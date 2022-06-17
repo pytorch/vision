@@ -1,4 +1,5 @@
 import math
+from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, List, Optional, Sequence, Tuple
 
@@ -23,6 +24,17 @@ __all__ = [
 
 # TODO: add weights
 # TODO: test on references
+
+
+@dataclass
+class MSBlockConfig:
+    num_heads: int
+    input_channels: int
+    output_channels: int
+    kernel_q: List[int]
+    kernel_kv: List[int]
+    stride_q: List[int]
+    stride_kv: List[int]
 
 
 def _prod(s: Sequence[int]) -> int:
@@ -192,13 +204,7 @@ class MultiscaleAttention(nn.Module):
 class MultiscaleBlock(nn.Module):
     def __init__(
         self,
-        input_channels: int,
-        output_channels: int,
-        num_heads: int,
-        kernel_q: List[int],
-        kernel_kv: List[int],
-        stride_q: List[int],
-        stride_kv: List[int],
+        cnf: MSBlockConfig,
         residual_pool: bool,
         dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
@@ -207,31 +213,31 @@ class MultiscaleBlock(nn.Module):
         super().__init__()
 
         self.pool_skip: Optional[nn.Module] = None
-        if _prod(stride_q) > 1:
-            kernel_skip = [s + 1 if s > 1 else s for s in stride_q]
+        if _prod(cnf.stride_q) > 1:
+            kernel_skip = [s + 1 if s > 1 else s for s in cnf.stride_q]
             padding_skip = [int(k // 2) for k in kernel_skip]
             self.pool_skip = Pool(
-                nn.MaxPool3d(kernel_skip, stride=stride_q, padding=padding_skip), None  # type: ignore[arg-type]
+                nn.MaxPool3d(kernel_skip, stride=cnf.stride_q, padding=padding_skip), None  # type: ignore[arg-type]
             )
 
-        self.norm1 = norm_layer(input_channels)
-        self.norm2 = norm_layer(input_channels)
+        self.norm1 = norm_layer(cnf.input_channels)
+        self.norm2 = norm_layer(cnf.input_channels)
         self.needs_transposal = isinstance(self.norm1, nn.BatchNorm1d)
 
         self.attn = MultiscaleAttention(
-            input_channels,
-            num_heads,
-            kernel_q=kernel_q,
-            kernel_kv=kernel_kv,
-            stride_q=stride_q,
-            stride_kv=stride_kv,
+            cnf.input_channels,
+            cnf.num_heads,
+            kernel_q=cnf.kernel_q,
+            kernel_kv=cnf.kernel_kv,
+            stride_q=cnf.stride_q,
+            stride_kv=cnf.stride_kv,
             residual_pool=residual_pool,
             dropout=dropout,
             norm_layer=norm_layer,
         )
         self.mlp = MLP(
-            input_channels,
-            [4 * input_channels, output_channels],
+            cnf.input_channels,
+            [4 * cnf.input_channels, cnf.output_channels],
             activation_layer=nn.GELU,
             dropout=dropout,
             inplace=None,
@@ -240,8 +246,8 @@ class MultiscaleBlock(nn.Module):
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
 
         self.project: Optional[nn.Module] = None
-        if input_channels != output_channels:
-            self.project = nn.Linear(input_channels, output_channels)
+        if cnf.input_channels != cnf.output_channels:
+            self.project = nn.Linear(cnf.input_channels, cnf.output_channels)
 
     def forward(self, x: torch.Tensor, thw: Tuple[int, int, int]) -> Tuple[torch.Tensor, Tuple[int, int, int]]:
         x_skip = x if self.pool_skip is None else self.pool_skip(x, thw)[0]
@@ -281,12 +287,7 @@ class MViT(nn.Module):
         self,
         spatial_size: Tuple[int, int],
         temporal_size: int,
-        embed_channels: List[int],
-        blocks: List[int],
-        heads: List[int],
-        pool_kv_stride: List[int],
-        pool_q_stride: List[int],
-        pool_kvq_kernel: List[int],
+        block_setting: Sequence[MSBlockConfig],
         residual_pool: bool,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
@@ -301,12 +302,7 @@ class MViT(nn.Module):
         Args:
             spatial_size (tuple of ints): The spacial size of the input as ``(H, W)``.
             temporal_size (int): The temporal size ``T`` of the input.
-            embed_channels (list of ints): A list with the embedding dimensions of each block group.
-            blocks (list of ints): A list with the number of blocks of each block group.
-            heads (list of ints): A list with the number of heads of each block group.
-            pool_kv_stride (list of ints): The initiale pooling stride of the first block.
-            pool_q_stride (list of ints): The pooling stride which reduces q in each block group.
-            pool_kvq_kernel (list of ints): The pooling kernel for the attention.
+            block_setting (sequence of MSBlockConfig): The Network structure.
             residual_pool (bool): If True, use MViTv2 pooling residual connection.
             dropout (float): Dropout rate. Default: 0.0.
             attention_dropout (float): Attention dropout rate. Default: 0.0.
@@ -321,9 +317,9 @@ class MViT(nn.Module):
         # We remove any experimental configuration that didn't make it to the final variants of the models. To represent
         # the configuration of the architecture we use the simplified form suggested at Table 1 of the paper.
         _log_api_usage_once(self)
-        num_blocks = len(blocks)
-        if num_blocks != len(embed_channels) or num_blocks != len(heads):
-            raise ValueError("The parameters 'embed_channels', 'blocks' and 'heads' must have equal length.")
+        total_stage_blocks = len(block_setting)
+        if total_stage_blocks == 0:
+            raise ValueError("The configuration parameter can't be empty.")
 
         if block is None:
             block = MultiscaleBlock
@@ -334,7 +330,7 @@ class MViT(nn.Module):
         # Patch Embedding module
         self.conv_proj = nn.Conv3d(
             in_channels=3,
-            out_channels=embed_channels[0],
+            out_channels=block_setting[0].input_channels,
             kernel_size=(3, 7, 7),
             stride=(2, 4, 4),
             padding=(1, 3, 3),
@@ -342,58 +338,33 @@ class MViT(nn.Module):
 
         # Spatio-Temporal Class Positional Encoding
         self.pos_encoding = PositionalEncoding(
-            embed_size=embed_channels[0],
+            embed_size=block_setting[0].input_channels,
             spatial_size=(spatial_size[0] // self.conv_proj.stride[1], spatial_size[1] // self.conv_proj.stride[2]),
             temporal_size=temporal_size // self.conv_proj.stride[0],
         )
 
         # Encoder module
         self.blocks = nn.ModuleList()
-        stage_block_id = 0
-        pool_countdown = blocks[0]
-        input_channels = output_channels = embed_channels[0]
-        stride_kv = pool_kv_stride
-        total_stage_blocks = sum(blocks)
-        for i, num_subblocks in enumerate(blocks):
-            for j in range(num_subblocks):
-                next_block_index = i + 1 if j + 1 == num_subblocks and i + 1 < num_blocks else i
-                output_channels = embed_channels[next_block_index]
+        for stage_block_id, cnf in enumerate(block_setting):
+            # adjust stochastic depth probability based on the depth of the stage block
+            sd_prob = stochastic_depth_prob * stage_block_id / (total_stage_blocks - 1.0)
 
-                stride_q = [1, 1, 1]
-                if pool_countdown == 0:
-                    stride_q = pool_q_stride
-                    pool_countdown = blocks[next_block_index]
-
-                stride_kv = [max(s // stride_q[d], 1) for d, s in enumerate(stride_kv)]
-
-                # adjust stochastic depth probability based on the depth of the stage block
-                sd_prob = stochastic_depth_prob * stage_block_id / (total_stage_blocks - 1.0)
-
-                self.blocks.append(
-                    block(
-                        input_channels=input_channels,
-                        output_channels=output_channels,
-                        num_heads=heads[i],
-                        kernel_q=pool_kvq_kernel,
-                        kernel_kv=pool_kvq_kernel,
-                        stride_q=stride_q,
-                        stride_kv=stride_kv,
-                        residual_pool=residual_pool,
-                        dropout=attention_dropout,
-                        stochastic_depth_prob=sd_prob,
-                        norm_layer=norm_layer,
-                    )
+            self.blocks.append(
+                block(
+                    cnf=cnf,
+                    residual_pool=residual_pool,
+                    dropout=attention_dropout,
+                    stochastic_depth_prob=sd_prob,
+                    norm_layer=norm_layer,
                 )
-                input_channels = output_channels
-                stage_block_id += 1
-                pool_countdown -= 1
-        self.norm = norm_layer(output_channels)
+            )
+        self.norm = norm_layer(block_setting[-1].output_channels)
 
         # Classifier module
         layers: List[nn.Module] = []
         if dropout > 0.0:
             layers.append(nn.Dropout(dropout, inplace=True))
-        layers.append(nn.Linear(output_channels, num_classes))
+        layers.append(nn.Linear(block_setting[-1].output_channels, num_classes))
         self.head = nn.Sequential(*layers)
 
         for m in self.modules():
@@ -432,9 +403,7 @@ class MViT(nn.Module):
 
 
 def _mvit(
-    embed_channels: List[int],
-    blocks: List[int],
-    heads: List[int],
+    block_setting: List[MSBlockConfig],
     stochastic_depth_prob: float,
     weights: Optional[WeightsEnum],
     progress: bool,
@@ -451,12 +420,7 @@ def _mvit(
     model = MViT(
         spatial_size=spatial_size,
         temporal_size=temporal_size,
-        embed_channels=embed_channels,
-        blocks=blocks,
-        heads=heads,
-        pool_kv_stride=kwargs.pop("pool_kv_stride", [1, 8, 8]),
-        pool_q_stride=kwargs.pop("pool_q_stride", [1, 2, 2]),
-        pool_kvq_kernel=kwargs.pop("pool_kvq_kernel", [3, 3, 3]),
+        block_setting=block_setting,
         residual_pool=kwargs.pop("residual_pool", False),
         stochastic_depth_prob=stochastic_depth_prob,
         **kwargs,
@@ -499,12 +463,157 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
     """
     weights = MViT_V1_B_Weights.verify(weights)
 
+    block_setting = [
+        MSBlockConfig(
+            num_heads=1,
+            input_channels=96,
+            output_channels=192,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 8, 8],
+        ),
+        MSBlockConfig(
+            num_heads=2,
+            input_channels=192,
+            output_channels=192,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 2, 2],
+            stride_kv=[1, 4, 4],
+        ),
+        MSBlockConfig(
+            num_heads=2,
+            input_channels=192,
+            output_channels=384,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 4, 4],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 2, 2],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=768,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=8,
+            input_channels=768,
+            output_channels=768,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 2, 2],
+            stride_kv=[1, 1, 1],
+        ),
+        MSBlockConfig(
+            num_heads=8,
+            input_channels=768,
+            output_channels=768,
+            kernel_q=[],
+            kernel_kv=[3, 3, 3],
+            stride_q=[],
+            stride_kv=[1, 1, 1],
+        ),
+    ]
+
     return _mvit(
         spatial_size=(224, 224),
         temporal_size=16,
-        embed_channels=[96, 192, 384, 768],
-        blocks=[1, 2, 11, 2],
-        heads=[1, 2, 4, 8],
+        block_setting=block_setting,
         residual_pool=False,
         stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.2),
         weights=weights,
@@ -537,14 +646,231 @@ def mvit_v2_b(*, weights: Optional[MViT_V2_B_Weights] = None, progress: bool = T
     """
     weights = MViT_V2_B_Weights.verify(weights)
 
+    block_setting = [
+        MSBlockConfig(
+            num_heads=1,
+            input_channels=96,
+            output_channels=96,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 8, 8],
+        ),
+        MSBlockConfig(
+            num_heads=1,
+            input_channels=96,
+            output_channels=192,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 8, 8],
+        ),
+        MSBlockConfig(
+            num_heads=2,
+            input_channels=192,
+            output_channels=192,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 2, 2],
+            stride_kv=[1, 4, 4],
+        ),
+        MSBlockConfig(
+            num_heads=2,
+            input_channels=192,
+            output_channels=192,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 4, 4],
+        ),
+        MSBlockConfig(
+            num_heads=2,
+            input_channels=192,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 4, 4],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 2, 2],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=384,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=4,
+            input_channels=384,
+            output_channels=768,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 2, 2],
+        ),
+        MSBlockConfig(
+            num_heads=8,
+            input_channels=768,
+            output_channels=768,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 2, 2],
+            stride_kv=[1, 1, 1],
+        ),
+        MSBlockConfig(
+            num_heads=8,
+            input_channels=768,
+            output_channels=768,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 1, 1],
+        ),
+        MSBlockConfig(
+            num_heads=8,
+            input_channels=768,
+            output_channels=768,
+            kernel_q=[3, 3, 3],
+            kernel_kv=[3, 3, 3],
+            stride_q=[1, 1, 1],
+            stride_kv=[1, 1, 1],
+        ),
+    ]
+
     # TODO: check if we should implement relative pos embedding (Section 4.1 in the paper). Ref:
     # https://github.com/facebookresearch/mvit/blob/main/mvit/models/attention.py#L45
     return _mvit(
         spatial_size=(224, 224),
         temporal_size=32,
-        embed_channels=[96, 192, 384, 768],
-        blocks=[2, 3, 16, 3],
-        heads=[1, 2, 4, 8],
+        block_setting=block_setting,
         residual_pool=True,
         stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.3),
         weights=weights,
