@@ -14,9 +14,9 @@ from torchvision.utils import _log_api_usage_once
 
 __all__ = (
     "RaftStereo",
-    "raft_stereo",
+    "raft_stereo_basic",
     "raft_stereo_realtime",
-    "Raft_Stereo_Weights",
+    "Raft_Stereo_Basic_Weights",
     "Raft_Stereo_Realtime_Weights",
 )
 
@@ -109,12 +109,11 @@ class MultiLevelContextEncoder(nn.Module):
         )
 
     def _make_out_layer(self, in_channels, out_channels, with_block=True, block=ResidualBlock):
+        layers = []
         if with_block:
-            block_layer = block(in_channels, in_channels, norm_layer=nn.BatchNorm2d, stride=1)
-        else:
-            block_layer = nn.Identity()
-        conv_layer = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-        return nn.Sequential(block_layer, conv_layer)
+            layers.append(block(in_channels, in_channels, norm_layer=nn.BatchNorm2d, stride=1))
+        layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1))
+        return nn.Sequential(*layers)
 
     def _make_downsampler(self, block, in_channels, out_channels):
         block1 = block(in_channels, out_channels, norm_layer=nn.BatchNorm2d, stride=2)
@@ -499,7 +498,7 @@ def _raft_stereo(
                 + " and feature_encoder_strides must be the same with context_encoder_layers[:-1] and context_encoder_strides!"
             )
 
-        base_encoder = BaseEncoder(
+        base_encoder = kwargs.pop("base_encoder", None) or BaseEncoder(
             block=context_encoder_block,
             layers=context_encoder_layers[:-1],
             strides=context_encoder_strides,
@@ -520,13 +519,13 @@ def _raft_stereo(
             strides=context_encoder_strides,
             norm_layer=nn.BatchNorm2d,
         )
-    feature_encoder = FeatureEncoder(
+    feature_encoder = kwargs.pop("feature_encoder", None) or FeatureEncoder(
         feature_base_encoder,
         output_dim=feature_encoder_layers[-1],
         shared_base=shared_encoder_weight,
         block=feature_encoder_block,
     )
-    context_encoder = MultiLevelContextEncoder(
+    context_encoder = kwargs.pop("context_encoder", None) or MultiLevelContextEncoder(
         context_base_encoder,
         out_with_blocks=context_encoder_out_with_blocks,
         output_dim=context_encoder_layers[-1],
@@ -535,22 +534,26 @@ def _raft_stereo(
 
     feature_downsampling_ratio = feature_encoder.base_downsampling_ratio
 
-    corr_pyramid = CorrPyramid1d(num_levels=corr_num_levels)
-    corr_block = CorrBlock1d(num_levels=corr_num_levels, radius=corr_radius)
+    corr_pyramid = kwargs.pop("corr_pyramid", None) or CorrPyramid1d(num_levels=corr_num_levels)
+    corr_block = kwargs.pop("corr_block", None) or CorrBlock1d(num_levels=corr_num_levels, radius=corr_radius)
 
-    motion_encoder = MotionEncoder(
+    motion_encoder = kwargs.pop("motion_encoder", None) or MotionEncoder(
         in_channels_corr=corr_block.out_channels,
         corr_layers=motion_encoder_corr_layers,
         flow_layers=motion_encoder_flow_layers,
         out_channels=motion_encoder_out_channels,
     )
-    update_block = MultiLevelUpdateBlock(motion_encoder=motion_encoder, hidden_dims=update_block_hidden_dims)
+    update_block = kwargs.pop("update_block", None) or MultiLevelUpdateBlock(
+        motion_encoder=motion_encoder, hidden_dims=update_block_hidden_dims
+    )
 
     # We use the largest scale hidden_dims of update_block to get the predicted depth
-    depth_head = FlowHead(
+    depth_head = kwargs.pop("depth_head", None) or FlowHead(
         in_channels=update_block_hidden_dims[0],
         hidden_size=flow_head_hidden_size,
     )
+
+    mask_predictor = kwargs.pop("mask_predictor", None)
     if use_mask_predictor:
         mask_predictor = MaskPredictor(
             in_channels=update_block.hidden_dims[0],
@@ -582,7 +585,7 @@ class Raft_Stereo_Realtime_Weights(WeightsEnum):
     pass
 
 
-class Raft_Stereo_Weights(WeightsEnum):
+class Raft_Stereo_Basic_Weights(WeightsEnum):
     pass
 
 
@@ -645,16 +648,16 @@ def raft_stereo_realtime(
     )
 
 
-def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True, **kwargs) -> RaftStereo:
+def raft_stereo_basic(*, weights: Optional[Raft_Stereo_Basic_Weights] = None, progress=True, **kwargs) -> RaftStereo:
     """RAFT-Stereo model from
     `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
 
     Please see the example below for a tutorial on how to use this model.
 
     Args:
-        weights(:class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Weights`, optional): The
+        weights(:class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Basic_Weights`, optional): The
             pretrained weights to use. See
-            :class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Weights`
+            :class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Basic_Weights`
             below for more details, and possible values. By default, no
             pre-trained weights are used.
         progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
@@ -663,11 +666,11 @@ def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True,
             <https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.prototype.models.depth.stereo.Raft_Stereo_Weights
+    .. autoclass:: torchvision.prototype.models.depth.stereo.Raft_Stereo_Basic_Weights
         :members:
     """
 
-    weights = Raft_Stereo_Weights.verify(weights)
+    weights = Raft_Stereo_Basic_Weights.verify(weights)
 
     return _raft_stereo(
         weights=weights,
