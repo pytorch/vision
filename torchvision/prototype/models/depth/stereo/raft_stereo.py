@@ -462,29 +462,29 @@ def _raft_stereo(
     progress: bool = False,
     shared_encoder_weight: bool = False,
     # Feature encoder
-    feature_encoder_layers: Tuple[int, int, int, int, int],
-    feature_encoder_strides: Tuple[int, int, int, int],
-    feature_encoder_block: Callable[..., nn.Module],
+    feature_encoder_layers: Tuple[int, int, int, int, int] = (64, 64, 96, 128, 256),
+    feature_encoder_strides: Tuple[int, int, int, int] = (1, 1, 2, 2),
+    feature_encoder_block: Callable[..., nn.Module] = ResidualBlock,
     # Context encoder
-    context_encoder_layers: Tuple[int, int, int, int, int],
-    context_encoder_strides: Tuple[int, int, int, int],
+    context_encoder_layers: Tuple[int, int, int, int, int] = (64, 64, 96, 128, 256),
+    context_encoder_strides: Tuple[int, int, int, int] = (1, 1, 2, 2),
     context_encoder_out_with_blocks: List[bool],
-    context_encoder_block: Callable[..., nn.Module],
+    context_encoder_block: Callable[..., nn.Module] = ResidualBlock,
     # Correlation block
     corr_num_levels: int = 4,
     corr_radius: int = 4,
     # Motion encoder
-    motion_encoder_corr_layers: Tuple[int, int],
-    motion_encoder_flow_layers: Tuple[int, int],
-    motion_encoder_out_channels: int,
+    motion_encoder_corr_layers: Tuple[int, int] = (64, 64),
+    motion_encoder_flow_layers: Tuple[int, int] = (64, 64),
+    motion_encoder_out_channels: int = 128,
     # Update block
     update_block_hidden_dims: List[int],
     # Flow Head
-    flow_head_hidden_size: int,
+    flow_head_hidden_size: int = 256,
     # Mask predictor
-    mask_predictor_hidden_size: int,
-    use_mask_predictor: bool,
-    slow_fast: bool,
+    mask_predictor_hidden_size: int = 256,
+    use_mask_predictor: bool = True,
+    slow_fast: bool = False,
     **kwargs,
 ):
 
