@@ -584,6 +584,8 @@ def ssd300_vgg16(
     """The SSD300 model is based on the `SSD: Single Shot MultiBox Detector
     <https://arxiv.org/abs/1512.02325>`_ paper.
 
+    .. betastatus:: detection module
+
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes but they will be resized
     to a fixed size before passing it to the backbone.
