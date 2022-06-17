@@ -189,7 +189,7 @@ def main(args):
             split="val",
             step_between_clips=1,
             transform=transform_test,
-            frame_rate=15,
+            frame_rate=args.frame_rate,
             extensions=(
                 "avi",
                 "mp4",
