@@ -16,7 +16,11 @@ def get_available_models():
     return [
         k
         for k, v in models.__dict__.items()
-        if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k != "get_weight"
+        if callable(v)
+        and k[0].lower() == k[0]
+        and k[0] != "_"
+        and k != "get_weight"
+        and not k.startswith("enable_beta")
     ]
 
 
