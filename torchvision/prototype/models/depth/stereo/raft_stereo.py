@@ -48,6 +48,12 @@ class BaseEncoder(raft.FeatureEncoder):
 
 
 class FeatureEncoder(nn.Module):
+    """Feature Encoder for Raft-Stereo (see paper section 3.1) that may have shared weight with the Context Encoder.
+
+    The FeatureEncoder takes concatination of left and right image as input, it produce feature embedding that later
+    will be used to construct correlation volume.
+    """
+
     def __init__(
         self,
         base_encoder: BaseEncoder,
@@ -78,6 +84,22 @@ class FeatureEncoder(nn.Module):
 
 
 class MultiLevelContextEncoder(nn.Module):
+    """Context Encoder for Raft-Stereo (see paper section 3.1) that may have shared weight with the Feature Encoder.
+
+    The ContextEncoder takes left image as input and it outputs concatenated hidden_states and contexts.
+    In Raft-Stereo we have multi level GRUs and this context encoder will also multi outputs (list of Tensor)
+    that correspond to each GRUs.
+    Take note that the length of "out_with_blocks" parameter represent the number of GRU's level.
+    args:
+        base_encoder (nn.Module): The base encoder part that can have a shared weight with feature_encoder's
+            base_encoder because they have same architecture.
+        out_with_blocks (List[bool]): The length represent the number of GRU's level (length of output), and
+            if the element is True then the output layer on that position will have additional block
+        output_dim (int): The dimension of output on each level (default: 256)
+        block (Callable[..., nn.Module]): The type of basic block used for downsampling and output layer
+            (default: ResidualBlock)
+    """
+
     def __init__(
         self,
         base_encoder: nn.Module,
@@ -468,6 +490,8 @@ def _raft_stereo(
     # Context encoder
     context_encoder_layers: Tuple[int, int, int, int, int] = (64, 64, 96, 128, 256),
     context_encoder_strides: Tuple[int, int, int, int] = (1, 1, 2, 2),
+    # if the `out_with_blocks` param of the context_encoder is True, then
+    # the particular output on that level position will have additional `context_encoder_block` layer
     context_encoder_out_with_blocks: List[bool],
     context_encoder_block: Callable[..., nn.Module] = ResidualBlock,
     # Correlation block
@@ -487,7 +511,11 @@ def _raft_stereo(
     slow_fast: bool = False,
     **kwargs,
 ):
-
+    if len(context_encoder_out_with_blocks) != len(update_block_hidden_dims):
+        raise ValueError(
+            "Length of context_encoder_out_with_blocks and update_block_hidden_dims must be the same"
+            + "because both of them represent the number of GRUs level"
+        )
     if shared_encoder_weight:
         if (
             feature_encoder_layers[:-1] != context_encoder_layers[:-1]
