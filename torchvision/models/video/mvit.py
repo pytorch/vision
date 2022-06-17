@@ -23,7 +23,6 @@ __all__ = [
 
 
 # TODO: Consider handle 2d input if Temporal is 1
-# TODO: test on references
 
 
 @dataclass
