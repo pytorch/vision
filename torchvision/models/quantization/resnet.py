@@ -302,7 +302,7 @@ def resnet18(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNet18_QuantizedWeights
@@ -351,7 +351,7 @@ def resnet50(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNet50_QuantizedWeights
@@ -400,7 +400,7 @@ def resnext101_32x8d(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights
@@ -443,7 +443,7 @@ def resnext101_64x4d(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNeXt101_64X4D_QuantizedWeights
