@@ -31,6 +31,8 @@ import utils
 from coco_utils import get_coco, get_coco_kp
 from engine import train_one_epoch, evaluate
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from torchvision.transforms import InterpolationMode
+from transforms import SimpleCopyPaste
 
 
 def get_dataset(name, image_set, transform, data_path):
@@ -145,6 +147,13 @@ def get_args_parser(add_help=True):
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
+    # Use CopyPaste augmentation training parameter
+    parser.add_argument(
+        "--use-copypaste",
+        action="store_true",
+        help="Use CopyPaste data augmentation. Works only with data-augmentation='lsj'.",
+    )
+
     return parser
 
 
@@ -180,8 +189,20 @@ def main(args):
     else:
         train_batch_sampler = torch.utils.data.BatchSampler(train_sampler, args.batch_size, drop_last=True)
 
+    train_collate_fn = utils.collate_fn
+    if args.use_copypaste:
+        if args.data_augmentation != "lsj":
+            raise RuntimeError("SimpleCopyPaste algorithm currently only supports the 'lsj' data augmentation policies")
+
+        copypaste = SimpleCopyPaste(resize_interpolation=InterpolationMode.BILINEAR, blending=True)
+
+        def copypaste_collate_fn(batch):
+            return copypaste(*utils.collate_fn(batch))
+
+        train_collate_fn = copypaste_collate_fn
+
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_sampler=train_batch_sampler, num_workers=args.workers, collate_fn=utils.collate_fn
+        dataset, batch_sampler=train_batch_sampler, num_workers=args.workers, collate_fn=train_collate_fn
     )
 
     data_loader_test = torch.utils.data.DataLoader(

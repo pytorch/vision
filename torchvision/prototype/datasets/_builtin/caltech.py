@@ -30,7 +30,7 @@ def _caltech101_info() -> Dict[str, Any]:
 @register_dataset("caltech101")
 class Caltech101(Dataset):
     """
-    - **homepage**: http://www.vision.caltech.edu/Image_Datasets/Caltech101
+    - **homepage**: https://data.caltech.edu/records/20086
     - **dependencies**:
         - <scipy `https://scipy.org/`>_
     """
@@ -159,7 +159,7 @@ def _caltech256_info() -> Dict[str, Any]:
 @register_dataset("caltech256")
 class Caltech256(Dataset):
     """
-    - **homepage**: http://www.vision.caltech.edu/Image_Datasets/Caltech256
+    - **homepage**: https://data.caltech.edu/records/20087
     """
 
     def __init__(

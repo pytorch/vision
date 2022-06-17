@@ -5,7 +5,7 @@ import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 
-from ..ops.misc import Conv2dNormActivation
+from ..ops.misc import Conv2dNormActivation, Permute
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
@@ -33,15 +33,6 @@ class LayerNorm2d(nn.LayerNorm):
         x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
         x = x.permute(0, 3, 1, 2)
         return x
-
-
-class Permute(nn.Module):
-    def __init__(self, dims: List[int]):
-        super().__init__()
-        self.dims = dims
-
-    def forward(self, x):
-        return torch.permute(x, self.dims)
 
 
 class CNBlock(nn.Module):

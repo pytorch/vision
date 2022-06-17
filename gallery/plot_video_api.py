@@ -325,7 +325,7 @@ print(data)
 # ----------------------------------
 # Example of visualized video
 
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 
 plt.figure(figsize=(12, 12))
 for i in range(16):

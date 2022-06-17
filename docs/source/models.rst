@@ -272,6 +272,8 @@ Semantic Segmentation
 
 .. currentmodule:: torchvision.models.segmentation
 
+.. betastatus:: segmentation module
+
 The following semantic segmentation models are available, with or without
 pre-trained weights:
 
@@ -333,6 +335,8 @@ The pre-trained models for detection, instance segmentation and
 keypoint detection are initialized with the classification models
 in torchvision. The models expect a list of ``Tensor[C, H, W]``.
 Check the constructor of the models for more information.
+
+.. betastatus:: detection module
 
 Object Detection
 ----------------
@@ -453,6 +457,8 @@ Video Classification
 
 .. currentmodule:: torchvision.models.video
 
+.. betastatus:: video module
+
 The following video classification models are available, with or without
 pre-trained weights:
 
@@ -471,7 +477,7 @@ Here is an example of how to use the pre-trained video classification models:
     from torchvision.io.video import read_video
     from torchvision.models.video import r3d_18, R3D_18_Weights
 
-    vid, _, _ = read_video("test/assets/videos/v_SoccerJuggling_g23_c01.avi")
+    vid, _, _ = read_video("test/assets/videos/v_SoccerJuggling_g23_c01.avi", output_format="TCHW")
     vid = vid[:32]  # optionally shorten duration
 
     # Step 1: Initialize model with the best available weights
