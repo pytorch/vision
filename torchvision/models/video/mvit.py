@@ -16,9 +16,7 @@ from .._utils import _ovewrite_named_param
 __all__ = [
     "MViT",
     "MViT_V1_B_Weights",
-    "MViT_V2_B_Weights",
     "mvit_v1_b",
-    "mvit_v2_b",
 ]
 
 
@@ -382,6 +380,8 @@ class MViT(nn.Module):
                     nn.init.trunc_normal_(weights, std=0.02)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # TODO: Consider handle 2d input if Temporal is 1
+
         # patchify and reshape: (B, C, T, H, W) -> (B, embed_channels[0], T', H', W') -> (B, THW', embed_channels[0])
         x = self.conv_proj(x)
         x = x.flatten(2).transpose(1, 2)
@@ -433,10 +433,6 @@ def _mvit(
 
 
 class MViT_V1_B_Weights(WeightsEnum):
-    pass
-
-
-class MViT_V2_B_Weights(WeightsEnum):
     pass
 
 
@@ -616,263 +612,6 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
         block_setting=block_setting,
         residual_pool=False,
         stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.2),
-        weights=weights,
-        progress=progress,
-        **kwargs,
-    )
-
-
-def mvit_v2_b(*, weights: Optional[MViT_V2_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
-    """
-    Constructs a base MViTV2 architecture from
-    `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
-    <https://arxiv.org/abs/2112.01526>`__.
-
-    Args:
-        weights (:class:`~torchvision.models.video.MViT_V2_B_Weights`, optional): The
-            pretrained weights to use. See
-            :class:`~torchvision.models.video.MViT_V2_B_Weights` below for
-            more details, and possible values. By default, no pre-trained
-            weights are used.
-        progress (bool, optional): If True, displays a progress bar of the
-            download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.video.MViTV2``
-            base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
-            for more details about this class.
-
-    .. autoclass:: torchvision.models.video.MViT_V2_B_Weights
-        :members:
-    """
-    weights = MViT_V2_B_Weights.verify(weights)
-
-    block_setting = [
-        MSBlockConfig(
-            num_heads=1,
-            input_channels=96,
-            output_channels=96,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 8, 8],
-        ),
-        MSBlockConfig(
-            num_heads=1,
-            input_channels=96,
-            output_channels=192,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 8, 8],
-        ),
-        MSBlockConfig(
-            num_heads=2,
-            input_channels=192,
-            output_channels=192,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 2, 2],
-            stride_kv=[1, 4, 4],
-        ),
-        MSBlockConfig(
-            num_heads=2,
-            input_channels=192,
-            output_channels=192,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 4, 4],
-        ),
-        MSBlockConfig(
-            num_heads=2,
-            input_channels=192,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 4, 4],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 2, 2],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=384,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=4,
-            input_channels=384,
-            output_channels=768,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 2, 2],
-        ),
-        MSBlockConfig(
-            num_heads=8,
-            input_channels=768,
-            output_channels=768,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 2, 2],
-            stride_kv=[1, 1, 1],
-        ),
-        MSBlockConfig(
-            num_heads=8,
-            input_channels=768,
-            output_channels=768,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 1, 1],
-        ),
-        MSBlockConfig(
-            num_heads=8,
-            input_channels=768,
-            output_channels=768,
-            kernel_q=[3, 3, 3],
-            kernel_kv=[3, 3, 3],
-            stride_q=[1, 1, 1],
-            stride_kv=[1, 1, 1],
-        ),
-    ]
-
-    # TODO: check if we should implement relative pos embedding (Section 4.1 in the paper). Ref:
-    # https://github.com/facebookresearch/mvit/blob/main/mvit/models/attention.py#L45
-    return _mvit(
-        spatial_size=(224, 224),
-        temporal_size=32,
-        block_setting=block_setting,
-        residual_pool=True,
-        stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.3),
         weights=weights,
         progress=progress,
         **kwargs,
