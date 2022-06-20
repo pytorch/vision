@@ -5,7 +5,7 @@ import torchvision.prototype.models.depth.stereo.raft_stereo as raft_stereo
 from common_utils import set_rng_seed, cpu_and_gpu
 
 
-@pytest.mark.parametrize("model_builder", (raft_stereo.raft_stereo_basic, raft_stereo.raft_stereo_realtime))
+@pytest.mark.parametrize("model_builder", (raft_stereo.raft_stereo_base, raft_stereo.raft_stereo_realtime))
 @pytest.mark.parametrize("model_mode", ("standard", "scripted"))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_raft_stereo(model_builder, model_mode, dev):
