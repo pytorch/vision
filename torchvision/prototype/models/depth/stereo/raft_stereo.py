@@ -14,9 +14,9 @@ from torchvision.utils import _log_api_usage_once
 
 __all__ = (
     "RaftStereo",
-    "raft_stereo_basic",
+    "raft_stereo_base",
     "raft_stereo_realtime",
-    "Raft_Stereo_Basic_Weights",
+    "Raft_Stereo_Base_Weights",
     "Raft_Stereo_Realtime_Weights",
 )
 
@@ -613,7 +613,7 @@ class Raft_Stereo_Realtime_Weights(WeightsEnum):
     pass
 
 
-class Raft_Stereo_Basic_Weights(WeightsEnum):
+class Raft_Stereo_Base_Weights(WeightsEnum):
     pass
 
 
@@ -676,16 +676,16 @@ def raft_stereo_realtime(
     )
 
 
-def raft_stereo_basic(*, weights: Optional[Raft_Stereo_Basic_Weights] = None, progress=True, **kwargs) -> RaftStereo:
+def raft_stereo_base(*, weights: Optional[Raft_Stereo_Base_Weights] = None, progress=True, **kwargs) -> RaftStereo:
     """RAFT-Stereo model from
     `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
 
     Please see the example below for a tutorial on how to use this model.
 
     Args:
-        weights(:class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Basic_Weights`, optional): The
+        weights(:class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Base_Weights`, optional): The
             pretrained weights to use. See
-            :class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Basic_Weights`
+            :class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Base_Weights`
             below for more details, and possible values. By default, no
             pre-trained weights are used.
         progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
@@ -694,11 +694,11 @@ def raft_stereo_basic(*, weights: Optional[Raft_Stereo_Basic_Weights] = None, pr
             <https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.prototype.models.depth.stereo.Raft_Stereo_Basic_Weights
+    .. autoclass:: torchvision.prototype.models.depth.stereo.Raft_Stereo_Base_Weights
         :members:
     """
 
-    weights = Raft_Stereo_Basic_Weights.verify(weights)
+    weights = Raft_Stereo_Base_Weights.verify(weights)
 
     return _raft_stereo(
         weights=weights,
