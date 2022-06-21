@@ -126,6 +126,8 @@ def fcn_resnet50(
     """Fully-Convolutional Network model with a ResNet-50 backbone from the `Fully Convolutional
     Networks for Semantic Segmentation <https://arxiv.org/abs/1411.4038>`_ paper.
 
+    .. betastatus:: segmentation module
+
     Args:
         weights (:class:`~torchvision.models.segmentation.FCN_ResNet50_Weights`, optional): The
             pretrained weights to use. See
@@ -181,6 +183,8 @@ def fcn_resnet101(
 ) -> FCN:
     """Fully-Convolutional Network model with a ResNet-101 backbone from the `Fully Convolutional
     Networks for Semantic Segmentation <https://arxiv.org/abs/1411.4038>`_ paper.
+
+    .. betastatus:: segmentation module
 
     Args:
         weights (:class:`~torchvision.models.segmentation.FCN_ResNet101_Weights`, optional): The

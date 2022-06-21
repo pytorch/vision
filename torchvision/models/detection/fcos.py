@@ -685,6 +685,8 @@ def fcos_resnet50_fpn(
     """
     Constructs a FCOS model with a ResNet-50-FPN backbone.
 
+    .. betastatus:: detection module
+
     Reference: `FCOS: Fully Convolutional One-Stage Object Detection <https://arxiv.org/abs/1904.01355>`_.
                `FCOS: A simple and strong anchor-free object detector <https://arxiv.org/abs/2006.09214>`_.
 
