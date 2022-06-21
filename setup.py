@@ -342,6 +342,8 @@ def get_extensions():
 
     ffmpeg_exe = shutil.which("ffmpeg")
     has_ffmpeg = ffmpeg_exe is not None
+    # FIXME: Building torchvision with ffmpeg on MacOS causes crash.
+    # FIXME: https://github.com/pytorch/pytorch/issues/65000
     if sys.platform != "linux":
         has_ffmpeg = False
     if has_ffmpeg:
