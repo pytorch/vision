@@ -223,13 +223,34 @@ def resize_image_tensor():
 
 @register_kernel_info_from_sample_inputs_fn
 def resize_bounding_box():
-    for bounding_box in make_bounding_boxes():
+    for bounding_box, max_size in itertools.product(
+        make_bounding_boxes(),
+        [None, 34],  # max_size
+    ):
         height, width = bounding_box.image_size
         for size in [
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
+            if max_size is not None:
+                size = [size[0]]
             yield SampleInput(bounding_box, size=size, image_size=bounding_box.image_size)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def resize_segmentation_mask():
+    for mask, max_size in itertools.product(
+        make_segmentation_masks(),
+        [None, 34],  # max_size
+    ):
+        height, width = mask.shape[-2:]
+        for size in [
+            (height, width),
+            (int(height * 0.75), int(width * 1.25)),
+        ]:
+            if max_size is not None:
+                size = [size[0]]
+            yield SampleInput(mask, size=size, max_size=max_size)
 
 
 @register_kernel_info_from_sample_inputs_fn

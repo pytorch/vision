@@ -79,9 +79,11 @@ def resize_segmentation_mask(
     return resize_image_tensor(segmentation_mask, size=size, interpolation=InterpolationMode.NEAREST, max_size=max_size)
 
 
-# TODO: handle max_size
-def resize_bounding_box(bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int]) -> torch.Tensor:
+def resize_bounding_box(
+    bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int], max_size: Optional[int] = None
+) -> torch.Tensor:
     old_height, old_width = image_size
+    size = _compute_output_size(image_size, size=size, max_size=max_size)
     new_height, new_width = size
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
     return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
