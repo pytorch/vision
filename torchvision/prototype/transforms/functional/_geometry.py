@@ -6,7 +6,12 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
-from torchvision.transforms.functional import pil_modes_mapping, _get_inverse_affine_matrix, InterpolationMode, _compute_output_size
+from torchvision.transforms.functional import (
+    pil_modes_mapping,
+    _get_inverse_affine_matrix,
+    InterpolationMode,
+    _compute_output_size,
+)
 
 from ._meta import convert_bounding_box_format, get_dimensions_image_tensor, get_dimensions_image_pil
 
@@ -43,7 +48,8 @@ def resize_image_tensor(
     antialias: Optional[bool] = None,
 ) -> torch.Tensor:
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
-    new_height, new_width = _compute_output_size((old_height, old_width), size=size, max_size=max_size)
+    size = _compute_output_size((old_height, old_width), size=size, max_size=max_size)
+    new_height, new_width = size
     batch_shape = image.shape[:-3]
     return _FT.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
@@ -59,6 +65,10 @@ def resize_image_pil(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
+    if isinstance(size, int):
+        size = [size, size]
+    # Explicitly cast size to list otherwise mypy issue: incompatible type "Sequence[int]"; expected "List[int]"
+    size: List[int] = list(size)
     size = _compute_output_size(img.size[::-1], size=size, max_size=max_size)
     return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation])
 
