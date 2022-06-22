@@ -318,8 +318,8 @@ def rotate_image_tensor(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
+    fill: Optional[List[float]] = None,
 ) -> torch.Tensor:
     center_f = [0.0, 0.0]
     if center is not None:
