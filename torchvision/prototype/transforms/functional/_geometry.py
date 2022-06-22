@@ -42,16 +42,17 @@ def resize_image_tensor(
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,
 ) -> torch.Tensor:
-    new_height, new_width = size
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
     batch_shape = image.shape[:-3]
-    return _FT.resize(
+    output = _FT.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
         size=size,
         interpolation=interpolation.value,
         max_size=max_size,
         antialias=antialias,
-    ).reshape(batch_shape + (num_channels, new_height, new_width))
+    )
+    num_channels, new_height, new_width = get_dimensions_image_tensor(output)
+    return output.reshape(batch_shape + (num_channels, new_height, new_width))
 
 
 def resize_image_pil(
