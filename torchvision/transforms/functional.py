@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import List, Tuple, Any, Optional, Union
+from typing import List, Tuple, Any, Optional
 
 import numpy as np
 import torch
