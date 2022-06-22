@@ -285,6 +285,22 @@ def affine_segmentation_mask():
 
 
 @register_kernel_info_from_sample_inputs_fn
+def rotate_image_tensor():
+    for image, angle, expand, center, fill in itertools.product(
+        make_images(extra_dims=((), (4,))),
+        [-87, 15, 90],  # angle
+        [True, False],  # expand
+        [None, [12, 23]],  # center
+        [None, [128]],  # fill
+    ):
+        if center is not None and expand:
+            # Skip warning: The provided center argument is ignored if expand is True
+            continue
+
+        yield SampleInput(image, angle=angle, expand=expand, center=center, fill=fill)
+
+
+@register_kernel_info_from_sample_inputs_fn
 def rotate_bounding_box():
     for bounding_box, angle, expand, center in itertools.product(
         make_bounding_boxes(), [-87, 15, 90], [True, False], [None, [12, 23]]
