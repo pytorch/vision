@@ -1,5 +1,5 @@
 import numbers
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -240,13 +240,13 @@ def crop(
 @torch.jit.unused
 def resize(
     img: Image.Image,
-    size: Union[Sequence[int], int],
+    size: Union[List[int], int],
     interpolation: int = _pil_constants.BILINEAR,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
-    if not (isinstance(size, Sequence) and len(size) == 2):
+    if not (isinstance(size, list) and len(size) == 2):
         raise TypeError(f"Got inappropriate size arg: {size}")
 
     return img.resize(size[::-1], interpolation)

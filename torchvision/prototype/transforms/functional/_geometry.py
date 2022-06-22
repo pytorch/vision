@@ -42,17 +42,17 @@ def resize_image_tensor(
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,
 ) -> torch.Tensor:
+    # TODO: use _compute_output_size to enable max_size option
+    max_size  # ununsed right now
+    new_height, new_width = size
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
     batch_shape = image.shape[:-3]
-    output = _FT.resize(
+    return _FT.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
         size=size,
         interpolation=interpolation.value,
-        max_size=max_size,
         antialias=antialias,
-    )
-    num_channels, new_height, new_width = get_dimensions_image_tensor(output)
-    return output.reshape(batch_shape + (num_channels, new_height, new_width))
+    ).reshape(batch_shape + (num_channels, new_height, new_width))
 
 
 def resize_image_pil(
@@ -61,7 +61,9 @@ def resize_image_pil(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
-    return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation], max_size=max_size)
+    # TODO: use _compute_output_size to enable max_size option
+    max_size  # ununsed right now
+    return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation])
 
 
 def resize_segmentation_mask(
