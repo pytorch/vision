@@ -201,19 +201,24 @@ def horizontal_flip_bounding_box():
 
 @register_kernel_info_from_sample_inputs_fn
 def resize_image_tensor():
-    for image, interpolation in itertools.product(
+    for image, interpolation, max_size, antialias in itertools.product(
         make_images(),
-        [
-            F.InterpolationMode.BILINEAR,
-            F.InterpolationMode.NEAREST,
-        ],
+        [F.InterpolationMode.BILINEAR, F.InterpolationMode.NEAREST],  # interpolation
+        [None, 34],  # max_size
+        [False, True],  # antialias
     ):
+
+        if antialias and interpolation == F.InterpolationMode.NEAREST:
+            continue
+
         height, width = image.shape[-2:]
         for size in [
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield SampleInput(image, size=size, interpolation=interpolation)
+            if max_size is not None:
+                size = [size[0]]
+            yield SampleInput(image, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
 
 @register_kernel_info_from_sample_inputs_fn
