@@ -109,3 +109,21 @@ class Image(_Feature):
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
         #  promote this out of the prototype state
         return Image.new_like(self, draw_bounding_boxes(self, bounding_box.to_format("xyxy").view(-1, 4), **kwargs))
+
+    def horizontal_flip(self) -> Image:
+        output = self._F.horizontal_flip_image_tensor(self)
+        return Image.new_like(self, output)
+
+    def vertical_flip(self) -> Image:
+        output = self._F.vertical_flip_image_tensor(self)
+        return Image.new_like(self, output)
+
+    def resize(self, size, *, interpolation, max_size, antialias) -> Image:
+        output = self._F.resize_image_tensor(
+            self, size, interpolation=interpolation, max_size=max_size, antialias=antialias
+        )
+        return Image.new_like(self, output)
+
+    def center_crop(self, output_size) -> Image:
+        output = self._F.center_crop_image_tensor(self, output_size=output_size)
+        return Image.new_like(self, output)

@@ -7,7 +7,42 @@ from torch._C import _TensorBase, DisableTorchFunction
 F = TypeVar("F", bound="_Feature")
 
 
-class _Feature(torch.Tensor):
+class _TransformsMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+
+        # To avoid circular dependency between features and transforms
+        from ..transforms import functional as F
+
+        self._F = F
+
+    def horizontal_flip(self):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def vertical_flip(self):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def resize(self, size, *, interpolation, max_size, antialias):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def center_crop(self, output_size):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def resized_crop(self, top, left, height, width, *, size, interpolation, antialias):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+
+class _Feature(_TransformsMixin, torch.Tensor):
     def __new__(
         cls: Type[F],
         data: Any,

@@ -69,3 +69,22 @@ class BoundingBox(_Feature):
         return BoundingBox.new_like(
             self, convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
         )
+
+    def horizontal_flip(self) -> BoundingBox:
+        output = self._F.horizontal_flip_bounding_box(self, format=self.format, image_size=self.image_size)
+        return BoundingBox.new_like(self, output)
+
+    def vertical_flip(self) -> BoundingBox:
+        output = self._F.vertical_flip_bounding_box(self, format=self.format, image_size=self.image_size)
+        return BoundingBox.new_like(self, output)
+
+    def resize(self, size, *, interpolation, max_size, antialias) -> BoundingBox:
+        interpolation, antialias  # unused
+        output = self._F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
+        return BoundingBox.new_like(self, output)
+
+    def center_crop(self, output_size) -> BoundingBox:
+        output = self._F.center_crop_bounding_box(
+            self, format=self.format, output_size=output_size, image_size=self.image_size
+        )
+        return BoundingBox.new_like(self, output)

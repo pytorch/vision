@@ -3,7 +3,12 @@ import itertools
 import pytest
 import torch
 from common_utils import assert_equal
-from test_prototype_transforms_functional import make_images, make_bounding_boxes, make_one_hot_labels
+from test_prototype_transforms_functional import (
+    make_images,
+    make_bounding_boxes,
+    make_one_hot_labels,
+    make_segmentation_masks,
+)
 from torchvision.prototype import transforms, features
 from torchvision.transforms.functional import to_pil_image, pil_to_tensor
 
@@ -25,23 +30,23 @@ def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
         yield bounding_box.data
 
 
-def parametrize(transforms_with_inputs):
+def parametrize(transforms_with_inpts):
     return pytest.mark.parametrize(
-        ("transform", "input"),
+        ("transform", "inpt"),
         [
             pytest.param(
                 transform,
-                input,
-                id=f"{type(transform).__name__}-{type(input).__module__}.{type(input).__name__}-{idx}",
+                inpt,
+                id=f"{type(transform).__name__}-{type(inpt).__module__}.{type(inpt).__name__}-{idx}",
             )
-            for transform, inputs in transforms_with_inputs
-            for idx, input in enumerate(inputs)
+            for transform, inpts in transforms_with_inpts
+            for idx, inpt in enumerate(inpts)
         ],
     )
 
 
 def parametrize_from_transforms(*transforms):
-    transforms_with_inputs = []
+    transforms_with_inpts = []
     for transform in transforms:
         for creation_fn in [
             make_images,
@@ -49,32 +54,34 @@ def parametrize_from_transforms(*transforms):
             make_one_hot_labels,
             make_vanilla_tensor_images,
             make_pil_images,
+            make_segmentation_masks,
         ]:
-            inputs = list(creation_fn())
-            try:
-                output = transform(inputs[0])
-            except Exception:
-                continue
-            else:
-                if output is inputs[0]:
-                    continue
+            inpts = list(creation_fn())
+            # try:
+            output = transform(inpts[0])
+            # except TypeError:
+            #     continue
+            # else:
+            #     if output is inpts[0]:
+            #         continue
 
-            transforms_with_inputs.append((transform, inputs))
+            transforms_with_inpts.append((transform, inpts))
 
-    return parametrize(transforms_with_inputs)
+    return parametrize(transforms_with_inpts)
 
 
 class TestSmoke:
     @parametrize_from_transforms(
-        transforms.RandomErasing(p=1.0),
+        # transforms.RandomErasing(p=1.0),
         transforms.Resize([16, 16]),
         transforms.CenterCrop([16, 16]),
-        transforms.ConvertImageDtype(),
-        transforms.RandomHorizontalFlip(),
-        transforms.Pad(5),
+        # transforms.ConvertImageDtype(),
+        # transforms.RandomHorizontalFlip(),
+        # transforms.Pad(5),
     )
-    def test_common(self, transform, input):
-        transform(input)
+    def test_common(self, transform, inpt):
+        output = transform(inpt)
+        assert type(output) == type(inpt)
 
     @parametrize(
         [
@@ -96,8 +103,8 @@ class TestSmoke:
             ]
         ]
     )
-    def test_mixup_cutmix(self, transform, input):
-        transform(input)
+    def test_mixup_cutmix(self, transform, inpt):
+        transform(inpt)
 
     @parametrize(
         [
@@ -127,8 +134,8 @@ class TestSmoke:
             )
         ]
     )
-    def test_auto_augment(self, transform, input):
-        transform(input)
+    def test_auto_augment(self, transform, inpt):
+        transform(inpt)
 
     @parametrize(
         [
@@ -144,8 +151,8 @@ class TestSmoke:
             ),
         ]
     )
-    def test_normalize(self, transform, input):
-        transform(input)
+    def test_normalize(self, transform, inpt):
+        transform(inpt)
 
     @parametrize(
         [
@@ -159,8 +166,8 @@ class TestSmoke:
             )
         ]
     )
-    def test_random_resized_crop(self, transform, input):
-        transform(input)
+    def test_random_resized_crop(self, transform, inpt):
+        transform(inpt)
 
     @parametrize(
         [
@@ -188,58 +195,58 @@ class TestSmoke:
             )
         ]
     )
-    def test_convert_image_color_space(self, transform, input):
-        transform(input)
+    def test_convert_image_color_space(self, transform, inpt):
+        transform(inpt)
 
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
 class TestRandomHorizontalFlip:
-    def input_expected_image_tensor(self, p, dtype=torch.float32):
-        input = torch.tensor([[[0, 1], [0, 1]], [[1, 0], [1, 0]]], dtype=dtype)
+    def inpt_expected_image_tensor(self, p, dtype=torch.float32):
+        inpt = torch.tensor([[[0, 1], [0, 1]], [[1, 0], [1, 0]]], dtype=dtype)
         expected = torch.tensor([[[1, 0], [1, 0]], [[0, 1], [0, 1]]], dtype=dtype)
 
-        return input, expected if p == 1 else input
+        return inpt, expected if p == 1 else inpt
 
     def test_simple_tensor(self, p):
-        input, expected = self.input_expected_image_tensor(p)
+        inpt, expected = self.inpt_expected_image_tensor(p)
         transform = transforms.RandomHorizontalFlip(p=p)
 
-        actual = transform(input)
+        actual = transform(inpt)
 
         assert_equal(expected, actual)
 
     def test_pil_image(self, p):
-        input, expected = self.input_expected_image_tensor(p, dtype=torch.uint8)
+        inpt, expected = self.inpt_expected_image_tensor(p, dtype=torch.uint8)
         transform = transforms.RandomHorizontalFlip(p=p)
 
-        actual = transform(to_pil_image(input))
+        actual = transform(to_pil_image(inpt))
 
         assert_equal(expected, pil_to_tensor(actual))
 
     def test_features_image(self, p):
-        input, expected = self.input_expected_image_tensor(p)
+        inpt, expected = self.inpt_expected_image_tensor(p)
         transform = transforms.RandomHorizontalFlip(p=p)
 
-        actual = transform(features.Image(input))
+        actual = transform(features.Image(inpt))
 
         assert_equal(features.Image(expected), actual)
 
     def test_features_segmentation_mask(self, p):
-        input, expected = self.input_expected_image_tensor(p)
+        inpt, expected = self.inpt_expected_image_tensor(p)
         transform = transforms.RandomHorizontalFlip(p=p)
 
-        actual = transform(features.SegmentationMask(input))
+        actual = transform(features.SegmentationMask(inpt))
 
         assert_equal(features.SegmentationMask(expected), actual)
 
     def test_features_bounding_box(self, p):
-        input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
+        inpt = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
         transform = transforms.RandomHorizontalFlip(p=p)
 
-        actual = transform(input)
+        actual = transform(inpt)
 
-        expected_image_tensor = torch.tensor([5, 0, 10, 5]) if p == 1.0 else input
-        expected = features.BoundingBox.new_like(input, data=expected_image_tensor)
+        expected_image_tensor = torch.tensor([5, 0, 10, 5]) if p == 1.0 else inpt
+        expected = features.BoundingBox.new_like(inpt, data=expected_image_tensor)
         assert_equal(expected, actual)
         assert actual.format == expected.format
         assert actual.image_size == expected.image_size
@@ -247,52 +254,52 @@ class TestRandomHorizontalFlip:
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
 class TestRandomVerticalFlip:
-    def input_expected_image_tensor(self, p, dtype=torch.float32):
-        input = torch.tensor([[[1, 1], [0, 0]], [[1, 1], [0, 0]]], dtype=dtype)
+    def inpt_expected_image_tensor(self, p, dtype=torch.float32):
+        inpt = torch.tensor([[[1, 1], [0, 0]], [[1, 1], [0, 0]]], dtype=dtype)
         expected = torch.tensor([[[0, 0], [1, 1]], [[0, 0], [1, 1]]], dtype=dtype)
 
-        return input, expected if p == 1 else input
+        return inpt, expected if p == 1 else inpt
 
     def test_simple_tensor(self, p):
-        input, expected = self.input_expected_image_tensor(p)
+        inpt, expected = self.inpt_expected_image_tensor(p)
         transform = transforms.RandomVerticalFlip(p=p)
 
-        actual = transform(input)
+        actual = transform(inpt)
 
         assert_equal(expected, actual)
 
     def test_pil_image(self, p):
-        input, expected = self.input_expected_image_tensor(p, dtype=torch.uint8)
+        inpt, expected = self.inpt_expected_image_tensor(p, dtype=torch.uint8)
         transform = transforms.RandomVerticalFlip(p=p)
 
-        actual = transform(to_pil_image(input))
+        actual = transform(to_pil_image(inpt))
 
         assert_equal(expected, pil_to_tensor(actual))
 
     def test_features_image(self, p):
-        input, expected = self.input_expected_image_tensor(p)
+        inpt, expected = self.inpt_expected_image_tensor(p)
         transform = transforms.RandomVerticalFlip(p=p)
 
-        actual = transform(features.Image(input))
+        actual = transform(features.Image(inpt))
 
         assert_equal(features.Image(expected), actual)
 
     def test_features_segmentation_mask(self, p):
-        input, expected = self.input_expected_image_tensor(p)
+        inpt, expected = self.inpt_expected_image_tensor(p)
         transform = transforms.RandomVerticalFlip(p=p)
 
-        actual = transform(features.SegmentationMask(input))
+        actual = transform(features.SegmentationMask(inpt))
 
         assert_equal(features.SegmentationMask(expected), actual)
 
     def test_features_bounding_box(self, p):
-        input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
+        inpt = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
         transform = transforms.RandomVerticalFlip(p=p)
 
-        actual = transform(input)
+        actual = transform(inpt)
 
-        expected_image_tensor = torch.tensor([0, 5, 5, 10]) if p == 1.0 else input
-        expected = features.BoundingBox.new_like(input, data=expected_image_tensor)
+        expected_image_tensor = torch.tensor([0, 5, 5, 10]) if p == 1.0 else inpt
+        expected = features.BoundingBox.new_like(inpt, data=expected_image_tensor)
         assert_equal(expected, actual)
         assert actual.format == expected.format
         assert actual.image_size == expected.image_size
