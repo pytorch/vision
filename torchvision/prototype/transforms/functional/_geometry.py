@@ -6,7 +6,7 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
-from torchvision.transforms.functional import pil_modes_mapping, _get_inverse_affine_matrix, InterpolationMode
+from torchvision.transforms.functional import pil_modes_mapping, _get_inverse_affine_matrix, InterpolationMode, _compute_output_size
 
 from ._meta import convert_bounding_box_format, get_dimensions_image_tensor, get_dimensions_image_pil
 
@@ -43,16 +43,14 @@ def resize_image_tensor(
     antialias: Optional[bool] = None,
 ) -> torch.Tensor:
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
+    new_height, new_width = _compute_output_size((old_height, old_width), size=size, max_size=max_size)
     batch_shape = image.shape[:-3]
-    output = _FT.resize(
+    return _FT.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
         size=size,
         interpolation=interpolation.value,
-        max_size=max_size,
         antialias=antialias,
-    )
-    num_channels, new_height, new_width = get_dimensions_image_tensor(output)
-    return output.reshape(batch_shape + (num_channels, new_height, new_width))
+    ).reshape(batch_shape + (num_channels, new_height, new_width))
 
 
 def resize_image_pil(
@@ -61,7 +59,8 @@ def resize_image_pil(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
-    return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation], max_size=max_size)
+    size = _compute_output_size(img.size[::-1], size=size, max_size=max_size)
+    return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation])
 
 
 def resize_segmentation_mask(
