@@ -618,6 +618,10 @@ def test_classification_model(model_fn, dev):
     _assert_expected(out.cpu(), model_name, prec=0.1)
     assert out.shape[-1] == num_classes
 
+    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+        # Skip backprop test only
+        return
+
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
@@ -628,10 +632,6 @@ def test_classification_model(model_fn, dev):
             if model_name not in autocast_flaky_numerics:
                 _assert_expected(out.cpu(), model_name, prec=0.1)
             assert out.shape[-1] == 50
-
-    if SKIP_BIG_MODEL and model_name in skipped_big_models:
-        # Skip backprop test only
-        return
 
     _check_input_backprop(model, x)
 
