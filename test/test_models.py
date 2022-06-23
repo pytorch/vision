@@ -603,8 +603,8 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
-    if dev == "cuda" and SKIP_BIG_MODEL and model_name in skipped_big_models:
-        pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
+    # if dev == "cuda" and SKIP_BIG_MODEL and model_name in skipped_big_models:
+    #     pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
@@ -613,9 +613,11 @@ def test_classification_model(model_fn, dev):
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
-    out = model(x)
+    with torch.inference_mode():
+        out = model(x)
     _assert_expected(out.cpu(), model_name, prec=0.1)
     assert out.shape[-1] == num_classes
+
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
@@ -626,6 +628,10 @@ def test_classification_model(model_fn, dev):
             if model_name not in autocast_flaky_numerics:
                 _assert_expected(out.cpu(), model_name, prec=0.1)
             assert out.shape[-1] == 50
+
+    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+        # Skip backprop test only
+        return
 
     _check_input_backprop(model, x)
 
