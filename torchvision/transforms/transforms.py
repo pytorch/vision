@@ -310,12 +310,8 @@ class Resize(torch.nn.Module):
             mode).
         antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
             is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
-            ``InterpolationMode.BILINEAR`` only mode. This can help making the output for PIL images and tensors
-            closer.
-
-            .. warning::
-                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
-
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
+            This can help making the output for PIL images and tensors closer.
     """
 
     def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias=None):
@@ -873,9 +869,20 @@ class RandomResizedCrop(torch.nn.Module):
             ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
+        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
+            This can help making the output for PIL images and tensors closer.
     """
 
-    def __init__(self, size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0), interpolation=InterpolationMode.BILINEAR):
+    def __init__(
+        self,
+        size,
+        scale=(0.08, 1.0),
+        ratio=(3.0 / 4.0, 4.0 / 3.0),
+        interpolation=InterpolationMode.BILINEAR,
+        antialias: Optional[bool] = None,
+    ):
         super().__init__()
         _log_api_usage_once(self)
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -896,6 +903,7 @@ class RandomResizedCrop(torch.nn.Module):
             interpolation = _interpolation_modes_from_int(interpolation)
 
         self.interpolation = interpolation
+        self.antialias = antialias
         self.scale = scale
         self.ratio = ratio
 
@@ -952,7 +960,7 @@ class RandomResizedCrop(torch.nn.Module):
             PIL Image or Tensor: Randomly cropped and resized image.
         """
         i, j, h, w = self.get_params(img, self.scale, self.ratio)
-        return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
+        return F.resized_crop(img, i, j, h, w, self.size, self.interpolation, antialias=self.antialias)
 
     def __repr__(self) -> str:
         interpolate_str = self.interpolation.value
@@ -960,6 +968,7 @@ class RandomResizedCrop(torch.nn.Module):
         format_string += f", scale={tuple(round(s, 4) for s in self.scale)}"
         format_string += f", ratio={tuple(round(r, 4) for r in self.ratio)}"
         format_string += f", interpolation={interpolate_str})"
+        format_string += f", antialias={self.antialias})"
         return format_string
 
 
