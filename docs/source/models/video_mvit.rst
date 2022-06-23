@@ -1,9 +1,9 @@
-Video ResNet
-============
+Video MViT
+==========
 
 .. currentmodule:: torchvision.models.video
 
-The MViT V2 model is based on the
+The MViT model is based on the
 `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
 <https://arxiv.org/abs/2112.01526>`__ and `Multiscale Vision Transformers
 <https://arxiv.org/abs/2104.11227>`__ papers.
