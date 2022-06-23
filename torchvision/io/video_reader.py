@@ -30,6 +30,8 @@ class VideoReader:
     Supports frame-by-frame reading of various streams from a single video
     container.
 
+    .. betastatus:: VideoReader class
+
     Example:
         The following examples creates a :mod:`VideoReader` object, seeks into 2s
         point, and returns a single frame::

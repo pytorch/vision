@@ -415,16 +415,15 @@ def pad_bounding_box(
 ) -> torch.Tensor:
     left, _, top, _ = _FT._parse_pad_padding(padding)
 
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    )
+    bounding_box = bounding_box.clone()
 
-    bounding_box[..., 0::2] += left
-    bounding_box[..., 1::2] += top
-
-    return convert_bounding_box_format(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    )
+    # this works without conversion since padding only affects xy coordinates
+    bounding_box[..., 0] += left
+    bounding_box[..., 1] += top
+    if format == features.BoundingBoxFormat.XYXY:
+        bounding_box[..., 2] += left
+        bounding_box[..., 3] += top
+    return bounding_box
 
 
 crop_image_tensor = _FT.crop
@@ -628,6 +627,10 @@ def center_crop_bounding_box(
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *image_size)
     return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left)
+
+
+def center_crop_segmentation_mask(segmentation_mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
+    return center_crop_image_tensor(img=segmentation_mask, output_size=output_size)
 
 
 def resized_crop_image_tensor(

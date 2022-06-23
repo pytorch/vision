@@ -6,6 +6,8 @@ SSD
 The SSD model is based on the `SSD: Single Shot MultiBox Detector
 <https://arxiv.org/abs/1512.02325>`__ paper.
 
+.. betastatus:: detection module
+
 
 Model builders
 --------------

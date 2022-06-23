@@ -7,6 +7,8 @@ The FCN model is based on the `Fully Convolutional Networks for Semantic
 Segmentation <https://arxiv.org/abs/1411.4038>`__
 paper.
 
+.. betastatus:: segmentation module
+
 
 Model builders
 --------------
