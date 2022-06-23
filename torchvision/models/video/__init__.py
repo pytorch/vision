@@ -1,2 +1,2 @@
-from .mvitv2 import *
+from .mvit import *
 from .resnet import *
