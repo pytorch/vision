@@ -1,11 +1,11 @@
 import datetime
-import functools
 import io
 import itertools
 import os
 import random
 import time
 import warnings
+from functools import partial
 from pathlib import Path
 
 import presets
@@ -27,37 +27,42 @@ IMAGENET_TRAIN_LEN = 1_281_167
 IMAGENET_TEST_LEN = 50_000
 
 
+class LenSetter(IterDataPipe):
+    def __init__(self, dp, size):
+        self.dp = dp
+        self.size = size
+
+    def __iter__(self):
+        yield from self.dp
+
+    def __len__(self):
+        # The // world_size part shouldn't be needed. See https://github.com/pytorch/data/issues/533
+        return self.size // dist.get_world_size()
+
+
+def decode(path, root, categories):
+    category = Path(path).relative_to(root).parts[0]
+
+    image = Image.open(path).convert("RGB")
+    label = Label.from_category(category, categories=categories)
+
+    return image, label
+
+
+def apply_tranforms(img_and_label, transforms):
+    img, label = img_and_label
+    return transforms(img), label
+
+
 def make_dp(root, transforms):
-    class LenSetter(IterDataPipe):
-        def __init__(self, dp, size):
-            self.dp = dp
-            self.size = size
-
-        def __iter__(self):
-            yield from self.dp
-
-        def __len__(self):
-            # The // world_size part shouldn't be needed. See https://github.com/pytorch/data/issues/533
-            return self.size // dist.get_world_size()
-
-    def decode(path):
-        category = Path(path).relative_to(root).parts[0]
-
-        image = Image.open(path).convert("RGB")
-        label = Label.from_category(category, categories=categories)
-
-        return image, label
-
-    def apply_tranforms(img_and_label):
-        img, label = img_and_label
-        return transforms(img), label
 
     root = Path(root).expanduser().resolve()
     categories = sorted(entry.name for entry in os.scandir(root) if entry.is_dir())
     dp = FileLister(str(root), recursive=True, masks=["*.JPEG"])
 
     dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE).set_shuffle(False).sharding_filter()
-    dp = dp.map(decode).map(apply_tranforms)
+    dp = dp.map(partial(decode, root=root, categories=categories))
+    dp = dp.map(partial(apply_tranforms, transforms=transforms))
 
     if "train" in str(root):
         size = IMAGENET_TRAIN_LEN
