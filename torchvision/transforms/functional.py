@@ -597,6 +597,7 @@ def resized_crop(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    antialias: Optional[bool] = None,
 ) -> Tensor:
     """Crop the given image and resize it to desired size.
     If the image is torch Tensor, it is expected
@@ -617,13 +618,17 @@ def resized_crop(
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
+        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
+            This can help making the output for PIL images and tensors closer.
     Returns:
         PIL Image or Tensor: Cropped image.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(resized_crop)
     img = crop(img, top, left, height, width)
-    img = resize(img, size, interpolation)
+    img = resize(img, size, interpolation, antialias=antialias)
     return img
 
 
