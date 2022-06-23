@@ -1,7 +1,9 @@
 import datetime
 import functools
 import io
+import itertools
 import os
+import random
 import time
 import warnings
 from pathlib import Path
@@ -16,9 +18,8 @@ import utils
 from PIL import Image
 from sampler import RASampler
 from torch import nn
-from torch.utils.data.dataloader import default_collate
-from torchdata.datapipes.iter import FileLister, Mapper, IterDataPipe
-from torchvision.prototype.datasets.utils._internal import hint_shuffling, hint_sharding, TakerDataPipe
+from torchdata.datapipes.iter import FileLister, IterDataPipe
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 from torchvision.prototype.features import Label
 from torchvision.transforms.functional import InterpolationMode
 
@@ -26,50 +27,37 @@ IMAGENET_TRAIN_LEN = 1_281_167
 IMAGENET_TEST_LEN = 50_000
 
 
-def decode_and_collate(path, root, categories):
-    category = Path(path).relative_to(root).parts[0]
-
-    return dict(
-        path=path,
-        image=Image.open(path).convert("RGB"),
-        # image=io.BytesIO(open(path, mode="rb").read()),
-        label=Label.from_category(category, categories=categories),
-    )
-
-
-def apply_tranforms(data, transforms):
-    data["image"] = transforms(data["image"])
-    return data
-
-
-def make_tuple(data):
-    return data["image"], data["label"]
-
-
-class LenSetter(IterDataPipe):
-    def __init__(self, dp, size):
-        self.dp = dp
-        self.size = size
-
-    def __iter__(self):
-        yield from self.dp
-
-    def __len__(self):
-        # The // world_size part shouldn't be needed. See https://github.com/pytorch/data/issues/533
-        return self.size // dist.get_world_size()
-
-
 def make_dp(root, transforms):
+    class LenSetter(IterDataPipe):
+        def __init__(self, dp, size):
+            self.dp = dp
+            self.size = size
+
+        def __iter__(self):
+            yield from self.dp
+
+        def __len__(self):
+            # The // world_size part shouldn't be needed. See https://github.com/pytorch/data/issues/533
+            return self.size // dist.get_world_size()
+
+    def decode(path):
+        category = Path(path).relative_to(root).parts[0]
+
+        image = Image.open(path).convert("RGB")
+        label = Label.from_category(category, categories=categories)
+
+        return image, label
+
+    def apply_tranforms(img_and_label):
+        img, label = img_and_label
+        return transforms(img), label
+
     root = Path(root).expanduser().resolve()
     categories = sorted(entry.name for entry in os.scandir(root) if entry.is_dir())
     dp = FileLister(str(root), recursive=True, masks=["*.JPEG"])
 
-    dp = hint_shuffling(dp)
-    dp = hint_sharding(dp)
-
-    dp = Mapper(dp, functools.partial(decode_and_collate, root=root, categories=categories))
-    dp = Mapper(dp, functools.partial(apply_tranforms, transforms=transforms))
-    dp = Mapper(dp, make_tuple)
+    dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE).set_shuffle(False).sharding_filter()
+    dp = dp.map(decode).map(apply_tranforms)
 
     if "train" in str(root):
         size = IMAGENET_TRAIN_LEN
@@ -80,6 +68,43 @@ def make_dp(root, transforms):
 
     dp = LenSetter(dp, size=size)
     return dp
+
+
+class MapStyleToIterable(torch.utils.data.IterableDataset):
+    # This converts a MapStyle dataset into an iterable one.
+    # Not sure this kind of Iterable dataset is actually useful to benchmark. It
+    # was necessary when benchmarking async-io stuff, but not anymore.
+    # If anything, it shows how tricky Iterable datasets are to implement.
+    def __init__(self, dataset, shuffle):
+        self.dataset = dataset
+        self.shuffle = shuffle
+
+        self.size = len(self.dataset)
+        self.seed = 0  # has to be hard-coded for all DDP workers to have the same shuffling
+
+    def __len__(self):
+        return self.size // dist.get_world_size()
+
+    def __iter__(self):
+
+        worker_info = torch.utils.data.get_worker_info()
+        num_dl_workers = worker_info.num_workers
+        dl_worker_id = worker_info.id
+
+        num_ddp_workers = dist.get_world_size()
+        ddp_worker_id = dist.get_rank()
+
+        num_total_workers = num_ddp_workers * num_dl_workers
+        current_worker_id = ddp_worker_id + (num_ddp_workers * dl_worker_id)
+
+        indices = range(self.size)
+        if self.shuffle:
+            rng = random.Random(self.seed)
+            indices = rng.sample(indices, k=self.size)
+        indices = itertools.islice(indices, current_worker_id, None, num_total_workers)
+
+        samples = (self.dataset[i] for i in indices)
+        yield from samples
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
@@ -197,13 +222,22 @@ def load_data(traindir, valdir, args):
     val_preset = presets.ClassificationPresetEval(
         crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
     )
-    print(f"ds_type={args.ds_type}")
+    print(f"ds-type={args.ds_type}")
     if args.ds_type == "dp":
         dataset = make_dp(traindir, transforms=preset)
         dataset_test = make_dp(valdir, transforms=val_preset)
 
         train_sampler = test_sampler = None
         shuffle_train = True
+    elif args.ds_type == "iterable":
+        dataset = torchvision.datasets.ImageFolder(traindir, transform=preset)
+        dataset = MapStyleToIterable(dataset, shuffle=True)
+
+        dataset_test = torchvision.datasets.ImageFolder(valdir, transform=val_preset)
+        dataset_test = MapStyleToIterable(dataset_test, shuffle=False)
+
+        train_sampler = test_sampler = None
+        shuffle_train = None  # but actually True
     elif args.ds_type == "mapstyle":
         dataset = torchvision.datasets.ImageFolder(traindir, transform=preset)
         dataset_test = torchvision.datasets.ImageFolder(valdir, transform=val_preset)
@@ -249,8 +283,21 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
-    train_dir = os.path.join(args.data_path, "train")
-    val_dir = os.path.join(args.data_path, "val")
+    print(f"file-system = {args.fs}")
+    if args.fs == "fsx":
+        dataset_dir = "/datasets01"
+    elif args.fs == "fsx_isolated":
+        dataset_dir = "/fsx_isolated"
+    elif args.fs == "ontap":
+        dataset_dir = "/datasets01_ontap"
+    elif args.fs == "ontap_isolated":
+        dataset_dir = "/ontap_isolated"
+    else:
+        raise ValueError(f"bad args.fs, got {args.fs}")
+
+    dataset_dir += "/imagenet_full_size/061417/"
+    train_dir = os.path.join(dataset_dir, "train")
+    val_dir = os.path.join(dataset_dir, "val")
     data_loader, data_loader_test, train_sampler = load_data(train_dir, val_dir, args)
 
     num_classes = 1000  # I'm lazy
@@ -407,6 +454,7 @@ def get_args_parser(add_help=True):
     parser = argparse.ArgumentParser(description="PyTorch Classification Training", add_help=add_help)
 
     parser.add_argument("--data-path", default="/datasets01/imagenet_full_size/061417/", type=str, help="dataset path")
+    parser.add_argument("--fs", default="fsx", type=str)
     parser.add_argument("--model", default="resnet18", type=str, help="model name")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
@@ -529,7 +577,10 @@ def get_args_parser(add_help=True):
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     parser.add_argument(
-        "--ds-type", default="mapstyle", type=str, help="dp or iterable or mapstyle (for regular indexable datasets)"
+        "--ds-type",
+        default="mapstyle",
+        type=str,
+        help="'dp' or 'iterable' or 'mapstyle' (for regular indexable datasets)",
     )
 
     return parser
