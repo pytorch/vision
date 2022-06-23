@@ -35,7 +35,7 @@ fi
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
 # conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c nvidia "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}"
-pip install --pre torch==1.13.0.dev20220621+cpu  --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+pip install --pre torch==1.13.0.dev20220618+cpu  --extra-index-url https://download.pytorch.org/whl/nightly/cpu
 
 torch_cuda=$(python -c "import torch; print(torch.cuda.is_available())")
 echo torch.cuda.is_available is $torch_cuda
