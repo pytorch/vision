@@ -1,18 +1,20 @@
-# Modified from
-# https://github.com/facebookresearch/ClassyVision/blob/309d4f12431c6b4d8540010a781dc2aa25fe88e7/classy_vision/models/r2plus1_util.py
-# https://github.com/facebookresearch/ClassyVision/blob/309d4f12431c6b4d8540010a781dc2aa25fe88e7/classy_vision/models/resnext3d_block.py
-# https://github.com/facebookresearch/ClassyVision/blob/309d4f12431c6b4d8540010a781dc2aa25fe88e7/classy_vision/models/resnext3d_stage.py
-# https://github.com/facebookresearch/ClassyVision/blob/309d4f12431c6b4d8540010a781dc2aa25fe88e7/classy_vision/models/resnext3d_stem.py
-# https://github.com/facebookresearch/ClassyVision/blob/309d4f12431c6b4d8540010a781dc2aa25fe88e7/classy_vision/models/resnext3d.py
+# Modified from ClassyVision Resnext3d
 
 from ast import Call
 from collections import OrderedDict
 from torch import Tensor, nn
 from ...utils import _log_api_usage_once
 from typing import Callable, Optional, List
+from torchvision.models._api import WeightsEnum
+from typing import Any
+
 
 __all__ = [
     "ResNeXt3D",
+    "resnext3d_postact_r2d101",
+    "resnext3d_preact_r2d50",
+    "resnext3d_pretact_r2d101",
+    "resnext3d_postact_r2d50"
 ]
 
 def _r2plus1_unit(
@@ -183,6 +185,7 @@ class PostactivatedBottleneckTransformation(nn.Module):
         inplace_relu: bool=True,
         bn_eps: float=1e-5,
         bn_mmt: float=0.1,
+        **kwargs,
     ):
         super().__init__()
         temporal_kernel_size_1x1, temporal_kernel_size_3x3 = (temporal_kernel_size, 1) if temporal_conv_1x1 else (1, temporal_kernel_size)
@@ -342,6 +345,7 @@ class PostactivatedShortcutTransformation(nn.Module):
         spatial_stride: int,
         bn_eps: float=1e-5,
         bn_mmt: float=0.1,
+        **kwargs,
     ):
         super().__init__()
         # Use skip connection with projection if dim or spatial/temporal res change.
@@ -793,11 +797,11 @@ class R2Plus1DStemMultiPathway(ResNeXt3DStemMultiPathway):
 
 class ResNeXt3DStem(nn.Module):
     def __init__(
-        self, temporal_kernel, spatial_kernel, input_planes, stem_planes
+        self, temporal_kernel, spatial_kernel, input_planes, stem_planes, maxpool
     ):
         super().__init__()
         self._construct_stem(
-            temporal_kernel, spatial_kernel, input_planes, stem_planes
+            temporal_kernel, spatial_kernel, input_planes, stem_planes, maxpool
         )
 
     def _construct_stem(
@@ -839,7 +843,84 @@ class R2Plus1DStem(ResNeXt3DStem):
             ],  # padding
             maxpool=[maxpool],
         )
-       
+class FullyConvolutionalLinear(nn.Module):
+    def __init__(self, dim_in, num_classes):
+        super(FullyConvolutionalLinear, self).__init__()
+        # Perform FC in a fully convolutional manner. The FC layer will be
+        # initialized with a different std comparing to convolutional layers.
+        self.projection = nn.Linear(dim_in, num_classes, bias=True)
+
+        # Softmax for evaluation and testing.
+        self.act = nn.Softmax(dim=4)
+        
+
+    def forward(self, x):
+        # (N, C, T, H, W) -> (N, T, H, W, C).
+        x = x.permute((0, 2, 3, 4, 1))
+        x = self.projection(x)
+        # Performs fully convlutional inference.
+        if not self.training:
+            x = self.act(x)
+            x = x.mean([1, 2, 3])
+        x = x.flatten(start_dim=1)
+        return x
+
+
+class FullyConvolutionalLinearHead(nn.Module):
+    """
+    This head defines a 3d average pooling layer (:class:`torch.nn.AvgPool3d` or
+    :class:`torch.nn.AdaptiveAvgPool3d` if pool_size is None) followed by a fully
+    convolutional linear layer. This layer performs a fully-connected projection
+    during training, when the input size is 1x1x1.
+    It performs a convolutional projection during testing when the input size
+    is larger than 1x1x1.
+    """
+
+    def __init__(
+        self,
+        num_classes: int,
+        in_plane: int,
+        pool_size: Optional[List[int]],
+        use_dropout: Optional[bool] = None,
+        dropout_ratio: float = 0.5,
+    ):
+        """
+        Constructor for FullyConvolutionalLinearHead.
+        Args:
+            unique_id: A unique identifier for the head. Multiple instances of
+                the same head might be attached to a model, and unique_id is used
+                to refer to them.
+            num_classes: Number of classes for the head.
+            in_plane: Input size for the fully connected layer.
+            pool_size: Optional kernel size for the 3d pooling layer. If None, use
+                :class:`torch.nn.AdaptiveAvgPool3d` with output size (1, 1, 1).
+            use_dropout: Whether to apply dropout after the pooling layer.
+            dropout_ratio: dropout ratio.
+        """
+        super().__init__()
+        if pool_size is not None:
+            self.final_avgpool = nn.AvgPool3d(pool_size, stride=1)
+        else:
+            self.final_avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
+        if use_dropout:
+            self.dropout = nn.Dropout(p=dropout_ratio)
+        # we separate average pooling from the fully-convolutional linear projection
+        # because for multi-path models such as SlowFast model, the input can be
+        # more than 1 tesnor. In such case, we can define a new head to combine multiple
+        # tensors via concat or addition, do average pooling, but still reuse
+        # FullyConvolutionalLinear inside of it.
+        self.head_fcl = FullyConvolutionalLinear(
+            in_plane, num_classes
+        )
+        
+    
+    def forward(self, x):
+        out = self.final_avgpool(x)
+        if hasattr(self, "dropout"):
+            out = self.dropout(out)
+        out = self.head_fcl(out)
+        return out
+
 class ResNeXt3D(nn.Module):
     """
     Implementation of:
@@ -924,6 +1005,7 @@ class ResNeXt3D(nn.Module):
             stem_maxpool,
         )
 
+
         num_stages = len(num_blocks)
         out_planes = [stage_planes * 2 ** i for i in range(num_stages)]
         in_planes = [stem_planes] + out_planes[:-1]
@@ -953,6 +1035,12 @@ class ResNeXt3D(nn.Module):
 
         self.stages = nn.Sequential(*stages)
         self._init_parameter(zero_init_residual_transform)
+        self.head = FullyConvolutionalLinearHead(
+            num_classes = 1000,
+            in_plane = 2048,
+            pool_size = [1, 7, 7],
+            use_dropout=False,
+        )
 
     def _init_parameter(self, zero_init_residual_transform):
         for m in self.modules():
@@ -990,7 +1078,154 @@ class ResNeXt3D(nn.Module):
         Args:
             x (torch.Tensor): video input with shape N x C x T x H x W.
         """
+        # single pathway input (make list out of tensor input)
         out = self.stem([x])
         out = self.stages(out)
-
+        # single pathway output get first element from the list before head
+        out = self.head(out[0])
+        
         return out
+
+class ResNeXt3D_PreAct_r2d50_Weights(WeightsEnum):
+    pass
+class ResNeXt3D_PreAct_r2d101_Weights(WeightsEnum):
+    pass
+class ResNeXt3D_PostAct_r2d50_Weights(WeightsEnum):
+    pass
+
+class ResNeXt3D_PostAct_r2d101_Weights(WeightsEnum):
+    pass
+
+
+def resnext3d_preact_r2d50(*, weights: Optional[ResNeXt3D_PreAct_r2d50_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNeXt3D:
+    """
+    Constructs a single pathway resnext3d_preact_r2d50 architecture.
+    Args:
+        weights (:class:`~fb.models.ResNeXt3D_PreAct_r2d50_Weights`, optional): The pretrained
+            weights to use. Currently no pretrained weights are provided. 
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``fb.models.resnext3d.ResNeXt3D``
+    """
+    return ResNeXt3D(
+            input_planes = 3,
+            clip_crop_size = 224,
+            skip_transformation = PreactivatedShortcutTransformation,
+            residual_transformation = PreactivatedBottleneckTransformation,
+            frames_per_clip = 1,
+            num_blocks = [3, 4, 6, 3],
+            stem = ResNeXt3DStem,
+            stem_planes = 32,
+            stem_temporal_kernel = 1,
+            stem_spatial_kernel = 5,
+            stem_maxpool = True,
+            stage_planes = 256,
+            stage_temporal_kernel_basis = [[1], [1], [1], [1]],
+            temporal_conv_1x1 = [True, True, True, True],
+            stage_temporal_stride = [1, 1, 1, 1],
+            stage_spatial_stride = [1, 2, 2, 2],
+            num_groups = 1,
+            width_per_group = 64,
+            zero_init_residual_transform = True,
+            **kwargs,
+        )
+
+
+def resnext3d_pretact_r2d101(*, weights: Optional[ResNeXt3D_PreAct_r2d101_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNeXt3D:
+    """
+    Constructs a single pathway resnext3d_pretact_r2d101 architecture.
+    Args:
+        weights (:class:`~fb.models.ResNeXt3D_PreAct_r2d101_Weights`, optional): The pretrained
+            weights to use. Currently no pretrained weights are provided. 
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``fb.models.resnext3d.ResNeXt3D``
+    """
+    return ResNeXt3D(
+            input_planes = 3,
+            clip_crop_size = 224,
+            skip_transformation = PreactivatedShortcutTransformation,
+            residual_transformation = PreactivatedBottleneckTransformation,
+            frames_per_clip = 1,
+            num_blocks = [3, 4, 23, 3],
+            stem = ResNeXt3DStem,
+            stem_planes = 32,
+            stem_temporal_kernel = 1,
+            stem_spatial_kernel = 5,
+            stem_maxpool = True,
+            stage_planes = 256,
+            stage_temporal_kernel_basis = [[1], [1], [1], [1]],
+            temporal_conv_1x1 = [True, True, True, True],
+            stage_temporal_stride = [1, 1, 1, 1],
+            stage_spatial_stride = [1, 2, 2, 2],
+            num_groups = 1,
+            width_per_group = 64,
+            zero_init_residual_transform = True,
+            **kwargs,
+    )
+
+
+def resnext3d_postact_r2d50(*, weights: Optional[ResNeXt3D_PostAct_r2d50_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNeXt3D:
+    """
+    Constructs a single pathway resnext3d_postact_r2d50 architecture.
+    Args:
+        weights (:class:`~fb.models.ResNeXt3D_PostAct_r2d50_Weights`, optional): The pretrained
+            weights to use. Currently no pretrained weights are provided. 
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``fb.models.resnext3d.ResNeXt3D``
+    """
+    return ResNeXt3D(
+            input_planes = 3,
+            clip_crop_size = 224,
+            skip_transformation = PostactivatedShortcutTransformation,
+            residual_transformation = PostactivatedBottleneckTransformation,
+            frames_per_clip = 1,
+            num_blocks = [3, 4, 6, 3],
+            stem = ResNeXt3DStem,
+            stem_planes = 64,
+            stem_temporal_kernel = 1,
+            stem_spatial_kernel = 7,
+            stem_maxpool = True,
+            stage_planes = 256,
+            stage_temporal_kernel_basis = [[1], [1], [1], [1]],
+            temporal_conv_1x1 = [True, True, True, True],
+            stage_temporal_stride = [1, 1, 1, 1],
+            stage_spatial_stride = [1, 2, 2, 2],
+            num_groups = 1,
+            width_per_group = 64,
+            zero_init_residual_transform = True,
+            **kwargs,
+    )
+
+
+
+
+def resnext3d_postact_r2d101(*, weights: Optional[ResNeXt3D_PostAct_r2d101_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNeXt3D:
+    """
+    Constructs a single pathway resnext3d_postact_r2d101 architecture.
+    Args:
+        weights (:class:`~fb.models.ResNeXt3D_PostAct_r2d101_Weights`, optional): The pretrained
+            weights to use. Currently no pretrained weights are provided. 
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``fb.models.resnext3d.ResNeXt3D``
+    """
+    return ResNeXt3D(
+            input_planes = 3,
+            clip_crop_size = 224,
+            skip_transformation = PostactivatedShortcutTransformation,
+            residual_transformation = PostactivatedBottleneckTransformation,
+            frames_per_clip = 1,
+            num_blocks = [3, 4, 23, 3],
+            stem = ResNeXt3DStem,
+            stem_planes = 64,
+            stem_temporal_kernel = 1,
+            stem_spatial_kernel = 7,
+            stem_maxpool = True,
+            stage_planes = 256,
+            stage_temporal_kernel_basis = [[1], [1], [1], [1]],
+            temporal_conv_1x1 = [True, True, True, True],
+            stage_temporal_stride = [1, 1, 1, 1],
+            stage_spatial_stride = [1, 2, 2, 2],
+            num_groups = 1,
+            width_per_group = 64,
+            zero_init_residual_transform = True,
+            **kwargs,
+        )
