@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+c08889e ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+034ec6f ) &#x25BC</a>
     </div>
     
 
@@ -689,6 +689,29 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span></div>
 
 
+<span class="k">def</span> <span class="nf">_compute_output_size</span><span class="p">(</span><span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># specified size only for the smallest edge</span>
+        <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">image_size</span>
+        <span class="n">short</span><span class="p">,</span> <span class="n">long</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span> <span class="k">if</span> <span class="n">w</span> <span class="o">&lt;=</span> <span class="n">h</span> <span class="k">else</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+        <span class="n">requested_new_short</span> <span class="o">=</span> <span class="n">size</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">new_short</span><span class="p">,</span> <span class="n">new_long</span> <span class="o">=</span> <span class="n">requested_new_short</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">requested_new_short</span> <span class="o">*</span> <span class="n">long</span> <span class="o">/</span> <span class="n">short</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">max_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">max_size</span> <span class="o">&lt;=</span> <span class="n">requested_new_short</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;max_size = </span><span class="si">{</span><span class="n">max_size</span><span class="si">}</span><span class="s2"> must be strictly greater than the requested &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;size for the smaller edge size = </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">new_long</span> <span class="o">&gt;</span> <span class="n">max_size</span><span class="p">:</span>
+                <span class="n">new_short</span><span class="p">,</span> <span class="n">new_long</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_size</span> <span class="o">*</span> <span class="n">new_short</span> <span class="o">/</span> <span class="n">new_long</span><span class="p">),</span> <span class="n">max_size</span>
+
+        <span class="n">new_w</span><span class="p">,</span> <span class="n">new_h</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_short</span><span class="p">,</span> <span class="n">new_long</span><span class="p">)</span> <span class="k">if</span> <span class="n">w</span> <span class="o">&lt;=</span> <span class="n">h</span> <span class="k">else</span> <span class="p">(</span><span class="n">new_long</span><span class="p">,</span> <span class="n">new_short</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># specified both h and w</span>
+        <span class="n">new_w</span><span class="p">,</span> <span class="n">new_h</span> <span class="o">=</span> <span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">new_h</span><span class="p">,</span> <span class="n">new_w</span><span class="p">]</span>
+
+
 <div class="viewcode-block" id="resize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.resize.html#torchvision.transforms.functional.resize">[docs]</a><span class="k">def</span> <span class="nf">resize</span><span class="p">(</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -752,13 +775,32 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">InterpolationMode</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument interpolation should be a InterpolationMode&quot;</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Size must be an int or a 1 or 2 element tuple/list, not a </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">size</span><span class="p">)</span><span class="si">}</span><span class="s2"> element tuple/list&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;max_size should only be passed if size specifies the length of the smaller edge, &quot;</span>
+                <span class="s2">&quot;i.e. size should be an int or a sequence of length 1 in torchscript mode.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">image_height</span><span class="p">,</span> <span class="n">image_width</span> <span class="o">=</span> <span class="n">get_dimensions</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="p">[</span><span class="n">size</span><span class="p">]</span>
+    <span class="n">output_size</span> <span class="o">=</span> <span class="n">_compute_output_size</span><span class="p">((</span><span class="n">image_height</span><span class="p">,</span> <span class="n">image_width</span><span class="p">),</span> <span class="n">size</span><span class="p">,</span> <span class="n">max_size</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">image_height</span><span class="p">,</span> <span class="n">image_width</span><span class="p">)</span> <span class="o">==</span> <span class="n">output_size</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">img</span>
+
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">antialias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">antialias</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.&quot;</span><span class="p">)</span>
         <span class="n">pil_interpolation</span> <span class="o">=</span> <span class="n">pil_modes_mapping</span><span class="p">[</span><span class="n">interpolation</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">F_pil</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">pil_interpolation</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">F_pil</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">output_size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">pil_interpolation</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span><span class="p">,</span> <span class="n">antialias</span><span class="o">=</span><span class="n">antialias</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">output_size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">antialias</span><span class="o">=</span><span class="n">antialias</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="pad"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.pad.html#torchvision.transforms.functional.pad">[docs]</a><span class="k">def</span> <span class="nf">pad</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">fill</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">padding_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
@@ -884,6 +926,7 @@
     <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
+    <span class="n">antialias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Crop the given image and resize it to desired size.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
@@ -904,13 +947,17 @@
 <span class="sd">            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.</span>
 <span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,</span>
 <span class="sd">            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.</span>
+<span class="sd">        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias</span>
+<span class="sd">            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for</span>
+<span class="sd">            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.</span>
+<span class="sd">            This can help making the output for PIL images and tensors closer.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        PIL Image or Tensor: Cropped image.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">)</span>
     <span class="n">img</span> <span class="o">=</span> <span class="n">crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
-    <span class="n">img</span> <span class="o">=</span> <span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="p">,</span> <span class="n">antialias</span><span class="o">=</span><span class="n">antialias</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">img</span></div>
 
 
