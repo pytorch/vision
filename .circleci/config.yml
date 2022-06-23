@@ -146,7 +146,7 @@ commands:
         default: true
     steps:
       - pip_install:
-          args: --pre torch==1.13.0.dev20220621 --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+          args: --pre torch==1.13.0.dev20220618 --extra-index-url https://download.pytorch.org/whl/nightly/cpu
           descr: Install PyTorch from nightly releases
       - pip_install:
           args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
