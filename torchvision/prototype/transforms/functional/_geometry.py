@@ -48,12 +48,11 @@ def resize_image_tensor(
     antialias: Optional[bool] = None,
 ) -> torch.Tensor:
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
-    size = _compute_output_size((old_height, old_width), size=size, max_size=max_size)
-    new_height, new_width = size
+    new_height, new_width = _compute_output_size((old_height, old_width), size=size, max_size=max_size)
     batch_shape = image.shape[:-3]
     return _FT.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
-        size=size,
+        size=[new_height, new_width],
         interpolation=interpolation.value,
         antialias=antialias,
     ).reshape(batch_shape + (num_channels, new_height, new_width))
@@ -83,8 +82,7 @@ def resize_bounding_box(
     bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int], max_size: Optional[int] = None
 ) -> torch.Tensor:
     old_height, old_width = image_size
-    size = _compute_output_size(image_size, size=size, max_size=max_size)
-    new_height, new_width = size
+    new_height, new_width = _compute_output_size(image_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
     return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
 
@@ -330,8 +328,8 @@ def rotate_image_tensor(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    center: Optional[List[float]] = None,
     fill: Optional[List[float]] = None,
+    center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     center_f = [0.0, 0.0]
     if center is not None:
