@@ -288,7 +288,7 @@ class MViT(nn.Module):
         temporal_size: int,
         block_setting: Sequence[MSBlockConfig],
         residual_pool: bool,
-        dropout: float = 0.0,
+        dropout: float = 0.5,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         num_classes: int = 400,
@@ -360,11 +360,10 @@ class MViT(nn.Module):
         self.norm = norm_layer(block_setting[-1].output_channels)
 
         # Classifier module
-        layers: List[nn.Module] = []
-        if dropout > 0.0:
-            layers.append(nn.Dropout(dropout, inplace=True))
-        layers.append(nn.Linear(block_setting[-1].output_channels, num_classes))
-        self.head = nn.Sequential(*layers)
+        self.head = nn.Sequential(
+            nn.Dropout(dropout, inplace=True),
+            nn.Linear(block_setting[-1].output_channels, num_classes),
+        )
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
@@ -433,7 +432,7 @@ def _mvit(
 
 class MViT_V1_B_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
-        url="https://download.pytorch.org/models/mvit_v1_b-a3d8bcb8.pth",
+        url="https://download.pytorch.org/models/mvit_v1_b-dbeb1030.pth",
         transforms=partial(
             VideoClassification,
             crop_size=(224, 224),
