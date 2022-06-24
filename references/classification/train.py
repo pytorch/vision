@@ -9,11 +9,11 @@ import warnings
 import helpers
 import presets
 import torch
-import torch.distributed as dist
 import torch.utils.data
 import torchvision
 import utils
 from torch import nn
+from torchdata.dataloader2 import DataLoader2, MultiProcessingReadingService, adapter
 from torchvision.transforms.functional import InterpolationMode
 
 
@@ -92,7 +92,8 @@ def evaluate(model, criterion, data_loader, device, args, print_freq=100, log_su
 
     num_processed_samples = utils.reduce_across_processes(num_processed_samples)
     if (
-        hasattr(data_loader.dataset, "__len__")
+        hasattr(data_loader, "dataset")
+        and hasattr(data_loader.dataset, "__len__")
         and len(data_loader.dataset) != num_processed_samples
         and torch.distributed.get_rank() == 0
     ):
@@ -170,22 +171,43 @@ def load_data(traindir, valdir, args):
         raise ValueError(f"Invalid value for args.ds_type ({args.ds_type})")
     print("Took", time.time() - st)
 
-    data_loader = torch.utils.data.DataLoader(
-        dataset,
-        batch_size=args.batch_size,
-        shuffle=shuffle_train,
-        sampler=train_sampler,
-        num_workers=args.workers,
-        pin_memory=True,
-        drop_last=True,
-    )
-    data_loader_test = torch.utils.data.DataLoader(
-        dataset_test,
-        batch_size=args.batch_size,
-        sampler=test_sampler,
-        num_workers=args.workers,
-        pin_memory=True,
-    )
+    if args.data_loader.lower() == "v1":
+        data_loader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=args.batch_size,
+            shuffle=shuffle_train,
+            sampler=train_sampler,
+            num_workers=args.workers,
+            pin_memory=True,
+            drop_last=True,
+        )
+        data_loader_test = torch.utils.data.DataLoader(
+            dataset_test,
+            batch_size=args.batch_size,
+            sampler=test_sampler,
+            num_workers=args.workers,
+            pin_memory=True,
+        )
+    else:
+        if args.ds_type != "dp":
+            raise ValueError("DataLoader2 only works with datapipes.")
+
+        # Note: we are batching and collating here *after the transforms*, which is consistent with DLV1.
+        # But maybe it would be more efficient to do that before, so that the transforms can work on batches??
+
+        dataset = dataset.batch(args.batch_size, drop_last=True).collate()
+        data_loader = DataLoader2(
+            dataset,
+            datapipe_adapter_fn=adapter.Shuffle(),
+            reading_service=MultiProcessingReadingService(num_workers=args.workers),
+        )
+
+        dataset_test = dataset_test.batch(args.batch_size, drop_last=True).collate()
+        data_loader_test = DataLoader2(
+            dataset_test,
+            reading_service=MultiProcessingReadingService(num_workers=args.workers),
+        )
+
     return data_loader, data_loader_test, train_sampler
 
 
@@ -519,6 +541,12 @@ def get_args_parser(add_help=True):
         help="Whether to apply transforms to the images. No transforms means we "
         "load and decode PIL images as usual, but we don't transform them. Instead we discard them "
         "and the dataset will produce random tensors instead, so Acc resuts will be garbage.",
+    )
+    parser.add_argument(
+        "--data-loader",
+        default="V1",
+        type=str,
+        help="'V1' or 'V2'. V2 only works for datapipes",
     )
 
     return parser
