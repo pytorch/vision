@@ -383,9 +383,12 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 41755286,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn",
-            "metrics": {
-                "box_map": 37.0,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 37.0,
+                }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -399,9 +402,12 @@ class FasterRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 43712278,
             "recipe": "https://github.com/pytorch/vision/pull/5763",
-            "metrics": {
-                "box_map": 46.7,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 46.7,
+                }
             },
+            "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )
     DEFAULT = COCO_V1
@@ -415,9 +421,12 @@ class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn",
-            "metrics": {
-                "box_map": 32.8,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 32.8,
+                }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -431,9 +440,12 @@ class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn",
-            "metrics": {
-                "box_map": 22.8,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 22.8,
+                }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -454,8 +466,10 @@ def fasterrcnn_resnet50_fpn(
 ) -> FasterRCNN:
     """
     Faster R-CNN model with a ResNet-50-FPN backbone from the `Faster R-CNN: Towards Real-Time Object
-    Detection with Region Proposal Networks <https://arxiv.org/abs/1703.06870>`__
+    Detection with Region Proposal Networks <https://arxiv.org/abs/1506.01497>`__
     paper.
+
+    .. betastatus:: detection module
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
@@ -567,6 +581,8 @@ def fasterrcnn_resnet50_fpn_v2(
     """
     Constructs an improved Faster R-CNN model with a ResNet-50-FPN backbone from `Benchmarking Detection
     Transfer Learning with Vision Transformers <https://arxiv.org/abs/2111.11429>`__ paper.
+
+    .. betastatus:: detection module
 
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
@@ -685,6 +701,8 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     """
     Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tunned for mobile use cases.
 
+    .. betastatus:: detection module
+
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
     details.
@@ -755,6 +773,9 @@ def fasterrcnn_mobilenet_v3_large_fpn(
 ) -> FasterRCNN:
     """
     Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
+
+    .. betastatus:: detection module
+
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
     details.

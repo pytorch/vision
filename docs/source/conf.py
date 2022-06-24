@@ -21,6 +21,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import os
+import sys
 import textwrap
 from copy import copy
 from pathlib import Path
@@ -30,6 +31,7 @@ import torchvision
 import torchvision.models as M
 from tabulate import tabulate
 
+sys.path.append(os.path.abspath("."))
 
 # -- General configuration ------------------------------------------------
 
@@ -50,6 +52,7 @@ extensions = [
     "sphinx.ext.duration",
     "sphinx_gallery.gen_gallery",
     "sphinx_copybutton",
+    "beta_status",
 ]
 
 sphinx_gallery_conf = {
@@ -103,7 +106,7 @@ if VERSION:
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -334,32 +337,30 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
         lines.append("")
 
         for field in obj:
+            meta = copy(field.meta)
+
             lines += [f"**{str(field)}**:", ""]
+            lines += [meta.pop("_docs")]
+
             if field == obj.DEFAULT:
-                lines += [f"This weight is also available as ``{obj.__name__}.DEFAULT``.", ""]
+                lines += [f"Also available as ``{obj.__name__}.DEFAULT``."]
+            lines += [""]
 
             table = []
+            metrics = meta.pop("_metrics")
+            for dataset, dataset_metrics in metrics.items():
+                for metric_name, metric_value in dataset_metrics.items():
+                    table.append((f"{metric_name} (on {dataset})", str(metric_value)))
 
-            # the `meta` dict contains another embedded `metrics` dict. To
-            # simplify the table generation below, we create the
-            # `meta_with_metrics` dict, where the metrics dict has been "flattened"
-            meta = copy(field.meta)
-            metrics = meta.pop("metrics", {})
-            meta_with_metrics = dict(meta, **metrics)
-
-            # We don't want to document these, they can be too long
-            for k in ["categories", "keypoint_names"]:
-                meta_with_metrics.pop(k, None)
-
-            custom_docs = meta_with_metrics.pop("_docs", None)  # Custom per-Weights docs
-            if custom_docs is not None:
-                lines += [custom_docs, ""]
-
-            for k, v in meta_with_metrics.items():
+            for k, v in meta.items():
                 if k in {"recipe", "license"}:
                     v = f"`link <{v}>`__"
                 elif k == "min_size":
                     v = f"height={v[0]}, width={v[1]}"
+                elif k in {"categories", "keypoint_names"} and isinstance(v, list):
+                    max_visible = 3
+                    v_sample = ", ".join(v[:max_visible])
+                    v = f"{v_sample}, ... ({len(v)-max_visible} omitted)" if len(v) > max_visible else v_sample
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
             lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
@@ -368,12 +369,12 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines.append("")
             lines.append(
                 f"The inference transforms are available at ``{str(field)}.transforms`` and "
-                f"perform the following operations: {field.transforms().describe()}"
+                f"perform the following preprocessing operations: {field.transforms().describe()}"
             )
             lines.append("")
 
 
-def generate_weights_table(module, table_name, metrics, include_patterns=None, exclude_patterns=None):
+def generate_weights_table(module, table_name, metrics, dataset, include_patterns=None, exclude_patterns=None):
     weights_endswith = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
     weight_enums = [getattr(module, name) for name in dir(module) if name.endswith(weights_endswith)]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
@@ -390,7 +391,7 @@ def generate_weights_table(module, table_name, metrics, include_patterns=None, e
     content = [
         (
             f":class:`{w} <{type(w).__name__}>`",
-            *(w.meta["metrics"][metric] for metric in metrics_keys),
+            *(w.meta["_metrics"][dataset][metric] for metric in metrics_keys),
             f"{w.meta['num_params']/1e6:.1f}M",
             f"`link <{w.meta['recipe']}>`__",
         )
@@ -407,29 +408,45 @@ def generate_weights_table(module, table_name, metrics, include_patterns=None, e
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
 
-generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
 generate_weights_table(
-    module=M.quantization, table_name="classification_quant", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")]
+    module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="ImageNet-1K"
 )
 generate_weights_table(
-    module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")], exclude_patterns=["Mask", "Keypoint"]
+    module=M.quantization,
+    table_name="classification_quant",
+    metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")],
+    dataset="ImageNet-1K",
+)
+generate_weights_table(
+    module=M.detection,
+    table_name="detection",
+    metrics=[("box_map", "Box MAP")],
+    exclude_patterns=["Mask", "Keypoint"],
+    dataset="COCO-val2017",
 )
 generate_weights_table(
     module=M.detection,
     table_name="instance_segmentation",
     metrics=[("box_map", "Box MAP"), ("mask_map", "Mask MAP")],
+    dataset="COCO-val2017",
     include_patterns=["Mask"],
 )
 generate_weights_table(
     module=M.detection,
     table_name="detection_keypoint",
     metrics=[("box_map", "Box MAP"), ("kp_map", "Keypoint MAP")],
+    dataset="COCO-val2017",
     include_patterns=["Keypoint"],
 )
 generate_weights_table(
-    module=M.segmentation, table_name="segmentation", metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")]
+    module=M.segmentation,
+    table_name="segmentation",
+    metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")],
+    dataset="COCO-val2017-VOC-labels",
 )
-generate_weights_table(module=M.video, table_name="video", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
+generate_weights_table(
+    module=M.video, table_name="video", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="Kinetics-400"
+)
 
 
 def setup(app):

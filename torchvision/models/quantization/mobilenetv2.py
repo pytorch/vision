@@ -75,10 +75,16 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
             "backend": "qnnpack",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv2",
             "unquantized": MobileNet_V2_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 71.658,
-                "acc@5": 90.150,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 71.658,
+                    "acc@5": 90.150,
+                }
             },
+            "_docs": """
+                These weights were produced by doing Quantization Aware Training (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_QNNPACK_V1
@@ -104,9 +110,10 @@ def mobilenet_v2(
     `MobileNetV2: Inverted Residuals and Linear Bottlenecks
     <https://arxiv.org/abs/1801.04381>`_.
 
-    Note that quantize = True returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
         weights (:class:`~torchvision.models.quantization.MobileNet_V2_QuantizedWeights` or :class:`~torchvision.models.MobileNet_V2_Weights`, optional): The

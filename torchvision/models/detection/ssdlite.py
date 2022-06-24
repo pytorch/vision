@@ -193,9 +193,12 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
             "categories": _COCO_CATEGORIES,
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
-            "metrics": {
-                "box_map": 21.3,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 21.3,
+                }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -218,6 +221,8 @@ def ssdlite320_mobilenet_v3_large(
     """SSDlite model architecture with input size 320x320 and a MobileNetV3 Large backbone, as
     described at `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`__ and
     `MobileNetV2: Inverted Residuals and Linear Bottlenecks <https://arxiv.org/abs/1801.04381>`__.
+
+    .. betastatus:: detection module
 
     See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.
 
