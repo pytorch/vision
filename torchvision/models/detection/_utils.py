@@ -300,6 +300,28 @@ class BoxLinearCoder:
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=1)
         return pred_boxes
 
+    def decode_all(self, list_rel_codes, list_boxes):
+
+        list_boxes = list_boxes.to(list_rel_codes.dtype)
+
+        list_ctr_x = 0.5 * (list_boxes[:, :, 0] + list_boxes[:, :, 2])
+        list_ctr_y = 0.5 * (list_boxes[:, :, 1] + list_boxes[:, :, 3])
+
+        if self.normalize_by_size:
+            list_boxes_w = list_boxes[:, :, 2] - list_boxes[:, :, 0]
+            list_boxes_h = list_boxes[:, :, 3] - list_boxes[:, :, 1]
+
+            list_box_size = torch.stack((list_boxes_w, list_boxes_h, list_boxes_w, list_boxes_h), dim=2)
+            list_rel_codes = list_rel_codes * list_box_size
+
+        pred_boxes1 = list_ctr_x - list_rel_codes[:, :, 0]
+        pred_boxes2 = list_ctr_y - list_rel_codes[:, :, 1]
+        pred_boxes3 = list_ctr_x - list_rel_codes[:, :, 2]
+        pred_boxes4 = list_ctr_y - list_rel_codes[:, :, 3]
+
+        list_pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2)
+        return list_pred_boxes
+
 
 class Matcher:
     """

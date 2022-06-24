@@ -88,10 +88,13 @@ class FCOSHead(nn.Module):
 
         # regression loss: GIoU loss
         # TODO: vectorize this instead of using a for loop
-        pred_boxes = [
-            self.box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
-            for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
-        ]
+        # pred_boxes = [
+        #    self.box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
+        #    for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
+        # ]
+
+        pred_boxes = self.box_coder.decode_all(bbox_regression, anchors)
+
         # amp issue: pred_boxes need to convert float
         loss_bbox_reg = generalized_box_iou_loss(
             torch.stack(pred_boxes)[foregroud_mask].float(),
