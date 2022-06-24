@@ -44,6 +44,14 @@ def _decode(path, root, categories):
     return image, label
 
 
+_RANDOM_IMAGE_TENSORS = [torch.randn(3, 224, 224) for _ in range(300)]
+
+
+def no_transforms(_):
+    # see --no-transforms doc
+    return random.choice(_RANDOM_IMAGE_TENSORS)
+
+
 def _apply_tranforms(img_and_label, transforms):
     img, label = img_and_label
     return transforms(img), label
@@ -57,6 +65,7 @@ def make_dp(root, transforms):
 
     dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE).set_shuffle(False).sharding_filter()
     dp = dp.map(partial(_decode, root=root, categories=categories))
+
     dp = dp.map(partial(_apply_tranforms, transforms=transforms))
 
     dp = _LenSetter(dp, root=root)

@@ -25,6 +25,8 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
 
     header = f"Epoch: [{epoch}]"
     for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
+        if args.data_loading_only:
+            continue
         start_time = time.time()
         image, target = image.to(device), target.to(device)
         with torch.cuda.amp.autocast(enabled=scaler is not None):
@@ -60,14 +62,19 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
         metric_logger.meters["img/s"].update(batch_size / (time.time() - start_time))
 
 
-def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix=""):
+def evaluate(model, criterion, data_loader, device, args, print_freq=100, log_suffix=""):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = f"Test: {log_suffix}"
 
+    metric_logger.add_meter("acc1", utils.SmoothedValue())
+    metric_logger.add_meter("acc5", utils.SmoothedValue())
+
     num_processed_samples = 0
     with torch.inference_mode():
         for image, target in metric_logger.log_every(data_loader, print_freq, header):
+            if args.data_loading_only:
+                continue
             image = image.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
             output = model(image)
@@ -123,17 +130,18 @@ def load_data(traindir, valdir, args):
     auto_augment_policy = getattr(args, "auto_augment", None)
     random_erase_prob = getattr(args, "random_erase", 0.0)
 
-    preset = presets.ClassificationPresetTrain(
-        crop_size=train_crop_size,
-        interpolation=interpolation,
-        auto_augment_policy=auto_augment_policy,
-        random_erase_prob=random_erase_prob,
-    )
-    val_preset = presets.ClassificationPresetEval(
-        crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
-    )
-    print(f"ds-type={args.ds_type}")
-    print(f"pre-load ds={args.preload_ds}")
+    if args.no_transforms:
+        preset = val_preset = helpers.no_transforms
+    else:
+        preset = presets.ClassificationPresetTrain(
+            crop_size=train_crop_size,
+            interpolation=interpolation,
+            auto_augment_policy=auto_augment_policy,
+            random_erase_prob=random_erase_prob,
+        )
+        val_preset = presets.ClassificationPresetEval(
+            crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
+        )
     if args.ds_type == "dp":
         builder = helpers.make_pre_loaded_dp if args.preload_ds else helpers.make_dp
         dataset = builder(traindir, transforms=preset)
@@ -186,7 +194,7 @@ def main(args):
         utils.mkdir(args.output_dir)
 
     utils.init_distributed_mode(args)
-    print(args)
+    print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())))
 
     device = torch.device(args.device)
 
@@ -326,9 +334,9 @@ def main(args):
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
         if model_ema:
-            evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
+            evaluate(model_ema, criterion, data_loader_test, device=device, args=args, log_suffix="EMA")
         else:
-            evaluate(model, criterion, data_loader_test, device=device)
+            evaluate(model, criterion, data_loader_test, device=device, args=args)
         return
 
     print("Start training")
@@ -338,9 +346,9 @@ def main(args):
             train_sampler.set_epoch(epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema, scaler)
         lr_scheduler.step()
-        evaluate(model, criterion, data_loader_test, device=device)
+        evaluate(model, criterion, data_loader_test, device=device, args=args)
         if model_ema:
-            evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
+            evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA", args=args)
         if args.output_dir:
             checkpoint = {
                 "model": model_without_ddp.state_dict(),
@@ -499,6 +507,18 @@ def get_args_parser(add_help=True):
         "--preload-ds",
         action="store_true",
         help="whether to use a fake dataset where all images are pre-loaded and tranformed",
+    )
+    parser.add_argument(
+        "--data-loading-only",
+        action="store_true",
+        help="When on, we bypass the model's forward and backward passes. So mostly only the dataloading happens",
+    )
+    parser.add_argument(
+        "--no-transforms",
+        action="store_true",
+        help="Whether to apply transforms to the images. No transforms means we "
+        "load and decode PIL images as usual, but we don't transform them. Instead we discard them "
+        "and the dataset will produce random tensors instead, so Acc resuts will be garbage.",
     )
 
     return parser

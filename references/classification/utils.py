@@ -40,24 +40,35 @@ class SmoothedValue:
 
     @property
     def median(self):
+        if not self.deque:
+            return 0
         d = torch.tensor(list(self.deque))
         return d.median().item()
 
     @property
     def avg(self):
+        if not self.deque:
+            return 0
         d = torch.tensor(list(self.deque), dtype=torch.float32)
         return d.mean().item()
 
     @property
     def global_avg(self):
-        return self.total / self.count
+        try:
+            return self.total / self.count
+        except ZeroDivisionError:
+            return 0
 
     @property
     def max(self):
+        if not self.deque:
+            return 0
         return max(self.deque)
 
     @property
     def value(self):
+        if not self.deque:
+            return 0
         return self.deque[-1]
 
     def __str__(self):
@@ -106,6 +117,7 @@ class MetricLogger:
         end = time.time()
         iter_time = SmoothedValue(fmt="{avg:.4f}")
         data_time = SmoothedValue(fmt="{avg:.4f}")
+        model_time = SmoothedValue(fmt="{avg:.4f}")
         space_fmt = ":" + str(len(str(len(iterable)))) + "d"
         if torch.cuda.is_available():
             log_msg = self.delimiter.join(
@@ -116,6 +128,7 @@ class MetricLogger:
                     "{meters}",
                     "time: {time}",
                     "data: {data}",
+                    "model: {model}",
                     "max mem: {memory:.0f}",
                 ]
             )
@@ -125,9 +138,12 @@ class MetricLogger:
             )
         MB = 1024.0 * 1024.0
         for obj in iterable:
-            data_time.update(time.time() - end)
+            dtime = time.time() - end
+            data_time.update(dtime)
             yield obj
-            iter_time.update(time.time() - end)
+            ttime = time.time() - end
+            iter_time.update(ttime)
+            model_time.update(ttime - dtime)
             if i % print_freq == 0:
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
@@ -140,6 +156,7 @@ class MetricLogger:
                             meters=str(self),
                             time=str(iter_time),
                             data=str(data_time),
+                            model=str(model_time),
                             memory=torch.cuda.max_memory_allocated() / MB,
                         )
                     )
