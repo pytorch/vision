@@ -301,6 +301,9 @@ class BoxLinearCoder:
         return pred_boxes
 
     def decode_all(self, list_rel_codes, list_boxes):
+        if len(list_rel_codes) != len(list_boxes):
+            min_len = min(len(list_box_size, list_boxes))
+            list_boxes, list_rel_codes = list_boxes[:min_len], list_rel_codes[:min_len]
 
         list_boxes = list_boxes.to(list_rel_codes.dtype)
 
