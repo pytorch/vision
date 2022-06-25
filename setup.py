@@ -319,7 +319,6 @@ def get_extensions():
 
     # Locating libjpeg
     (jpeg_found, jpeg_conda, jpeg_include, jpeg_lib) = find_library("jpeglib", vision_include)
-    print(f"JPEG found: {jpeg_found}")
 
     use_jpeg = use_jpeg and jpeg_found
     if use_jpeg:
@@ -328,6 +327,8 @@ def get_extensions():
         if jpeg_conda:
             image_library += [jpeg_lib]
             image_include += [jpeg_include]
+    else:
+        print("Building torchvision without JPEG image support")
     image_macros += [("JPEG_FOUND", str(int(use_jpeg)))]
 
     # Locating nvjpeg
@@ -337,12 +338,13 @@ def get_extensions():
         and CUDA_HOME is not None
         and os.path.exists(os.path.join(CUDA_HOME, "include", "nvjpeg.h"))
     )
-    print(f"NVJPEG found: {nvjpeg_found}")
 
     use_nvjpeg = use_nvjpeg and nvjpeg_found
     if use_nvjpeg:
         print("Building torchvision with NVJPEG image support")
         image_link_flags.append("nvjpeg")
+    else:
+        print("Building torchvision without NVJPEG image support")
     image_macros += [("NVJPEG_FOUND", str(int(use_nvjpeg)))]
 
     image_path = os.path.join(extensions_dir, "io", "image")
@@ -377,11 +379,11 @@ def get_extensions():
     if has_ffmpeg:
         try:
             # This is to check if ffmpeg is installed properly.
-            subprocess.check_output(["ffmpeg", "-version"])
+            ffmpeg_version = subprocess.check_output(["ffmpeg", "-version"])
         except subprocess.CalledProcessError:
-            print("Error fetching ffmpeg version, ignoring ffmpeg.")
+            print("Building torchvision without ffmpeg support")
+            print("  Error fetching ffmpeg version, ignoring ffmpeg.")
             has_ffmpeg = False
-    print(f"FFmpeg found: {has_ffmpeg}")
 
     use_ffmpeg = use_ffmpeg and has_ffmpeg
 
@@ -413,12 +415,17 @@ def get_extensions():
                 library_found |= len(glob.glob(full_path)) > 0
 
             if not library_found:
-                print(f"{library} header files were not found, disabling ffmpeg support")
+                print("Building torchvision without ffmpeg support")
+                print(f"  {library} header files were not found, disabling ffmpeg support")
                 use_ffmpeg = False
+    else:
+        print("Building torchvision without ffmpeg support")
 
     if use_ffmpeg:
-        print(f"ffmpeg include path: {ffmpeg_include_dir}")
-        print(f"ffmpeg library_dir: {ffmpeg_library_dir}")
+        print("Building torchvision with ffmpeg support")
+        print(f"  ffmpeg version: {ffmpeg_version}")
+        print(f"  ffmpeg include path: {ffmpeg_include_dir}")
+        print(f"  ffmpeg library_dir: {ffmpeg_library_dir}")
 
         # TorchVision base decoder + video reader
         video_reader_src_dir = os.path.join(this_dir, "torchvision", "csrc", "io", "video_reader")
@@ -469,7 +476,6 @@ def get_extensions():
         and any([os.path.exists(os.path.join(folder, "nvcuvid.h")) for folder in vision_include])
         and any([os.path.exists(os.path.join(folder, "libnvcuvid.so")) for folder in library_dirs])
     )
-    print(f"video codec found: {video_codec_found}")
 
     use_video_codec = use_video_codec and video_codec_found
     if (
@@ -477,6 +483,7 @@ def get_extensions():
         and use_ffmpeg
         and any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
     ):
+        print("Building torchvision with video codec support")
         gpu_decoder_path = os.path.join(extensions_dir, "io", "decoder", "gpu")
         gpu_decoder_src = glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
         cuda_libs = os.path.join(CUDA_HOME, "lib64")
@@ -506,11 +513,17 @@ def get_extensions():
             )
         )
     else:
-        print(
-            "The installed version of ffmpeg is missing the header file 'bsf.h' which is "
-            "required for GPU video decoding. Please install the latest ffmpeg from conda-forge channel:"
-            " `conda install -c conda-forge ffmpeg`."
-        )
+        print("Building torchvision without video codec support")
+        if (
+            use_video_codec
+            and use_ffmpeg
+            and not any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
+        ):
+            print(
+                "  The installed version of ffmpeg is missing the header file 'bsf.h' which is "
+                "  required for GPU video decoding. Please install the latest ffmpeg from conda-forge channel:"
+                "   `conda install -c conda-forge ffmpeg`."
+            )
 
     return ext_modules
 
