@@ -139,7 +139,7 @@ def get_extensions():
         + glob.glob(os.path.join(extensions_dir, "ops", "quantized", "cpu", "*.cpp"))
     )
 
-    print(f"Compiling extensions with following flags:")
+    print("Compiling extensions with following flags:")
     compile_cpp_tests = os.getenv("WITH_CPP_MODELS_TEST", "0") == "1"
     print(f"  WITH_CPP_MODELS_TEST: {compile_cpp_tests}")
     force_cuda = os.getenv("FORCE_CUDA", "0") == "1"
@@ -190,7 +190,7 @@ def get_extensions():
     extension = CppExtension
 
     if compile_cpp_tests:
-        print(f"Compiling CPP tests")
+        print("Compiling CPP tests")
         test_dir = os.path.join(this_dir, "test")
         models_dir = os.path.join(this_dir, "torchvision", "csrc", "models")
         test_file = glob.glob(os.path.join(test_dir, "*.cpp"))
@@ -224,7 +224,7 @@ def get_extensions():
         extra_compile_args["cxx"].append("/MP")
 
     if debug_mode:
-        print(f"Compiling in debug mode")
+        print("Compiling in debug mode")
         extra_compile_args["cxx"].append("-g")
         extra_compile_args["cxx"].append("-O0")
         if "nvcc" in extra_compile_args:
@@ -282,7 +282,7 @@ def get_extensions():
 
     use_png = use_png and png_found
     if use_png:
-        print(f"Found PNG library")
+        print("Found PNG library")
         if libpng is not None:
             # Linux / Mac
             min_version = "1.6.0"
@@ -290,7 +290,7 @@ def get_extensions():
             png_version = png_version.stdout.strip().decode("utf-8")
             png_version = parse_version(png_version)
             if png_version >= parse_version(min_version):
-                print(f"Building torchvision with PNG image support")
+                print("Building torchvision with PNG image support")
                 png_lib = subprocess.run([libpng, "--libdir"], stdout=subprocess.PIPE)
                 png_lib = png_lib.stdout.strip().decode("utf-8")
                 if "disabled" not in png_lib:
@@ -303,7 +303,7 @@ def get_extensions():
                 print(f"  libpng version: {png_version}")
                 print(f"  libpng include path: {png_include}")
             else:
-                print(f"Could not add PNG image support to torchvision:")
+                print("Could not add PNG image support to torchvision:")
                 print(f"  libpng minimum version {min_version}, found {png_version}")
                 use_png = False
         else:
@@ -314,7 +314,7 @@ def get_extensions():
             image_include += [png_include]
             image_link_flags.append("libpng")
     else:
-        print(f"Building torchvision without PNG image support")
+        print("Building torchvision without PNG image support")
     image_macros += [("PNG_FOUND", str(int(use_png)))]
 
     # Locating libjpeg
