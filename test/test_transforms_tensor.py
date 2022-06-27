@@ -394,9 +394,7 @@ class TestResize:
     @pytest.mark.parametrize(
         "size",
         [
-            [
-                32,
-            ],
+            [32],
             [32, 32],
             (32, 32),
             [34, 35],
@@ -412,7 +410,7 @@ class TestResize:
             # This is a trivial cast to float of uint8 data to test all cases
             tensor = tensor.to(dt)
         if max_size is not None and len(size) != 1:
-            pytest.xfail("with max_size, size must be a sequence with 2 elements")
+            pytest.skip("Size should be an int or a sequence of length 1 if max_size is specified")
 
         transform = T.Resize(size=size, interpolation=interpolation, max_size=max_size)
         s_transform = torch.jit.script(transform)
@@ -420,11 +418,7 @@ class TestResize:
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_resize_save(self, tmpdir):
-        transform = T.Resize(
-            size=[
-                32,
-            ]
-        )
+        transform = T.Resize(size=[32])
         s_transform = torch.jit.script(transform)
         s_transform.save(os.path.join(tmpdir, "t_resize.pt"))
 
@@ -435,12 +429,8 @@ class TestResize:
         "size",
         [
             (32,),
-            [
-                44,
-            ],
-            [
-                32,
-            ],
+            [44],
+            [32],
             [32, 32],
             (32, 32),
             [44, 55],
