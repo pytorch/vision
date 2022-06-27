@@ -309,6 +309,9 @@ _model_params = {
         "image_size": 56,
         "input_shape": (1, 3, 56, 56),
     },
+    "mvit_v1_b": {
+        "input_shape": (1, 3, 16, 224, 224),
+    },
 }
 # speeding up slow models:
 slow_models = [
@@ -830,6 +833,8 @@ def test_video_model(model_fn, dev):
         "num_classes": 50,
     }
     model_name = model_fn.__name__
+    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+        pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
