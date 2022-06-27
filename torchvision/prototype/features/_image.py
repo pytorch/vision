@@ -127,3 +127,24 @@ class Image(_Feature):
     def center_crop(self, output_size) -> Image:
         output = self._F.center_crop_image_tensor(self, output_size=output_size)
         return Image.new_like(self, output)
+
+    def resized_crop(self, top, left, height, width, *, size, interpolation, antialias) -> Image:
+        output = self._F.resized_crop_image_tensor(
+            self, top, left, height, width, size=list(size), interpolation=interpolation, antialias=antialias
+        )
+        return Image.new_like(self, output)
+
+    def pad(self, padding, *, fill, padding_mode) -> Image:
+        # Previous message from previous implementation:
+        # PyTorch's pad supports only integers on fill. So we need to overwrite the colour
+        # vfdev-5: pytorch pad support both int and floats but keeps original dtyp
+        # if user pads int image with float pad, they need to cast the image first to float
+        # before padding. Let's remove previous manual float fill support.
+        output = self._F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
+        return Image.new_like(self, output)
+
+    def rotate(self, angle, *, interpolation, expand, fill, center) -> Image:
+        output = self._F.rotate_image_tensor(
+            self, angle, interpolation=interpolation, expand=expand, fill=fill, center=center
+        )
+        return Image.new_like(self, output)

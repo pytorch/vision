@@ -57,13 +57,13 @@ def parametrize_from_transforms(*transforms):
             make_segmentation_masks,
         ]:
             inpts = list(creation_fn())
-            # try:
-            output = transform(inpts[0])
-            # except TypeError:
-            #     continue
-            # else:
-            #     if output is inpts[0]:
-            #         continue
+            try:
+                output = transform(inpts[0])
+            except TypeError:
+                continue
+            else:
+                if output is inpts[0]:
+                    continue
 
             transforms_with_inpts.append((transform, inpts))
 
@@ -72,12 +72,13 @@ def parametrize_from_transforms(*transforms):
 
 class TestSmoke:
     @parametrize_from_transforms(
-        # transforms.RandomErasing(p=1.0),
+        transforms.RandomErasing(p=1.0),
         transforms.Resize([16, 16]),
         transforms.CenterCrop([16, 16]),
-        # transforms.ConvertImageDtype(),
-        # transforms.RandomHorizontalFlip(),
-        # transforms.Pad(5),
+        transforms.RandomResizedCrop([16, 16]),
+        transforms.ConvertImageDtype(),
+        transforms.RandomHorizontalFlip(),
+        transforms.Pad(5),
     )
     def test_common(self, transform, inpt):
         output = transform(inpt)

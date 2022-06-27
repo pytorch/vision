@@ -9,7 +9,12 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.transforms.functional import pil_to_tensor, InterpolationMode
-from torchvision.transforms.transforms import _setup_size
+
+# TODO: refactor _parse_pad_padding into
+# torchvision.transforms.functional and update F_t.pad and F_pil.pad
+# and remove redundancy
+from torchvision.transforms.functional_tensor import _parse_pad_padding
+from torchvision.transforms.transforms import _setup_size, _setup_angle, _check_sequence_input
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
@@ -104,6 +109,7 @@ class RandomResizedCrop(Transform):
         scale: Tuple[float, float] = (0.08, 1.0),
         ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        antialias: Optional[bool] = None,
     ) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -121,8 +127,12 @@ class RandomResizedCrop(Transform):
         self.scale = scale
         self.ratio = ratio
         self.interpolation = interpolation
+        self.antialias = antialias
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
+        # vfdev-5: techically, this op can work on bboxes/segm masks only inputs without image in samples
+        # What if we have multiple images/bboxes/masks of different sizes ?
+        # TODO: let's support bbox or mask in samples without image
         image = query_image(sample)
         _, height, width = get_image_dimensions(image)
         area = height * width
@@ -162,21 +172,18 @@ class RandomResizedCrop(Transform):
         return dict(top=i, left=j, height=h, width=w)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Image):
-            output = F.resized_crop_image_tensor(inpt, **params, size=list(self.size), interpolation=self.interpolation)
-            return features.Image.new_like(inpt, output)
+        if isinstance(inpt, features._Feature):
+            antialias = False if self.antialias is None else self.antialias
+            return inpt.resized_crop(**params, size=self.size, interpolation=self.interpolation, antialias=antialias)
         elif is_simple_tensor(inpt):
-            return F.resized_crop_image_tensor(inpt, **params, size=list(self.size), interpolation=self.interpolation)
+            antialias = False if self.antialias is None else self.antialias
+            return F.resized_crop_image_tensor(
+                inpt, **params, size=list(self.size), interpolation=self.interpolation, antialias=antialias
+            )
         elif isinstance(inpt, PIL.Image.Image):
             return F.resized_crop_image_pil(inpt, **params, size=list(self.size), interpolation=self.interpolation)
         else:
             return inpt
-
-    def forward(self, *inpts: Any) -> Any:
-        sample = inpts if len(inpts) > 1 else inpts[0]
-        if has_any(sample, features.BoundingBox, features.SegmentationMask):
-            raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
-        return super().forward(sample)
 
 
 class MultiCropResult(list):
@@ -287,48 +294,32 @@ class Pad(Transform):
                 f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
             )
 
+        padding = _parse_pad_padding(padding)
         self.padding = padding
         self.fill = fill
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Image) or is_simple_tensor(inpt):
-            # PyTorch's pad supports only integers on fill. So we need to overwrite the colour
-
-            output = F.pad_image_tensor(inpt, self.padding, fill=0, padding_mode="constant")
-
-            left, top, right, bottom = self.padding
-            fill = torch.tensor(self.fill, dtype=inpt.dtype, device=inpt.device).to().view(-1, 1, 1)
-
-            if top > 0:
-                output[..., :top, :] = fill
-            if left > 0:
-                output[..., :, :left] = fill
-            if bottom > 0:
-                output[..., -bottom:, :] = fill
-            if right > 0:
-                output[..., :, -right:] = fill
-
-            if isinstance(inpt, features.Image):
-                output = features.Image.new_like(inpt, output)
-
-            return output
+        if isinstance(inpt, features._Feature):
+            return inpt.pad(
+                self.padding,
+                fill=self.fill,
+                padding_mode=self.padding_mode,
+            )
         elif isinstance(inpt, PIL.Image.Image):
             return F.pad_image_pil(
                 inpt,
                 self.padding,
-                fill=tuple(int(v) if inpt.mode != "F" else v for v in self.fill),
-                padding_mode="constant",
+                fill=self.fill,
+                padding_mode=self.padding_mode,
             )
-        elif isinstance(inpt, features.BoundingBox):
-            output = F.pad_bounding_box(inpt, self.padding, format=inpt.format)
-
-            left, top, right, bottom = self.padding
-            height, width = inpt.image_size
-            height += top + bottom
-            width += left + right
-
-            return features.BoundingBox.new_like(inpt, output, image_size=(height, width))
+        elif is_simple_tensor(inpt):
+            return F.pad_image_tensor(
+                inpt,
+                self.padding,
+                fill=self.fill,
+                padding_mode=self.padding_mode,
+            )
         else:
             return inpt
 
@@ -346,6 +337,8 @@ class RandomZoomOut(_RandomApplyTransform):
         self.side_range = side_range
         if side_range[0] < 1.0 or side_range[0] > side_range[1]:
             raise ValueError(f"Invalid canvas side range provided {side_range}.")
+
+        self.pad_op = Pad(0, padding_mode="constant")
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
@@ -369,5 +362,62 @@ class RandomZoomOut(_RandomApplyTransform):
         return dict(padding=padding, fill=fill)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        transform = Pad(**params, padding_mode="constant")
-        return transform(inpt)
+        self.pad_op.padding = params["padding"]
+        self.pad_op.fill = params["fill"]
+        return self.pad_op(inpt)
+
+
+class RandomRotation(Transform):
+    def __init__(
+        self,
+        degrees,
+        interpolation=InterpolationMode.NEAREST,
+        expand=False,
+        fill=0,
+        center=None,
+    ):
+        super().__init__()
+        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
+        self.interpolation = interpolation
+        self.expand = expand
+
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
+            raise TypeError("Fill should be either a sequence or a number.")
+
+        self.fill = fill
+
+        if center is not None:
+            _check_sequence_input(center, "center", req_sizes=(2,))
+
+        self.center = center
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        angle = float(torch.empty(1).uniform_(float(self.degrees[0]), float(self.degrees[1])).item())
+        return dict(angle=angle)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, features._Feature):
+            return inpt.rotate(
+                **params,
+                interpolation=self.interpolation,
+                expand=self.expand,
+                fill=self.fill,
+                center=self.center,
+            )
+        elif is_simple_tensor(inpt):
+            return F.rotate_image_tensor(
+                inpt,
+                **params,
+                interpolation=self.interpolation,
+                expand=self.expand,
+                fill=self.fill,
+                center=self.center,
+            )
+        elif isinstance(inpt, PIL.Image.Image):
+            return F.rotate_image_pil(
+                inpt, **params, interpolation=self.interpolation, expand=self.expand, fill=self.fill, center=self.center
+            )
+        else:
+            return inpt

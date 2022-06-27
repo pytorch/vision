@@ -20,3 +20,14 @@ class SegmentationMask(_Feature):
     def center_crop(self, output_size) -> SegmentationMask:
         output = self._F.center_crop_segmentation_mask(self, output_size=output_size)
         return SegmentationMask.new_like(self, output)
+
+    def resized_crop(self, top, left, height, width, *, size, interpolation, antialias) -> SegmentationMask:
+        # TODO: untested right now
+        interpolation, antialias  # unused
+        output = self._F.resized_crop_segmentation_mask(self, top, left, height, width, size=list(size))
+        return SegmentationMask.new_like(self, output)
+
+    def pad(self, padding, *, fill, padding_mode) -> SegmentationMask:
+        fill  # unused
+        output = self._F.pad_segmentation_mask(self, padding, padding_mode=padding_mode)
+        return SegmentationMask.new_like(self, output)

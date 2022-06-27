@@ -41,6 +41,16 @@ class _TransformsMixin:
         # How dangerous to do this instead of raising an error ?
         return self
 
+    def pad(self, padding, *, fill, padding_mode):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def rotate(self, angle, *, interpolation, expand, fill, center):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
 
 class _Feature(_TransformsMixin, torch.Tensor):
     def __new__(

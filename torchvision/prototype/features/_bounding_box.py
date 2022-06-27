@@ -81,10 +81,37 @@ class BoundingBox(_Feature):
     def resize(self, size, *, interpolation, max_size, antialias) -> BoundingBox:
         interpolation, antialias  # unused
         output = self._F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
-        return BoundingBox.new_like(self, output)
+        return BoundingBox.new_like(self, output, image_size=size)
 
     def center_crop(self, output_size) -> BoundingBox:
         output = self._F.center_crop_bounding_box(
             self, format=self.format, output_size=output_size, image_size=self.image_size
+        )
+        return BoundingBox.new_like(self, output, image_size=output_size)
+
+    def resized_crop(self, top, left, height, width, *, size, interpolation, antialias) -> BoundingBox:
+        # TODO: untested right now
+        interpolation, antialias  # unused
+        output = self._F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
+        return BoundingBox.new_like(self, output, image_size=size)
+
+    def pad(self, padding, *, fill, padding_mode) -> BoundingBox:
+        fill  # unused
+        if padding_mode not in ["constant"]:
+            raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
+
+        output = self._F.pad_bounding_box(self, padding, fill=fill, padding_mode=padding_mode)
+
+        # Update output image size:
+        left, top, right, bottom = padding
+        height, width = self.image_size
+        height += top + bottom
+        width += left + right
+
+        return BoundingBox.new_like(self, output, image_size=(height, width))
+
+    def rotate(self, angle, *, interpolation, expand, fill, center) -> BoundingBox:
+        output = self._F.rotate_bounding_box(
+            self, angle, interpolation=interpolation, expand=expand, fill=fill, center=center
         )
         return BoundingBox.new_like(self, output)

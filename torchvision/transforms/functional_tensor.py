@@ -430,15 +430,12 @@ def resize(
     img: Tensor,
     size: List[int],
     interpolation: str = "bilinear",
-    antialias: Optional[bool] = None,
+    antialias: bool = False,
 ) -> Tensor:
     _assert_image_tensor(img)
 
     if isinstance(size, tuple):
         size = list(size)
-
-    if antialias is None:
-        antialias = False
 
     if antialias and interpolation not in ["bilinear", "bicubic"]:
         raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")

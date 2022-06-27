@@ -45,7 +45,7 @@ def resize_image_tensor(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
+    antialias: bool = False,
 ) -> torch.Tensor:
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
     new_height, new_width = _compute_output_size((old_height, old_width), size=size, max_size=max_size)
@@ -651,9 +651,10 @@ def resized_crop_image_tensor(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    antialias: bool = False,
 ) -> torch.Tensor:
     img = crop_image_tensor(img, top, left, height, width)
-    return resize_image_tensor(img, size, interpolation=interpolation)
+    return resize_image_tensor(img, size, interpolation=interpolation, antialias=antialias)
 
 
 def resized_crop_image_pil(
