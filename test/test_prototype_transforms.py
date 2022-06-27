@@ -59,7 +59,7 @@ def parametrize_from_transforms(*transforms):
             inpts = list(creation_fn())
             try:
                 output = transform(inpts[0])
-            except TypeError:
+            except (TypeError, RuntimeError):
                 continue
             else:
                 if output is inpts[0]:

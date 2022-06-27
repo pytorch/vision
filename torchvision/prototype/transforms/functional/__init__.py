@@ -7,16 +7,15 @@ from ._meta import (
 
 from ._augment import (
     erase_image_tensor,
-    mixup_image_tensor,
-    mixup_one_hot_label,
-    cutmix_image_tensor,
-    cutmix_one_hot_label,
 )
 from ._color import (
+    adjust_brightness,
     adjust_brightness_image_tensor,
     adjust_brightness_image_pil,
+    adjust_contrast,
     adjust_contrast_image_tensor,
     adjust_contrast_image_pil,
+    adjust_saturation,
     adjust_saturation_image_tensor,
     adjust_saturation_image_pil,
     adjust_sharpness_image_tensor,
@@ -37,6 +36,7 @@ from ._color import (
     adjust_gamma_image_pil,
 )
 from ._geometry import (
+    horizontal_flip,
     horizontal_flip_bounding_box,
     horizontal_flip_image_tensor,
     horizontal_flip_image_pil,
@@ -53,10 +53,12 @@ from ._geometry import (
     resized_crop_image_tensor,
     resized_crop_image_pil,
     resized_crop_segmentation_mask,
+    affine,
     affine_bounding_box,
     affine_image_tensor,
     affine_image_pil,
     affine_segmentation_mask,
+    rotate,
     rotate_bounding_box,
     rotate_image_tensor,
     rotate_image_pil,
@@ -73,6 +75,7 @@ from ._geometry import (
     perspective_image_tensor,
     perspective_image_pil,
     perspective_segmentation_mask,
+    vertical_flip,
     vertical_flip_image_tensor,
     vertical_flip_image_pil,
     vertical_flip_bounding_box,

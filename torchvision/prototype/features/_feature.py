@@ -7,52 +7,7 @@ from torch._C import _TensorBase, DisableTorchFunction
 F = TypeVar("F", bound="_Feature")
 
 
-class _TransformsMixin:
-    def __init__(self, *args, **kwargs):
-        super().__init__()
-
-        # To avoid circular dependency between features and transforms
-        from ..transforms import functional as F
-
-        self._F = F
-
-    def horizontal_flip(self):
-        # Just output itself
-        # How dangerous to do this instead of raising an error ?
-        return self
-
-    def vertical_flip(self):
-        # Just output itself
-        # How dangerous to do this instead of raising an error ?
-        return self
-
-    def resize(self, size, *, interpolation, max_size, antialias):
-        # Just output itself
-        # How dangerous to do this instead of raising an error ?
-        return self
-
-    def center_crop(self, output_size):
-        # Just output itself
-        # How dangerous to do this instead of raising an error ?
-        return self
-
-    def resized_crop(self, top, left, height, width, *, size, interpolation, antialias):
-        # Just output itself
-        # How dangerous to do this instead of raising an error ?
-        return self
-
-    def pad(self, padding, *, fill, padding_mode):
-        # Just output itself
-        # How dangerous to do this instead of raising an error ?
-        return self
-
-    def rotate(self, angle, *, interpolation, expand, fill, center):
-        # Just output itself
-        # How dangerous to do this instead of raising an error ?
-        return self
-
-
-class _Feature(_TransformsMixin, torch.Tensor):
+class _Feature(torch.Tensor):
     def __new__(
         cls: Type[F],
         data: Any,
@@ -61,7 +16,7 @@ class _Feature(_TransformsMixin, torch.Tensor):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> F:
-        return cast(
+        feature = cast(
             F,
             torch.Tensor._make_subclass(
                 cast(_TensorBase, cls),
@@ -69,6 +24,13 @@ class _Feature(_TransformsMixin, torch.Tensor):
                 requires_grad,
             ),
         )
+
+        # To avoid circular dependency between features and transforms
+        from ..transforms import functional
+
+        feature._F = functional
+
+        return feature
 
     @classmethod
     def new_like(
@@ -128,3 +90,73 @@ class _Feature(_TransformsMixin, torch.Tensor):
             return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
         else:
             return output
+
+    def horizontal_flip(self):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def vertical_flip(self):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def resize(self, size, *, interpolation, max_size, antialias):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def center_crop(self, output_size):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def resized_crop(self, top, left, height, width, *, size, interpolation, antialias):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def pad(self, padding, *, fill, padding_mode):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def rotate(self, angle, *, interpolation, expand, fill, center):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def affine(self, angle, *, translate, scale, shear, interpolation, fill, center):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_brightness(self, brightness_factor):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_saturation(self, saturation_factor):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_contrast(self, contrast_factor):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def erase(self, i, j, h, w, v):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def mixup(self, lam):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def cutmix(self, *, box, lam_adjusted):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self

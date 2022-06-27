@@ -23,26 +23,12 @@ from ._utils import query_image, get_image_dimensions, has_any, is_simple_tensor
 
 class RandomHorizontalFlip(_RandomApplyTransform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.horizontal_flip()
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.horizontal_flip_image_pil(inpt)
-        elif is_simple_tensor(inpt):
-            return F.horizontal_flip_image_tensor(inpt)
-        else:
-            return inpt
+        return F.horizontal_flip(inpt)
 
 
 class RandomVerticalFlip(_RandomApplyTransform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.vertical_flip()
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.vertical_flip_image_pil(inpt)
-        elif is_simple_tensor(inpt):
-            return F.vertical_flip_image_tensor(inpt)
-        else:
-            return inpt
+        return F.vertical_flip(inpt)
 
 
 class Resize(Transform):
@@ -74,7 +60,7 @@ class Resize(Transform):
                 interpolation=self.interpolation,
                 max_size=self.max_size,
             )
-        elif is_simple_tensor(inpt):
+        elif isinstance(inpt, torch.Tensor):
             return F.resize_image_tensor(
                 inpt,
                 self.size,
@@ -94,10 +80,10 @@ class CenterCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, features._Feature):
             return inpt.center_crop(self.output_size)
-        elif is_simple_tensor(inpt):
-            return F.center_crop_image_tensor(inpt, self.output_size)
         elif isinstance(inpt, PIL.Image.Image):
             return F.center_crop_image_pil(inpt, self.output_size)
+        elif isinstance(inpt, torch.Tensor):
+            return F.center_crop_image_tensor(inpt, self.output_size)
         else:
             return inpt
 
@@ -175,13 +161,13 @@ class RandomResizedCrop(Transform):
         if isinstance(inpt, features._Feature):
             antialias = False if self.antialias is None else self.antialias
             return inpt.resized_crop(**params, size=self.size, interpolation=self.interpolation, antialias=antialias)
-        elif is_simple_tensor(inpt):
+        elif isinstance(inpt, PIL.Image.Image):
+            return F.resized_crop_image_pil(inpt, **params, size=list(self.size), interpolation=self.interpolation)
+        elif isinstance(inpt, torch.Tensor):
             antialias = False if self.antialias is None else self.antialias
             return F.resized_crop_image_tensor(
                 inpt, **params, size=list(self.size), interpolation=self.interpolation, antialias=antialias
             )
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.resized_crop_image_pil(inpt, **params, size=list(self.size), interpolation=self.interpolation)
         else:
             return inpt
 
@@ -206,10 +192,10 @@ class FiveCrop(Transform):
         if isinstance(inpt, features.Image):
             output = F.five_crop_image_tensor(inpt, self.size)
             return MultiCropResult(features.Image.new_like(inpt, o) for o in output)
-        elif is_simple_tensor(inpt):
-            return MultiCropResult(F.five_crop_image_tensor(inpt, self.size))
         elif isinstance(inpt, PIL.Image.Image):
             return MultiCropResult(F.five_crop_image_pil(inpt, self.size))
+        elif isinstance(inpt, torch.Tensor):
+            return MultiCropResult(F.five_crop_image_tensor(inpt, self.size))
         else:
             return inpt
 
@@ -230,10 +216,10 @@ class TenCrop(Transform):
         if isinstance(inpt, features.Image):
             output = F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip)
             return MultiCropResult(features.Image.new_like(inpt, o) for o in output)
-        elif is_simple_tensor(inpt):
-            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size))
         elif isinstance(inpt, PIL.Image.Image):
             return MultiCropResult(F.ten_crop_image_pil(inpt, self.size))
+        elif isinstance(inpt, torch.Tensor):
+            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size))
         else:
             return inpt
 
@@ -313,7 +299,7 @@ class Pad(Transform):
                 fill=self.fill,
                 padding_mode=self.padding_mode,
             )
-        elif is_simple_tensor(inpt):
+        elif isinstance(inpt, torch.Tensor):
             return F.pad_image_tensor(
                 inpt,
                 self.padding,
@@ -398,26 +384,11 @@ class RandomRotation(Transform):
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.rotate(
-                **params,
-                interpolation=self.interpolation,
-                expand=self.expand,
-                fill=self.fill,
-                center=self.center,
-            )
-        elif is_simple_tensor(inpt):
-            return F.rotate_image_tensor(
-                inpt,
-                **params,
-                interpolation=self.interpolation,
-                expand=self.expand,
-                fill=self.fill,
-                center=self.center,
-            )
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.rotate_image_pil(
-                inpt, **params, interpolation=self.interpolation, expand=self.expand, fill=self.fill, center=self.center
-            )
-        else:
-            return inpt
+        return F.rotate(
+            inpt,
+            **params,
+            interpolation=self.interpolation,
+            expand=self.expand,
+            fill=self.fill,
+            center=self.center,
+        )

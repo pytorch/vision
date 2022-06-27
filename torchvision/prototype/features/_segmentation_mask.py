@@ -31,3 +31,29 @@ class SegmentationMask(_Feature):
         fill  # unused
         output = self._F.pad_segmentation_mask(self, padding, padding_mode=padding_mode)
         return SegmentationMask.new_like(self, output)
+
+    def rotate(self, angle, *, interpolation, expand, fill, center) -> SegmentationMask:
+        interpolation, fill  # unused
+        output = self._F.rotate_segmentation_mask(self, angle, expand=expand, center=center)
+        return SegmentationMask.new_like(self, output)
+
+    def affine(self, angle, *, translate, scale, shear, interpolation, fill, center) -> SegmentationMask:
+        interpolation, fill  # unused
+        output = self._F.affine_segmentation_mask(
+            self,
+            angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            center=center,
+        )
+        return SegmentationMask.new_like(self, output)
+
+    def erase(self, *args) -> SegmentationMask:
+        raise TypeError(f"Erase transformation does not support segmentation masks")
+
+    def mixup(self, *args) -> SegmentationMask:
+        raise TypeError(f"Mixup transformation does not support segmentation masks")
+
+    def cutmix(self, *args) -> SegmentationMask:
+        raise TypeError(f"Cutmix transformation does not support segmentation masks")

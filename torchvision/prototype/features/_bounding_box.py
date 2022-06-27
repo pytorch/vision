@@ -111,7 +111,32 @@ class BoundingBox(_Feature):
         return BoundingBox.new_like(self, output, image_size=(height, width))
 
     def rotate(self, angle, *, interpolation, expand, fill, center) -> BoundingBox:
+        interpolation, fill  # unused
         output = self._F.rotate_bounding_box(
-            self, angle, interpolation=interpolation, expand=expand, fill=fill, center=center
+            self, format=self.format, image_size=self.image_size, angle=angle, expand=expand, center=center
+        )
+        # TODO: update output image size if expand is True
+        if expand:
+            raise RuntimeError("Not yet implemented")
+        return BoundingBox.new_like(self, output)
+
+    def affine(self, angle, *, translate, scale, shear, interpolation, fill, center) -> BoundingBox:
+        interpolation, fill  # unused
+        output = self._F.affine_bounding_box(
+            self,
+            angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            center=center,
         )
         return BoundingBox.new_like(self, output)
+
+    def erase(self, *args) -> BoundingBox:
+        raise TypeError(f"Erase transformation does not support bounding boxes")
+
+    def mixup(self, *args) -> BoundingBox:
+        raise TypeError(f"Mixup transformation does not support bounding boxes")
+
+    def cutmix(self, *args) -> BoundingBox:
+        raise TypeError(f"Cutmix transformation does not support bounding boxes")

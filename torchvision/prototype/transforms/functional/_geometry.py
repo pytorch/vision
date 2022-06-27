@@ -1,6 +1,6 @@
 import numbers
 import warnings
-from typing import Tuple, List, Optional, Sequence, Union
+from typing import Any, Tuple, List, Optional, Sequence, Union
 
 import PIL.Image
 import torch
@@ -38,6 +38,52 @@ def horizontal_flip_bounding_box(
     return convert_bounding_box_format(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
+
+
+def horizontal_flip(inpt: Any) -> Any:
+    if isinstance(inpt, features._Feature):
+        return inpt.horizontal_flip()
+    elif isinstance(inpt, PIL.Image.Image):
+        return horizontal_flip_image_pil(inpt)
+    elif isinstance(inpt, torch.Tensor):
+        return horizontal_flip_image_tensor(inpt)
+    else:
+        return inpt
+
+
+vertical_flip_image_tensor = _FT.vflip
+vertical_flip_image_pil = _FP.vflip
+
+
+def vertical_flip_segmentation_mask(segmentation_mask: torch.Tensor) -> torch.Tensor:
+    return vertical_flip_image_tensor(segmentation_mask)
+
+
+def vertical_flip_bounding_box(
+    bounding_box: torch.Tensor, format: features.BoundingBoxFormat, image_size: Tuple[int, int]
+) -> torch.Tensor:
+    shape = bounding_box.shape
+
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    ).view(-1, 4)
+
+    bounding_box[:, [1, 3]] = image_size[0] - bounding_box[:, [3, 1]]
+
+    return convert_bounding_box_format(
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    ).view(shape)
+
+
+def vertical_flip(inpt: Any) -> Any:
+    if isinstance(inpt, features._Feature):
+        return inpt.vertical_flip()
+    elif isinstance(inpt, PIL.Image.Image):
+        return vertical_flip_image_pil(inpt)
+    elif isinstance(inpt, torch.Tensor):
+        return vertical_flip_image_tensor(inpt)
+    else:
+        return inpt
 
 
 def resize_image_tensor(
@@ -85,30 +131,6 @@ def resize_bounding_box(
     new_height, new_width = _compute_output_size(image_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
     return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
-
-
-vertical_flip_image_tensor = _FT.vflip
-vertical_flip_image_pil = _FP.vflip
-
-
-def vertical_flip_segmentation_mask(segmentation_mask: torch.Tensor) -> torch.Tensor:
-    return vertical_flip_image_tensor(segmentation_mask)
-
-
-def vertical_flip_bounding_box(
-    bounding_box: torch.Tensor, format: features.BoundingBoxFormat, image_size: Tuple[int, int]
-) -> torch.Tensor:
-    shape = bounding_box.shape
-
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    ).view(-1, 4)
-
-    bounding_box[:, [1, 3]] = image_size[0] - bounding_box[:, [3, 1]]
-
-    return convert_bounding_box_format(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    ).view(shape)
 
 
 def _affine_parse_args(
@@ -323,6 +345,27 @@ def affine_segmentation_mask(
     )
 
 
+def affine(
+    inpt: Any,
+    angle: float, *,
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    fill: Optional[List[float]] = None,
+    center: Optional[List[float]] = None,
+) -> Any:
+    kwargs = dict(translate=translate, scale=scale, shear=shear, interpolation=interpolation, fill=fill, center=center)
+    if isinstance(inpt, features._Feature):
+        return inpt.affine(angle, **kwargs)
+    elif isinstance(inpt, PIL.Image.Image):
+        return affine_image_pil(inpt, angle, **kwargs)
+    elif isinstance(inpt, torch.Tensor):
+        return affine_image_tensor(inpt, angle, **kwargs)
+    else:
+        return inpt
+
+
 def rotate_image_tensor(
     img: torch.Tensor,
     angle: float,
@@ -400,6 +443,29 @@ def rotate_segmentation_mask(
         interpolation=InterpolationMode.NEAREST,
         center=center,
     )
+
+
+def rotate(inpt: Any,
+    angle: float,
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    expand: bool = False,
+    fill: Optional[List[float]] = None,
+    center: Optional[List[float]] = None,
+) -> Any:
+    kwargs = dict(
+        interpolation=interpolation,
+        expand=expand,
+        fill=fill,
+        center=center,
+    )
+    if isinstance(inpt, features._Feature):
+        return inpt.rotate(angle, **kwargs)
+    elif isinstance(inpt, PIL.Image.Image):
+        return rotate_image_pil(inpt, angle, **kwargs)
+    elif isinstance(inpt, torch.Tensor):
+        return rotate_image_tensor(inpt, angle, **kwargs)
+    else:
+        return inpt
 
 
 pad_image_tensor = _FT.pad

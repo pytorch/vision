@@ -106,9 +106,7 @@ class _AutoAugmentBase(Transform):
         if transform_id == "Identity":
             return image
         elif transform_id == "ShearX":
-            return self._dispatch_image_kernels(
-                F.affine_image_tensor,
-                F.affine_image_pil,
+            return F.affine(
                 image,
                 angle=0.0,
                 translate=[0, 0],
@@ -118,9 +116,7 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "ShearY":
-            return self._dispatch_image_kernels(
-                F.affine_image_tensor,
-                F.affine_image_pil,
+            return F.affine(
                 image,
                 angle=0.0,
                 translate=[0, 0],
@@ -130,9 +126,7 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "TranslateX":
-            return self._dispatch_image_kernels(
-                F.affine_image_tensor,
-                F.affine_image_pil,
+            return F.affine(
                 image,
                 angle=0.0,
                 translate=[int(magnitude), 0],
@@ -142,9 +136,7 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "TranslateY":
-            return self._dispatch_image_kernels(
-                F.affine_image_tensor,
-                F.affine_image_pil,
+            return F.affine(
                 image,
                 angle=0.0,
                 translate=[0, int(magnitude)],
@@ -154,25 +146,19 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "Rotate":
-            return self._dispatch_image_kernels(F.rotate_image_tensor, F.rotate_image_pil, image, angle=magnitude)
+            return F.rotate(image, angle=magnitude)
         elif transform_id == "Brightness":
-            return self._dispatch_image_kernels(
-                F.adjust_brightness_image_tensor,
-                F.adjust_brightness_image_pil,
+            return F.adjust_brightness(
                 image,
                 brightness_factor=1.0 + magnitude,
             )
         elif transform_id == "Color":
-            return self._dispatch_image_kernels(
-                F.adjust_saturation_image_tensor,
-                F.adjust_saturation_image_pil,
+            return F.adjust_saturation(
                 image,
                 saturation_factor=1.0 + magnitude,
             )
         elif transform_id == "Contrast":
-            return self._dispatch_image_kernels(
-                F.adjust_contrast_image_tensor, F.adjust_contrast_image_pil, image, contrast_factor=1.0 + magnitude
-            )
+            return F.adjust_contrast(image, contrast_factor=1.0 + magnitude)
         elif transform_id == "Sharpness":
             return self._dispatch_image_kernels(
                 F.adjust_sharpness_image_tensor,

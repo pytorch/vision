@@ -148,3 +148,49 @@ class Image(_Feature):
             self, angle, interpolation=interpolation, expand=expand, fill=fill, center=center
         )
         return Image.new_like(self, output)
+
+    def affine(self, angle, *, translate, scale, shear, interpolation, fill, center) -> Image:
+        output = self._F.affine_image_tensor(
+            self,
+            angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            interpolation=interpolation,
+            fill=fill,
+            center=center,
+        )
+        return Image.new_like(self, output)
+
+    def adjust_brightness(self, brightness_factor) -> Image:
+        output = self._F.adjust_brightness_image_tensor(self, brightness_factor=brightness_factor)
+        return Image.new_like(self, output)
+
+    def adjust_saturation(self, saturation_factor) -> Image:
+        output = self._F.adjust_saturation_image_tensor(self, saturation_factor=saturation_factor)
+        return Image.new_like(self, output)
+
+    def adjust_contrast(self, contrast_factor) -> Image:
+        output = self._F.adjust_contrast_image_tensor(self, contrast_factor=contrast_factor)
+        return Image.new_like(self, output)
+
+    def erase(self, i, j, h, w, v) -> Image:
+        output = self._F.erase_image_tensor(self, i, j, h, w, v)
+        return Image.new_like(self, output)
+
+    def mixup(self, lam: float) -> Image:
+        if self.ndim < 4:
+            raise ValueError("Need a batch of images")
+        output = self.clone()
+        output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
+        return Image.new_like(self, output)
+
+    def cutmix(self, *, box: Tuple[int, int, int, int], lam_adjusted: float) -> Image:
+        lam_adjusted  # unused
+        if self.ndim < 4:
+            raise ValueError("Need a batch of images")
+        x1, y1, x2, y2 = box
+        image_rolled = self.roll(1, -4)
+        output = self.clone()
+        output[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
+        return Image.new_like(self, output)
