@@ -370,6 +370,7 @@ def get_extensions():
     # Locating ffmpeg
     ffmpeg_exe = shutil.which("ffmpeg")
     has_ffmpeg = ffmpeg_exe is not None
+    ffmpeg_version = None
     # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
     # FIXME: causes crash. See the following GitHub issues for more details.
     # FIXME: https://github.com/pytorch/pytorch/issues/65000
@@ -407,7 +408,6 @@ def get_extensions():
             ffmpeg_include_dir = [ffmpeg_include_dir]
             ffmpeg_library_dir = [ffmpeg_library_dir]
 
-        use_ffmpeg = True
         for library in ffmpeg_libraries:
             library_found = False
             for search_path in ffmpeg_include_dir + include_dirs:
