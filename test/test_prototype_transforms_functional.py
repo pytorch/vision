@@ -201,30 +201,56 @@ def horizontal_flip_bounding_box():
 
 @register_kernel_info_from_sample_inputs_fn
 def resize_image_tensor():
-    for image, interpolation in itertools.product(
+    for image, interpolation, max_size, antialias in itertools.product(
         make_images(),
-        [
-            F.InterpolationMode.BILINEAR,
-            F.InterpolationMode.NEAREST,
-        ],
+        [F.InterpolationMode.BILINEAR, F.InterpolationMode.NEAREST],  # interpolation
+        [None, 34],  # max_size
+        [False, True],  # antialias
     ):
+
+        if antialias and interpolation == F.InterpolationMode.NEAREST:
+            continue
+
         height, width = image.shape[-2:]
         for size in [
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield SampleInput(image, size=size, interpolation=interpolation)
+            if max_size is not None:
+                size = [size[0]]
+            yield SampleInput(image, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def resize_bounding_box():
-    for bounding_box in make_bounding_boxes():
+    for bounding_box, max_size in itertools.product(
+        make_bounding_boxes(),
+        [None, 34],  # max_size
+    ):
         height, width = bounding_box.image_size
         for size in [
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
+            if max_size is not None:
+                size = [size[0]]
             yield SampleInput(bounding_box, size=size, image_size=bounding_box.image_size)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def resize_segmentation_mask():
+    for mask, max_size in itertools.product(
+        make_segmentation_masks(),
+        [None, 34],  # max_size
+    ):
+        height, width = mask.shape[-2:]
+        for size in [
+            (height, width),
+            (int(height * 0.75), int(width * 1.25)),
+        ]:
+            if max_size is not None:
+                size = [size[0]]
+            yield SampleInput(mask, size=size, max_size=max_size)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -282,6 +308,22 @@ def affine_segmentation_mask():
             scale=scale,
             shear=(shear, shear),
         )
+
+
+@register_kernel_info_from_sample_inputs_fn
+def rotate_image_tensor():
+    for image, angle, expand, center, fill in itertools.product(
+        make_images(extra_dims=((), (4,))),
+        [-87, 15, 90],  # angle
+        [True, False],  # expand
+        [None, [12, 23]],  # center
+        [None, [128]],  # fill
+    ):
+        if center is not None and expand:
+            # Skip warning: The provided center argument is ignored if expand is True
+            continue
+
+        yield SampleInput(image, angle=angle, expand=expand, center=center, fill=fill)
 
 
 @register_kernel_info_from_sample_inputs_fn
