@@ -392,3 +392,89 @@ class RandomRotation(Transform):
             fill=self.fill,
             center=self.center,
         )
+
+
+class RandomAffine(Transform):
+    def __init__(
+        self,
+        degrees,
+        translate=None,
+        scale=None,
+        shear=None,
+        interpolation=InterpolationMode.NEAREST,
+        fill=0,
+        center=None,
+    ):
+        super().__init__()
+        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
+        if translate is not None:
+            _check_sequence_input(translate, "translate", req_sizes=(2,))
+            for t in translate:
+                if not (0.0 <= t <= 1.0):
+                    raise ValueError("translation values should be between 0 and 1")
+        self.translate = translate
+        if scale is not None:
+            _check_sequence_input(scale, "scale", req_sizes=(2,))
+            for s in scale:
+                if s <= 0:
+                    raise ValueError("scale values should be positive")
+        self.scale = scale
+
+        if shear is not None:
+            self.shear = _setup_angle(shear, name="shear", req_sizes=(2, 4))
+        else:
+            self.shear = shear
+
+        self.interpolation = interpolation
+
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
+            raise TypeError("Fill should be either a sequence or a number.")
+
+        self.fill = fill
+
+        if center is not None:
+            _check_sequence_input(center, "center", req_sizes=(2,))
+
+        self.center = center
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+
+        # Get image size
+        # TODO: make it work with bboxes and segm masks
+        image = query_image(sample)
+        _, height, width = get_image_dimensions(image)
+
+        angle = float(torch.empty(1).uniform_(float(self.degrees[0]), float(self.degrees[1])).item())
+        if self.translate is not None:
+            max_dx = float(self.translate[0] * width)
+            max_dy = float(self.translate[1] * height)
+            tx = int(round(torch.empty(1).uniform_(-max_dx, max_dx).item()))
+            ty = int(round(torch.empty(1).uniform_(-max_dy, max_dy).item()))
+            translations = (tx, ty)
+        else:
+            translations = (0, 0)
+
+        if self.scale is not None:
+            scale = float(torch.empty(1).uniform_(self.scale[0], self.scale[1]).item())
+        else:
+            scale = 1.0
+
+        shear_x = shear_y = 0.0
+        if self.shear is not None:
+            shear_x = float(torch.empty(1).uniform_(self.shear[0], self.shear[1]).item())
+            if len(self.shear) == 4:
+                shear_y = float(torch.empty(1).uniform_(self.shear[2], self.shear[3]).item())
+
+        shear = (shear_x, shear_y)
+        return dict(angle=angle, translations=translations, scale=scale, shear=shear)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.affine(
+            inpt,
+            **params,
+            interpolation=self.interpolation,
+            fill=self.fill,
+            center=self.center,
+        )

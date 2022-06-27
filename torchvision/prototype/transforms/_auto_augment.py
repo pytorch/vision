@@ -148,38 +148,23 @@ class _AutoAugmentBase(Transform):
         elif transform_id == "Rotate":
             return F.rotate(image, angle=magnitude)
         elif transform_id == "Brightness":
-            return F.adjust_brightness(
-                image,
-                brightness_factor=1.0 + magnitude,
-            )
+            return F.adjust_brightness(image, brightness_factor=1.0 + magnitude)
         elif transform_id == "Color":
-            return F.adjust_saturation(
-                image,
-                saturation_factor=1.0 + magnitude,
-            )
+            return F.adjust_saturation(image, saturation_factor=1.0 + magnitude)
         elif transform_id == "Contrast":
             return F.adjust_contrast(image, contrast_factor=1.0 + magnitude)
         elif transform_id == "Sharpness":
-            return self._dispatch_image_kernels(
-                F.adjust_sharpness_image_tensor,
-                F.adjust_sharpness_image_pil,
-                image,
-                sharpness_factor=1.0 + magnitude,
-            )
+            return F.adjust_sharpness(image, sharpness_factor=1.0 + magnitude)
         elif transform_id == "Posterize":
-            return self._dispatch_image_kernels(
-                F.posterize_image_tensor, F.posterize_image_pil, image, bits=int(magnitude)
-            )
+            return F.posterize(image, bits=int(magnitude))
         elif transform_id == "Solarize":
-            return self._dispatch_image_kernels(
-                F.solarize_image_tensor, F.solarize_image_pil, image, threshold=magnitude
-            )
+            return F.solarize(image, threshold=magnitude)
         elif transform_id == "AutoContrast":
-            return self._dispatch_image_kernels(F.autocontrast_image_tensor, F.autocontrast_image_pil, image)
+            return F.autocontrast(image)
         elif transform_id == "Equalize":
-            return self._dispatch_image_kernels(F.equalize_image_tensor, F.equalize_image_pil, image)
+            return F.equalize(image)
         elif transform_id == "Invert":
-            return self._dispatch_image_kernels(F.invert_image_tensor, F.invert_image_pil, image)
+            return F.invert(image)
         else:
             raise ValueError(f"No transform available for {transform_id}")
 

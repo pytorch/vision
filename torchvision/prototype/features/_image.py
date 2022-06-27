@@ -162,16 +162,48 @@ class Image(_Feature):
         )
         return Image.new_like(self, output)
 
-    def adjust_brightness(self, brightness_factor) -> Image:
+    def adjust_brightness(self, brightness_factor: float) -> Image:
         output = self._F.adjust_brightness_image_tensor(self, brightness_factor=brightness_factor)
         return Image.new_like(self, output)
 
-    def adjust_saturation(self, saturation_factor) -> Image:
+    def adjust_saturation(self, saturation_factor: float) -> Image:
         output = self._F.adjust_saturation_image_tensor(self, saturation_factor=saturation_factor)
         return Image.new_like(self, output)
 
-    def adjust_contrast(self, contrast_factor) -> Image:
+    def adjust_contrast(self, contrast_factor: float) -> Image:
         output = self._F.adjust_contrast_image_tensor(self, contrast_factor=contrast_factor)
+        return Image.new_like(self, output)
+
+    def adjust_sharpness(self, sharpness_factor: float) -> Image:
+        output = self._F.adjust_sharpness_image_tensor(self, sharpness_factor=sharpness_factor)
+        return Image.new_like(self, output)
+
+    def adjust_hue(self, hue_factor: float) -> Image:
+        output = self._F.adjust_hue_image_tensor(self, hue_factor=hue_factor)
+        return Image.new_like(self, output)
+
+    def adjust_gamma(self, gamma: float, gain: float = 1) -> Image:
+        output = self._F.adjust_gamma_image_tensor(self, gamma=gamma, gain=gain)
+        return Image.new_like(self, output)
+
+    def posterize(self, bits: int) -> Image:
+        output = self._F.posterize_image_tensor(self, bits=bits)
+        return Image.new_like(self, output)
+
+    def solarize(self, threshold: float) -> Image:
+        output = self._F.solarize_image_tensor(self, threshold=threshold)
+        return Image.new_like(self, output)
+
+    def autocontrast(self) -> Image:
+        output = self._F.autocontrast_image_tensor(self)
+        return Image.new_like(self, output)
+
+    def equalize(self) -> Image:
+        output = self._F.equalize_image_tensor(self)
+        return Image.new_like(self, output)
+
+    def invert(self) -> Image:
+        output = self._F.invert_image_tensor(self)
         return Image.new_like(self, output)
 
     def erase(self, i, j, h, w, v) -> Image:

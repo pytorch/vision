@@ -347,7 +347,8 @@ def affine_segmentation_mask(
 
 def affine(
     inpt: Any,
-    angle: float, *,
+    angle: float,
+    *,
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -445,7 +446,8 @@ def rotate_segmentation_mask(
     )
 
 
-def rotate(inpt: Any,
+def rotate(
+    inpt: Any,
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,

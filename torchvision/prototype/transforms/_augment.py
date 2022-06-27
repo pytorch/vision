@@ -97,12 +97,20 @@ class RandomErasing(_RandomApplyTransform):
             return inpt
 
 
-class RandomMixup(Transform):
+class _BaseMixupCutmix(Transform):
     def __init__(self, *, alpha: float) -> None:
         super().__init__()
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
+    def forward(self, *inpts: Any) -> Any:
+        sample = inpts if len(inpts) > 1 else inpts[0]
+        if not has_all(sample, features.Image, features.OneHotLabel):
+            raise TypeError(f"{type(self).__name__}() is only defined for Image's *and* OneHotLabel's.")
+        return super().forward(sample)
+
+
+class RandomMixup(_BaseMixupCutmix):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))
 
@@ -112,19 +120,8 @@ class RandomMixup(Transform):
         else:
             return inpt
 
-    def forward(self, *inpts: Any) -> Any:
-        sample = inpts if len(inpts) > 1 else inpts[0]
-        if not has_all(sample, features.Image, features.OneHotLabel):
-            raise TypeError(f"{type(self).__name__}() is only defined for Image's *and* OneHotLabel's.")
-        return super().forward(sample)
 
-
-class RandomCutmix(Transform):
-    def __init__(self, *, alpha: float) -> None:
-        super().__init__()
-        self.alpha = alpha
-        self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
-
+class RandomCutmix(_BaseMixupCutmix):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
@@ -153,9 +150,3 @@ class RandomCutmix(Transform):
             return inpt.cutmix(**params)
         else:
             return inpt
-
-    def forward(self, *inpts: Any) -> Any:
-        sample = inpts if len(inpts) > 1 else inpts[0]
-        if not has_all(sample, features.Image, features.OneHotLabel):
-            raise TypeError(f"{type(self).__name__}() is only defined for Image's *and* OneHotLabel's.")
-        return super().forward(sample)

@@ -131,17 +131,57 @@ class _Feature(torch.Tensor):
         # How dangerous to do this instead of raising an error ?
         return self
 
-    def adjust_brightness(self, brightness_factor):
+    def adjust_brightness(self, brightness_factor: float):
         # Just output itself
         # How dangerous to do this instead of raising an error ?
         return self
 
-    def adjust_saturation(self, saturation_factor):
+    def adjust_saturation(self, saturation_factor: float):
         # Just output itself
         # How dangerous to do this instead of raising an error ?
         return self
 
-    def adjust_contrast(self, contrast_factor):
+    def adjust_contrast(self, contrast_factor: float):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_sharpness(self, sharpness_factor: float):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_hue(self, hue_factor: float):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_gamma(self, gamma: float, gain: float = 1):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def posterize(self, bits: int):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def solarize(self, threshold: float):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def autocontrast(self):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def equalize(self):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def equalize(self):
         # Just output itself
         # How dangerous to do this instead of raising an error ?
         return self
