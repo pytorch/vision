@@ -22,12 +22,12 @@ class ColorJitter(Transform):
         hue: Optional[Union[float, Sequence[float]]] = None,
     ) -> None:
         super().__init__()
-        self.brightness = self._check_inpt(brightness, "brightness")
-        self.contrast = self._check_inpt(contrast, "contrast")
-        self.saturation = self._check_inpt(saturation, "saturation")
-        self.hue = self._check_inpt(hue, "hue", center=0, bound=(-0.5, 0.5), clip_first_on_zero=False)
+        self.brightness = self._check_input(brightness, "brightness")
+        self.contrast = self._check_input(contrast, "contrast")
+        self.saturation = self._check_input(saturation, "saturation")
+        self.hue = self._check_input(hue, "hue", center=0, bound=(-0.5, 0.5), clip_first_on_zero=False)
 
-    def _check_inpt(
+    def _check_input(
         self,
         value: Optional[Union[float, Sequence[float]]],
         name: str,
