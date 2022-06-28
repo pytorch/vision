@@ -471,6 +471,9 @@ def resize(
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.resize(img, size=output_size, interpolation=pil_interpolation)
 
+    if antialias is None:
+        antialias = False
+
     return F_t.resize(img, size=output_size, interpolation=interpolation.value, antialias=antialias)
 
 
