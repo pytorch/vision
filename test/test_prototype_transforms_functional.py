@@ -489,14 +489,38 @@ def center_crop_segmentation_mask():
         and callable(kernel)
         and any(feature_type in name for feature_type in {"image", "segmentation_mask", "bounding_box", "label"})
         and "pil" not in name
-        and name
-        not in {
-            "to_image_tensor",
-        }
+        and name not in {"to_image_tensor"}
     ],
 )
 def test_scriptable(kernel):
     jit.script(kernel)
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        pytest.param(func, id=name)
+        for name, func in F.__dict__.items()
+        if not name.startswith("_")
+        and callable(func)
+        and all(
+            feature_type not in name for feature_type in {"image", "segmentation_mask", "bounding_box", "label", "pil"}
+        )
+        and name not in {"to_image_tensor", "InterpolationMode", "decode_video_with_av"}
+    ],
+)
+def test_functional_mid_level(func):
+    finfos = [finfo for finfo in FUNCTIONAL_INFOS if f"{func.__name__}_" in finfo.name]
+    for finfo in finfos:
+        for sample_input in finfo.sample_inputs():
+            expected = finfo(sample_input)
+            kwargs = dict(sample_input.kwargs)
+            for key in ["format", "image_size"]:
+                if key in kwargs:
+                    del kwargs[key]
+            output = func(*sample_input.args, **kwargs)
+            torch.testing.assert_close(output, expected, msg=f"finfo={finfo}, output={output}, expected={expected}")
+            break
 
 
 @pytest.mark.parametrize(

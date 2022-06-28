@@ -369,7 +369,6 @@ def affine_segmentation_mask(
 def affine(
     inpt: Any,
     angle: float,
-    *,
     translate: List[float],
     scale: float,
     shear: List[float],

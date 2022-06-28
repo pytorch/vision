@@ -81,7 +81,7 @@ class BoundingBox(_Feature):
     def resize(self, size, *, interpolation, max_size, antialias) -> BoundingBox:
         interpolation, antialias  # unused
         output = self._F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
-        return BoundingBox.new_like(self, output, image_size=size)
+        return BoundingBox.new_like(self, output, image_size=size, dtype=output.dtype)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
         output = self._F.crop_bounding_box(self, self.format, top, left)
@@ -94,10 +94,9 @@ class BoundingBox(_Feature):
         return BoundingBox.new_like(self, output, image_size=output_size)
 
     def resized_crop(self, top, left, height, width, *, size, interpolation, antialias) -> BoundingBox:
-        # TODO: untested right now
         interpolation, antialias  # unused
         output = self._F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
-        return BoundingBox.new_like(self, output, image_size=size)
+        return BoundingBox.new_like(self, output, image_size=size, dtype=output.dtype)
 
     def pad(self, padding, *, fill, padding_mode) -> BoundingBox:
         fill  # unused
@@ -107,7 +106,10 @@ class BoundingBox(_Feature):
         output = self._F.pad_bounding_box(self, padding, format=self.format)
 
         # Update output image size:
-        left, top, right, bottom = padding
+        # TODO: remove the import below and make _parse_pad_padding available
+        from torchvision.transforms.functional_tensor import _parse_pad_padding
+
+        left, top, right, bottom = _parse_pad_padding(padding)
         height, width = self.image_size
         height += top + bottom
         width += left + right
@@ -122,24 +124,26 @@ class BoundingBox(_Feature):
         # TODO: update output image size if expand is True
         if expand:
             raise RuntimeError("Not yet implemented")
-        return BoundingBox.new_like(self, output)
+        return BoundingBox.new_like(self, output, dtype=output.dtype)
 
     def affine(self, angle, *, translate, scale, shear, interpolation, fill, center) -> BoundingBox:
         interpolation, fill  # unused
         output = self._F.affine_bounding_box(
             self,
+            self.format,
+            self.image_size,
             angle,
             translate=translate,
             scale=scale,
             shear=shear,
             center=center,
         )
-        return BoundingBox.new_like(self, output)
+        return BoundingBox.new_like(self, output, dtype=output.dtype)
 
     def perspective(self, perspective_coeffs, *, interpolation, fill) -> BoundingBox:
         interpolation, fill  # unused
         output = self._F.perspective_bounding_box(self, self.format, perspective_coeffs)
-        return BoundingBox.new_like(self, output)
+        return BoundingBox.new_like(self, output, dtype=output.dtype)
 
     def erase(self, *args) -> BoundingBox:
         raise TypeError("Erase transformation does not support bounding boxes")
