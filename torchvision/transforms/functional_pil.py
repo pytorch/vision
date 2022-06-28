@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from PIL import Image, ImageOps, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 from typing_extensions import Literal
 
 try:
@@ -249,7 +249,7 @@ def resize(
     if not (isinstance(size, list) and len(size) == 2):
         raise TypeError(f"Got inappropriate size arg: {size}")
 
-    return img.resize(size[::-1], interpolation)
+    return img.resize(tuple(size[::-1]), interpolation)
 
 
 @torch.jit.unused
