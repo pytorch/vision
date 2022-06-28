@@ -83,6 +83,10 @@ class BoundingBox(_Feature):
         output = self._F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
         return BoundingBox.new_like(self, output, image_size=size)
 
+    def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
+        output = self._F.crop_bounding_box(self, self.format, top, left)
+        return BoundingBox.new_like(self, output, image_size=(height, width))
+
     def center_crop(self, output_size) -> BoundingBox:
         output = self._F.center_crop_bounding_box(
             self, format=self.format, output_size=output_size, image_size=self.image_size
@@ -100,7 +104,7 @@ class BoundingBox(_Feature):
         if padding_mode not in ["constant"]:
             raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
 
-        output = self._F.pad_bounding_box(self, padding, fill=fill, padding_mode=padding_mode)
+        output = self._F.pad_bounding_box(self, padding, format=self.format)
 
         # Update output image size:
         left, top, right, bottom = padding
@@ -132,11 +136,16 @@ class BoundingBox(_Feature):
         )
         return BoundingBox.new_like(self, output)
 
+    def perspective(self, perspective_coeffs, *, interpolation, fill) -> BoundingBox:
+        interpolation, fill  # unused
+        output = self._F.perspective_bounding_box(self, self.format, perspective_coeffs)
+        return BoundingBox.new_like(self, output)
+
     def erase(self, *args) -> BoundingBox:
-        raise TypeError(f"Erase transformation does not support bounding boxes")
+        raise TypeError("Erase transformation does not support bounding boxes")
 
     def mixup(self, *args) -> BoundingBox:
-        raise TypeError(f"Mixup transformation does not support bounding boxes")
+        raise TypeError("Mixup transformation does not support bounding boxes")
 
     def cutmix(self, *args) -> BoundingBox:
-        raise TypeError(f"Cutmix transformation does not support bounding boxes")
+        raise TypeError("Cutmix transformation does not support bounding boxes")

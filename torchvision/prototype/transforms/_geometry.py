@@ -18,7 +18,7 @@ from torchvision.transforms.transforms import _setup_size, _setup_angle, _check_
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_image, get_image_dimensions, has_any, is_simple_tensor
+from ._utils import query_image, get_image_dimensions, has_any
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -46,30 +46,13 @@ class Resize(Transform):
         self.antialias = antialias
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.resize(
-                self.size,
-                interpolation=self.interpolation,
-                max_size=self.max_size,
-                antialias=self.antialias,
-            )
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.resize_image_pil(
-                inpt,
-                self.size,
-                interpolation=self.interpolation,
-                max_size=self.max_size,
-            )
-        elif isinstance(inpt, torch.Tensor):
-            return F.resize_image_tensor(
-                inpt,
-                self.size,
-                interpolation=self.interpolation,
-                max_size=self.max_size,
-                antialias=self.antialias,
-            )
-        else:
-            return inpt
+        return F.resize(
+            inpt,
+            self.size,
+            interpolation=self.interpolation,
+            max_size=self.max_size,
+            antialias=self.antialias,
+        )
 
 
 class CenterCrop(Transform):
@@ -78,14 +61,7 @@ class CenterCrop(Transform):
         self.output_size = output_size
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.center_crop(self.output_size)
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.center_crop_image_pil(inpt, self.output_size)
-        elif isinstance(inpt, torch.Tensor):
-            return F.center_crop_image_tensor(inpt, self.output_size)
-        else:
-            return inpt
+        return F.center_crop(inpt, output_size=self.output_size)
 
 
 class RandomResizedCrop(Transform):
@@ -158,18 +134,9 @@ class RandomResizedCrop(Transform):
         return dict(top=i, left=j, height=h, width=w)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            antialias = False if self.antialias is None else self.antialias
-            return inpt.resized_crop(**params, size=self.size, interpolation=self.interpolation, antialias=antialias)
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.resized_crop_image_pil(inpt, **params, size=list(self.size), interpolation=self.interpolation)
-        elif isinstance(inpt, torch.Tensor):
-            antialias = False if self.antialias is None else self.antialias
-            return F.resized_crop_image_tensor(
-                inpt, **params, size=list(self.size), interpolation=self.interpolation, antialias=antialias
-            )
-        else:
-            return inpt
+        return F.resized_crop(
+            inpt, **params, size=self.size, interpolation=self.interpolation, antialias=self.antialias
+        )
 
 
 class MultiCropResult(list):
@@ -286,28 +253,7 @@ class Pad(Transform):
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.pad(
-                self.padding,
-                fill=self.fill,
-                padding_mode=self.padding_mode,
-            )
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.pad_image_pil(
-                inpt,
-                self.padding,
-                fill=self.fill,
-                padding_mode=self.padding_mode,
-            )
-        elif isinstance(inpt, torch.Tensor):
-            return F.pad_image_tensor(
-                inpt,
-                self.padding,
-                fill=self.fill,
-                padding_mode=self.padding_mode,
-            )
-        else:
-            return inpt
+        return F.pad(inpt, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
 
 
 class RandomZoomOut(_RandomApplyTransform):
@@ -361,7 +307,7 @@ class RandomRotation(Transform):
         expand=False,
         fill=0,
         center=None,
-    ):
+    ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
         self.interpolation = interpolation
@@ -404,7 +350,7 @@ class RandomAffine(Transform):
         interpolation=InterpolationMode.NEAREST,
         fill=0,
         center=None,
-    ):
+    ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
         if translate is not None:

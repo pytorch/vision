@@ -9,7 +9,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_image, get_image_dimensions, has_all, has_any, is_simple_tensor
+from ._utils import query_image, get_image_dimensions, has_all
 
 
 class RandomErasing(_RandomApplyTransform):

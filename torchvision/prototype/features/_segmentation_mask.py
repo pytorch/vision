@@ -17,6 +17,10 @@ class SegmentationMask(_Feature):
         output = self._F.resize_segmentation_mask(self, size, max_size=max_size)
         return SegmentationMask.new_like(self, output)
 
+    def crop(self, top: int, left: int, height: int, width: int) -> SegmentationMask:
+        output = self._F.center_crop_segmentation_mask(self, top, left, height, width)
+        return SegmentationMask.new_like(self, output)
+
     def center_crop(self, output_size) -> SegmentationMask:
         output = self._F.center_crop_segmentation_mask(self, output_size=output_size)
         return SegmentationMask.new_like(self, output)
@@ -49,11 +53,16 @@ class SegmentationMask(_Feature):
         )
         return SegmentationMask.new_like(self, output)
 
+    def perspective(self, perspective_coeffs, *, interpolation, fill) -> SegmentationMask:
+        interpolation, fill  # unused
+        output = self._F.perspective_segmentation_mask(self, perspective_coeffs)
+        return SegmentationMask.new_like(self, output)
+
     def erase(self, *args) -> SegmentationMask:
-        raise TypeError(f"Erase transformation does not support segmentation masks")
+        raise TypeError("Erase transformation does not support segmentation masks")
 
     def mixup(self, *args) -> SegmentationMask:
-        raise TypeError(f"Mixup transformation does not support segmentation masks")
+        raise TypeError("Mixup transformation does not support segmentation masks")
 
     def cutmix(self, *args) -> SegmentationMask:
-        raise TypeError(f"Cutmix transformation does not support segmentation masks")
+        raise TypeError("Cutmix transformation does not support segmentation masks")

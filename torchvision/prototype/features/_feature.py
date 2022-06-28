@@ -106,6 +106,11 @@ class _Feature(torch.Tensor):
         # How dangerous to do this instead of raising an error ?
         return self
 
+    def crop(self, top: int, left: int, height: int, width: int):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
     def center_crop(self, output_size):
         # Just output itself
         # How dangerous to do this instead of raising an error ?
@@ -127,6 +132,11 @@ class _Feature(torch.Tensor):
         return self
 
     def affine(self, angle, *, translate, scale, shear, interpolation, fill, center):
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def perspective(self, perspective_coeffs, *, interpolation, fill):
         # Just output itself
         # How dangerous to do this instead of raising an error ?
         return self
@@ -172,11 +182,6 @@ class _Feature(torch.Tensor):
         return self
 
     def autocontrast(self):
-        # Just output itself
-        # How dangerous to do this instead of raising an error ?
-        return self
-
-    def equalize(self):
         # Just output itself
         # How dangerous to do this instead of raising an error ?
         return self

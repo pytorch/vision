@@ -124,6 +124,10 @@ class Image(_Feature):
         )
         return Image.new_like(self, output)
 
+    def crop(self, top: int, left: int, height: int, width: int) -> Image:
+        output = self._F.crop_image_tensor(self, top, left, height, width)
+        return Image.new_like(self, output)
+
     def center_crop(self, output_size) -> Image:
         output = self._F.center_crop_image_tensor(self, output_size=output_size)
         return Image.new_like(self, output)
@@ -160,6 +164,10 @@ class Image(_Feature):
             fill=fill,
             center=center,
         )
+        return Image.new_like(self, output)
+
+    def perspective(self, perspective_coeffs, *, interpolation, fill) -> Image:
+        output = self._F.perspective_image_tensor(self, perspective_coeffs, interpolation=interpolation, fill=fill)
         return Image.new_like(self, output)
 
     def adjust_brightness(self, brightness_factor: float) -> Image:
