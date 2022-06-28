@@ -1,9 +1,9 @@
 import numbers
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from PIL import Image, ImageOps, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 from typing_extensions import Literal
 
 try:
@@ -240,46 +240,16 @@ def crop(
 @torch.jit.unused
 def resize(
     img: Image.Image,
-    size: Union[Sequence[int], int],
+    size: Union[List[int], int],
     interpolation: int = _pil_constants.BILINEAR,
-    max_size: Optional[int] = None,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
-    if not (isinstance(size, int) or (isinstance(size, Sequence) and len(size) in (1, 2))):
+    if not (isinstance(size, list) and len(size) == 2):
         raise TypeError(f"Got inappropriate size arg: {size}")
 
-    if isinstance(size, Sequence) and len(size) == 1:
-        size = size[0]
-    if isinstance(size, int):
-        w, h = img.size
-
-        short, long = (w, h) if w <= h else (h, w)
-        new_short, new_long = size, int(size * long / short)
-
-        if max_size is not None:
-            if max_size <= size:
-                raise ValueError(
-                    f"max_size = {max_size} must be strictly greater than the requested "
-                    f"size for the smaller edge size = {size}"
-                )
-            if new_long > max_size:
-                new_short, new_long = int(max_size * new_short / new_long), max_size
-
-        new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
-
-        if (w, h) == (new_w, new_h):
-            return img
-        else:
-            return img.resize((new_w, new_h), interpolation)
-    else:
-        if max_size is not None:
-            raise ValueError(
-                "max_size should only be passed if size specifies the length of the smaller edge, "
-                "i.e. size should be an int or a sequence of length 1 in torchscript mode."
-            )
-        return img.resize(size[::-1], interpolation)
+    return img.resize(tuple(size[::-1]), interpolation)
 
 
 @torch.jit.unused

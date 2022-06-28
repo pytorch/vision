@@ -116,7 +116,9 @@ class FeatureEncoder(nn.Module):
     It must downsample its input by 8.
     """
 
-    def __init__(self, *, block=ResidualBlock, layers=(64, 64, 96, 128, 256), norm_layer=nn.BatchNorm2d):
+    def __init__(
+        self, *, block=ResidualBlock, layers=(64, 64, 96, 128, 256), strides=(2, 1, 2, 2), norm_layer=nn.BatchNorm2d
+    ):
         super().__init__()
 
         if len(layers) != 5:
@@ -124,12 +126,12 @@ class FeatureEncoder(nn.Module):
 
         # See note in ResidualBlock for the reason behind bias=True
         self.convnormrelu = Conv2dNormActivation(
-            3, layers[0], norm_layer=norm_layer, kernel_size=7, stride=2, bias=True
+            3, layers[0], norm_layer=norm_layer, kernel_size=7, stride=strides[0], bias=True
         )
 
-        self.layer1 = self._make_2_blocks(block, layers[0], layers[1], norm_layer=norm_layer, first_stride=1)
-        self.layer2 = self._make_2_blocks(block, layers[1], layers[2], norm_layer=norm_layer, first_stride=2)
-        self.layer3 = self._make_2_blocks(block, layers[2], layers[3], norm_layer=norm_layer, first_stride=2)
+        self.layer1 = self._make_2_blocks(block, layers[0], layers[1], norm_layer=norm_layer, first_stride=strides[1])
+        self.layer2 = self._make_2_blocks(block, layers[1], layers[2], norm_layer=norm_layer, first_stride=strides[2])
+        self.layer3 = self._make_2_blocks(block, layers[2], layers[3], norm_layer=norm_layer, first_stride=strides[3])
 
         self.conv = nn.Conv2d(layers[3], layers[4], kernel_size=1)
 

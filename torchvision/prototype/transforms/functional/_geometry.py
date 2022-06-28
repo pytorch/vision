@@ -6,7 +6,12 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
-from torchvision.transforms.functional import pil_modes_mapping, _get_inverse_affine_matrix, InterpolationMode
+from torchvision.transforms.functional import (
+    pil_modes_mapping,
+    _get_inverse_affine_matrix,
+    InterpolationMode,
+    _compute_output_size,
+)
 
 from ._meta import convert_bounding_box_format, get_dimensions_image_tensor, get_dimensions_image_pil
 
@@ -42,14 +47,13 @@ def resize_image_tensor(
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,
 ) -> torch.Tensor:
-    new_height, new_width = size
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
+    new_height, new_width = _compute_output_size((old_height, old_width), size=size, max_size=max_size)
     batch_shape = image.shape[:-3]
     return _FT.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
-        size=size,
+        size=[new_height, new_width],
         interpolation=interpolation.value,
-        max_size=max_size,
         antialias=antialias,
     ).reshape(batch_shape + (num_channels, new_height, new_width))
 
@@ -60,7 +64,12 @@ def resize_image_pil(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
-    return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation], max_size=max_size)
+    if isinstance(size, int):
+        size = [size, size]
+    # Explicitly cast size to list otherwise mypy issue: incompatible type "Sequence[int]"; expected "List[int]"
+    size: List[int] = list(size)
+    size = _compute_output_size(img.size[::-1], size=size, max_size=max_size)
+    return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation])
 
 
 def resize_segmentation_mask(
@@ -69,10 +78,11 @@ def resize_segmentation_mask(
     return resize_image_tensor(segmentation_mask, size=size, interpolation=InterpolationMode.NEAREST, max_size=max_size)
 
 
-# TODO: handle max_size
-def resize_bounding_box(bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int]) -> torch.Tensor:
+def resize_bounding_box(
+    bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int], max_size: Optional[int] = None
+) -> torch.Tensor:
     old_height, old_width = image_size
-    new_height, new_width = size
+    new_height, new_width = _compute_output_size(image_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
     return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
 
