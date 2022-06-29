@@ -458,7 +458,7 @@ jobs:
   binary_macos_wheel:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -481,7 +481,7 @@ jobs:
   binary_ios_build:
     <<: *torchvision_ios_params
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     steps:
     - attach_workspace:
         at: ~/workspace
@@ -501,7 +501,7 @@ jobs:
   binary_ios_upload:
     <<: *torchvision_ios_params
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     steps:
     - attach_workspace:
         at: ~/workspace
@@ -554,7 +554,7 @@ jobs:
   binary_macos_conda:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -901,7 +901,7 @@ jobs:
   unittest_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     resource_class: large
     steps:
       - checkout
@@ -977,7 +977,7 @@ jobs:
   cmake_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     steps:
       - checkout_merge
       - designate_upload_channel
