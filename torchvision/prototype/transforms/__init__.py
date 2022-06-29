@@ -8,6 +8,7 @@ from ._color import ColorJitter, RandomPhotometricDistort, RandomEqualize
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
     Resize,
+    RandomCrop,
     CenterCrop,
     RandomResizedCrop,
     FiveCrop,

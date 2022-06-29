@@ -139,11 +139,6 @@ class Image(_Feature):
         return Image.new_like(self, output)
 
     def pad(self, padding, *, fill, padding_mode) -> Image:
-        # Previous message from previous implementation:
-        # PyTorch's pad supports only integers on fill. So we need to overwrite the colour
-        # vfdev-5: pytorch pad support both int and floats but keeps original dtyp
-        # if user pads int image with float pad, they need to cast the image first to float
-        # before padding. Let's remove previous manual float fill support.
         output = self._F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
         return Image.new_like(self, output)
 

@@ -532,9 +532,9 @@ def pad(inpt: Any, padding: List[int], fill: int = 0, padding_mode: str = "const
     if isinstance(inpt, features._Feature):
         return inpt.pad(padding, **kwargs)
     elif isinstance(inpt, PIL.Image.Image):
-        return rotate_image_pil(inpt, padding, **kwargs)
+        return pad_image_pil(inpt, padding, **kwargs)
     elif isinstance(inpt, torch.Tensor):
-        return rotate_image_tensor(inpt, padding, **kwargs)
+        return pad_image_tensor(inpt, padding, **kwargs)
     else:
         return inpt
 

@@ -64,6 +64,84 @@ class CenterCrop(Transform):
         return F.center_crop(inpt, output_size=self.output_size)
 
 
+class RandomCrop(Transform):
+    def __init__(
+        self,
+        size: Union[int, Sequence[int]],
+        padding: Optional[Union[int, Sequence[int]]] = None,
+        pad_if_needed: bool = False,
+        fill: Union[float, Sequence[float]] = 0.0,
+        padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
+    ):
+        super().__init__()
+        self.size = tuple(_setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
+        self.padding = padding
+        self.pad_if_needed = pad_if_needed
+        self.fill = fill
+        self.padding_mode = padding_mode
+
+        self._pad_op = Pad(padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        # vfdev-5: techically, this op can work on bboxes/segm masks only inputs without image in samples
+        # What if we have multiple images/bboxes/masks of different sizes ?
+        # TODO: let's support bbox or mask in samples without image
+        image = query_image(sample)
+        _, height, width = get_image_dimensions(image)
+        out_height, out_width = self.size
+
+        if height + 1 < out_height or width + 1 < out_width:
+            raise ValueError(
+                f"Required crop size {(out_height, out_width)} is larger then input image size {(height, width)}"
+            )
+
+        if height == out_height and width == out_width:
+            return dict(top=0, left=0, height=height, width=width)
+
+        i = torch.randint(0, height - out_height + 1, size=(1,)).item()
+        j = torch.randint(0, width - out_width + 1, size=(1,)).item()
+        return dict(top=i, left=j, height=out_height, width=out_width)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.crop(inpt, **params)
+
+    def forward(self, *inputs: Any) -> Any:
+        # TODO: main difficulties implementing this op:
+        # 1) unstructured inputs and why we need to call: sample = inputs if len(inputs) > 1 else inputs[0] ?
+        # 2) how to call F.op efficiently on inputs ?
+        #
+        # We can make inputs flatten using from torch.utils._pytree import tree_flatten, tree_unflatten
+        # Such that inputs -> flat_inputs = [obj1, obj2, obj3, ...]
+
+        raise RuntimeError("Not yet implemented")
+
+        params = self._get_params(inputs)
+
+        # sample = inputs if len(inputs) > 1 else inputs[0]
+        # return apply_recursively(functools.partial(self._transform, params=self._get_params(sample)), sample)
+
+        if self.padding is not None:
+            self._pad_op.padding = self.padding
+            inputs = self._pad_op(*inputs)
+
+        # vfdev-5: techically, this op can work on bboxes/segm masks only inputs without image in samples
+        # What if we have multiple images/bboxes/masks of different sizes ?
+        # TODO: let's support bbox or mask in samples without image
+        image = query_image(inputs)
+        _, height, width = get_image_dimensions(image)
+
+        # pad the width if needed
+        if self.pad_if_needed and width < self.size[1]:
+            padding = [self.size[1] - width, 0]
+            img = F.pad(img, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
+        # pad the height if needed
+        if self.pad_if_needed and height < self.size[0]:
+            padding = [0, self.size[0] - height]
+            img = F.pad(img, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
+
+        return ...
+
+
 class RandomResizedCrop(Transform):
     def __init__(
         self,
@@ -270,7 +348,7 @@ class RandomZoomOut(_RandomApplyTransform):
         if side_range[0] < 1.0 or side_range[0] > side_range[1]:
             raise ValueError(f"Invalid canvas side range provided {side_range}.")
 
-        self.pad_op = Pad(0, padding_mode="constant")
+        self._pad_op = Pad(0, padding_mode="constant")
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
@@ -293,10 +371,11 @@ class RandomZoomOut(_RandomApplyTransform):
 
         return dict(padding=padding, fill=fill)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        self.pad_op.padding = params["padding"]
-        self.pad_op.fill = params["fill"]
-        return self.pad_op(inpt)
+    def forward(self, *inputs: Any) -> Any:
+        params = self._get_params(inputs)
+        self._pad_op.padding = params["padding"]
+        self._pad_op.fill = params["fill"]
+        return self._pad_op(*inputs)
 
 
 class RandomRotation(Transform):
