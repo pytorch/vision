@@ -1,8 +1,8 @@
-from typing import Any, cast, TypeVar, Union, Optional, Type, Callable, Tuple, Sequence, Mapping
+from typing import Any, cast, TypeVar, Union, Optional, Type, Callable, List, Tuple, Sequence, Mapping
 
 import torch
 from torch._C import _TensorBase, DisableTorchFunction
-
+from torchvision.transforms import InterpolationMode
 
 F = TypeVar("F", bound="_Feature")
 
@@ -16,7 +16,7 @@ class _Feature(torch.Tensor):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> F:
-        return cast(
+        feature = cast(
             F,
             torch.Tensor._make_subclass(
                 cast(_TensorBase, cls),
@@ -24,6 +24,13 @@ class _Feature(torch.Tensor):
                 requires_grad,
             ),
         )
+
+        # To avoid circular dependency between features and transforms
+        from ..transforms import functional
+
+        feature._F = functional  # type: ignore[attr-defined]
+
+        return feature
 
     @classmethod
     def new_like(
@@ -83,3 +90,159 @@ class _Feature(torch.Tensor):
             return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
         else:
             return output
+
+    def horizontal_flip(self) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def vertical_flip(self) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def resize(  # type: ignore[override]
+        self,
+        size: List[int],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        max_size: Optional[int] = None,
+        antialias: bool = False,
+    ) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def crop(self, top: int, left: int, height: int, width: int) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def center_crop(self, output_size: List[int]) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def resized_crop(
+        self,
+        top: int,
+        left: int,
+        height: int,
+        width: int,
+        size: List[int],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        antialias: bool = False,
+    ) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def pad(self, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def rotate(
+        self,
+        angle: float,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        expand: bool = False,
+        fill: Optional[List[float]] = None,
+        center: Optional[List[float]] = None,
+    ) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def affine(
+        self,
+        angle: float,
+        translate: List[float],
+        scale: float,
+        shear: List[float],
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+        center: Optional[List[float]] = None,
+    ) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def perspective(
+        self,
+        perspective_coeffs: List[float],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[List[float]] = None,
+    ) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_brightness(self, brightness_factor: float) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_saturation(self, saturation_factor: float) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_contrast(self, contrast_factor: float) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_sharpness(self, sharpness_factor: float) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_hue(self, hue_factor: float) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def adjust_gamma(self, gamma: float, gain: float = 1) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def posterize(self, bits: int) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def solarize(self, threshold: float) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def autocontrast(self) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def equalize(self) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def invert(self) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def mixup(self, lam: float) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
+
+    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> Any:
+        # Just output itself
+        # How dangerous to do this instead of raising an error ?
+        return self
