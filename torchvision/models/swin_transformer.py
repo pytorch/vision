@@ -160,7 +160,20 @@ def shifted_window_attention(
     return x
 
 
+def _fix_window_and_shift_size(
+    input_hw: List[int], window_size: List[int], shift_size: List[int]
+) -> Tuple[List[int], List[int]]:
+    # Handle case where window_size is larger than input tensor
+    # Reference on the original implementation: https://github.com/microsoft/Swin-Transformer/blob/main/models/swin_transformer.py#L192-L195
+    for i in range(2):
+        if input_hw[i] <= window_size[i]:
+            window_size[i] = input_hw[i]
+            shift_size[i] = 0
+    return window_size, shift_size
+
+
 torch.fx.wrap("shifted_window_attention")
+torch.fx.wrap("_fix_window_and_shift_size")
 
 
 class ShiftedWindowAttention(nn.Module):
@@ -218,8 +231,12 @@ class ShiftedWindowAttention(nn.Module):
         Returns:
             Tensor with same layout as input, i.e. [B, H, W, C]
         """
+        _, H, W, _ = x.shape
+        input_hw = [H, W]
+        # Handle case where the window_size is larger than the input
+        window_size, shift_size = _fix_window_and_shift_size(input_hw, self.window_size, self.shift_size)
 
-        N = self.window_size[0] * self.window_size[1]
+        N = window_size[0] * window_size[1]
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index]  # type: ignore[index]
         relative_position_bias = relative_position_bias.view(N, N, -1)
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous().unsqueeze(0)
@@ -229,9 +246,9 @@ class ShiftedWindowAttention(nn.Module):
             self.qkv.weight,
             self.proj.weight,
             relative_position_bias,
-            self.window_size,
+            window_size,
             self.num_heads,
-            shift_size=self.shift_size,
+            shift_size=shift_size,
             attention_dropout=self.attention_dropout,
             dropout=self.dropout,
             qkv_bias=self.qkv.bias,
