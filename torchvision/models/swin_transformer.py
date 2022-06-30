@@ -161,15 +161,17 @@ def shifted_window_attention(
 
 
 def _fix_window_and_shift_size(
-    input_hw: List[int], window_size: List[int], shift_size: List[int]
+    input_size: List[int], window_size: List[int], shift_size: List[int]
 ) -> Tuple[List[int], List[int]]:
     # Handle case where window_size is larger than input tensor
     # Reference on the original implementation: https://github.com/microsoft/Swin-Transformer/blob/main/models/swin_transformer.py#L192-L195
-    for i in range(2):
-        if input_hw[i] <= window_size[i]:
-            window_size[i] = input_hw[i]
-            shift_size[i] = 0
-    return window_size, shift_size
+    updated_window_size = window_size.copy()
+    updated_shift_size = shift_size.copy()
+    for i in range(len(input_size)):
+        if input_size[i] <= window_size[i]:
+            updated_window_size[i] = input_size[i]
+            updated_shift_size[i] = 0
+    return updated_window_size, updated_shift_size
 
 
 torch.fx.wrap("shifted_window_attention")
@@ -374,7 +376,7 @@ class SwinTransformer(nn.Module):
         # build SwinTransformer blocks
         for i_stage in range(len(depths)):
             stage: List[nn.Module] = []
-            dim = embed_dim * 2**i_stage
+            dim = embed_dim * 2 ** i_stage
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
