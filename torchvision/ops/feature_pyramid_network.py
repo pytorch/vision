@@ -81,10 +81,9 @@ class FeaturePyramidNetwork(nn.Module):
         x = list(x.values())
 
         last_inner = self.inner_blocks[-1](x[-1])
-        results = []
-        results.append(self.layer_blocks[-1](last_inner))
+        results = [self.layer_blocks[-1](last_inner)]
         for feature, inner_block, layer_block in zip(
-            x[:-1][::-1], self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]
+                x[:-1][::-1], self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]
         ):
             if not inner_block:
                 continue
@@ -118,6 +117,7 @@ class ExtraFPNBlock(nn.Module):
             of the FPN
         names (List[str]): the extended set of names for the results
     """
+
     def forward(self, results, x, names):
         pass
 
@@ -126,6 +126,7 @@ class LastLevelMaxPool(ExtraFPNBlock):
     """
     Applies a max_pool2d on top of the last feature map
     """
+
     def forward(self, x, y, names):
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))
@@ -136,6 +137,7 @@ class LastLevelP6P7(ExtraFPNBlock):
     """
     This module is used in RetinaNet to generate extra layers, P6 and P7.
     """
+
     def __init__(self, in_channels, out_channels):
         super(LastLevelP6P7, self).__init__()
         self.p6 = nn.Conv2d(in_channels, out_channels, 3, 2, 1)
@@ -153,6 +155,7 @@ class LastLevelP6P7(ExtraFPNBlock):
         p.extend([p6, p7])
         names.extend(["p6", "p7"])
         return p, names
+
 
 class TwoSidesFeaturePyramidNetwork(nn.Module):
     """
@@ -200,16 +203,14 @@ class TwoSidesFeaturePyramidNetwork(nn.Module):
         x = list(x.values())
 
         # bottom up path:
-        parallel_pyramid = []
-        parallel_pyramid.append(self.inner_blocks_1[0](x[0]))
+        parallel_pyramid = [self.inner_blocks_1[0](x[0])]
 
         for i in range(1, len(x)):
             down_sampled = F.max_pool2d(parallel_pyramid[-1], 2)
             parallel_pyramid.append(self.inner_blocks_1[i](x[i]) + down_sampled)
 
         last_inner = self.inner_blocks[-1](x[-1])
-        results = []
-        results.append(self.layer_blocks[-1](last_inner + parallel_pyramid[-1]))
+        results = [self.layer_blocks[-1](last_inner + parallel_pyramid[-1])]
         for i in reversed(range(len(x) - 1)):
             inner_lateral = self.inner_blocks[i](x[i])
             feat_shape = inner_lateral.shape[-2:]
@@ -224,8 +225,6 @@ class TwoSidesFeaturePyramidNetwork(nn.Module):
         out = OrderedDict([(k, v) for k, v in zip(names, results)])
 
         return out
-
-
 
 
 class FeaturePyramidNetworkLateFusion(nn.Module):
@@ -273,7 +272,7 @@ class FeaturePyramidNetworkLateFusion(nn.Module):
         for in_channels in in_channels_list:
             if in_channels == 0:
                 continue
-            inner_block_module = nn.Conv2d(2*in_channels, out_channels, 1)
+            inner_block_module = nn.Conv2d(2 * in_channels, out_channels, 1)
             layer_block_module = nn.Conv2d(out_channels, out_channels, 3, padding=1)
             self.inner_blocks.append(inner_block_module)
             self.layer_blocks.append(layer_block_module)
@@ -304,10 +303,9 @@ class FeaturePyramidNetworkLateFusion(nn.Module):
         x = list(x.values())
 
         last_inner = self.inner_blocks[-1](x[-1])
-        results = []
-        results.append(self.layer_blocks[-1](last_inner))
+        results = [self.layer_blocks[-1](last_inner)]
         for feature, inner_block, layer_block in zip(
-            x[:-1][::-1], self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]
+                x[:-1][::-1], self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]
         ):
             if not inner_block:
                 continue
