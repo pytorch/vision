@@ -136,7 +136,7 @@ class _Feature(torch.Tensor):
         # How dangerous to do this instead of raising an error ?
         return self
 
-    def pad(self, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Any:
+    def pad(self, padding: List[int], fill: Union[float, Sequence[float]] = 0, padding_mode: str = "constant") -> Any:
         # Just output itself
         # How dangerous to do this instead of raising an error ?
         return self

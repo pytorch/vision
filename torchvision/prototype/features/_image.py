@@ -163,10 +163,17 @@ class Image(_Feature):
         )
         return Image.new_like(self, output)
 
-    def pad(self, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Image:
+    def pad(self, padding: List[int], fill: Union[float, List[float]] = 0.0, padding_mode: str = "constant") -> Image:
         from torchvision.prototype.transforms import functional as _F
 
-        output = _F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
+        # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
+        if isinstance(fill, (int, float)):
+            output = _F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
+        else:
+            from torchvision.prototype.transforms.functional._geometry import _pad_with_vector_fill
+
+            output = _pad_with_vector_fill(self, padding, fill=fill, padding_mode=padding_mode)
+
         return Image.new_like(self, output)
 
     def rotate(

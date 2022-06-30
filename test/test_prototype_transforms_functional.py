@@ -427,6 +427,17 @@ def resized_crop_segmentation_mask():
 
 
 @register_kernel_info_from_sample_inputs_fn
+def pad_image_tensor():
+    for image, padding, fill, padding_mode in itertools.product(
+        make_images(),
+        [[1], [1, 1], [1, 1, 2, 2]],  # padding
+        [12],  # fill
+        ["constant", "symmetric", "edge", "reflect"],  # padding mode,
+    ):
+        yield SampleInput(image, padding=padding, fill=fill, padding_mode=padding_mode)
+
+
+@register_kernel_info_from_sample_inputs_fn
 def pad_segmentation_mask():
     for mask, padding, padding_mode in itertools.product(
         make_segmentation_masks(),

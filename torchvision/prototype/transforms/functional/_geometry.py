@@ -503,8 +503,43 @@ def rotate(
         return inpt
 
 
-pad_image_tensor = _FT.pad
 pad_image_pil = _FP.pad
+
+
+def pad_image_tensor(
+    img: torch.Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant"
+) -> torch.Tensor:
+    num_masks, height, width = img.shape[-3:]
+    extra_dims = img.shape[:-3]
+
+    padded_image = _FT.pad(
+        img=img.view(-1, num_masks, height, width), padding=padding, fill=fill, padding_mode=padding_mode
+    )
+
+    new_height, new_width = padded_image.shape[-2:]
+    return padded_image.view(extra_dims + (num_masks, new_height, new_width))
+
+
+# TODO: This should be removed once pytorch pad supports non-scalar padding values
+def _pad_with_vector_fill(
+    img: torch.Tensor, padding: List[int], fill: Union[float, List[float]] = 0.0, padding_mode: str = "constant"
+):
+    if padding_mode != "constant":
+        raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
+
+    output = pad_image_tensor(img, padding, fill=0, padding_mode="constant")
+    left, top, right, bottom = padding
+    fill = torch.tensor(fill, dtype=img.dtype, device=img.device).view(-1, 1, 1)
+
+    if top > 0:
+        output[..., :top, :] = fill
+    if left > 0:
+        output[..., :, :left] = fill
+    if bottom > 0:
+        output[..., -bottom:, :] = fill
+    if right > 0:
+        output[..., :, -right:] = fill
+    return output
 
 
 def pad_segmentation_mask(
@@ -537,13 +572,19 @@ def pad_bounding_box(
     return bounding_box
 
 
-def pad(inpt: Any, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Any:
+def pad(
+    inpt: Any, padding: List[int], fill: Union[float, Sequence[float]] = 0.0, padding_mode: str = "constant"
+) -> Any:
     if isinstance(inpt, features._Feature):
         return inpt.pad(padding, fill=fill, padding_mode=padding_mode)
     elif isinstance(inpt, PIL.Image.Image):
         return pad_image_pil(inpt, padding, fill=fill, padding_mode=padding_mode)
     elif isinstance(inpt, torch.Tensor):
-        return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
+        # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
+        if isinstance(fill, (int, float)):
+            return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
+        else:
+            return _pad_with_vector_fill(inpt, padding, fill=fill, padding_mode=padding_mode)
     else:
         return inpt
 
