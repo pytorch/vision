@@ -3,7 +3,6 @@ import math
 import torch
 from torch.jit.annotations import List, Tuple
 from torch import Tensor
-import torchvision
 
 
 class BalancedPositiveNegativeSampler(object):

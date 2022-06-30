@@ -16,8 +16,8 @@ from torch.utils.hipify import hipify_python
 
 def read(*names, **kwargs):
     with io.open(
-        os.path.join(os.path.dirname(__file__), *names),
-        encoding=kwargs.get("encoding", "utf8")
+            os.path.join(os.path.dirname(__file__), *names),
+            encoding=kwargs.get("encoding", "utf8")
     ) as fp:
         return fp.read()
 
@@ -29,9 +29,9 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.8.0a0'
+version = '1.0.0'
 sha = 'Unknown'
-package_name = 'torchvision'
+package_name = 'bo-torchvision'
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 
