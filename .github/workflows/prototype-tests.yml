@@ -41,4 +41,4 @@ jobs:
 
       - name: Run prototype tests
         shell: bash
-        run: pytest --durations=20 test/test_prototype_*.py
+        run: pytest -vvv --durations=20 test/test_prototype_*.py

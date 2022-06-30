@@ -26,9 +26,9 @@ class _Feature(torch.Tensor):
         )
 
         # To avoid circular dependency between features and transforms
-        from ..transforms import functional
-
-        feature._F = functional  # type: ignore[attr-defined]
+        # This does not work with dataloader multi-worker setup
+        # from torchvision.prototype.transforms import functional
+        # setattr(feature, "_F", functional)  # type: ignore[attr-defined]
 
         return feature
 

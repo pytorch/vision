@@ -10,11 +10,15 @@ from ._feature import _Feature
 
 class SegmentationMask(_Feature):
     def horizontal_flip(self) -> SegmentationMask:
-        output = self._F.horizontal_flip_segmentation_mask(self)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.horizontal_flip_segmentation_mask(self)
         return SegmentationMask.new_like(self, output)
 
     def vertical_flip(self) -> SegmentationMask:
-        output = self._F.vertical_flip_segmentation_mask(self)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.vertical_flip_segmentation_mask(self)
         return SegmentationMask.new_like(self, output)
 
     def resize(  # type: ignore[override]
@@ -24,15 +28,21 @@ class SegmentationMask(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> SegmentationMask:
-        output = self._F.resize_segmentation_mask(self, size, max_size=max_size)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.resize_segmentation_mask(self, size, max_size=max_size)
         return SegmentationMask.new_like(self, output)
 
     def crop(self, top: int, left: int, height: int, width: int) -> SegmentationMask:
-        output = self._F.center_crop_segmentation_mask(self, top, left, height, width)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.crop_segmentation_mask(self, top, left, height, width)
         return SegmentationMask.new_like(self, output)
 
     def center_crop(self, output_size: List[int]) -> SegmentationMask:
-        output = self._F.center_crop_segmentation_mask(self, output_size=output_size)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.center_crop_segmentation_mask(self, output_size=output_size)
         return SegmentationMask.new_like(self, output)
 
     def resized_crop(
@@ -45,11 +55,15 @@ class SegmentationMask(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = False,
     ) -> SegmentationMask:
-        output = self._F.resized_crop_segmentation_mask(self, top, left, height, width, size=size)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.resized_crop_segmentation_mask(self, top, left, height, width, size=size)
         return SegmentationMask.new_like(self, output)
 
     def pad(self, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> SegmentationMask:
-        output = self._F.pad_segmentation_mask(self, padding, padding_mode=padding_mode)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.pad_segmentation_mask(self, padding, padding_mode=padding_mode)
         return SegmentationMask.new_like(self, output)
 
     def rotate(
@@ -60,7 +74,9 @@ class SegmentationMask(_Feature):
         fill: Optional[List[float]] = None,
         center: Optional[List[float]] = None,
     ) -> SegmentationMask:
-        output = self._F.rotate_segmentation_mask(self, angle, expand=expand, center=center)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.rotate_segmentation_mask(self, angle, expand=expand, center=center)
         return SegmentationMask.new_like(self, output)
 
     def affine(
@@ -73,7 +89,9 @@ class SegmentationMask(_Feature):
         fill: Optional[List[float]] = None,
         center: Optional[List[float]] = None,
     ) -> SegmentationMask:
-        output = self._F.affine_segmentation_mask(  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.affine_segmentation_mask(
             self,
             angle,
             translate=translate,
@@ -89,7 +107,9 @@ class SegmentationMask(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[List[float]] = None,
     ) -> SegmentationMask:
-        output = self._F.perspective_segmentation_mask(self, perspective_coeffs)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.perspective_segmentation_mask(self, perspective_coeffs)
         return SegmentationMask.new_like(self, output)
 
     def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> SegmentationMask:

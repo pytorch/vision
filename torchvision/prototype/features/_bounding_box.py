@@ -72,11 +72,15 @@ class BoundingBox(_Feature):
         )
 
     def horizontal_flip(self) -> BoundingBox:
-        output = self._F.horizontal_flip_bounding_box(self, format=self.format, image_size=self.image_size)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.horizontal_flip_bounding_box(self, format=self.format, image_size=self.image_size)
         return BoundingBox.new_like(self, output)
 
     def vertical_flip(self) -> BoundingBox:
-        output = self._F.vertical_flip_bounding_box(self, format=self.format, image_size=self.image_size)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.vertical_flip_bounding_box(self, format=self.format, image_size=self.image_size)
         return BoundingBox.new_like(self, output)
 
     def resize(  # type: ignore[override]
@@ -86,17 +90,22 @@ class BoundingBox(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> BoundingBox:
-        # interpolation, antialias  # unused
-        output = self._F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
         image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
         return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
-        output = self._F.crop_bounding_box(self, self.format, top, left)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.crop_bounding_box(self, self.format, top, left)
         return BoundingBox.new_like(self, output, image_size=(height, width))
 
     def center_crop(self, output_size: List[int]) -> BoundingBox:
-        output = self._F.center_crop_bounding_box(  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.center_crop_bounding_box(
             self, format=self.format, output_size=output_size, image_size=self.image_size
         )
         image_size = (output_size[0], output_size[0]) if len(output_size) == 1 else (output_size[0], output_size[1])
@@ -112,16 +121,19 @@ class BoundingBox(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = False,
     ) -> BoundingBox:
-        output = self._F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
         image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
         return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
 
     def pad(self, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> BoundingBox:
-        # fill  # unused
+        from torchvision.prototype.transforms import functional as _F
+
         if padding_mode not in ["constant"]:
             raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
 
-        output = self._F.pad_bounding_box(self, padding, format=self.format)  # type: ignore[attr-defined]
+        output = _F.pad_bounding_box(self, padding, format=self.format)
 
         # Update output image size:
         # TODO: remove the import below and make _parse_pad_padding available
@@ -142,7 +154,9 @@ class BoundingBox(_Feature):
         fill: Optional[List[float]] = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
-        output = self._F.rotate_bounding_box(  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.rotate_bounding_box(
             self, format=self.format, image_size=self.image_size, angle=angle, expand=expand, center=center
         )
         # TODO: update output image size if expand is True
@@ -160,7 +174,9 @@ class BoundingBox(_Feature):
         fill: Optional[List[float]] = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
-        output = self._F.affine_bounding_box(  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.affine_bounding_box(
             self,
             self.format,
             self.image_size,
@@ -178,7 +194,9 @@ class BoundingBox(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[List[float]] = None,
     ) -> BoundingBox:
-        output = self._F.perspective_bounding_box(self, self.format, perspective_coeffs)  # type: ignore[attr-defined]
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.perspective_bounding_box(self, self.format, perspective_coeffs)
         return BoundingBox.new_like(self, output, dtype=output.dtype)
 
     def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> BoundingBox:
