@@ -507,7 +507,7 @@ pad_image_pil = _FP.pad
 
 
 def pad_image_tensor(
-    img: torch.Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant"
+    img: torch.Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mode: str = "constant"
 ) -> torch.Tensor:
     num_masks, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
@@ -522,8 +522,11 @@ def pad_image_tensor(
 
 # TODO: This should be removed once pytorch pad supports non-scalar padding values
 def _pad_with_vector_fill(
-    img: torch.Tensor, padding: List[int], fill: Union[float, List[float]] = 0.0, padding_mode: str = "constant"
-):
+    img: torch.Tensor,
+    padding: List[int],
+    fill: Sequence[float] = [0.0],
+    padding_mode: str = "constant",
+) -> torch.Tensor:
     if padding_mode != "constant":
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
@@ -573,7 +576,7 @@ def pad_bounding_box(
 
 
 def pad(
-    inpt: Any, padding: List[int], fill: Union[float, Sequence[float]] = 0.0, padding_mode: str = "constant"
+    inpt: Any, padding: List[int], fill: Union[int, float, Sequence[float]] = 0.0, padding_mode: str = "constant"
 ) -> Any:
     if isinstance(inpt, features._Feature):
         return inpt.pad(padding, fill=fill, padding_mode=padding_mode)

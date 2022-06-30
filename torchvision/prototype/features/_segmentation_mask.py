@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Union, Sequence
 
 import torch
 from torchvision.transforms import InterpolationMode
@@ -60,7 +60,9 @@ class SegmentationMask(_Feature):
         output = _F.resized_crop_segmentation_mask(self, top, left, height, width, size=size)
         return SegmentationMask.new_like(self, output)
 
-    def pad(self, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> SegmentationMask:
+    def pad(
+        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+    ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.pad_segmentation_mask(self, padding, padding_mode=padding_mode)

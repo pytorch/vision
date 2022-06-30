@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Tuple, Union, Optional
+from typing import Any, List, Tuple, Union, Optional, Sequence
 
 import torch
 from torchvision._utils import StrEnum
@@ -127,7 +127,9 @@ class BoundingBox(_Feature):
         image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
         return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
 
-    def pad(self, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> BoundingBox:
+    def pad(
+        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+    ) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
 
         if padding_mode not in ["constant"]:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, List, Optional, Union, Tuple, cast
+from typing import Any, List, Optional, Union, Sequence, Tuple, cast
 
 import torch
 from torchvision._utils import StrEnum
@@ -163,7 +163,9 @@ class Image(_Feature):
         )
         return Image.new_like(self, output)
 
-    def pad(self, padding: List[int], fill: Union[float, List[float]] = 0.0, padding_mode: str = "constant") -> Image:
+    def pad(
+        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+    ) -> Image:
         from torchvision.prototype.transforms import functional as _F
 
         # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour

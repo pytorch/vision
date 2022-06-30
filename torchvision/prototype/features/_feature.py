@@ -119,7 +119,9 @@ class _Feature(torch.Tensor):
     ) -> Any:
         return self
 
-    def pad(self, padding: List[int], fill: Union[float, Sequence[float]] = 0, padding_mode: str = "constant") -> Any:
+    def pad(
+        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+    ) -> Any:
         return self
 
     def rotate(
