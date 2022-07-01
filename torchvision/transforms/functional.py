@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import List, Tuple, Any, Optional
+from typing import List, Tuple, Any, Optional, Union
 
 import numpy as np
 import torch
@@ -474,7 +474,7 @@ def resize(
     return F_t.resize(img, size=output_size, interpolation=interpolation.value, antialias=antialias)
 
 
-def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
+def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,
