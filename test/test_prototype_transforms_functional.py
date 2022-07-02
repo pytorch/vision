@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 import torch.testing
 import torchvision.prototype.transforms.functional as F
-from common_utils import cpu_and_gpu
 from torch import jit
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
@@ -14,6 +13,8 @@ from torchvision.prototype.transforms.functional._geometry import _center_crop_c
 from torchvision.prototype.transforms.functional._meta import convert_bounding_box_format
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
+
+from .common_utils import cpu_and_gpu
 
 make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
 

@@ -5,7 +5,12 @@ import numpy as np
 import pytest
 import torch
 import torchvision.transforms._pil_constants as _pil_constants
-from common_utils import (
+from torchvision import transforms as T
+from torchvision.transforms import InterpolationMode
+from torchvision.transforms import functional as F
+from torchvision.transforms.autoaugment import _apply_op
+
+from .common_utils import (
     get_tmp_dir,
     int_dtypes,
     float_dtypes,
@@ -16,10 +21,6 @@ from common_utils import (
     cpu_and_gpu,
     assert_equal,
 )
-from torchvision import transforms as T
-from torchvision.transforms import InterpolationMode
-from torchvision.transforms import functional as F
-from torchvision.transforms.autoaugment import _apply_op
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 

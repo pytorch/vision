@@ -13,7 +13,9 @@ import torchvision.transforms as T
 import torchvision.transforms.functional as F
 import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional_tensor as F_t
-from common_utils import (
+from torchvision.transforms import InterpolationMode
+
+from .common_utils import (
     cpu_and_gpu,
     needs_cuda,
     _create_data,
@@ -23,7 +25,6 @@ from common_utils import (
     _test_fn_on_batch,
     assert_equal,
 )
-from torchvision.transforms import InterpolationMode
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 

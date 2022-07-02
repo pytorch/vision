@@ -1,6 +1,5 @@
 import pytest
 import torch
-from common_utils import get_list_of_videos, assert_equal
 from torchvision import io
 from torchvision.datasets.samplers import (
     DistributedSampler,
@@ -8,6 +7,8 @@ from torchvision.datasets.samplers import (
     UniformClipSampler,
 )
 from torchvision.datasets.video_utils import VideoClips
+
+from .common_utils import get_list_of_videos, assert_equal
 
 
 @pytest.mark.skipif(not io.video._av_available(), reason="this test requires av")

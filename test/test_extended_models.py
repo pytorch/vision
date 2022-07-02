@@ -2,7 +2,7 @@ import importlib
 import os
 
 import pytest
-import test_models as TM
+import test.test_models as TM
 import torch
 from torchvision import models
 from torchvision.models._api import WeightsEnum, Weights

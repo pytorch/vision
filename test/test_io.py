@@ -6,8 +6,9 @@ import tempfile
 import pytest
 import torch
 import torchvision.io as io
-from common_utils import assert_equal
 from torchvision import get_video_backend
+
+from .common_utils import assert_equal
 
 
 try:

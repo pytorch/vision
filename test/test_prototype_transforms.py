@@ -2,10 +2,11 @@ import itertools
 
 import pytest
 import torch
-from common_utils import assert_equal
-from test_prototype_transforms_functional import make_images, make_bounding_boxes, make_one_hot_labels
 from torchvision.prototype import transforms, features
 from torchvision.transforms.functional import to_pil_image, pil_to_tensor
+
+from .common_utils import assert_equal
+from .test_prototype_transforms_functional import make_images, make_bounding_boxes, make_one_hot_labels
 
 
 def make_vanilla_tensor_images(*args, **kwargs):

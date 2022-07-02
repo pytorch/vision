@@ -4,7 +4,6 @@ from typing import List, Tuple
 
 import pytest
 import torch
-from common_utils import set_rng_seed, assert_equal
 from torchvision import models
 from torchvision import ops
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
@@ -13,6 +12,8 @@ from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.ops._register_onnx_ops import _onnx_opset_version
+
+from .common_utils import set_rng_seed, assert_equal
 
 # In environments without onnxruntime we prefer to
 # invoke all tests in the repo and have this one skipped rather than fail.

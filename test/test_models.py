@@ -13,9 +13,10 @@ import pytest
 import torch
 import torch.fx
 import torch.nn as nn
-from _utils_internal import get_relative_path
-from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 from torchvision import models
+
+from ._utils_internal import get_relative_path
+from .common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"

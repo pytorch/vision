@@ -14,12 +14,12 @@ import unittest
 import xml.etree.ElementTree as ET
 import zipfile
 
-import datasets_utils
 import numpy as np
 import PIL
 import pytest
 import torch
 import torch.nn.functional as F
+from test import datasets_utils
 from torchvision import datasets
 
 

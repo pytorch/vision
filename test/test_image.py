@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 import torch
 import torchvision.transforms.functional as F
-from common_utils import needs_cuda, assert_equal
 from PIL import Image, __version__ as PILLOW_VERSION
 from torchvision.io.image import (
     decode_png,
@@ -24,6 +23,8 @@ from torchvision.io.image import (
     read_image,
     _read_png_16,
 )
+
+from .common_utils import needs_cuda, assert_equal
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
