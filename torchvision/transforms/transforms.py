@@ -46,6 +46,7 @@ __all__ = [
     "RandomPerspective",
     "RandomErasing",
     "GaussianBlur",
+    "GaussianNoise",
     "InterpolationMode",
     "RandomInvert",
     "RandomPosterize",
@@ -1834,6 +1835,83 @@ class GaussianBlur(torch.nn.Module):
 
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}(kernel_size={self.kernel_size}, sigma={self.sigma})"
+        return s
+
+
+class GaussianNoise(torch.nn.Module):
+    """Adds Gaussian noise to the image with specified mean and standard deviation.
+        If the image is torch Tensor, it is expected
+        to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
+
+        Args:
+            mean (float or sequence): Mean of the sampling gaussian distribution .
+            sigma (float or tuple of float (min, max)): Standard deviation to be used for
+                sampling the gaussian noise. If float, sigma is fixed. If it is tuple
+                of float (min, max), sigma is chosen uniformly at random to lie in the
+                given range.
+            per_channel (bool): if set to True, noise will be sampled for each channel independently.
+            Otherwise, the noise will be sampled once for all channels. Default: True
+
+        Returns:
+            PIL Image or Tensor: Gaussian blurred version of the input image.
+
+        """
+    def __init__(self, mean, sigma=(0.1, 2.0), per_channel=True):
+        super().__init__()
+        _log_api_usage_once(self)
+
+        if mean < 0:
+            raise ValueError("Mean should be a positive number")
+
+        if isinstance(sigma, numbers.Number):
+            if sigma <= 0:
+                raise ValueError("If sigma is a single number, it must be positive.")
+            sigma = (sigma, sigma)
+        elif isinstance(sigma, Sequence) and len(sigma) == 2:
+            if not 0.0 < sigma[0] <= sigma[1]:
+                raise ValueError("sigma values should be positive and of the form (min, max).")
+        else:
+            raise ValueError("sigma should be a single number or a list/tuple with length 2.")
+
+        self.mean = mean
+        self.sigma = sigma
+        self.per_channel = per_channel
+
+    @staticmethod
+    def get_params(sigma_min: float, sigma_max: float) -> float:
+        return torch.empty(1).unifrom_(sigma_min, sigma_max).item()
+
+    def forward(self, image: Tensor) -> Tensor:
+        """
+        Args:
+            image (PIL Image or Tensor): image to be perturbed with gaussian noise.
+
+        Returns:
+            PIL Image or Tensor: Image added with gaussian noise.
+        """
+        if not isinstance(image, torch.Tensor):
+            if not F._is_pil_image(image):
+                raise TypeError(f"image should be PIL Image or Tensor. Got {type(image)}")
+
+            image = F.pil_to_tensor(image)
+
+        sigma = self.get_params(self.sigma[0], self.sigma[1])
+        if self.per_channel:
+            gaussian_noise = sigma * torch.randn(image.shape) + self.mean
+        else:
+            gaussian_noise = sigma * torch.randn(image.shape[-2:]) + self.mean
+            if len(image.shape) >= 3:
+                gaussian_noise = torch.unsqueeze(gaussian_noise, dim=1)
+
+        output = image + gaussian_noise
+
+        if not isinstance(image, torch.Tensor):
+            output = F.to_pil_image(output)
+
+        return output
+
+    def __repr__(self) -> str:
+        s = f"{self.__class__.__name__}(mean={self.mean}, sigma={self.sigma})"
         return s
 
 
