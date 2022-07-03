@@ -1840,23 +1840,22 @@ class GaussianBlur(torch.nn.Module):
 
 class GaussianNoise(torch.nn.Module):
     """Adds Gaussian noise to the image with specified mean and standard deviation.
-        If the image is torch Tensor, it is expected
-        to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If the image is torch Tensor, it is expected
+    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
-        Args:
-            mean (float or sequence): Mean of the sampling gaussian distribution .
-            sigma (float or tuple of float (min, max)): Standard deviation to be used for
-                sampling the gaussian noise. If float, sigma is fixed. If it is tuple
-                of float (min, max), sigma is chosen uniformly at random to lie in the
-                given range.
-            per_channel (bool): if set to True, noise will be sampled for each channel independently.
-            Otherwise, the noise will be sampled once for all channels. Default: True
+    Args:
+        mean (float or sequence): Mean of the sampling gaussian distribution .
+        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+            sampling the gaussian noise. If float, sigma is fixed. If it is tuple
+            of float (min, max), sigma is chosen uniformly at random to lie in the
+            given range.
 
-        Returns:
-            PIL Image or Tensor: Gaussian blurred version of the input image.
+    Returns:
+        PIL Image or Tensor: Gaussian blurred version of the input image.
 
-        """
-    def __init__(self, mean, sigma=(0.1, 2.0), per_channel=True):
+    """
+
+    def __init__(self, mean, sigma=(0.1, 2.0)):
         super().__init__()
         _log_api_usage_once(self)
 
@@ -1875,11 +1874,10 @@ class GaussianNoise(torch.nn.Module):
 
         self.mean = mean
         self.sigma = sigma
-        self.per_channel = per_channel
 
     @staticmethod
     def get_params(sigma_min: float, sigma_max: float) -> float:
-        return torch.empty(1).unifrom_(sigma_min, sigma_max).item()
+        return torch.empty(1).uniform_(sigma_min, sigma_max).item()
 
     def forward(self, image: Tensor) -> Tensor:
         """
@@ -1893,17 +1891,16 @@ class GaussianNoise(torch.nn.Module):
             if not F._is_pil_image(image):
                 raise TypeError(f"image should be PIL Image or Tensor. Got {type(image)}")
 
-            image = F.pil_to_tensor(image)
+            t_image = F.pil_to_tensor(image)
+        else:
+            t_image = image
+
+        if not t_image.ndim >= 2:
+            raise TypeError("Tensor is not a torch image.")
 
         sigma = self.get_params(self.sigma[0], self.sigma[1])
-        if self.per_channel:
-            gaussian_noise = sigma * torch.randn(image.shape) + self.mean
-        else:
-            gaussian_noise = sigma * torch.randn(image.shape[-2:]) + self.mean
-            if len(image.shape) >= 3:
-                gaussian_noise = torch.unsqueeze(gaussian_noise, dim=1)
-
-        output = image + gaussian_noise
+        gaussian_noise = sigma * torch.randn(t_image.shape) + self.mean
+        output = t_image + gaussian_noise
 
         if not isinstance(image, torch.Tensor):
             output = F.to_pil_image(output)

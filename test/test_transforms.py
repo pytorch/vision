@@ -1314,6 +1314,25 @@ def test_gaussian_blur_asserts():
         transforms.GaussianBlur(3, "sigma_string")
 
 
+def test_gaussian_noise():
+    np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
+    img = F.to_pil_image(np_img, "RGB")
+    out = transforms.GaussianNoise(2.0, (0.1, 2.0))(img)
+    assert F._is_pil_image(out) is True
+
+    with pytest.raises(TypeError, match='Tensor is not a torch image'):
+        out = transforms.GaussianNoise(2.0, (0.1, 2.0))(torch.ones((4)))
+
+    with pytest.raises(ValueError, match='Mean should be a positive number'):
+        transforms.GaussianNoise(-1)
+
+    with pytest.raises(ValueError, match='If sigma is a single number, it must be positive.'):
+        transforms.GaussianNoise(2.0, -1)
+
+    with pytest.raises(ValueError, match='sigma should be a single number or a list/tuple with length 2.'):
+        transforms.GaussianNoise(2.0, (1, 2, 3))
+
+
 def test_lambda():
     trans = transforms.Lambda(lambda x: x.add(10))
     x = torch.randn(10)
