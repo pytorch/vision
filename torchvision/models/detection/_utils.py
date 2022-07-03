@@ -300,10 +300,11 @@ class BoxLinearCoder:
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=1)
         return pred_boxes
 
-    def decode_all(self, list_rel_codes, list_boxes):
+    def decode_all(self, list_rel_codes: Tensor, list_boxes: List[Tensor]) -> Tensor:
         if len(list_rel_codes) != len(list_boxes):
-            min_len = min(len(list_box_size, list_boxes))
+            min_len = min(len(list_rel_codes), len(list_boxes))
             list_boxes, list_rel_codes = list_boxes[:min_len], list_rel_codes[:min_len]
+        list_boxes = torch.as_tensor(list_boxes)
 
         list_boxes = list_boxes.to(list_rel_codes.dtype)
 
