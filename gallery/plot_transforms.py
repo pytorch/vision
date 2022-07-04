@@ -120,6 +120,15 @@ blurred_imgs = [blurrer(orig_img) for _ in range(4)]
 plot(blurred_imgs)
 
 ####################################
+# GaussianNoise
+# ~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.GaussianNoise` transform
+# perturbs the input image with gaussian noise.
+noisy = T.GaussianNoise(mean=0.0, sigma=(0.1, 5))
+noisy_imgs = [noisy(orig_img) for _ in range(4)]
+plot(noisy_imgs)
+
+####################################
 # RandomPerspective
 # ~~~~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomPerspective` transform
