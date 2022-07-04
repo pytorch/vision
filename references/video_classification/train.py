@@ -100,6 +100,7 @@ def evaluate(model, criterion, data_loader, device):
 
 def _get_cache_path(filepath, args):
     import hashlib
+
     value = f"{filepath}-{args.clip_len}-{args.kinetics_version}-{args.frame_rate}"
     h = hashlib.sha1(value.encode()).hexdigest()
     cache_path = os.path.join("~", ".torch", "vision", "datasets", "kinetics", h[:10] + ".pt")
