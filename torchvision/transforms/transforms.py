@@ -1851,7 +1851,7 @@ class GaussianNoise(torch.nn.Module):
             given range.
 
     Returns:
-        PIL Image or Tensor: Gaussian blurred version of the input image.
+        PIL Image or Tensor: Input image perturbed with Gaussian Noise.
 
     """
 
