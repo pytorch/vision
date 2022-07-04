@@ -300,31 +300,41 @@ class BoxLinearCoder:
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=1)
         return pred_boxes
 
-    def decode_all(self, list_rel_codes: Tensor, list_boxes: List[Tensor]) -> Tensor:
-        if len(list_rel_codes) != len(list_boxes):
-            min_len = min(len(list_rel_codes), len(list_boxes))
-            list_boxes, list_rel_codes = list_boxes[:min_len], list_rel_codes[:min_len]
-        list_boxes = torch.stack(list_boxes)
+    def decode_all(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
+        """
+        Vectorized version of `decode_single` method.
 
-        list_boxes = list_boxes.to(list_rel_codes.dtype)
+        Args:
+            rel_codes (Tensor) : encoded boxes
+            boxes (List[Tensor]) : List of reference boxes.
 
-        list_ctr_x = 0.5 * (list_boxes[..., 0] + list_boxes[..., 2])
-        list_ctr_y = 0.5 * (list_boxes[..., 1] + list_boxes[..., 3])
+        Returns:
+            Tensor: the predicted boxes with the encoded relative box offsets.
+
+        .. note::
+            This method assumes that ``rel_codes`` and ``boxes`` have same size for 0th dimension. i.e. ``len(rel_codes) == len(boxes)``.
+
+        """
+
+        boxes = torch.stack(boxes).to(rel_codes.dtype)
+
+        ctr_x = 0.5 * (boxes[..., 0] + boxes[..., 2])
+        ctr_y = 0.5 * (boxes[..., 1] + boxes[..., 3])
 
         if self.normalize_by_size:
-            list_boxes_w = list_boxes[..., 2] - list_boxes[..., 0]
-            list_boxes_h = list_boxes[..., 3] - list_boxes[..., 1]
+            boxes_w = boxes[..., 2] - boxes[..., 0]
+            boxes_h = boxes[..., 3] - boxes[..., 1]
 
-            list_box_size = torch.stack((list_boxes_w, list_boxes_h, list_boxes_w, list_boxes_h), dim=2)
-            list_rel_codes = list_rel_codes * list_box_size
+            list_box_size = torch.stack((boxes_w, boxes_h, boxes_w, boxes_h), dim=-1)
+            rel_codes = rel_codes * list_box_size
 
-        pred_boxes1 = list_ctr_x - list_rel_codes[..., 0]
-        pred_boxes2 = list_ctr_y - list_rel_codes[..., 1]
-        pred_boxes3 = list_ctr_x - list_rel_codes[..., 2]
-        pred_boxes4 = list_ctr_y - list_rel_codes[..., 3]
+        pred_boxes1 = ctr_x - rel_codes[..., 0]
+        pred_boxes2 = ctr_y - rel_codes[..., 1]
+        pred_boxes3 = ctr_x + rel_codes[..., 2]
+        pred_boxes4 = ctr_y + rel_codes[..., 3]
 
-        list_pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2)
-        return list_pred_boxes
+        pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=-1)
+        return pred_boxes
 
 
 class Matcher:

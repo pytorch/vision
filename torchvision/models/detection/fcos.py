@@ -93,7 +93,7 @@ class FCOSHead(nn.Module):
 
         # amp issue: pred_boxes need to convert float
         loss_bbox_reg = generalized_box_iou_loss(
-            pred_boxes[foregroud_mask].float(),
+            pred_boxes[foregroud_mask],
             torch.stack(all_gt_boxes_targets)[foregroud_mask],
             reduction="sum",
         )
