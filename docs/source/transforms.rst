@@ -123,6 +123,7 @@ Transforms on PIL Image and torch.\*Tensor
     Resize
     TenCrop
     GaussianBlur
+    GaussianNoise
     RandomInvert
     RandomPosterize
     RandomSolarize
