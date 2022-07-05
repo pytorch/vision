@@ -89,7 +89,7 @@ class RandomErasing(_RandomApplyTransform):
         if isinstance(inpt, features._Feature):
             return inpt.erase(**params)
         elif isinstance(inpt, PIL.Image.Image):
-            # Shouldn't we implement a fallback to tensor ?
+            # TODO: We should implement a fallback to tensor, like gaussian_blur etc
             raise RuntimeError("Not implemented")
         elif isinstance(inpt, torch.Tensor):
             return F.erase_image_tensor(inpt, **params)

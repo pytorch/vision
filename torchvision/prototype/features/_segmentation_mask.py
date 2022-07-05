@@ -24,7 +24,7 @@ class SegmentationMask(_Feature):
     def resize(  # type: ignore[override]
         self,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> SegmentationMask:
@@ -52,7 +52,7 @@ class SegmentationMask(_Feature):
         height: int,
         width: int,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
         antialias: bool = False,
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
@@ -106,7 +106,7 @@ class SegmentationMask(_Feature):
     def perspective(
         self,
         perspective_coeffs: List[float],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: Optional[List[float]] = None,
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
