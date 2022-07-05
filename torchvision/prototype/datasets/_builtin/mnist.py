@@ -37,7 +37,6 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
 
     def __iter__(self) -> Iterator[torch.Tensor]:
         for _, file in self.datapipe:
-            print(file)
             read = functools.partial(fromfile, file, byte_order="big")
 
             magic = int(read(dtype=torch.int32, count=1))

@@ -75,11 +75,6 @@ class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_sample(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
-
-        # if dataset_mock.name in ['cub200']:
-        #     print(traverse(dataset, only_datapipe=True))
-        #     halt()
-
         try:
             iterator = iter(dataset)
             sample = next(iterator)
@@ -99,11 +94,6 @@ class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_num_samples(self, dataset_mock, config):
         dataset, mock_info = dataset_mock.load(config)
-
-        # if dataset_mock.name in ['cub200']:
-        #     print(traverse(dataset, only_datapipe=True))
-        #     halt()
-
         assert len(list(dataset)) == mock_info["num_samples"]
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
@@ -121,11 +111,9 @@ class TestCommon:
                 f"{sequence_to_str(sorted(vanilla_tensors), separate_last='and ')} contained vanilla tensors."
             )
 
-        # raise Exception(one_element)
         list(iterator) # Cleanups and closing streams in buffers
 
         if (len(StreamWrapper.session_streams)>0):
-            print(traverse(dataset, only_datapipe=True))
             Demultiplexer.buffers()
             raise Exception(StreamWrapper.session_streams)
 
