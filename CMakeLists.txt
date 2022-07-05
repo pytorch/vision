@@ -5,6 +5,7 @@ file(STRINGS version.txt TORCHVISION_VERSION)
 
 option(WITH_CUDA "Enable CUDA support" OFF)
 option(USE_PYTHON "Link to Python when building" OFF)
+option(TORCHVISION_USE_NVJPEG "Link to NVJPEG when building" ON)
 
 if(WITH_CUDA)
   enable_language(CUDA)
@@ -71,10 +72,29 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 set(TVCPP torchvision/csrc)
-list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/models ${TVCPP}/ops
-  ${TVCPP}/ops/autograd ${TVCPP}/ops/cpu ${TVCPP}/io/image/cuda)
+  list(APPEND ALLOW_LISTED
+    ${TVCPP}
+    ${TVCPP}/io/image
+    ${TVCPP}/io/image/cpu
+    ${TVCPP}/models
+    ${TVCPP}/ops
+    ${TVCPP}/ops/autograd
+    ${TVCPP}/ops/cpu
+)
+
+# Add CUDA source files if requested.
 if(WITH_CUDA)
-    list(APPEND ALLOW_LISTED ${TVCPP}/ops/cuda ${TVCPP}/ops/autocast)
+  list(APPEND ALLOW_LISTED
+    ${TVCPP}/ops/cuda
+    ${TVCPP}/ops/autocast
+  )
+endif()
+
+# Add NVJPEG source files if requested.
+if(TORCHVISION_USE_NVJPEG)
+list(APPEND ALLOW_LISTED
+  ${TVCPP}/io/image/cuda
+)
 endif()
 
 FOREACH(DIR ${ALLOW_LISTED})
