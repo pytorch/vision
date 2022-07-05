@@ -972,7 +972,7 @@ def test_adjust_gamma(device, dtype, config, channels):
     [
         {"padding_mode": "constant", "fill": 0},
         {"padding_mode": "constant", "fill": 10},
-        {"padding_mode": "constant", "fill": 20},
+        {"padding_mode": "constant", "fill": 20.2},
         {"padding_mode": "edge"},
         {"padding_mode": "reflect"},
         {"padding_mode": "symmetric"},
@@ -1361,6 +1361,45 @@ def test_ten_crop(device):
     s_tuple_transformed_batches = script_ten_crop(batch_tensors, [10, 11])
     for transformed_batch, s_transformed_batch in zip(tuple_transformed_batches, s_tuple_transformed_batches):
         assert_equal(transformed_batch, s_transformed_batch)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR, BICUBIC])
+@pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
+@pytest.mark.parametrize(
+    "fill",
+    [
+        None,
+        [255, 255, 255],
+        (2.0,),
+    ],
+)
+def test_elastic_transform_consistency(device, interpolation, dt, fill):
+    script_elastic_transform = torch.jit.script(F.elastic_transform)
+    img_tensor, _ = _create_data(32, 34, device=device)
+    # As there is no PIL implementation for elastic_transform,
+    # thus we do not run tests tensor vs pillow
+
+    if dt is not None:
+        img_tensor = img_tensor.to(dt)
+
+    displacement = T.ElasticTransform.get_params([1.5, 1.5], [2.0, 2.0], [32, 34])
+    kwargs = dict(
+        displacement=displacement,
+        interpolation=interpolation,
+        fill=fill,
+    )
+
+    out_tensor1 = F.elastic_transform(img_tensor, **kwargs)
+    out_tensor2 = script_elastic_transform(img_tensor, **kwargs)
+    assert_equal(out_tensor1, out_tensor2)
+
+    batch_tensors = _create_data_batch(16, 18, num_samples=4, device=device)
+    displacement = T.ElasticTransform.get_params([1.5, 1.5], [2.0, 2.0], [16, 18])
+    kwargs["displacement"] = displacement
+    if dt is not None:
+        batch_tensors = batch_tensors.to(dt)
+    _test_fn_on_batch(batch_tensors, F.elastic_transform, **kwargs)
 
 
 if __name__ == "__main__":
