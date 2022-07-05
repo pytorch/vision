@@ -305,8 +305,8 @@ class BoxLinearCoder:
         Vectorized version of `decode_single` method.
 
         Args:
-            rel_codes (Tensor) : encoded boxes
-            boxes (List[Tensor]) : List of reference boxes.
+            rel_codes (Tensor): encoded boxes
+            boxes (List[Tensor]): List of reference boxes.
 
         Returns:
             Tensor: the predicted boxes with the encoded relative box offsets.
@@ -316,7 +316,7 @@ class BoxLinearCoder:
 
         """
 
-        boxes = torch.stack(boxes).to(rel_codes.dtype)
+        boxes = torch.stack(boxes).to(dtype=rel_codes.dtype)
 
         ctr_x = 0.5 * (boxes[..., 0] + boxes[..., 2])
         ctr_y = 0.5 * (boxes[..., 1] + boxes[..., 3])

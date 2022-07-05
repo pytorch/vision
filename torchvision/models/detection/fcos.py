@@ -87,7 +87,6 @@ class FCOSHead(nn.Module):
         loss_cls = sigmoid_focal_loss(cls_logits, gt_classes_targets, reduction="sum")
 
         # regression loss: GIoU loss
-        # TODO: vectorize this instead of using a for loop
 
         pred_boxes = self.box_coder.decode_all(bbox_regression, anchors)
 
