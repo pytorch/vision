@@ -208,6 +208,10 @@ def draw_bounding_boxes(
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
+    elif (boxes[:, 0] > boxes[:, 2]).any() or (boxes[:, 1] > boxes[:, 3]).any():
+        raise ValueError(
+            "Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to convert them"
+        )
 
     num_boxes = boxes.shape[0]
 
@@ -558,9 +562,10 @@ def _log_api_usage_once(obj: Any) -> None:
     Args:
         obj (class instance or method): an object to extract info from.
     """
-    if not obj.__module__.startswith("torchvision"):
-        return
+    module = obj.__module__
+    if not module.startswith("torchvision"):
+        module = f"torchvision.internal.{module}"
     name = obj.__class__.__name__
     if isinstance(obj, FunctionType):
         name = obj.__name__
-    torch._C._log_api_usage_once(f"{obj.__module__}.{name}")
+    torch._C._log_api_usage_once(f"{module}.{name}")

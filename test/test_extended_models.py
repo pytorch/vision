@@ -87,6 +87,7 @@ def test_schema_meta_validation(model_fn):
         "license",
         "_metrics",
         "min_size",
+        "min_temporal_size",
         "num_params",
         "recipe",
         "unquantized",
@@ -180,7 +181,7 @@ def test_transforms_jit(model_fn):
             "input_shape": (1, 3, 520, 520),
         },
         "video": {
-            "input_shape": (1, 4, 3, 112, 112),
+            "input_shape": (1, 3, 4, 112, 112),
         },
         "optical_flow": {
             "input_shape": (1, 3, 128, 128),
@@ -194,6 +195,8 @@ def test_transforms_jit(model_fn):
     if module_name == "optical_flow":
         args = (x, x)
     else:
+        if module_name == "video":
+            x = x.permute(0, 2, 1, 3, 4)
         args = (x,)
 
     problematic_weights = []

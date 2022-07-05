@@ -49,6 +49,7 @@ from torchvision.models.resnet import (
     resnet152,
     resnext50_32x4d,
     resnext101_32x8d,
+    resnext101_64x4d,
     wide_resnet50_2,
     wide_resnet101_2,
 )

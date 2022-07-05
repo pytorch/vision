@@ -21,6 +21,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import os
+import sys
 import textwrap
 from copy import copy
 from pathlib import Path
@@ -30,6 +31,7 @@ import torchvision
 import torchvision.models as M
 from tabulate import tabulate
 
+sys.path.append(os.path.abspath("."))
 
 # -- General configuration ------------------------------------------------
 
@@ -50,6 +52,7 @@ extensions = [
     "sphinx.ext.duration",
     "sphinx_gallery.gen_gallery",
     "sphinx_copybutton",
+    "beta_status",
 ]
 
 sphinx_gallery_conf = {
@@ -103,7 +106,7 @@ if VERSION:
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

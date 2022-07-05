@@ -394,9 +394,7 @@ class TestResize:
     @pytest.mark.parametrize(
         "size",
         [
-            [
-                32,
-            ],
+            [32],
             [32, 32],
             (32, 32),
             [34, 35],
@@ -412,7 +410,7 @@ class TestResize:
             # This is a trivial cast to float of uint8 data to test all cases
             tensor = tensor.to(dt)
         if max_size is not None and len(size) != 1:
-            pytest.xfail("with max_size, size must be a sequence with 2 elements")
+            pytest.skip("Size should be an int or a sequence of length 1 if max_size is specified")
 
         transform = T.Resize(size=size, interpolation=interpolation, max_size=max_size)
         s_transform = torch.jit.script(transform)
@@ -420,11 +418,7 @@ class TestResize:
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_resize_save(self, tmpdir):
-        transform = T.Resize(
-            size=[
-                32,
-            ]
-        )
+        transform = T.Resize(size=[32])
         s_transform = torch.jit.script(transform)
         s_transform.save(os.path.join(tmpdir, "t_resize.pt"))
 
@@ -435,22 +429,25 @@ class TestResize:
         "size",
         [
             (32,),
-            [
-                44,
-            ],
-            [
-                32,
-            ],
+            [44],
+            [32],
             [32, 32],
             (32, 32),
             [44, 55],
         ],
     )
     @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR, BICUBIC])
-    def test_resized_crop(self, scale, ratio, size, interpolation, device):
+    @pytest.mark.parametrize("antialias", [None, True, False])
+    def test_resized_crop(self, scale, ratio, size, interpolation, antialias, device):
+
+        if antialias and interpolation == NEAREST:
+            pytest.skip("Can not resize if interpolation mode is NEAREST and antialias=True")
+
         tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
-        transform = T.RandomResizedCrop(size=size, scale=scale, ratio=ratio, interpolation=interpolation)
+        transform = T.RandomResizedCrop(
+            size=size, scale=scale, ratio=ratio, interpolation=interpolation, antialias=antialias
+        )
         s_transform = torch.jit.script(transform)
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
