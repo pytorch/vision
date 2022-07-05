@@ -488,7 +488,7 @@ def rotate(
 ) -> DType:
     if isinstance(inpt, features._Feature):
         return inpt.rotate(angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
-    elif isinstance(inpt, PIL.Image.Image):
+    if isinstance(inpt, PIL.Image.Image):
         return rotate_image_pil(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
     return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
@@ -573,11 +573,11 @@ def pad(
     if isinstance(inpt, PIL.Image.Image):
         return pad_image_pil(inpt, padding, fill=fill, padding_mode=padding_mode)
 
-    # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
+    # TODO: PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
     if isinstance(fill, (int, float)):
         return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
-    else:
-        return _pad_with_vector_fill(inpt, padding, fill=fill, padding_mode=padding_mode)
+
+    return _pad_with_vector_fill(inpt, padding, fill=fill, padding_mode=padding_mode)
 
 
 crop_image_tensor = _FT.crop
@@ -610,7 +610,7 @@ def crop_segmentation_mask(img: torch.Tensor, top: int, left: int, height: int, 
 def crop(inpt: DType, top: int, left: int, height: int, width: int) -> DType:
     if isinstance(inpt, features._Feature):
         return inpt.crop(top, left, height, width)
-    elif isinstance(inpt, PIL.Image.Image):
+    if isinstance(inpt, PIL.Image.Image):
         return crop_image_pil(inpt, top, left, height, width)
     return crop_image_tensor(inpt, top, left, height, width)
 
@@ -738,10 +738,9 @@ def perspective(
 def _center_crop_parse_output_size(output_size: List[int]) -> List[int]:
     if isinstance(output_size, numbers.Number):
         return [int(output_size), int(output_size)]
-    elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
+    if isinstance(output_size, (tuple, list)) and len(output_size) == 1:
         return [output_size[0], output_size[0]]
-    else:
-        return list(output_size)
+    return list(output_size)
 
 
 def _center_crop_compute_padding(crop_height: int, crop_width: int, image_height: int, image_width: int) -> List[int]:
@@ -811,7 +810,7 @@ def center_crop_segmentation_mask(segmentation_mask: torch.Tensor, output_size: 
 def center_crop(inpt: DType, output_size: List[int]) -> DType:
     if isinstance(inpt, features._Feature):
         return inpt.center_crop(output_size)
-    elif isinstance(inpt, PIL.Image.Image):
+    if isinstance(inpt, PIL.Image.Image):
         return center_crop_image_pil(inpt, output_size)
     return center_crop_image_tensor(inpt, output_size)
 
