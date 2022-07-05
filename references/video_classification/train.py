@@ -4,6 +4,7 @@ import time
 import warnings
 
 import presets
+import datasets
 import torch
 import torch.utils.data
 import torchvision
@@ -52,12 +53,24 @@ def evaluate(model, criterion, data_loader, device):
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test:"
     num_processed_samples = 0
+    # Group and aggregate output of a video
+    num_videos = len(data_loader.dataset.samples)
+    num_classes = len(data_loader.dataset.classes)
+    agg_preds = torch.zeros((num_videos, num_classes), dtype=torch.float32, device=device)
+    agg_targets = torch.zeros((num_videos), type=torch.int32, device=device)
     with torch.inference_mode():
-        for video, target in metric_logger.log_every(data_loader, 100, header):
+        for video, video_idx, target in metric_logger.log_every(data_loader, 100, header):
             video = video.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
             output = model(video)
             loss = criterion(output, target)
+
+            # Use softmax to convert output into prediction probability
+            preds = nn.Softmax(dim=1)(output)
+            for b in range(video.size(0)):
+                idx = video_idx[b].item()
+                agg_preds[idx] += preds[b].detach()
+                agg_targets[idx] = target[b].detach().item()
 
             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             # FIXME need to take into account that the datasets
@@ -95,6 +108,15 @@ def evaluate(model, criterion, data_loader, device):
             top1=metric_logger.acc1, top5=metric_logger.acc5
         )
     )
+    # Reduce the agg_preds and agg_targets from all gpu and show result
+    agg_preds = utils.reduce_across_processes(agg_preds)
+    agg_targets = utils.reduce_across_processes(agg_targets, op=torch.distributed.ReduceOp.MAX)
+    agg_acc1, agg_acc5 = utils.accuracy(agg_preds, agg_targets, topk=(1, 5))
+    print(
+        " * Video Acc@1 {acc1:.3f} Video Acc@5 {acc5:.3f}".format(
+            acc1=agg_acc1, acc5=agg_acc5
+        )
+    )
     return metric_logger.acc1.global_avg
 
 
@@ -110,7 +132,7 @@ def _get_cache_path(filepath, args):
 
 def collate_fn(batch):
     # remove audio from the batch
-    batch = [(d[0], d[2]) for d in batch]
+    batch = [(d[0], d[1], d[3]) for d in batch]
     return default_collate(batch)
 
 
