@@ -564,7 +564,7 @@ def _log_api_usage_once(obj: Any) -> None:
     """
     module = obj.__module__
     if not module.startswith("torchvision"):
-        module = f"torchvision.fb.{module}"
+        module = f"torchvision.internal.{module}"
     name = obj.__class__.__name__
     if isinstance(obj, FunctionType):
         name = obj.__name__
