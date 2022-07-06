@@ -1,8 +1,8 @@
-from typing import Any, cast, TypeVar, Union, Optional, Type, Callable, Tuple, Sequence, Mapping
+from typing import Any, cast, TypeVar, Union, Optional, Type, Callable, List, Tuple, Sequence, Mapping
 
 import torch
 from torch._C import _TensorBase, DisableTorchFunction
-
+from torchvision.transforms import InterpolationMode
 
 F = TypeVar("F", bound="_Feature")
 
@@ -83,3 +83,115 @@ class _Feature(torch.Tensor):
             return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
         else:
             return output
+
+    def horizontal_flip(self) -> Any:
+        return self
+
+    def vertical_flip(self) -> Any:
+        return self
+
+    # TODO: We have to ignore override mypy error as there is torch.Tensor built-in deprecated op: Tensor.resize
+    # https://github.com/pytorch/pytorch/blob/e8727994eb7cdb2ab642749d6549bc497563aa06/torch/_tensor.py#L588-L593
+    def resize(  # type: ignore[override]
+        self,
+        size: List[int],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        max_size: Optional[int] = None,
+        antialias: bool = False,
+    ) -> Any:
+        return self
+
+    def crop(self, top: int, left: int, height: int, width: int) -> Any:
+        return self
+
+    def center_crop(self, output_size: List[int]) -> Any:
+        return self
+
+    def resized_crop(
+        self,
+        top: int,
+        left: int,
+        height: int,
+        width: int,
+        size: List[int],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        antialias: bool = False,
+    ) -> Any:
+        return self
+
+    def pad(
+        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+    ) -> Any:
+        return self
+
+    def rotate(
+        self,
+        angle: float,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        expand: bool = False,
+        fill: Optional[List[float]] = None,
+        center: Optional[List[float]] = None,
+    ) -> Any:
+        return self
+
+    def affine(
+        self,
+        angle: float,
+        translate: List[float],
+        scale: float,
+        shear: List[float],
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+        center: Optional[List[float]] = None,
+    ) -> Any:
+        return self
+
+    def perspective(
+        self,
+        perspective_coeffs: List[float],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[List[float]] = None,
+    ) -> Any:
+        return self
+
+    def adjust_brightness(self, brightness_factor: float) -> Any:
+        return self
+
+    def adjust_saturation(self, saturation_factor: float) -> Any:
+        return self
+
+    def adjust_contrast(self, contrast_factor: float) -> Any:
+        return self
+
+    def adjust_sharpness(self, sharpness_factor: float) -> Any:
+        return self
+
+    def adjust_hue(self, hue_factor: float) -> Any:
+        return self
+
+    def adjust_gamma(self, gamma: float, gain: float = 1) -> Any:
+        return self
+
+    def posterize(self, bits: int) -> Any:
+        return self
+
+    def solarize(self, threshold: float) -> Any:
+        return self
+
+    def autocontrast(self) -> Any:
+        return self
+
+    def equalize(self) -> Any:
+        return self
+
+    def invert(self) -> Any:
+        return self
+
+    def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> Any:
+        return self
+
+    def mixup(self, lam: float) -> Any:
+        return self
+
+    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> Any:
+        return self
