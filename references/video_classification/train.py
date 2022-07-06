@@ -3,8 +3,9 @@ import os
 import time
 import warnings
 
-import presets
 import datasets
+
+import presets
 import torch
 import torch.utils.data
 import torchvision
@@ -12,7 +13,7 @@ import torchvision.datasets.video_utils
 import utils
 from torch import nn
 from torch.utils.data.dataloader import default_collate
-from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
+from torchvision.datasets.samplers import DistributedSampler, RandomClipSampler, UniformClipSampler
 
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):
@@ -112,11 +113,7 @@ def evaluate(model, criterion, data_loader, device):
     agg_preds = utils.reduce_across_processes(agg_preds)
     agg_targets = utils.reduce_across_processes(agg_targets, op=torch.distributed.ReduceOp.MAX)
     agg_acc1, agg_acc5 = utils.accuracy(agg_preds, agg_targets, topk=(1, 5))
-    print(
-        " * Video Acc@1 {acc1:.3f} Video Acc@5 {acc5:.3f}".format(
-            acc1=agg_acc1, acc5=agg_acc5
-        )
-    )
+    print(" * Video Acc@1 {acc1:.3f} Video Acc@5 {acc5:.3f}".format(acc1=agg_acc1, acc5=agg_acc5))
     return metric_logger.acc1.global_avg
 
 
@@ -335,10 +332,10 @@ def main(args):
     print(f"Training time {total_time_str}")
 
 
-def parse_args():
+def get_args_parser(add_help=True):
     import argparse
 
-    parser = argparse.ArgumentParser(description="PyTorch Video Classification Training")
+    parser = argparse.ArgumentParser(description="PyTorch Video Classification Training", add_help=add_help)
 
     parser.add_argument("--data-path", default="/datasets01_101/kinetics/070618/", type=str, help="dataset path")
     parser.add_argument(
@@ -409,11 +406,9 @@ def parse_args():
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
-    args = parser.parse_args()
-
-    return args
+    return parser
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = get_args_parser().parse_args()
     main(args)
