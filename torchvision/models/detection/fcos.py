@@ -87,14 +87,12 @@ class FCOSHead(nn.Module):
         loss_cls = sigmoid_focal_loss(cls_logits, gt_classes_targets, reduction="sum")
 
         # regression loss: GIoU loss
-        # TODO: vectorize this instead of using a for loop
-        pred_boxes = [
-            self.box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
-            for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
-        ]
+
+        pred_boxes = self.box_coder.decode_all(bbox_regression, anchors)
+
         # amp issue: pred_boxes need to convert float
         loss_bbox_reg = generalized_box_iou_loss(
-            torch.stack(pred_boxes)[foregroud_mask].float(),
+            pred_boxes[foregroud_mask],
             torch.stack(all_gt_boxes_targets)[foregroud_mask],
             reduction="sum",
         )
