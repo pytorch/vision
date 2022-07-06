@@ -317,9 +317,9 @@ def rotate(
 @torch.jit.unused
 def perspective(
     img: Image.Image,
-    perspective_coeffs: float,
+    perspective_coeffs: List[float],
     interpolation: int = _pil_constants.BICUBIC,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = None,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
