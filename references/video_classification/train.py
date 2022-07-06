@@ -58,7 +58,7 @@ def evaluate(model, criterion, data_loader, device):
     num_videos = len(data_loader.dataset.samples)
     num_classes = len(data_loader.dataset.classes)
     agg_preds = torch.zeros((num_videos, num_classes), dtype=torch.float32, device=device)
-    agg_targets = torch.zeros((num_videos), type=torch.int32, device=device)
+    agg_targets = torch.zeros((num_videos), dtype=torch.int32, device=device)
     with torch.inference_mode():
         for video, video_idx, target in metric_logger.log_every(data_loader, 100, header):
             video = video.to(device, non_blocking=True)
