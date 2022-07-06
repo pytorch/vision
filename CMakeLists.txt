@@ -92,9 +92,9 @@ endif()
 
 # Add NVJPEG source files if requested.
 if(TORCHVISION_USE_NVJPEG)
-list(APPEND ALLOW_LISTED
-  ${TVCPP}/io/image/cuda
-)
+    list(APPEND ALLOW_LISTED
+      ${TVCPP}/io/image/cuda
+    )
 endif()
 
 FOREACH(DIR ${ALLOW_LISTED})
