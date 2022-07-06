@@ -72,8 +72,7 @@ _ = urlretrieve(video_url, video_path)
 # single model input.
 
 from torchvision.io import read_video
-frames, _, _ = read_video(str(video_path))
-frames = frames.permute(0, 3, 1, 2)  # (N, H, W, C) -> (N, C, H, W)
+frames, _, _ = read_video(str(video_path), output_format="TCHW")
 
 img1_batch = torch.stack([frames[100], frames[150]])
 img2_batch = torch.stack([frames[101], frames[151]])
@@ -181,7 +180,7 @@ plot(grid)
 #     # Note: it would be faster to predict batches of flows instead of individual flows
 #     img1, img2 = preprocess(img1, img2)
 
-#     list_of_flows = model(img1.to(device), img1.to(device))
+#     list_of_flows = model(img1.to(device), img2.to(device))
 #     predicted_flow = list_of_flows[-1][0]
 #     flow_img = flow_to_image(predicted_flow).to("cpu")
 #     output_folder = "/tmp/"  # Update this to the folder of your choice

@@ -222,6 +222,8 @@ def ssdlite320_mobilenet_v3_large(
     described at `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`__ and
     `MobileNetV2: Inverted Residuals and Linear Bottlenecks <https://arxiv.org/abs/1801.04381>`__.
 
+    .. betastatus:: detection module
+
     See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.
 
     Example:

@@ -6,6 +6,8 @@ Video ResNet
 The VideoResNet model is based on the `A Closer Look at Spatiotemporal
 Convolutions for Action Recognition <https://arxiv.org/abs/1711.11248>`__ paper.
 
+.. betastatus:: video module
+
 
 Model builders
 --------------

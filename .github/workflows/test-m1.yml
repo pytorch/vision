@@ -1,0 +1,52 @@
+name: Unit-tests on M1
+on:
+  pull_request:
+    paths:
+      - .github/workflows/test-m1.yml
+  push:
+    branches:
+      - nightly
+      - main
+      - release/*
+  workflow_dispatch:
+env:
+  CHANNEL: "nightly"
+jobs:
+  tests:
+    name: "Unit-tests on M1"
+    runs-on: macos-m1
+    strategy:
+      matrix:
+        py_vers: [ "3.8"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Set Release CHANNEL (for release)
+        if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }}
+        run: |
+          echo "CHANNEL=test" >> "$GITHUB_ENV"
+      - name: Install TorchVision
+        shell: arch -arch arm64 bash {0}
+        env:
+          ENV_NAME: conda-env-${{ github.run_id }}
+          PY_VERS: ${{ matrix.py_vers }}
+        run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          # Needed for JPEG library detection as setup.py detects conda presence by running `shlex.which('conda')`
+          export PATH=~/miniconda3/bin:$PATH
+          set -ex
+          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy
+          conda run -p ${ENV_NAME} python3 -mpip install --pre torch --extra-index-url=https://download.pytorch.org/whl/${CHANNEL}
+          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda run -p ${ENV_NAME} python3 -mpip install pytest pytest-mock av
+      - name: Run tests
+        shell: arch -arch arm64 bash {0}
+        env:
+          ENV_NAME: conda-env-${{ github.run_id }}
+          PY_VERS: ${{ matrix.py_vers }}
+        run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          set -ex
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20
+          conda env remove -p ${ENV_NAME}

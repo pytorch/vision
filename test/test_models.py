@@ -309,6 +309,9 @@ _model_params = {
         "image_size": 56,
         "input_shape": (1, 3, 56, 56),
     },
+    "mvit_v1_b": {
+        "input_shape": (1, 3, 16, 224, 224),
+    },
 }
 # speeding up slow models:
 slow_models = [
@@ -603,7 +606,7 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
-    if dev == "cuda" and SKIP_BIG_MODEL and model_name in skipped_big_models:
+    if SKIP_BIG_MODEL and model_name in skipped_big_models:
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
@@ -822,24 +825,38 @@ def test_detection_model_validation(model_fn):
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.video))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_video_model(model_fn, dev):
+    set_rng_seed(0)
     # the default input shape is
     # bs * num_channels * clip_len * h *w
-    input_shape = (1, 3, 4, 112, 112)
+    defaults = {
+        "input_shape": (1, 3, 4, 112, 112),
+        "num_classes": 50,
+    }
     model_name = model_fn.__name__
+    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+        pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
+    kwargs = {**defaults, **_model_params.get(model_name, {})}
+    num_classes = kwargs.get("num_classes")
+    input_shape = kwargs.pop("input_shape")
     # test both basicblock and Bottleneck
-    model = model_fn(num_classes=50)
+    model = model_fn(**kwargs)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
+    _assert_expected(out.cpu(), model_name, prec=0.1)
+    assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
-    assert out.shape[-1] == 50
+    assert out.shape[-1] == num_classes
 
     if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
-            assert out.shape[-1] == 50
+            # See autocast_flaky_numerics comment at top of file.
+            if model_name not in autocast_flaky_numerics:
+                _assert_expected(out.cpu(), model_name, prec=0.1)
+            assert out.shape[-1] == num_classes
 
     _check_input_backprop(model, x)
 

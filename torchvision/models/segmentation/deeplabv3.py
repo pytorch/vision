@@ -233,6 +233,8 @@ def deeplabv3_resnet50(
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
 
+    .. betastatus:: segmentation module
+
     Reference: `Rethinking Atrous Convolution for Semantic Image Segmentation <https://arxiv.org/abs/1706.05587>`__.
 
     Args:
@@ -285,6 +287,8 @@ def deeplabv3_resnet101(
     **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
+
+    .. betastatus:: segmentation module
 
     Reference: `Rethinking Atrous Convolution for Semantic Image Segmentation <https://arxiv.org/abs/1706.05587>`__.
 
