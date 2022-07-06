@@ -454,7 +454,7 @@ class MViT_V1_B_Weights(WeightsEnum):
                 }
             },
             "_frame_rate": 8,
-            "_clip_per_video": 5,
+            "_clips_per_video": 5,
             "_clip_len": 16,
         },
     )
