@@ -23,7 +23,7 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
     metric_logger.add_meter("clips/s", utils.SmoothedValue(window_size=10, fmt="{value:.3f}"))
 
     header = f"Epoch: [{epoch}]"
-    for video, target in metric_logger.log_every(data_loader, print_freq, header):
+    for video, target, _ in metric_logger.log_every(data_loader, print_freq, header):
         start_time = time.time()
         video, target = video.to(device), target.to(device)
         with torch.cuda.amp.autocast(enabled=scaler is not None):
@@ -60,7 +60,7 @@ def evaluate(model, criterion, data_loader, device):
     agg_preds = torch.zeros((num_videos, num_classes), dtype=torch.float32, device=device)
     agg_targets = torch.zeros((num_videos), dtype=torch.int32, device=device)
     with torch.inference_mode():
-        for video, video_idx, target in metric_logger.log_every(data_loader, 100, header):
+        for video, target, video_idx in metric_logger.log_every(data_loader, 100, header):
             video = video.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
             output = model(video)
@@ -129,7 +129,7 @@ def _get_cache_path(filepath, args):
 
 def collate_fn(batch):
     # remove audio from the batch
-    batch = [(d[0], d[1], d[3]) for d in batch]
+    batch = [(d[0], d[2], d[3]) for d in batch]
     return default_collate(batch)
 
 
@@ -165,7 +165,7 @@ def main(args):
     else:
         if args.distributed:
             print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
-        dataset = datasets.CustomKinetics(
+        dataset = datasets.KineticsWithVideoId(
             args.data_path,
             frames_per_clip=args.clip_len,
             num_classes=args.kinetics_version,
@@ -202,7 +202,7 @@ def main(args):
     else:
         if args.distributed:
             print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
-        dataset_test = datasets.CustomKinetics(
+        dataset_test = datasets.KineticsWithVideoId(
             args.data_path,
             frames_per_clip=args.clip_len,
             num_classes=args.kinetics_version,
