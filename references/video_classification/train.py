@@ -66,7 +66,7 @@ def evaluate(model, criterion, data_loader, device):
             loss = criterion(output, target)
 
             # Use softmax to convert output into prediction probability
-            preds = nn.Softmax(dim=1)(output)
+            preds = torch.softmax(output, dim=1)
             for b in range(video.size(0)):
                 idx = video_idx[b].item()
                 agg_preds[idx] += preds[b].detach()
@@ -147,6 +147,23 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
+    if args.weights and args.test_only:
+        weights = torchvision.models.get_weight(args.weights)
+        transform_test = weights.transforms()
+        _meta = weights.meta
+        if args.clip_len != _meta["_clip_len"]:
+            warnings.warn(f"Using clip_len from weights meta: {_meta['_clip_len']}")
+            args.clip_len = _meta["_clip_len"]
+        if args.frame_rate != _meta["_frame_rate"]:
+            warnings.warn(f"Using frame_rate from weights meta: {_meta['_frame_rate']}")
+            args.frame_rate = _meta["_frame_rate"]
+        if args.clips_per_video != _meta["_clips_per_video"]:
+            warnings.warn(f"Using clips_per_video from weights meta: {_meta['_clips_per_video']}")
+            args.clips_per_video = _meta["_clips_per_video"]
+
+    else:
+        transform_test = presets.VideoClassificationPresetEval(crop_size=(112, 112), resize_size=(128, 171))
+
     # Data loading code
     print("Loading data")
     traindir = os.path.join(args.data_path, "train")
@@ -187,12 +204,6 @@ def main(args):
 
     print("Loading validation data")
     cache_path = _get_cache_path(valdir, args)
-
-    if args.weights and args.test_only:
-        weights = torchvision.models.get_weight(args.weights)
-        transform_test = weights.transforms()
-    else:
-        transform_test = presets.VideoClassificationPresetEval(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")

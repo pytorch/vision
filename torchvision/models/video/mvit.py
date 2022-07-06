@@ -449,10 +449,13 @@ class MViT_V1_B_Weights(WeightsEnum):
             "num_params": 36610672,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": 78.47,
-                    "acc@5": 93.65,
+                    "acc@1": 78.477,
+                    "acc@5": 93.582,
                 }
             },
+            "_frame_rate": 8,
+            "_clip_per_video": 5,
+            "_clip_len": 16,
         },
     )
     DEFAULT = KINETICS400_V1
