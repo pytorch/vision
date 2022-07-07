@@ -9,7 +9,7 @@ from torchvision.prototype.utils._internal import query_recursively
 from torchvision.transforms.autoaugment import AutoAugmentPolicy
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image, InterpolationMode
 
-from ._utils import get_image_dimensions, is_simple_tensor
+from ._utils import get_image_dimensions
 
 K = TypeVar("K")
 V = TypeVar("V")

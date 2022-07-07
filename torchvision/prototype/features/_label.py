@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, cast, Union, Tuple
+from typing import Any, Optional, Sequence, cast, Union
 
 import torch
 from torchvision.prototype.utils._internal import apply_recursively

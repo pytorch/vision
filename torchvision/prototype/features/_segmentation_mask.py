@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Tuple, List, Optional, Union, Sequence
+from typing import List, Optional, Union, Sequence
 
-import torch
 from torchvision.transforms import InterpolationMode
 
 from ._feature import _Feature
