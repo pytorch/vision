@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional, Callable, List, Any
+from typing import Any, Callable, List, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -19,9 +19,15 @@ __all__ = [
     "Swin_T_Weights",
     "Swin_S_Weights",
     "Swin_B_Weights",
+    "Swin_V2_T_Weights",
+    "Swin_V2_S_Weights",
+    "Swin_V2_B_Weights",
     "swin_t",
     "swin_s",
     "swin_b",
+    "swin_v2_t",
+    "swin_v2_s",
+    "swin_v2_b",
 ]
 
 
@@ -239,6 +245,215 @@ class ShiftedWindowAttention(nn.Module):
         )
 
 
+def shifted_window_attention_v2(
+    input: Tensor,
+    qkv_weight: Tensor,
+    proj_weight: Tensor,
+    relative_position_bias: Tensor,
+    window_size: List[int],
+    num_heads: int,
+    shift_size: List[int],
+    logit_scale: torch.Tensor,
+    attention_dropout: float = 0.0,
+    dropout: float = 0.0,
+    qkv_bias: Optional[Tensor] = None,
+    proj_bias: Optional[Tensor] = None,
+):
+    """
+    Window based multi-head self attention (W-MSA) module with relative position bias.
+    It supports both of shifted and non-shifted window.
+    Args:
+        input (Tensor[N, H, W, C]): The input tensor or 4-dimensions.
+        qkv_weight (Tensor[in_dim, out_dim]): The weight tensor of query, key, value.
+        proj_weight (Tensor[out_dim, out_dim]): The weight tensor of projection.
+        relative_position_bias (Tensor): The learned relative position bias added to attention.
+        window_size (List[int]): Window size.
+        num_heads (int): Number of attention heads.
+        shift_size (List[int]): Shift size for shifted window attention.
+        attention_dropout (float): Dropout ratio of attention weight. Default: 0.0.
+        dropout (float): Dropout ratio of output. Default: 0.0.
+        qkv_bias (Tensor[out_dim], optional): The bias tensor of query, key, value. Default: None.
+        proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
+    Returns:
+        Tensor[N, H, W, C]: The output tensor after shifted window attention.
+    """
+    B, H, W, C = input.shape
+    # pad feature maps to multiples of window size
+    pad_r = (window_size[1] - W % window_size[1]) % window_size[1]
+    pad_b = (window_size[0] - H % window_size[0]) % window_size[0]
+    x = F.pad(input, (0, 0, 0, pad_r, 0, pad_b))
+    _, pad_H, pad_W, _ = x.shape
+
+    # If window size is larger than feature size, there is no need to shift window
+    if window_size[0] >= pad_H:
+        shift_size[0] = 0
+    if window_size[1] >= pad_W:
+        shift_size[1] = 0
+
+    # cyclic shift
+    if sum(shift_size) > 0:
+        x = torch.roll(x, shifts=(-shift_size[0], -shift_size[1]), dims=(1, 2))
+
+    # partition windows
+    num_windows = (pad_H // window_size[0]) * (pad_W // window_size[1])
+    x = x.view(B, pad_H // window_size[0], window_size[0], pad_W // window_size[1], window_size[1], C)
+    x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size[0] * window_size[1], C)  # B*nW, Ws*Ws, C
+
+    # multi-head attention
+    if qkv_bias is not None:    # v2 ignores k_bias
+        qkv_bias= qkv_bias.clone()
+        length = qkv_bias.numel() // 3
+        qkv_bias[length: 2*length].zero_()
+    qkv = F.linear(x, qkv_weight, qkv_bias)
+    qkv = qkv.reshape(x.size(0), x.size(1), 3, num_heads, -1).permute(2, 0, 3, 1, 4)
+    q, k, v = qkv[0], qkv[1], qkv[2]
+    # v2 cosine attention
+    attn = (F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-2, -1))
+    logit_scale = torch.clamp(logit_scale, max=torch.log(torch.tensor(1. / 0.01))).exp()
+    attn = attn * logit_scale
+    # add relative position bias
+    attn = attn + relative_position_bias
+
+    if sum(shift_size) > 0:
+        # generate attention mask
+        attn_mask = x.new_zeros((pad_H, pad_W))
+        h_slices = ((0, -window_size[0]), (-window_size[0], -shift_size[0]), (-shift_size[0], None))
+        w_slices = ((0, -window_size[1]), (-window_size[1], -shift_size[1]), (-shift_size[1], None))
+        count = 0
+        for h in h_slices:
+            for w in w_slices:
+                attn_mask[h[0] : h[1], w[0] : w[1]] = count
+                count += 1
+        attn_mask = attn_mask.view(pad_H // window_size[0], window_size[0], pad_W // window_size[1], window_size[1])
+        attn_mask = attn_mask.permute(0, 2, 1, 3).reshape(num_windows, window_size[0] * window_size[1])
+        attn_mask = attn_mask.unsqueeze(1) - attn_mask.unsqueeze(2)
+        attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
+        attn = attn.view(x.size(0) // num_windows, num_windows, num_heads, x.size(1), x.size(1))
+        attn = attn + attn_mask.unsqueeze(1).unsqueeze(0)
+        attn = attn.view(-1, num_heads, x.size(1), x.size(1))
+
+    attn = F.softmax(attn, dim=-1)
+    attn = F.dropout(attn, p=attention_dropout)
+
+    x = attn.matmul(v).transpose(1, 2).reshape(x.size(0), x.size(1), C)
+    x = F.linear(x, proj_weight, proj_bias)
+    x = F.dropout(x, p=dropout)
+
+    # reverse windows
+    x = x.view(B, pad_H // window_size[0], pad_W // window_size[1], window_size[0], window_size[1], C)
+    x = x.permute(0, 1, 3, 2, 4, 5).reshape(B, pad_H, pad_W, C)
+
+    # reverse cyclic shift
+    if sum(shift_size) > 0:
+        x = torch.roll(x, shifts=(shift_size[0], shift_size[1]), dims=(1, 2))
+
+    # unpad features
+    x = x[:, :H, :W, :].contiguous()
+    return x
+
+
+torch.fx.wrap("shifted_window_attention_v2")
+
+
+class ShiftedWindowAttentionV2(nn.Module):
+    """
+    See :func:`shifted_window_attention_v2`.
+    """
+
+    def __init__(
+        self,
+        dim: int,
+        window_size: List[int],
+        shift_size: List[int],
+        num_heads: int,
+        qkv_bias: bool = True,
+        proj_bias: bool = True,
+        attention_dropout: float = 0.0,
+        dropout: float = 0.0,
+        pretrained_window_size: Tuple[int] = (0, 0),
+    ):
+        super().__init__()
+        if len(window_size) != 2 or len(shift_size) != 2:
+            raise ValueError("window_size and shift_size must be of length 2")
+        self.window_size = window_size
+        self.shift_size = shift_size
+        self.num_heads = num_heads
+        self.attention_dropout = attention_dropout
+        self.dropout = dropout
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.proj = nn.Linear(dim, dim, bias=proj_bias)
+
+        # V2
+        # get relative_coords_table
+        relative_coords_h = torch.arange(-(self.window_size[0] - 1), self.window_size[0], dtype=torch.float32)
+        relative_coords_w = torch.arange(-(self.window_size[1] - 1), self.window_size[1], dtype=torch.float32)
+        relative_coords_table = torch.stack(
+            torch.meshgrid([relative_coords_h,
+                            relative_coords_w])).permute(1, 2, 0).contiguous().unsqueeze(0)  # 1, 2*Wh-1, 2*Ww-1, 2
+        if pretrained_window_size[0] > 0:
+            relative_coords_table[:, :, :, 0] /= (pretrained_window_size[0] - 1)
+            relative_coords_table[:, :, :, 1] /= (pretrained_window_size[1] - 1)
+        else:
+            relative_coords_table[:, :, :, 0] /= (self.window_size[0] - 1)
+            relative_coords_table[:, :, :, 1] /= (self.window_size[1] - 1)
+        relative_coords_table *= 8  # normalize to -8, 8
+        relative_coords_table = torch.sign(relative_coords_table) * torch.log2(
+            torch.abs(relative_coords_table) + 1.0) / 3.0
+
+        self.register_buffer("relative_coords_table", relative_coords_table)
+
+        # get pair-wise relative position index for each token inside the window
+        coords_h = torch.arange(self.window_size[0])
+        coords_w = torch.arange(self.window_size[1])
+        coords = torch.stack(torch.meshgrid([coords_h, coords_w]))  # 2, Wh, Ww
+        coords_flatten = torch.flatten(coords, 1)  # 2, Wh*Ww
+        relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, Wh*Ww, Wh*Ww
+        relative_coords = relative_coords.permute(1, 2, 0).contiguous()  # Wh*Ww, Wh*Ww, 2
+        relative_coords[:, :, 0] += self.window_size[0] - 1  # shift to start from 0
+        relative_coords[:, :, 1] += self.window_size[1] - 1
+        relative_coords[:, :, 0] *= 2 * self.window_size[1] - 1
+        relative_position_index = relative_coords.sum(-1)  # Wh*Ww, Wh*Ww
+        self.register_buffer("relative_position_index", relative_position_index)
+
+        self.logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))))
+        # mlp to generate continuous relative position bias
+        self.cpb_mlp = nn.Sequential(nn.Linear(2, 512, bias=True),
+                                     nn.ReLU(inplace=True),
+                                     nn.Linear(512, num_heads, bias=False))
+        if qkv_bias:
+            length = self.qkv.bias.numel() // 3
+            self.qkv.bias[length: 2*length].zero_()
+
+    def forward(self, x: Tensor):
+        """
+        Args:
+            x (Tensor): Tensor with layout of [B, H, W, C]
+        Returns:
+            Tensor with same layout as input, i.e. [B, H, W, C]
+        """
+
+        relative_position_bias_table = self.cpb_mlp(self.relative_coords_table).view(-1, self.num_heads)
+        relative_position_bias = relative_position_bias_table[self.relative_position_index.view(-1)].view(
+            self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
+        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
+        relative_position_bias = 16 * torch.sigmoid(relative_position_bias).unsqueeze(0)
+
+        return shifted_window_attention_v2(
+            x,
+            self.qkv.weight,
+            self.proj.weight,
+            relative_position_bias,
+            self.window_size,
+            self.num_heads,
+            shift_size=self.shift_size,
+            logit_scale=self.logit_scale,
+            attention_dropout=self.attention_dropout,
+            dropout=self.dropout,
+            qkv_bias=self.qkv.bias,
+            proj_bias=self.proj.bias,
+        )
+
 class SwinTransformerBlock(nn.Module):
     """
     Swin Transformer Block.
@@ -253,6 +468,8 @@ class SwinTransformerBlock(nn.Module):
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
         attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttention
+        pretrained_window_size (int): (V2) Window size in pre-training. Default: 0.
+        version (int): SwinTransformer version. Default: 1.
     """
 
     def __init__(
@@ -266,11 +483,21 @@ class SwinTransformerBlock(nn.Module):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
-        attn_layer: Callable[..., nn.Module] = ShiftedWindowAttention,
+        attn_layer: Optional[Callable[..., nn.Module]] = None,
+        pretrained_window_size: int = 0,
+        version: int = 1,
     ):
         super().__init__()
         _log_api_usage_once(self)
 
+        if attn_layer is None:
+            if self.version==1:  # TODO: switch after python 3.10
+                attn_layer = ShiftedWindowAttention
+            elif self.version==2:
+                attn_layer = ShiftedWindowAttentionV2
+            else:
+                raise NotImplementedError(self.version)
+        self.version=version
         self.norm1 = norm_layer(dim)
         self.attn = attn_layer(
             dim,
@@ -279,6 +506,7 @@ class SwinTransformerBlock(nn.Module):
             num_heads,
             attention_dropout=attention_dropout,
             dropout=dropout,
+            pretrained_window_size=(pretrained_window_size, pretrained_window_size),
         )
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
@@ -291,8 +519,14 @@ class SwinTransformerBlock(nn.Module):
                     nn.init.normal_(m.bias, std=1e-6)
 
     def forward(self, x: Tensor):
-        x = x + self.stochastic_depth(self.attn(self.norm1(x)))
-        x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
+        if self.version==1:  # TODO: switch after python 3.10
+            x = x + self.stochastic_depth(self.attn(self.norm1(x)))
+            x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
+        elif self.version==2:
+            x = x + self.stochastic_depth(self.norm1(self.attn(x)))
+            x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
+        else:
+            raise NotImplementedError(self.version)
         return x
 
 
@@ -310,6 +544,7 @@ class SwinTransformer(nn.Module):
         dropout (float): Dropout rate. Default: 0.0.
         attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob (float): Stochastic depth rate. Default: 0.0.
+        version (int): SwinTransformer version. Default: 1.
         num_classes (int): Number of classes for classification head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
@@ -326,6 +561,7 @@ class SwinTransformer(nn.Module):
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
+        version: int = 1,
         num_classes: int = 1000,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         block: Optional[Callable[..., nn.Module]] = None,
@@ -372,6 +608,7 @@ class SwinTransformer(nn.Module):
                         attention_dropout=attention_dropout,
                         stochastic_depth_prob=sd_prob,
                         norm_layer=norm_layer,
+                        version=version,
                     )
                 )
                 stage_block_id += 1
@@ -409,6 +646,7 @@ def _swin_transformer(
     num_heads: List[int],
     window_size: List[int],
     stochastic_depth_prob: float,
+    version: int,
     weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
@@ -423,6 +661,7 @@ def _swin_transformer(
         num_heads=num_heads,
         window_size=window_size,
         stochastic_depth_prob=stochastic_depth_prob,
+        version=version,
         **kwargs,
     )
 
@@ -506,6 +745,75 @@ class Swin_B_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+class Swin_V2_T_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/swin_v2_t-123456.pth",  # TODO
+        transforms=partial(
+            ImageClassification, crop_size=224, resize_size=232, interpolation=InterpolationMode.BICUBIC
+        ),  # TODO
+        meta={
+            **_COMMON_META,
+            "num_params": 28288354,  # TODO
+            "min_size": (224, 224),  # TODO
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 0.100,  # TODO
+                    "acc@5": 0.100,  # TODO
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class Swin_V2_S_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/swin_v2_s-123456.pth",  # TODO
+        transforms=partial(
+            ImageClassification, crop_size=224, resize_size=246, interpolation=InterpolationMode.BICUBIC
+        ),  # TODO
+        meta={
+            **_COMMON_META,
+            "num_params": 49606258,  # TODO
+            "min_size": (224, 224),  # TODO
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 0.100,  # TODO
+                    "acc@5": 0.100,  # TODO
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class Swin_V2_B_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/swin_v2_b-123456.pth",  # TODO
+        transforms=partial(
+            ImageClassification, crop_size=224, resize_size=238, interpolation=InterpolationMode.BICUBIC
+        ),  # TODO
+        meta={
+            **_COMMON_META,
+            "num_params": 87768224,  # TODO
+            "min_size": (224, 224),  # TODO
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 0.100,  # TODO
+                    "acc@5": 0.100,  # TODO
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
 def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
@@ -536,6 +844,7 @@ def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, *
         num_heads=[3, 6, 12, 24],
         window_size=[7, 7],
         stochastic_depth_prob=0.2,
+        version=1,
         weights=weights,
         progress=progress,
         **kwargs,
@@ -572,6 +881,7 @@ def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, *
         num_heads=[3, 6, 12, 24],
         window_size=[7, 7],
         stochastic_depth_prob=0.3,
+        version=1,
         weights=weights,
         progress=progress,
         **kwargs,
@@ -608,6 +918,117 @@ def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, *
         num_heads=[4, 8, 16, 32],
         window_size=[7, 7],
         stochastic_depth_prob=0.5,
+        version=1,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+    """
+    Constructs a swin_v2_tiny architecture from
+    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/pdf/2111.09883>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.Swin_V2_T_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_V2_T_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_transformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer_v2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_V2_T_Weights
+        :members:
+    """
+    weights = Swin_V2_T_Weights.verify(weights)
+
+    return _swin_transformer(
+        patch_size=[4, 4],
+        embed_dim=96,
+        depths=[2, 2, 6, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=[7, 7],
+        stochastic_depth_prob=0.2,
+        version=2,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+def swin_s(*, weights: Optional[Swin_V2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+    """
+    Constructs a swin_v2_small architecture from
+    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/pdf/2111.09883>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.Swin_V2_S_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_V2_S_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_transformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer_v2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_V2_S_Weights
+        :members:
+    """
+    weights = Swin_V2_S_Weights.verify(weights)
+
+    return _swin_transformer(
+        patch_size=[4, 4],
+        embed_dim=96,
+        depths=[2, 2, 18, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=[7, 7],
+        stochastic_depth_prob=0.3,
+        version=2,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+def swin_b(*, weights: Optional[Swin_V2_B_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+    """
+    Constructs a swin_v2_base architecture from
+    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/pdf/2111.09883>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.Swin_V2_B_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_V2_B_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_transformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer_v2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_V2_B_Weights
+        :members:
+    """
+    weights = Swin_V2_B_Weights.verify(weights)
+
+    return _swin_transformer(
+        patch_size=[4, 4],
+        embed_dim=128,
+        depths=[2, 2, 18, 2],
+        num_heads=[4, 8, 16, 32],
+        window_size=[7, 7],
+        stochastic_depth_prob=0.5,
+        version=2,
         weights=weights,
         progress=progress,
         **kwargs,
