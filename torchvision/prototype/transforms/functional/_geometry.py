@@ -497,7 +497,7 @@ pad_image_pil = _FP.pad
 
 
 def pad_image_tensor(
-    img: torch.Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mode: str = "constant"
+    img: torch.Tensor, padding: Union[int, List[int]], fill: Union[int, float] = 0, padding_mode: str = "constant"
 ) -> torch.Tensor:
     num_masks, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
@@ -513,7 +513,7 @@ def pad_image_tensor(
 # TODO: This should be removed once pytorch pad supports non-scalar padding values
 def _pad_with_vector_fill(
     img: torch.Tensor,
-    padding: List[int],
+    padding: Union[int, List[int]],
     fill: Sequence[float] = [0.0],
     padding_mode: str = "constant",
 ) -> torch.Tensor:
@@ -536,7 +536,7 @@ def _pad_with_vector_fill(
 
 
 def pad_segmentation_mask(
-    segmentation_mask: torch.Tensor, padding: List[int], padding_mode: str = "constant"
+    segmentation_mask: torch.Tensor, padding: Union[int, List[int]], padding_mode: str = "constant"
 ) -> torch.Tensor:
     num_masks, height, width = segmentation_mask.shape[-3:]
     extra_dims = segmentation_mask.shape[:-3]
@@ -550,7 +550,7 @@ def pad_segmentation_mask(
 
 
 def pad_bounding_box(
-    bounding_box: torch.Tensor, padding: List[int], format: features.BoundingBoxFormat
+    bounding_box: torch.Tensor, padding: Union[int, List[int]], format: features.BoundingBoxFormat
 ) -> torch.Tensor:
     left, _, top, _ = _FT._parse_pad_padding(padding)
 
@@ -566,12 +566,19 @@ def pad_bounding_box(
 
 
 def pad(
-    inpt: DType, padding: List[int], fill: Union[int, float, Sequence[float]] = 0.0, padding_mode: str = "constant"
+    inpt: DType,
+    padding: Union[int, Sequence[int]],
+    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+    padding_mode: str = "constant"
 ) -> DType:
     if isinstance(inpt, features._Feature):
         return inpt.pad(padding, fill=fill, padding_mode=padding_mode)
     if isinstance(inpt, PIL.Image.Image):
         return pad_image_pil(inpt, padding, fill=fill, padding_mode=padding_mode)
+
+    # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+    if not isinstance(padding, int):
+        padding = list(padding)
 
     # TODO: PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
     if isinstance(fill, (int, float)):

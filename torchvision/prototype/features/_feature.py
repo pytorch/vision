@@ -120,7 +120,10 @@ class _Feature(torch.Tensor):
         return self
 
     def pad(
-        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+        self,
+        padding: Union[int, Sequence[int]],
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        padding_mode: str = "constant",
     ) -> Any:
         return self
 

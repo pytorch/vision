@@ -61,9 +61,16 @@ class SegmentationMask(_Feature):
         return SegmentationMask.new_like(self, output)
 
     def pad(
-        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+        self,
+        padding: Union[int, Sequence[int]],
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        padding_mode: str = "constant",
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
+
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        if not isinstance(padding, int):
+            padding = list(padding)
 
         output = _F.pad_segmentation_mask(self, padding, padding_mode=padding_mode)
         return SegmentationMask.new_like(self, output)

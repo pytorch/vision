@@ -350,7 +350,7 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
         raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
-def _parse_pad_padding(padding: List[int]) -> List[int]:
+def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
     if isinstance(padding, int):
         if torch.jit.is_scripting():
             # This maybe unreachable
@@ -370,7 +370,7 @@ def _parse_pad_padding(padding: List[int]) -> List[int]:
     return [pad_left, pad_right, pad_top, pad_bottom]
 
 
-def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
+def pad(img: Tensor, padding: Union[int, List[int]], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
     _assert_image_tensor(img)
 
     if not isinstance(padding, (int, tuple, list)):

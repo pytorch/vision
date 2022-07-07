@@ -247,8 +247,7 @@ class Pad(Transform):
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        # TODO: Fix typing error
-        return F.pad(inpt, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
+        return F.pad(inpt, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
 
 
 class RandomZoomOut(_RandomApplyTransform):

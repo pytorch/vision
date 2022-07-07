@@ -164,9 +164,16 @@ class Image(_Feature):
         return Image.new_like(self, output)
 
     def pad(
-        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+        self,
+        padding: Union[int, Sequence[int]],
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        padding_mode: str = "constant",
     ) -> Image:
         from torchvision.prototype.transforms import functional as _F
+
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        if not isinstance(padding, int):
+            padding = list(padding)
 
         # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
         if isinstance(fill, (int, float)):

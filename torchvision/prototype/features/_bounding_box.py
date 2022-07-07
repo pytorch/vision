@@ -128,12 +128,19 @@ class BoundingBox(_Feature):
         return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
 
     def pad(
-        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+        self,
+        padding: Union[int, Sequence[int]],
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        padding_mode: str = "constant",
     ) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
 
         if padding_mode not in ["constant"]:
             raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
+
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        if not isinstance(padding, int):
+            padding = list(padding)
 
         output = _F.pad_bounding_box(self, padding, format=self.format)
 
@@ -153,7 +160,7 @@ class BoundingBox(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[float]] = 0,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
@@ -173,7 +180,7 @@ class BoundingBox(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[float]] = 0,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
