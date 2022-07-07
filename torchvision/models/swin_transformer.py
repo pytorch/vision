@@ -427,7 +427,7 @@ class ShiftedWindowAttentionV2(nn.Module):
         )
         if qkv_bias:
             length = self.qkv.bias.numel() // 3
-            self.qkv.bias[length : 2 * length].zero_()
+            self.qkv.bias[length : 2 * length].data.zero_()
 
     def forward(self, x: Tensor):
         """
@@ -474,7 +474,6 @@ class SwinTransformerBlock(nn.Module):
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
         attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttention
-        pretrained_window_size (int): (V2) Window size in pre-training. Default: 0.
         version (int): SwinTransformer version. Default: 1.
     """
 
@@ -490,7 +489,6 @@ class SwinTransformerBlock(nn.Module):
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_layer: Optional[Callable[..., nn.Module]] = None,
-        pretrained_window_size: int = 0,
         version: int = 1,
     ):
         super().__init__()
@@ -512,7 +510,6 @@ class SwinTransformerBlock(nn.Module):
             num_heads,
             attention_dropout=attention_dropout,
             dropout=dropout,
-            pretrained_window_size=(pretrained_window_size, pretrained_window_size),
         )
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
