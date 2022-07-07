@@ -9,7 +9,7 @@ from ..ops.misc import MLP, Permute
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param
 
@@ -300,16 +300,16 @@ def shifted_window_attention_v2(
     x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size[0] * window_size[1], C)  # B*nW, Ws*Ws, C
 
     # multi-head attention
-    if qkv_bias is not None:    # v2 ignores k_bias
-        qkv_bias= qkv_bias.clone()
+    if qkv_bias is not None:  # v2 ignores k_bias
+        qkv_bias = qkv_bias.clone()
         length = qkv_bias.numel() // 3
-        qkv_bias[length: 2*length].zero_()
+        qkv_bias[length : 2 * length].zero_()
     qkv = F.linear(x, qkv_weight, qkv_bias)
     qkv = qkv.reshape(x.size(0), x.size(1), 3, num_heads, -1).permute(2, 0, 3, 1, 4)
     q, k, v = qkv[0], qkv[1], qkv[2]
     # v2 cosine attention
-    attn = (F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-2, -1))
-    logit_scale = torch.clamp(logit_scale, max=torch.log(torch.tensor(1. / 0.01))).exp()
+    attn = F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-2, -1)
+    logit_scale = torch.clamp(logit_scale, max=torch.log(torch.tensor(1.0 / 0.01))).exp()
     attn = attn * logit_scale
     # add relative position bias
     attn = attn + relative_position_bias
@@ -370,7 +370,7 @@ class ShiftedWindowAttentionV2(nn.Module):
         proj_bias: bool = True,
         attention_dropout: float = 0.0,
         dropout: float = 0.0,
-        pretrained_window_size: Tuple[int] = (0, 0),
+        pretrained_window_size: Tuple[int, int] = (0, 0),
     ):
         super().__init__()
         if len(window_size) != 2 or len(shift_size) != 2:
@@ -388,18 +388,22 @@ class ShiftedWindowAttentionV2(nn.Module):
         # get relative_coords_table
         relative_coords_h = torch.arange(-(self.window_size[0] - 1), self.window_size[0], dtype=torch.float32)
         relative_coords_w = torch.arange(-(self.window_size[1] - 1), self.window_size[1], dtype=torch.float32)
-        relative_coords_table = torch.stack(
-            torch.meshgrid([relative_coords_h,
-                            relative_coords_w])).permute(1, 2, 0).contiguous().unsqueeze(0)  # 1, 2*Wh-1, 2*Ww-1, 2
+        relative_coords_table = (
+            torch.stack(torch.meshgrid([relative_coords_h, relative_coords_w]))
+            .permute(1, 2, 0)
+            .contiguous()
+            .unsqueeze(0)
+        )  # 1, 2*Wh-1, 2*Ww-1, 2
         if pretrained_window_size[0] > 0:
-            relative_coords_table[:, :, :, 0] /= (pretrained_window_size[0] - 1)
-            relative_coords_table[:, :, :, 1] /= (pretrained_window_size[1] - 1)
+            relative_coords_table[:, :, :, 0] /= pretrained_window_size[0] - 1
+            relative_coords_table[:, :, :, 1] /= pretrained_window_size[1] - 1
         else:
-            relative_coords_table[:, :, :, 0] /= (self.window_size[0] - 1)
-            relative_coords_table[:, :, :, 1] /= (self.window_size[1] - 1)
+            relative_coords_table[:, :, :, 0] /= self.window_size[0] - 1
+            relative_coords_table[:, :, :, 1] /= self.window_size[1] - 1
         relative_coords_table *= 8  # normalize to -8, 8
-        relative_coords_table = torch.sign(relative_coords_table) * torch.log2(
-            torch.abs(relative_coords_table) + 1.0) / 3.0
+        relative_coords_table = (
+            torch.sign(relative_coords_table) * torch.log2(torch.abs(relative_coords_table) + 1.0) / 3.0
+        )
 
         self.register_buffer("relative_coords_table", relative_coords_table)
 
@@ -418,12 +422,12 @@ class ShiftedWindowAttentionV2(nn.Module):
 
         self.logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))))
         # mlp to generate continuous relative position bias
-        self.cpb_mlp = nn.Sequential(nn.Linear(2, 512, bias=True),
-                                     nn.ReLU(inplace=True),
-                                     nn.Linear(512, num_heads, bias=False))
+        self.cpb_mlp = nn.Sequential(
+            nn.Linear(2, 512, bias=True), nn.ReLU(inplace=True), nn.Linear(512, num_heads, bias=False)
+        )
         if qkv_bias:
             length = self.qkv.bias.numel() // 3
-            self.qkv.bias[length: 2*length].zero_()
+            self.qkv.bias[length : 2 * length].zero_()
 
     def forward(self, x: Tensor):
         """
@@ -434,8 +438,9 @@ class ShiftedWindowAttentionV2(nn.Module):
         """
 
         relative_position_bias_table = self.cpb_mlp(self.relative_coords_table).view(-1, self.num_heads)
-        relative_position_bias = relative_position_bias_table[self.relative_position_index.view(-1)].view(
-            self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
+        relative_position_bias = relative_position_bias_table[self.relative_position_index.view(-1)].view(  # type: ignore[operator]
+            self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1
+        )  # Wh*Ww,Wh*Ww,nH
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
         relative_position_bias = 16 * torch.sigmoid(relative_position_bias).unsqueeze(0)
 
@@ -453,6 +458,7 @@ class ShiftedWindowAttentionV2(nn.Module):
             qkv_bias=self.qkv.bias,
             proj_bias=self.proj.bias,
         )
+
 
 class SwinTransformerBlock(nn.Module):
     """
@@ -491,13 +497,13 @@ class SwinTransformerBlock(nn.Module):
         _log_api_usage_once(self)
 
         if attn_layer is None:
-            if self.version==1:  # TODO: switch after python 3.10
+            if version == 1:  # TODO: switch after python 3.10
                 attn_layer = ShiftedWindowAttention
-            elif self.version==2:
+            elif version == 2:
                 attn_layer = ShiftedWindowAttentionV2
             else:
-                raise NotImplementedError(self.version)
-        self.version=version
+                raise NotImplementedError(version)
+        self.version = version
         self.norm1 = norm_layer(dim)
         self.attn = attn_layer(
             dim,
@@ -519,10 +525,10 @@ class SwinTransformerBlock(nn.Module):
                     nn.init.normal_(m.bias, std=1e-6)
 
     def forward(self, x: Tensor):
-        if self.version==1:  # TODO: switch after python 3.10
+        if self.version == 1:  # TODO: switch after python 3.10
             x = x + self.stochastic_depth(self.attn(self.norm1(x)))
             x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
-        elif self.version==2:
+        elif self.version == 2:
             x = x + self.stochastic_depth(self.norm1(self.attn(x)))
             x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
         else:
@@ -593,7 +599,7 @@ class SwinTransformer(nn.Module):
         # build SwinTransformer blocks
         for i_stage in range(len(depths)):
             stage: List[nn.Module] = []
-            dim = embed_dim * 2 ** i_stage
+            dim = embed_dim * 2**i_stage
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
@@ -923,6 +929,7 @@ def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, *
         progress=progress,
         **kwargs,
     )
+
 
 def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
