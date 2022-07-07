@@ -446,8 +446,8 @@ class MViT_V1_B_Weights(WeightsEnum):
             "categories": _KINETICS400_CATEGORIES,
             "recipe": "https://github.com/facebookresearch/pytorchvideo/blob/main/docs/source/model_zoo.md",
             "_docs": (
-                "These weights were ported from the paper and it is evaluated on video level accuracy "
-                "with parameters frame_rate=7.5, clips_per_video=5, and clip_len=16"
+                "The weights were ported from the paper. The accuracies are estimated on video-level "
+                "with parameters `frame_rate=7.5`, `clips_per_video=5`, and `clip_len=16`"
             ),
             "num_params": 36610672,
             "_metrics": {

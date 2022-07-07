@@ -313,8 +313,8 @@ _COMMON_META = {
     "categories": _KINETICS400_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
     "_docs": (
-        "These weights reproduce closely the video accuracy of the paper for 16-frame clip inputs. "
-        "To produce the metrics we use frame_rate=8, clips_per_video=5, and clip_len=16 as parameters."
+        "The weights reproduce closely the accuracy of the paper. The accuracies are estimated on video-level "
+        "with parameters `frame_rate=15`, `clips_per_video=5`, and `clip_len=16`."
     ),
 }
 
@@ -328,8 +328,8 @@ class R3D_18_Weights(WeightsEnum):
             "num_params": 33371472,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": 62.893,
-                    "acc@5": 83.771,
+                    "acc@1": 63.200,
+                    "acc@5": 83.479,
                 }
             },
         },
@@ -346,8 +346,8 @@ class MC3_18_Weights(WeightsEnum):
             "num_params": 11695440,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": 64.491,
-                    "acc@5": 84.770,
+                    "acc@1": 63.960,
+                    "acc@5": 84.130,
                 }
             },
         },
@@ -364,8 +364,8 @@ class R2Plus1D_18_Weights(WeightsEnum):
             "num_params": 31505325,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": 67.473,
-                    "acc@5": 86.363,
+                    "acc@1": 67.463,
+                    "acc@5": 86.175,
                 }
             },
         },
