@@ -9,7 +9,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.transforms.functional import pil_to_tensor, InterpolationMode
-from torchvision.transforms.transforms import _setup_size
+from torchvision.transforms.transforms import _setup_size, _setup_angle, _check_sequence_input
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
@@ -220,19 +220,23 @@ class BatchMultiCrop(Transform):
         return apply_recursively(inputs if len(inputs) > 1 else inputs[0])
 
 
+def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> None:
+    if not isinstance(fill, (numbers.Number, tuple, list)):
+        raise TypeError("Got inappropriate fill arg")
+
+
 class Pad(Transform):
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[float, Sequence[float]] = 0.0,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
         if not isinstance(padding, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate padding arg")
 
-        if not isinstance(fill, (numbers.Number, tuple, list)):
-            raise TypeError("Got inappropriate fill arg")
+        _check_fill_arg(fill)
 
         if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
             raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
@@ -252,12 +256,11 @@ class Pad(Transform):
 
 class RandomZoomOut(_RandomApplyTransform):
     def __init__(
-        self, fill: Union[float, Sequence[float]] = 0.0, side_range: Tuple[float, float] = (1.0, 4.0), p: float = 0.5
+        self, fill: Union[int, float, Sequence[int], Sequence[float]] = 0, side_range: Tuple[float, float] = (1.0, 4.0), p: float = 0.5
     ) -> None:
         super().__init__(p=p)
 
-        if fill is None:
-            fill = 0.0
+        _check_fill_arg(fill)
         self.fill = fill
 
         self.side_range = side_range
@@ -292,3 +295,41 @@ class RandomZoomOut(_RandomApplyTransform):
         self._pad_op.padding = params["padding"]
         self._pad_op.fill = params["fill"]
         return self._pad_op(*inputs)
+
+
+class RandomRotation(Transform):
+    def __init__(
+        self,
+        degrees: Union[numbers.Number, Sequence],
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        expand: bool = False,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        center: Optional[List[float]] = None,
+    ) -> None:
+        super().__init__()
+        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
+        self.interpolation = interpolation
+        self.expand = expand
+
+        _check_fill_arg(fill)
+
+        self.fill = fill
+
+        if center is not None:
+            _check_sequence_input(center, "center", req_sizes=(2,))
+
+        self.center = center
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        angle = float(torch.empty(1).uniform_(float(self.degrees[0]), float(self.degrees[1])).item())
+        return dict(angle=angle)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.rotate(
+            inpt,
+            **params,
+            interpolation=self.interpolation,
+            expand=self.expand,
+            fill=self.fill,
+            center=self.center,
+        )

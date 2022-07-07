@@ -1,5 +1,5 @@
 import numbers
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -304,7 +304,7 @@ def rotate(
     interpolation: int = _pil_constants.NEAREST,
     expand: bool = False,
     center: Optional[Tuple[int, int]] = None,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
 ) -> Image.Image:
 
     if not _is_pil_image(img):

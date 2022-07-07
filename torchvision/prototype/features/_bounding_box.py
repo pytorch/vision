@@ -160,7 +160,7 @@ class BoundingBox(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Union[int, float, Sequence[float]] = 0,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
@@ -180,7 +180,7 @@ class BoundingBox(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[int, float, Sequence[float]] = 0,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F

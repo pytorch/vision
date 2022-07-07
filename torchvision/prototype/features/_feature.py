@@ -132,7 +132,7 @@ class _Feature(torch.Tensor):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
         center: Optional[List[float]] = None,
     ) -> Any:
         return self
@@ -144,7 +144,7 @@ class _Feature(torch.Tensor):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
         center: Optional[List[float]] = None,
     ) -> Any:
         return self

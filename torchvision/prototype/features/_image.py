@@ -190,10 +190,18 @@ class Image(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
         center: Optional[List[float]] = None,
     ) -> Image:
         from torchvision.prototype.transforms import functional as _F
+
+        # This cast does Sequence -> List[float] to please mypy and torch.jit.script
+        if not isinstance(fill, (int, float)):
+            fill = [float(v) for v in list(fill)]
+
+        if isinstance(fill, (int, float)):
+            # It is OK to cast int to float as later we use inpt.dtype
+            fill = [float(fill)]
 
         output = _F.rotate_image_tensor(
             self, angle, interpolation=interpolation, expand=expand, fill=fill, center=center
@@ -207,10 +215,18 @@ class Image(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
         center: Optional[List[float]] = None,
     ) -> Image:
         from torchvision.prototype.transforms import functional as _F
+
+        # This cast does Sequence -> List[float] to please mypy and torch.jit.script
+        if not isinstance(fill, (int, float)):
+            fill = [float(v) for v in list(fill)]
+
+        if isinstance(fill, (int, float)):
+            # It is OK to cast int to float as later we use inpt.dtype
+            fill = [float(fill)]
 
         output = _F.affine_image_tensor(
             self,

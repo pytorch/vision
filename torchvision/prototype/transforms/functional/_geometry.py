@@ -231,7 +231,7 @@ def affine_image_pil(
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Optional[List[float]] = None,
+    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
@@ -369,7 +369,7 @@ def affine(
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Optional[List[float]] = None,
+    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
     center: Optional[List[float]] = None,
 ) -> DType:
     if isinstance(inpt, features._Feature):
@@ -387,6 +387,15 @@ def affine(
             fill=fill,
             center=center,
         )
+
+    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
+    if not isinstance(fill, (int, float)):
+        fill = [float(v) for v in list(fill)]
+
+    if isinstance(fill, (int, float)):
+        # It is OK to cast int to float as later we use inpt.dtype
+        fill = [float(fill)]
+
     return affine_image_tensor(
         inpt,
         angle,
@@ -427,7 +436,7 @@ def rotate_image_pil(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Optional[List[float]] = None,
+    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     if center is not None and expand:
@@ -483,13 +492,22 @@ def rotate(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Optional[List[float]] = None,
+    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
     center: Optional[List[float]] = None,
 ) -> DType:
     if isinstance(inpt, features._Feature):
         return inpt.rotate(angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
     if isinstance(inpt, PIL.Image.Image):
         return rotate_image_pil(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
+
+    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
+    if not isinstance(fill, (int, float)):
+        fill = [float(v) for v in list(fill)]
+
+    if isinstance(fill, (int, float)):
+        # It is OK to cast int to float as later we use inpt.dtype
+        fill = [float(fill)]
+
     return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
 

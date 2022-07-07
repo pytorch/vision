@@ -80,7 +80,7 @@ class SegmentationMask(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
         center: Optional[List[float]] = None,
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
@@ -95,7 +95,7 @@ class SegmentationMask(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
         center: Optional[List[float]] = None,
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
