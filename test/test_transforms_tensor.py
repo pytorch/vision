@@ -291,11 +291,7 @@ def test_center_crop(device, tmpdir):
     scripted_fn(tensor)
 
     # Test torchscript of transforms.CenterCrop with size as [int, ]
-    f = T.CenterCrop(
-        size=[
-            5,
-        ]
-    )
+    f = T.CenterCrop(size=[5])
     scripted_fn = torch.jit.script(f)
     scripted_fn(tensor)
 
@@ -317,17 +313,7 @@ def test_center_crop(device, tmpdir):
         (F.ten_crop, T.TenCrop, 10),
     ],
 )
-@pytest.mark.parametrize(
-    "size",
-    [
-        (5,),
-        [
-            5,
-        ],
-        (4, 5),
-        [4, 5],
-    ],
-)
+@pytest.mark.parametrize("size", [(5,), [5], (4, 5), [4, 5]])
 def test_x_crop(fn, method, out_length, size, device):
     meth_kwargs = fn_kwargs = {"size": size}
     scripted_fn = torch.jit.script(fn)
@@ -509,19 +495,7 @@ def test_random_affine_degrees(device, interpolation, degrees):
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
-@pytest.mark.parametrize(
-    "fill",
-    [
-        85,
-        (10, -10, 10),
-        0.7,
-        [0.0, 0.0, 0.0],
-        [
-            1,
-        ],
-        1,
-    ],
-)
+@pytest.mark.parametrize("fill", [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_random_affine_fill(device, interpolation, fill):
     _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, fill=fill)
 
@@ -531,19 +505,7 @@ def test_random_affine_fill(device, interpolation, fill):
 @pytest.mark.parametrize("expand", [True, False])
 @pytest.mark.parametrize("degrees", [45, 35.0, (-45, 45), [-90.0, 90.0]])
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
-@pytest.mark.parametrize(
-    "fill",
-    [
-        85,
-        (10, -10, 10),
-        0.7,
-        [0.0, 0.0, 0.0],
-        [
-            1,
-        ],
-        1,
-    ],
-)
+@pytest.mark.parametrize("fill", [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_random_rotate(device, center, expand, degrees, interpolation, fill):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
@@ -564,19 +526,7 @@ def test_random_rotate_save(tmpdir):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("distortion_scale", np.linspace(0.1, 1.0, num=20))
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
-@pytest.mark.parametrize(
-    "fill",
-    [
-        85,
-        (10, -10, 10),
-        0.7,
-        [0.0, 0.0, 0.0],
-        [
-            1,
-        ],
-        1,
-    ],
-)
+@pytest.mark.parametrize("fill", [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_random_perspective(device, distortion_scale, interpolation, fill):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)

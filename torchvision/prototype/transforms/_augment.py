@@ -100,6 +100,7 @@ class RandomErasing(_RandomApplyTransform):
             "RandomErasing transformation does not support bounding boxes, segmentation masks and plain labels"
         )
 
+
 class _BaseMixupCutmix(Transform):
     def __init__(self, *, alpha: float) -> None:
         super().__init__()

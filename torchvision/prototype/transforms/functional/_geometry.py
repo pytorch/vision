@@ -587,7 +587,7 @@ def pad(
     inpt: DType,
     padding: Union[int, Sequence[int]],
     fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
-    padding_mode: str = "constant"
+    padding_mode: str = "constant",
 ) -> DType:
     if isinstance(inpt, features._Feature):
         return inpt.pad(padding, fill=fill, padding_mode=padding_mode)
