@@ -293,25 +293,3 @@ class Image(_Feature):
 
         output = _F.invert_image_tensor(self)
         return Image.new_like(self, output)
-
-    def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> Image:
-        from torchvision.prototype.transforms import functional as _F
-
-        output = _F.erase_image_tensor(self, i, j, h, w, v)
-        return Image.new_like(self, output)
-
-    def mixup(self, lam: float) -> Image:
-        if self.ndim < 4:
-            raise ValueError("Need a batch of images")
-        output = self.clone()
-        output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
-        return Image.new_like(self, output)
-
-    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> Image:
-        if self.ndim < 4:
-            raise ValueError("Need a batch of images")
-        x1, y1, x2, y2 = box
-        image_rolled = self.roll(1, -4)
-        output = self.clone()
-        output[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
-        return Image.new_like(self, output)

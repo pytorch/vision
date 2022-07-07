@@ -186,12 +186,3 @@ class _Feature(torch.Tensor):
 
     def invert(self) -> Any:
         return self
-
-    def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> Any:
-        return self
-
-    def mixup(self, lam: float) -> Any:
-        return self
-
-    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> Any:
-        return self

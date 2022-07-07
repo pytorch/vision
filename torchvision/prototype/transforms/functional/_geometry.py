@@ -521,7 +521,7 @@ def _pad_with_vector_fill(
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
     output = pad_image_tensor(img, padding, fill=0, padding_mode="constant")
-    left, top, right, bottom = padding
+    left, top, right, bottom = _FT._parse_pad_padding(padding)
     fill = torch.tensor(fill, dtype=img.dtype, device=img.device).view(-1, 1, 1)
 
     if top > 0:

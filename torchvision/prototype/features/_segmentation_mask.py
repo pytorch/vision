@@ -113,12 +113,3 @@ class SegmentationMask(_Feature):
 
         output = _F.perspective_segmentation_mask(self, perspective_coeffs)
         return SegmentationMask.new_like(self, output)
-
-    def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> SegmentationMask:
-        raise TypeError("Erase transformation does not support segmentation masks")
-
-    def mixup(self, lam: float) -> SegmentationMask:
-        raise TypeError("Mixup transformation does not support segmentation masks")
-
-    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> SegmentationMask:
-        raise TypeError("Cutmix transformation does not support segmentation masks")

@@ -200,12 +200,3 @@ class BoundingBox(_Feature):
 
         output = _F.perspective_bounding_box(self, self.format, perspective_coeffs)
         return BoundingBox.new_like(self, output, dtype=output.dtype)
-
-    def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> BoundingBox:
-        raise TypeError("Erase transformation does not support bounding boxes")
-
-    def mixup(self, lam: float) -> BoundingBox:
-        raise TypeError("Mixup transformation does not support bounding boxes")
-
-    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> BoundingBox:
-        raise TypeError("Cutmix transformation does not support bounding boxes")

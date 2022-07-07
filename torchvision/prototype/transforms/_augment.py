@@ -86,16 +86,19 @@ class RandomErasing(_RandomApplyTransform):
         return dict(i=i, j=j, h=h, w=w, v=v)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.erase(**params)
+        if isinstance(inpt, (features.Image, torch.Tensor)):
+            output = F.erase_image_tensor(inpt, **params)
+            if isinstance(inpt, features.Image):
+                return features.Image.new_like(inpt, output)
+            return output
         elif isinstance(inpt, PIL.Image.Image):
             # TODO: We should implement a fallback to tensor, like gaussian_blur etc
             raise RuntimeError("Not implemented")
         elif isinstance(inpt, torch.Tensor):
             return F.erase_image_tensor(inpt, **params)
-        else:
-            return inpt
-
+        raise TypeError(
+            "RandomErasing transformation does not support bounding boxes, segmentation masks and plain labels"
+        )
 
 class _BaseMixupCutmix(Transform):
     def __init__(self, *, alpha: float) -> None:
@@ -110,15 +113,32 @@ class _BaseMixupCutmix(Transform):
         return super().forward(sample)
 
 
+def _mixup_onehotlabel(inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
+    if inpt.ndim < 2:
+        raise ValueError("Need a batch of one hot labels")
+    output = inpt.clone()
+    output = output.roll(1, -2).mul_(1 - lam).add_(output.mul_(lam))
+    return features.OneHotLabel.new_like(inpt, output)
+
+
 class RandomMixup(_BaseMixupCutmix):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.mixup(**params)
-        else:
-            return inpt
+        lam = params["lam"]
+        if isinstance(inpt, features.Image):
+            if inpt.ndim < 4:
+                raise ValueError("Need a batch of images")
+            output = inpt.clone()
+            output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
+            return features.Image.new_like(inpt, output)
+        if isinstance(inpt, features.OneHotLabel):
+            return _mixup_onehotlabel(inpt, lam)
+
+        raise TypeError(
+            "RandomMixup transformation does not support bounding boxes, segmentation masks and plain labels"
+        )
 
 
 class RandomCutmix(_BaseMixupCutmix):
@@ -146,7 +166,19 @@ class RandomCutmix(_BaseMixupCutmix):
         return dict(box=box, lam_adjusted=lam_adjusted)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.cutmix(**params)
-        else:
-            return inpt
+        if isinstance(inpt, features.Image):
+            box = params["box"]
+            if inpt.ndim < 4:
+                raise ValueError("Need a batch of images")
+            x1, y1, x2, y2 = box
+            image_rolled = inpt.roll(1, -4)
+            output = inpt.clone()
+            output[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
+            return features.Image.new_like(inpt, output)
+        if isinstance(inpt, features.OneHotLabel):
+            lam_adjusted = params["lam_adjusted"]
+            return _mixup_onehotlabel(inpt, lam_adjusted)
+
+        raise TypeError(
+            "RandomCutmix transformation does not support bounding boxes, segmentation masks and plain labels"
+        )
