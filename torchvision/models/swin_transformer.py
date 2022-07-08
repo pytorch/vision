@@ -31,6 +31,15 @@ __all__ = [
 ]
 
 
+def _patch_merging_pad(x):
+    H, W, _ = x.shape[-3:]
+    x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+    return x
+
+
+torch.fx.wrap("_patch_merging_pad")
+
+
 class PatchMerging(nn.Module):
     """Patch Merging Layer.
     Args:
@@ -52,8 +61,7 @@ class PatchMerging(nn.Module):
         Returns:
             Tensor with layout of [..., H/2, W/2, 2*C]
         """
-        H, W, _ = x.shape[-3:]
-        x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+        x = _patch_merging_pad(x)
 
         x0 = x[..., 0::2, 0::2, :]  # ... H/2 W/2 C
         x1 = x[..., 1::2, 0::2, :]  # ... H/2 W/2 C
