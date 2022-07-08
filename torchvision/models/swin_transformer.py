@@ -86,8 +86,7 @@ def shifted_window_attention(
     dropout: float = 0.0,
     qkv_bias: Optional[Tensor] = None,
     proj_bias: Optional[Tensor] = None,
-    v2: bool = False,
-    logit_scale: torch.Tensor = None,
+    v2_logit_scale: Optional[torch.Tensor] = None,
 ):
     """
     Window based multi-head self attention (W-MSA) module with relative position bias.
@@ -130,18 +129,18 @@ def shifted_window_attention(
     x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size[0] * window_size[1], C)  # B*nW, Ws*Ws, C
 
     # multi-head attention
-    if v2 and qkv_bias is not None:
+    if v2_logit_scale is not None and qkv_bias is not None:
         qkv_bias = qkv_bias.clone()
         length = qkv_bias.numel() // 3
         qkv_bias[length : 2 * length].zero_()
     qkv = F.linear(x, qkv_weight, qkv_bias)
     qkv = qkv.reshape(x.size(0), x.size(1), 3, num_heads, C // num_heads).permute(2, 0, 3, 1, 4)
     q, k, v = qkv[0], qkv[1], qkv[2]
-    if v2:
+    if v2_logit_scale is not None:
         # cosine attention
         attn = F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-2, -1)
-        logit_scale = torch.clamp(logit_scale, max=torch.log(torch.tensor(1.0 / 0.01))).exp()
-        attn = attn * logit_scale
+        v2_logit_scale = torch.clamp(v2_logit_scale, max=torch.log(torch.tensor(1.0 / 0.01))).exp()
+        attn = attn * v2_logit_scale
     else:
         q = q * (C // num_heads) ** -0.5
         attn = q.matmul(k.transpose(-2, -1))
@@ -240,7 +239,7 @@ class ShiftedWindowAttention(nn.Module):
 
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
-    def get_relative_position_bias(self, relative_position_bias_table: Optional[torch.Tensor]) -> torch.Tensor:
+    def get_relative_position_bias(self, relative_position_bias_table: Optional[torch.Tensor] = None) -> torch.Tensor:
         if relative_position_bias_table is None:
             relative_position_bias_table = self.relative_position_bias_table
         N = self.window_size[0] * self.window_size[1]
@@ -301,7 +300,7 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
             dropout=dropout,
         )
 
-        self.logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))))
+        self.v2_logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))))
         # mlp to generate continuous relative position bias
         self.cpb_mlp = nn.Sequential(
             nn.Linear(2, 512, bias=True), nn.ReLU(inplace=True), nn.Linear(512, num_heads, bias=False)
@@ -342,8 +341,9 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
         relative_position_index = relative_coords.sum(-1).flatten()  # Wh*Ww*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
-    def get_relative_position_bias(self) -> torch.Tensor:
-        relative_position_bias_table: torch.Tensor = self.cpb_mlp(self.relative_coords_table).view(-1, self.num_heads)
+    def get_relative_position_bias(self, relative_position_bias_table: Optional[torch.Tensor] = None) -> torch.Tensor:
+        if relative_position_bias_table is None:
+            relative_position_bias_table = self.cpb_mlp(self.relative_coords_table).view(-1, self.num_heads)
         relative_position_bias = super().get_relative_position_bias(relative_position_bias_table)
         relative_position_bias = 16 * torch.sigmoid(relative_position_bias)
         return relative_position_bias
@@ -368,8 +368,7 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
             dropout=self.dropout,
             qkv_bias=self.qkv.bias,
             proj_bias=self.proj.bias,
-            v2=True,
-            logit_scale=self.logit_scale,
+            v2_logit_scale=self.v2_logit_scale,
         )
 
 
@@ -400,7 +399,7 @@ class SwinTransformerBlock(nn.Module):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
-        attn_layer: Optional[Callable[..., nn.Module]] = ShiftedWindowAttention,
+        attn_layer: Callable[..., nn.Module] = ShiftedWindowAttention,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -457,7 +456,7 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
-        attn_layer: Optional[Callable[..., nn.Module]] = ShiftedWindowAttentionV2,
+        attn_layer: Callable[..., nn.Module] = ShiftedWindowAttentionV2,
     ):
         super().__init__(
             dim,
@@ -511,14 +510,14 @@ class SwinTransformer(nn.Module):
         num_classes: int = 1000,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         block: Optional[Callable[..., nn.Module]] = None,
-        v2: bool = False,
+        use_v2: bool = False,
     ):
         super().__init__()
         _log_api_usage_once(self)
         self.num_classes = num_classes
 
         if block is None:
-            block = SwinTransformerBlockV2 if v2 else SwinTransformerBlock
+            block = SwinTransformerBlockV2 if use_v2 else SwinTransformerBlock
 
         if norm_layer is None:
             norm_layer = partial(nn.LayerNorm, eps=1e-5)
@@ -833,6 +832,6 @@ def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = T
         stochastic_depth_prob=0.2,
         weights=weights,
         progress=progress,
-        v2=True,
+        use_v2=True,
         **kwargs,
     )
