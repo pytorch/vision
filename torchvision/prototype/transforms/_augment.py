@@ -9,7 +9,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_image, get_image_dimensions, has_any
+from ._utils import query_image, get_image_dimensions, has_any, has_all
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -106,6 +106,8 @@ class _BaseMixupCutmix(Transform):
 
     def forward(self, *inpts: Any) -> Any:
         sample = inpts if len(inpts) > 1 else inpts[0]
+        if not has_all(sample, features.Image, features.OneHotLabel):
+            raise TypeError(f"{type(self).__name__}() is only defined for Image's *and* OneHotLabel's.")
         if has_any(sample, features.BoundingBox, features.SegmentationMask, features.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support bounding boxes, segmentation masks and plain labels."
