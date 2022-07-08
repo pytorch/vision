@@ -3,7 +3,13 @@ import itertools
 import pytest
 import torch
 from common_utils import assert_equal
-from test_prototype_transforms_functional import make_images, make_bounding_boxes, make_one_hot_labels
+from test_prototype_transforms_functional import (
+    make_images,
+    make_bounding_boxes,
+    make_one_hot_labels,
+    make_segmentation_masks,
+    make_label,
+)
 from torchvision.prototype import transforms, features
 from torchvision.transforms.functional import to_pil_image, pil_to_tensor
 
@@ -101,6 +107,20 @@ class TestSmoke:
     )
     def test_mixup_cutmix(self, transform, input):
         transform(input)
+
+    @pytest.mark.parametrize("transform", [transforms.RandomMixup(alpha=1.0), transforms.RandomCutmix(alpha=1.0)])
+    def test_mixup_cutmix_assertions(self, transform):
+        for bbox in make_bounding_boxes():
+            with pytest.raises(TypeError, match="does not support"):
+                transform(bbox)
+            break
+        for mask in make_segmentation_masks():
+            with pytest.raises(TypeError, match="does not support"):
+                transform(mask)
+            break
+        label = make_label()
+        with pytest.raises(TypeError, match="does not support"):
+            transform(label)
 
     @parametrize(
         [
