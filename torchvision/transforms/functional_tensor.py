@@ -385,8 +385,13 @@ def pad(
     if isinstance(padding, tuple):
         padding = list(padding)
 
-    if isinstance(padding, list) and len(padding) not in [1, 2, 4]:
-        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
+    if isinstance(padding, list):
+        # TODO: Jit is failing on loading this op when scripted and saved
+        # https://github.com/pytorch/pytorch/issues/81100
+        if len(padding) not in [1, 2, 4]:
+            raise ValueError(
+                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
+            )
 
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
