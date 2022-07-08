@@ -445,12 +445,15 @@ class MViT_V1_B_Weights(WeightsEnum):
             "min_temporal_size": 16,
             "categories": _KINETICS400_CATEGORIES,
             "recipe": "https://github.com/facebookresearch/pytorchvideo/blob/main/docs/source/model_zoo.md",
-            "_docs": """These weights support 16-frame clip inputs and were ported from the paper.""",
+            "_docs": (
+                "The weights were ported from the paper. The accuracies are estimated on video-level "
+                "with parameters `frame_rate=7.5`, `clips_per_video=5`, and `clip_len=16`"
+            ),
             "num_params": 36610672,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": 78.47,
-                    "acc@5": 93.65,
+                    "acc@1": 78.477,
+                    "acc@5": 93.582,
                 }
             },
         },
