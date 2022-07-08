@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 
-def _patch_merging_pad(x):
+def _patch_merging_pad(x: torch.Tensor) -> torch.Tensor:
     H, W, _ = x.shape[-3:]
     x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
     return x
