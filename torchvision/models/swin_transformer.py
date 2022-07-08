@@ -749,72 +749,9 @@ class Swin_B_Weights(WeightsEnum):
 
 
 class Swin_V2_T_Weights(WeightsEnum):
-    IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_v2_t-123456.pth",  # TODO
-        transforms=partial(
-            ImageClassification, crop_size=224, resize_size=232, interpolation=InterpolationMode.BICUBIC
-        ),  # TODO
-        meta={
-            **_COMMON_META,
-            "num_params": 28288354,  # TODO
-            "min_size": (224, 224),  # TODO
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
-            "_metrics": {
-                "ImageNet-1K": {
-                    "acc@1": 0.100,  # TODO
-                    "acc@5": 0.100,  # TODO
-                }
-            },
-            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
-        },
-    )
-    DEFAULT = IMAGENET1K_V1
+    pass
 
 
-class Swin_V2_S_Weights(WeightsEnum):
-    IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_v2_s-123456.pth",  # TODO
-        transforms=partial(
-            ImageClassification, crop_size=224, resize_size=246, interpolation=InterpolationMode.BICUBIC
-        ),  # TODO
-        meta={
-            **_COMMON_META,
-            "num_params": 49606258,  # TODO
-            "min_size": (224, 224),  # TODO
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
-            "_metrics": {
-                "ImageNet-1K": {
-                    "acc@1": 0.100,  # TODO
-                    "acc@5": 0.100,  # TODO
-                }
-            },
-            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
-        },
-    )
-    DEFAULT = IMAGENET1K_V1
-
-
-class Swin_V2_B_Weights(WeightsEnum):
-    IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_v2_b-123456.pth",  # TODO
-        transforms=partial(
-            ImageClassification, crop_size=224, resize_size=238, interpolation=InterpolationMode.BICUBIC
-        ),  # TODO
-        meta={
-            **_COMMON_META,
-            "num_params": 87768224,  # TODO
-            "min_size": (224, 224),  # TODO
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
-            "_metrics": {
-                "ImageNet-1K": {
-                    "acc@1": 0.100,  # TODO
-                    "acc@5": 0.100,  # TODO
-                }
-            },
-            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
-        },
-    )
-    DEFAULT = IMAGENET1K_V1
 
 
 def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
