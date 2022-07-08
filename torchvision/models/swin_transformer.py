@@ -233,7 +233,8 @@ class ShiftedWindowAttention(nn.Module):
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
     def get_relative_position_bias(self, relative_position_bias_table: Optional[torch.Tensor]) -> torch.Tensor:
-        relative_position_bias_table = relative_position_bias_table or self.relative_position_bias_table
+        if relative_position_bias_table is None:
+            relative_position_bias_table = self.relative_position_bias_table
         N = self.window_size[0] * self.window_size[1]
         relative_position_bias = relative_position_bias_table[self.relative_position_index]  # type: ignore[index]
         relative_position_bias = relative_position_bias.view(N, N, -1)
