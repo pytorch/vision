@@ -14,11 +14,7 @@ from torchdata.datapipes.iter import (
     TarArchiveLoader,
     Enumerator,
 )
-from torchvision.prototype.datasets.utils import (
-    OnlineResource,
-    ManualDownloadResource,
-    Dataset,
-)
+from torchvision.prototype.datasets.utils import ManualDownloadResource, Dataset
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     getitem,
@@ -39,11 +35,6 @@ NAME = "imagenet"
 def _info() -> Dict[str, Any]:
     categories, wnids = zip(*read_categories_file(NAME))
     return dict(categories=categories, wnids=wnids)
-
-
-class ImageNetResource(ManualDownloadResource):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__("Register on https://image-net.org/ and follow the instructions there.", **kwargs)
 
 
 class ImageNetDemux(enum.IntEnum):
@@ -80,16 +71,22 @@ class ImageNet(Dataset):
         "test_v10102019": "9cf7f8249639510f17d3d8a0deb47cd22a435886ba8e29e2b3223e65a4079eb4",
     }
 
-    def _resources(self) -> List[OnlineResource]:
-        name = "test_v10102019" if self._split == "test" else self._split
-        images = ImageNetResource(
-            file_name=f"ILSVRC2012_img_{name}.tar",
-            sha256=self._IMAGES_CHECKSUMS[name],
+    def _imagenet_resource(self, *, file_name: str, sha256: str) -> ManualDownloadResource:
+        return ManualDownloadResource(
+            "https://image-net.org/",
+            instructions="Register on https://image-net.org/ and follow the instructions there.",
+            file_name=file_name,
+            sha256=sha256,
         )
-        resources: List[OnlineResource] = [images]
+
+    def _resources(self) -> List[ManualDownloadResource]:
+        name = "test_v10102019" if self._split == "test" else self._split
+        images = self._imagenet_resource(file_name=f"ILSVRC2012_img_{name}.tar", sha256=self._IMAGES_CHECKSUMS[name])
+
+        resources = [images]
 
         if self._split == "val":
-            devkit = ImageNetResource(
+            devkit = self._imagenet_resource(
                 file_name="ILSVRC2012_devkit_t12.tar.gz",
                 sha256="b59243268c0d266621fd587d2018f69e906fb22875aca0e295b48cafaa927953",
             )

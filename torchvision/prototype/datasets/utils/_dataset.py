@@ -42,7 +42,7 @@ class Dataset(IterDataPipe[Dict[str, Any]], abc.ABC):
         yield from self._dp
 
     @abc.abstractmethod
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> Sequence[OnlineResource]:
         pass
 
     @abc.abstractmethod

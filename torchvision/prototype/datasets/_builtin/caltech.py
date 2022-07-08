@@ -9,7 +9,7 @@ from torchdata.datapipes.iter import (
     Filter,
     IterKeyZipper,
 )
-from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     read_mat,
@@ -49,13 +49,13 @@ class Caltech101(Dataset):
         )
 
     def _resources(self) -> List[OnlineResource]:
-        images = GDriveResource(
+        images = OnlineResource.from_gdrive(
             "137RyRjvTBkBiIfeYBNZBtViDHQ6_Ewsp",
             file_name="101_ObjectCategories.tar.gz",
             sha256="af6ece2f339791ca20f855943d8b55dd60892c0a25105fcd631ee3d6430f9926",
             preprocess="decompress",
         )
-        anns = GDriveResource(
+        anns = OnlineResource.from_gdrive(
             "175kQy3UsZ0wUEHZjqkUDdNVssr7bgh_m",
             file_name="Annotations.tar",
             sha256="1717f4e10aa837b05956e3f4c94456527b143eec0d95e935028b30aff40663d8",
@@ -173,7 +173,7 @@ class Caltech256(Dataset):
 
     def _resources(self) -> List[OnlineResource]:
         return [
-            GDriveResource(
+            OnlineResource.from_gdrive(
                 "1r6o0pSROcV1_VwT4oSjA2FBUSCWGuxLK",
                 file_name="256_ObjectCategories.tar",
                 sha256="08ff01b03c65566014ae88eb0490dbe4419fc7ac4de726ee1163e39fd809543e",
