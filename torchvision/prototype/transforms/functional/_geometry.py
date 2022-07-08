@@ -210,18 +210,22 @@ def affine_image_tensor(
     fill: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    num_channels, height, width = img.shape[-3:]
+    extra_dims = img.shape[:-3]
+    img = img.view(-1, num_channels, height, width)
+
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
 
     center_f = [0.0, 0.0]
     if center is not None:
-        _, height, width = get_dimensions_image_tensor(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
         center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
 
     translate_f = [1.0 * t for t in translate]
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
 
-    return _FT.affine(img, matrix, interpolation=interpolation.value, fill=fill)
+    output = _FT.affine(img, matrix, interpolation=interpolation.value, fill=fill)
+    return output.view(extra_dims + (num_channels, height, width))
 
 
 def affine_image_pil(
@@ -344,7 +348,7 @@ def affine_bounding_box(
 
 
 def affine_segmentation_mask(
-    img: torch.Tensor,
+    mask: torch.Tensor,
     angle: float,
     translate: List[float],
     scale: float,
@@ -352,7 +356,7 @@ def affine_segmentation_mask(
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     return affine_image_tensor(
-        img,
+        mask,
         angle=angle,
         translate=translate,
         scale=scale,
@@ -423,6 +427,10 @@ def rotate_image_tensor(
     fill: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    num_channels, height, width = img.shape[-3:]
+    extra_dims = img.shape[:-3]
+    img = img.view(-1, num_channels, height, width)
+
     center_f = [0.0, 0.0]
     if center is not None:
         if expand:
@@ -435,7 +443,8 @@ def rotate_image_tensor(
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
-    return _FT.rotate(img, matrix, interpolation=interpolation.value, expand=expand, fill=fill)
+    output = _FT.rotate(img, matrix, interpolation=interpolation.value, expand=expand, fill=fill)
+    return output.view(extra_dims + (num_channels, height, width))
 
 
 def rotate_image_pil(
@@ -518,15 +527,15 @@ pad_image_pil = _FP.pad
 def pad_image_tensor(
     img: torch.Tensor, padding: Union[int, List[int]], fill: Union[int, float] = 0, padding_mode: str = "constant"
 ) -> torch.Tensor:
-    num_masks, height, width = img.shape[-3:]
+    num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
 
     padded_image = _FT.pad(
-        img=img.view(-1, num_masks, height, width), padding=padding, fill=fill, padding_mode=padding_mode
+        img=img.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
     )
 
     new_height, new_width = padded_image.shape[-2:]
-    return padded_image.view(extra_dims + (num_masks, new_height, new_width))
+    return padded_image.view(extra_dims + (num_channels, new_height, new_width))
 
 
 # TODO: This should be removed once pytorch pad supports non-scalar padding values
