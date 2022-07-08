@@ -113,13 +113,12 @@ class _BaseMixupCutmix(Transform):
             raise TypeError(f"{type(self).__name__}() is only defined for Image's *and* OneHotLabel's.")
         return super().forward(sample)
 
-
-def _mixup_onehotlabel(inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
-    if inpt.ndim < 2:
-        raise ValueError("Need a batch of one hot labels")
-    output = inpt.clone()
-    output = output.roll(1, -2).mul_(1 - lam).add_(output.mul_(lam))
-    return features.OneHotLabel.new_like(inpt, output)
+    def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
+        if inpt.ndim < 2:
+            raise ValueError("Need a batch of one hot labels")
+        output = inpt.clone()
+        output = output.roll(1, -2).mul_(1 - lam).add_(output.mul_(lam))
+        return features.OneHotLabel.new_like(inpt, output)
 
 
 class RandomMixup(_BaseMixupCutmix):
@@ -135,7 +134,7 @@ class RandomMixup(_BaseMixupCutmix):
             output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
             return features.Image.new_like(inpt, output)
         if isinstance(inpt, features.OneHotLabel):
-            return _mixup_onehotlabel(inpt, lam)
+            return self._mixup_onehotlabel(inpt, lam)
 
         raise TypeError(
             "RandomMixup transformation does not support bounding boxes, segmentation masks and plain labels"
@@ -178,7 +177,7 @@ class RandomCutmix(_BaseMixupCutmix):
             return features.Image.new_like(inpt, output)
         if isinstance(inpt, features.OneHotLabel):
             lam_adjusted = params["lam_adjusted"]
-            return _mixup_onehotlabel(inpt, lam_adjusted)
+            return self._mixup_onehotlabel(inpt, lam_adjusted)
 
         raise TypeError(
             "RandomCutmix transformation does not support bounding boxes, segmentation masks and plain labels"

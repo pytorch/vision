@@ -1,5 +1,5 @@
 import collections.abc
-from typing import Any, Dict, Union, Tuple, Optional, Sequence, Callable, TypeVar
+from typing import Any, Dict, Union, Tuple, Optional, Sequence, TypeVar
 
 import PIL.Image
 import torch
@@ -51,24 +51,6 @@ class ColorJitter(Transform):
             raise TypeError(f"{name} should be a single number or a sequence with length 2.")
 
         return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
-
-    def _image_transform(
-        self,
-        inpt: T,
-        *,
-        kernel_tensor: Callable[..., torch.Tensor],
-        kernel_pil: Callable[..., PIL.Image.Image],
-        **kwargs: Any,
-    ) -> T:
-        if isinstance(inpt, features.Image):
-            output = kernel_tensor(inpt, **kwargs)
-            return features.Image.new_like(inpt, output)
-        elif is_simple_tensor(inpt):
-            return kernel_tensor(inpt, **kwargs)
-        elif isinstance(inpt, PIL.Image.Image):
-            return kernel_pil(inpt, **kwargs)  # type: ignore[no-any-return]
-        else:
-            raise RuntimeError
 
     @staticmethod
     def _generate_value(left: float, right: float) -> float:

@@ -270,8 +270,6 @@ class RandomZoomOut(_RandomApplyTransform):
         if side_range[0] < 1.0 or side_range[0] > side_range[1]:
             raise ValueError(f"Invalid canvas side range provided {side_range}.")
 
-        self._pad_op = Pad(0, padding_mode="constant")
-
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
         orig_c, orig_h, orig_w = get_image_dimensions(image)
@@ -293,11 +291,8 @@ class RandomZoomOut(_RandomApplyTransform):
 
         return dict(padding=padding, fill=fill)
 
-    def forward(self, *inputs: Any) -> Any:
-        params = self._get_params(inputs)
-        self._pad_op.padding = params["padding"]
-        self._pad_op.fill = params["fill"]
-        return self._pad_op(*inputs)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.pad(inpt, **params)
 
 
 class RandomRotation(Transform):

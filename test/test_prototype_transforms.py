@@ -72,6 +72,7 @@ class TestSmoke:
         transforms.ConvertImageDtype(),
         transforms.RandomHorizontalFlip(),
         transforms.Pad(5),
+        transforms.RandomZoomOut(),
     )
     def test_common(self, transform, input):
         transform(input)

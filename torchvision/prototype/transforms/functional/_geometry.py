@@ -231,7 +231,7 @@ def affine_image_pil(
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
@@ -362,6 +362,19 @@ def affine_segmentation_mask(
     )
 
 
+def _convert_fill_arg(fill: Optional[Union[int, float, Sequence[int], Sequence[float]]]) -> Optional[List[float]]:
+    if fill is None:
+        fill = 0
+
+    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
+    if not isinstance(fill, (int, float)):
+        fill = [float(v) for v in list(fill)]
+    else:
+        # It is OK to cast int to float as later we use inpt.dtype
+        fill = [float(fill)]
+    return fill
+
+
 def affine(
     inpt: DType,
     angle: float,
@@ -369,7 +382,7 @@ def affine(
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> DType:
     if isinstance(inpt, features._Feature):
@@ -388,13 +401,7 @@ def affine(
             center=center,
         )
 
-    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
-    if not isinstance(fill, (int, float)):
-        fill = [float(v) for v in list(fill)]
-
-    if isinstance(fill, (int, float)):
-        # It is OK to cast int to float as later we use inpt.dtype
-        fill = [float(fill)]
+    fill = _convert_fill_arg(fill)
 
     return affine_image_tensor(
         inpt,
@@ -436,7 +443,7 @@ def rotate_image_pil(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     if center is not None and expand:
@@ -492,7 +499,7 @@ def rotate(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> DType:
     if isinstance(inpt, features._Feature):
@@ -500,13 +507,7 @@ def rotate(
     if isinstance(inpt, PIL.Image.Image):
         return rotate_image_pil(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
-    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
-    if not isinstance(fill, (int, float)):
-        fill = [float(v) for v in list(fill)]
-
-    if isinstance(fill, (int, float)):
-        # It is OK to cast int to float as later we use inpt.dtype
-        fill = [float(fill)]
+    fill = _convert_fill_arg(fill)
 
     return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
@@ -586,7 +587,7 @@ def pad_bounding_box(
 def pad(
     inpt: DType,
     padding: Union[int, Sequence[int]],
-    fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     padding_mode: str = "constant",
 ) -> DType:
     if isinstance(inpt, features._Feature):
@@ -597,6 +598,9 @@ def pad(
     # This cast does Sequence[int] -> List[int] and is required to make mypy happy
     if not isinstance(padding, int):
         padding = list(padding)
+
+    if fill is None:
+        fill = 0
 
     # TODO: PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
     if isinstance(fill, (int, float)):
@@ -653,7 +657,7 @@ def perspective_image_pil(
     img: PIL.Image.Image,
     perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BICUBIC,
-    fill: Optional[List[float]] = None,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> PIL.Image.Image:
     return _FP.perspective(img, perspective_coeffs, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
@@ -751,12 +755,15 @@ def perspective(
     inpt: DType,
     perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[List[float]] = None,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> DType:
     if isinstance(inpt, features._Feature):
         return inpt.perspective(perspective_coeffs, interpolation=interpolation, fill=fill)
     if isinstance(inpt, PIL.Image.Image):
         return perspective_image_pil(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
+
+    fill = _convert_fill_arg(fill)
+
     return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
 
 

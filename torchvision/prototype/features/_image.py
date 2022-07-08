@@ -166,7 +166,7 @@ class Image(_Feature):
     def pad(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         padding_mode: str = "constant",
     ) -> Image:
         from torchvision.prototype.transforms import functional as _F
@@ -174,6 +174,9 @@ class Image(_Feature):
         # This cast does Sequence[int] -> List[int] and is required to make mypy happy
         if not isinstance(padding, int):
             padding = list(padding)
+
+        if fill is None:
+            fill = 0
 
         # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
         if isinstance(fill, (int, float)):
@@ -190,18 +193,12 @@ class Image(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        from torchvision.prototype.transforms.functional import _geometry as _F
 
-        # This cast does Sequence -> List[float] to please mypy and torch.jit.script
-        if not isinstance(fill, (int, float)):
-            fill = [float(v) for v in list(fill)]
-
-        if isinstance(fill, (int, float)):
-            # It is OK to cast int to float as later we use inpt.dtype
-            fill = [float(fill)]
+        fill = _F._convert_fill_arg(fill)
 
         output = _F.rotate_image_tensor(
             self, angle, interpolation=interpolation, expand=expand, fill=fill, center=center
@@ -215,18 +212,12 @@ class Image(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        from torchvision.prototype.transforms.functional import _geometry as _F
 
-        # This cast does Sequence -> List[float] to please mypy and torch.jit.script
-        if not isinstance(fill, (int, float)):
-            fill = [float(v) for v in list(fill)]
-
-        if isinstance(fill, (int, float)):
-            # It is OK to cast int to float as later we use inpt.dtype
-            fill = [float(fill)]
+        fill = _F._convert_fill_arg(fill)
 
         output = _F.affine_image_tensor(
             self,
@@ -244,9 +235,11 @@ class Image(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        from torchvision.prototype.transforms.functional import _geometry as _F
+
+        fill = _F._convert_fill_arg(fill)
 
         output = _F.perspective_image_tensor(self, perspective_coeffs, interpolation=interpolation, fill=fill)
         return Image.new_like(self, output)

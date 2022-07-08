@@ -62,7 +62,7 @@ class SegmentationMask(_Feature):
     def pad(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         padding_mode: str = "constant",
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
@@ -79,7 +79,7 @@ class SegmentationMask(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
@@ -94,7 +94,7 @@ class SegmentationMask(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
@@ -113,7 +113,7 @@ class SegmentationMask(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
 
