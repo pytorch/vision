@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, List, Optional, Union, Tuple
+from typing import Callable, List, Optional, Union, Tuple, Sequence
 
 import torch
 from torch import Tensor
@@ -86,10 +86,7 @@ class ConvNormActivation(torch.nn.Sequential):
             if isinstance(kernel_size, int) and isinstance(dilation, int):
                 padding = (kernel_size - 1) // 2 * dilation
             else:
-                if isinstance(kernel_size, Tuple):
-                    _conv_dim = len(kernel_size)
-                elif isinstance(dilation, Tuple):
-                    _conv_dim = len(dilation)
+                _conv_dim = len(kernel_size) if isinstance(kernel_size, Sequence) else len(dilation)
                 kernel_size = _make_ntuple(kernel_size, _conv_dim)
                 dilation = _make_ntuple(dilation, _conv_dim)
                 padding = tuple((kernel_size[i] - 1) // 2 * dilation[i] for i in range(_conv_dim))
