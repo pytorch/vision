@@ -72,8 +72,8 @@ class _AutoAugmentBase(Transform):
     ) -> Union[int, float, Sequence[int], Sequence[float]]:
         fill = self.fill
 
-        # if isinstance(image, PIL.Image.Image) or fill is None:
-        #     return fill
+        if isinstance(image, PIL.Image.Image) or fill is None:
+            return fill
 
         if isinstance(fill, (int, float)):
             fill = [float(fill)] * num_channels
