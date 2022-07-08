@@ -72,7 +72,7 @@ class ConvNormActivation(torch.nn.Sequential):
         out_channels: int,
         kernel_size: Union[int, Tuple[int, ...]] = 3,
         stride: Union[int, Tuple[int, ...]] = 1,
-        padding: Optional[Union[int, Tuple[int, ...]]] = None,
+        padding: Optional[Union[int, Tuple[int, ...], str]] = None,
         groups: int = 1,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
@@ -82,11 +82,17 @@ class ConvNormActivation(torch.nn.Sequential):
         conv_layer: Callable[..., torch.nn.Module] = torch.nn.Conv2d,
     ) -> None:
 
-        _conv_dim = 2 if conv_layer == torch.nn.Conv2d else 3
-        kernel_size = _make_ntuple(kernel_size, _conv_dim)
-        dilation = _make_ntuple(dilation, _conv_dim)
         if padding is None:
-            padding = tuple((kernel_size[i] - 1) // 2 * dilation[i] for i in range(_conv_dim))
+            if isinstance(kernel_size, int) and isinstance(dilation, int):
+                padding = (kernel_size - 1) // 2 * dilation
+            else:
+                if isinstance(kernel_size, Tuple):
+                    _conv_dim = len(kernel_size)
+                elif isinstance(dilation, Tuple):
+                    _conv_dim = len(dilation)
+                kernel_size = _make_ntuple(kernel_size, _conv_dim)
+                dilation = _make_ntuple(dilation, _conv_dim)
+                padding = tuple((kernel_size[i] - 1) // 2 * dilation[i] for i in range(_conv_dim))
         if bias is None:
             bias = norm_layer is None
 
@@ -128,7 +134,7 @@ class Conv2dNormActivation(ConvNormActivation):
         out_channels (int): Number of channels produced by the Convolution-Normalization-Activation block
         kernel_size: (int, optional): Size of the convolving kernel. Default: 3
         stride (int, optional): Stride of the convolution. Default: 1
-        padding (int, tuple, optional): Padding added to all four sides of the input. Default: None, in which case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
+        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
         groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1
         norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm2d``
         activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``
@@ -144,7 +150,7 @@ class Conv2dNormActivation(ConvNormActivation):
         out_channels: int,
         kernel_size: Union[int, Tuple[int, int]] = 3,
         stride: Union[int, Tuple[int, int]] = 1,
-        padding: Optional[Union[int, Tuple[int, int]]] = None,
+        padding: Optional[Union[int, Tuple[int, int], str]] = None,
         groups: int = 1,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
@@ -178,7 +184,7 @@ class Conv3dNormActivation(ConvNormActivation):
         out_channels (int): Number of channels produced by the Convolution-Normalization-Activation block
         kernel_size: (int, optional): Size of the convolving kernel. Default: 3
         stride (int, optional): Stride of the convolution. Default: 1
-        padding (int, tuple, optional): Padding added to all four sides of the input. Default: None, in which case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
+        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
         groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1
         norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm3d``
         activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``
@@ -193,7 +199,7 @@ class Conv3dNormActivation(ConvNormActivation):
         out_channels: int,
         kernel_size: Union[int, Tuple[int, int, int]] = 3,
         stride: Union[int, Tuple[int, int, int]] = 1,
-        padding: Optional[Union[int, Tuple[int, int, int]]] = None,
+        padding: Optional[Union[int, Tuple[int, int, int], str]] = None,
         groups: int = 1,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm3d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
