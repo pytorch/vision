@@ -94,11 +94,8 @@ class RandomErasing(_RandomApplyTransform):
         elif isinstance(inpt, PIL.Image.Image):
             # TODO: We should implement a fallback to tensor, like gaussian_blur etc
             raise RuntimeError("Not implemented")
-        elif isinstance(inpt, torch.Tensor):
-            return F.erase_image_tensor(inpt, **params)
-        raise TypeError(
-            "RandomErasing transformation does not support bounding boxes, segmentation masks and plain labels"
-        )
+        else:
+            return inpt
 
 
 class _BaseMixupCutmix(Transform):
@@ -133,12 +130,10 @@ class RandomMixup(_BaseMixupCutmix):
             output = inpt.clone()
             output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
             return features.Image.new_like(inpt, output)
-        if isinstance(inpt, features.OneHotLabel):
+        elif isinstance(inpt, features.OneHotLabel):
             return self._mixup_onehotlabel(inpt, lam)
-
-        raise TypeError(
-            "RandomMixup transformation does not support bounding boxes, segmentation masks and plain labels"
-        )
+        else:
+            return inpt
 
 
 class RandomCutmix(_BaseMixupCutmix):
@@ -175,10 +170,8 @@ class RandomCutmix(_BaseMixupCutmix):
             output = inpt.clone()
             output[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
             return features.Image.new_like(inpt, output)
-        if isinstance(inpt, features.OneHotLabel):
+        elif isinstance(inpt, features.OneHotLabel):
             lam_adjusted = params["lam_adjusted"]
             return self._mixup_onehotlabel(inpt, lam_adjusted)
-
-        raise TypeError(
-            "RandomCutmix transformation does not support bounding boxes, segmentation masks and plain labels"
-        )
+        else:
+            return inpt
