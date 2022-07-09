@@ -4,6 +4,7 @@ from typing import Any, Callable, List, Optional
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
+import math
 
 from ..ops.misc import MLP, Permute
 from ..ops.stochastic_depth import StochasticDepth
@@ -139,7 +140,7 @@ def shifted_window_attention(
     if v2_logit_scale is not None:
         # cosine attention
         attn = F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-2, -1)
-        v2_logit_scale = torch.clamp(v2_logit_scale, max=torch.log(torch.tensor(1.0 / 0.01))).exp()
+        v2_logit_scale = torch.clamp(v2_logit_scale, max=math.log(100.0)).exp()
         attn = attn * v2_logit_scale
     else:
         q = q * (C // num_heads) ** -0.5
