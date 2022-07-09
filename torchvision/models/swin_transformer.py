@@ -237,7 +237,11 @@ class ShiftedWindowAttention(nn.Module):
         self.relative_position_bias_table = nn.Parameter(
             torch.zeros((2 * self.window_size[0] - 1) * (2 * self.window_size[1] - 1), self.num_heads)
         )  # 2*Wh-1 * 2*Ww-1, nH
+        nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
+        self.define_relative_position_index()
+
+    def define_relative_position_index(self):
         # get pair-wise relative position index for each token inside the window
         coords_h = torch.arange(self.window_size[0])
         coords_w = torch.arange(self.window_size[1])
@@ -250,8 +254,6 @@ class ShiftedWindowAttention(nn.Module):
         relative_coords[:, :, 0] *= 2 * self.window_size[1] - 1
         relative_position_index = relative_coords.sum(-1).flatten()  # Wh*Ww*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
-
-        nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
     def get_relative_position_bias(self) -> torch.Tensor:
         return _get_relative_position_bias(
@@ -335,21 +337,9 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
         relative_coords_table = (
             torch.sign(relative_coords_table) * torch.log2(torch.abs(relative_coords_table) + 1.0) / 3.0
         )
-
         self.register_buffer("relative_coords_table", relative_coords_table)
 
-        # get pair-wise relative position index for each token inside the window
-        coords_h = torch.arange(self.window_size[0])
-        coords_w = torch.arange(self.window_size[1])
-        coords = torch.stack(torch.meshgrid([coords_h, coords_w], indexing="ij"))  # 2, Wh, Ww
-        coords_flatten = torch.flatten(coords, 1)  # 2, Wh*Ww
-        relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, Wh*Ww, Wh*Ww
-        relative_coords = relative_coords.permute(1, 2, 0).contiguous()  # Wh*Ww, Wh*Ww, 2
-        relative_coords[:, :, 0] += self.window_size[0] - 1  # shift to start from 0
-        relative_coords[:, :, 1] += self.window_size[1] - 1
-        relative_coords[:, :, 0] *= 2 * self.window_size[1] - 1
-        relative_position_index = relative_coords.sum(-1).flatten()  # Wh*Ww*Wh*Ww
-        self.register_buffer("relative_position_index", relative_position_index)
+        self.define_relative_position_index()
 
     def get_relative_position_bias(self) -> torch.Tensor:
         relative_position_bias = _get_relative_position_bias(
