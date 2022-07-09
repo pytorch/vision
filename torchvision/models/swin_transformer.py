@@ -41,6 +41,19 @@ def _patch_merging_pad(x: torch.Tensor) -> torch.Tensor:
 torch.fx.wrap("_patch_merging_pad")
 
 
+def _get_relative_position_bias(
+    relative_position_bias_table: torch.Tensor, relative_position_index: torch.Tensor, window_size: List[int]
+) -> torch.Tensor:
+    N = window_size[0] * window_size[1]
+    relative_position_bias = relative_position_bias_table[relative_position_index]  # type: ignore[index]
+    relative_position_bias = relative_position_bias.view(N, N, -1)
+    relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous().unsqueeze(0)
+    return relative_position_bias
+
+
+torch.fx.wrap("_get_relative_position_bias")
+
+
 class PatchMerging(nn.Module):
     """Patch Merging Layer.
     Args:
@@ -240,14 +253,10 @@ class ShiftedWindowAttention(nn.Module):
 
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
-    def get_relative_position_bias(self, relative_position_bias_table: Optional[torch.Tensor] = None) -> torch.Tensor:
-        if relative_position_bias_table is None:
-            relative_position_bias_table = self.relative_position_bias_table
-        N = self.window_size[0] * self.window_size[1]
-        relative_position_bias = relative_position_bias_table[self.relative_position_index]  # type: ignore[index]
-        relative_position_bias = relative_position_bias.view(N, N, -1)
-        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous().unsqueeze(0)
-        return relative_position_bias
+    def get_relative_position_bias(self) -> torch.Tensor:
+        return _get_relative_position_bias(
+            self.relative_position_bias_table, self.relative_position_index, self.window_size
+        )
 
     def forward(self, x: Tensor):
         """
@@ -342,10 +351,12 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
         relative_position_index = relative_coords.sum(-1).flatten()  # Wh*Ww*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
-    def get_relative_position_bias(self, relative_position_bias_table: Optional[torch.Tensor] = None) -> torch.Tensor:
-        if relative_position_bias_table is None:
-            relative_position_bias_table = self.cpb_mlp(self.relative_coords_table).view(-1, self.num_heads)
-        relative_position_bias = super().get_relative_position_bias(relative_position_bias_table)
+    def get_relative_position_bias(self) -> torch.Tensor:
+        relative_position_bias = _get_relative_position_bias(
+            self.cpb_mlp(self.relative_coords_table).view(-1, self.num_heads),
+            self.relative_position_index,
+            self.window_size,
+        )
         relative_position_bias = 16 * torch.sigmoid(relative_position_bias)
         return relative_position_bias
 
