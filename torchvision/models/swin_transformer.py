@@ -255,7 +255,7 @@ class ShiftedWindowAttention(nn.Module):
 
     def get_relative_position_bias(self) -> torch.Tensor:
         return _get_relative_position_bias(
-            self.relative_position_bias_table, self.relative_position_index, self.window_size
+            self.relative_position_bias_table, self.relative_position_index, self.window_size  # type: ignore[arg-type]
         )
 
     def forward(self, x: Tensor):
@@ -354,7 +354,7 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
     def get_relative_position_bias(self) -> torch.Tensor:
         relative_position_bias = _get_relative_position_bias(
             self.cpb_mlp(self.relative_coords_table).view(-1, self.num_heads),
-            self.relative_position_index,
+            self.relative_position_index,  # type: ignore[arg-type]
             self.window_size,
         )
         relative_position_bias = 16 * torch.sigmoid(relative_position_bias)
