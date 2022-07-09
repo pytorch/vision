@@ -520,8 +520,8 @@ class SwinTransformer(nn.Module):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         num_classes: int = 1000,
-        norm_layer: Optional[Callable[..., nn.Module]] = None,
         block: Optional[Callable[..., nn.Module]] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
         use_v2: bool = False,
     ):
         super().__init__()
