@@ -1,10 +1,10 @@
+import math
 from functools import partial
 from typing import Any, Callable, List, Optional
 
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
-import math
 
 from ..ops.misc import MLP, Permute
 from ..ops.stochastic_depth import StochasticDepth
