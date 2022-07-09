@@ -1,6 +1,6 @@
 import math
 from functools import partial
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import torch
 import torch.nn.functional as F
@@ -412,6 +412,7 @@ class SwinTransformerBlock(nn.Module):
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_layer: Callable[..., nn.Module] = ShiftedWindowAttention,
+        **kwargs,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -424,6 +425,7 @@ class SwinTransformerBlock(nn.Module):
             num_heads,
             attention_dropout=attention_dropout,
             dropout=dropout,
+            **kwargs,
         )
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
@@ -454,7 +456,8 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
         attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
-        attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttentionV2
+        attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttentionV2.
+        pretrained_window_size (int): Local window size in pre-training. Default: 0.
     """
 
     def __init__(
@@ -469,6 +472,7 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_layer: Callable[..., nn.Module] = ShiftedWindowAttentionV2,
+        pretrained_window_size: int = 0,
     ):
         super().__init__(
             dim,
@@ -481,6 +485,7 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
             stochastic_depth_prob=stochastic_depth_prob,
             norm_layer=norm_layer,
             attn_layer=attn_layer,
+            pretrained_window_size=[pretrained_window_size, pretrained_window_size],
         )
 
     def forward(self, x: Tensor):
@@ -506,6 +511,7 @@ class SwinTransformer(nn.Module):
         num_classes (int): Number of classes for classification head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
+        v2_pretrained_window_sizes (List[int]): Pretrained window sizes of each layer. Default: [0, 0, 0, 0].
     """
 
     def __init__(
@@ -523,6 +529,7 @@ class SwinTransformer(nn.Module):
         block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         use_v2: bool = False,
+        v2_pretrained_window_sizes: List[int] = [0, 0, 0, 0],
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -552,6 +559,9 @@ class SwinTransformer(nn.Module):
         for i_stage in range(len(depths)):
             stage: List[nn.Module] = []
             dim = embed_dim * 2 ** i_stage
+            kwargs: Dict[str, Any] = {}
+            if use_v2:
+                kwargs["pretrained_window_size"] = v2_pretrained_window_sizes[i_stage]
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
@@ -566,6 +576,7 @@ class SwinTransformer(nn.Module):
                         attention_dropout=attention_dropout,
                         stochastic_depth_prob=sd_prob,
                         norm_layer=norm_layer,
+                        **kwargs,
                     )
                 )
                 stage_block_id += 1
