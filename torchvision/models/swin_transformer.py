@@ -230,16 +230,15 @@ class ShiftedWindowAttention(nn.Module):
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.proj = nn.Linear(dim, dim, bias=proj_bias)
 
-        self.define_relative_coords()
+        self.define_relative_position_bias_table()
+        self.define_relative_position_index()
 
-    def define_relative_coords(self):
+    def define_relative_position_bias_table(self):
         # define a parameter table of relative position bias
         self.relative_position_bias_table = nn.Parameter(
             torch.zeros((2 * self.window_size[0] - 1) * (2 * self.window_size[1] - 1), self.num_heads)
         )  # 2*Wh-1 * 2*Ww-1, nH
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
-
-        self.define_relative_position_index()
 
     def define_relative_position_index(self):
         # get pair-wise relative position index for each token inside the window
@@ -321,7 +320,7 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
             length = self.qkv.bias.numel() // 3
             self.qkv.bias[length : 2 * length].data.zero_()
 
-    def define_relative_coords(self):
+    def define_relative_position_bias_table(self):
         # get relative_coords_table
         relative_coords_h = torch.arange(-(self.window_size[0] - 1), self.window_size[0], dtype=torch.float32)
         relative_coords_w = torch.arange(-(self.window_size[1] - 1), self.window_size[1], dtype=torch.float32)
@@ -338,8 +337,6 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
             torch.sign(relative_coords_table) * torch.log2(torch.abs(relative_coords_table) + 1.0) / 3.0
         )
         self.register_buffer("relative_coords_table", relative_coords_table)
-
-        self.define_relative_position_index()
 
     def get_relative_position_bias(self) -> torch.Tensor:
         relative_position_bias = _get_relative_position_bias(
