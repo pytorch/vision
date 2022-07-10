@@ -35,6 +35,11 @@ __all__ = [
 def _patch_merging_pad(x: torch.Tensor) -> torch.Tensor:
     H, W, _ = x.shape[-3:]
     x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+    x0 = x[..., 0::2, 0::2, :]  # ... H/2 W/2 C
+    x1 = x[..., 1::2, 0::2, :]  # ... H/2 W/2 C
+    x2 = x[..., 0::2, 1::2, :]  # ... H/2 W/2 C
+    x3 = x[..., 1::2, 1::2, :]  # ... H/2 W/2 C
+    x = torch.cat([x0, x1, x2, x3], -1)  # ... H/2 W/2 4*C
     return x
 
 
@@ -76,15 +81,35 @@ class PatchMerging(nn.Module):
             Tensor with layout of [..., H/2, W/2, 2*C]
         """
         x = _patch_merging_pad(x)
-
-        x0 = x[..., 0::2, 0::2, :]  # ... H/2 W/2 C
-        x1 = x[..., 1::2, 0::2, :]  # ... H/2 W/2 C
-        x2 = x[..., 0::2, 1::2, :]  # ... H/2 W/2 C
-        x3 = x[..., 1::2, 1::2, :]  # ... H/2 W/2 C
-        x = torch.cat([x0, x1, x2, x3], -1)  # ... H/2 W/2 4*C
-
         x = self.norm(x)
         x = self.reduction(x)  # ... H/2 W/2 2*C
+        return x
+
+
+class PatchMergingV2(nn.Module):
+    """Patch Merging Layer for Swin Transformer V2.
+    Args:
+        dim (int): Number of input channels.
+        norm_layer (nn.Module): Normalization layer. Default: nn.LayerNorm.
+    """
+
+    def __init__(self, dim: int, norm_layer: Callable[..., nn.Module] = nn.LayerNorm):
+        super().__init__()
+        _log_api_usage_once(self)
+        self.dim = dim
+        self.reduction = nn.Linear(4 * dim, 2 * dim, bias=False)
+        self.norm = norm_layer(2 * dim)  # difference
+
+    def forward(self, x: Tensor):
+        """
+        Args:
+            x (Tensor): input tensor with expected layout of [..., H, W, C]
+        Returns:
+            Tensor with layout of [..., H/2, W/2, 2*C]
+        """
+        x = _patch_merging_pad(x)
+        x = self.reduction(x)  # ... H/2 W/2 2*C
+        x = self.norm(x)
         return x
 
 
@@ -528,6 +553,8 @@ class SwinTransformer(nn.Module):
         if norm_layer is None:
             norm_layer = partial(nn.LayerNorm, eps=1e-5)
 
+        downsample_layer = PatchMergingV2 if use_v2 else PatchMerging
+
         layers: List[nn.Module] = []
         # split image into non-overlapping patches
         layers.append(
@@ -570,7 +597,7 @@ class SwinTransformer(nn.Module):
             layers.append(nn.Sequential(*stage))
             # add patch merging layer
             if i_stage < (len(depths) - 1):
-                layers.append(PatchMerging(dim, norm_layer))
+                layers.append(downsample_layer(dim, norm_layer))
         self.features = nn.Sequential(*layers)
 
         num_features = embed_dim * 2 ** (len(depths) - 1)
@@ -704,7 +731,9 @@ class Swin_V2_T_Weights(WeightsEnum):
     pass
 
 
-def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, window_size: List[int] = [7, 7], **kwargs: Any) -> SwinTransformer:
+def swin_t(
+    *, weights: Optional[Swin_T_Weights] = None, progress: bool = True, window_size: List[int] = [7, 7], **kwargs: Any
+) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
     `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
@@ -741,7 +770,9 @@ def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, w
     )
 
 
-def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, window_size: List[int] = [7, 7], **kwargs: Any) -> SwinTransformer:
+def swin_s(
+    *, weights: Optional[Swin_S_Weights] = None, progress: bool = True, window_size: List[int] = [7, 7], **kwargs: Any
+) -> SwinTransformer:
     """
     Constructs a swin_small architecture from
     `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
@@ -778,7 +809,9 @@ def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, w
     )
 
 
-def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, window_size: List[int] = [7, 7], **kwargs: Any) -> SwinTransformer:
+def swin_b(
+    *, weights: Optional[Swin_B_Weights] = None, progress: bool = True, window_size: List[int] = [7, 7], **kwargs: Any
+) -> SwinTransformer:
     """
     Constructs a swin_base architecture from
     `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
@@ -815,7 +848,13 @@ def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, w
     )
 
 
-def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = True, window_size: List[int] = [8, 8], **kwargs: Any) -> SwinTransformer:
+def swin_v2_t(
+    *,
+    weights: Optional[Swin_V2_T_Weights] = None,
+    progress: bool = True,
+    window_size: List[int] = [8, 8],
+    **kwargs: Any,
+) -> SwinTransformer:
     """
     Constructs a swin_v2_tiny architecture from
     `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/pdf/2111.09883>`_.
