@@ -6,7 +6,10 @@ from common_utils import assert_equal
 from test_prototype_transforms_functional import (
     make_images,
     make_bounding_boxes,
+    make_bounding_box,
     make_one_hot_labels,
+    make_label,
+    make_segmentation_mask,
 )
 from torchvision.prototype import transforms, features
 from torchvision.transforms.functional import to_pil_image, pil_to_tensor
@@ -105,6 +108,20 @@ class TestSmoke:
     )
     def test_mixup_cutmix(self, transform, input):
         transform(input)
+
+        # add other data that should bypass and wont raise any error
+        input_copy = dict(input)
+        input_copy["path"] = "/path/to/somewhere"
+        input_copy["num"] = 1234
+        transform(input_copy)
+
+        # Check if we raise an error if sample contains bbox or mask or label
+        err_msg = "does not support bounding boxes, segmentation masks and plain labels"
+        input_copy = dict(input)
+        for unsup_data in [make_label(), make_bounding_box(format="XYXY"), make_segmentation_mask()]:
+            input_copy["unsupported"] = unsup_data
+            with pytest.raises(TypeError, match=err_msg):
+                transform(input_copy)
 
     @parametrize(
         [
