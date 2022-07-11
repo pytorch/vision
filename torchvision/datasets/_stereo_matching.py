@@ -28,7 +28,8 @@ def read_pfm_file(file_path: str) -> np.array:
     # adapted from https://github.com/ucbdrive/hd3/blob/master/utils/pfm.py
     with open(file_path, "rb") as file:
         header = file.readline().rstrip()
-        assert header in ["PF", "Pf"], f"{file_path} is not a valid .pfm file"
+        assert header in [b"PF", b"Pf"], f"{file_path} is not a valid .pfm file"
+
         dim_match = re.match(r'^(\d+)\s(\d+)\s$', file.readline())
         assert dim_match, f"{file_path} has a Malformed PFM header"
 
@@ -473,6 +474,50 @@ class Kitti2015(StereoMatchingDataset):
         dsp_mask = np.array(Image.open(file_path)) / 256.0
         occ_mask = dsp_mask > 0.0
 
+        return dsp_mask, occ_mask
+
+    def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple]:
+        return super().__getitem__(index)
+
+
+class SintelDataset(StereoMatchingDataset):
+    """"Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
+
+    Args:
+        root (string): Root directory where Sintel Stereo is located.
+        transforms (callalbe, optional): A function/transform that takes in
+            ``left_img, right_img, left_disparity, right_disparity`` and returns a transformed version.
+    """
+
+    def __init__(self, root: str, transforms: Optional[Callable] = None):
+        super().__init__(root, transforms)
+
+        root = Path(root) / "Sintel"
+
+        imgs_left = sorted(glob(str(root / "training" / "final_left" / "*" / "*.png")))
+        imgs_right = sorted(glob(str(root / "training" / "final_right" / "*" / "*.png")))
+
+        dps_masks_left = sorted(glob(str(root / "training" / "disparities" / "*" / "*.png")))
+        dsp_masks_right = list("" for _ in dps_masks_left)
+
+        self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
+        self._dsp_masks = list((l, r) for l, r in zip(dps_masks_left, dsp_masks_right))
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        if not os.path.exists(file_path):
+            return None, None
+
+        # disparity decoding as per Sintel instructions
+        dsp_mask = np.array(Image.open(file_path), dtype=np.float32)
+        r, g, b = np.split(dsp_mask, 3, axis=-1)
+        dsp_mask = r * 4 + g / (2**6) + b / (2**14)
+
+        # occlusion mask
+        occ_mask = np.array(Image.open(file_path.replace("disparities", "occlusions"))) > 0
+        # out of frame mask
+        off_mask = np.array(Image.open(file_path.replace("disparities", "outofframe"))) > 0
+        # combine the masks together
+        occ_mask = np.logical_or(off_mask, occ_mask)
         return dsp_mask, occ_mask
 
     def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple]:
