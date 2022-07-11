@@ -322,9 +322,11 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
         proj_bias: bool = True,
         attention_dropout: float = 0.0,
         dropout: float = 0.0,
-        pretrained_window_size: List[int] = [0, 0],
+        pretrained_window_size: Optional[List[int]] = None,
     ):
-        self.pretrained_window_size = pretrained_window_size  # TODO: unsafe, need copy?
+        if pretrained_window_size is None:
+            pretrained_window_size = [0, 0]
+        self.pretrained_window_size = pretrained_window_size
         super().__init__(
             dim,
             window_size,
@@ -541,7 +543,7 @@ class SwinTransformer(nn.Module):
         block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         use_v2: bool = False,
-        v2_pretrained_window_sizes: List[int] = [0, 0, 0, 0],
+        v2_pretrained_window_sizes: Optional[List[int]] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -553,7 +555,12 @@ class SwinTransformer(nn.Module):
         if norm_layer is None:
             norm_layer = partial(nn.LayerNorm, eps=1e-5)
 
-        downsample_layer = PatchMergingV2 if use_v2 else PatchMerging
+        if use_v2:
+            downsample_layer = PatchMergingV2
+            if v2_pretrained_window_sizes is None:
+                v2_pretrained_window_sizes = [0, 0, 0, 0]
+        else:
+            downsample_layer = PatchMerging
 
         layers: List[nn.Module] = []
         # split image into non-overlapping patches
