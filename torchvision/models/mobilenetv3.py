@@ -22,21 +22,6 @@ __all__ = [
 ]
 
 
-class SqueezeExcitation(SElayer):
-    """DEPRECATED"""
-
-    def __init__(self, input_channels: int, squeeze_factor: int = 4):
-        squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
-        super().__init__(input_channels, squeeze_channels, scale_activation=nn.Hardsigmoid)
-        self.relu = self.activation
-        delattr(self, "activation")
-        warnings.warn(
-            "This SqueezeExcitation class is deprecated since 0.12 and will be removed in 0.14. "
-            "Use torchvision.ops.SqueezeExcitation instead.",
-            FutureWarning,
-        )
-
-
 class InvertedResidualConfig:
     # Stores information listed at Tables 1 and 2 of the MobileNetV3 paper
     def __init__(
