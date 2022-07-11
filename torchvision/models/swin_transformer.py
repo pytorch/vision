@@ -736,15 +736,12 @@ class Swin_V2_T_Weights(WeightsEnum):
     pass
 
 
-def swin_t(
-    *, weights: Optional[Swin_T_Weights] = None, progress: bool = True, window_size: List[int] = [7, 7], **kwargs: Any
-) -> SwinTransformer:
+def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
     `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
 
     Args:
-        window_size (List[int]): Window size. Default: [7, 7].
         weights (:class:`~torchvision.models.Swin_T_Weights`, optional): The
             pretrained weights to use. See
             :class:`~torchvision.models.Swin_T_Weights` below for
@@ -767,7 +764,7 @@ def swin_t(
         embed_dim=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
-        window_size=window_size,
+        window_size=[7, 7],
         stochastic_depth_prob=0.2,
         weights=weights,
         progress=progress,
@@ -775,15 +772,12 @@ def swin_t(
     )
 
 
-def swin_s(
-    *, weights: Optional[Swin_S_Weights] = None, progress: bool = True, window_size: List[int] = [7, 7], **kwargs: Any
-) -> SwinTransformer:
+def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_small architecture from
     `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
 
     Args:
-        window_size (List[int]): Window size. Default: [7, 7].
         weights (:class:`~torchvision.models.Swin_S_Weights`, optional): The
             pretrained weights to use. See
             :class:`~torchvision.models.Swin_S_Weights` below for
@@ -806,7 +800,7 @@ def swin_s(
         embed_dim=96,
         depths=[2, 2, 18, 2],
         num_heads=[3, 6, 12, 24],
-        window_size=window_size,
+        window_size=[7, 7],
         stochastic_depth_prob=0.3,
         weights=weights,
         progress=progress,
@@ -814,15 +808,12 @@ def swin_s(
     )
 
 
-def swin_b(
-    *, weights: Optional[Swin_B_Weights] = None, progress: bool = True, window_size: List[int] = [7, 7], **kwargs: Any
-) -> SwinTransformer:
+def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_base architecture from
     `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
 
     Args:
-        window_size (List[int]): Window size. Default: [7, 7].
         weights (:class:`~torchvision.models.Swin_B_Weights`, optional): The
             pretrained weights to use. See
             :class:`~torchvision.models.Swin_B_Weights` below for
@@ -845,7 +836,7 @@ def swin_b(
         embed_dim=128,
         depths=[2, 2, 18, 2],
         num_heads=[4, 8, 16, 32],
-        window_size=window_size,
+        window_size=[7, 7],
         stochastic_depth_prob=0.5,
         weights=weights,
         progress=progress,
@@ -853,19 +844,12 @@ def swin_b(
     )
 
 
-def swin_v2_t(
-    *,
-    weights: Optional[Swin_V2_T_Weights] = None,
-    progress: bool = True,
-    window_size: List[int] = [8, 8],
-    **kwargs: Any,
-) -> SwinTransformer:
+def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_v2_tiny architecture from
     `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/pdf/2111.09883>`_.
 
     Args:
-        window_size (List[int]): Window size. Default: [8, 8].
         weights (:class:`~torchvision.models.Swin_V2_T_Weights`, optional): The
             pretrained weights to use. See
             :class:`~torchvision.models.Swin_V2_T_Weights` below for
@@ -888,7 +872,7 @@ def swin_v2_t(
         embed_dim=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
-        window_size=window_size,
+        window_size=[8, 8],
         stochastic_depth_prob=0.2,
         weights=weights,
         progress=progress,
