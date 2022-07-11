@@ -616,15 +616,10 @@ class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
             year=[f"20{year:02d}" for year in range(7, 13)], image_set=("train", "val", "trainval")
         ),
         dict(year="2007", image_set="test"),
-        dict(year="2007-test", image_set="test"),
     )
 
     def inject_fake_data(self, tmpdir, config):
-        year, is_test_set = (
-            ("2007", True)
-            if config["year"] == "2007-test" or config["image_set"] == "test"
-            else (config["year"], False)
-        )
+        year, is_test_set = config["year"], config["image_set"] == "test"
         image_set = config["image_set"]
 
         base_dir = pathlib.Path(tmpdir)
