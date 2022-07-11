@@ -2,7 +2,6 @@ import csv
 import os
 import time
 import urllib
-import warnings
 from functools import partial
 from multiprocessing import Pool
 from os import path

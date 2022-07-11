@@ -8,7 +8,6 @@ try:
     from defusedxml.ElementTree import parse as ET_parse
 except ImportError:
     from xml.etree.ElementTree import parse as ET_parse
-import warnings
 from typing import Any, Callable, Dict, Optional, Tuple, List
 
 from PIL import Image

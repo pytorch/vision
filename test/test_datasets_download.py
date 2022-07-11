@@ -245,7 +245,7 @@ def cifar100():
 
 
 def voc():
-    #TODO: Also test the "2007-test" key
+    # TODO: Also test the "2007-test" key
     return itertools.chain(
         *[
             collect_download_configs(
