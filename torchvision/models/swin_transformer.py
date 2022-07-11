@@ -557,8 +557,8 @@ class SwinTransformer(nn.Module):
 
         downsample_layer = PatchMergingV2 if use_v2 else PatchMerging
 
-            if v2_pretrained_window_sizes is None:
-                v2_pretrained_window_sizes = [0, 0, 0, 0]
+        if v2_pretrained_window_sizes is None:
+            v2_pretrained_window_sizes = [0, 0, 0, 0]
 
         layers: List[nn.Module] = []
         # split image into non-overlapping patches
