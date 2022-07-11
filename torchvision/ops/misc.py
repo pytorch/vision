@@ -1,10 +1,10 @@
 import warnings
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union, Tuple, Sequence
 
 import torch
 from torch import Tensor
 
-from ..utils import _log_api_usage_once
+from ..utils import _log_api_usage_once, _make_ntuple
 
 
 interpolate = torch.nn.functional.interpolate
@@ -70,20 +70,26 @@ class ConvNormActivation(torch.nn.Sequential):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: int = 3,
-        stride: int = 1,
-        padding: Optional[int] = None,
+        kernel_size: Union[int, Tuple[int, ...]] = 3,
+        stride: Union[int, Tuple[int, ...]] = 1,
+        padding: Optional[Union[int, Tuple[int, ...], str]] = None,
         groups: int = 1,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
-        dilation: int = 1,
+        dilation: Union[int, Tuple[int, ...]] = 1,
         inplace: Optional[bool] = True,
         bias: Optional[bool] = None,
         conv_layer: Callable[..., torch.nn.Module] = torch.nn.Conv2d,
     ) -> None:
 
         if padding is None:
-            padding = (kernel_size - 1) // 2 * dilation
+            if isinstance(kernel_size, int) and isinstance(dilation, int):
+                padding = (kernel_size - 1) // 2 * dilation
+            else:
+                _conv_dim = len(kernel_size) if isinstance(kernel_size, Sequence) else len(dilation)
+                kernel_size = _make_ntuple(kernel_size, _conv_dim)
+                dilation = _make_ntuple(dilation, _conv_dim)
+                padding = tuple((kernel_size[i] - 1) // 2 * dilation[i] for i in range(_conv_dim))
         if bias is None:
             bias = norm_layer is None
 
@@ -139,13 +145,13 @@ class Conv2dNormActivation(ConvNormActivation):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: int = 3,
-        stride: int = 1,
-        padding: Optional[int] = None,
+        kernel_size: Union[int, Tuple[int, int]] = 3,
+        stride: Union[int, Tuple[int, int]] = 1,
+        padding: Optional[Union[int, Tuple[int, int], str]] = None,
         groups: int = 1,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
-        dilation: int = 1,
+        dilation: Union[int, Tuple[int, int]] = 1,
         inplace: Optional[bool] = True,
         bias: Optional[bool] = None,
     ) -> None:
@@ -188,13 +194,13 @@ class Conv3dNormActivation(ConvNormActivation):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: int = 3,
-        stride: int = 1,
-        padding: Optional[int] = None,
+        kernel_size: Union[int, Tuple[int, int, int]] = 3,
+        stride: Union[int, Tuple[int, int, int]] = 1,
+        padding: Optional[Union[int, Tuple[int, int, int], str]] = None,
         groups: int = 1,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm3d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
-        dilation: int = 1,
+        dilation: Union[int, Tuple[int, int, int]] = 1,
         inplace: Optional[bool] = True,
         bias: Optional[bool] = None,
     ) -> None:
