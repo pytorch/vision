@@ -164,9 +164,19 @@ class Image(_Feature):
         return Image.new_like(self, output)
 
     def pad(
-        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+        self,
+        padding: Union[int, Sequence[int]],
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        padding_mode: str = "constant",
     ) -> Image:
         from torchvision.prototype.transforms import functional as _F
+
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        if not isinstance(padding, int):
+            padding = list(padding)
+
+        if fill is None:
+            fill = 0
 
         # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
         if isinstance(fill, (int, float)):
@@ -183,10 +193,12 @@ class Image(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        from torchvision.prototype.transforms.functional import _geometry as _F
+
+        fill = _F._convert_fill_arg(fill)
 
         output = _F.rotate_image_tensor(
             self, angle, interpolation=interpolation, expand=expand, fill=fill, center=center
@@ -200,10 +212,12 @@ class Image(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        from torchvision.prototype.transforms.functional import _geometry as _F
+
+        fill = _F._convert_fill_arg(fill)
 
         output = _F.affine_image_tensor(
             self,
@@ -221,9 +235,11 @@ class Image(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        from torchvision.prototype.transforms.functional import _geometry as _F
+
+        fill = _F._convert_fill_arg(fill)
 
         output = _F.perspective_image_tensor(self, perspective_coeffs, interpolation=interpolation, fill=fill)
         return Image.new_like(self, output)
@@ -292,26 +308,4 @@ class Image(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.invert_image_tensor(self)
-        return Image.new_like(self, output)
-
-    def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> Image:
-        from torchvision.prototype.transforms import functional as _F
-
-        output = _F.erase_image_tensor(self, i, j, h, w, v)
-        return Image.new_like(self, output)
-
-    def mixup(self, lam: float) -> Image:
-        if self.ndim < 4:
-            raise ValueError("Need a batch of images")
-        output = self.clone()
-        output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
-        return Image.new_like(self, output)
-
-    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> Image:
-        if self.ndim < 4:
-            raise ValueError("Need a batch of images")
-        x1, y1, x2, y2 = box
-        image_rolled = self.roll(1, -4)
-        output = self.clone()
-        output[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
         return Image.new_like(self, output)
