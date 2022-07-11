@@ -1,26 +1,28 @@
 from abc import ABC, abstractmethod
-from functools import reduce
 from glob import glob
 from pathlib import Path
 from random import random
 import re
 import shutil
 from typing import Callable, List, Optional, Tuple, Any
-import lzma
 from torch import Tensor
 from .vision import VisionDataset
 from .utils import download_and_extract_archive, download_url, verify_str_arg
 import os
-from torch.utils.model_zoo import tqdm
 import numpy as np
 from PIL import Image
+import json
 
 __all__ = (
-    "CSEStereo"
+    "CREStereo"  # waiting for download
     "Middlebury2014"
     "ETH3D"
     "Kitti2012"
     "Kitti2015"
+    "Sintel"
+    "SceneFlow"  # need to find valid mask procedure
+    "FallingThings"
+    "InStereo2k"  # waiting for download
 )
 
 
@@ -71,21 +73,21 @@ class StereoMatchingDataset(ABC, VisionDataset):
         # function that returns a disparity map and an occlusion map
         pass
 
-    def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple]:
+    def __getitem__(self, index: int) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         img_left = self._read_img(self._images[index][0])
         img_right = self._read_img(self._images[index][1])
 
-        dsp_map_left, occ_mask_left = self._read_disparity(self._disparities[index][0])
-        dsp_map_right, occ_mask_right = self._read_disparity(self._disparities[index][1])
+        dsp_map_left, valid_mask_right = self._read_disparity(self._disparities[index][0])
+        dsp_map_right, valid_mask_right = self._read_disparity(self._disparities[index][1])
 
         imgs = (img_left, img_right)
         dsp_maps = (dsp_map_left, dsp_map_right)
-        occ_masks = (occ_mask_left, occ_mask_right)
+        valid_masks = (valid_mask_right, valid_mask_right)
 
         if self.transforms is not None:
-            imgs, dsp_maps, occ_masks, = self.transforms(imgs, dsp_maps, occ_masks)
+            imgs, dsp_maps, valid_masks, = self.transforms(imgs, dsp_maps, valid_masks)
 
-        return imgs, dsp_maps, occ_masks
+        return imgs[0], imgs[1], dsp_maps[0], valid_masks[0]
 
     def __len__(self) -> int:
         return len(self._images)
@@ -100,7 +102,9 @@ class CRESSyntethicStereo(StereoMatchingDataset):
 
     EXPERIMENTAL_RANGE = 1  # TODO: remove after validating dataset structure / flow
 
-    def __init__(self, root: str, transforms: Optional[Callable] = None, download: bool = True):
+    MAX_DISP = 256.
+
+    def __init__(self, root: str, split: str = "tree", transforms: Optional[Callable] = None, download: bool = True):
         super().__init__(root, transforms)
         # if the API user requests a dataset download check that the user can download it
         if download:
@@ -113,6 +117,32 @@ class CRESSyntethicStereo(StereoMatchingDataset):
                     f"an additional {self.DOWNLOAD_SPACE - self.available_space:.2f} GB are required."
                 )
             self._download_dataset(root)
+
+        verify_str_arg(split, "split", valid_values=("tree", "shapenet", "reflective", "hole", "all"))
+
+        splits = {
+            "tree": ["tree"],
+            "shapenet": ["shapenet"],
+            "reflective": ["reflective"],
+            "hole": ["hole"],
+            "all": ["hole", "shapenet", "reflective", "hole"],
+        }[split]
+
+        for s in splits:
+            imgs_left = sorted(glob(str(root / s / "*_left.jpg")))
+            imgs_right = (p.replace("_left", "_right") for p in imgs_left)
+            imgs = list((l, r) for l, r in zip(imgs_left, imgs_right))
+            self._images += imgs
+
+            disparity_maps_left = (p.replace("_left", "_left.disp") for p in imgs_left)
+            disparity_maps_right = (p.replace("_right", "_right.disp") for p in imgs_right)
+            disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+            self._disparities += disparity_maps
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        disparity = np.array(Image.open(file_path), dtype=np.float32)
+        valid = (disparity < self.MAX_DISP) & (disparity > 0.)
+        return disparity, valid
 
     def _download_dataset(self, root: str) -> None:
         # TODO: remove before release, used only for testing purposes
@@ -249,9 +279,9 @@ class Middlebury2014(StereoMatchingDataset):
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):  # case when dealing with the test split
             return None, None
-        dsp_mask = read_pfm_file(file_path)
-        occ_mask = dsp_mask < 1e3
-        return dsp_mask, occ_mask
+        disparity_map = read_pfm_file(file_path)
+        valid_mask = disparity_map < 1e3
+        return disparity_map, valid_mask
 
     def _download_dataset(self, root: str):
         base_url = "https://vision.middlebury.edu/stereo/data/scenes2014/zip"
@@ -347,23 +377,23 @@ class ETH3D(StereoMatchingDataset):
         imgs_right = sorted(glob(str(root / img_dir / "*" / "*im1.png")))
 
         if split == "test":
-            dsp_masks_left, dsp_masks_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
+            disparity_maps_left, disparity_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
         else:
-            dsp_masks_left = sorted(glob(str(root / anot_dir / "*" / "*[0-1].pfm")))
+            disparity_maps_left = sorted(glob(str(root / anot_dir / "*" / "*[0-1].pfm")))
             # no masks for the right view, always using left as reference
-            dsp_masks_right = list("" for _ in dsp_masks_left)
+            disparity_maps_right = list("" for _ in disparity_maps_left)
 
         self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
-        self._dsp_masks = list((l, r) for l, r in zip(dsp_masks_left, dsp_masks_right))
+        self._disparities = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):
             return None, None
 
-        dsp_mask = read_pfm_file(file_path)
-        occ_mask = Image.open(file_path.replace("disp0GT.pfm", "mask0nocc.png"))
-        occ_mask = np.array(occ_mask)
-        return dsp_mask, occ_mask
+        disparity_map = read_pfm_file(file_path)
+        valid_mask = Image.open(file_path.replace("disp0GT.pfm", "mask0nocc.png"))
+        valid_mask = np.array(valid_mask)
+        return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple]:
         return super().__getitem__(index)
@@ -404,22 +434,22 @@ class Kitti2012(StereoMatchingDataset):
         imgs_right = sorted(glob(str(root / "colored_1" / "*_10.png")))
 
         if split == "train":
-            dsp_masks_left = sorted(glob(str(root / "disp_noc" / "*.png")))
-            dsp_masks_right = list("" for _ in dsp_masks_left)
+            disparity_maps_left = sorted(glob(str(root / "disp_noc" / "*.png")))
+            disparity_maps_right = list("" for _ in disparity_maps_left)
         else:
-            dsp_masks_left, dsp_masks_right = list("" for _ in dsp_masks_left), list("" for _ in dsp_masks_right)
+            disparity_maps_left, disparity_maps_right = list("" for _ in disparity_maps_left), list("" for _ in disparity_maps_right)
 
         self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
-        self._dsp_masks = list((l, r) for l, r in zip(dsp_masks_left, dsp_masks_right))
+        self._disparities = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):
             return None, None
 
-        dsp_mask = np.array(Image.open(file_path)) / 256.0
-        occ_mask = dsp_mask > 0.0
+        disparity_map = np.array(Image.open(file_path)) / 256.0
+        valid_mask = disparity_map > 0.0
 
-        return dsp_mask, occ_mask
+        return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple]:
         return super().__getitem__(index)
@@ -459,22 +489,22 @@ class Kitti2015(StereoMatchingDataset):
         imgs_right = sorted(glob(str(root / "image_3" / "*_10.png")))
 
         if split == "train":
-            dsp_masks_left = sorted(glob(str(root / "disp_noc_0" / "*.png")))
-            dsp_masks_right = sorted(glob(str(root / "disp_noc_1" / "*.png")))
+            disparity_maps_left = sorted(glob(str(root / "disp_occ_0" / "*.png")))
+            disparity_maps_right = sorted(glob(str(root / "disp_occ_1" / "*.png")))
         else:
-            dsp_masks_left, dsp_masks_right = list("" for _ in dsp_masks_left), list("" for _ in dsp_masks_right)
+            disparity_maps_left, disparity_maps_right = list("" for _ in disparity_maps_left), list("" for _ in disparity_maps_right)
 
         self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
-        self._dsp_masks = list((l, r) for l, r in zip(dsp_masks_left, dsp_masks_right))
+        self._disparities = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):
             return None, None
 
-        dsp_mask = np.array(Image.open(file_path)) / 256.0
-        occ_mask = dsp_mask > 0.0
+        disparity_map = np.array(Image.open(file_path)) / 256.0
+        valid_mask = disparity_map < 0.0
 
-        return dsp_mask, occ_mask
+        return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple]:
         return super().__getitem__(index)
@@ -498,27 +528,135 @@ class SintelDataset(StereoMatchingDataset):
         imgs_right = sorted(glob(str(root / "training" / "final_right" / "*" / "*.png")))
 
         dps_masks_left = sorted(glob(str(root / "training" / "disparities" / "*" / "*.png")))
-        dsp_masks_right = list("" for _ in dps_masks_left)
+        disparity_maps_right = list("" for _ in dps_masks_left)
 
         self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
-        self._dsp_masks = list((l, r) for l, r in zip(dps_masks_left, dsp_masks_right))
+        self._disparities = list((l, r) for l, r in zip(dps_masks_left, disparity_maps_right))
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):
             return None, None
 
         # disparity decoding as per Sintel instructions
-        dsp_mask = np.array(Image.open(file_path), dtype=np.float32)
-        r, g, b = np.split(dsp_mask, 3, axis=-1)
-        dsp_mask = r * 4 + g / (2**6) + b / (2**14)
+        disparity_map = np.array(Image.open(file_path), dtype=np.float32)
+        r, g, b = np.split(disparity_map, 3, axis=-1)
+        disparity_map = r * 4 + g / (2**6) + b / (2**14)
 
         # occlusion mask
-        occ_mask = np.array(Image.open(file_path.replace("disparities", "occlusions"))) > 0
+        valid_mask = np.array(Image.open(file_path.replace("disparities", "occlusions"))) == 0
         # out of frame mask
-        off_mask = np.array(Image.open(file_path.replace("disparities", "outofframe"))) > 0
+        off_mask = np.array(Image.open(file_path.replace("disparities", "outofframe"))) == 0
         # combine the masks together
-        occ_mask = np.logical_or(off_mask, occ_mask)
-        return dsp_mask, occ_mask
+        valid_mask = np.logical_or(off_mask, valid_mask)
+        return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple]:
         return super().__getitem__(index)
+
+
+class SceneFlowDataset(StereoMatchingDataset):
+    """Dataset interface for `Scene Flow <https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html>`_ datasets."""
+
+    def __init__(self, root: str, split: str = "train", pass_name: str = "clean", transforms: Optional[Callable] = None):
+        super().__init__(root, transforms)
+
+        verify_str_arg(split, "split", valid_values=("FlyingThings3D", "Driving", "Monkaa"))
+        split = split.upper()
+
+        verify_str_arg(split, "pass_name", valid_values=("clean", "final", "both"))
+
+        passes = {
+            "clean": ["frames_cleanpass"],
+            "final": ["frames_finalpass"],
+            "both": ["frames_cleanpass, frames_finalpass"],
+        }[pass_name]
+
+        root = Path(root) / split
+
+        for p in passes:
+            imgs_left = sorted(glob(str(root / p / "left" / "*" / "*.png")))
+            imgs_right = sorted(glob(str(root / p / "right" / "*" / "*.png")))
+            imgs = list((l, r) for l, r in zip(imgs_left, imgs_right))
+            self._images += imgs
+
+            disparity_maps_left = [file_path.replace(p, "disparity").replace(".png", ".pfm") for file_path in imgs_left]
+            disparity_maps_right = [file_path.replace(p, "disparity").replace(".png", ".pfm") for file_path in imgs_right]
+            disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+            self._disparities += disparity_maps
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        disparity = read_pfm_file(file_path)
+        valid = np.ones_like(disparity)
+        return disparity, valid
+
+
+class FallingThingsDataset(StereoMatchingDataset):
+    """FallingThings `<https://research.nvidia.com/publication/2018-06_falling-things-synthetic-dataset-3d-object-detection-and-pose-estimation>`_ dataset
+
+    The dataset is expected to have the following structre: ::
+
+        root
+            FallingThings
+                single
+                    scene1
+                        _object_settings.json
+                        _camera_settings.json
+                        image1.left.depth.png
+                        image1.right.depth.png
+                        image1.left.jpg
+                        image1.right.jpg
+                        image2.left.depth.png
+                        image2.right.depth.png
+                        image2.left.jpg
+                        image2.right
+                        ...
+                    scene2
+                    ...
+                mixed
+                    scene1
+                        _object_settings.json
+                        _camera_settings.json
+                        image1.left.depth.png
+                        image1.right.depth.png
+                        image1.left.jpg
+                        image1.right.jpg
+                        image2.left.depth.png
+                        image2.right.depth.png
+                        image2.left.jpg
+                        image2.right
+                        ...
+                    scene2
+                    ...
+    """
+
+    def __init__(self, root: str, split: str = "single", transforms: Optional[Callable] = None):
+        super().__init__(root, transforms)
+
+        verify_str_arg(split, "split", valid_values=("single", "mixed", "both"))
+        split = split.upper()
+
+        splits = {
+            "single": ["single"],
+            "mixed": ["mixed"],
+            "both": ["single", "mixed"],
+        }[split]
+
+        for s in splits:
+            imgs_left = sorted(glob(str(root / s / "*.left.jpg")))
+            imgs_right = sorted(glob(str(root / s / "*.right.jpg")))
+            imgs = list((l, r) for l, r in zip(imgs_left, imgs_right))
+            self._images += imgs
+
+            disparity_maps_left = sorted(glob(str(root / s / "*.left.depth.png")))
+            disparity_maps_right = sorted(glob(str(root / s / "*.right.depth.png")))
+            disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+            self._disparities += disparity_maps
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        depth = Image.Open(file_path)
+        with open(os.path.split(file_path)[0] + '_camera_settings.json', 'r') as f:
+            intrinsics = json.load(f)
+            fx = intrinsics['camera_settings'][0]['intrinsic_settings']['fx']
+            disparity = (fx * 6.0 * 100) / depth.astype(np.float32)
+            valid = disparity > 0
+            return disparity, valid
