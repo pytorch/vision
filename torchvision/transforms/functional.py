@@ -1124,7 +1124,6 @@ def affine(
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
-    fillcolor: Optional[List[float]] = None,
     center: Optional[List[int]] = None,
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
@@ -1150,9 +1149,6 @@ def affine(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
-        fillcolor (sequence or number, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.
         center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
 
@@ -1169,13 +1165,6 @@ def affine(
             "Please use InterpolationMode enum."
         )
         interpolation = _interpolation_modes_from_int(interpolation)
-
-    if fillcolor is not None:
-        warnings.warn(
-            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
-            "Please use 'fill' instead."
-        )
-        fill = fillcolor
 
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")

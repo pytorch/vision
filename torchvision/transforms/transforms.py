@@ -1393,9 +1393,6 @@ class RandomAffine(torch.nn.Module):
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         fill (sequence or number): Pixel fill value for the area outside the transformed
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
-        fillcolor (sequence or number, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
 
@@ -1411,7 +1408,6 @@ class RandomAffine(torch.nn.Module):
         shear=None,
         interpolation=InterpolationMode.NEAREST,
         fill=0,
-        fillcolor=None,
         center=None,
     ):
         super().__init__()
@@ -1424,13 +1420,6 @@ class RandomAffine(torch.nn.Module):
                 "Please use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
-
-        if fillcolor is not None:
-            warnings.warn(
-                "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
-                "Please use 'fill' instead."
-            )
-            fill = fillcolor
 
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
 
@@ -1460,7 +1449,7 @@ class RandomAffine(torch.nn.Module):
         elif not isinstance(fill, (Sequence, numbers.Number)):
             raise TypeError("Fill should be either a sequence or a number.")
 
-        self.fillcolor = self.fill = fill
+        self.fill = fill
 
         if center is not None:
             _check_sequence_input(center, "center", req_sizes=(2,))
