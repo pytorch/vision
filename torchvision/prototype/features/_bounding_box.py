@@ -128,12 +128,19 @@ class BoundingBox(_Feature):
         return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
 
     def pad(
-        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+        self,
+        padding: Union[int, Sequence[int]],
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        padding_mode: str = "constant",
     ) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
 
         if padding_mode not in ["constant"]:
             raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
+
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        if not isinstance(padding, int):
+            padding = list(padding)
 
         output = _F.pad_bounding_box(self, padding, format=self.format)
 
@@ -153,7 +160,7 @@ class BoundingBox(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
@@ -173,7 +180,7 @@ class BoundingBox(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
@@ -194,18 +201,9 @@ class BoundingBox(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.perspective_bounding_box(self, self.format, perspective_coeffs)
         return BoundingBox.new_like(self, output, dtype=output.dtype)
-
-    def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> BoundingBox:
-        raise TypeError("Erase transformation does not support bounding boxes")
-
-    def mixup(self, lam: float) -> BoundingBox:
-        raise TypeError("Mixup transformation does not support bounding boxes")
-
-    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> BoundingBox:
-        raise TypeError("Cutmix transformation does not support bounding boxes")
