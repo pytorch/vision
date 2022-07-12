@@ -322,6 +322,79 @@ class TestRandomVerticalFlip:
         assert actual.image_size == expected.image_size
 
 
+class TestPad:
+    def test_assertions(self):
+        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+            transforms.Pad("abc")
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.Pad([-0.7, 0, 0.7])
+
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.Pad(12, fill="abc")
+
+        with pytest.raises(ValueError, match="Padding mode should be either"):
+            transforms.Pad(12, padding_mode="abc")
+
+    @pytest.mark.parametrize("padding", [1, (1, 2), [1, 2, 3, 4]])
+    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
+    @pytest.mark.parametrize("padding_mode", ["constant", "edge"])
+    def test__transform(self, padding, fill, padding_mode, mocker):
+        transform = transforms.Pad(padding, fill=fill, padding_mode=padding_mode)
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.pad")
+        inpt = mocker.MagicMock(spec=torch.Tensor)
+        _ = transform(inpt)
+
+        fn.assert_called_once_with(inpt, padding=padding, fill=fill, padding_mode=padding_mode)
+
+
+class TestRandomZoomOut:
+    def test_assertions(self):
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.RandomZoomOut(fill="abc")
+
+        with pytest.raises(TypeError, match="should be a sequence of length"):
+            transforms.RandomZoomOut(0, side_range=0)
+
+        with pytest.raises(ValueError, match="Invalid canvas side range"):
+            transforms.RandomZoomOut(0, side_range=[4.0, 1.0])
+
+    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
+    @pytest.mark.parametrize("side_range", [(1.0, 4.0), [2.0, 5.0]])
+    def test__get_params(self, fill, side_range):
+        transform = transforms.RandomZoomOut(fill=fill, side_range=side_range)
+
+        image = features.Image(torch.rand(1, 3, 32, 32))
+        c, h, w = image.shape[-3:]
+
+        params = transform._get_params(image)
+
+        assert params["fill"] == (fill if not isinstance(fill, int) else [fill] * c)
+        assert len(params["padding"]) == 4
+        assert 0 <= params["padding"][0] <= (side_range[1] - 1) * w
+        assert 0 <= params["padding"][1] <= (side_range[1] - 1) * h
+        assert 0 <= params["padding"][2] <= (side_range[1] - 1) * w
+        assert 0 <= params["padding"][3] <= (side_range[1] - 1) * h
+
+    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
+    @pytest.mark.parametrize("side_range", [(1.0, 4.0), [2.0, 5.0]])
+    def test__transform(self, fill, side_range, mocker):
+        image = features.Image(torch.rand(1, 3, 32, 32))
+        transform = transforms.RandomZoomOut(fill=fill, side_range=side_range, p=1)
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.pad")
+        # vfdev-5, Feature Request: let's store params as Transform attribute
+        # This could be also helpful for users
+        torch.manual_seed(12)
+        _ = transform(image)
+        torch.manual_seed(12)
+        torch.rand(1)  # random apply changes random state
+        params = transform._get_params(image)
+
+        fn.assert_called_once_with(image, **params)
+
+
 class TestRandomRotation:
     def test_assertions(self):
         with pytest.raises(ValueError, match="is a single number, it must be positive"):
@@ -355,7 +428,7 @@ class TestRandomRotation:
 
     @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
     @pytest.mark.parametrize("expand", [False, True])
-    @pytest.mark.parametrize("fill", [0, [[1, 2, 3], (2, 3, 4)]])
+    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
     @pytest.mark.parametrize("center", [None, [2.0, 3.0]])
     def test__transform(self, degrees, expand, fill, center, mocker):
         interpolation = InterpolationMode.BILINEAR
@@ -420,33 +493,51 @@ class TestRandomAffine(TestRandomRotation):
             with pytest.raises(ValueError, match="shear should be a sequence of length 2"):
                 transforms.RandomAffine(12, shear=s)
 
-    def test__get_params(self):
+    @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
+    @pytest.mark.parametrize("translate", [None, [0.1, 0.2]])
+    @pytest.mark.parametrize("scale", [None, [0.7, 1.2]])
+    @pytest.mark.parametrize("shear", [None, 2.0, [5.0, 15.0], [1.0, 2.0, 3.0, 4.0]])
+    def test__get_params(self, degrees, translate, scale, shear):
         image = features.Image(torch.rand(1, 3, 32, 32))
-
-        angle_bound = 34
-        transform = transforms.RandomAffine(angle_bound)
-        params = transform._get_params(image)
-        assert -angle_bound <= params["angle"] <= angle_bound
-        assert params["translations"] == (0, 0)
-        assert params["scale"] == 1.0
-        assert params["shear"] == (0, 0)
-
         h, w = image.shape[-2:]
-        translate = (0.1, 0.2)
-        transform = transforms.RandomAffine(angle_bound, translate=translate, scale=(0.7, 1.2), shear=(5.0, 15.0))
+
+        transform = transforms.RandomAffine(degrees, translate=translate, scale=scale, shear=shear)
         params = transform._get_params(image)
-        assert -angle_bound <= params["angle"] <= angle_bound
-        assert -translate[0] * w <= params["translations"][0] <= translate[0] * w
-        assert -translate[1] * h <= params["translations"][1] <= translate[1] * h
-        assert 0.7 <= params["scale"] <= 1.2
-        assert 5.0 <= params["shear"][0] <= 15.0
-        assert params["shear"][1] == 0.0
+
+        if not isinstance(degrees, (list, tuple)):
+            assert -degrees <= params["angle"] <= degrees
+        else:
+            assert degrees[0] <= params["angle"] <= degrees[1]
+
+        if translate is not None:
+            assert -translate[0] * w <= params["translations"][0] <= translate[0] * w
+            assert -translate[1] * h <= params["translations"][1] <= translate[1] * h
+        else:
+            assert params["translations"] == (0, 0)
+
+        if scale is not None:
+            assert scale[0] <= params["scale"] <= scale[1]
+        else:
+            assert params["scale"] == 1.0
+
+        if shear is not None:
+            if isinstance(shear, float):
+                assert -shear <= params["shear"][0] <= shear
+                assert params["shear"][1] == 0.0
+            elif len(shear) == 2:
+                assert shear[0] <= params["shear"][0] <= shear[1]
+                assert params["shear"][1] == 0.0
+            else:
+                assert shear[0] <= params["shear"][0] <= shear[1]
+                assert shear[2] <= params["shear"][1] <= shear[3]
+        else:
+            assert params["shear"] == (0, 0)
 
     @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
     @pytest.mark.parametrize("translate", [None, [0.1, 0.2]])
     @pytest.mark.parametrize("scale", [None, [0.7, 1.2]])
     @pytest.mark.parametrize("shear", [None, 2.0, [5.0, 15.0], [1.0, 2.0, 3.0, 4.0]])
-    @pytest.mark.parametrize("fill", [0, [[1, 2, 3], (2, 3, 4)]])
+    @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
     @pytest.mark.parametrize("center", [None, [2.0, 3.0]])
     def test__transform(self, degrees, translate, scale, shear, fill, center, mocker):
         interpolation = InterpolationMode.BILINEAR

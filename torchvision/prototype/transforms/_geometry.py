@@ -236,15 +236,15 @@ class Pad(Transform):
         if not isinstance(padding, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate padding arg")
 
+        if isinstance(padding, (tuple, list)) and len(padding) not in [1, 2, 4]:
+            raise ValueError(
+                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
+            )
+
         _check_fill_arg(fill)
 
         if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
             raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
-
-        if isinstance(padding, Sequence) and len(padding) not in [1, 2, 4]:
-            raise ValueError(
-                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
-            )
 
         self.padding = padding
         self.fill = fill
@@ -258,13 +258,15 @@ class RandomZoomOut(_RandomApplyTransform):
     def __init__(
         self,
         fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
-        side_range: Tuple[float, float] = (1.0, 4.0),
+        side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
         super().__init__(p=p)
 
         _check_fill_arg(fill)
         self.fill = fill
+
+        _check_sequence_input(side_range, "side_range", req_sizes=(2,))
 
         self.side_range = side_range
         if side_range[0] < 1.0 or side_range[0] > side_range[1]:
