@@ -309,11 +309,7 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
         num_heads: int,
         qkv_bias: bool = True,
         proj_bias: bool = True,
-        pretrained_window_size: Optional[List[int]] = None,
     ):
-        if pretrained_window_size is None:
-            pretrained_window_size = [0, 0]
-        self.pretrained_window_size = pretrained_window_size
         super().__init__(
             dim,
             window_size,
@@ -338,12 +334,10 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
         relative_coords_w = torch.arange(-(self.window_size[1] - 1), self.window_size[1], dtype=torch.float32)
         relative_coords_table = torch.stack(torch.meshgrid([relative_coords_h, relative_coords_w], indexing="ij"))
         relative_coords_table = relative_coords_table.permute(1, 2, 0).contiguous().unsqueeze(0)  # 1, 2*Wh-1, 2*Ww-1, 2
-        if self.pretrained_window_size[0] > 0:
-            relative_coords_table[:, :, :, 0] /= self.pretrained_window_size[0] - 1
-            relative_coords_table[:, :, :, 1] /= self.pretrained_window_size[1] - 1
-        else:
-            relative_coords_table[:, :, :, 0] /= self.window_size[0] - 1
-            relative_coords_table[:, :, :, 1] /= self.window_size[1] - 1
+
+        relative_coords_table[:, :, :, 0] /= self.window_size[0] - 1
+        relative_coords_table[:, :, :, 1] /= self.window_size[1] - 1
+
         relative_coords_table *= 8  # normalize to -8, 8
         relative_coords_table = (
             torch.sign(relative_coords_table) * torch.log2(torch.abs(relative_coords_table) + 1.0) / 3.0
@@ -446,7 +440,6 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
         attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttentionV2.
-        pretrained_window_size (int): Local window size in pre-training. Default: 0.
     """
 
     def __init__(
@@ -459,7 +452,6 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_layer: Callable[..., nn.Module] = ShiftedWindowAttentionV2,
-        pretrained_window_size: int = 0,
     ):
         super().__init__(
             dim,
@@ -470,7 +462,6 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
             stochastic_depth_prob=stochastic_depth_prob,
             norm_layer=norm_layer,
             attn_layer=attn_layer,
-            pretrained_window_size=[pretrained_window_size, pretrained_window_size],
         )
 
     def forward(self, x: Tensor):
@@ -494,7 +485,6 @@ class SwinTransformer(nn.Module):
         num_classes (int): Number of classes for classification head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
-        pretrained_window_sizes (List[int]): Pretrained window sizes of each layer for Swin Transformer V2. Default: [0, 0, 0, 0].
     """
 
     def __init__(
@@ -510,7 +500,6 @@ class SwinTransformer(nn.Module):
         block: Callable[..., nn.Module] = SwinTransformerBlock,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         downsample_layer: Callable[..., nn.Module] = PatchMerging,
-        pretrained_window_sizes: Optional[List[int]] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -537,9 +526,6 @@ class SwinTransformer(nn.Module):
         for i_stage in range(len(depths)):
             stage: List[nn.Module] = []
             dim = embed_dim * 2 ** i_stage
-            kwargs: Dict[str, Any] = {}
-            if pretrained_window_sizes is not None:
-                kwargs["pretrained_window_size"] = pretrained_window_sizes[i_stage]
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
@@ -552,7 +538,6 @@ class SwinTransformer(nn.Module):
                         mlp_ratio=mlp_ratio,
                         stochastic_depth_prob=sd_prob,
                         norm_layer=norm_layer,
-                        **kwargs,
                     )
                 )
                 stage_block_id += 1
