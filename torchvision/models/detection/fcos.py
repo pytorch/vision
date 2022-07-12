@@ -523,8 +523,8 @@ class FCOS(nn.Module):
                 anchor_idxs = torch.div(topk_idxs, num_classes, rounding_mode="floor")
                 labels_per_level = topk_idxs % num_classes
 
-                boxes_per_level = self.box_coder.decode_single(
-                    box_regression_per_level[anchor_idxs], anchors_per_level[anchor_idxs]
+                boxes_per_level = self.box_coder.decode_all(
+                    box_regression_per_level[anchor_idxs], list(anchors_per_level[anchor_idxs])
                 )
                 boxes_per_level = box_ops.clip_boxes_to_image(boxes_per_level, image_shape)
 
