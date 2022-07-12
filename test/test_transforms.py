@@ -1320,16 +1320,16 @@ def test_gaussian_noise():
     out = transforms.GaussianNoise(2.0, (0.1, 2.0))(img)
     assert F._is_pil_image(out) is True
 
-    with pytest.raises(TypeError, match='Tensor is not a torch image'):
+    with pytest.raises(TypeError, match="Tensor is not a torch image"):
         out = transforms.GaussianNoise(2.0, (0.1, 2.0))(torch.ones((4)))
 
-    with pytest.raises(ValueError, match='Mean should be a positive number'):
+    with pytest.raises(ValueError, match="Mean should be a positive number"):
         transforms.GaussianNoise(-1)
 
-    with pytest.raises(ValueError, match='If sigma is a single number, it must be positive.'):
+    with pytest.raises(ValueError, match="If sigma is a single number, it must be positive."):
         transforms.GaussianNoise(2.0, -1)
 
-    with pytest.raises(ValueError, match='sigma should be a single number or a list/tuple with length 2.'):
+    with pytest.raises(ValueError, match="sigma should be a single number or a list/tuple with length 2."):
         transforms.GaussianNoise(2.0, (1, 2, 3))
 
 
