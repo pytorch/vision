@@ -2,6 +2,7 @@ from typing import Any, Optional, Tuple, Union, Type, Iterator
 
 import PIL.Image
 import torch
+from torch.utils._pytree import tree_flatten
 from torchvision.prototype import features
 from torchvision.prototype.utils._internal import query_recursively
 
@@ -9,10 +10,20 @@ from .functional._meta import get_dimensions_image_tensor, get_dimensions_image_
 
 
 def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
+    flat_sample, _ = tree_flatten(sample)
+    for i in flat_sample:
+        if type(i) == torch.Tensor or isinstance(i, (PIL.Image.Image, features.Image)):
+            return i
+
+    raise TypeError("No image was found in the sample")
+
+
+# vfdev-5: let's use tree_flatten instead of query_recursively and internal fn to make the code simplier
+def query_image_(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
     def fn(
         id: Tuple[Any, ...], input: Any
     ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
-        if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
+        if type(input) == torch.Tensor or isinstance(input, (PIL.Image.Image, features.Image)):
             return id, input
 
         return None

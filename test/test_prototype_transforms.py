@@ -82,6 +82,7 @@ class TestSmoke:
         transforms.RandomZoomOut(),
         transforms.RandomRotation(degrees=(-45, 45)),
         transforms.RandomAffine(degrees=(-45, 45)),
+        transforms.RandomCrop([16, 16], padding=1, pad_if_needed=True),
     )
     def test_common(self, transform, input):
         transform(input)
@@ -566,3 +567,80 @@ class TestRandomAffine:
         params = transform._get_params(inpt)
 
         fn.assert_called_once_with(inpt, **params, interpolation=interpolation, fill=fill, center=center)
+
+
+class TestRandomCrop:
+    def test_assertions(self):
+        with pytest.raises(ValueError, match="Please provide only two dimensions"):
+            transforms.RandomCrop([10, 12, 14])
+
+        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+            transforms.RandomCrop([10, 12], padding="abc")
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.RandomCrop([10, 12], padding=[-0.7, 0, 0.7])
+
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.RandomCrop([10, 12], padding=1, fill="abc")
+
+        with pytest.raises(ValueError, match="Padding mode should be either"):
+            transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
+
+    def test__get_params(self):
+        image = features.Image(torch.rand(1, 3, 32, 32))
+        h, w = image.shape[-2:]
+
+        transform = transforms.RandomCrop([10, 10])
+        params = transform._get_params(image)
+
+        assert 0 <= params["top"] <= h - transform.size[0] + 1
+        assert 0 <= params["left"] <= w - transform.size[1] + 1
+        assert params["height"] == 10
+        assert params["width"] == 10
+
+    @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
+    @pytest.mark.parametrize("pad_if_needed", [False, True])
+    @pytest.mark.parametrize("fill", [False, True])
+    @pytest.mark.parametrize("padding_mode", ["constant", "edge"])
+    def test_forward(self, padding, pad_if_needed, fill, padding_mode, mocker):
+        output_size = [10, 12]
+        transform = transforms.RandomCrop(
+            output_size, padding=padding, pad_if_needed=pad_if_needed, fill=fill, padding_mode=padding_mode
+        )
+
+        inpt = features.Image(torch.rand(1, 3, 32, 32))
+        expected = mocker.MagicMock(spec=features.Image)
+        expected.num_channels = 3
+        if isinstance(padding, int):
+            expected.image_size = (inpt.image_size[0] + padding, inpt.image_size[1] + padding)
+        elif isinstance(padding, list):
+            expected.image_size = (
+                inpt.image_size[0] + sum(padding[0::2]),
+                inpt.image_size[1] + sum(padding[1::2]),
+            )
+        else:
+            expected.image_size = inpt.image_size
+        _ = mocker.patch("torchvision.prototype.transforms.functional.pad", return_value=expected)
+        fn_crop = mocker.patch("torchvision.prototype.transforms.functional.crop")
+
+        # vfdev-5, Feature Request: let's store params as Transform attribute
+        # This could be also helpful for users
+        torch.manual_seed(12)
+        _ = transform(inpt)
+        torch.manual_seed(12)
+        if padding is None and not pad_if_needed:
+            params = transform._get_params(inpt)
+            fn_crop.assert_called_once_with(
+                inpt, top=params["top"], left=params["left"], height=output_size[0], width=output_size[1]
+            )
+        elif not pad_if_needed:
+            params = transform._get_params(expected)
+            fn_crop.assert_called_once_with(
+                expected, top=params["top"], left=params["left"], height=output_size[0], width=output_size[1]
+            )
+        elif padding is None:
+            # vfdev-5: I do not know how to mock and test this case
+            pass
+        else:
+            # vfdev-5: I do not know how to mock and test this case
+            pass

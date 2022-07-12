@@ -10,6 +10,7 @@ from ._geometry import (
     Resize,
     CenterCrop,
     RandomResizedCrop,
+    RandomCrop,
     FiveCrop,
     TenCrop,
     BatchMultiCrop,
