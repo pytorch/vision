@@ -453,7 +453,7 @@ class TestRandomRotation:
         fn.assert_called_once_with(inpt, **params, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
 
-class TestRandomAffine(TestRandomRotation):
+class TestRandomAffine:
     def test_assertions(self):
         with pytest.raises(ValueError, match="is a single number, it must be positive"):
             transforms.RandomAffine(-0.7)
