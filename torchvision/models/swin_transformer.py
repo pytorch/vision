@@ -125,7 +125,7 @@ def shifted_window_attention(
     dropout: float = 0.0,
     qkv_bias: Optional[Tensor] = None,
     proj_bias: Optional[Tensor] = None,
-    v2_logit_scale: Optional[torch.Tensor] = None,
+    logit_scale: Optional[torch.Tensor] = None,
 ):
     """
     Window based multi-head self attention (W-MSA) module with relative position bias.
@@ -142,6 +142,7 @@ def shifted_window_attention(
         dropout (float): Dropout ratio of output. Default: 0.0.
         qkv_bias (Tensor[out_dim], optional): The bias tensor of query, key, value. Default: None.
         proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
+        logit_scale (Tensor[out_dim], optional): Logit scale of cosine attention for Swin Transformer V2. Default: None.
     Returns:
         Tensor[N, H, W, C]: The output tensor after shifted window attention.
     """
@@ -168,18 +169,18 @@ def shifted_window_attention(
     x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size[0] * window_size[1], C)  # B*nW, Ws*Ws, C
 
     # multi-head attention
-    if v2_logit_scale is not None and qkv_bias is not None:
+    if logit_scale is not None and qkv_bias is not None:
         qkv_bias = qkv_bias.clone()
         length = qkv_bias.numel() // 3
         qkv_bias[length : 2 * length].zero_()
     qkv = F.linear(x, qkv_weight, qkv_bias)
     qkv = qkv.reshape(x.size(0), x.size(1), 3, num_heads, C // num_heads).permute(2, 0, 3, 1, 4)
     q, k, v = qkv[0], qkv[1], qkv[2]
-    if v2_logit_scale is not None:
+    if logit_scale is not None:
         # cosine attention
         attn = F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-2, -1)
-        v2_logit_scale = torch.clamp(v2_logit_scale, max=math.log(100.0)).exp()
-        attn = attn * v2_logit_scale
+        logit_scale = torch.clamp(logit_scale, max=math.log(100.0)).exp()
+        attn = attn * logit_scale
     else:
         q = q * (C // num_heads) ** -0.5
         attn = q.matmul(k.transpose(-2, -1))
@@ -338,7 +339,7 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
             dropout=dropout,
         )
 
-        self.v2_logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))))
+        self.logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))))
         # mlp to generate continuous relative position bias
         self.cpb_mlp = nn.Sequential(
             nn.Linear(2, 512, bias=True), nn.ReLU(inplace=True), nn.Linear(512, num_heads, bias=False)
@@ -394,7 +395,7 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
             dropout=self.dropout,
             qkv_bias=self.qkv.bias,
             proj_bias=self.proj.bias,
-            v2_logit_scale=self.v2_logit_scale,
+            logit_scale=self.logit_scale,
         )
 
 
@@ -525,7 +526,7 @@ class SwinTransformer(nn.Module):
         num_classes (int): Number of classes for classification head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
-        v2_pretrained_window_sizes (List[int]): Pretrained window sizes of each layer. Default: [0, 0, 0, 0].
+        pretrained_window_sizes (List[int]): Pretrained window sizes of each layer for Swin Transformer V2. Default: [0, 0, 0, 0].
     """
 
     def __init__(
@@ -540,25 +541,17 @@ class SwinTransformer(nn.Module):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         num_classes: int = 1000,
-        block: Optional[Callable[..., nn.Module]] = None,
+        block: Callable[..., nn.Module] = SwinTransformerBlock,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-        use_v2: bool = False,
-        v2_pretrained_window_sizes: Optional[List[int]] = None,
+        downsample_layer: Callable[..., nn.Module] = PatchMerging,
+        pretrained_window_sizes: Optional[List[int]] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
         self.num_classes = num_classes
 
-        if block is None:
-            block = SwinTransformerBlockV2 if use_v2 else SwinTransformerBlock
-
         if norm_layer is None:
             norm_layer = partial(nn.LayerNorm, eps=1e-5)
-
-        downsample_layer = PatchMergingV2 if use_v2 else PatchMerging
-
-        if v2_pretrained_window_sizes is None:
-            v2_pretrained_window_sizes = [0, 0, 0, 0]
 
         layers: List[nn.Module] = []
         # split image into non-overlapping patches
@@ -579,8 +572,8 @@ class SwinTransformer(nn.Module):
             stage: List[nn.Module] = []
             dim = embed_dim * 2 ** i_stage
             kwargs: Dict[str, Any] = {}
-            if use_v2:
-                kwargs["pretrained_window_size"] = v2_pretrained_window_sizes[i_stage]
+            if pretrained_window_sizes is not None:
+                kwargs["pretrained_window_size"] = pretrained_window_sizes[i_stage]
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
@@ -656,6 +649,34 @@ def _swin_transformer(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+def _swin_transformer_v2(
+    patch_size: List[int],
+    embed_dim: int,
+    depths: List[int],
+    num_heads: List[int],
+    window_size: List[int],
+    stochastic_depth_prob: float,
+    weights: Optional[WeightsEnum],
+    progress: bool,
+    block: Callable[..., nn.Module] = SwinTransformerBlockV2,
+    downsample_layer: Callable[..., nn.Module] = PatchMergingV2,
+    **kwargs: Any,
+) -> SwinTransformer:
+    return _swin_transformer(
+        patch_size=patch_size,
+        embed_dim=embed_dim,
+        depths=depths,
+        num_heads=num_heads,
+        window_size=window_size,
+        stochastic_depth_prob=stochastic_depth_prob,
+        weights=weights,
+        progress=progress,
+        block=block,
+        downsample_layer=downsample_layer,
+        **kwargs,
+    )
 
 
 _COMMON_META = {
@@ -867,7 +888,7 @@ def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = T
     """
     weights = Swin_V2_T_Weights.verify(weights)
 
-    return _swin_transformer(
+    return _swin_transformer_v2(
         patch_size=[4, 4],
         embed_dim=96,
         depths=[2, 2, 6, 2],
@@ -876,6 +897,5 @@ def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = T
         stochastic_depth_prob=0.2,
         weights=weights,
         progress=progress,
-        use_v2=True,
         **kwargs,
     )
