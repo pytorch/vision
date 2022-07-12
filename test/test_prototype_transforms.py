@@ -12,7 +12,7 @@ from test_prototype_transforms_functional import (
     make_segmentation_mask,
 )
 from torchvision.prototype import transforms, features
-from torchvision.transforms.functional import to_pil_image, pil_to_tensor
+from torchvision.transforms.functional import to_pil_image, pil_to_tensor, InterpolationMode
 
 
 def make_vanilla_tensor_images(*args, **kwargs):
@@ -320,3 +320,158 @@ class TestRandomVerticalFlip:
         assert_equal(expected, actual)
         assert actual.format == expected.format
         assert actual.image_size == expected.image_size
+
+
+class TestRandomRotation:
+    def test_assertions(self):
+        with pytest.raises(ValueError, match="is a single number, it must be positive"):
+            transforms.RandomRotation(-0.7)
+
+        for d in [[-0.7], [-0.7, 0, 0.7]]:
+            with pytest.raises(ValueError, match="degrees should be a sequence of length 2"):
+                transforms.RandomRotation(d)
+
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.RandomRotation(12, fill="abc")
+
+        with pytest.raises(TypeError, match="center should be a sequence of length"):
+            transforms.RandomRotation(12, center=12)
+
+        with pytest.raises(ValueError, match="center should be a sequence of length"):
+            transforms.RandomRotation(12, center=[1, 2, 3])
+
+    def test__get_params(self):
+        angle_bound = 34
+        transform = transforms.RandomRotation(angle_bound)
+
+        params = transform._get_params(None)
+        assert -angle_bound <= params["angle"] <= angle_bound
+
+        angle_bounds = [12, 34]
+        transform = transforms.RandomRotation(angle_bounds)
+
+        params = transform._get_params(None)
+        assert angle_bounds[0] <= params["angle"] <= angle_bounds[1]
+
+    @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
+    @pytest.mark.parametrize("expand", [False, True])
+    @pytest.mark.parametrize("fill", [0, [[1, 2, 3], (2, 3, 4)]])
+    @pytest.mark.parametrize("center", [None, [2.0, 3.0]])
+    def test__transform(self, degrees, expand, fill, center, mocker):
+        interpolation = InterpolationMode.BILINEAR
+        transform = transforms.RandomRotation(
+            degrees, interpolation=interpolation, expand=expand, fill=fill, center=center
+        )
+
+        if isinstance(degrees, (tuple, list)):
+            assert transform.degrees == [float(degrees[0]), float(degrees[1])]
+        else:
+            assert transform.degrees == [float(-degrees), float(degrees)]
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.rotate")
+        inpt = mocker.MagicMock(spec=torch.Tensor)
+        # vfdev-5, Feature Request: let's store params as Transform attribute
+        # This could be also helpful for users
+        torch.manual_seed(12)
+        _ = transform(inpt)
+        torch.manual_seed(12)
+        params = transform._get_params(inpt)
+
+        fn.assert_called_once_with(inpt, **params, interpolation=interpolation, expand=expand, fill=fill, center=center)
+
+
+class TestRandomAffine(TestRandomRotation):
+    def test_assertions(self):
+        with pytest.raises(ValueError, match="is a single number, it must be positive"):
+            transforms.RandomAffine(-0.7)
+
+        for d in [[-0.7], [-0.7, 0, 0.7]]:
+            with pytest.raises(ValueError, match="degrees should be a sequence of length 2"):
+                transforms.RandomAffine(d)
+
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.RandomAffine(12, fill="abc")
+
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.RandomAffine(12, fill="abc")
+
+        for kwargs in [
+            {"center": 12},
+            {"translate": 12},
+            {"scale": 12},
+        ]:
+            with pytest.raises(TypeError, match="should be a sequence of length"):
+                transforms.RandomAffine(12, **kwargs)
+
+        for kwargs in [{"center": [1, 2, 3]}, {"translate": [1, 2, 3]}, {"scale": [1, 2, 3]}]:
+            with pytest.raises(ValueError, match="should be a sequence of length"):
+                transforms.RandomAffine(12, **kwargs)
+
+        with pytest.raises(ValueError, match="translation values should be between 0 and 1"):
+            transforms.RandomAffine(12, translate=[-1.0, 2.0])
+
+        with pytest.raises(ValueError, match="scale values should be positive"):
+            transforms.RandomAffine(12, scale=[-1.0, 2.0])
+
+        with pytest.raises(ValueError, match="is a single number, it must be positive"):
+            transforms.RandomAffine(12, shear=-10)
+
+        for s in [[-0.7], [-0.7, 0, 0.7]]:
+            with pytest.raises(ValueError, match="shear should be a sequence of length 2"):
+                transforms.RandomAffine(12, shear=s)
+
+    def test__get_params(self):
+        image = features.Image(torch.rand(1, 3, 32, 32))
+
+        angle_bound = 34
+        transform = transforms.RandomAffine(angle_bound)
+        params = transform._get_params(image)
+        assert -angle_bound <= params["angle"] <= angle_bound
+        assert params["translations"] == (0, 0)
+        assert params["scale"] == 1.0
+        assert params["shear"] == (0, 0)
+
+        h, w = image.shape[-2:]
+        translate = (0.1, 0.2)
+        transform = transforms.RandomAffine(angle_bound, translate=translate, scale=(0.7, 1.2), shear=(5.0, 15.0))
+        params = transform._get_params(image)
+        assert -angle_bound <= params["angle"] <= angle_bound
+        assert -translate[0] * w <= params["translations"][0] <= translate[0] * w
+        assert -translate[1] * h <= params["translations"][1] <= translate[1] * h
+        assert 0.7 <= params["scale"] <= 1.2
+        assert 5.0 <= params["shear"][0] <= 15.0
+        assert params["shear"][1] == 0.0
+
+    @pytest.mark.parametrize("degrees", [23, [0, 45], (0, 45)])
+    @pytest.mark.parametrize("translate", [None, [0.1, 0.2]])
+    @pytest.mark.parametrize("scale", [None, [0.7, 1.2]])
+    @pytest.mark.parametrize("shear", [None, 2.0, [5.0, 15.0], [1.0, 2.0, 3.0, 4.0]])
+    @pytest.mark.parametrize("fill", [0, [[1, 2, 3], (2, 3, 4)]])
+    @pytest.mark.parametrize("center", [None, [2.0, 3.0]])
+    def test__transform(self, degrees, translate, scale, shear, fill, center, mocker):
+        interpolation = InterpolationMode.BILINEAR
+        transform = transforms.RandomAffine(
+            degrees,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            interpolation=interpolation,
+            fill=fill,
+            center=center,
+        )
+
+        if isinstance(degrees, (tuple, list)):
+            assert transform.degrees == [float(degrees[0]), float(degrees[1])]
+        else:
+            assert transform.degrees == [float(-degrees), float(degrees)]
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.affine")
+        inpt = features.Image(torch.rand(1, 3, 32, 32))
+        # vfdev-5, Feature Request: let's store params as Transform attribute
+        # This could be also helpful for users
+        torch.manual_seed(12)
+        _ = transform(inpt)
+        torch.manual_seed(12)
+        params = transform._get_params(inpt)
+
+        fn.assert_called_once_with(inpt, **params, interpolation=interpolation, fill=fill, center=center)
