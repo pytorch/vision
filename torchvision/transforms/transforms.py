@@ -1350,7 +1350,7 @@ class RandomRotation(torch.nn.Module):
                 fill = [float(f) for f in fill]
         angle = self.get_params(self.degrees)
 
-        return F.rotate(img, angle, self.interploation, self.expand, self.center, fill)
+        return F.rotate(img, angle, self.interpolation, self.expand, self.center, fill)
 
     def __repr__(self) -> str:
         interpolate_str = self.interpolation.value
