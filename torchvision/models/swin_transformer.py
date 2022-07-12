@@ -522,7 +522,7 @@ class SwinTransformer(nn.Module):
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
         dropout (float): Dropout rate. Default: 0.0.
         attention_dropout (float): Attention dropout rate. Default: 0.0.
-        stochastic_depth_prob (float): Stochastic depth rate. Default: 0.0.
+        stochastic_depth_prob (float): Stochastic depth rate. Default: 0.1.
         num_classes (int): Number of classes for classification head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
@@ -539,7 +539,7 @@ class SwinTransformer(nn.Module):
         mlp_ratio: float = 4.0,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
-        stochastic_depth_prob: float = 0.0,
+        stochastic_depth_prob: float = 0.1,
         num_classes: int = 1000,
         block: Callable[..., nn.Module] = SwinTransformerBlock,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
