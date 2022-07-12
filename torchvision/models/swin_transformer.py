@@ -651,34 +651,6 @@ def _swin_transformer(
     return model
 
 
-def _swin_transformer_v2(
-    patch_size: List[int],
-    embed_dim: int,
-    depths: List[int],
-    num_heads: List[int],
-    window_size: List[int],
-    stochastic_depth_prob: float,
-    weights: Optional[WeightsEnum],
-    progress: bool,
-    block: Callable[..., nn.Module] = SwinTransformerBlockV2,
-    downsample_layer: Callable[..., nn.Module] = PatchMergingV2,
-    **kwargs: Any,
-) -> SwinTransformer:
-    return _swin_transformer(
-        patch_size=patch_size,
-        embed_dim=embed_dim,
-        depths=depths,
-        num_heads=num_heads,
-        window_size=window_size,
-        stochastic_depth_prob=stochastic_depth_prob,
-        weights=weights,
-        progress=progress,
-        block=block,
-        downsample_layer=downsample_layer,
-        **kwargs,
-    )
-
-
 _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
 }
@@ -888,7 +860,7 @@ def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = T
     """
     weights = Swin_V2_T_Weights.verify(weights)
 
-    return _swin_transformer_v2(
+    return _swin_transformer(
         patch_size=[4, 4],
         embed_dim=96,
         depths=[2, 2, 6, 2],
@@ -897,5 +869,7 @@ def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = T
         stochastic_depth_prob=0.2,
         weights=weights,
         progress=progress,
+        block=SwinTransformerBlockV2,
+        downsample_layer=PatchMergingV2,
         **kwargs,
     )
