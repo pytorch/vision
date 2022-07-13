@@ -98,6 +98,7 @@ def shifted_window_attention(
     x = F.pad(input, (0, 0, 0, pad_r, 0, pad_b))
     _, pad_H, pad_W, _ = x.shape
 
+    shift_size = shift_size.copy()
     # If window size is larger than feature size, there is no need to shift window
     if window_size[0] >= pad_H:
         shift_size[0] = 0
@@ -229,9 +230,9 @@ class ShiftedWindowAttention(nn.Module):
             self.qkv.weight,
             self.proj.weight,
             relative_position_bias,
-            self.window_size.copy(),
+            self.window_size,
             self.num_heads,
-            shift_size=self.shift_size.copy(),
+            shift_size=self.shift_size,
             attention_dropout=self.attention_dropout,
             dropout=self.dropout,
             qkv_bias=self.qkv.bias,
@@ -274,8 +275,8 @@ class SwinTransformerBlock(nn.Module):
         self.norm1 = norm_layer(dim)
         self.attn = attn_layer(
             dim,
-            window_size.copy(),
-            shift_size.copy(),
+            window_size,
+            shift_size,
             num_heads,
             attention_dropout=attention_dropout,
             dropout=dropout,
