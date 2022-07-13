@@ -121,6 +121,8 @@ def shifted_window_attention(
     window_size: List[int],
     num_heads: int,
     shift_size: List[int],
+    attention_dropout: float = 0.0,
+    dropout: float = 0.0,
     qkv_bias: Optional[Tensor] = None,
     proj_bias: Optional[Tensor] = None,
     logit_scale: Optional[torch.Tensor] = None,
@@ -136,6 +138,8 @@ def shifted_window_attention(
         window_size (List[int]): Window size.
         num_heads (int): Number of attention heads.
         shift_size (List[int]): Shift size for shifted window attention.
+        attention_dropout (float): Dropout ratio of attention weight. Default: 0.0.
+        dropout (float): Dropout ratio of output. Default: 0.0.
         qkv_bias (Tensor[out_dim], optional): The bias tensor of query, key, value. Default: None.
         proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
         logit_scale (Tensor[out_dim], optional): Logit scale of cosine attention for Swin Transformer V2. Default: None.
@@ -205,9 +209,11 @@ def shifted_window_attention(
         attn = attn.view(-1, num_heads, x.size(1), x.size(1))
 
     attn = F.softmax(attn, dim=-1)
+    attn = F.dropout(attn, p=attention_dropout)
 
     x = attn.matmul(v).transpose(1, 2).reshape(x.size(0), x.size(1), C)
     x = F.linear(x, proj_weight, proj_bias)
+    x = F.dropout(x, p=dropout)
 
     # reverse windows
     x = x.view(B, pad_H // window_size[0], pad_W // window_size[1], window_size[0], window_size[1], C)
@@ -238,6 +244,8 @@ class ShiftedWindowAttention(nn.Module):
         num_heads: int,
         qkv_bias: bool = True,
         proj_bias: bool = True,
+        attention_dropout: float = 0.0,
+        dropout: float = 0.0,
     ):
         super().__init__()
         if len(window_size) != 2 or len(shift_size) != 2:
@@ -245,6 +253,8 @@ class ShiftedWindowAttention(nn.Module):
         self.window_size = window_size
         self.shift_size = shift_size
         self.num_heads = num_heads
+        self.attention_dropout = attention_dropout
+        self.dropout = dropout
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.proj = nn.Linear(dim, dim, bias=proj_bias)
@@ -294,6 +304,8 @@ class ShiftedWindowAttention(nn.Module):
             self.window_size,
             self.num_heads,
             shift_size=self.shift_size,
+            attention_dropout=self.attention_dropout,
+            dropout=self.dropout,
             qkv_bias=self.qkv.bias,
             proj_bias=self.proj.bias,
         )
@@ -312,6 +324,8 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
         num_heads: int,
         qkv_bias: bool = True,
         proj_bias: bool = True,
+        attention_dropout: float = 0.0,
+        dropout: float = 0.0,
     ):
         super().__init__(
             dim,
@@ -320,6 +334,8 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
             num_heads,
             qkv_bias=qkv_bias,
             proj_bias=proj_bias,
+            attention_dropout=attention_dropout,
+            dropout=dropout,
         )
 
         self.logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))))
@@ -372,6 +388,8 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
             self.window_size,
             self.num_heads,
             shift_size=self.shift_size,
+            attention_dropout=self.attention_dropout,
+            dropout=self.dropout,
             qkv_bias=self.qkv.bias,
             proj_bias=self.proj.bias,
             logit_scale=self.logit_scale,
@@ -387,6 +405,8 @@ class SwinTransformerBlock(nn.Module):
         window_size (List[int]): Window size.
         shift_size (List[int]): Shift size for shifted window attention.
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
+        dropout (float): Dropout rate. Default: 0.0.
+        attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
         attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttention
@@ -399,6 +419,8 @@ class SwinTransformerBlock(nn.Module):
         window_size: List[int],
         shift_size: List[int],
         mlp_ratio: float = 4.0,
+        dropout: float = 0.0,
+        attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_layer: Callable[..., nn.Module] = ShiftedWindowAttention,
@@ -413,11 +435,13 @@ class SwinTransformerBlock(nn.Module):
             window_size,
             shift_size,
             num_heads,
+            attention_dropout=attention_dropout,
+            dropout=dropout,
             **kwargs,
         )
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
-        self.mlp = MLP(dim, [int(dim * mlp_ratio), dim], activation_layer=nn.GELU, inplace=None)
+        self.mlp = MLP(dim, [int(dim * mlp_ratio), dim], activation_layer=nn.GELU, inplace=None, dropout=dropout)
 
         for m in self.mlp.modules():
             if isinstance(m, nn.Linear):
@@ -440,6 +464,8 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
         window_size (List[int]): Window size.
         shift_size (List[int]): Shift size for shifted window attention.
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
+        dropout (float): Dropout rate. Default: 0.0.
+        attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
         attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttentionV2.
@@ -452,6 +478,8 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
         window_size: List[int],
         shift_size: List[int],
         mlp_ratio: float = 4.0,
+        dropout: float = 0.0,
+        attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_layer: Callable[..., nn.Module] = ShiftedWindowAttentionV2,
@@ -462,6 +490,8 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
             window_size,
             shift_size,
             mlp_ratio=mlp_ratio,
+            dropout=dropout,
+            attention_dropout=attention_dropout,
             stochastic_depth_prob=stochastic_depth_prob,
             norm_layer=norm_layer,
             attn_layer=attn_layer,
@@ -484,6 +514,8 @@ class SwinTransformer(nn.Module):
         num_heads (List(int)): Number of attention heads in different layers.
         window_size (List[int]): Window size.
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
+        dropout (float): Dropout rate. Default: 0.0.
+        attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob (float): Stochastic depth rate. Default: 0.1.
         num_classes (int): Number of classes for classification head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
@@ -498,6 +530,8 @@ class SwinTransformer(nn.Module):
         num_heads: List[int],
         window_size: List[int],
         mlp_ratio: float = 4.0,
+        dropout: float = 0.0,
+        attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.1,
         num_classes: int = 1000,
         block: Callable[..., nn.Module] = SwinTransformerBlock,
@@ -539,6 +573,8 @@ class SwinTransformer(nn.Module):
                         window_size=window_size,
                         shift_size=[0 if i_layer % 2 == 0 else w // 2 for w in window_size],
                         mlp_ratio=mlp_ratio,
+                        dropout=dropout,
+                        attention_dropout=attention_dropout,
                         stochastic_depth_prob=sd_prob,
                         norm_layer=norm_layer,
                     )
