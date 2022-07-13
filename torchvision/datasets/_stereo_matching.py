@@ -239,7 +239,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         self,
         root: str,
         split: str = "train",
-        calibration: Optional[str] = None,
+        calibration: Optional[str] = "perfect",
         use_ambient_views: bool = False,
         transforms: Optional[Callable] = None,
         download: bool = False
@@ -248,8 +248,9 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         verify_str_arg(split, "split", valid_values=("train", "test", "additional"))
 
         if calibration:
-            verify_str_arg(calibration, "calibration", valid_values=("perfect", "imperfect", None))
+            verify_str_arg(calibration, "calibration", valid_values=("perfect", "imperfect", "both", None))
             if split == "test":
+                calibration = None
                 warnings.warn(
                     "\nSplit 'test' has only no calibration settings, ignoring calibration argument.",
                     RuntimeWarning
@@ -267,6 +268,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
             self._download_dataset(root)
 
         root = Path(root) / "Middlebury2014"
+        print(split)
         if not os.path.exists(root / split):
             raise FileNotFoundError(
                 f"The {split} directory was not found in the provided root directory"
@@ -290,6 +292,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
 
         for calibration_suffix in calibrartion_suffixes:
             scene_pattern = "*" + calibration_suffix
+            print(scene_pattern)
 
             imgs_left = sorted(glob(str(root / split / scene_pattern / "im0.png")))
             imgs_right = sorted(glob(str(root / split / scene_pattern / "im1.png")))
