@@ -530,7 +530,7 @@ class SwinTransformer(nn.Module):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.1,
         num_classes: int = 1000,
-        block: Callable[..., nn.Module] = SwinTransformerBlock,
+        block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         downsample_layer: Callable[..., nn.Module] = PatchMerging,
     ):
@@ -538,6 +538,8 @@ class SwinTransformer(nn.Module):
         _log_api_usage_once(self)
         self.num_classes = num_classes
 
+        if block is None:
+            block = SwinTransformerBlock
         if norm_layer is None:
             norm_layer = partial(nn.LayerNorm, eps=1e-5)
 
