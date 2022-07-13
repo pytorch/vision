@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, cast, Union, Tuple
+from typing import Any, Optional, Sequence, cast, Union
 
 import torch
 from torchvision.prototype.utils._internal import apply_recursively
@@ -77,14 +77,3 @@ class OneHotLabel(_Feature):
         return super().new_like(
             other, data, categories=categories if categories is not None else other.categories, **kwargs
         )
-
-    def mixup(self, lam: float) -> OneHotLabel:
-        if self.ndim < 2:
-            raise ValueError("Need a batch of one hot labels")
-        output = self.clone()
-        output = output.roll(1, -2).mul_(1 - lam).add_(output.mul_(lam))
-        return OneHotLabel.new_like(self, output)
-
-    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> OneHotLabel:
-        box  # unused
-        return self.mixup(lam_adjusted)

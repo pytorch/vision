@@ -9,7 +9,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_image, get_image_dimensions, has_all
+from ._utils import query_image, get_image_dimensions, has_any, has_all
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -86,13 +86,14 @@ class RandomErasing(_RandomApplyTransform):
         return dict(i=i, j=j, h=h, w=w, v=v)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.erase(**params)
+        if isinstance(inpt, (features.Image, torch.Tensor)):
+            output = F.erase_image_tensor(inpt, **params)
+            if isinstance(inpt, features.Image):
+                return features.Image.new_like(inpt, output)
+            return output
         elif isinstance(inpt, PIL.Image.Image):
             # TODO: We should implement a fallback to tensor, like gaussian_blur etc
             raise RuntimeError("Not implemented")
-        elif isinstance(inpt, torch.Tensor):
-            return F.erase_image_tensor(inpt, **params)
         else:
             return inpt
 
@@ -107,7 +108,18 @@ class _BaseMixupCutmix(Transform):
         sample = inpts if len(inpts) > 1 else inpts[0]
         if not has_all(sample, features.Image, features.OneHotLabel):
             raise TypeError(f"{type(self).__name__}() is only defined for Image's *and* OneHotLabel's.")
+        if has_any(sample, features.BoundingBox, features.SegmentationMask, features.Label):
+            raise TypeError(
+                f"{type(self).__name__}() does not support bounding boxes, segmentation masks and plain labels."
+            )
         return super().forward(sample)
+
+    def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
+        if inpt.ndim < 2:
+            raise ValueError("Need a batch of one hot labels")
+        output = inpt.clone()
+        output = output.roll(1, -2).mul_(1 - lam).add_(output.mul_(lam))
+        return features.OneHotLabel.new_like(inpt, output)
 
 
 class RandomMixup(_BaseMixupCutmix):
@@ -115,8 +127,15 @@ class RandomMixup(_BaseMixupCutmix):
         return dict(lam=float(self._dist.sample(())))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.mixup(**params)
+        lam = params["lam"]
+        if isinstance(inpt, features.Image):
+            if inpt.ndim < 4:
+                raise ValueError("Need a batch of images")
+            output = inpt.clone()
+            output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
+            return features.Image.new_like(inpt, output)
+        elif isinstance(inpt, features.OneHotLabel):
+            return self._mixup_onehotlabel(inpt, lam)
         else:
             return inpt
 
@@ -146,7 +165,17 @@ class RandomCutmix(_BaseMixupCutmix):
         return dict(box=box, lam_adjusted=lam_adjusted)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features._Feature):
-            return inpt.cutmix(**params)
+        if isinstance(inpt, features.Image):
+            box = params["box"]
+            if inpt.ndim < 4:
+                raise ValueError("Need a batch of images")
+            x1, y1, x2, y2 = box
+            image_rolled = inpt.roll(1, -4)
+            output = inpt.clone()
+            output[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
+            return features.Image.new_like(inpt, output)
+        elif isinstance(inpt, features.OneHotLabel):
+            lam_adjusted = params["lam_adjusted"]
+            return self._mixup_onehotlabel(inpt, lam_adjusted)
         else:
             return inpt

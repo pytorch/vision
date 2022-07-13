@@ -3,7 +3,11 @@ import itertools
 import pytest
 import torch
 from common_utils import assert_equal
-from test_prototype_transforms_functional import make_images, make_bounding_boxes, make_one_hot_labels
+from test_prototype_transforms_functional import (
+    make_images,
+    make_bounding_boxes,
+    make_one_hot_labels,
+)
 from torchvision.prototype import transforms, features
 from torchvision.transforms.functional import to_pil_image, pil_to_tensor
 
@@ -72,6 +76,9 @@ class TestSmoke:
         transforms.ConvertImageDtype(),
         transforms.RandomHorizontalFlip(),
         transforms.Pad(5),
+        transforms.RandomZoomOut(),
+        transforms.RandomRotation(degrees=(-45, 45)),
+        transforms.RandomAffine(degrees=(-45, 45)),
     )
     def test_common(self, transform, input):
         transform(input)
