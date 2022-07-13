@@ -274,8 +274,8 @@ class SwinTransformerBlock(nn.Module):
         self.norm1 = norm_layer(dim)
         self.attn = attn_layer(
             dim,
-            window_size,
-            shift_size,
+            window_size.copy(),
+            shift_size.copy(),
             num_heads,
             attention_dropout=attention_dropout,
             dropout=dropout,
