@@ -1,4 +1,5 @@
 from ._optical_flow import KittiFlow, Sintel, FlyingChairs, FlyingThings3D, HD1K
+from ._stereo_matching import StereoETH3D, StereoFallingThings, StereoKitti2012, StereoKitti2015, StereoMiddlebury2014, StereoSceneFlow, StereoSintel, CREStereoSynthetic 
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
 from .cifar import CIFAR10, CIFAR100
