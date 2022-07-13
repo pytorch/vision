@@ -1,5 +1,5 @@
 import numbers
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -286,7 +286,7 @@ def affine(
     img: Image.Image,
     matrix: List[float],
     interpolation: int = _pil_constants.NEAREST,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -304,7 +304,7 @@ def rotate(
     interpolation: int = _pil_constants.NEAREST,
     expand: bool = False,
     center: Optional[Tuple[int, int]] = None,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -319,7 +319,7 @@ def perspective(
     img: Image.Image,
     perspective_coeffs: List[float],
     interpolation: int = _pil_constants.BICUBIC,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = None,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
 
     if not _is_pil_image(img):

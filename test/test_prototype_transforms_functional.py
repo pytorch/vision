@@ -317,7 +317,7 @@ def rotate_image_tensor():
         [-87, 15, 90],  # angle
         [True, False],  # expand
         [None, [12, 23]],  # center
-        [None, [128]],  # fill
+        [None, [128], [12.0]],  # fill
     ):
         if center is not None and expand:
             # Skip warning: The provided center argument is ignored if expand is True
