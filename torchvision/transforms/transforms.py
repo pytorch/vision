@@ -1888,7 +1888,6 @@ class GaussianNoise(torch.nn.Module):
             PIL Image or Tensor: Image added with gaussian noise.
         """
         sigma = self.get_params(self.sigma[0], self.sigma[1])
-        print(sigma)
         if not isinstance(image, torch.Tensor):
             if not F._is_pil_image(image):
                 raise TypeError(f"image should be PIL Image or Tensor. Got {type(image)}")
