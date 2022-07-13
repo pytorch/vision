@@ -421,7 +421,6 @@ class SwinTransformerBlock(nn.Module):
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_layer: Callable[..., nn.Module] = ShiftedWindowAttention,
-        **kwargs,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -434,7 +433,6 @@ class SwinTransformerBlock(nn.Module):
             num_heads,
             attention_dropout=attention_dropout,
             dropout=dropout,
-            **kwargs,
         )
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
