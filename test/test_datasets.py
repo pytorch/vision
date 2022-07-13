@@ -150,7 +150,11 @@ class CREStereoSynthethicTestCase(datasets_utils.ImageDatasetTestCase):
 
 class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.StereoMiddlebury2014
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test", "additional"), use_ambient_views=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "additional"),
+        calibration=("perfect", "imperfect", "both"),
+        use_ambient_views=(True, False),
+    )
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
     @staticmethod
@@ -193,12 +197,15 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
             scene_name = split_scene_map[config["split"]][idx]
             self._make_scene_folder(root_dir=split_dir, scene_name=scene_name, split=config["split"])
 
-        # TODO: add calibration argument test
+            print(f"Created {scene_name} for split {config['split']}")        
+
+        if config["calibration"] == "both":
+            num_examples *= 2
         return num_examples
 
     def test_train_splits(self):
-        for split in ["train", "additional"]:
-            with self.create_dataset(split=split) as (dataset, _):
+        for split, calibration in itertools.product(["train", "additional"], ["perfect", "imperfect", "both"]):
+            with self.create_dataset(split=split, calibration=calibration) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
                     left_array = np.array(left)
                     right_array = np.array(right)
@@ -219,7 +226,7 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
 
     def test_test_split(self):
         for split in ["test"]:
-            with self.create_dataset(split=split) as (dataset, _):
+            with self.create_dataset(split=split, calibration=None) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
                     left_array = np.array(left)
                     right_array = np.array(right)
@@ -238,6 +245,29 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
                 right_array = np.array(right)
                 # check that left and right are the same size
                 assert left_array.shape == right_array.shape
+
+    def test_warnings_train(self):
+        # train set invalid
+        split = "train"
+        calibration = None
+        with pytest.warns(
+            RuntimeWarning,
+            match=f"\nSplit '{split}' has calibration settings, however None was provided as an argument."
+                  f"\nSetting calibration to 'perfect' for split '{split}'. Available calibration settings are: 'perfect', 'imperfect', 'both'.",
+        ):
+            with self.create_dataset(split=split, calibration=calibration):
+                pass
+
+    def test_warnings_test(self):
+        # test set invalid
+        split = "test"
+        calibration = "perfect"
+        with pytest.warns(
+            RuntimeWarning,
+            match="\nSplit 'test' has only no calibration settings, ignoring calibration argument."
+        ):
+            with self.create_dataset(split=split, calibration=calibration):
+                pass
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
