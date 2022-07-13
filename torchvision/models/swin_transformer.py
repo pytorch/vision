@@ -147,20 +147,17 @@ def shifted_window_attention(
         Tensor[N, H, W, C]: The output tensor after shifted window attention.
     """
     B, H, W, C = input.shape
-
-    # If window size is larger than feature size, there is no need to shift window
-    if window_size[0] >= H:
-        shift_size[0] = 0
-        window_size[0] = H
-    if window_size[1] >= W:
-        shift_size[1] = 0
-        window_size[1] = W
-
     # pad feature maps to multiples of window size
     pad_r = (window_size[1] - W % window_size[1]) % window_size[1]
     pad_b = (window_size[0] - H % window_size[0]) % window_size[0]
     x = F.pad(input, (0, 0, 0, pad_r, 0, pad_b))
     _, pad_H, pad_W, _ = x.shape
+
+    # If window size is larger than feature size, there is no need to shift window
+    if window_size[0] >= pad_H:
+        shift_size[0] = 0
+    if window_size[1] >= pad_W:
+        shift_size[1] = 0
 
     # cyclic shift
     if sum(shift_size) > 0:
