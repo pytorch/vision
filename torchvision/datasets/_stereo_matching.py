@@ -6,6 +6,7 @@ import random
 import re
 import shutil
 from typing import Callable, List, Optional, Tuple, Any
+import warnings
 from jsonschema import ValidationError
 from torch import Tensor
 from .vision import VisionDataset
@@ -238,12 +239,29 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         self,
         root: str,
         split: str = "train",
+        calibration: Optional[str] = None,
         use_ambient_views: bool = False,
         transforms: Optional[Callable] = None,
         download: bool = False
     ):
         super().__init__(root, transforms)
         verify_str_arg(split, "split", valid_values=("train", "test", "additional"))
+
+        if calibration:
+            verify_str_arg(calibration, "calibration", valid_values=("perfect", "imperfect", None))
+            if split == "test":
+                warnings.warn(
+                    "\nSplit 'test' has only no calibration settings, ignoring calibration argument.",
+                    RuntimeWarning
+                )
+        else:
+            if split != "test":
+                calibration = "perfect"
+                warnings.warn(
+                    f"\nSplit '{split}' has calibration settings, however None was provided as an argument."
+                    f"\nSetting calibration to 'perfect' for split '{split}'. Available calibration settings are: 'perfect', 'imperfect', 'both'.",
+                    RuntimeWarning
+                )
 
         if download:
             self._download_dataset(root)
@@ -263,25 +281,36 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         ):
             raise FileNotFoundError(f"Provided root folder does not contain any scenes from the {split} split.")
 
-        imgs_left = sorted(glob(str(root / split / "*" / "im0.png")))
-        imgs_right = sorted(glob(str(root / split / "*" / "im1.png")))
+        calibrartion_suffixes = {
+            None: [""],
+            "perfect": ["-perfect"],
+            "imperfect": ["-imperfect"],
+            "both": ["-perfect", "-imperfect"],
+        }[calibration]
 
-        if not len(imgs_left) or not len(imgs_right):
-            raise FileNotFoundError("No images found in {}".format(root))
+        for calibration_suffix in calibrartion_suffixes:
+            scene_pattern = "*" + calibration_suffix
 
-        self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
+            imgs_left = sorted(glob(str(root / split / scene_pattern / "im0.png")))
+            imgs_right = sorted(glob(str(root / split / scene_pattern / "im1.png")))
 
-        if split == "test":
-            dsp_maps_left, dsp_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
-        else:
+            if not len(imgs_left) or not len(imgs_right):
+                raise FileNotFoundError("No images found in {}".format(root))
 
-            dsp_maps_left = sorted(glob(str(root / split / "*" / "disp0.pfm")))
-            dsp_maps_right = sorted(glob(str(root / split / "*" / "disp1.pfm")))
-        self._disparities = list((l, r) for l, r in zip(dsp_maps_left, dsp_maps_right))
+            self._images += list((l, r) for l, r in zip(imgs_left, imgs_right))
+
+            if split == "test":
+                dsp_maps_left, dsp_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
+            else:
+
+                dsp_maps_left = sorted(glob(str(root / split / "*" / "disp0.pfm")))
+                dsp_maps_right = sorted(glob(str(root / split / "*" / "disp1.pfm")))
+
+            self._disparities += list((l, r) for l, r in zip(dsp_maps_left, dsp_maps_right))
 
         self.use_ambient_views = use_ambient_views
 
-    def __getitem__(self, index: int) -> Tuple:
+    def __getitem__(self, index: int) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         return super().__getitem__(index)
 
     def _read_img(self, file_path: str) -> Image.Image:
@@ -579,17 +608,60 @@ class StereoSintel(StereoMatchingDataset):
         # out of frame mask
         off_mask = np.array(Image.open(file_path.replace("disparities", "outofframe"))) == 0
         # combine the masks together
-        valid_mask = np.logical_or(off_mask, valid_mask)
+        valid_mask = np.logical_and(off_mask, valid_mask)
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple]:
+    def __getitem__(self, index: int) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         return super().__getitem__(index)
 
 
 class StereoSceneFlow(StereoMatchingDataset):
-    """Dataset interface for `Scene Flow <https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html>`_ datasets."""
+    """Dataset interface for `Scene Flow <https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html>`_ datasets.
 
-    def __init__(self, root: str, split: str = "train", pass_name: str = "clean", transforms: Optional[Callable] = None):
+    The dataset is expected to have the following structre: ::
+
+        root
+            SceneFlow
+                Monkaa
+                    frames_cleanpass
+                        scene1
+                            left
+                                img1.png
+                                img2.png
+                            right
+                                img1.png
+                                img2.png
+                        scene2
+                            left
+                                img1.png
+                                img2.png
+                            right
+                                img1.png
+                                img2.png
+                    frames_finalpass
+                        scene1
+                            left
+                                img1.png
+                                img2.png
+                            right
+                                img1.png
+                                img2.png
+                        ...
+                        ...
+                    disparity
+                        scene1
+                            left
+                                img1.pfm
+                                img2.pfm
+                            right
+                                img1.pfm
+                                img2.pfm
+                FlyingThings3D
+                    ...
+                    ...
+    """
+
+    def __init__(self, root: str, split: str = "FlyingThings3D", pass_name: str = "clean", transforms: Optional[Callable] = None):
         super().__init__(root, transforms)
 
         root = Path(root) / "SceneFlow"
@@ -622,6 +694,9 @@ class StereoSceneFlow(StereoMatchingDataset):
             self._disparities += disparity_maps
 
     def _read_disparity(self, file_path: str) -> Tuple:
+        if not os.path.exists(file_path):
+            raise FileNotFoundError("Disparity map {} not found".format(file_path))
+
         disparity = read_pfm_file(file_path)
         valid = np.ones_like(disparity)
         return disparity, valid

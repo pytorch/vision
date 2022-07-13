@@ -193,10 +193,7 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
             scene_name = split_scene_map[config["split"]][idx]
             self._make_scene_folder(root_dir=split_dir, scene_name=scene_name, split=config["split"])
 
-        # account for perfect / imperfect calibrations
-        if config["split"] != "test":
-            num_examples *= 2
-
+        # TODO: add calibration argument test
         return num_examples
 
     def test_train_splits(self):
@@ -428,12 +425,15 @@ class StereoSceneFlowTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
     @staticmethod
-    def _create_pfm_folder(root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: Tuple[int, int]):
+    def _create_pfm_folder(root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: Tuple[int, int]) -> List[str]:
         root = pathlib.Path(root) / name
         os.makedirs(root, exist_ok=True)
 
+        paths = []
         for i in range(num_examples):
             datasets_utils.make_fake_pfm_file(size[0], size[1], root / file_name_fn(i))
+            paths.append(str(root / file_name_fn(i)))
+        return paths
 
     def inject_fake_data(self, tmpdir, config):
         scene_flow_dir = pathlib.Path(tmpdir) / "SceneFlow"
@@ -447,27 +447,25 @@ class StereoSceneFlowTestCase(datasets_utils.ImageDatasetTestCase):
             "final": "frames_finalpass",
         }
 
-        num_examples = 4
+        num_examples = 1
         pass_dir_name = pass_dir_map[config["pass_name"]]
         # create pass directories
         pass_dir = split_dir / pass_dir_name
-        disp_dir = split_dir / "disp"
+        disp_dir = split_dir / "disparity"
         os.makedirs(pass_dir, exist_ok=True)
         os.makedirs(disp_dir, exist_ok=True)
 
-        # root / pass / direction / scene / .imgs
-        # root / disparity / direction / scene / .imgs
         for direction in ["left", "right"]:
             for scene_idx in range(num_examples):
-                # scene_dir = pass_dir / direction / f"scene_{scene_idx:06d}"
                 os.makedirs(pass_dir / f"scene_{scene_idx:06d}", exist_ok=True)
                 datasets_utils.create_image_folder(
                     root=pass_dir / f"scene_{scene_idx:06d}",
                     name=direction,
                     file_name_fn=lambda i: f"{i:06d}.png",
                     num_examples=3,
-                    size=(3, 100, 200),
+                    size=(3, 200, 100),
                 )
+
                 os.makedirs(disp_dir / f"scene_{scene_idx:06d}", exist_ok=True)
                 self._create_pfm_folder(
                     root=disp_dir / f"scene_{scene_idx:06d}",
@@ -480,18 +478,20 @@ class StereoSceneFlowTestCase(datasets_utils.ImageDatasetTestCase):
         return num_examples * 3
 
     def test_train_splits(self):
-        for split, pass_name in itertools.product(["FlyingThings3D", "Driving", "Monkaa"], ["clean", "final"]):
-            with self.create_dataset(split=split, pass_name=pass_name) as (dataset, _):
+        for split_name, pass_name in itertools.product(["FlyingThings3D", "Driving", "Monkaa"], ["clean", "final"]):
+            with self.create_dataset(split=split_name, pass_name=pass_name) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
+                    print(f"Split {split_name} pass {pass_name}")
                     left_array = np.array(left)
                     right_array = np.array(right)
                     h, w, c = left_array.shape
                     # check that left and right are the same size
                     assert left_array.shape == right_array.shape
+                    print(left_array.shape)
                     # check general shapes
                     assert c == 3
                     assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 2
+                    assert len(valid_mask.shape) == 3
                     assert disparity.shape == (h, w, 3)
                     # check that valid mask is the same size as the disparity
                     dh, dw, _ = disparity.shape
@@ -533,6 +533,28 @@ class StereoFallingThingsTestCase(datasets_utils.ImageDatasetTestCase):
             )
 
         return num_examples
+
+    def test_splits(self):
+        for split_name in ["single", "mixed"]:
+            with self.create_dataset(split=split_name) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    print(f"Split {split_name}")
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    h, w, c = left_array.shape
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    print(left_array.shape)
+                    # check general shapes
+                    assert c == 3
+                    assert len(disparity.shape) == 3
+                    assert len(valid_mask.shape) == 2
+                    assert disparity.shape == (h, w)
+                    # check that valid mask is the same size as the disparity
+                    dh, dw = disparity.shape
+                    mh, mw = valid_mask.shape
+                    assert dh == mh
+                    assert dw == mw
 
 
 class STL10TestCase(datasets_utils.ImageDatasetTestCase):
