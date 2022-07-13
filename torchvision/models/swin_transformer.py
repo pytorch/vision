@@ -482,7 +482,7 @@ class SwinTransformer(nn.Module):
         embed_dim (int): Patch embedding dimension.
         depths (List(int)): Depth of each Swin Transformer layer.
         num_heads (List(int)): Number of attention heads in different layers.
-        window_size (int, List[int]): Window size.
+        window_size (List[int]): Window size.
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
         stochastic_depth_prob (float): Stochastic depth rate. Default: 0.1.
         num_classes (int): Number of classes for classification head. Default: 1000.
