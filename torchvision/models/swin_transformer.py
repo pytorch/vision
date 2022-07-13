@@ -515,6 +515,7 @@ class SwinTransformer(nn.Module):
         num_classes (int): Number of classes for classification head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
+        downsample_layer (nn.Module): Downsample layer (patch merging). Default: PatchMerging.
     """
 
     def __init__(
