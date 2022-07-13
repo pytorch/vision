@@ -1,6 +1,6 @@
 import math
 from functools import partial
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional
 
 import torch
 import torch.nn.functional as F
