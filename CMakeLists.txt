@@ -90,6 +90,7 @@ if(WITH_CUDA)
   )
   # Add NVJPEG source files if requested.
   if(TORCHVISION_USE_NVJPEG)
+      add_definitions(-DWITH_NVJPEG)
       list(APPEND ALLOW_LISTED
         ${TVCPP}/io/image/cuda
       )

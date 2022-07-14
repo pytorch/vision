@@ -6,4 +6,7 @@
 #include "cpu/encode_jpeg.h"
 #include "cpu/encode_png.h"
 #include "cpu/read_write_file.h"
+
+#ifdef WITH_NVJPEG
 #include "cuda/decode_jpeg_cuda.h"
+#endif

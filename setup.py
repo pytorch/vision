@@ -343,6 +343,7 @@ def get_extensions():
     if use_nvjpeg:
         print("Building torchvision with NVJPEG image support")
         image_link_flags.append("nvjpeg")
+        image_macros += [("WITH_NVJPEG", True)]
     else:
         print("Building torchvision without NVJPEG image support")
     image_macros += [("NVJPEG_FOUND", str(int(use_nvjpeg)))]
