@@ -309,3 +309,9 @@ class Image(_Feature):
 
         output = _F.invert_image_tensor(self)
         return Image.new_like(self, output)
+
+    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Image:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.gaussian_blur_image_tensor(self, kernel_size=kernel_size, sigma=sigma)
+        return Image.new_like(self, output)

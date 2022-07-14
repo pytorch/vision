@@ -495,12 +495,23 @@ def center_crop_bounding_box():
         )
 
 
+@register_kernel_info_from_sample_inputs_fn
 def center_crop_segmentation_mask():
     for mask, output_size in itertools.product(
         make_segmentation_masks(image_sizes=((16, 16), (7, 33), (31, 9))),
         [[4, 3], [42, 70], [4]],  # crop sizes < image sizes, crop_sizes > image sizes, single crop size
     ):
         yield SampleInput(mask, output_size)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def gaussian_blur_image_tensor():
+    for image, kernel_size, sigma in itertools.product(
+        make_images(extra_dims=((4,),)),
+        [[3, 3], ],
+        [None, [3.0, 3.0]],
+    ):
+        yield SampleInput(image, kernel_size=kernel_size, sigma=sigma)
 
 
 @pytest.mark.parametrize(
