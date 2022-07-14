@@ -10,10 +10,10 @@ import pickle
 import random
 import shutil
 import string
-from typing import List, Callable, Tuple
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
+from typing import List, Callable, Tuple
 
 import datasets_utils
 import numpy as np
@@ -28,26 +28,26 @@ class STL10TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.STL10
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test", "unlabeled", "train+unlabeled"))
 
-    @ staticmethod
+    @staticmethod
     def _make_binary_file(num_elements, root, name):
         file_name = os.path.join(root, name)
         np.zeros(num_elements, dtype=np.uint8).tofile(file_name)
 
-    @ staticmethod
+    @staticmethod
     def _make_image_file(num_images, root, name, num_channels=3, height=96, width=96):
         STL10TestCase._make_binary_file(num_images * num_channels * height * width, root, name)
 
-    @ staticmethod
+    @staticmethod
     def _make_label_file(num_images, root, name):
         STL10TestCase._make_binary_file(num_images, root, name)
 
-    @ staticmethod
+    @staticmethod
     def _make_class_names_file(root, name="class_names.txt"):
         with open(os.path.join(root, name), "w") as fh:
             for cname in ("airplane", "bird"):
                 fh.write(f"{cname}\n")
 
-    @ staticmethod
+    @staticmethod
     def _make_fold_indices_file(root):
         num_folds = 10
         offset = 0
@@ -59,7 +59,7 @@ class STL10TestCase(datasets_utils.ImageDatasetTestCase):
 
         return tuple(range(1, num_folds + 1))
 
-    @ staticmethod
+    @staticmethod
     def _make_train_files(root, num_unlabeled_images=1):
         num_images_in_fold = STL10TestCase._make_fold_indices_file(root)
         num_train_images = sum(num_images_in_fold)
@@ -70,7 +70,7 @@ class STL10TestCase(datasets_utils.ImageDatasetTestCase):
 
         return dict(train=num_train_images, unlabeled=num_unlabeled_images)
 
-    @ staticmethod
+    @staticmethod
     def _make_test_files(root, num_images=2):
         STL10TestCase._make_image_file(num_images, root, "test_X.bin")
         STL10TestCase._make_label_file(num_images, root, "test_y.bin")
@@ -888,7 +888,7 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_images
 
-    @ contextlib.contextmanager
+    @contextlib.contextmanager
     def create_dataset(self, *args, **kwargs):
         with super().create_dataset(*args, **kwargs) as output:
             yield output
@@ -1294,7 +1294,7 @@ class PhotoTourTestCase(datasets_utils.ImageDatasetTestCase):
 
         return archive
 
-    @ datasets_utils.test_all_configs
+    @datasets_utils.test_all_configs
     def test_feature_types(self, config):
         feature_types = self.FEATURE_TYPES
         self.FEATURE_TYPES = self._TRAIN_FEATURE_TYPES if config["train"] else self._TEST_FEATURE_TYPES
@@ -1572,7 +1572,7 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
     def _is_valid_file_to_extensions(self, is_valid_file):
         return {ext for ext in self._EXTENSIONS if is_valid_file(f"foo.{ext}")}
 
-    @ datasets_utils.test_all_configs
+    @datasets_utils.test_all_configs
     def test_is_valid_file(self, config):
         extensions = config.pop("extensions")
         # We need to explicitly pass extensions=None here or otherwise it would be filled by the value from the
@@ -1582,7 +1582,7 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
         ) as (dataset, info):
             assert len(dataset) == info["num_examples"]
 
-    @ datasets_utils.test_all_configs
+    @datasets_utils.test_all_configs
     def test_classes(self, config):
         with self.create_dataset(config) as (dataset, info):
             assert len(dataset.classes) == len(info["classes"])
@@ -1603,7 +1603,7 @@ class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
 
         return dict(num_examples=num_examples_total, classes=classes)
 
-    @ datasets_utils.test_all_configs
+    @datasets_utils.test_all_configs
     def test_classes(self, config):
         with self.create_dataset(config) as (dataset, info):
             assert len(dataset.classes) == len(info["classes"])
@@ -1702,32 +1702,32 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
         *((f"{category}/Places365_train_00000001.png", idx) for category, idx in _CATEGORIES_CONTENT),
     )
 
-    @ staticmethod
+    @staticmethod
     def _make_txt(root, name, seq):
         file = os.path.join(root, name)
         with open(file, "w") as fh:
             for text, idx in seq:
                 fh.write(f"{text} {idx}\n")
 
-    @ staticmethod
+    @staticmethod
     def _make_categories_txt(root, name):
         Places365TestCase._make_txt(root, name, Places365TestCase._CATEGORIES_CONTENT)
 
-    @ staticmethod
+    @staticmethod
     def _make_file_list_txt(root, name):
         Places365TestCase._make_txt(root, name, Places365TestCase._FILE_LIST_CONTENT)
 
-    @ staticmethod
+    @staticmethod
     def _make_image(file_name, size):
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         PIL.Image.fromarray(np.zeros((*size, 3), dtype=np.uint8)).save(file_name)
 
-    @ staticmethod
+    @staticmethod
     def _make_devkit_archive(root, split):
         Places365TestCase._make_categories_txt(root, Places365TestCase._CATEGORIES)
         Places365TestCase._make_file_list_txt(root, Places365TestCase._FILE_LISTS[split])
 
-    @ staticmethod
+    @staticmethod
     def _make_images_archive(root, split, small):
         folder_name = Places365TestCase._IMAGES[(split, small)]
         image_size = (256, 256) if small else (512, random.randint(512, 1024))
@@ -2042,7 +2042,7 @@ class FlyingChairsTestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_examples[config["split"]]
 
-    @ datasets_utils.test_all_configs
+    @datasets_utils.test_all_configs
     def test_flow(self, config):
         # Make sure flow always exists, and make sure there are as many flow values as (pairs of) images
         # Also make sure the flow is properly decoded
@@ -2101,7 +2101,7 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
         )
         return num_examples
 
-    @ datasets_utils.test_all_configs
+    @datasets_utils.test_all_configs
     def test_flow(self, config):
         h, w = self.FLOW_H, self.FLOW_W
         expected_flow = np.arange(3 * h * w).reshape(h, w, 3).transpose(2, 0, 1)
@@ -2726,7 +2726,9 @@ class StereoETH3DTestCase(datasets_utils.ImageDatasetTestCase):
 
     def test_training_test_splits(self):
         with self.create_dataset(split="train") as (dataset, _):
-            assert dataset._images and len(dataset._images) == len(dataset._disparities), "Training images do not match with training disparities"
+            assert dataset._images and len(dataset._images) == len(
+                dataset._disparities
+            ), "Training images do not match with training disparities"
             for _, _, disparity, valid_mask in dataset:
                 assert len(disparity.shape) == 3
                 assert len(valid_mask.shape) == 2
@@ -2813,10 +2815,10 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
             scene_dir = os.path.join(root_dir, f"{scene_name}{c}")
             os.makedirs(scene_dir, exist_ok=True)
             # make normal images first
-            datasets_utils.create_image_file(root=scene_dir, name=f"im0.png", size=(3, 100, 100))
-            datasets_utils.create_image_file(root=scene_dir, name=f"im1.png", size=(3, 100, 100))
-            datasets_utils.create_image_file(root=scene_dir, name=f"im1E.png", size=(3, 100, 100))
-            datasets_utils.create_image_file(root=scene_dir, name=f"im1L.png", size=(3, 100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name="im0.png", size=(3, 100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name="im1.png", size=(3, 100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name="im1E.png", size=(3, 100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name="im1L.png", size=(3, 100, 100))
             # these are going to end up being gray scale images
             datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=os.path.join(scene_dir, "disp0.pfm"))
             datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=os.path.join(scene_dir, "disp1.pfm"))
@@ -2827,7 +2829,7 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
         split_scene_map = {
             "train": ["Adirondack", "Jadeplant", "Motorcycle", "Piano"],
             "additional": ["Backpack", "Bicycle1", "Cable", "Classroom1"],
-            "test": ["Plants", "Classroom2E", "Classroom2", "Australia"]
+            "test": ["Plants", "Classroom2E", "Classroom2", "Australia"],
         }
 
         middlebury_dir = pathlib.Path(tmpdir, "Middlebury2014")
@@ -2895,7 +2897,7 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
         with pytest.warns(
             RuntimeWarning,
             match=f"\nSplit '{split}' has calibration settings, however None was provided as an argument."
-                  f"\nSetting calibration to 'perfect' for split '{split}'. Available calibration settings are: 'perfect', 'imperfect', 'both'.",
+            f"\nSetting calibration to 'perfect' for split '{split}'. Available calibration settings are: 'perfect', 'imperfect', 'both'.",
         ):
             with self.create_dataset(split=split, calibration=calibration):
                 pass
@@ -2905,8 +2907,7 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
         split = "test"
         calibration = "perfect"
         with pytest.warns(
-            RuntimeWarning,
-            match="\nSplit 'test' has only no calibration settings, ignoring calibration argument."
+            RuntimeWarning, match="\nSplit 'test' has only no calibration settings, ignoring calibration argument."
         ):
             with self.create_dataset(split=split, calibration=calibration):
                 pass
@@ -3086,13 +3087,14 @@ class StereoKitti2015TestCase(datasets_utils.ImageDatasetTestCase):
 class StereoSceneFlowTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.StereoSceneFlow
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-        split=("FlyingThings3D", "Driving", "Monkaa"),
-        pass_name=("clean", "final")
+        split=("FlyingThings3D", "Driving", "Monkaa"), pass_name=("clean", "final")
     )
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
     @staticmethod
-    def _create_pfm_folder(root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: Tuple[int, int]) -> List[str]:
+    def _create_pfm_folder(
+        root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: Tuple[int, int]
+    ) -> List[str]:
         root = pathlib.Path(root) / name
         os.makedirs(root, exist_ok=True)
 
@@ -3193,8 +3195,12 @@ class StereoFallingThingsTestCase(datasets_utils.ImageDatasetTestCase):
         paths.append(datasets_utils.create_image_file(root, "image1.left.jpg", size=(3, size[1], size[0])))
         paths.append(datasets_utils.create_image_file(root, "image1.right.jpg", size=(3, size[1], size[0])))
         # single channel depth maps
-        paths.append(StereoFallingThingsTestCase._make_dummy_depth_map(root, "image1.left.depth.png", size=(size[0], size[1])))
-        paths.append(StereoFallingThingsTestCase._make_dummy_depth_map(root, "image1.right.depth.png", size=(size[0], size[1])))
+        paths.append(
+            StereoFallingThingsTestCase._make_dummy_depth_map(root, "image1.left.depth.png", size=(size[0], size[1]))
+        )
+        paths.append(
+            StereoFallingThingsTestCase._make_dummy_depth_map(root, "image1.right.depth.png", size=(size[0], size[1]))
+        )
         # camera settings json. Minimal example for _read_disparity function testing
         settings_json = {"camera_settings": [{"intrinsic_settings": {"fx": 1}}]}
         with open(root / "_camera_settings.json", "w") as f:

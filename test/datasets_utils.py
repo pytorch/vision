@@ -561,9 +561,11 @@ class DatasetTestCase(unittest.TestCase):
     @test_all_configs
     def test_num_examples(self, config):
         with self.create_dataset(config) as (dataset, info):
-            assert len(dataset) == info["num_examples"], f"The number of examples {len(dataset)} does not match the expected {info['num_examples']}"
+            assert (
+                len(dataset) == info["num_examples"]
+            ), f"The number of examples {len(dataset)} does not match the expected {info['num_examples']}"
 
-    @ test_all_configs
+    @test_all_configs
     def test_transforms(self, config):
         mock = unittest.mock.Mock(wraps=lambda *args: args[0] if len(args) == 1 else args)
         for kwarg in self._TRANSFORM_KWARGS:
@@ -587,7 +589,7 @@ class ImageDatasetTestCase(DatasetTestCase):
 
     FEATURE_TYPES = (PIL.Image.Image, int)
 
-    @ contextlib.contextmanager
+    @contextlib.contextmanager
     def create_dataset(
         self,
         config: Optional[Dict[str, Any]] = None,
@@ -610,7 +612,7 @@ class ImageDatasetTestCase(DatasetTestCase):
             with self._force_load_images():
                 yield dataset, info
 
-    @ contextlib.contextmanager
+    @contextlib.contextmanager
     def _force_load_images(self):
         open = PIL.Image.open
 
@@ -649,7 +651,7 @@ class VideoDatasetTestCase(DatasetTestCase):
         args_without_default = argspec.args[1 : (-len(argspec.defaults) if argspec.defaults else None)]
         frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
 
-        @ functools.wraps(inject_fake_data)
+        @functools.wraps(inject_fake_data)
         def wrapper(tmpdir, config):
             args = inject_fake_data(tmpdir, config)
             if frames_per_clip_last and len(args) == len(args_without_default) - 1:
@@ -748,7 +750,7 @@ def create_image_folder(
     ]
 
 
-@ requires_lazy_imports("av")
+@requires_lazy_imports("av")
 def create_video_file(
     root: Union[pathlib.Path, str],
     name: Union[pathlib.Path, str],
@@ -790,7 +792,7 @@ def create_video_file(
     return file
 
 
-@ requires_lazy_imports("av")
+@requires_lazy_imports("av")
 def create_video_folder(
     root: Union[str, pathlib.Path],
     name: Union[str, pathlib.Path],
