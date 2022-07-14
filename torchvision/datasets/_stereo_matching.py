@@ -60,8 +60,8 @@ class StereoMatchingDataset(ABC, VisionDataset):
         super().__init__(root=root)
         self.transforms = transforms
 
-        self._images: List[Tuple] = []
-        self._disparities: List[Tuple] = []
+        self._images: List[Tuple[str, str]] = []
+        self._disparities: List[Tuple[str, str]] = []
 
     def _read_img(self, file_path: str) -> Image.Image:
         img = Image.open(file_path)
@@ -69,25 +69,27 @@ class StereoMatchingDataset(ABC, VisionDataset):
             img = img.convert("RGB")
         return img
 
-    def _scan_pairs(self, left_pattern: str, right_pattern: str, fill_empty: bool = False) -> List[Tuple[str, str]]:
-        left_paths = sorted(glob(left_pattern))
-        right_paths = sorted(glob(right_pattern))
+    def _scan_pairs(
+        self, paths_left_pattern: str, paths_right_pattern: str, fill_empty: bool = False
+    ) -> List[Tuple[str, str]]:
+        left_paths: List[str] = sorted(glob(paths_left_pattern))
+        right_paths: List[str] = sorted(glob(paths_right_pattern))
 
         # used when dealing with inexistent disparity for the right image
         if fill_empty:
             right_paths = list("" for _ in left_paths)
 
         if not left_paths:
-            raise FileNotFoundError(f"Could not find any files matching the patterns: {left_pattern}")
+            raise FileNotFoundError(f"Could not find any files matching the patterns: {paths_left_pattern}")
 
         if not right_paths:
-            raise FileNotFoundError(f"Could not find any files matching the patterns: {right_pattern}")
+            raise FileNotFoundError(f"Could not find any files matching the patterns: {paths_right_pattern}")
 
         if len(left_paths) != len(right_paths):
             raise ValueError(
                 f"Found {len(left_paths)} left files but {len(right_paths)} right files using:\n "
-                f"left pattern: {left_pattern}\n"
-                f"right pattern: {right_pattern}\n"
+                f"left pattern: {paths_left_pattern}\n"
+                f"right pattern: {paths_right_pattern}\n"
             )
 
         images = list((left, right) for left, right in zip(left_paths, right_paths))
@@ -387,6 +389,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
             self._download_dataset(root)
 
         root = Path(root) / "Middlebury2014"
+        self.split = split
 
         if not os.path.exists(root / split):
             raise FileNotFoundError(f"The {split} directory was not found in the provided root directory")
@@ -457,7 +460,9 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         base_url = "https://vision.middlebury.edu/stereo/data/scenes2014/zip"
         # train and additional splits have 2 different calibration settings
         root = Path(root) / "Middlebury2014"
-        for split_name, split_scenes in self.splits.items():
+        download_split = self.split
+
+        for split_name, split_scenes in (download_split, self.splits[download_split]):
             if split_name == "test":
                 continue
             split_root = root / split_name
@@ -465,11 +470,16 @@ class StereoMiddlebury2014(StereoMatchingDataset):
                 for calibration in ["perfect", "imperfect"]:
                     scene_name = f"{scene}-{calibration}"
                     scene_url = f"{base_url}/{scene_name}.zip"
-                    download_and_extract_archive(
-                        url=scene_url, filename=f"{scene_name}.zip", download_root=str(split_root), remove_finished=True
-                    )
+                    # download the scene only if it doesn't exist
+                    if not os.path.exists(split_root / scene_name):
+                        download_and_extract_archive(
+                            url=scene_url,
+                            filename=f"{scene_name}.zip",
+                            download_root=str(split_root),
+                            remove_finished=True,
+                        )
 
-        if any(s not in os.listdir(root) for s in self.splits["test"]):
+        if any(s not in os.listdir(root / "test") for s in self.splits["test"]):
             # test split is downloaded from a different location
             test_set_url = "https://vision.middlebury.edu/stereo/submit3/zip/MiddEval3-data-F.zip"
 
@@ -550,13 +560,13 @@ class StereoETH3D(StereoMatchingDataset):
 
         left_img_pattern = str(root / img_dir / "*" / "im0.png")
         right_img_pattern = str(root / img_dir / "*" / "im1.png")
-        self._images = self._scan_pairs(left_img_pattern, right_img_pattern)
+        self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
 
         if split == "test":
             self._disparities = list(("", "") for _ in self._images)
         else:
             disparity_pattern = str(root / anot_dir / "*" / "disp0GT.pfm")
-            self._disparities = self._scan_pairs(disparity_pattern, "", fill_empty=True)
+            self._disparities += self._scan_pairs(disparity_pattern, "", fill_empty=True)
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):
@@ -605,11 +615,11 @@ class StereoKitti2012(StereoMatchingDataset):
 
         left_img_pattern = str(root / "colored_0" / "*_10.png")
         right_img_pattern = str(root / "colored_1" / "*_10.png")
-        self._images = self._scan_pairs(left_img_pattern, right_img_pattern)
+        self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
 
         if split == "train":
             disparity_pattern = str(root / "disp_noc" / "*.png")
-            self._disparities = self._scan_pairs(disparity_pattern, "", fill_empty=True)
+            self._disparities += self._scan_pairs(disparity_pattern, "", fill_empty=True)
         else:
             self._disparities = list(("", "") for _ in self._images)
 
@@ -676,12 +686,12 @@ class StereoKitti2015(StereoMatchingDataset):
         root = Path(root) / "Kitti2015" / (split + "ing")
         left_img_pattern = str(root / "image_2" / "*.png")
         right_img_pattern = str(root / "image_3" / "*.png")
-        self._images = self._scan_pairs(left_img_pattern, right_img_pattern)
+        self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
 
         if split == "train":
             left_disparity_pattern = str(root / "disp_occ_0" / "*.png")
             right_disparity_pattern = str(root / "disp_occ_1" / "*.png")
-            self._disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
+            self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
         else:
             self._disparities = list(("", "") for _ in self._images)
 
@@ -750,21 +760,33 @@ class StereoSintel(StereoMatchingDataset):
 
         left_img_pattern = str(root / "training" / "final_left" / "*" / "*.png")
         right_img_pattern = str(root / "training" / "final_right" / "*" / "*.png")
-        self._images = self._scan_pairs(left_img_pattern, right_img_pattern)
+        self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
 
         disparity_pattern = str(root / "training" / "disparities" / "*" / "*.png")
-        self._disparities = self._scan_pairs(disparity_pattern, "", fill_empty=True)
+        self._disparities += self._scan_pairs(disparity_pattern, "", fill_empty=True)
 
-    def _get_oclussion_mask_paths(self, file_path: str) -> List[str]:
+    def _get_oclussion_mask_paths(self, file_path: str) -> Tuple[str, str]:
         path_tokens = file_path.split(os.sep)
+        rets = None
+
         for idx in range(len(path_tokens) - 1):
             if path_tokens[idx] == "training" and path_tokens[idx + 1] == "disparities":
                 pre_tokens = path_tokens[: idx + 1]
                 post_tokens = path_tokens[idx + 2 :]
-                return (
+                rets = (
                     "/".join(pre_tokens + ["occlusions"] + post_tokens),
                     "/".join(pre_tokens + ["outofframe"] + post_tokens),
                 )
+                break
+
+        if rets is None:
+            raise ValueError("Malformed file path: {}".format(file_path))
+
+        for path in rets:
+            if not os.path.exists(path):
+                raise ValueError(f"Could not find file {path}")
+
+        return rets
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):
