@@ -35,7 +35,8 @@ class Resize(Transform):
         antialias: Optional[bool] = None,
     ) -> None:
         super().__init__()
-        self.size = [size] if isinstance(size, int) else list(size)
+
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.interpolation = interpolation
         self.max_size = max_size
         self.antialias = antialias
@@ -80,7 +81,6 @@ class RandomResizedCrop(Transform):
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")
 
-        self.size = size
         self.scale = scale
         self.ratio = ratio
         self.interpolation = interpolation
@@ -225,6 +225,19 @@ def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> 
         raise TypeError("Got inappropriate fill arg")
 
 
+def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
+    if not isinstance(padding, (numbers.Number, tuple, list)):
+        raise TypeError("Got inappropriate padding arg")
+
+    if isinstance(padding, (tuple, list)) and len(padding) not in [1, 2, 4]:
+        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
+
+
+def _check_padding_mode_arg(padding_mode: Literal["constant", "edge", "reflect", "symmetric"]) -> None:
+    if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
+        raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
+
+
 class Pad(Transform):
     def __init__(
         self,
@@ -233,18 +246,10 @@ class Pad(Transform):
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
-        if not isinstance(padding, (numbers.Number, tuple, list)):
-            raise TypeError("Got inappropriate padding arg")
 
-        if isinstance(padding, (tuple, list)) and len(padding) not in [1, 2, 4]:
-            raise ValueError(
-                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
-            )
-
+        _check_padding_arg(padding)
         _check_fill_arg(fill)
-
-        if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
-            raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
+        _check_padding_mode_arg(padding_mode)
 
         self.padding = padding
         self.fill = fill
@@ -416,3 +421,75 @@ class RandomAffine(Transform):
             fill=self.fill,
             center=self.center,
         )
+
+
+class RandomCrop(Transform):
+    def __init__(
+        self,
+        size: Union[int, Sequence[int]],
+        padding: Optional[Union[int, Sequence[int]]] = None,
+        pad_if_needed: bool = False,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
+    ) -> None:
+        super().__init__()
+
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+
+        if padding is not None:
+            _check_padding_arg(padding)
+
+        if (padding is not None) or pad_if_needed:
+            _check_padding_mode_arg(padding_mode)
+            _check_fill_arg(fill)
+
+        self.padding = padding
+        self.pad_if_needed = pad_if_needed
+        self.fill = fill
+        self.padding_mode = padding_mode
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        _, height, width = get_image_dimensions(image)
+        output_height, output_width = self.size
+
+        if height + 1 < output_height or width + 1 < output_width:
+            raise ValueError(
+                f"Required crop size {(output_height, output_width)} is larger then input image size {(height, width)}"
+            )
+
+        if width == output_width and height == output_height:
+            return dict(top=0, left=0, height=height, width=width)
+
+        top = torch.randint(0, height - output_height + 1, size=(1,)).item()
+        left = torch.randint(0, width - output_width + 1, size=(1,)).item()
+        return dict(top=top, left=left, height=output_height, width=output_width)
+
+    def _forward(self, flat_inputs: List[Any]) -> List[Any]:
+        if self.padding is not None:
+            flat_inputs = [F.pad(flat_input, self.padding, self.fill, self.padding_mode) for flat_input in flat_inputs]
+
+        image = query_image(flat_inputs)
+        _, height, width = get_image_dimensions(image)
+
+        # pad the width if needed
+        if self.pad_if_needed and width < self.size[1]:
+            padding = [self.size[1] - width, 0]
+            flat_inputs = [F.pad(flat_input, padding, self.fill, self.padding_mode) for flat_input in flat_inputs]
+        # pad the height if needed
+        if self.pad_if_needed and height < self.size[0]:
+            padding = [0, self.size[0] - height]
+            flat_inputs = [F.pad(flat_input, padding, self.fill, self.padding_mode) for flat_input in flat_inputs]
+
+        params = self._get_params(flat_inputs)
+
+        return [F.crop(flat_input, **params) for flat_input in flat_inputs]
+
+    def forward(self, *inputs: Any) -> Any:
+        from torch.utils._pytree import tree_flatten, tree_unflatten
+
+        sample = inputs if len(inputs) > 1 else inputs[0]
+
+        flat_inputs, spec = tree_flatten(sample)
+        out_flat_inputs = self._forward(flat_inputs)
+        return tree_unflatten(out_flat_inputs, spec)
