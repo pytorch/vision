@@ -530,8 +530,8 @@ class SwinTransformer(nn.Module):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.1,
         num_classes: int = 1000,
-        block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
+        block: Optional[Callable[..., nn.Module]] = None,
         downsample_layer: Callable[..., nn.Module] = PatchMerging,
     ):
         super().__init__()
