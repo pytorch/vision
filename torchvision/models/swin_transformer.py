@@ -588,7 +588,7 @@ class SwinTransformer(nn.Module):
         self.norm = norm_layer(num_features)
         self.permute = Permute([0, 3, 1, 2])
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.flatten = nn.Flatten()
+        self.flatten = nn.Flatten(1)
         self.head = nn.Linear(num_features, num_classes)
 
         for m in self.modules():
