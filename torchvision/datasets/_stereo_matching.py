@@ -445,7 +445,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         base_url = "https://vision.middlebury.edu/stereo/data/scenes2014/zip"
         # train and additional splits have 2 different calibration settings
         root = Path(root) / "Middlebury2014"
-        for split_name, split_scenes in self.splits.values():
+        for split_name, split_scenes in self.splits.items():
             if split_name == "test":
                 continue
             split_root = root / split_name

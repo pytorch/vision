@@ -16,6 +16,7 @@ import zipfile
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
+import numpy as np
 import PIL
 import PIL.Image
 import pytest
@@ -931,6 +932,38 @@ def create_random_string(length: int, *digits: str) -> str:
         digits = "".join(itertools.chain(*digits))
 
     return "".join(random.choice(digits) for _ in range(length))
+
+
+def shape_test_for_stereo_disp(
+    left: PIL.Image.Image, right: PIL.Image.Image, disparity: np.ndarray, valid_mask: np.ndarray
+):
+    left_array = np.array(left)
+    right_array = np.array(right)
+    h, w, c = left_array.shape
+    # check that left and right are the same size
+    assert left_array.shape == right_array.shape
+    # check general shapes
+    assert c == 3
+    assert len(disparity.shape) == 3
+    assert len(valid_mask.shape) == 2
+    assert disparity.shape == (1, h, w)
+    # check that valid mask is the same size as the disparity
+    _, dh, dw = disparity.shape
+    mh, mw = valid_mask.shape
+    assert dh == mh
+    assert dw == mw
+
+
+def shape_test_for_stereo_none(left: PIL.Image.Image, right: PIL.Image.Image, disparity: None, valid_mask: None):
+    left_array = np.array(left)
+    right_array = np.array(right)
+    _, _, c = left_array.shape
+    # check that left and right are the same size
+    assert left_array.shape == right_array.shape
+    # check general shapes
+    assert c == 3
+    assert disparity is None
+    assert valid_mask is None
 
 
 def make_fake_pfm_file(h, w, file_name):

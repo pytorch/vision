@@ -2729,19 +2729,13 @@ class StereoETH3DTestCase(datasets_utils.ImageDatasetTestCase):
             assert dataset._images and len(dataset._images) == len(
                 dataset._disparities
             ), "Training images do not match with training disparities"
-            for _, _, disparity, valid_mask in dataset:
-                assert len(disparity.shape) == 3
-                assert len(valid_mask.shape) == 2
-                _, dh, dw = disparity.shape
-                mh, mw = valid_mask.shape
-                assert dh == mh
-                assert dw == mw
+            for left, right, disparity, valid_mask in dataset:
+                datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
 
         with self.create_dataset(split="test") as (dataset, _):
             assert all(d == ("", "") for d in dataset._disparities)
-            for _, _, disparity, valid_mask in dataset:
-                assert disparity is None
-                assert valid_mask is None
+            for left, right, disparity, valid_mask in dataset:
+                datasets_utils.shape_test_for_stereo_none(left, right, disparity, valid_mask)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -2776,21 +2770,7 @@ class CREStereoTestCase(datasets_utils.ImageDatasetTestCase):
         for split in ("tree", "shapenet", "reflective", "hole"):
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (1, h, w)
-                    # check that valid mask is the same size as the disparity
-                    _, dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
+                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -2851,36 +2831,13 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
         for split, calibration in itertools.product(["train", "additional"], ["perfect", "imperfect", "both"]):
             with self.create_dataset(split=split, calibration=calibration) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (1, h, w)
-                    # check that valid mask is the same size as the disparity
-                    _, dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    print("disparities", disparity.shape, valid_mask.shape)
-                    assert dh == mh
-                    assert dw == mw
+                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
 
     def test_test_split(self):
         for split in ["test"]:
             with self.create_dataset(split=split, calibration=None) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert disparity is None
-                    assert valid_mask is None
+                    datasets_utils.shape_test_for_stereo_none(left, right, disparity, valid_mask)
 
     def test_augmented_view_usage(self):
         with self.create_dataset(split="train", use_ambient_views=True) as (dataset, _):
@@ -2963,32 +2920,13 @@ class StereoKitti2012TestCase(datasets_utils.ImageDatasetTestCase):
         for split in ["train"]:
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (1, h, w)
-                    # check that valid mask is the same size as the disparity
-                    _, dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
+                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
 
     def test_test_split(self):
         for split in ["test"]:
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    assert disparity is None
-                    assert valid_mask is None
+                    datasets_utils.shape_test_for_stereo_none(left, right, disparity, valid_mask)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -3050,33 +2988,13 @@ class StereoKitti2015TestCase(datasets_utils.ImageDatasetTestCase):
         for split in ["train"]:
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (1, h, w)
-                    # check that valid mask is the same size as the disparity
-                    _, dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
+                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
 
     def test_test_split(self):
         for split in ["test"]:
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert disparity is None
-                    assert valid_mask is None
+                    datasets_utils.shape_test_for_stereo_none(left, right, disparity, valid_mask)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -3153,21 +3071,7 @@ class StereoSceneFlowTestCase(datasets_utils.ImageDatasetTestCase):
         for split_name, pass_name in itertools.product(["FlyingThings3D", "Driving", "Monkaa"], ["clean", "final"]):
             with self.create_dataset(split=split_name, pass_name=pass_name) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (1, h, w)
-                    # check that valid mask is the same size as the disparity
-                    _, dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
+                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -3230,21 +3134,7 @@ class StereoFallingThingsTestCase(datasets_utils.ImageDatasetTestCase):
         for split_name in ["single", "mixed"]:
             with self.create_dataset(split=split_name) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (1, h, w)
-                    # check that valid mask is the same size as the disparity
-                    _, dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
+                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -3307,21 +3197,7 @@ class StereoSintelTestCase(datasets_utils.ImageDatasetTestCase):
     def test_splits(self):
         with self.create_dataset() as (dataset, _):
             for left, right, disparity, valid_mask in dataset:
-                left_array = np.array(left)
-                right_array = np.array(right)
-                h, w, c = left_array.shape
-                # check that left and right are the same size
-                assert left_array.shape == right_array.shape
-                # check general shapes
-                assert c == 3
-                assert len(disparity.shape) == 3
-                assert len(valid_mask.shape) == 2
-                assert disparity.shape == (1, h, w)
-                # check that valid mask is the same size as the disparity
-                _, dh, dw = disparity.shape
-                mh, mw = valid_mask.shape
-                assert dh == mh
-                assert dw == mw
+                datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
 
 
 class InStereo2k(datasets_utils.ImageDatasetTestCase):
@@ -3357,21 +3233,7 @@ class InStereo2k(datasets_utils.ImageDatasetTestCase):
         for split_name in ["train", "test"]:
             with self.create_dataset(split=split_name) as (dataset, _):
                 for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (1, h, w)
-                    # check that valid mask is the same size as the disparity
-                    _, dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
+                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
