@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
 import numpy as np
-from jsonschema import ValidationError
 from PIL import Image
 from torch import Tensor
 
@@ -35,11 +34,11 @@ def read_pfm_file(file_path: str) -> np.array:
     with open(file_path, "rb") as file:
         header = file.readline().rstrip()
         if not header in [b"PF", b"Pf"]:
-            raise ValidationError(f"Not a valid PFM file: {file_path}")
+            raise ValueError(f"Not a valid PFM file: {file_path}")
 
         dim_match = re.match(rb"^(\d+)\s(\d+)\s$", file.readline())
         if not dim_match:
-            raise ValidationError(f"Malformed PFM header: {file_path}")
+            raise ValueError(f"Malformed PFM header: {file_path}")
 
         width, height = map(int, dim_match.groups())
         channels = 3 if header == b"PF" else 1
@@ -231,7 +230,7 @@ class CREStereo(StereoMatchingDataset):
             if not len(imgs_left) or not len(imgs_right):
                 raise FileNotFoundError("No images found in {}".format(root))
 
-            imgs = list((l, r) for l, r in zip(imgs_left, imgs_right))
+            imgs = list((left, right) for left, right in zip(imgs_left, imgs_right))
             self._images += imgs
 
             disparity_maps_left = list(p.replace("_left", "_left.disp") for p in imgs_left)
@@ -243,7 +242,7 @@ class CREStereo(StereoMatchingDataset):
             if not any(os.path.exists(file_path) for file_path in disparity_maps_right):
                 raise FileNotFoundError("No disparity valid maps found in {}".format(root / s))
 
-            disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+            disparity_maps = list((left, right) for left, right in zip(disparity_maps_left, disparity_maps_right))
             self._disparities += disparity_maps
 
     def _read_disparity(self, file_path: str) -> Tuple:
@@ -432,7 +431,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
             if not len(imgs_left) or not len(imgs_right):
                 raise FileNotFoundError("No images found in {}".format(root))
 
-            self._images += list((l, r) for l, r in zip(imgs_left, imgs_right))
+            self._images += list((left, right) for left, right in zip(imgs_left, imgs_right))
 
             if split == "test":
                 disparity_maps_left, disparity_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
@@ -442,7 +441,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
                 if not len(disparity_maps_left) or not len(disparity_maps_right):
                     raise FileNotFoundError("No disparity maps found in {}".format(root / split))
 
-            self._disparities += list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+            self._disparities += list((left, right) for left, right in zip(disparity_maps_left, disparity_maps_right))
 
         self.use_ambient_views = use_ambient_views
 
@@ -578,8 +577,8 @@ class StereoETH3D(StereoMatchingDataset):
             if not len(disparity_maps_left):
                 raise FileNotFoundError("No disparity maps found in {}".format(root / anot_dir))
 
-        self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
-        self._disparities = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+        self._images = list((left, right) for left, right in zip(imgs_left, imgs_right))
+        self._disparities = list((left, right) for left, right in zip(disparity_maps_left, disparity_maps_right))
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):
@@ -639,8 +638,8 @@ class StereoKitti2012(StereoMatchingDataset):
         else:
             disparity_maps_left, disparity_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
 
-        self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
-        self._disparities = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+        self._images = list((left, right) for left, right in zip(imgs_left, imgs_right))
+        self._disparities = list((left, right) for left, right in zip(disparity_maps_left, disparity_maps_right))
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):
@@ -700,8 +699,8 @@ class StereoKitti2015(StereoMatchingDataset):
         else:
             disparity_maps_left, disparity_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
 
-        self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
-        self._disparities = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+        self._images = list((left, right) for left, right in zip(imgs_left, imgs_right))
+        self._disparities = list((left, right) for left, right in zip(disparity_maps_left, disparity_maps_right))
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):
@@ -777,8 +776,8 @@ class StereoSintel(StereoMatchingDataset):
 
         disparity_maps_right = list("" for _ in dps_masks_left)
 
-        self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
-        self._disparities = list((l, r) for l, r in zip(dps_masks_left, disparity_maps_right))
+        self._images = list((left, right) for left, right in zip(imgs_left, imgs_right))
+        self._disparities = list((left, right) for left, right in zip(dps_masks_left, disparity_maps_right))
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if not os.path.exists(file_path):
@@ -876,7 +875,7 @@ class StereoSceneFlow(StereoMatchingDataset):
             if not len(imgs_left) or not len(imgs_right):
                 raise FileNotFoundError("No images found in {}".format(root / p))
 
-            imgs = list((l, r) for l, r in zip(imgs_left, imgs_right))
+            imgs = list((left, right) for left, right in zip(imgs_left, imgs_right))
             self._images += imgs
 
             disparity_maps_left = [file_path.replace(p, "disparity").replace(".png", ".pfm") for file_path in imgs_left]
@@ -890,7 +889,7 @@ class StereoSceneFlow(StereoMatchingDataset):
             if not any(os.path.exists(file_path) for file_path in disparity_maps_right):
                 raise FileNotFoundError("No disparity valid maps found in {}".format(root / "disparity"))
 
-            disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+            disparity_maps = list((left, right) for left, right in zip(disparity_maps_left, disparity_maps_right))
             self._disparities += disparity_maps
 
     def _read_disparity(self, file_path: str) -> Tuple:
@@ -967,7 +966,7 @@ class StereoFallingThings(StereoMatchingDataset):
             if not len(imgs_left) or not len(imgs_right):
                 raise FileNotFoundError("No images found in {}".format(root))
 
-            imgs = list((l, r) for l, r in zip(imgs_left, imgs_right))
+            imgs = list((left, right) for left, right in zip(imgs_left, imgs_right))
             self._images += imgs
 
             disparity_maps_left = sorted(glob(str(root / s / "*" / "*.left.depth.png")))
@@ -975,7 +974,7 @@ class StereoFallingThings(StereoMatchingDataset):
             if not len(disparity_maps_left) or not len(disparity_maps_right):
                 raise FileNotFoundError("No disparity maps found in {}".format(root))
 
-            disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+            disparity_maps = list((left, right) for left, right in zip(disparity_maps_left, disparity_maps_right))
             self._disparities += disparity_maps
 
     def _read_disparity(self, file_path: str) -> Tuple:
@@ -1041,7 +1040,7 @@ class InStereo2k(StereoMatchingDataset):
         if not len(imgs_left) or not len(imgs_right):
             raise FileNotFoundError("No images found in {}".format(root))
 
-        imgs = list((l, r) for l, r in zip(imgs_left, imgs_right))
+        imgs = list((left, right) for left, right in zip(imgs_left, imgs_right))
         self._images = imgs
 
         disparity_maps_left = list(p.replace("left", "left_disp") for p in imgs_left)
@@ -1053,7 +1052,7 @@ class InStereo2k(StereoMatchingDataset):
         if not any(os.path.exists(file_path) for file_path in disparity_maps_right):
             raise FileNotFoundError("No disparity valid maps found in {}".format(root))
 
-        disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
+        disparity_maps = list((left, right) for left, right in zip(disparity_maps_left, disparity_maps_right))
         self._disparities = disparity_maps
 
     def _read_disparity(self, file_path: str) -> Tuple:
