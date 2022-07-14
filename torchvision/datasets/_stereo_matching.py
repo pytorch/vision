@@ -44,7 +44,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
                 disparities is a Tuple of (``np.ndarray``, ``np.ndarray``) with shape (1, H, W)
                 valid_masks is a Tuple of (``np.ndarray``, ``np.ndarray``) with shape (H, W)
 
-                In some cases, when a dataset does not provide disparties, the ``disparities`` and
+                In some cases, when a dataset does not provide disparities, the ``disparities`` and
                 ``valid_masks`` can be Tuples containing None values.
 
                 For training splits generally the datasets provide a minimal guarantee of
@@ -427,10 +427,14 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         return super().__getitem__(index)
 
     def _read_img(self, file_path: str) -> Image.Image:
-        """Function that reads either the original right image or an augmented view when ``use_ambient_views`` is True."""
+        """
+        Function that reads either the original right image or an augmented view when ``use_ambient_views`` is True.
+        When ``use_ambient_views`` is True, the dataset will return at random one of ``[im1.png, im1E.png, im1L.png]``
+        as the right image.
+        """
         if os.path.basename(file_path) == "im1.png" and self.use_ambient_views:
             # initialize sampleable container
-            base_path = os.path.basename(file_path)[0]
+            base_path = os.path.dirname(file_path)
             ambient_file_paths = list(os.path.join(base_path, view_name) for view_name in ["im1E.png", "im1L.png"])
             # double check that we're not going to try to read from an invalid file path
             ambient_file_paths = list(filter(lambda p: os.path.exists(p), ambient_file_paths))
@@ -765,7 +769,7 @@ class StereoSintel(StereoMatchingDataset):
         if not os.path.exists(file_path):
             return None, None
 
-        # disparity decoding as per Sintel instructions
+        # disparity decoding as per Sintel instructions in the README provided with the dataset
         disparity_map = np.array(Image.open(file_path), dtype=np.float32)
         r, g, b = np.split(disparity_map, 3, axis=-1)
         disparity_map = r * 4 + g / (2 ** 6) + b / (2 ** 14)
@@ -945,10 +949,11 @@ class StereoFallingThings(StereoMatchingDataset):
         # as per https://research.nvidia.com/sites/default/files/pubs/2018-06_Falling-Things/readme_0.txt
         # in order to extract disparity from depth maps
         with open(os.path.split(file_path)[0] + "/_camera_settings.json", "r") as f:
+            # inverse of depth-from-disparity equation: depth = (baseline * focal) / (disparity * pixel_constatnt)
             intrinsics = json.load(f)
-            fx = intrinsics["camera_settings"][0]["intrinsic_settings"]["fx"]
-            # inverse of depth-from-disparity equation
-            disparity = (fx * 6.0 * 100) / depth.astype(np.float32)
+            focal = intrinsics["camera_settings"][0]["intrinsic_settings"]["fx"]
+            baseline, pixel_constant = 6.0, 100.0  # pixel constant is inverted
+            disparity = (baseline * focal * pixel_constant) / depth.astype(np.float32)
             valid = disparity > 0
             # unsqueeze disparity to (C, H, W)
             disparity = disparity[None, :, :]
