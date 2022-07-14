@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 
 from ..io.image import _read_png_16
-from .utils import verify_str_arg, read_pfm
+from .utils import verify_str_arg, _read_pfm
 from .vision import VisionDataset
 
 
@@ -375,7 +375,7 @@ class FlyingThings3D(FlowDataset):
         return super().__getitem__(index)
 
     def _read_flow(self, file_name):
-        return read_pfm(file_name)
+        return _read_pfm(file_name)
 
 
 class HD1K(FlowDataset):

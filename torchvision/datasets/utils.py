@@ -486,13 +486,13 @@ def verify_str_arg(
     return value
 
 
-def read_pfm(file_name: str, slice_channels: int = 2) -> np.ndarray:
-    """Read file in .pfm format. Might contain
+def _read_pfm(file_name: str, slice_channels: int = 2) -> np.ndarray:
+    """Read file in .pfm format. Might contain either 1 or 3 channels of data.
 
     Args:
         file_name (str): Path to the file.
         slice_channels (int): Number of channels to slice out of the file.
-        Useful for reading different data formats stored in .pfm files: Optical Flows, Stereo Disparity Maps, etc.
+            Useful for reading different data formats stored in .pfm files: Optical Flows, Stereo Disparity Maps, etc.
     """
 
     with open(file_name, "rb") as f:
