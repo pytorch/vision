@@ -1,19 +1,21 @@
-from abc import ABC, abstractmethod
-from glob import glob
-from pathlib import Path
+import json
+import os
 import random
 import re
 import shutil
-from typing import Callable, List, Optional, Tuple
 import warnings
-from jsonschema import ValidationError
-from torch import Tensor
-from .vision import VisionDataset
-from .utils import download_and_extract_archive, verify_str_arg
-import os
+from abc import ABC, abstractmethod
+from glob import glob
+from pathlib import Path
+from typing import Callable, List, Optional, Tuple
+
 import numpy as np
+from jsonschema import ValidationError
 from PIL import Image
-import json
+from torch import Tensor
+
+from .utils import download_and_extract_archive, verify_str_arg
+from .vision import VisionDataset
 
 __all__ = (
     "CREStereo"
@@ -35,7 +37,7 @@ def read_pfm_file(file_path: str) -> np.array:
         if not header in [b"PF", b"Pf"]:
             raise ValidationError(f"Not a valid PFM file: {file_path}")
 
-        dim_match = re.match(rb'^(\d+)\s(\d+)\s$', file.readline())
+        dim_match = re.match(rb"^(\d+)\s(\d+)\s$", file.readline())
         if not dim_match:
             raise ValidationError(f"Malformed PFM header: {file_path}")
 
@@ -45,11 +47,11 @@ def read_pfm_file(file_path: str) -> np.array:
         # check for endian type
         if scale < 0:
             scale = -scale
-            endian = '<'
+            endian = "<"
         else:
-            endian = '>'
+            endian = ">"
 
-        data = np.fromfile(file, endian + 'f')
+        data = np.fromfile(file, endian + "f")
         data = np.reshape(data, (height, width, channels))
         data = np.flipud(data)
 
@@ -126,7 +128,11 @@ class StereoMatchingDataset(ABC, VisionDataset):
         valid_masks = (valid_mask_left, valid_mask_right)
 
         if self.transforms is not None:
-            imgs, dsp_maps, valid_masks, = self.transforms(imgs, dsp_maps, valid_masks)
+            (
+                imgs,
+                dsp_maps,
+                valid_masks,
+            ) = self.transforms(imgs, dsp_maps, valid_masks)
 
         return imgs[0], imgs[1], dsp_maps[0], valid_masks[0]
 
@@ -135,7 +141,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
 
 
 class CREStereo(StereoMatchingDataset):
-    """Synthetic dataset used in training the `CREStereo <https://arxiv.org/pdf/2203.11483.pdf>`_ architecture. 
+    """Synthetic dataset used in training the `CREStereo <https://arxiv.org/pdf/2203.11483.pdf>`_ architecture.
 
     Dataset details on the official paper `repo <https://github.com/megvii-research/CREStereo>`_.
 
@@ -179,10 +185,18 @@ class CREStereo(StereoMatchingDataset):
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
         download (bool, optional): If true, downloads the dataset from the internet and puts it in the root directory.
         max_disparity (int, optional): Maximum disparity value. Used to compute the valid mask.
-   """
+    """
+
     DOWNLOAD_SPACE = 400 * 1024 * 1024 * 1024
 
-    def __init__(self, root: str, split: str = "tree", transforms: Optional[Callable] = None, download: bool = False, max_disparity: float = 256.):
+    def __init__(
+        self,
+        root: str,
+        split: str = "tree",
+        transforms: Optional[Callable] = None,
+        download: bool = False,
+        max_disparity: float = 256.0,
+    ):
         super().__init__(root, transforms)
 
         root = Path(root) / "CREStereo"
@@ -234,7 +248,7 @@ class CREStereo(StereoMatchingDataset):
 
     def _read_disparity(self, file_path: str) -> Tuple:
         disparity = np.array(Image.open(file_path), dtype=np.float32)
-        valid = (disparity < self.max_disparity) & (disparity > 0.)
+        valid = (disparity < self.max_disparity) & (disparity > 0.0)
         # unsqueeze the disparity map into (C, H, W) format
         disparity = disparity[None, :, :]
         return disparity, valid
@@ -261,33 +275,33 @@ class StereoMiddlebury2014(StereoMatchingDataset):
             Middlebury2014
                 train
                     scene1-{ ,perfect,imperfect}
-                        calib.txt                    
-                        im{0,1}.png                  
-                        im1E.png                     
-                        im1L.png                     
-                        disp{0,1}.pfm                
-                        disp{0,1}-n.png              
-                        disp{0,1}-sd.pfm             
+                        calib.txt
+                        im{0,1}.png
+                        im1E.png
+                        im1L.png
+                        disp{0,1}.pfm
+                        disp{0,1}-n.png
+                        disp{0,1}-sd.pfm
                         disp{0,1}y.pfm
                     scene2-{ ,perfect,imperfect}
-                        calib.txt                    
-                        im{0,1}.png                  
-                        im1E.png                     
-                        im1L.png                     
-                        disp{0,1}.pfm                
-                        disp{0,1}-n.png              
-                        disp{0,1}-sd.pfm             
+                        calib.txt
+                        im{0,1}.png
+                        im1E.png
+                        im1L.png
+                        disp{0,1}.pfm
+                        disp{0,1}-n.png
+                        disp{0,1}-sd.pfm
                         disp{0,1}y.pfm
                     ...
                 additional
                     scene1-{ ,perfect,imperfect}
-                        calib.txt                    
-                        im{0,1}.png                  
-                        im1E.png                     
-                        im1L.png                     
-                        disp{0,1}.pfm                
-                        disp{0,1}-n.png              
-                        disp{0,1}-sd.pfm             
+                        calib.txt
+                        im{0,1}.png
+                        im1E.png
+                        im1L.png
+                        disp{0,1}.pfm
+                        disp{0,1}-n.png
+                        disp{0,1}-sd.pfm
                         disp{0,1}y.pfm
                     ...
                 test
@@ -305,15 +319,56 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         split (string, optional): The dataset split of scenes, either "train" (default), "test", or "additional"
         use_ambient_views (boolean, optional): Whether to use different expose or lightning views when possible.
         The dataset samples with equal probability between ``[im1.png, im1E.png, im1L.png]``.
-        calibration (string, optional): Wether or not to use the calibrated (default) or uncalibrated scenes. 
+        calibration (string, optional): Wether or not to use the calibrated (default) or uncalibrated scenes.
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
-        download (boolean, optional): Wether or not to download the dataset in the ``root`` directory. 
+        download (boolean, optional): Wether or not to download the dataset in the ``root`` directory.
     """
 
     splits = {
-        "train": ["Adirondack", "Jadeplant", "Motorcycle", "Piano", "Pipes", "Playroom", "Playtable", "Recycle", "Shelves", "Vintage"],
-        "additional": ["Backpack", "Bicycle1", "Cable", "Classroom1", "Couch", "Flowers", "Mask", "Shopvac", "Sticks", "Storage", "Sword1", "Sword2", "Umbrella"],
-        "test": ["Plants", "Classroom2E", "Classroom2", "Australia", "DjembeL", "CrusadeP", "Crusade", "Hoops", "Bicycle2", "Staircase", "Newkuba", "AustraliaP", "Djembe", "Livingroom", "Computer"]
+        "train": [
+            "Adirondack",
+            "Jadeplant",
+            "Motorcycle",
+            "Piano",
+            "Pipes",
+            "Playroom",
+            "Playtable",
+            "Recycle",
+            "Shelves",
+            "Vintage",
+        ],
+        "additional": [
+            "Backpack",
+            "Bicycle1",
+            "Cable",
+            "Classroom1",
+            "Couch",
+            "Flowers",
+            "Mask",
+            "Shopvac",
+            "Sticks",
+            "Storage",
+            "Sword1",
+            "Sword2",
+            "Umbrella",
+        ],
+        "test": [
+            "Plants",
+            "Classroom2E",
+            "Classroom2",
+            "Australia",
+            "DjembeL",
+            "CrusadeP",
+            "Crusade",
+            "Hoops",
+            "Bicycle2",
+            "Staircase",
+            "Newkuba",
+            "AustraliaP",
+            "Djembe",
+            "Livingroom",
+            "Computer",
+        ],
     }
 
     def __init__(
@@ -323,7 +378,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         calibration: Optional[str] = "perfect",
         use_ambient_views: bool = False,
         transforms: Optional[Callable] = None,
-        download: bool = False
+        download: bool = False,
     ):
         super().__init__(root, transforms)
         verify_str_arg(split, "split", valid_values=("train", "test", "additional"))
@@ -333,8 +388,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
             if split == "test":
                 calibration = None
                 warnings.warn(
-                    "\nSplit 'test' has only no calibration settings, ignoring calibration argument.",
-                    RuntimeWarning
+                    "\nSplit 'test' has only no calibration settings, ignoring calibration argument.", RuntimeWarning
                 )
         else:
             if split != "test":
@@ -342,7 +396,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
                 warnings.warn(
                     f"\nSplit '{split}' has calibration settings, however None was provided as an argument."
                     f"\nSetting calibration to 'perfect' for split '{split}'. Available calibration settings are: 'perfect', 'imperfect', 'both'.",
-                    RuntimeWarning
+                    RuntimeWarning,
                 )
 
         if download:
@@ -351,15 +405,14 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         root = Path(root) / "Middlebury2014"
 
         if not os.path.exists(root / split):
-            raise FileNotFoundError(
-                f"The {split} directory was not found in the provided root directory"
-            )
+            raise FileNotFoundError(f"The {split} directory was not found in the provided root directory")
 
         split_scenes = self.splits[split]
         # check that the provided root folder contains the scene splits
         if not any(
             # using startswith to account for perfect / imperfect calibrartion
-            scene.startswith(s) for scene in os.listdir(root / split)
+            scene.startswith(s)
+            for scene in os.listdir(root / split)
             for s in split_scenes
         ):
             raise FileNotFoundError(f"Provided root folder does not contain any scenes from the {split} split.")
@@ -429,7 +482,9 @@ class StereoMiddlebury2014(StereoMatchingDataset):
                 scene_name = f"{scene}-{calibration}"
                 for calibration in ["perfect", "imperfect"]:
                     scene_url = f"{base_url}/{scene_name}.zip"
-                    download_and_extract_archive(url=scene_url, filename=scene_name, download_root=str(split_root), remove_finished=True)
+                    download_and_extract_archive(
+                        url=scene_url, filename=scene_name, download_root=str(split_root), remove_finished=True
+                    )
 
         if any(s not in os.listdir(root) for s in self.splits["test"]):
             # test split is downloaded from a different location
@@ -450,7 +505,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
 
 
 class StereoETH3D(StereoMatchingDataset):
-    """"ETH3D `Low-Res Two-View <https://www.eth3d.net/datasets>`_ dataset.
+    """ "ETH3D `Low-Res Two-View <https://www.eth3d.net/datasets>`_ dataset.
 
     The dataset is expected to have the following structure: ::
 
@@ -458,13 +513,13 @@ class StereoETH3D(StereoMatchingDataset):
             ETH3D
                 two_view_training
                     scene1
-                        im1.png 
+                        im1.png
                         im0.png
                         images.txt
                         cameras.txt
                         calib.txt
                     scene2
-                        im1.png 
+                        im1.png
                         im0.png
                         images.txt
                         cameras.txt
@@ -480,13 +535,13 @@ class StereoETH3D(StereoMatchingDataset):
                     ...
                 two_view_testing
                     scene1
-                        im1.png 
+                        im1.png
                         im0.png
                         images.txt
                         cameras.txt
                         calib.txt
                     scene2
-                        im1.png 
+                        im1.png
                         im0.png
                         images.txt
                         cameras.txt
@@ -496,7 +551,7 @@ class StereoETH3D(StereoMatchingDataset):
     Args:
         root (string): Root directory of the ETH3D Dataset.
         split (string, optional): The dataset split of scenes, either "train" (default) or "test".
-        calibration (string, optional): Wether or not to use the calibrated (default) or uncalibrated scenes. 
+        calibration (string, optional): Wether or not to use the calibrated (default) or uncalibrated scenes.
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
@@ -540,7 +595,7 @@ class StereoETH3D(StereoMatchingDataset):
 
 
 class StereoKitti2012(StereoMatchingDataset):
-    """"Kitti dataset from the `2012 <http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php>`_ stereo evaluation benchmark.
+    """ "Kitti dataset from the `2012 <http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php>`_ stereo evaluation benchmark.
     Uses the RGB images for consistency with Kitti 2015.
 
     The dataset is expected to have the following structure: ::
@@ -560,7 +615,7 @@ class StereoKitti2012(StereoMatchingDataset):
         root (string): Root directory where Kitti2012 is located.
         split (string, optional): The dataset split of scenes, either "train" (default), test, or "additional"
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
-        download (boolean, optional): Wether or not to download the dataset in the ``root`` directory. 
+        download (boolean, optional): Wether or not to download the dataset in the ``root`` directory.
     """
 
     def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
@@ -602,7 +657,7 @@ class StereoKitti2012(StereoMatchingDataset):
 
 
 class StereoKitti2015(StereoMatchingDataset):
-    """"Kitti dataset from the `2015 <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php>`_ stereo evaluation benchmark.
+    """ "Kitti dataset from the `2015 <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php>`_ stereo evaluation benchmark.
 
     The dataset is expected to have the following structure: ::
 
@@ -663,7 +718,7 @@ class StereoKitti2015(StereoMatchingDataset):
 
 
 class StereoSintel(StereoMatchingDataset):
-    """"Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
+    """ "Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
 
     The dataset is expected to have the following structure: ::
 
@@ -732,7 +787,7 @@ class StereoSintel(StereoMatchingDataset):
         # disparity decoding as per Sintel instructions
         disparity_map = np.array(Image.open(file_path), dtype=np.float32)
         r, g, b = np.split(disparity_map, 3, axis=-1)
-        disparity_map = r * 4 + g / (2**6) + b / (2**14)
+        disparity_map = r * 4 + g / (2 ** 6) + b / (2 ** 14)
         # reshape into (C, H, W) format
         disparity_map = np.transpose(disparity_map, (2, 0, 1))
         # occlusion mask
@@ -797,7 +852,9 @@ class StereoSceneFlow(StereoMatchingDataset):
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
-    def __init__(self, root: str, split: str = "FlyingThings3D", pass_name: str = "clean", transforms: Optional[Callable] = None):
+    def __init__(
+        self, root: str, split: str = "FlyingThings3D", pass_name: str = "clean", transforms: Optional[Callable] = None
+    ):
         super().__init__(root, transforms)
 
         root = Path(root) / "SceneFlow"
@@ -823,7 +880,9 @@ class StereoSceneFlow(StereoMatchingDataset):
             self._images += imgs
 
             disparity_maps_left = [file_path.replace(p, "disparity").replace(".png", ".pfm") for file_path in imgs_left]
-            disparity_maps_right = [file_path.replace(p, "disparity").replace(".png", ".pfm") for file_path in imgs_right]
+            disparity_maps_right = [
+                file_path.replace(p, "disparity").replace(".png", ".pfm") for file_path in imgs_right
+            ]
 
             if not any(os.path.exists(file_path) for file_path in disparity_maps_left):
                 raise FileNotFoundError("No disparity valid maps found in {}".format(root / "disparity"))
@@ -924,9 +983,9 @@ class StereoFallingThings(StereoMatchingDataset):
         depth = np.array(Image.open(file_path))
         # as per https://research.nvidia.com/sites/default/files/pubs/2018-06_Falling-Things/readme_0.txt
         # in order to extract disparity from depth maps
-        with open(os.path.split(file_path)[0] + '/_camera_settings.json', 'r') as f:
+        with open(os.path.split(file_path)[0] + "/_camera_settings.json", "r") as f:
             intrinsics = json.load(f)
-            fx = intrinsics['camera_settings'][0]['intrinsic_settings']['fx']
+            fx = intrinsics["camera_settings"][0]["intrinsic_settings"]["fx"]
             # inverse of depth-from-disparity equation
             disparity = (fx * 6.0 * 100) / depth.astype(np.float32)
             valid = disparity > 0
