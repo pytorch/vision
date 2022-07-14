@@ -417,11 +417,12 @@ class StereoMiddlebury2014(StereoMatchingDataset):
             if split == "test":
                 self._disparities += list(("", "") for _ in self._images)
             else:
-                left_dispartity_pattern = str(root / split / "*" / "disp0.pfm")
-                right_dispartity_pattern = str(root / split / "*" / "disp1.pfm")
+                left_dispartity_pattern = str(root / split / scene_pattern / "disp0.pfm")
+                right_dispartity_pattern = str(root / split / scene_pattern / "disp1.pfm")
                 self._disparities += self._scan_pairs(left_dispartity_pattern, right_dispartity_pattern)
 
         self.use_ambient_views = use_ambient_views
+        print(self._disparities[0], self._images[0])
 
     def __getitem__(self, index: int) -> Tuple:
         return super().__getitem__(index)
