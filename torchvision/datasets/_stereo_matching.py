@@ -33,7 +33,7 @@ def read_pfm_file(file_path: str) -> np.array:
     # adapted from https://github.com/ucbdrive/hd3/blob/master/utils/pfm.py
     with open(file_path, "rb") as file:
         header = file.readline().rstrip()
-        if not header in [b"PF", b"Pf"]:
+        if header not in [b"PF", b"Pf"]:
             raise ValueError(f"Not a valid PFM file: {file_path}")
 
         dim_match = re.match(rb"^(\d+)\s(\d+)\s$", file.readline())
