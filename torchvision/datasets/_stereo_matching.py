@@ -1,31 +1,30 @@
 from abc import ABC, abstractmethod
 from glob import glob
 from pathlib import Path
-import pathlib
 import random
 import re
 import shutil
-from typing import Callable, List, Optional, Tuple, Any
+from typing import Callable, List, Optional, Tuple
 import warnings
 from jsonschema import ValidationError
 from torch import Tensor
 from .vision import VisionDataset
-from .utils import download_and_extract_archive, download_url, verify_str_arg
+from .utils import download_and_extract_archive, verify_str_arg
 import os
 import numpy as np
 from PIL import Image
 import json
 
 __all__ = (
-    "CREStereo"  # waiting for download / need to find valid mask procedure
+    "CREStereo"
     "StereoMiddlebury2014"
     "StereoETH3D"
     "StereoKitti2012"
     "StereoKitti2015"
     "StereoSintel"
-    "StereoSceneFlow"  # need to find valid mask procedure
+    "StereoSceneFlow"
     "StereoFallingThings"
-    "InStereo2k"  # need to find valid mask procedure
+    "InStereo2k"
 )
 
 
@@ -54,13 +53,38 @@ def read_pfm_file(file_path: str) -> np.array:
         data = np.reshape(data, (height, width, channels))
         data = np.flipud(data)
 
-        return data
+        # PFM files for disparity maps should contain only a single channel
+        # they should also be returned in (C, H, W) format
+        return np.transpose(data[:, :, :1], (2, 0, 1))
 
 
 class StereoMatchingDataset(ABC, VisionDataset):
     """Base interface for Stereo matching datasets"""
 
     def __init__(self, root: str, transforms: Optional[Callable] = None):
+        """
+
+        Args:
+            root(str): Root directory of the dataset.
+            transforms(callable, optional): A function/transform that takes in Tuples of
+                (images, disparities, valid_masks) and returns a transformed version of each of them.
+                images is a Tuple of (``PIL.Image``, ``PIL.Image``)
+                disparities is a Tuple of (``np.ndarray``, ``np.ndarray``) with shape (1, H, W)
+                valid_masks is a Tuple of (``np.ndarray``, ``np.ndarray``) with shape (H, W)
+
+                In some cases, when a dataset does not provide disparties, the ``disparities`` and
+                ``valid_masks`` can be Tuples containing None values.
+
+                For training splits generally the datasets provide a minimal guarantee of
+                images: (``PIL.Image``, ``PIL.Image``)
+                disparities: (``np.ndarray``, ``None``) with shape (1, H, W)
+                valid_masks: (``np.ndarray``, ``None``) with shape (H, W)
+
+                For some test splits, the datasets provides outputs that look like:
+                imgaes: (``PIL.Image``, ``PIL.Image``)
+                disparities: (``None``, ``None``)
+                valid_masks: (``None``, ``None``)
+        """
         super().__init__(root=root)
         self.transforms = transforms
 
@@ -79,6 +103,18 @@ class StereoMatchingDataset(ABC, VisionDataset):
         pass
 
     def __getitem__(self, index: int) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` where ``valid_mask``
+            is a numpy boolean mask of shape (H, W)
+            indicating which disparity values are valid. The disparity is a numpy array of
+            shape (1, H, W) and the images are PIL images. ``disparity`` and ``valid_mask`` are None for
+            datasets on which for ``split="test"`` the authors did not provide annotations.
+        """
         img_left = self._read_img(self._images[index][0])
         img_right = self._read_img(self._images[index][1])
 
@@ -98,21 +134,59 @@ class StereoMatchingDataset(ABC, VisionDataset):
         return len(self._images)
 
 
-class CREStereoSynthetic(StereoMatchingDataset):
+class CREStereo(StereoMatchingDataset):
     """Synthetic dataset used in training the `CREStereo <https://arxiv.org/pdf/2203.11483.pdf>`_ architecture. 
 
-   Ported from the download script in the paper github `repo <https://github.com/megvii-research/CREStereo>`_.
+    Dataset details on the official paper `repo <https://github.com/megvii-research/CREStereo>`_.
+
+    The dataset is expected to have the following structure: ::
+
+        root
+            CREStereo
+                tree
+                    img1_left.jpg
+                    img1_right.jpg
+                    img1_left.disp.jpg
+                    img1_right.disp.jpg
+                    img2_left.jpg
+                    img2_right.jpg
+                    img2_left.disp.jpg
+                    img2_right.disp.jpg
+                    ...
+                shapenet
+                    img1_left.jpg
+                    img1_right.jpg
+                    img1_left.disp.jpg
+                    img1_right.disp.jpg
+                    ...
+                reflective
+                    img1_left.jpg
+                    img1_right.jpg
+                    img1_left.disp.jpg
+                    img1_right.disp.jpg
+                    ...
+                hole
+                    img1_left.jpg
+                    img1_right.jpg
+                    img1_left.disp.jpg
+                    img1_right.disp.jpg
+                    ...
+
+    Args:
+        root (str): Root directory of the dataset.
+        split (str): The split of the dataset to use. One of ``"tree"``, ``"shapenet"``, ``"reflective"``, ``"hole"``
+        or ``"all"``. The ``"all"`` split contains all of the above splits.
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+        download (bool, optional): If true, downloads the dataset from the internet and puts it in the root directory.
+        max_disparity (int, optional): Maximum disparity value. Used to compute the valid mask.
    """
-    DOWNLOAD_SPACE = 4 * 1024 * 1024 * 1024  # dataset requires download requires about 400 GB of free space
+    DOWNLOAD_SPACE = 400 * 1024 * 1024 * 1024
 
-    EXPERIMENTAL_RANGE = 1  # TODO: remove after validating dataset structure / flow
-
-    MAX_DISP = 256.
-
-    def __init__(self, root: str, split: str = "tree", transforms: Optional[Callable] = None, download: bool = False):
+    def __init__(self, root: str, split: str = "tree", transforms: Optional[Callable] = None, download: bool = False, max_disparity: float = 256.):
         super().__init__(root, transforms)
 
         root = Path(root) / "CREStereo"
+        self.max_disparity = max_disparity
 
         # if the API user requests a dataset download check that the user can download it
         if download:
@@ -149,16 +223,23 @@ class CREStereoSynthetic(StereoMatchingDataset):
             disparity_maps_left = list(p.replace("_left", "_left.disp") for p in imgs_left)
             disparity_maps_right = list(p.replace("_right", "_right.disp") for p in imgs_right)
 
+            if not any(os.path.exists(file_path) for file_path in disparity_maps_left):
+                raise FileNotFoundError("No disparity valid maps found in {}".format(root / s))
+
+            if not any(os.path.exists(file_path) for file_path in disparity_maps_right):
+                raise FileNotFoundError("No disparity valid maps found in {}".format(root / s))
+
             disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
             self._disparities += disparity_maps
 
     def _read_disparity(self, file_path: str) -> Tuple:
         disparity = np.array(Image.open(file_path), dtype=np.float32)
-        valid = (disparity < self.MAX_DISP) & (disparity > 0.)
+        valid = (disparity < self.max_disparity) & (disparity > 0.)
+        # unsqueeze the disparity map into (C, H, W) format
+        disparity = disparity[None, :, :]
         return disparity, valid
 
     def _download_dataset(self, root: str) -> None:
-        # TODO: remove before release, used only for testing purposes
         dirs = ["tree", "shapenet", "reflective", "hole"]
         # create directory subtree for the download
         for d in dirs:
@@ -221,11 +302,11 @@ class StereoMiddlebury2014(StereoMatchingDataset):
 
     Args:
         root (string): Root directory of the Middleburry 2014 Dataset.
-        split (string, optional): The dataset split of scenes, either "train" (default), test, or "additional"
-        use_ambient_views (boolean, optional): Whether to use different expose or lightning views when possible. Sampled with equal probability.
+        split (string, optional): The dataset split of scenes, either "train" (default), "test", or "additional"
+        use_ambient_views (boolean, optional): Whether to use different expose or lightning views when possible.
+        The dataset samples with equal probability between ``[im1.png, im1E.png, im1L.png]``.
         calibration (string, optional): Wether or not to use the calibrated (default) or uncalibrated scenes. 
-        transforms (callalbe, optional): A function/transform that takes in
-            ``left_img, right_img, left_disparity, right_disparity`` and returns a transformed version.
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
         download (boolean, optional): Wether or not to download the dataset in the ``root`` directory. 
     """
 
@@ -268,7 +349,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
             self._download_dataset(root)
 
         root = Path(root) / "Middlebury2014"
-        print(split)
+
         if not os.path.exists(root / split):
             raise FileNotFoundError(
                 f"The {split} directory was not found in the provided root directory"
@@ -292,24 +373,23 @@ class StereoMiddlebury2014(StereoMatchingDataset):
 
         for calibration_suffix in calibrartion_suffixes:
             scene_pattern = "*" + calibration_suffix
-            print(scene_pattern)
 
             imgs_left = sorted(glob(str(root / split / scene_pattern / "im0.png")))
             imgs_right = sorted(glob(str(root / split / scene_pattern / "im1.png")))
-
             if not len(imgs_left) or not len(imgs_right):
                 raise FileNotFoundError("No images found in {}".format(root))
 
             self._images += list((l, r) for l, r in zip(imgs_left, imgs_right))
 
             if split == "test":
-                dsp_maps_left, dsp_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
+                disparity_maps_left, disparity_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
             else:
+                disparity_maps_left = sorted(glob(str(root / split / "*" / "disp0.pfm")))
+                disparity_maps_right = sorted(glob(str(root / split / "*" / "disp1.pfm")))
+                if not len(disparity_maps_left) or not len(disparity_maps_right):
+                    raise FileNotFoundError("No disparity maps found in {}".format(root / split))
 
-                dsp_maps_left = sorted(glob(str(root / split / "*" / "disp0.pfm")))
-                dsp_maps_right = sorted(glob(str(root / split / "*" / "disp1.pfm")))
-
-            self._disparities += list((l, r) for l, r in zip(dsp_maps_left, dsp_maps_right))
+            self._disparities += list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
 
         self.use_ambient_views = use_ambient_views
 
@@ -317,6 +397,7 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         return super().__getitem__(index)
 
     def _read_img(self, file_path: str) -> Image.Image:
+        """Function that reads either the original right image or an augmented view when ``use_ambient_views`` is True."""
         if os.path.basename(file_path) == "im1.png" and self.use_ambient_views:
             # initialize sampleable container
             ambient_file_paths = list(file_path.replace("im1.png", view_name) for view_name in ["im1E.png", "im1L.png"])
@@ -332,6 +413,8 @@ class StereoMiddlebury2014(StereoMatchingDataset):
             return None, None
         disparity_map = read_pfm_file(file_path)
         valid_mask = disparity_map < 1e3
+        # remove the channel dimension from the valid mask
+        valid_mask = valid_mask[0, :, :]
         return disparity_map, valid_mask
 
     def _download_dataset(self, root: str):
@@ -357,10 +440,13 @@ class StereoMiddlebury2014(StereoMatchingDataset):
             download_and_extract_archive(url=test_set_url, download_root=root, remove_finished=True)
             for scene_dir, scene_names, _ in os.walk(str(root / "MiddEval3/testF")):
                 for scene in scene_names:
-                    shutil.move(os.path.join(scene_dir, scene), os.path.join(root, scene))
+                    scene_dst_dir = root / "test" / scene
+                    scene_src_dir = scene_dir / scene
+                    os.makedirs(scene_dst_dir, exist_ok=True)
+                    shutil.move(str(scene_src_dir), str(scene_dst_dir))
 
             # cleanup MiddEval3 directory
-            shutil.rmtree(os.path.join(root, "MiddEval3"))
+            shutil.rmtree(str(root / "MiddEval3"))
 
 
 class StereoETH3D(StereoMatchingDataset):
@@ -411,8 +497,7 @@ class StereoETH3D(StereoMatchingDataset):
         root (string): Root directory of the ETH3D Dataset.
         split (string, optional): The dataset split of scenes, either "train" (default) or "test".
         calibration (string, optional): Wether or not to use the calibrated (default) or uncalibrated scenes. 
-        transforms (callalbe, optional): A function/transform that takes in
-            ``left_img, right_img, left_disparity, right_disparity`` and returns a transformed version.
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
     def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
@@ -427,7 +512,6 @@ class StereoETH3D(StereoMatchingDataset):
 
         imgs_left = sorted(glob(str(root / img_dir / "*" / "*im0.png")))
         imgs_right = sorted(glob(str(root / img_dir / "*" / "*im1.png")))
-
         if not len(imgs_left) or not len(imgs_right):
             raise FileNotFoundError("No images found in {}".format(root))
 
@@ -435,8 +519,9 @@ class StereoETH3D(StereoMatchingDataset):
             disparity_maps_left, disparity_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
         else:
             disparity_maps_left = sorted(glob(str(root / anot_dir / "*" / "*0GT.pfm")))
-            # no masks for the right view, always using left as reference
             disparity_maps_right = list("" for _ in disparity_maps_left)
+            if not len(disparity_maps_left):
+                raise FileNotFoundError("No disparity maps found in {}".format(root / anot_dir))
 
         self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
         self._disparities = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
@@ -447,10 +532,10 @@ class StereoETH3D(StereoMatchingDataset):
 
         disparity_map = read_pfm_file(file_path)
         valid_mask = Image.open(file_path.replace("disp0GT.pfm", "mask0nocc.png"))
-        valid_mask = np.array(valid_mask)
+        valid_mask = np.array(valid_mask).astype(np.bool)
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple, Tuple]:
+    def __getitem__(self, index: int) -> Tuple:
         return super().__getitem__(index)
 
 
@@ -474,8 +559,7 @@ class StereoKitti2012(StereoMatchingDataset):
     Args:
         root (string): Root directory where Kitti2012 is located.
         split (string, optional): The dataset split of scenes, either "train" (default), test, or "additional"
-        transforms (callalbe, optional): A function/transform that takes in
-            ``left_img, right_img, left_disparity, right_disparity`` and returns a transformed version.
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
         download (boolean, optional): Wether or not to download the dataset in the ``root`` directory. 
     """
 
@@ -494,6 +578,9 @@ class StereoKitti2012(StereoMatchingDataset):
         if split == "train":
             disparity_maps_left = sorted(glob(str(root / "disp_noc" / "*.png")))
             disparity_maps_right = list("" for _ in disparity_maps_left)
+            if not len(disparity_maps_left):
+                raise FileNotFoundError("No disparity maps found in {}".format(root))
+
         else:
             disparity_maps_left, disparity_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
 
@@ -506,7 +593,8 @@ class StereoKitti2012(StereoMatchingDataset):
 
         disparity_map = np.array(Image.open(file_path)) / 256.0
         valid_mask = disparity_map > 0.0
-
+        # unsqueeze the disparity map into (C, H, W) format
+        disparity_map = disparity_map[None, :, :]
         return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple]:
@@ -533,8 +621,7 @@ class StereoKitti2015(StereoMatchingDataset):
     Args:
         root (string): Root directory where Kitti2015 is located.
         split (string, optional): The dataset split of scenes, either "train" (default) or test.
-        transforms (callalbe, optional): A function/transform that takes in
-            ``left_img, right_img, left_disparity, right_disparity`` and returns a transformed version.
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
     def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
@@ -552,6 +639,9 @@ class StereoKitti2015(StereoMatchingDataset):
         if split == "train":
             disparity_maps_left = sorted(glob(str(root / "disp_occ_0" / "*.png")))
             disparity_maps_right = sorted(glob(str(root / "disp_occ_1" / "*.png")))
+            if not len(disparity_maps_left) or not len(disparity_maps_right):
+                raise FileNotFoundError("No disparity maps found in {}".format(root))
+
         else:
             disparity_maps_left, disparity_maps_right = list("" for _ in imgs_left), list("" for _ in imgs_right)
 
@@ -564,7 +654,8 @@ class StereoKitti2015(StereoMatchingDataset):
 
         disparity_map = np.array(Image.open(file_path)) / 256.0
         valid_mask = disparity_map < 0.0
-
+        # unsqueeze the disparity map into (C, H, W) format
+        disparity_map = disparity_map[None, :, :]
         return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple[Tuple, Tuple, Tuple]:
@@ -574,10 +665,45 @@ class StereoKitti2015(StereoMatchingDataset):
 class StereoSintel(StereoMatchingDataset):
     """"Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
 
+    The dataset is expected to have the following structure: ::
+
+        root
+            Sintel
+                training
+                    final_left
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    final_right
+                        scene2
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    disparities
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    occlusions
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    outofframe
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+
     Args:
         root (string): Root directory where Sintel Stereo is located.
-        transforms (callalbe, optional): A function/transform that takes in
-            ``left_img, right_img, left_disparity, right_disparity`` and returns a transformed version.
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
     def __init__(self, root: str, transforms: Optional[Callable] = None):
@@ -587,11 +713,13 @@ class StereoSintel(StereoMatchingDataset):
 
         imgs_left = sorted(glob(str(root / "training" / "final_left" / "*" / "*.png")))
         imgs_right = sorted(glob(str(root / "training" / "final_right" / "*" / "*.png")))
-
         if not len(imgs_left) or not len(imgs_right):
             raise FileNotFoundError("No images found in {}".format(root))
 
         dps_masks_left = sorted(glob(str(root / "training" / "disparities" / "*" / "*.png")))
+        if not len(dps_masks_left):
+            raise FileNotFoundError("No disparity maps found in {}".format(root))
+
         disparity_maps_right = list("" for _ in dps_masks_left)
 
         self._images = list((l, r) for l, r in zip(imgs_left, imgs_right))
@@ -605,7 +733,8 @@ class StereoSintel(StereoMatchingDataset):
         disparity_map = np.array(Image.open(file_path), dtype=np.float32)
         r, g, b = np.split(disparity_map, 3, axis=-1)
         disparity_map = r * 4 + g / (2**6) + b / (2**14)
-
+        # reshape into (C, H, W) format
+        disparity_map = np.transpose(disparity_map, (2, 0, 1))
         # occlusion mask
         valid_mask = np.array(Image.open(file_path.replace("disparities", "occlusions"))) == 0
         # out of frame mask
@@ -662,6 +791,10 @@ class StereoSceneFlow(StereoMatchingDataset):
                 FlyingThings3D
                     ...
                     ...
+
+    Args:
+        root (string): Root directory where SceneFlow is located.
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
     def __init__(self, root: str, split: str = "FlyingThings3D", pass_name: str = "clean", transforms: Optional[Callable] = None):
@@ -683,7 +816,6 @@ class StereoSceneFlow(StereoMatchingDataset):
         for p in passes:
             imgs_left = sorted(glob(str(root / p / "*" / "left" / "*.png")))
             imgs_right = sorted(glob(str(root / p / "*" / "right" / "*.png")))
-
             if not len(imgs_left) or not len(imgs_right):
                 raise FileNotFoundError("No images found in {}".format(root / p))
 
@@ -693,15 +825,19 @@ class StereoSceneFlow(StereoMatchingDataset):
             disparity_maps_left = [file_path.replace(p, "disparity").replace(".png", ".pfm") for file_path in imgs_left]
             disparity_maps_right = [file_path.replace(p, "disparity").replace(".png", ".pfm") for file_path in imgs_right]
 
+            if not any(os.path.exists(file_path) for file_path in disparity_maps_left):
+                raise FileNotFoundError("No disparity valid maps found in {}".format(root / "disparity"))
+
+            if not any(os.path.exists(file_path) for file_path in disparity_maps_right):
+                raise FileNotFoundError("No disparity valid maps found in {}".format(root / "disparity"))
+
             disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
             self._disparities += disparity_maps
 
     def _read_disparity(self, file_path: str) -> Tuple:
-        if not os.path.exists(file_path):
-            raise FileNotFoundError("Disparity map {} not found".format(file_path))
-
         disparity = read_pfm_file(file_path)
-        valid = np.ones_like(disparity)
+        # keep valid mask with shape (H, W)
+        valid = np.ones(disparity.shape[1:]).astype(np.bool)
         return disparity, valid
 
     def __getitem__(self, index: int) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
@@ -745,13 +881,20 @@ class StereoFallingThings(StereoMatchingDataset):
                         ...
                     scene2
                     ...
+
+    Args:
+        root (string): Root directory where FallingThings is located.
+        split (string): Either "single", "mixed", or "both".
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+
     """
 
     def __init__(self, root: str, split: str = "single", transforms: Optional[Callable] = None):
         super().__init__(root, transforms)
 
+        root = Path(root) / "FallingThings"
+
         verify_str_arg(split, "split", valid_values=("single", "mixed", "both"))
-        split = split.upper()
 
         splits = {
             "single": ["single"],
@@ -760,28 +903,35 @@ class StereoFallingThings(StereoMatchingDataset):
         }[split]
 
         for s in splits:
-            imgs_left = sorted(glob(str(root / s / "*.left.jpg")))
-            imgs_right = sorted(glob(str(root / s / "*.right.jpg")))
-
+            imgs_left = sorted(glob(str(root / s / "*" / "*.left.jpg")))
+            imgs_right = sorted(glob(str(root / s / "*" / "*.right.jpg")))
             if not len(imgs_left) or not len(imgs_right):
                 raise FileNotFoundError("No images found in {}".format(root))
 
             imgs = list((l, r) for l, r in zip(imgs_left, imgs_right))
             self._images += imgs
 
-            disparity_maps_left = sorted(glob(str(root / s / "*.left.depth.png")))
-            disparity_maps_right = sorted(glob(str(root / s / "*.right.depth.png")))
+            disparity_maps_left = sorted(glob(str(root / s / "*" / "*.left.depth.png")))
+            disparity_maps_right = sorted(glob(str(root / s / "*" / "*.right.depth.png")))
+            if not len(disparity_maps_left) or not len(disparity_maps_right):
+                raise FileNotFoundError("No disparity maps found in {}".format(root))
 
             disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
             self._disparities += disparity_maps
 
     def _read_disparity(self, file_path: str) -> Tuple:
-        depth = Image.Open(file_path)
-        with open(os.path.split(file_path)[0] + '_camera_settings.json', 'r') as f:
+        # (H, W) image
+        depth = np.array(Image.open(file_path))
+        # as per https://research.nvidia.com/sites/default/files/pubs/2018-06_Falling-Things/readme_0.txt
+        # in order to extract disparity from depth maps
+        with open(os.path.split(file_path)[0] + '/_camera_settings.json', 'r') as f:
             intrinsics = json.load(f)
             fx = intrinsics['camera_settings'][0]['intrinsic_settings']['fx']
+            # inverse of depth-from-disparity equation
             disparity = (fx * 6.0 * 100) / depth.astype(np.float32)
             valid = disparity > 0
+            # unsqueeze disparity to (C, H, W)
+            disparity = disparity[None, :, :]
             return disparity, valid
 
     def __getitem__(self, index: int) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
@@ -789,7 +939,7 @@ class StereoFallingThings(StereoMatchingDataset):
 
 
 class InStereo2k(StereoMatchingDataset):
-    """InStereo2k `<https://research.nvidia.com/publication/2018-06_falling-things-synthetic-dataset-3d-object-detection-and-pose-estimation>`_ dataset
+    """InStereo2k `<https://github.com/YuhuaXu/StereoDataset>`_ dataset
 
     The dataset is expected to have the following structre: ::
 
@@ -813,6 +963,11 @@ class InStereo2k(StereoMatchingDataset):
                         ...
                     scene2
                     ...
+
+    Args:
+        root (string): Root directory where InStereo2k is located.
+        split (string): Either "train" or "test".
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
     def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
@@ -820,9 +975,10 @@ class InStereo2k(StereoMatchingDataset):
 
         root = Path(root) / "InStereo2k" / split
 
+        verify_str_arg(split, "split", valid_values=("train", "test"))
+
         imgs_left = sorted(glob(str(root / "*" / "left.png")))
         imgs_right = list(p.replace("left", "right") for p in imgs_left)
-
         if not len(imgs_left) or not len(imgs_right):
             raise FileNotFoundError("No images found in {}".format(root))
 
@@ -832,10 +988,18 @@ class InStereo2k(StereoMatchingDataset):
         disparity_maps_left = list(p.replace("left", "left_disp") for p in imgs_left)
         disparity_maps_right = list(p.replace("right", "right_disp") for p in imgs_left)
 
+        if not any(os.path.exists(file_path) for file_path in disparity_maps_left):
+            raise FileNotFoundError("No disparity valid maps found in {}".format(root))
+
+        if not any(os.path.exists(file_path) for file_path in disparity_maps_right):
+            raise FileNotFoundError("No disparity valid maps found in {}".format(root))
+
         disparity_maps = list((l, r) for l, r in zip(disparity_maps_left, disparity_maps_right))
         self._disparities = disparity_maps
 
     def _read_disparity(self, file_path: str) -> Tuple:
         disparity = np.array(Image.open(file_path), dtype=np.float32)
-        valid = np.ones_like(disparity)
+        valid = np.ones_like(disparity).astype(np.bool)
+        # unsqueeze disparity to (C, H, W)
+        disparity = disparity[None, :, :]
         return disparity, valid

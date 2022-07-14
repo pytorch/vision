@@ -1,4 +1,3 @@
-from abc import abstractmethod
 import bz2
 import contextlib
 import csv
@@ -23,568 +22,6 @@ import pytest
 import torch
 import torch.nn.functional as F
 from torchvision import datasets
-
-
-class StereoETH3DTestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoETH3D
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
-
-    @staticmethod
-    def _create_scene_folder(num_examples: int, root_dir: str) -> List[pathlib.Path]:
-        # create the scene folder
-        image_paths = []
-        # make the root_dir if it does not exits
-        os.makedirs(root_dir, exist_ok=True)
-
-        for i in range(num_examples):
-            scene_dir = os.path.join(root_dir, f"scene_{i}")
-            os.makedirs(scene_dir, exist_ok=True)
-            # populate with left right images
-            image_paths.append(datasets_utils.create_image_file(root=scene_dir, name="im0.png", size=(100, 100)))
-            image_paths.append(datasets_utils.create_image_file(root=scene_dir, name="im1.png", size=(100, 100)))
-        return image_paths
-
-    @staticmethod
-    def _create_annotation_folder(num_examples: int, root_dir: str) -> List[pathlib.Path]:
-        paths = []
-        # make the root_dir if it does not exits
-        os.makedirs(root_dir, exist_ok=True)
-
-        # create scene directories
-        for i in range(num_examples):
-            scene_dir = os.path.join(root_dir, f"scene_{i}")
-            os.makedirs(scene_dir, exist_ok=True)
-            # populate with a random png file for occlusion mask, and a pfm file for disparity
-            paths.append(datasets_utils.create_image_file(root=scene_dir, name="mask0nocc.png", size=(1, 100, 100)))
-            pfm_path = os.path.join(scene_dir, "disp0GT.pfm")
-            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=pfm_path)
-            paths.append(pfm_path)
-        return paths
-
-    def inject_fake_data(self, tmpdir, config):
-        eth3d_dir = os.path.join(tmpdir, "ETH3D")
-
-        num_examples = 2 if config["split"] == "train" else 3
-
-        split_name = "two_view_training" if config["split"] == "train" else "two_view_test"
-        split_dir = os.path.join(eth3d_dir, split_name)
-        self._create_scene_folder(num_examples, split_dir)
-
-        if config["split"] == "train":
-            annot_dir = os.path.join(eth3d_dir, "two_view_training_gt")
-            self._create_annotation_folder(num_examples, annot_dir)
-
-        return num_examples
-
-    def test_training_test_splits(self):
-        with self.create_dataset(split="train") as (dataset, _):
-            assert dataset._images and len(dataset._images) == len(dataset._disparities), "Training images do not match with training disparities"
-            for _, _, disparity, valid_mask in dataset:
-                assert len(disparity.shape) == 3
-                assert len(valid_mask.shape) == 2
-                dh, dw, _ = disparity.shape
-                mh, mw = valid_mask.shape
-                assert dh == mh
-                assert dw == mw
-
-        with self.create_dataset(split="test") as (dataset, _):
-            assert all(d == ("", "") for d in dataset._disparities)
-            for _, _, disparity, valid_mask in dataset:
-                assert disparity is None
-                assert valid_mask is None
-
-    def test_bad_input(self):
-        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
-            with self.create_dataset(split="bad"):
-                pass
-
-
-class CREStereoSynthethicTestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.CREStereoSynthetic
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("tree", "shapenet", "reflective", "hole"))
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
-
-    def inject_fake_data(self, tmpdir, config):
-        crestereo_dir = pathlib.Path(tmpdir) / "CREStereo"
-        os.makedirs(crestereo_dir, exist_ok=True)
-
-        split_dir = crestereo_dir / config["split"]
-        os.makedirs(split_dir, exist_ok=True)
-        num_examples = 4
-
-        for idx in range(num_examples):
-            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.jpg", size=(100, 100))
-            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.jpg", size=(100, 100))
-            # these are going to end up being gray scale images
-            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.disp.jpg", size=(1, 100, 100))
-            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.disp.jpg", size=(1, 100, 100))
-
-        return num_examples
-
-    def test_splits(self):
-        for split in ("tree", "shapenet", "reflective", "hole"):
-            with self.create_dataset(split=split) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 2
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (h, w)
-                    # check that valid mask is the same size as the disparity
-                    dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
-
-    def test_bad_input(self):
-        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
-            with self.create_dataset(split="bad"):
-                pass
-
-
-class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoMiddlebury2014
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-        split=("train", "additional"),
-        calibration=("perfect", "imperfect", "both"),
-        use_ambient_views=(True, False),
-    )
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
-
-    @staticmethod
-    def _make_scene_folder(root_dir: str, scene_name: str, split: str) -> List[str]:
-        calibrations = [""] if split == "test" else ["-perfect", "-imperfect"]
-        scene_dirs = []
-        for c in calibrations:
-            scene_dir = os.path.join(root_dir, f"{scene_name}{c}")
-            os.makedirs(scene_dir, exist_ok=True)
-            # make normal images first
-            datasets_utils.create_image_file(root=scene_dir, name=f"im0.png", size=(3, 100, 100))
-            datasets_utils.create_image_file(root=scene_dir, name=f"im1.png", size=(3, 100, 100))
-            datasets_utils.create_image_file(root=scene_dir, name=f"im1E.png", size=(3, 100, 100))
-            datasets_utils.create_image_file(root=scene_dir, name=f"im1L.png", size=(3, 100, 100))
-            # these are going to end up being gray scale images
-            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=os.path.join(scene_dir, "disp0.pfm"))
-            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=os.path.join(scene_dir, "disp1.pfm"))
-            scene_dirs.append(scene_dir)
-        return scene_dirs
-
-    def inject_fake_data(self, tmpdir, config):
-        split_scene_map = {
-            "train": ["Adirondack", "Jadeplant", "Motorcycle", "Piano"],
-            "additional": ["Backpack", "Bicycle1", "Cable", "Classroom1"],
-            "test": ["Plants", "Classroom2E", "Classroom2", "Australia"]
-        }
-
-        middlebury_dir = pathlib.Path(tmpdir, "Middlebury2014")
-        os.makedirs(middlebury_dir, exist_ok=True)
-
-        split_dir = middlebury_dir / config["split"]
-        os.makedirs(split_dir, exist_ok=True)
-
-        num_examples = 4
-        for idx in range(num_examples):
-            # special case for test_bad_input
-            if config["split"] not in split_scene_map:
-                return 0
-
-            scene_name = split_scene_map[config["split"]][idx]
-            self._make_scene_folder(root_dir=split_dir, scene_name=scene_name, split=config["split"])
-
-            print(f"Created {scene_name} for split {config['split']}")        
-
-        if config["calibration"] == "both":
-            num_examples *= 2
-        return num_examples
-
-    def test_train_splits(self):
-        for split, calibration in itertools.product(["train", "additional"], ["perfect", "imperfect", "both"]):
-            with self.create_dataset(split=split, calibration=calibration) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 3
-                    assert disparity.shape == (h, w, 3)
-                    # check that valid mask is the same size as the disparity
-                    dh, dw, c = disparity.shape
-                    print(valid_mask.shape)
-                    mh, mw, _ = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
-
-    def test_test_split(self):
-        for split in ["test"]:
-            with self.create_dataset(split=split, calibration=None) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert disparity is None
-                    assert valid_mask is None
-
-    def test_augmented_view_usage(self):
-        with self.create_dataset(split="train", use_ambient_views=True) as (dataset, _):
-            for left, right, _, _ in dataset:
-                left_array = np.array(left)
-                right_array = np.array(right)
-                # check that left and right are the same size
-                assert left_array.shape == right_array.shape
-
-    def test_warnings_train(self):
-        # train set invalid
-        split = "train"
-        calibration = None
-        with pytest.warns(
-            RuntimeWarning,
-            match=f"\nSplit '{split}' has calibration settings, however None was provided as an argument."
-                  f"\nSetting calibration to 'perfect' for split '{split}'. Available calibration settings are: 'perfect', 'imperfect', 'both'.",
-        ):
-            with self.create_dataset(split=split, calibration=calibration):
-                pass
-
-    def test_warnings_test(self):
-        # test set invalid
-        split = "test"
-        calibration = "perfect"
-        with pytest.warns(
-            RuntimeWarning,
-            match="\nSplit 'test' has only no calibration settings, ignoring calibration argument."
-        ):
-            with self.create_dataset(split=split, calibration=calibration):
-                pass
-
-    def test_bad_input(self):
-        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
-            with self.create_dataset(split="bad"):
-                pass
-
-
-class StereoKitti2012TestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoKitti2012
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
-
-    def inject_fake_data(self, tmpdir, config):
-        kitti_dir = pathlib.Path(tmpdir) / "Kitti2012"
-        os.makedirs(kitti_dir, exist_ok=True)
-
-        split_dir = kitti_dir / (config["split"] + "ing")
-        os.makedirs(split_dir, exist_ok=True)
-
-        num_examples = 4
-
-        datasets_utils.create_image_folder(
-            root=split_dir,
-            name="colored_0",
-            file_name_fn=lambda i: f"{i:06d}_10.png",
-            num_examples=num_examples,
-            size=(3, 100, 200),
-        )
-        datasets_utils.create_image_folder(
-            root=split_dir,
-            name="colored_1",
-            file_name_fn=lambda i: f"{i:06d}_10.png",
-            num_examples=num_examples,
-            size=(3, 100, 200),
-        )
-
-        if config["split"] == "train":
-            datasets_utils.create_image_folder(
-                root=split_dir,
-                name="disp_noc",
-                file_name_fn=lambda i: f"{i:06d}.png",
-                num_examples=num_examples,
-                # Kitti2012 uses a single channel image for disparities
-                size=(1, 100, 200),
-            )
-
-        return num_examples
-
-    def test_train_splits(self):
-        for split in ["train"]:
-            with self.create_dataset(split=split) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 2
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (h, w)
-                    # check that valid mask is the same size as the disparity
-                    dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
-
-    def test_test_split(self):
-        for split in ["test"]:
-            with self.create_dataset(split=split) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert disparity is None
-                    assert valid_mask is None
-
-    def test_bad_input(self):
-        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
-            with self.create_dataset(split="bad"):
-                pass
-
-
-class StereoKitti2015TestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoKitti2015
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
-
-    def inject_fake_data(self, tmpdir, config):
-        kitti_dir = pathlib.Path(tmpdir) / "Kitti2015"
-        os.makedirs(kitti_dir, exist_ok=True)
-
-        split_dir = kitti_dir / (config["split"] + "ing")
-        os.makedirs(split_dir, exist_ok=True)
-
-        num_examples = 4
-
-        datasets_utils.create_image_folder(
-            root=split_dir,
-            name="image_2",
-            file_name_fn=lambda i: f"{i:06d}_10.png",
-            num_examples=num_examples,
-            size=(3, 100, 200),
-        )
-        datasets_utils.create_image_folder(
-            root=split_dir,
-            name="image_3",
-            file_name_fn=lambda i: f"{i:06d}_10.png",
-            num_examples=num_examples,
-            size=(3, 100, 200),
-        )
-
-        if config["split"] == "train":
-            datasets_utils.create_image_folder(
-                root=split_dir,
-                name="disp_occ_0",
-                file_name_fn=lambda i: f"{i:06d}.png",
-                num_examples=num_examples,
-                # Kitti2015 uses a single channel image for disparities
-                size=(1, 100, 200),
-            )
-
-            datasets_utils.create_image_folder(
-                root=split_dir,
-                name="disp_occ_1",
-                file_name_fn=lambda i: f"{i:06d}.png",
-                num_examples=num_examples,
-                # Kitti2015 uses a single channel image for disparities
-                size=(1, 100, 200),
-            )
-
-        return num_examples
-
-    def test_train_splits(self):
-        for split in ["train"]:
-            with self.create_dataset(split=split) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 2
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (h, w)
-                    # check that valid mask is the same size as the disparity
-                    dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
-
-    def test_test_split(self):
-        for split in ["test"]:
-            with self.create_dataset(split=split) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    # check general shapes
-                    assert c == 3
-                    assert disparity is None
-                    assert valid_mask is None
-
-    def test_bad_input(self):
-        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
-            with self.create_dataset(split="bad"):
-                pass
-
-
-class StereoSceneFlowTestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoSceneFlow
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-        split=("FlyingThings3D", "Driving", "Monkaa"),
-        pass_name=("clean", "final")
-    )
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
-
-    @staticmethod
-    def _create_pfm_folder(root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: Tuple[int, int]) -> List[str]:
-        root = pathlib.Path(root) / name
-        os.makedirs(root, exist_ok=True)
-
-        paths = []
-        for i in range(num_examples):
-            datasets_utils.make_fake_pfm_file(size[0], size[1], root / file_name_fn(i))
-            paths.append(str(root / file_name_fn(i)))
-        return paths
-
-    def inject_fake_data(self, tmpdir, config):
-        scene_flow_dir = pathlib.Path(tmpdir) / "SceneFlow"
-        os.makedirs(scene_flow_dir, exist_ok=True)
-
-        split_dir = scene_flow_dir / config["split"]
-        os.makedirs(split_dir, exist_ok=True)
-
-        pass_dir_map = {
-            "clean": "frames_cleanpass",
-            "final": "frames_finalpass",
-        }
-
-        num_examples = 1
-        pass_dir_name = pass_dir_map[config["pass_name"]]
-        # create pass directories
-        pass_dir = split_dir / pass_dir_name
-        disp_dir = split_dir / "disparity"
-        os.makedirs(pass_dir, exist_ok=True)
-        os.makedirs(disp_dir, exist_ok=True)
-
-        for direction in ["left", "right"]:
-            for scene_idx in range(num_examples):
-                os.makedirs(pass_dir / f"scene_{scene_idx:06d}", exist_ok=True)
-                datasets_utils.create_image_folder(
-                    root=pass_dir / f"scene_{scene_idx:06d}",
-                    name=direction,
-                    file_name_fn=lambda i: f"{i:06d}.png",
-                    num_examples=3,
-                    size=(3, 200, 100),
-                )
-
-                os.makedirs(disp_dir / f"scene_{scene_idx:06d}", exist_ok=True)
-                self._create_pfm_folder(
-                    root=disp_dir / f"scene_{scene_idx:06d}",
-                    name=direction,
-                    file_name_fn=lambda i: f"{i:06d}.pfm",
-                    num_examples=3,
-                    size=(100, 200),
-                )
-
-        return num_examples * 3
-
-    def test_train_splits(self):
-        for split_name, pass_name in itertools.product(["FlyingThings3D", "Driving", "Monkaa"], ["clean", "final"]):
-            with self.create_dataset(split=split_name, pass_name=pass_name) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    print(f"Split {split_name} pass {pass_name}")
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    print(left_array.shape)
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 3
-                    assert disparity.shape == (h, w, 3)
-                    # check that valid mask is the same size as the disparity
-                    dh, dw, _ = disparity.shape
-                    mh, mw, _ = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
-
-
-class StereoFallingThingsTestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoFallingThings
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("single", "mixed"))
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
-
-    @staticmethod
-    def _make_scene_folder(root: str, scene_name: str, num_examples: int, size: Tuple[int, int]):
-        root = pathlib.Path(root) / scene_name
-        os.makedirs(root, exist_ok=True)
-
-        datasets_utils.create_image_file(root, "image1.left.jpg", size=(3, size[0], size[1]))
-        datasets_utils.create_image_file(root, "image1.right.jpg", size=(3, size[0], size[1]))
-        # single channel depth maps
-        datasets_utils.create_image_file(root, "image1.left.depth.jpg", size=(1, size[0], size[1]))
-        datasets_utils.create_image_file(root, "image1.right.depth.jpg", size=(1, size[0], size[1]))
-
-    def inject_fake_data(self, tmpdir, config):
-        fallingthings_dir = pathlib.Path(tmpdir) / "FallingThings"
-
-        split_dir = pathlib.Path(fallingthings_dir) / config["split"]
-        os.makedirs(split_dir, exist_ok=True)
-
-        num_examples = 4
-
-        for i in range(num_examples):
-            self._make_scene_folder(
-                root=split_dir,
-                scene_name=f"scene_{i:06d}",
-                num_examples=num_examples,
-                size=(100, 200),
-            )
-
-        return num_examples
-
-    def test_splits(self):
-        for split_name in ["single", "mixed"]:
-            with self.create_dataset(split=split_name) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    print(f"Split {split_name}")
-                    left_array = np.array(left)
-                    right_array = np.array(right)
-                    h, w, c = left_array.shape
-                    # check that left and right are the same size
-                    assert left_array.shape == right_array.shape
-                    print(left_array.shape)
-                    # check general shapes
-                    assert c == 3
-                    assert len(disparity.shape) == 3
-                    assert len(valid_mask.shape) == 2
-                    assert disparity.shape == (h, w)
-                    # check that valid mask is the same size as the disparity
-                    dh, dw = disparity.shape
-                    mh, mw = valid_mask.shape
-                    assert dh == mh
-                    assert dw == mw
 
 
 class STL10TestCase(datasets_utils.ImageDatasetTestCase):
@@ -3233,6 +2670,707 @@ class RenderedSST2TestCase(datasets_utils.ImageDatasetTestCase):
             )
 
         return len(sampled_classes) * num_images_per_class[config["split"]]
+
+
+class StereoETH3DTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StereoETH3D
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    @staticmethod
+    def _create_scene_folder(num_examples: int, root_dir: str) -> List[pathlib.Path]:
+        # create the scene folder
+        image_paths = []
+        # make the root_dir if it does not exits
+        os.makedirs(root_dir, exist_ok=True)
+
+        for i in range(num_examples):
+            scene_dir = os.path.join(root_dir, f"scene_{i}")
+            os.makedirs(scene_dir, exist_ok=True)
+            # populate with left right images
+            image_paths.append(datasets_utils.create_image_file(root=scene_dir, name="im0.png", size=(100, 100)))
+            image_paths.append(datasets_utils.create_image_file(root=scene_dir, name="im1.png", size=(100, 100)))
+        return image_paths
+
+    @staticmethod
+    def _create_annotation_folder(num_examples: int, root_dir: str) -> List[pathlib.Path]:
+        paths = []
+        # make the root_dir if it does not exits
+        os.makedirs(root_dir, exist_ok=True)
+
+        # create scene directories
+        for i in range(num_examples):
+            scene_dir = os.path.join(root_dir, f"scene_{i}")
+            os.makedirs(scene_dir, exist_ok=True)
+            # populate with a random png file for occlusion mask, and a pfm file for disparity
+            paths.append(datasets_utils.create_image_file(root=scene_dir, name="mask0nocc.png", size=(1, 100, 100)))
+            pfm_path = os.path.join(scene_dir, "disp0GT.pfm")
+            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=pfm_path)
+            paths.append(pfm_path)
+        return paths
+
+    def inject_fake_data(self, tmpdir, config):
+        eth3d_dir = os.path.join(tmpdir, "ETH3D")
+
+        num_examples = 2 if config["split"] == "train" else 3
+
+        split_name = "two_view_training" if config["split"] == "train" else "two_view_test"
+        split_dir = os.path.join(eth3d_dir, split_name)
+        self._create_scene_folder(num_examples, split_dir)
+
+        if config["split"] == "train":
+            annot_dir = os.path.join(eth3d_dir, "two_view_training_gt")
+            self._create_annotation_folder(num_examples, annot_dir)
+
+        return num_examples
+
+    def test_training_test_splits(self):
+        with self.create_dataset(split="train") as (dataset, _):
+            assert dataset._images and len(dataset._images) == len(dataset._disparities), "Training images do not match with training disparities"
+            for _, _, disparity, valid_mask in dataset:
+                assert len(disparity.shape) == 3
+                assert len(valid_mask.shape) == 2
+                _, dh, dw = disparity.shape
+                mh, mw = valid_mask.shape
+                assert dh == mh
+                assert dw == mw
+
+        with self.create_dataset(split="test") as (dataset, _):
+            assert all(d == ("", "") for d in dataset._disparities)
+            for _, _, disparity, valid_mask in dataset:
+                assert disparity is None
+                assert valid_mask is None
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
+class CREStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.CREStereo
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("tree", "shapenet", "reflective", "hole"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        crestereo_dir = pathlib.Path(tmpdir) / "CREStereo"
+        os.makedirs(crestereo_dir, exist_ok=True)
+
+        split_dir = crestereo_dir / config["split"]
+        os.makedirs(split_dir, exist_ok=True)
+
+        num_examples = {"tree": 2, "shapenet": 3, "reflective": 6, "hole": 5}.get(config["split"], 0)
+
+        for idx in range(num_examples):
+            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.jpg", size=(100, 100))
+            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.jpg", size=(100, 100))
+            # these are going to end up being gray scale images
+            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.disp.jpg", size=(1, 100, 100))
+            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.disp.jpg", size=(1, 100, 100))
+
+        return num_examples
+
+    def test_splits(self):
+        for split in ("tree", "shapenet", "reflective", "hole"):
+            with self.create_dataset(split=split) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    h, w, c = left_array.shape
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    # check general shapes
+                    assert c == 3
+                    assert len(disparity.shape) == 3
+                    assert len(valid_mask.shape) == 2
+                    assert disparity.shape == (1, h, w)
+                    # check that valid mask is the same size as the disparity
+                    _, dh, dw = disparity.shape
+                    mh, mw = valid_mask.shape
+                    assert dh == mh
+                    assert dw == mw
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
+class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StereoMiddlebury2014
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "additional"),
+        calibration=("perfect", "imperfect", "both"),
+        use_ambient_views=(True, False),
+    )
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    @staticmethod
+    def _make_scene_folder(root_dir: str, scene_name: str, split: str) -> List[str]:
+        calibrations = [""] if split == "test" else ["-perfect", "-imperfect"]
+        scene_dirs = []
+        for c in calibrations:
+            scene_dir = os.path.join(root_dir, f"{scene_name}{c}")
+            os.makedirs(scene_dir, exist_ok=True)
+            # make normal images first
+            datasets_utils.create_image_file(root=scene_dir, name=f"im0.png", size=(3, 100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name=f"im1.png", size=(3, 100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name=f"im1E.png", size=(3, 100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name=f"im1L.png", size=(3, 100, 100))
+            # these are going to end up being gray scale images
+            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=os.path.join(scene_dir, "disp0.pfm"))
+            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=os.path.join(scene_dir, "disp1.pfm"))
+            scene_dirs.append(scene_dir)
+        return scene_dirs
+
+    def inject_fake_data(self, tmpdir, config):
+        split_scene_map = {
+            "train": ["Adirondack", "Jadeplant", "Motorcycle", "Piano"],
+            "additional": ["Backpack", "Bicycle1", "Cable", "Classroom1"],
+            "test": ["Plants", "Classroom2E", "Classroom2", "Australia"]
+        }
+
+        middlebury_dir = pathlib.Path(tmpdir, "Middlebury2014")
+        os.makedirs(middlebury_dir, exist_ok=True)
+
+        split_dir = middlebury_dir / config["split"]
+        os.makedirs(split_dir, exist_ok=True)
+
+        num_examples = {"train": 2, "additional": 3, "test": 4}.get(config["split"], 0)
+        for idx in range(num_examples):
+            scene_name = split_scene_map[config["split"]][idx]
+            self._make_scene_folder(root_dir=split_dir, scene_name=scene_name, split=config["split"])
+
+        if config["calibration"] == "both":
+            num_examples *= 2
+        return num_examples
+
+    def test_train_splits(self):
+        for split, calibration in itertools.product(["train", "additional"], ["perfect", "imperfect", "both"]):
+            with self.create_dataset(split=split, calibration=calibration) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    h, w, c = left_array.shape
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    # check general shapes
+                    assert c == 3
+                    assert len(disparity.shape) == 3
+                    assert len(valid_mask.shape) == 2
+                    assert disparity.shape == (1, h, w)
+                    # check that valid mask is the same size as the disparity
+                    _, dh, dw = disparity.shape
+                    mh, mw = valid_mask.shape
+                    print("disparities", disparity.shape, valid_mask.shape)
+                    assert dh == mh
+                    assert dw == mw
+
+    def test_test_split(self):
+        for split in ["test"]:
+            with self.create_dataset(split=split, calibration=None) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    h, w, c = left_array.shape
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    # check general shapes
+                    assert c == 3
+                    assert disparity is None
+                    assert valid_mask is None
+
+    def test_augmented_view_usage(self):
+        with self.create_dataset(split="train", use_ambient_views=True) as (dataset, _):
+            for left, right, _, _ in dataset:
+                left_array = np.array(left)
+                right_array = np.array(right)
+                # check that left and right are the same size
+                assert left_array.shape == right_array.shape
+
+    def test_warnings_train(self):
+        # train set invalid
+        split = "train"
+        calibration = None
+        with pytest.warns(
+            RuntimeWarning,
+            match=f"\nSplit '{split}' has calibration settings, however None was provided as an argument."
+                  f"\nSetting calibration to 'perfect' for split '{split}'. Available calibration settings are: 'perfect', 'imperfect', 'both'.",
+        ):
+            with self.create_dataset(split=split, calibration=calibration):
+                pass
+
+    def test_warnings_test(self):
+        # test set invalid
+        split = "test"
+        calibration = "perfect"
+        with pytest.warns(
+            RuntimeWarning,
+            match="\nSplit 'test' has only no calibration settings, ignoring calibration argument."
+        ):
+            with self.create_dataset(split=split, calibration=calibration):
+                pass
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
+class StereoKitti2012TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StereoKitti2012
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        kitti_dir = pathlib.Path(tmpdir) / "Kitti2012"
+        os.makedirs(kitti_dir, exist_ok=True)
+
+        split_dir = kitti_dir / (config["split"] + "ing")
+        os.makedirs(split_dir, exist_ok=True)
+
+        num_examples = {"train": 4, "test": 3}.get(config["split"], 0)
+
+        datasets_utils.create_image_folder(
+            root=split_dir,
+            name="colored_0",
+            file_name_fn=lambda i: f"{i:06d}_10.png",
+            num_examples=num_examples,
+            size=(3, 100, 200),
+        )
+        datasets_utils.create_image_folder(
+            root=split_dir,
+            name="colored_1",
+            file_name_fn=lambda i: f"{i:06d}_10.png",
+            num_examples=num_examples,
+            size=(3, 100, 200),
+        )
+
+        if config["split"] == "train":
+            datasets_utils.create_image_folder(
+                root=split_dir,
+                name="disp_noc",
+                file_name_fn=lambda i: f"{i:06d}.png",
+                num_examples=num_examples,
+                # Kitti2012 uses a single channel image for disparities
+                size=(1, 100, 200),
+            )
+
+        return num_examples
+
+    def test_train_splits(self):
+        for split in ["train"]:
+            with self.create_dataset(split=split) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    h, w, c = left_array.shape
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    # check general shapes
+                    assert c == 3
+                    assert len(disparity.shape) == 3
+                    assert len(valid_mask.shape) == 2
+                    assert disparity.shape == (1, h, w)
+                    # check that valid mask is the same size as the disparity
+                    _, dh, dw = disparity.shape
+                    mh, mw = valid_mask.shape
+                    assert dh == mh
+                    assert dw == mw
+
+    def test_test_split(self):
+        for split in ["test"]:
+            with self.create_dataset(split=split) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    assert disparity is None
+                    assert valid_mask is None
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
+class StereoKitti2015TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StereoKitti2015
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        kitti_dir = pathlib.Path(tmpdir) / "Kitti2015"
+        os.makedirs(kitti_dir, exist_ok=True)
+
+        split_dir = kitti_dir / (config["split"] + "ing")
+        os.makedirs(split_dir, exist_ok=True)
+
+        num_examples = {"train": 4, "test": 6}.get(config["split"], 0)
+
+        datasets_utils.create_image_folder(
+            root=split_dir,
+            name="image_2",
+            file_name_fn=lambda i: f"{i:06d}_10.png",
+            num_examples=num_examples,
+            size=(3, 100, 200),
+        )
+        datasets_utils.create_image_folder(
+            root=split_dir,
+            name="image_3",
+            file_name_fn=lambda i: f"{i:06d}_10.png",
+            num_examples=num_examples,
+            size=(3, 100, 200),
+        )
+
+        if config["split"] == "train":
+            datasets_utils.create_image_folder(
+                root=split_dir,
+                name="disp_occ_0",
+                file_name_fn=lambda i: f"{i:06d}.png",
+                num_examples=num_examples,
+                # Kitti2015 uses a single channel image for disparities
+                size=(1, 100, 200),
+            )
+
+            datasets_utils.create_image_folder(
+                root=split_dir,
+                name="disp_occ_1",
+                file_name_fn=lambda i: f"{i:06d}.png",
+                num_examples=num_examples,
+                # Kitti2015 uses a single channel image for disparities
+                size=(1, 100, 200),
+            )
+
+        return num_examples
+
+    def test_train_splits(self):
+        for split in ["train"]:
+            with self.create_dataset(split=split) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    h, w, c = left_array.shape
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    # check general shapes
+                    assert c == 3
+                    assert len(disparity.shape) == 3
+                    assert len(valid_mask.shape) == 2
+                    assert disparity.shape == (1, h, w)
+                    # check that valid mask is the same size as the disparity
+                    _, dh, dw = disparity.shape
+                    mh, mw = valid_mask.shape
+                    assert dh == mh
+                    assert dw == mw
+
+    def test_test_split(self):
+        for split in ["test"]:
+            with self.create_dataset(split=split) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    # check general shapes
+                    assert disparity is None
+                    assert valid_mask is None
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
+class StereoSceneFlowTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StereoSceneFlow
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("FlyingThings3D", "Driving", "Monkaa"),
+        pass_name=("clean", "final")
+    )
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    @staticmethod
+    def _create_pfm_folder(root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: Tuple[int, int]) -> List[str]:
+        root = pathlib.Path(root) / name
+        os.makedirs(root, exist_ok=True)
+
+        paths = []
+        for i in range(num_examples):
+            datasets_utils.make_fake_pfm_file(size[0], size[1], root / file_name_fn(i))
+            paths.append(str(root / file_name_fn(i)))
+        return paths
+
+    def inject_fake_data(self, tmpdir, config):
+        scene_flow_dir = pathlib.Path(tmpdir) / "SceneFlow"
+        os.makedirs(scene_flow_dir, exist_ok=True)
+
+        split_dir = scene_flow_dir / config["split"]
+        os.makedirs(split_dir, exist_ok=True)
+
+        pass_dir_map = {
+            "clean": "frames_cleanpass",
+            "final": "frames_finalpass",
+        }
+
+        num_examples = 1
+        pass_dir_name = pass_dir_map.get(config["pass_name"], None)
+
+        # create pass directories
+        pass_dir = split_dir / pass_dir_name
+        disp_dir = split_dir / "disparity"
+        os.makedirs(pass_dir, exist_ok=True)
+        os.makedirs(disp_dir, exist_ok=True)
+
+        num_examples = {"FlyingThings3D": 4, "Driving": 6, "Monkaa": 5}.get(config["split"], 0)
+
+        for direction in ["left", "right"]:
+            for scene_idx in range(num_examples):
+                os.makedirs(pass_dir / f"scene_{scene_idx:06d}", exist_ok=True)
+                datasets_utils.create_image_folder(
+                    root=pass_dir / f"scene_{scene_idx:06d}",
+                    name=direction,
+                    file_name_fn=lambda i: f"{i:06d}.png",
+                    num_examples=1,
+                    size=(3, 200, 100),
+                )
+
+                os.makedirs(disp_dir / f"scene_{scene_idx:06d}", exist_ok=True)
+                self._create_pfm_folder(
+                    root=disp_dir / f"scene_{scene_idx:06d}",
+                    name=direction,
+                    file_name_fn=lambda i: f"{i:06d}.pfm",
+                    num_examples=1,
+                    size=(100, 200),
+                )
+
+        return num_examples
+
+    def test_splits(self):
+        for split_name, pass_name in itertools.product(["FlyingThings3D", "Driving", "Monkaa"], ["clean", "final"]):
+            with self.create_dataset(split=split_name, pass_name=pass_name) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    h, w, c = left_array.shape
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    # check general shapes
+                    assert c == 3
+                    assert len(disparity.shape) == 3
+                    assert len(valid_mask.shape) == 2
+                    assert disparity.shape == (1, h, w)
+                    # check that valid mask is the same size as the disparity
+                    _, dh, dw = disparity.shape
+                    mh, mw = valid_mask.shape
+                    assert dh == mh
+                    assert dw == mw
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
+class StereoFallingThingsTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StereoFallingThings
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("single", "mixed"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    @staticmethod
+    def _make_dummy_depth_map(root: str, name: str, size: Tuple[int, int]):
+        file = pathlib.Path(root) / name
+        image = np.ones((size[0], size[1]), dtype=np.uint8)
+        PIL.Image.fromarray(image).save(file)
+
+    @staticmethod
+    def _make_scene_folder(root: str, scene_name: str, size: Tuple[int, int]) -> List[str]:
+        paths = []
+        root = pathlib.Path(root) / scene_name
+        os.makedirs(root, exist_ok=True)
+        # jpg images
+        paths.append(datasets_utils.create_image_file(root, "image1.left.jpg", size=(3, size[1], size[0])))
+        paths.append(datasets_utils.create_image_file(root, "image1.right.jpg", size=(3, size[1], size[0])))
+        # single channel depth maps
+        paths.append(StereoFallingThingsTestCase._make_dummy_depth_map(root, "image1.left.depth.png", size=(size[0], size[1])))
+        paths.append(StereoFallingThingsTestCase._make_dummy_depth_map(root, "image1.right.depth.png", size=(size[0], size[1])))
+        # camera settings json. Minimal example for _read_disparity function testing
+        settings_json = {"camera_settings": [{"intrinsic_settings": {"fx": 1}}]}
+        with open(root / "_camera_settings.json", "w") as f:
+            json.dump(settings_json, f)
+
+        return paths
+
+    def inject_fake_data(self, tmpdir, config):
+        fallingthings_dir = pathlib.Path(tmpdir) / "FallingThings"
+        os.makedirs(fallingthings_dir, exist_ok=True)
+
+        split_dir = pathlib.Path(fallingthings_dir) / config["split"]
+        os.makedirs(split_dir, exist_ok=True)
+
+        num_examples = {"single": 2, "mixed": 3}.get(config["split"], 0)
+
+        for i in range(num_examples):
+            self._make_scene_folder(
+                root=split_dir,
+                scene_name=f"scene_{i:06d}",
+                size=(100, 200),
+            )
+
+        return num_examples
+
+    def test_splits(self):
+        for split_name in ["single", "mixed"]:
+            with self.create_dataset(split=split_name) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    h, w, c = left_array.shape
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    # check general shapes
+                    assert c == 3
+                    assert len(disparity.shape) == 3
+                    assert len(valid_mask.shape) == 2
+                    assert disparity.shape == (1, h, w)
+                    # check that valid mask is the same size as the disparity
+                    _, dh, dw = disparity.shape
+                    mh, mw = valid_mask.shape
+                    assert dh == mh
+                    assert dw == mw
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
+class StereoSintelTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StereoSintel
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        sintel_dir = pathlib.Path(tmpdir) / "Sintel"
+        os.makedirs(sintel_dir, exist_ok=True)
+
+        split_dir = pathlib.Path(sintel_dir) / "training"
+        os.makedirs(split_dir, exist_ok=True)
+
+        # a single setting, since there are no splits
+        num_examples = 4
+
+        for view in ["final_left", "final_right"]:
+            root = split_dir / view
+            os.makedirs(root, exist_ok=True)
+
+            datasets_utils.create_image_folder(
+                root=root,
+                name="scene1",
+                file_name_fn=lambda i: f"{i:06d}.png",
+                num_examples=num_examples,
+                size=(3, 100, 200),
+            )
+
+        datasets_utils.create_image_folder(
+            root=split_dir / "occlusions",
+            name="scene1",
+            file_name_fn=lambda i: f"{i:06d}.png",
+            num_examples=num_examples,
+            size=(1, 100, 200),
+        )
+
+        datasets_utils.create_image_folder(
+            root=split_dir / "outofframe",
+            name="scene1",
+            file_name_fn=lambda i: f"{i:06d}.png",
+            num_examples=num_examples,
+            size=(1, 100, 200),
+        )
+
+        datasets_utils.create_image_folder(
+            root=split_dir / "disparities",
+            name="scene1",
+            file_name_fn=lambda i: f"{i:06d}.png",
+            num_examples=num_examples,
+            size=(3, 100, 200),
+        )
+
+        return num_examples
+
+    def test_splits(self):
+        with self.create_dataset() as (dataset, _):
+            for left, right, disparity, valid_mask in dataset:
+                left_array = np.array(left)
+                right_array = np.array(right)
+                h, w, c = left_array.shape
+                # check that left and right are the same size
+                assert left_array.shape == right_array.shape
+                # check general shapes
+                assert c == 3
+                assert len(disparity.shape) == 3
+                assert len(valid_mask.shape) == 2
+                assert disparity.shape == (1, h, w)
+                # check that valid mask is the same size as the disparity
+                _, dh, dw = disparity.shape
+                mh, mw = valid_mask.shape
+                assert dh == mh
+                assert dw == mw
+
+
+class InStereo2k(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.InStereo2k
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+
+    @staticmethod
+    def _make_scene_folder(root: str, name: str, size: Tuple[int, int]):
+        root = pathlib.Path(root) / name
+        os.makedirs(root, exist_ok=True)
+
+        datasets_utils.create_image_file(root=root, name="left.png", size=(3, size[0], size[1]))
+        datasets_utils.create_image_file(root=root, name="right.png", size=(3, size[0], size[1]))
+        datasets_utils.create_image_file(root=root, name="left_disp.png", size=(1, size[0], size[1]))
+        datasets_utils.create_image_file(root=root, name="right_disp.png", size=(1, size[0], size[1]))
+
+    def inject_fake_data(self, tmpdir, config):
+        in_stereo_dir = pathlib.Path(tmpdir) / "InStereo2k"
+        os.makedirs(in_stereo_dir, exist_ok=True)
+
+        split_dir = pathlib.Path(in_stereo_dir) / config["split"]
+        os.makedirs(split_dir, exist_ok=True)
+
+        num_examples = {"train": 4, "test": 5}.get(config["split"], 0)
+
+        for i in range(num_examples):
+            self._make_scene_folder(split_dir, f"scene_{i:06d}", (100, 200))
+
+        return num_examples
+
+    def test_splits(self):
+        for split_name in ["train", "test"]:
+            with self.create_dataset(split=split_name) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    left_array = np.array(left)
+                    right_array = np.array(right)
+                    h, w, c = left_array.shape
+                    # check that left and right are the same size
+                    assert left_array.shape == right_array.shape
+                    # check general shapes
+                    assert c == 3
+                    assert len(disparity.shape) == 3
+                    assert len(valid_mask.shape) == 2
+                    assert disparity.shape == (1, h, w)
+                    # check that valid mask is the same size as the disparity
+                    _, dh, dw = disparity.shape
+                    mh, mw = valid_mask.shape
+                    assert dh == mh
+                    assert dw == mw
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
 
 
 if __name__ == "__main__":
