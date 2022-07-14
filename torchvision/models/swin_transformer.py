@@ -153,6 +153,7 @@ def shifted_window_attention(
     x = F.pad(input, (0, 0, 0, pad_r, 0, pad_b))
     _, pad_H, pad_W, _ = x.shape
 
+    shift_size = shift_size.copy()
     # If window size is larger than feature size, there is no need to shift window
     if window_size[0] >= pad_H:
         shift_size[0] = 0

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Tuple, List, Optional, Union, Sequence
+from typing import List, Optional, Union, Sequence
 
-import torch
 from torchvision.transforms import InterpolationMode
 
 from ._feature import _Feature
@@ -61,9 +60,16 @@ class SegmentationMask(_Feature):
         return SegmentationMask.new_like(self, output)
 
     def pad(
-        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+        self,
+        padding: Union[int, Sequence[int]],
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        padding_mode: str = "constant",
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
+
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        if not isinstance(padding, int):
+            padding = list(padding)
 
         output = _F.pad_segmentation_mask(self, padding, padding_mode=padding_mode)
         return SegmentationMask.new_like(self, output)
@@ -73,7 +79,7 @@ class SegmentationMask(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
@@ -88,7 +94,7 @@ class SegmentationMask(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
@@ -107,18 +113,9 @@ class SegmentationMask(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.perspective_segmentation_mask(self, perspective_coeffs)
         return SegmentationMask.new_like(self, output)
-
-    def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> SegmentationMask:
-        raise TypeError("Erase transformation does not support segmentation masks")
-
-    def mixup(self, lam: float) -> SegmentationMask:
-        raise TypeError("Mixup transformation does not support segmentation masks")
-
-    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> SegmentationMask:
-        raise TypeError("Cutmix transformation does not support segmentation masks")
