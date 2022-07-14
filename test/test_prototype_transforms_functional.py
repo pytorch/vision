@@ -495,6 +495,7 @@ def center_crop_bounding_box():
         )
 
 
+@register_kernel_info_from_sample_inputs_fn
 def center_crop_segmentation_mask():
     for mask, output_size in itertools.product(
         make_segmentation_masks(image_sizes=((16, 16), (7, 33), (31, 9))),
