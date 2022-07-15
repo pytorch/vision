@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+b18fc23 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+336c8b2 ) &#x25BC</a>
     </div>
     
 
@@ -329,7 +329,6 @@
   <h1>Source code for torchvision.datasets._optical_flow</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
@@ -339,7 +338,7 @@
 <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
 
 <span class="kn">from</span> <span class="nn">..io.image</span> <span class="kn">import</span> <span class="n">_read_png_16</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">verify_str_arg</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">verify_str_arg</span><span class="p">,</span> <span class="n">_read_pfm</span>
 <span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 
@@ -801,34 +800,6 @@
 
     <span class="c1"># For consistency with other datasets, we convert to numpy</span>
     <span class="k">return</span> <span class="n">flow</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">valid_flow_mask</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-
-
-<span class="k">def</span> <span class="nf">_read_pfm</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Read flow in .pfm format&quot;&quot;&quot;</span>
-
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">header</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">header</span> <span class="o">!=</span> <span class="sa">b</span><span class="s2">&quot;PF&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid PFM file&quot;</span><span class="p">)</span>
-
-        <span class="n">dim_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">rb</span><span class="s2">&quot;^(\d+)\s(\d+)\s$&quot;</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">())</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">dim_match</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Malformed PFM header.&quot;</span><span class="p">)</span>
-        <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">dim_match</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span>
-
-        <span class="n">scale</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">())</span>
-        <span class="k">if</span> <span class="n">scale</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># little-endian</span>
-            <span class="n">endian</span> <span class="o">=</span> <span class="s2">&quot;&lt;&quot;</span>
-            <span class="n">scale</span> <span class="o">=</span> <span class="o">-</span><span class="n">scale</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">endian</span> <span class="o">=</span> <span class="s2">&quot;&gt;&quot;</span>  <span class="c1"># big-endian</span>
-
-        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">endian</span> <span class="o">+</span> <span class="s2">&quot;f&quot;</span><span class="p">)</span>
-
-    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># flip on h dimension</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="mi">2</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
-    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 </pre></div>
 
              </article>
