@@ -433,6 +433,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
         if not os.path.exists(file_path):  # case when dealing with the test split
             return None, None
         disparity_map = _read_pfm_file(file_path)
+        disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
         valid_mask = disparity_map < 1e3
         # remove the channel dimension from the valid mask
         valid_mask = valid_mask[0, :, :]
@@ -554,6 +555,7 @@ class ETH3DStereo(StereoMatchingDataset):
             return None, None
 
         disparity_map = _read_pfm_file(file_path)
+        disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
         mask_path = os.path.join(os.path.split(file_path)[0], "mask0nocc.png")
         valid_mask = Image.open(mask_path)
         valid_mask = np.asarray(valid_mask).astype(np.bool_)
@@ -675,7 +677,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
             return None, None
 
         disparity_map = np.asarray(Image.open(file_path)) / 256.0
-        valid_mask = disparity_map < 0.0
+        valid_mask = disparity_map > 0.0
         # unsqueeze the disparity map into (C, H, W) format
         disparity_map = disparity_map[None, :, :]
         return disparity_map, valid_mask
@@ -859,10 +861,11 @@ class SceneFlowStereo(StereoMatchingDataset):
             self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
 
     def _read_disparity(self, file_path: str) -> Tuple:
-        disparity = _read_pfm_file(file_path)
+        disparity_map = _read_pfm_file(file_path)
+        disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
         # keep valid mask with shape (H, W)
-        valid = np.ones(disparity.shape[1:]).astype(np.bool_)
-        return disparity, valid
+        valid = np.ones(disparity_map.shape[1:]).astype(np.bool_)
+        return disparity_map, valid
 
 
 class FallingThingsStereo(StereoMatchingDataset):
