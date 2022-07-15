@@ -189,3 +189,6 @@ class _Feature(torch.Tensor):
 
     def invert(self) -> Any:
         return self
+
+    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Any:
+        return self

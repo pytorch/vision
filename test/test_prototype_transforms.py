@@ -644,3 +644,58 @@ class TestRandomCrop:
         else:
             # vfdev-5: I do not know how to mock and test this case
             pass
+
+
+class TestGaussianBlur:
+    def test_assertions(self):
+        with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
+            transforms.GaussianBlur([10, 12, 14])
+
+        with pytest.raises(ValueError, match="Kernel size value should be an odd and positive number"):
+            transforms.GaussianBlur(4)
+
+        with pytest.raises(TypeError, match="sigma should be a single float or a list/tuple with length 2"):
+            transforms.GaussianBlur(3, sigma=[1, 2, 3])
+
+        with pytest.raises(ValueError, match="If sigma is a single number, it must be positive"):
+            transforms.GaussianBlur(3, sigma=-1.0)
+
+        with pytest.raises(ValueError, match="sigma values should be positive and of the form"):
+            transforms.GaussianBlur(3, sigma=[2.0, 1.0])
+
+    @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0]])
+    def test__get_params(self, sigma):
+        transform = transforms.GaussianBlur(3, sigma=sigma)
+        params = transform._get_params(None)
+
+        if isinstance(sigma, float):
+            assert params["sigma"][0] == params["sigma"][1] == 10
+        else:
+            assert sigma[0] <= params["sigma"][0] <= sigma[1]
+            assert sigma[0] <= params["sigma"][1] <= sigma[1]
+
+    @pytest.mark.parametrize("kernel_size", [3, [3, 5], (5, 3)])
+    @pytest.mark.parametrize("sigma", [2.0, [2.0, 3.0]])
+    def test__transform(self, kernel_size, sigma, mocker):
+        transform = transforms.GaussianBlur(kernel_size=kernel_size, sigma=sigma)
+
+        if isinstance(kernel_size, (tuple, list)):
+            assert transform.kernel_size == kernel_size
+        else:
+            assert transform.kernel_size == (kernel_size, kernel_size)
+
+        if isinstance(sigma, (tuple, list)):
+            assert transform.sigma == sigma
+        else:
+            assert transform.sigma == (sigma, sigma)
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.gaussian_blur")
+        inpt = features.Image(torch.rand(1, 3, 32, 32))
+        # vfdev-5, Feature Request: let's store params as Transform attribute
+        # This could be also helpful for users
+        torch.manual_seed(12)
+        _ = transform(inpt)
+        torch.manual_seed(12)
+        params = transform._get_params(inpt)
+
+        fn.assert_called_once_with(inpt, **params)
