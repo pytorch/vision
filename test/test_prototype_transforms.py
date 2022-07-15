@@ -689,7 +689,6 @@ class TestGaussianBlur:
         else:
             assert transform.sigma == (sigma, sigma)
 
-
         fn = mocker.patch("torchvision.prototype.transforms.functional.gaussian_blur")
         inpt = features.Image(torch.rand(1, 3, 32, 32))
         # vfdev-5, Feature Request: let's store params as Transform attribute

@@ -508,7 +508,7 @@ def center_crop_segmentation_mask():
 def gaussian_blur_image_tensor():
     for image, kernel_size, sigma in itertools.product(
         make_images(extra_dims=((4,),)),
-        [[3, 3], ],
+        [[3, 3]],
         [None, [3.0, 3.0]],
     ):
         yield SampleInput(image, kernel_size=kernel_size, sigma=sigma)

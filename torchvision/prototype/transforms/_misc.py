@@ -2,8 +2,8 @@ import functools
 from typing import Any, List, Type, Callable, Dict, Sequence, Union
 
 import torch
-from torchvision.transforms.transforms import _setup_size
 from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.transforms.transforms import _setup_size
 
 
 class Identity(Transform):
