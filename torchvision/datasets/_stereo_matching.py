@@ -3,7 +3,6 @@ import json
 import os
 import random
 import shutil
-import warnings
 from abc import ABC, abstractmethod
 from glob import glob
 from pathlib import Path
@@ -17,13 +16,13 @@ from .vision import VisionDataset
 
 __all__ = (
     "CREStereo"
-    "StereoMiddlebury2014"
-    "StereoETH3D"
-    "StereoKitti2012"
-    "StereoKitti2015"
-    "StereoSintel"
-    "StereoSceneFlow"
-    "StereoFallingThings"
+    "Middlebury2014Stereo"
+    "ETH3DStereo"
+    "Kitti2012Stereo"
+    "Kitti2015Stereo"
+    "SintelStereo"
+    "SceneFlowStereo"
+    "FallingThingsStereo"
     "InStereo2k"
 )
 
@@ -188,7 +187,6 @@ class CREStereo(StereoMatchingDataset):
     def __init__(
         self,
         root: str,
-        split: str = "tree",
         transforms: Optional[Callable] = None,
         download: bool = False,
         max_disparity: float = 256.0,
@@ -210,29 +208,22 @@ class CREStereo(StereoMatchingDataset):
                 )
             self._download_dataset(str(root))
 
-        verify_str_arg(split, "split", valid_values=("tree", "shapenet", "reflective", "hole", "all"))
+        dirs = ["shapenet", "reflective", "tree", "hole"]
 
-        splits = {
-            "tree": ["tree"],
-            "shapenet": ["shapenet"],
-            "reflective": ["reflective"],
-            "hole": ["hole"],
-            "all": ["hole", "shapenet", "reflective", "hole"],
-        }[split]
-
-        for s in splits:
+        for s in dirs:
             left_image_pattern = str(root / s / "*_left.jpg")
             right_image_pattern = str(root / s / "*_right.jpg")
+            print(left_image_pattern, right_image_pattern)
             imgs = self._scan_pairs(left_image_pattern, right_image_pattern)
             self._images += imgs
 
-            left_disparity_pattern = str(root / s / "*_left.disp.jpg")
-            right_disparity_pattern = str(root / s / "*_right.disp.jpg")
+            left_disparity_pattern = str(root / s / "*_left.disp.png")
+            right_disparity_pattern = str(root / s / "*_right.disp.png")
             disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
             self._disparities += disparities
 
     def _read_disparity(self, file_path: str) -> Tuple:
-        disparity = np.array(Image.open(file_path), dtype=np.float32)
+        disparity = np.asarray(Image.open(file_path), dtype=np.float32)
         valid = (disparity < self.max_disparity) & (disparity > 0.0)
         # unsqueeze the disparity map into (C, H, W) format
         disparity = disparity[None, :, :]
@@ -251,7 +242,7 @@ class CREStereo(StereoMatchingDataset):
                 download_and_extract_archive(url=url, download_root=d_path, remove_finished=True)
 
 
-class StereoMiddlebury2014(StereoMatchingDataset):
+class Middlebury2014Stereo(StereoMatchingDataset):
     """Publicly available scenes from the Middlebury dataset `2014 version <https://vision.middlebury.edu/stereo/data/scenes2014/>`.
 
     The dataset mostly follows the original format, without containing the ambient subdirectories.  : ::
@@ -368,28 +359,23 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         super().__init__(root, transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test", "additional"))
+        self.split = split
 
         if calibration:
-            verify_str_arg(calibration, "calibration", valid_values=("perfect", "imperfect", "both"))  # type: ignore
+            verify_str_arg(calibration, "calibration", valid_values=("perfect", "imperfect", "both", None))  # type: ignore
             if split == "test":
-                calibration = None
-                warnings.warn(
-                    "\nSplit 'test' has only no calibration settings, ignoring calibration argument.", RuntimeWarning
-                )
+                raise ValueError("Split 'test' has only no calibration settings, please set `calibration=None`.")
         else:
             if split != "test":
-                calibration = "perfect"
-                warnings.warn(
-                    f"\nSplit '{split}' has calibration settings, however None was provided as an argument."
+                raise ValueError(
+                    f"Split '{split}' has calibration settings, however None was provided as an argument."
                     f"\nSetting calibration to 'perfect' for split '{split}'. Available calibration settings are: 'perfect', 'imperfect', 'both'.",
-                    RuntimeWarning,
                 )
 
         if download:
             self._download_dataset(root)
 
         root = Path(root) / "Middlebury2014"
-        self.split = split
 
         if not os.path.exists(root / split):
             raise FileNotFoundError(f"The {split} directory was not found in the provided root directory")
@@ -425,10 +411,6 @@ class StereoMiddlebury2014(StereoMatchingDataset):
                 self._disparities += self._scan_pairs(left_dispartity_pattern, right_dispartity_pattern)
 
         self.use_ambient_views = use_ambient_views
-        print(self._disparities[0], self._images[0])
-
-    def __getitem__(self, index: int) -> Tuple:
-        return super().__getitem__(index)
 
     def _read_img(self, file_path: str) -> Image.Image:
         """
@@ -460,16 +442,15 @@ class StereoMiddlebury2014(StereoMatchingDataset):
         base_url = "https://vision.middlebury.edu/stereo/data/scenes2014/zip"
         # train and additional splits have 2 different calibration settings
         root = Path(root) / "Middlebury2014"
-        download_split = self.split
+        split_name = self.split
 
-        for split_name, split_scenes in (download_split, self.splits[download_split]):
-            if split_name == "test":
-                continue
-            split_root = root / split_name
-            for scene in split_scenes:
+        if split_name != "test":
+            for split_scene in self.splits[split_name]:
+                split_root = root / split_name
                 for calibration in ["perfect", "imperfect"]:
-                    scene_name = f"{scene}-{calibration}"
+                    scene_name = f"{split_scene}-{calibration}"
                     scene_url = f"{base_url}/{scene_name}.zip"
+                    print(f"Downloading {scene_url}")
                     # download the scene only if it doesn't exist
                     if not os.path.exists(split_root / scene_name):
                         download_and_extract_archive(
@@ -478,26 +459,26 @@ class StereoMiddlebury2014(StereoMatchingDataset):
                             download_root=str(split_root),
                             remove_finished=True,
                         )
+        else:
+            os.makedirs(root / "test")
+            if any(s not in os.listdir(root / "test") for s in self.splits["test"]):
+                # test split is downloaded from a different location
+                test_set_url = "https://vision.middlebury.edu/stereo/submit3/zip/MiddEval3-data-F.zip"
+                # the unzip is going to produce a directory MiddEval3 with two subdirectories trainingF and testF
+                # we want to move the contents from testF into the  directory
+                download_and_extract_archive(url=test_set_url, download_root=str(root), remove_finished=True)
+                for scene_dir, scene_names, _ in os.walk(str(root / "MiddEval3/testF")):
+                    for scene in scene_names:
+                        scene_dst_dir = root / "test"
+                        scene_src_dir = Path(scene_dir) / scene
+                        os.makedirs(scene_dst_dir, exist_ok=True)
+                        shutil.move(str(scene_src_dir), str(scene_dst_dir))
 
-        if any(s not in os.listdir(root / "test") for s in self.splits["test"]):
-            # test split is downloaded from a different location
-            test_set_url = "https://vision.middlebury.edu/stereo/submit3/zip/MiddEval3-data-F.zip"
-
-            # the unzip is going to produce a directory MiddEval3 with two subdirectories trainingF and testF
-            # we want to move the contents from testF into the  directory
-            download_and_extract_archive(url=test_set_url, download_root=str(root), remove_finished=True)
-            for scene_dir, scene_names, _ in os.walk(str(root / "MiddEval3/testF")):
-                for scene in scene_names:
-                    scene_dst_dir = root / "test" / scene
-                    scene_src_dir = Path(scene_dir) / scene
-                    os.makedirs(scene_dst_dir, exist_ok=True)
-                    shutil.move(str(scene_src_dir), str(scene_dst_dir))
-
-            # cleanup MiddEval3 directory
-            shutil.rmtree(str(root / "MiddEval3"))
+                # cleanup MiddEval3 directory
+                shutil.rmtree(str(root / "MiddEval3"))
 
 
-class StereoETH3D(StereoMatchingDataset):
+class ETH3DStereo(StereoMatchingDataset):
     """ "ETH3D `Low-Res Two-View <https://www.eth3d.net/datasets>`_ dataset.
 
     The dataset is expected to have the following structure: ::
@@ -575,14 +556,11 @@ class StereoETH3D(StereoMatchingDataset):
         disparity_map = _read_pfm_file(file_path)
         mask_path = os.path.join(os.path.split(file_path)[0], "mask0nocc.png")
         valid_mask = Image.open(mask_path)
-        valid_mask = np.array(valid_mask).astype(np.bool_)
+        valid_mask = np.asarray(valid_mask).astype(np.bool_)
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Tuple:
-        return super().__getitem__(index)
 
-
-class StereoKitti2012(StereoMatchingDataset):
+class Kitti2012Stereo(StereoMatchingDataset):
     """ "Kitti dataset from the `2012 <http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php>`_ stereo evaluation benchmark.
     Uses the RGB images for consistency with Kitti 2015.
 
@@ -627,17 +605,14 @@ class StereoKitti2012(StereoMatchingDataset):
         if not os.path.exists(file_path):
             return None, None
 
-        disparity_map = np.array(Image.open(file_path)) / 256.0
+        disparity_map = np.asarray(Image.open(file_path)) / 256.0
         valid_mask = disparity_map > 0.0
         # unsqueeze the disparity map into (C, H, W) format
         disparity_map = disparity_map[None, :, :]
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Tuple:
-        return super().__getitem__(index)
 
-
-class StereoKitti2015(StereoMatchingDataset):
+class Kitti2015Stereo(StereoMatchingDataset):
     """ "Kitti dataset from the `2015 <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php>`_ stereo evaluation benchmark.
 
     The dataset is expected to have the following structure: ::
@@ -699,17 +674,14 @@ class StereoKitti2015(StereoMatchingDataset):
         if not os.path.exists(file_path):
             return None, None
 
-        disparity_map = np.array(Image.open(file_path)) / 256.0
+        disparity_map = np.asarray(Image.open(file_path)) / 256.0
         valid_mask = disparity_map < 0.0
         # unsqueeze the disparity map into (C, H, W) format
         disparity_map = disparity_map[None, :, :]
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Tuple:
-        return super().__getitem__(index)
 
-
-class StereoSintel(StereoMatchingDataset):
+class SintelStereo(StereoMatchingDataset):
     """ "Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
 
     The dataset is expected to have the following structure: ::
@@ -793,7 +765,7 @@ class StereoSintel(StereoMatchingDataset):
             return None, None
 
         # disparity decoding as per Sintel instructions in the README provided with the dataset
-        disparity_map = np.array(Image.open(file_path), dtype=np.float32)
+        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
         r, g, b = np.split(disparity_map, 3, axis=-1)
         disparity_map = r * 4 + g / (2 ** 6) + b / (2 ** 14)
         # reshape into (C, H, W) format
@@ -801,18 +773,15 @@ class StereoSintel(StereoMatchingDataset):
         # find the appropiate file paths
         occlued_mask_path, out_of_frame_mask_path = self._get_oclussion_mask_paths(file_path)
         # occlusion masks
-        valid_mask = np.array(Image.open(occlued_mask_path)) == 0
+        valid_mask = np.asarray(Image.open(occlued_mask_path)) == 0
         # out of frame masks
-        off_mask = np.array(Image.open(out_of_frame_mask_path)) == 0
+        off_mask = np.asarray(Image.open(out_of_frame_mask_path)) == 0
         # combine the masks together
         valid_mask = np.logical_and(off_mask, valid_mask)
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Tuple:
-        return super().__getitem__(index)
 
-
-class StereoSceneFlow(StereoMatchingDataset):
+class SceneFlowStereo(StereoMatchingDataset):
     """Dataset interface for `Scene Flow <https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html>`_ datasets.
 
     The dataset is expected to have the following structre: ::
@@ -895,11 +864,8 @@ class StereoSceneFlow(StereoMatchingDataset):
         valid = np.ones(disparity.shape[1:]).astype(np.bool_)
         return disparity, valid
 
-    def __getitem__(self, index: int) -> Tuple:
-        return super().__getitem__(index)
 
-
-class StereoFallingThings(StereoMatchingDataset):
+class FallingThingsStereo(StereoMatchingDataset):
     """FallingThings `<https://research.nvidia.com/publication/2018-06_falling-things-synthetic-dataset-3d-object-detection-and-pose-estimation>`_ dataset
 
     The dataset is expected to have the following structre: ::
@@ -968,7 +934,7 @@ class StereoFallingThings(StereoMatchingDataset):
 
     def _read_disparity(self, file_path: str) -> Tuple:
         # (H, W) image
-        depth = np.array(Image.open(file_path))
+        depth = np.asarray(Image.open(file_path))
         # as per https://research.nvidia.com/sites/default/files/pubs/2018-06_Falling-Things/readme_0.txt
         # in order to extract disparity from depth maps
         with open(os.path.split(file_path)[0] + "/_camera_settings.json", "r") as f:
@@ -1034,7 +1000,7 @@ class InStereo2k(StereoMatchingDataset):
         self._disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
 
     def _read_disparity(self, file_path: str) -> Tuple:
-        disparity = np.array(Image.open(file_path), dtype=np.float32)
+        disparity = np.asarray(Image.open(file_path), dtype=np.float32)
         valid = np.ones_like(disparity).astype(np.bool_)
         # unsqueeze disparity to (C, H, W)
         disparity = disparity[None, :, :]

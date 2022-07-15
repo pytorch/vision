@@ -24,7 +24,7 @@ import torch
 import torchvision.datasets
 import torchvision.io
 from common_utils import get_tmp_dir, disable_console_output
-
+from torchvision.transforms.functional import get_dimensions
 
 __all__ = [
     "UsageError",
@@ -937,15 +937,15 @@ def create_random_string(length: int, *digits: str) -> str:
 def shape_test_for_stereo_disp(
     left: PIL.Image.Image, right: PIL.Image.Image, disparity: np.ndarray, valid_mask: np.ndarray
 ):
-    left_array = np.array(left)
-    right_array = np.array(right)
-    h, w, c = left_array.shape
+    left_dims = get_dimensions(left)
+    right_dims = get_dimensions(right)
+    c, h, w = left_dims
     # check that left and right are the same size
-    assert left_array.shape == right_array.shape
+    assert left_dims == right_dims
     # check general shapes
     assert c == 3
-    assert len(disparity.shape) == 3
-    assert len(valid_mask.shape) == 2
+    assert disparity.ndim == 3
+    assert valid_mask.ndim == 2
     assert disparity.shape == (1, h, w)
     # check that valid mask is the same size as the disparity
     _, dh, dw = disparity.shape
@@ -955,11 +955,11 @@ def shape_test_for_stereo_disp(
 
 
 def shape_test_for_stereo_none(left: PIL.Image.Image, right: PIL.Image.Image, disparity: None, valid_mask: None):
-    left_array = np.array(left)
-    right_array = np.array(right)
-    _, _, c = left_array.shape
+    left_dims = get_dimensions(left)
+    right_dims = get_dimensions(right)
+    c, _, _ = left_dims
     # check that left and right are the same size
-    assert left_array.shape == right_array.shape
+    assert left_dims == right_dims
     # check general shapes
     assert c == 3
     assert disparity is None

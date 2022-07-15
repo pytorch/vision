@@ -2672,8 +2672,8 @@ class RenderedSST2TestCase(datasets_utils.ImageDatasetTestCase):
         return len(sampled_classes) * num_images_per_class[config["split"]]
 
 
-class StereoETH3DTestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoETH3D
+class ETH3DTStereoestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.ETH3DStereo
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
@@ -2745,41 +2745,37 @@ class StereoETH3DTestCase(datasets_utils.ImageDatasetTestCase):
 
 class CREStereoTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.CREStereo
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("tree", "shapenet", "reflective", "hole"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
     def inject_fake_data(self, tmpdir, config):
         crestereo_dir = pathlib.Path(tmpdir) / "CREStereo"
         os.makedirs(crestereo_dir, exist_ok=True)
 
-        split_dir = crestereo_dir / config["split"]
-        os.makedirs(split_dir, exist_ok=True)
+        examples = {"tree": 2, "shapenet": 3, "reflective": 6, "hole": 5}
 
-        num_examples = {"tree": 2, "shapenet": 3, "reflective": 6, "hole": 5}.get(config["split"], 0)
+        for category_name in ["shapenet", "reflective", "tree", "hole"]:
+            split_dir = crestereo_dir / category_name
+            os.makedirs(split_dir, exist_ok=True)
+            num_examples = examples[category_name]
 
-        for idx in range(num_examples):
-            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.jpg", size=(100, 100))
-            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.jpg", size=(100, 100))
-            # these are going to end up being gray scale images
-            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.disp.jpg", size=(1, 100, 100))
-            datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.disp.jpg", size=(1, 100, 100))
+            for idx in range(num_examples):
+                p = datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.jpg", size=(100, 100))
+                print(p)
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.jpg", size=(100, 100))
+                # these are going to end up being gray scale images
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.disp.png", size=(1, 100, 100))
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.disp.png", size=(1, 100, 100))
 
-        return num_examples
+        return sum(examples.values())
 
     def test_splits(self):
-        for split in ("tree", "shapenet", "reflective", "hole"):
-            with self.create_dataset(split=split) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
-
-    def test_bad_input(self):
-        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
-            with self.create_dataset(split="bad"):
-                pass
+        with self.create_dataset() as (dataset, _):
+            for left, right, disparity, valid_mask in dataset:
+                datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
 
 
-class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoMiddlebury2014
+class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Middlebury2014Stereo
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("train", "additional"),
         calibration=("perfect", "imperfect", "both"),
@@ -2789,7 +2785,7 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
 
     @staticmethod
     def _make_scene_folder(root_dir: str, scene_name: str, split: str) -> List[str]:
-        calibrations = [""] if split == "test" else ["-perfect", "-imperfect"]
+        calibrations = [None] if split == "test" else ["-perfect", "-imperfect"]
         scene_dirs = []
         for c in calibrations:
             scene_dir = os.path.join(root_dir, f"{scene_name}{c}")
@@ -2851,9 +2847,9 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
         # train set invalid
         split = "train"
         calibration = None
-        with pytest.warns(
-            RuntimeWarning,
-            match=f"\nSplit '{split}' has calibration settings, however None was provided as an argument."
+        with pytest.raises(
+            ValueError,
+            match=f"Split '{split}' has calibration settings, however None was provided as an argument."
             f"\nSetting calibration to 'perfect' for split '{split}'. Available calibration settings are: 'perfect', 'imperfect', 'both'.",
         ):
             with self.create_dataset(split=split, calibration=calibration):
@@ -2863,8 +2859,8 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
         # test set invalid
         split = "test"
         calibration = "perfect"
-        with pytest.warns(
-            RuntimeWarning, match="\nSplit 'test' has only no calibration settings, ignoring calibration argument."
+        with pytest.raises(
+            ValueError, match="Split 'test' has only no calibration settings, please set `calibration=None`."
         ):
             with self.create_dataset(split=split, calibration=calibration):
                 pass
@@ -2875,8 +2871,8 @@ class StereoMiddlebury2014TestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
-class StereoKitti2012TestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoKitti2012
+class Kitti2012StereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Kitti2012Stereo
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
@@ -2934,8 +2930,8 @@ class StereoKitti2012TestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
-class StereoKitti2015TestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoKitti2015
+class Kitti2015StereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Kitti2015Stereo
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
@@ -3002,8 +2998,8 @@ class StereoKitti2015TestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
-class StereoSceneFlowTestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoSceneFlow
+class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SceneFlowStereo
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("FlyingThings3D", "Driving", "Monkaa"), pass_name=("clean", "final")
     )
@@ -3079,8 +3075,8 @@ class StereoSceneFlowTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
-class StereoFallingThingsTestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoFallingThings
+class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FallingThingsStereo
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("single", "mixed"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
@@ -3100,10 +3096,10 @@ class StereoFallingThingsTestCase(datasets_utils.ImageDatasetTestCase):
         paths.append(datasets_utils.create_image_file(root, "image1.right.jpg", size=(3, size[1], size[0])))
         # single channel depth maps
         paths.append(
-            StereoFallingThingsTestCase._make_dummy_depth_map(root, "image1.left.depth.png", size=(size[0], size[1]))
+            FallingThingsStereoTestCase._make_dummy_depth_map(root, "image1.left.depth.png", size=(size[0], size[1]))
         )
         paths.append(
-            StereoFallingThingsTestCase._make_dummy_depth_map(root, "image1.right.depth.png", size=(size[0], size[1]))
+            FallingThingsStereoTestCase._make_dummy_depth_map(root, "image1.right.depth.png", size=(size[0], size[1]))
         )
         # camera settings json. Minimal example for _read_disparity function testing
         settings_json = {"camera_settings": [{"intrinsic_settings": {"fx": 1}}]}
@@ -3142,8 +3138,8 @@ class StereoFallingThingsTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
-class StereoSintelTestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StereoSintel
+class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SintelStereo
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
     def inject_fake_data(self, tmpdir, config):

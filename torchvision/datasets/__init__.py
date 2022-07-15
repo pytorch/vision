@@ -1,12 +1,12 @@
 from ._optical_flow import KittiFlow, Sintel, FlyingChairs, FlyingThings3D, HD1K
 from ._stereo_matching import (
-    StereoETH3D,
-    StereoFallingThings,
-    StereoKitti2012,
-    StereoKitti2015,
-    StereoMiddlebury2014,
-    StereoSceneFlow,
-    StereoSintel,
+    ETH3DStereo,
+    FallingThingsStereo,
+    Kitti2012Stereo,
+    Kitti2015Stereo,
+    Middlebury2014Stereo,
+    SceneFlowStereo,
+    SintelStereo,
     CREStereo,
     InStereo2k,
 )
