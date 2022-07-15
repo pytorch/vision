@@ -87,8 +87,8 @@ class TestSmoke:
         # transforms.RandomEqualize(),
         # transforms.RandomInvert(),
         # transforms.RandomPosterize(bits=4),
-        transforms.RandomSolarize(threshold=0.5),
-        transforms.RandomAdjustSharpness(sharpness_factor=0.5),
+        # transforms.RandomSolarize(threshold=0.5),
+        # transforms.RandomAdjustSharpness(sharpness_factor=0.5),
     )
     def test_common(self, transform, input):
         transform(input)
