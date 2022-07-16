@@ -98,12 +98,8 @@ class FCOSHead(nn.Module):
         )
 
         # ctrness loss
-        # bbox_reg_targets = [
-        #    self.box_coder.encode_single(anchors_per_image, boxes_targets_per_image)
-        #    for anchors_per_image, boxes_targets_per_image in zip(anchors, all_gt_boxes_targets)
-        # ]
         bbox_reg_targets = self.box_coder.encode_all(anchors, all_gt_boxes_targets)
-        # bbox_reg_targets = torch.stack(bbox_reg_targets, dim=0)
+
         if len(bbox_reg_targets) == 0:
             gt_ctrness_targets = bbox_reg_targets.new_zeros(bbox_reg_targets.size()[:-1])
         else:
