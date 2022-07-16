@@ -83,6 +83,12 @@ class TestSmoke:
         transforms.RandomRotation(degrees=(-45, 45)),
         transforms.RandomAffine(degrees=(-45, 45)),
         transforms.RandomCrop([16, 16], padding=1, pad_if_needed=True),
+        # TODO: Something wrong with input data setup. Let's fix that
+        # transforms.RandomEqualize(),
+        # transforms.RandomInvert(),
+        # transforms.RandomPosterize(bits=4),
+        # transforms.RandomSolarize(threshold=0.5),
+        # transforms.RandomAdjustSharpness(sharpness_factor=0.5),
     )
     def test_common(self, transform, input):
         transform(input)
@@ -699,3 +705,28 @@ class TestGaussianBlur:
         params = transform._get_params(inpt)
 
         fn.assert_called_once_with(inpt, **params)
+
+
+class TestRandomColorOp:
+    @pytest.mark.parametrize("p", [0.0, 1.0])
+    @pytest.mark.parametrize(
+        "transform_cls, func_op_name, kwargs",
+        [
+            (transforms.RandomEqualize, "equalize", {}),
+            (transforms.RandomInvert, "invert", {}),
+            (transforms.RandomAutocontrast, "autocontrast", {}),
+            (transforms.RandomPosterize, "posterize", {"bits": 4}),
+            (transforms.RandomSolarize, "solarize", {"threshold": 0.5}),
+            (transforms.RandomAdjustSharpness, "adjust_sharpness", {"sharpness_factor": 0.5}),
+        ],
+    )
+    def test__transform(self, p, transform_cls, func_op_name, kwargs, mocker):
+        transform = transform_cls(p=p, **kwargs)
+
+        fn = mocker.patch(f"torchvision.prototype.transforms.functional.{func_op_name}")
+        inpt = mocker.MagicMock(spec=features.Image)
+        _ = transform(inpt)
+        if p > 0.0:
+            fn.assert_called_once_with(inpt, **kwargs)
+        else:
+            fn.call_count == 0
