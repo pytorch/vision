@@ -270,7 +270,7 @@ class BoxLinearCoder:
 
         return targets
 
-    def encode_all(self, reference_boxes: List[Tensor], proposals: list[Tensor]) -> Tensor:
+    def encode_all(self, reference_boxes: List[Tensor], proposals: List[Tensor]) -> Tensor:
         """
         vectorized version of `encode_single`
         Args:
