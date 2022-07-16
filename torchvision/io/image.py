@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List
 from warnings import warn
 
 import torch
@@ -162,6 +163,11 @@ def decode_jpeg(
     else:
         output = torch.ops.image.decode_jpeg(input, mode.value)
     return output
+
+def batch_decode_jpeg_cuda(
+    inputs: List[torch.Tensor], num_threads: int, device: str = "cuda",
+):
+    return torch.ops.image.batch_decode_jpeg_cuda(inputs, device, num_threads)
 
 
 def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
