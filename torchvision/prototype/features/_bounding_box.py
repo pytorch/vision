@@ -207,3 +207,14 @@ class BoundingBox(_Feature):
 
         output = _F.perspective_bounding_box(self, self.format, perspective_coeffs)
         return BoundingBox.new_like(self, output, dtype=output.dtype)
+
+    def elastic(
+        self,
+        displacement: torch.Tensor,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    ) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.elastic_bounding_box(self, self.format, displacement)
+        return BoundingBox.new_like(self, output, dtype=output.dtype)

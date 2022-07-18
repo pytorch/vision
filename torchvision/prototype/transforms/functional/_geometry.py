@@ -11,6 +11,8 @@ from torchvision.transforms.functional import (
     _get_inverse_affine_matrix,
     InterpolationMode,
     _compute_output_size,
+    pil_to_tensor,
+    to_pil_image,
 )
 
 from ._meta import convert_bounding_box_format, get_dimensions_image_tensor, get_dimensions_image_pil
@@ -759,8 +761,8 @@ def perspective_bounding_box(
     ).view(original_shape)
 
 
-def perspective_segmentation_mask(img: torch.Tensor, perspective_coeffs: List[float]) -> torch.Tensor:
-    return perspective_image_tensor(img, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST)
+def perspective_segmentation_mask(mask: torch.Tensor, perspective_coeffs: List[float]) -> torch.Tensor:
+    return perspective_image_tensor(mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST)
 
 
 def perspective(
@@ -777,6 +779,59 @@ def perspective(
         fill = _convert_fill_arg(fill)
 
         return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
+
+
+def elastic_image_tensor(
+    img: torch.Tensor,
+    displacement: torch.Tensor,
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    fill: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return _FT.elastic_transform(img, displacement, interpolation=interpolation.value, fill=fill)
+
+
+def elastic_image_pil(
+    img: PIL.Image.Image,
+    displacement: torch.Tensor,
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+) -> PIL.Image.Image:
+    t_img = pil_to_tensor(img)
+    fill = _convert_fill_arg(fill)
+
+    output = elastic_image_tensor(t_img, displacement, interpolation=interpolation, fill=fill)
+    return to_pil_image(output, mode=img.mode)
+
+
+def elastic_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    displacement: torch.Tensor,
+) -> torch.Tensor:
+    pass
+
+
+def elastic_segmentation_mask(mask: torch.Tensor, displacement: torch.Tensor) -> torch.Tensor:
+    return elastic_image_tensor(mask, displacement=displacement, interpolation=InterpolationMode.NEAREST)
+
+
+def elastic(
+    inpt: DType,
+    displacement: torch.Tensor,
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+) -> DType:
+    if isinstance(inpt, features._Feature):
+        return inpt.elastic(displacement, interpolation=interpolation, fill=fill)
+    elif isinstance(inpt, PIL.Image.Image):
+        return elastic_image_pil(inpt, displacement, interpolation=interpolation, fill=fill)
+    else:
+        fill = _convert_fill_arg(fill)
+
+        return elastic_image_tensor(inpt, displacement, interpolation=interpolation, fill=fill)
+
+
+elastic_transform = elastic
 
 
 def _center_crop_parse_output_size(output_size: List[int]) -> List[int]:
