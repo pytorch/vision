@@ -2724,18 +2724,19 @@ class ETH3DTStereoestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_examples
 
-    def test_training_test_splits(self):
+    def test_training_splits(self):
         with self.create_dataset(split="train") as (dataset, _):
             assert dataset._images and len(dataset._images) == len(
                 dataset._disparities
             ), "Training images do not match with training disparities"
             for left, right, disparity, valid_mask in dataset:
-                datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
+                datasets_utils.shape_test_for_stereo_gt_w_mask(left, right, disparity, valid_mask)
 
+    def test_testing_splits(self):
         with self.create_dataset(split="test") as (dataset, _):
             assert all(d == ("", "") for d in dataset._disparities)
-            for left, right, disparity, valid_mask in dataset:
-                datasets_utils.shape_test_for_stereo_none(left, right, disparity, valid_mask)
+            for left, right, disparity, _ in dataset:
+                datasets_utils.shape_test_for_stereo_no_gt(left, right, disparity)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -2745,7 +2746,7 @@ class ETH3DTStereoestCase(datasets_utils.ImageDatasetTestCase):
 
 class CREStereoTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.CREStereo
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, np.ndarray, type(None))
 
     def inject_fake_data(self, tmpdir, config):
         crestereo_dir = pathlib.Path(tmpdir) / "CREStereo"
@@ -2759,8 +2760,7 @@ class CREStereoTestCase(datasets_utils.ImageDatasetTestCase):
             num_examples = examples[category_name]
 
             for idx in range(num_examples):
-                p = datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.jpg", size=(100, 100))
-                print(p)
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.jpg", size=(100, 100))
                 datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.jpg", size=(100, 100))
                 # these are going to end up being gray scale images
                 datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.disp.png", size=(1, 100, 100))
@@ -2770,8 +2770,8 @@ class CREStereoTestCase(datasets_utils.ImageDatasetTestCase):
 
     def test_splits(self):
         with self.create_dataset() as (dataset, _):
-            for left, right, disparity, valid_mask in dataset:
-                datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
+            for left, right, disparity, mask in dataset:
+                datasets_utils.shape_test_for_stereo_gt_no_mask(left, right, disparity)
 
 
 class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
@@ -2781,7 +2781,7 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
         calibration=("perfect", "imperfect", "both"),
         use_ambient_views=(True, False),
     )
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
 
     @staticmethod
     def _make_scene_folder(root_dir: str, scene_name: str, split: str) -> List[str]:
@@ -2826,18 +2826,18 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
     def test_train_splits(self):
         for split, calibration in itertools.product(["train", "additional"], ["perfect", "imperfect", "both"]):
             with self.create_dataset(split=split, calibration=calibration) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
+                for left, right, disparity in dataset:
+                    datasets_utils.shape_test_for_stereo_gt_no_mask(left, right, disparity)
 
     def test_test_split(self):
         for split in ["test"]:
             with self.create_dataset(split=split, calibration=None) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    datasets_utils.shape_test_for_stereo_none(left, right, disparity, valid_mask)
+                for left, right, disparity in dataset:
+                    datasets_utils.shape_test_for_stereo_no_gt(left, right, disparity)
 
     def test_augmented_view_usage(self):
         with self.create_dataset(split="train", use_ambient_views=True) as (dataset, _):
-            for left, right, _, _ in dataset:
+            for left, right, _ in dataset:
                 left_array = np.array(left)
                 right_array = np.array(right)
                 # check that left and right are the same size
@@ -2915,14 +2915,16 @@ class Kitti2012StereoTestCase(datasets_utils.ImageDatasetTestCase):
     def test_train_splits(self):
         for split in ["train"]:
             with self.create_dataset(split=split) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
+                for left, right, disparity, mask in dataset:
+                    assert mask is None
+                    datasets_utils.shape_test_for_stereo_gt_no_mask(left, right, disparity)
 
     def test_test_split(self):
         for split in ["test"]:
             with self.create_dataset(split=split) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    datasets_utils.shape_test_for_stereo_none(left, right, disparity, valid_mask)
+                for left, right, disparity, mask in dataset:
+                    assert mask is None
+                    datasets_utils.shape_test_for_stereo_no_gt(left, right, disparity)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -2983,14 +2985,16 @@ class Kitti2015StereoTestCase(datasets_utils.ImageDatasetTestCase):
     def test_train_splits(self):
         for split in ["train"]:
             with self.create_dataset(split=split) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
+                for left, right, disparity, mask in dataset:
+                    assert mask is None
+                    datasets_utils.shape_test_for_stereo_gt_no_mask(left, right, disparity)
 
     def test_test_split(self):
         for split in ["test"]:
             with self.create_dataset(split=split) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    datasets_utils.shape_test_for_stereo_none(left, right, disparity, valid_mask)
+                for left, right, disparity, mask in dataset:
+                    assert mask is None
+                    datasets_utils.shape_test_for_stereo_no_gt(left, right, disparity)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -3003,7 +3007,7 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("FlyingThings3D", "Driving", "Monkaa"), pass_name=("clean", "final")
     )
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
 
     @staticmethod
     def _create_pfm_folder(
@@ -3066,8 +3070,8 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
     def test_splits(self):
         for split_name, pass_name in itertools.product(["FlyingThings3D", "Driving", "Monkaa"], ["clean", "final"]):
             with self.create_dataset(split=split_name, pass_name=pass_name) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
+                for left, right, disparity in dataset:
+                    datasets_utils.shape_test_for_stereo_gt_no_mask(left, right, disparity)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -3078,7 +3082,7 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
 class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.FallingThingsStereo
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("single", "mixed"))
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
 
     @staticmethod
     def _make_dummy_depth_map(root: str, name: str, size: Tuple[int, int]):
@@ -3129,8 +3133,8 @@ class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
     def test_splits(self):
         for split_name in ["single", "mixed"]:
             with self.create_dataset(split=split_name) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
+                for left, right, disparity in dataset:
+                    datasets_utils.shape_test_for_stereo_gt_no_mask(left, right, disparity)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -3140,6 +3144,7 @@ class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
 
 class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SintelStereo
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(pass_name=("final", "clean", "both"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
     def inject_fake_data(self, tmpdir, config):
@@ -3150,25 +3155,31 @@ class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
         os.makedirs(split_dir, exist_ok=True)
 
         # a single setting, since there are no splits
-        num_examples = 4
+        num_examples = {"final": 2, "clean": 2}
+        pass_names = {
+            "final": ["final"],
+            "clean": ["clean"],
+            "both": ["final", "clean"],
+        }.get(config["pass_name"], [])
 
-        for view in ["final_left", "final_right"]:
-            root = split_dir / view
-            os.makedirs(root, exist_ok=True)
+        for p in pass_names:
+            for view in [f"{p}_left", f"{p}_right"]:
+                root = split_dir / view
+                os.makedirs(root, exist_ok=True)
 
-            datasets_utils.create_image_folder(
-                root=root,
-                name="scene1",
-                file_name_fn=lambda i: f"{i:06d}.png",
-                num_examples=num_examples,
-                size=(3, 100, 200),
-            )
+                datasets_utils.create_image_folder(
+                    root=root,
+                    name="scene1",
+                    file_name_fn=lambda i: f"{i:06d}.png",
+                    num_examples=num_examples[p],
+                    size=(3, 100, 200),
+                )
 
         datasets_utils.create_image_folder(
             root=split_dir / "occlusions",
             name="scene1",
             file_name_fn=lambda i: f"{i:06d}.png",
-            num_examples=num_examples,
+            num_examples=2,
             size=(1, 100, 200),
         )
 
@@ -3176,7 +3187,7 @@ class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
             root=split_dir / "outofframe",
             name="scene1",
             file_name_fn=lambda i: f"{i:06d}.png",
-            num_examples=num_examples,
+            num_examples=2,
             size=(1, 100, 200),
         )
 
@@ -3184,21 +3195,32 @@ class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
             root=split_dir / "disparities",
             name="scene1",
             file_name_fn=lambda i: f"{i:06d}.png",
-            num_examples=num_examples,
+            num_examples=2,
             size=(3, 100, 200),
         )
+
+        if config["pass_name"] == "both":
+            num_examples = sum(num_examples.values())
+        else:
+            num_examples = num_examples.get(config["pass_name"], 0)
 
         return num_examples
 
     def test_splits(self):
-        with self.create_dataset() as (dataset, _):
-            for left, right, disparity, valid_mask in dataset:
-                datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
+        for pass_name in ["final", "clean", "both"]:
+            with self.create_dataset(pass_name=pass_name) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    datasets_utils.shape_test_for_stereo_gt_w_mask(left, right, disparity, valid_mask)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
+            with self.create_dataset(pass_name="bad"):
+                pass
 
 
 class InStereo2k(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.InStereo2k
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
 
     @staticmethod
@@ -3228,8 +3250,8 @@ class InStereo2k(datasets_utils.ImageDatasetTestCase):
     def test_splits(self):
         for split_name in ["train", "test"]:
             with self.create_dataset(split=split_name) as (dataset, _):
-                for left, right, disparity, valid_mask in dataset:
-                    datasets_utils.shape_test_for_stereo_disp(left, right, disparity, valid_mask)
+                for left, right, disparity in dataset:
+                    datasets_utils.shape_test_for_stereo_gt_no_mask(left, right, disparity)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):

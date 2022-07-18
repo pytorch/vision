@@ -934,7 +934,7 @@ def create_random_string(length: int, *digits: str) -> str:
     return "".join(random.choice(digits) for _ in range(length))
 
 
-def shape_test_for_stereo_disp(
+def shape_test_for_stereo_gt_w_mask(
     left: PIL.Image.Image, right: PIL.Image.Image, disparity: np.ndarray, valid_mask: np.ndarray
 ):
     left_dims = get_dimensions(left)
@@ -945,7 +945,6 @@ def shape_test_for_stereo_disp(
     # check general shapes
     assert c == 3
     assert disparity.ndim == 3
-    assert valid_mask.ndim == 2
     assert disparity.shape == (1, h, w)
     # check that valid mask is the same size as the disparity
     _, dh, dw = disparity.shape
@@ -954,7 +953,19 @@ def shape_test_for_stereo_disp(
     assert dw == mw
 
 
-def shape_test_for_stereo_none(left: PIL.Image.Image, right: PIL.Image.Image, disparity: None, valid_mask: None):
+def shape_test_for_stereo_gt_no_mask(left: PIL.Image.Image, right: PIL.Image.Image, disparity: np.ndarray):
+    left_dims = get_dimensions(left)
+    right_dims = get_dimensions(right)
+    c, h, w = left_dims
+    # check that left and right are the same size
+    assert left_dims == right_dims
+    # check general shapes
+    assert c == 3
+    assert disparity.ndim == 3
+    assert disparity.shape == (1, h, w)
+
+
+def shape_test_for_stereo_no_gt(left: PIL.Image.Image, right: PIL.Image.Image, disparity: None):
     left_dims = get_dimensions(left)
     right_dims = get_dimensions(right)
     c, _, _ = left_dims
@@ -963,7 +974,6 @@ def shape_test_for_stereo_none(left: PIL.Image.Image, right: PIL.Image.Image, di
     # check general shapes
     assert c == 3
     assert disparity is None
-    assert valid_mask is None
 
 
 def make_fake_pfm_file(h, w, file_name):
