@@ -292,6 +292,7 @@ class RandomZoomOut(_RandomApplyTransform):
         bottom = canvas_height - (top + orig_h)
         padding = [left, top, right, bottom]
 
+        # vfdev-5: Can we put that into pad_image_tensor ?
         fill = self.fill
         if not isinstance(fill, collections.abc.Sequence):
             fill = [fill] * orig_c
@@ -493,3 +494,60 @@ class RandomCrop(Transform):
         flat_inputs, spec = tree_flatten(sample)
         out_flat_inputs = self._forward(flat_inputs)
         return tree_unflatten(out_flat_inputs, spec)
+
+
+class RandomPerspective(_RandomApplyTransform):
+    def __init__(
+        self,
+        distortion_scale: float,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        p: float = 0.5,
+    ) -> None:
+        super().__init__(p=p)
+
+        _check_fill_arg(fill)
+        if not (0 <= distortion_scale <= 1):
+            raise ValueError("Argument distortion_scale value should be between 0 and 1")
+
+        self.distortion_scale = distortion_scale
+        self.interpolation = interpolation
+        self.fill = fill
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        # Get image size
+        # TODO: make it work with bboxes and segm masks
+        image = query_image(sample)
+        _, height, width = get_image_dimensions(image)
+
+        distortion_scale = self.distortion_scale
+
+        half_height = height // 2
+        half_width = width // 2
+        topleft = [
+            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1,)).item()),
+            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1,)).item()),
+        ]
+        topright = [
+            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1,)).item()),
+            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1,)).item()),
+        ]
+        botright = [
+            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1,)).item()),
+            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1,)).item()),
+        ]
+        botleft = [
+            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1,)).item()),
+            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1,)).item()),
+        ]
+        startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
+        endpoints = [topleft, topright, botright, botleft]
+        return dict(startpoints=startpoints, endpoints=endpoints)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.perspective(
+            inpt,
+            **params,
+            fill=self.fill,
+            interpolation=self.interpolation,
+        )

@@ -548,9 +548,11 @@ def test_scriptable(kernel):
         and all(
             feature_type not in name for feature_type in {"image", "segmentation_mask", "bounding_box", "label", "pil"}
         )
-        and name not in {"to_image_tensor", "InterpolationMode", "decode_video_with_av", "crop", "rotate"}
+        and name
+        not in {"to_image_tensor", "InterpolationMode", "decode_video_with_av", "crop", "rotate", "perspective"}
         # We skip 'crop' due to missing 'height' and 'width'
         # We skip 'rotate' due to non implemented yet expand=True case for bboxes
+        # We skip 'perspective' as it requires different input args than perspective_image_tensor etc
     ],
 )
 def test_functional_mid_level(func):
