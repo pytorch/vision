@@ -25,6 +25,15 @@ __all__ = [
 ]
 
 
+def _patch_merging_pad(x):
+    H, W, _ = x.shape[-3:]
+    x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+    return x
+
+
+torch.fx.wrap("_patch_merging_pad")
+
+
 class PatchMerging(nn.Module):
     """Patch Merging Layer.
     Args:
@@ -46,8 +55,7 @@ class PatchMerging(nn.Module):
         Returns:
             Tensor with layout of [..., H/2, W/2, 2*C]
         """
-        H, W, _ = x.shape[-3:]
-        x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+        x = _patch_merging_pad(x)
 
         x0 = x[..., 0::2, 0::2, :]  # ... H/2 W/2 C
         x1 = x[..., 1::2, 0::2, :]  # ... H/2 W/2 C
@@ -98,6 +106,7 @@ def shifted_window_attention(
     x = F.pad(input, (0, 0, 0, pad_r, 0, pad_b))
     _, pad_H, pad_W, _ = x.shape
 
+    shift_size = shift_size.copy()
     # If window size is larger than feature size, there is no need to shift window
     if window_size[0] >= pad_H:
         shift_size[0] = 0
