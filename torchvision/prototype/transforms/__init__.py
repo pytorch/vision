@@ -29,6 +29,7 @@ from ._geometry import (
     RandomZoomOut,
     RandomRotation,
     RandomAffine,
+    RandomPerspective,
 )
 from ._meta import ConvertBoundingBoxFormat, ConvertImageDtype, ConvertImageColorSpace
 from ._misc import Identity, GaussianBlur, Normalize, ToDtype, Lambda

@@ -350,7 +350,7 @@ class TestPad:
         transform = transforms.Pad(padding, fill=fill, padding_mode=padding_mode)
 
         fn = mocker.patch("torchvision.prototype.transforms.functional.pad")
-        inpt = mocker.MagicMock(spec=torch.Tensor)
+        inpt = mocker.MagicMock(spec=features.Image)
         _ = transform(inpt)
 
         fn.assert_called_once_with(inpt, padding=padding, fill=fill, padding_mode=padding_mode)
@@ -369,11 +369,12 @@ class TestRandomZoomOut:
 
     @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
     @pytest.mark.parametrize("side_range", [(1.0, 4.0), [2.0, 5.0]])
-    def test__get_params(self, fill, side_range):
+    def test__get_params(self, fill, side_range, mocker):
         transform = transforms.RandomZoomOut(fill=fill, side_range=side_range)
 
-        image = features.Image(torch.rand(1, 3, 32, 32))
-        c, h, w = image.shape[-3:]
+        image = mocker.MagicMock(spec=features.Image)
+        c = image.num_channels = 3
+        h, w = image.image_size = (24, 32)
 
         params = transform._get_params(image)
 
@@ -387,19 +388,22 @@ class TestRandomZoomOut:
     @pytest.mark.parametrize("fill", [0, [1, 2, 3], (2, 3, 4)])
     @pytest.mark.parametrize("side_range", [(1.0, 4.0), [2.0, 5.0]])
     def test__transform(self, fill, side_range, mocker):
-        image = features.Image(torch.rand(1, 3, 32, 32))
+        inpt = mocker.MagicMock(spec=features.Image)
+        inpt.num_channels = 3
+        inpt.image_size = (24, 32)
+
         transform = transforms.RandomZoomOut(fill=fill, side_range=side_range, p=1)
 
         fn = mocker.patch("torchvision.prototype.transforms.functional.pad")
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         torch.manual_seed(12)
-        _ = transform(image)
+        _ = transform(inpt)
         torch.manual_seed(12)
         torch.rand(1)  # random apply changes random state
-        params = transform._get_params(image)
+        params = transform._get_params(inpt)
 
-        fn.assert_called_once_with(image, **params)
+        fn.assert_called_once_with(inpt, **params)
 
 
 class TestRandomRotation:
@@ -449,7 +453,7 @@ class TestRandomRotation:
             assert transform.degrees == [float(-degrees), float(degrees)]
 
         fn = mocker.patch("torchvision.prototype.transforms.functional.rotate")
-        inpt = mocker.MagicMock(spec=torch.Tensor)
+        inpt = mocker.MagicMock(spec=features.Image)
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         torch.manual_seed(12)
@@ -504,9 +508,11 @@ class TestRandomAffine:
     @pytest.mark.parametrize("translate", [None, [0.1, 0.2]])
     @pytest.mark.parametrize("scale", [None, [0.7, 1.2]])
     @pytest.mark.parametrize("shear", [None, 2.0, [5.0, 15.0], [1.0, 2.0, 3.0, 4.0]])
-    def test__get_params(self, degrees, translate, scale, shear):
-        image = features.Image(torch.rand(1, 3, 32, 32))
-        h, w = image.shape[-2:]
+    def test__get_params(self, degrees, translate, scale, shear, mocker):
+        image = mocker.MagicMock(spec=features.Image)
+        image.num_channels = 3
+        image.image_size = (24, 32)
+        h, w = image.image_size
 
         transform = transforms.RandomAffine(degrees, translate=translate, scale=scale, shear=shear)
         params = transform._get_params(image)
@@ -564,7 +570,10 @@ class TestRandomAffine:
             assert transform.degrees == [float(-degrees), float(degrees)]
 
         fn = mocker.patch("torchvision.prototype.transforms.functional.affine")
-        inpt = features.Image(torch.rand(1, 3, 32, 32))
+        inpt = mocker.MagicMock(spec=features.Image)
+        inpt.num_channels = 3
+        inpt.image_size = (24, 32)
+
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         torch.manual_seed(12)
@@ -592,9 +601,11 @@ class TestRandomCrop:
         with pytest.raises(ValueError, match="Padding mode should be either"):
             transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
 
-    def test__get_params(self):
-        image = features.Image(torch.rand(1, 3, 32, 32))
-        h, w = image.shape[-2:]
+    def test__get_params(self, mocker):
+        image = mocker.MagicMock(spec=features.Image)
+        image.num_channels = 3
+        image.image_size = (24, 32)
+        h, w = image.image_size
 
         transform = transforms.RandomCrop([10, 10])
         params = transform._get_params(image)
@@ -614,7 +625,10 @@ class TestRandomCrop:
             output_size, padding=padding, pad_if_needed=pad_if_needed, fill=fill, padding_mode=padding_mode
         )
 
-        inpt = features.Image(torch.rand(1, 3, 32, 32))
+        inpt = mocker.MagicMock(spec=features.Image)
+        inpt.num_channels = 3
+        inpt.image_size = (32, 32)
+
         expected = mocker.MagicMock(spec=features.Image)
         expected.num_channels = 3
         if isinstance(padding, int):
@@ -696,7 +710,10 @@ class TestGaussianBlur:
             assert transform.sigma == (sigma, sigma)
 
         fn = mocker.patch("torchvision.prototype.transforms.functional.gaussian_blur")
-        inpt = features.Image(torch.rand(1, 3, 32, 32))
+        inpt = mocker.MagicMock(spec=features.Image)
+        inpt.num_channels = 3
+        inpt.image_size = (24, 32)
+
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         torch.manual_seed(12)
@@ -730,3 +747,58 @@ class TestRandomColorOp:
             fn.assert_called_once_with(inpt, **kwargs)
         else:
             fn.call_count == 0
+
+
+class TestRandomPerspective:
+    def test_assertions(self):
+        with pytest.raises(ValueError, match="Argument distortion_scale value should be between 0 and 1"):
+            transforms.RandomPerspective(distortion_scale=-1.0)
+
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.RandomPerspective(0.5, fill="abc")
+
+    def test__get_params(self, mocker):
+        dscale = 0.5
+        transform = transforms.RandomPerspective(dscale)
+        image = mocker.MagicMock(spec=features.Image)
+        image.num_channels = 3
+        image.image_size = (24, 32)
+
+        params = transform._get_params(image)
+
+        h, w = image.image_size
+        assert len(params["startpoints"]) == 4
+        for x, y in params["startpoints"]:
+            assert x in (0, w - 1)
+            assert y in (0, h - 1)
+
+        assert len(params["endpoints"]) == 4
+        for (x, y), name in zip(params["endpoints"], ["tl", "tr", "br", "bl"]):
+            if "t" in name:
+                assert 0 <= y <= int(dscale * h // 2), (x, y, name)
+            if "b" in name:
+                assert h - int(dscale * h // 2) - 1 <= y <= h, (x, y, name)
+            if "l" in name:
+                assert 0 <= x <= int(dscale * w // 2), (x, y, name)
+            if "r" in name:
+                assert w - int(dscale * w // 2) - 1 <= x <= w, (x, y, name)
+
+    @pytest.mark.parametrize("distortion_scale", [0.1, 0.7])
+    def test__transform(self, distortion_scale, mocker):
+        interpolation = InterpolationMode.BILINEAR
+        fill = 12
+        transform = transforms.RandomPerspective(distortion_scale, fill=fill, interpolation=interpolation)
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.perspective")
+        inpt = mocker.MagicMock(spec=features.Image)
+        inpt.num_channels = 3
+        inpt.image_size = (24, 32)
+        # vfdev-5, Feature Request: let's store params as Transform attribute
+        # This could be also helpful for users
+        torch.manual_seed(12)
+        _ = transform(inpt)
+        torch.manual_seed(12)
+        torch.rand(1)  # random apply changes random state
+        params = transform._get_params(inpt)
+
+        fn.assert_called_once_with(inpt, **params, fill=fill, interpolation=interpolation)
