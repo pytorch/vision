@@ -515,6 +515,57 @@ def gaussian_blur_image_tensor():
         yield SampleInput(image, kernel_size=kernel_size, sigma=sigma)
 
 
+@register_kernel_info_from_sample_inputs_fn
+def equalize_image_tensor():
+    for image in make_images(extra_dims=(), color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+        if image.dtype != torch.uint8:
+            continue
+        yield SampleInput(image)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def invert_image_tensor():
+    for image in make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+        yield SampleInput(image)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def posterize_image_tensor():
+    for image, bits in itertools.product(
+        make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
+        [1, 4, 8],
+    ):
+        if image.dtype != torch.uint8:
+            continue
+        yield SampleInput(image, bits=bits)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def solarize_image_tensor():
+    for image, threshold in itertools.product(
+        make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
+        [0.1, 0.5, 127.0],
+    ):
+        if image.is_floating_point() and threshold > 1.0:
+            continue
+        yield SampleInput(image, threshold=threshold)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def autocontrast_image_tensor():
+    for image in make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+        yield SampleInput(image)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def adjust_sharpness_image_tensor():
+    for image, sharpness_factor in itertools.product(
+        make_images(extra_dims=((4,),), color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
+        [0.1, 0.5],
+    ):
+        yield SampleInput(image, sharpness_factor=sharpness_factor)
+
+
 @pytest.mark.parametrize(
     "kernel",
     [
