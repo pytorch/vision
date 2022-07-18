@@ -11,6 +11,7 @@ from torchvision.transforms.functional import (
     _get_inverse_affine_matrix,
     InterpolationMode,
     _compute_output_size,
+    _get_perspective_coeffs,
     pil_to_tensor,
     to_pil_image,
 )
@@ -767,10 +768,13 @@ def perspective_segmentation_mask(mask: torch.Tensor, perspective_coeffs: List[f
 
 def perspective(
     inpt: DType,
-    perspective_coeffs: List[float],
+    startpoints: List[List[int]],
+    endpoints: List[List[int]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> DType:
+    perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
+
     if isinstance(inpt, features._Feature):
         return inpt.perspective(perspective_coeffs, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, PIL.Image.Image):
