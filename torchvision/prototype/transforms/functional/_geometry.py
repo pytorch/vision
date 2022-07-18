@@ -763,7 +763,9 @@ def perspective_bounding_box(
 
 
 def perspective_segmentation_mask(mask: torch.Tensor, perspective_coeffs: List[float]) -> torch.Tensor:
-    return perspective_image_tensor(mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST)
+    return perspective_image_tensor(
+        mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST
+    )
 
 
 def perspective(
@@ -812,6 +814,7 @@ def elastic_bounding_box(
     format: features.BoundingBoxFormat,
     displacement: torch.Tensor,
 ) -> torch.Tensor:
+    # TODO: implement transformation
     pass
 
 
