@@ -2708,12 +2708,12 @@ class ETH3DTStereoestCase(datasets_utils.ImageDatasetTestCase):
             datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=pfm_path)
 
     def inject_fake_data(self, tmpdir, config):
-        eth3d_dir = os.path.join(tmpdir, "ETH3D")
+        eth3d_dir = pathlib.Path(tmpdir) / "ETH3D"
 
         num_examples = 2 if config["split"] == "train" else 3
 
         split_name = "two_view_training" if config["split"] == "train" else "two_view_test"
-        split_dir = os.path.join(eth3d_dir, split_name)
+        split_dir = eth3d_dir / split_name
         self._create_scene_folder(num_examples, split_dir)
 
         if config["split"] == "train":
@@ -2784,9 +2784,10 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
     @staticmethod
     def _make_scene_folder(root_dir: str, scene_name: str, split: str) -> None:
         calibrations = [None] if split == "test" else ["-perfect", "-imperfect"]
+        root_dir = pathlib.Path(root_dir)
 
         for c in calibrations:
-            scene_dir = os.path.join(root_dir, f"{scene_name}{c}")
+            scene_dir = root_dir / f"{scene_name}{c}"
             os.makedirs(scene_dir, exist_ok=True)
             # make normal images first
             datasets_utils.create_image_file(root=scene_dir, name="im0.png", size=(3, 100, 100))
