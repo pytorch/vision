@@ -2693,7 +2693,7 @@ class ETH3DTStereoestCase(datasets_utils.ImageDatasetTestCase):
         return image_paths
 
     @staticmethod
-    def _create_annotation_folder(num_examples: int, root_dir: str) -> List[pathlib.Path]:
+    def _create_annotation_folder(num_examples: int, root_dir: str) -> None:
         paths = []
         # make the root_dir if it does not exits
         os.makedirs(root_dir, exist_ok=True)
@@ -2706,8 +2706,6 @@ class ETH3DTStereoestCase(datasets_utils.ImageDatasetTestCase):
             paths.append(datasets_utils.create_image_file(root=scene_dir, name="mask0nocc.png", size=(1, 100, 100)))
             pfm_path = os.path.join(scene_dir, "disp0GT.pfm")
             datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=pfm_path)
-            paths.append(pfm_path)
-        return paths
 
     def inject_fake_data(self, tmpdir, config):
         eth3d_dir = os.path.join(tmpdir, "ETH3D")
@@ -2784,9 +2782,9 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
 
     @staticmethod
-    def _make_scene_folder(root_dir: str, scene_name: str, split: str) -> List[str]:
+    def _make_scene_folder(root_dir: str, scene_name: str, split: str) -> None:
         calibrations = [None] if split == "test" else ["-perfect", "-imperfect"]
-        scene_dirs = []
+
         for c in calibrations:
             scene_dir = os.path.join(root_dir, f"{scene_name}{c}")
             os.makedirs(scene_dir, exist_ok=True)
@@ -2798,8 +2796,6 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
             # these are going to end up being gray scale images
             datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=os.path.join(scene_dir, "disp0.pfm"))
             datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=os.path.join(scene_dir, "disp1.pfm"))
-            scene_dirs.append(scene_dir)
-        return scene_dirs
 
     def inject_fake_data(self, tmpdir, config):
         split_scene_map = {
@@ -3012,15 +3008,12 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
     @staticmethod
     def _create_pfm_folder(
         root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: Tuple[int, int]
-    ) -> List[str]:
+    ) -> None:
         root = pathlib.Path(root) / name
         os.makedirs(root, exist_ok=True)
 
-        paths = []
         for i in range(num_examples):
             datasets_utils.make_fake_pfm_file(size[0], size[1], root / file_name_fn(i))
-            paths.append(str(root / file_name_fn(i)))
-        return paths
 
     def inject_fake_data(self, tmpdir, config):
         scene_flow_dir = pathlib.Path(tmpdir) / "SceneFlow"
@@ -3091,26 +3084,19 @@ class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
         PIL.Image.fromarray(image).save(file)
 
     @staticmethod
-    def _make_scene_folder(root: str, scene_name: str, size: Tuple[int, int]) -> List[str]:
-        paths = []
+    def _make_scene_folder(root: str, scene_name: str, size: Tuple[int, int]) -> None:
         root = pathlib.Path(root) / scene_name
         os.makedirs(root, exist_ok=True)
         # jpg images
-        paths.append(datasets_utils.create_image_file(root, "image1.left.jpg", size=(3, size[1], size[0])))
-        paths.append(datasets_utils.create_image_file(root, "image1.right.jpg", size=(3, size[1], size[0])))
+        datasets_utils.create_image_file(root, "image1.left.jpg", size=(3, size[1], size[0]))
+        datasets_utils.create_image_file(root, "image1.right.jpg", size=(3, size[1], size[0]))
         # single channel depth maps
-        paths.append(
-            FallingThingsStereoTestCase._make_dummy_depth_map(root, "image1.left.depth.png", size=(size[0], size[1]))
-        )
-        paths.append(
-            FallingThingsStereoTestCase._make_dummy_depth_map(root, "image1.right.depth.png", size=(size[0], size[1]))
-        )
+        FallingThingsStereoTestCase._make_dummy_depth_map(root, "image1.left.depth.png", size=(size[0], size[1]))
+        FallingThingsStereoTestCase._make_dummy_depth_map(root, "image1.right.depth.png", size=(size[0], size[1]))
         # camera settings json. Minimal example for _read_disparity function testing
         settings_json = {"camera_settings": [{"intrinsic_settings": {"fx": 1}}]}
         with open(root / "_camera_settings.json", "w") as f:
             json.dump(settings_json, f)
-
-        return paths
 
     def inject_fake_data(self, tmpdir, config):
         fallingthings_dir = pathlib.Path(tmpdir) / "FallingThings"
