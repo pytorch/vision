@@ -110,7 +110,7 @@ def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -
     return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value)
 
 
-def close_buffer(fn, buffer) -> Any:
+def close_buffer(fn: Callable, buffer: IO) -> Any:
     result = fn(buffer)
     buffer.close()
     return result
