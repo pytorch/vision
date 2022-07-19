@@ -24,7 +24,6 @@ import torch.utils.data
 from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 from torchvision.prototype.utils._internal import fromfile
-from torchvision.prototype.features import EncodedImage
 
 
 __all__ = [
@@ -111,7 +110,7 @@ def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -
     return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value)
 
 
-def close_buffer(fn, buffer):
+def close_buffer(fn, buffer) -> Any:
     result = fn(buffer)
     buffer.close()
     return result

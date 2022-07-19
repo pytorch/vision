@@ -10,22 +10,15 @@ from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data import DataLoader
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
+from torchdata.datapipes.iter import (
+    Demultiplexer,
+)
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
+from torchdata.datapipes.utils import StreamWrapper
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 from torchvision.prototype.features import Image, Label
-from torchdata.datapipes.utils import StreamWrapper
-
-
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Demultiplexer,
-    Filter,
-    IterKeyZipper,
-    LineReader,
-)
 
 assert_samples_equal = functools.partial(
     assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
@@ -89,7 +82,7 @@ class TestCommon:
         if not sample:
             raise AssertionError("Sample dictionary is empty.")
 
-        list(iterator) # Cleanups and closing streams in buffers
+        list(iterator)  # Cleanups and closing streams in buffers
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_num_samples(self, dataset_mock, config):
@@ -111,9 +104,9 @@ class TestCommon:
                 f"{sequence_to_str(sorted(vanilla_tensors), separate_last='and ')} contained vanilla tensors."
             )
 
-        list(iterator) # Cleanups and closing streams in buffers
+        list(iterator)  # Cleanups and closing streams in buffers
 
-        if (len(StreamWrapper.session_streams)>0):
+        if len(StreamWrapper.session_streams) > 0:
             Demultiplexer.buffers()
             raise Exception(StreamWrapper.session_streams)
 

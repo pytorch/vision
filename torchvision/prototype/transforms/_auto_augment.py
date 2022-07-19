@@ -1,5 +1,5 @@
 import math
-from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar, Union, Type
+from typing import Any, Dict, Tuple, Optional, Callable, List, cast, Sequence, TypeVar, Union, Type
 
 import PIL.Image
 import torch
@@ -9,7 +9,7 @@ from torchvision.prototype.utils._internal import query_recursively
 from torchvision.transforms.autoaugment import AutoAugmentPolicy
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image, InterpolationMode
 
-from ._utils import get_image_dimensions, is_simple_tensor
+from ._utils import get_image_dimensions
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -29,7 +29,10 @@ def _put_into_sample(sample: Any, id: Tuple[Any, ...], item: Any) -> Any:
 
 class _AutoAugmentBase(Transform):
     def __init__(
-        self, *, interpolation: InterpolationMode = InterpolationMode.NEAREST, fill: Optional[List[float]] = None
+        self,
+        *,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
     ) -> None:
         super().__init__()
         self.interpolation = interpolation
@@ -66,7 +69,7 @@ class _AutoAugmentBase(Transform):
 
     def _parse_fill(
         self, image: Union[PIL.Image.Image, torch.Tensor, features.Image], num_channels: int
-    ) -> Optional[List[float]]:
+    ) -> Union[int, float, Sequence[int], Sequence[float]]:
         fill = self.fill
 
         if isinstance(image, PIL.Image.Image) or fill is None:
@@ -79,36 +82,18 @@ class _AutoAugmentBase(Transform):
 
         return fill
 
-    def _dispatch_image_kernels(
-        self,
-        image_tensor_kernel: Callable,
-        image_pil_kernel: Callable,
-        input: Any,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
-        if isinstance(input, features.Image):
-            output = image_tensor_kernel(input, *args, **kwargs)
-            return features.Image.new_like(input, output)
-        elif is_simple_tensor(input):
-            return image_tensor_kernel(input, *args, **kwargs)
-        else:  # isinstance(input, PIL.Image.Image):
-            return image_pil_kernel(input, *args, **kwargs)
-
     def _apply_image_transform(
         self,
         image: Any,
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Optional[List[float]],
+        fill: Union[int, float, Sequence[int], Sequence[float]],
     ) -> Any:
         if transform_id == "Identity":
             return image
         elif transform_id == "ShearX":
-            return self._dispatch_image_kernels(
-                F.affine_image_tensor,
-                F.affine_image_pil,
+            return F.affine(
                 image,
                 angle=0.0,
                 translate=[0, 0],
@@ -118,9 +103,7 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "ShearY":
-            return self._dispatch_image_kernels(
-                F.affine_image_tensor,
-                F.affine_image_pil,
+            return F.affine(
                 image,
                 angle=0.0,
                 translate=[0, 0],
@@ -130,9 +113,7 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "TranslateX":
-            return self._dispatch_image_kernels(
-                F.affine_image_tensor,
-                F.affine_image_pil,
+            return F.affine(
                 image,
                 angle=0.0,
                 translate=[int(magnitude), 0],
@@ -142,9 +123,7 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "TranslateY":
-            return self._dispatch_image_kernels(
-                F.affine_image_tensor,
-                F.affine_image_pil,
+            return F.affine(
                 image,
                 angle=0.0,
                 translate=[0, int(magnitude)],
@@ -154,46 +133,25 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "Rotate":
-            return self._dispatch_image_kernels(F.rotate_image_tensor, F.rotate_image_pil, image, angle=magnitude)
+            return F.rotate(image, angle=magnitude)
         elif transform_id == "Brightness":
-            return self._dispatch_image_kernels(
-                F.adjust_brightness_image_tensor,
-                F.adjust_brightness_image_pil,
-                image,
-                brightness_factor=1.0 + magnitude,
-            )
+            return F.adjust_brightness(image, brightness_factor=1.0 + magnitude)
         elif transform_id == "Color":
-            return self._dispatch_image_kernels(
-                F.adjust_saturation_image_tensor,
-                F.adjust_saturation_image_pil,
-                image,
-                saturation_factor=1.0 + magnitude,
-            )
+            return F.adjust_saturation(image, saturation_factor=1.0 + magnitude)
         elif transform_id == "Contrast":
-            return self._dispatch_image_kernels(
-                F.adjust_contrast_image_tensor, F.adjust_contrast_image_pil, image, contrast_factor=1.0 + magnitude
-            )
+            return F.adjust_contrast(image, contrast_factor=1.0 + magnitude)
         elif transform_id == "Sharpness":
-            return self._dispatch_image_kernels(
-                F.adjust_sharpness_image_tensor,
-                F.adjust_sharpness_image_pil,
-                image,
-                sharpness_factor=1.0 + magnitude,
-            )
+            return F.adjust_sharpness(image, sharpness_factor=1.0 + magnitude)
         elif transform_id == "Posterize":
-            return self._dispatch_image_kernels(
-                F.posterize_image_tensor, F.posterize_image_pil, image, bits=int(magnitude)
-            )
+            return F.posterize(image, bits=int(magnitude))
         elif transform_id == "Solarize":
-            return self._dispatch_image_kernels(
-                F.solarize_image_tensor, F.solarize_image_pil, image, threshold=magnitude
-            )
+            return F.solarize(image, threshold=magnitude)
         elif transform_id == "AutoContrast":
-            return self._dispatch_image_kernels(F.autocontrast_image_tensor, F.autocontrast_image_pil, image)
+            return F.autocontrast(image)
         elif transform_id == "Equalize":
-            return self._dispatch_image_kernels(F.equalize_image_tensor, F.equalize_image_pil, image)
+            return F.equalize(image)
         elif transform_id == "Invert":
-            return self._dispatch_image_kernels(F.invert_image_tensor, F.invert_image_pil, image)
+            return F.invert(image)
         else:
             raise ValueError(f"No transform available for {transform_id}")
 
@@ -231,7 +189,7 @@ class AutoAugment(_AutoAugmentBase):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -393,7 +351,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -453,7 +411,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         *,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -512,7 +470,7 @@ class AugMix(_AutoAugmentBase):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[List[float]] = None,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10

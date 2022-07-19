@@ -350,7 +350,7 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
         raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
-def _parse_pad_padding(padding: List[int]) -> List[int]:
+def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
     if isinstance(padding, int):
         if torch.jit.is_scripting():
             # This maybe unreachable
@@ -370,7 +370,9 @@ def _parse_pad_padding(padding: List[int]) -> List[int]:
     return [pad_left, pad_right, pad_top, pad_bottom]
 
 
-def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
+def pad(
+    img: Tensor, padding: Union[int, List[int]], fill: Union[int, float] = 0, padding_mode: str = "constant"
+) -> Tensor:
     _assert_image_tensor(img)
 
     if not isinstance(padding, (int, tuple, list)):
@@ -383,8 +385,13 @@ def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mo
     if isinstance(padding, tuple):
         padding = list(padding)
 
-    if isinstance(padding, list) and len(padding) not in [1, 2, 4]:
-        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
+    if isinstance(padding, list):
+        # TODO: Jit is failing on loading this op when scripted and saved
+        # https://github.com/pytorch/pytorch/issues/81100
+        if len(padding) not in [1, 2, 4]:
+            raise ValueError(
+                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
+            )
 
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")

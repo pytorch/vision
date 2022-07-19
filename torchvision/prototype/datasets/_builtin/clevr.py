@@ -1,6 +1,7 @@
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
 
+from torchdata import janitor
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, JsonParser, UnBatcher
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
@@ -14,8 +15,6 @@ from torchvision.prototype.datasets.utils._internal import (
 from torchvision.prototype.features import Label, EncodedImage
 
 from .._api import register_dataset, register_info
-
-from torchdata import janitor
 
 NAME = "clevr"
 

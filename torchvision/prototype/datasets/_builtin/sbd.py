@@ -30,6 +30,7 @@ NAME = "sbd"
 
 from torchdata import janitor
 
+
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
     return dict(categories=read_categories_file(NAME))
