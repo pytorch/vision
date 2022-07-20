@@ -333,8 +333,8 @@ slow_models = [
     "swin_s",
     "swin_b",
     "swin_v2_t",
-    # "swin_v2_s",
-    # "swin_v2_b",
+    "swin_v2_s",
+    "swin_v2_b",
 ]
 for m in slow_models:
     _model_params[m] = {"input_shape": (1, 3, 64, 64)}
