@@ -21,14 +21,14 @@ __all__ = [
     "Swin_S_Weights",
     "Swin_B_Weights",
     "Swin_V2_T_Weights",
-    # "Swin_V2_S_Weights",
-    # "Swin_V2_B_Weights",
+    "Swin_V2_S_Weights",
+    "Swin_V2_B_Weights",
     "swin_t",
     "swin_s",
     "swin_b",
     "swin_v2_t",
-    # "swin_v2_s",
-    # "swin_v2_b",
+    "swin_v2_s",
+    "swin_v2_b",
 ]
 
 
@@ -716,6 +716,14 @@ class Swin_V2_T_Weights(WeightsEnum):
     pass
 
 
+class Swin_V2_S_Weights(WeightsEnum):
+    pass
+
+
+class Swin_V2_B_Weights(WeightsEnum):
+    pass
+
+
 def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
@@ -854,6 +862,82 @@ def swin_v2_t(*, weights: Optional[Swin_V2_T_Weights] = None, progress: bool = T
         num_heads=[3, 6, 12, 24],
         window_size=[8, 8],
         stochastic_depth_prob=0.2,
+        weights=weights,
+        progress=progress,
+        block=SwinTransformerBlockV2,
+        downsample_layer=PatchMergingV2,
+        **kwargs,
+    )
+
+
+def swin_v2_s(*, weights: Optional[Swin_V2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+    """
+    Constructs a swin_v2_small architecture from
+    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/pdf/2111.09883>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.Swin_V2_S_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_V2_S_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_transformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_V2_S_Weights
+        :members:
+    """
+    weights = Swin_V2_S_Weights.verify(weights)
+
+    return _swin_transformer(
+        patch_size=[4, 4],
+        embed_dim=96,
+        depths=[2, 2, 18, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=[8, 8],
+        stochastic_depth_prob=0.3,
+        weights=weights,
+        progress=progress,
+        block=SwinTransformerBlockV2,
+        downsample_layer=PatchMergingV2,
+        **kwargs,
+    )
+
+
+def swin_v2_b(*, weights: Optional[Swin_V2_B_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+    """
+    Constructs a swin_v2_base architecture from
+    `Swin Transformer V2: Scaling Up Capacity and Resolution <https://arxiv.org/pdf/2111.09883>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.Swin_V2_B_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_V2_B_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_transformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_V2_B_Weights
+        :members:
+    """
+    weights = Swin_V2_B_Weights.verify(weights)
+
+    return _swin_transformer(
+        patch_size=[4, 4],
+        embed_dim=128,
+        depths=[2, 2, 18, 2],
+        num_heads=[4, 8, 16, 32],
+        window_size=[8, 8],
+        stochastic_depth_prob=0.5,
         weights=weights,
         progress=progress,
         block=SwinTransformerBlockV2,
