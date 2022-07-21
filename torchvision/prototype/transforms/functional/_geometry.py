@@ -814,8 +814,37 @@ def elastic_bounding_box(
     format: features.BoundingBoxFormat,
     displacement: torch.Tensor,
 ) -> torch.Tensor:
-    # TODO: implement transformation
-    pass
+    displacement = displacement.to(bounding_box.device)
+
+    original_shape = bounding_box.shape
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    ).view(-1, 4)
+
+    # Question (vfdev-5): should we rely on good displacement shape and fetch image size from it
+    # Or add image_size arg and check displacement shape
+    image_size = displacement.shape[-3], displacement.shape[-2]
+
+    id_grid = _FT._create_identity_grid(list(image_size)).to(bounding_box.device)
+    # We construct inverse grid vs grid = id_grid + displacement used for images
+    inv_grid = id_grid - displacement
+
+    # Get points from bboxes
+    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].view(-1, 2)
+    index_x = torch.floor(points[:, 0] + 0.5).to(dtype=torch.long)
+    index_y = torch.floor(points[:, 1] + 0.5).to(dtype=torch.long)
+    # Transform points:
+    t_size = torch.tensor(image_size[::-1], device=displacement.device, dtype=displacement.dtype)
+    transformed_points = (inv_grid[0, index_y, index_x, :] + 1) * 0.5 * t_size - 0.5
+
+    transformed_points = transformed_points.view(-1, 4, 2)
+    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
+    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
+
+    return convert_bounding_box_format(
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    ).view(original_shape)
 
 
 def elastic_segmentation_mask(mask: torch.Tensor, displacement: torch.Tensor) -> torch.Tensor:

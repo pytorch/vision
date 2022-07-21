@@ -696,6 +696,7 @@ def test_scriptable(kernel):
             "rotate",
             "perspective",
             "elastic_transform",
+            "elastic",
         }
         # We skip 'crop' due to missing 'height' and 'width'
         # We skip 'rotate' due to non implemented yet expand=True case for bboxes
@@ -713,7 +714,9 @@ def test_functional_mid_level(func):
                 if key in kwargs:
                     del kwargs[key]
             output = func(*sample_input.args, **kwargs)
-            torch.testing.assert_close(output, expected, msg=f"finfo={finfo}, output={output}, expected={expected}")
+            torch.testing.assert_close(
+                output, expected, msg=f"finfo={finfo.name}, output={output}, expected={expected}"
+            )
             break
 
 
