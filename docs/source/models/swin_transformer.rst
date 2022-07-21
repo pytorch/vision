@@ -11,7 +11,7 @@ paper.
 Model builders
 --------------
 
-The following model builders can be used to instanciate an SwinTransformer model. 
+The following model builders can be used to instantiate an SwinTransformer model. 
 `swin_t` can be instantiated with pre-trained weights and all others without. 
 All the model builders internally rely on the ``torchvision.models.swin_transformer.SwinTransformer`` 
 base class. Please refer to the `source code
