@@ -120,7 +120,10 @@ class _Feature(torch.Tensor):
         return self
 
     def pad(
-        self, padding: List[int], fill: Union[int, float, Sequence[float]] = 0, padding_mode: str = "constant"
+        self,
+        padding: Union[int, Sequence[int]],
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        padding_mode: str = "constant",
     ) -> Any:
         return self
 
@@ -129,7 +132,7 @@ class _Feature(torch.Tensor):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Any:
         return self
@@ -141,7 +144,7 @@ class _Feature(torch.Tensor):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Any:
         return self
@@ -150,7 +153,7 @@ class _Feature(torch.Tensor):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[List[float]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> Any:
         return self
 
@@ -185,13 +188,4 @@ class _Feature(torch.Tensor):
         return self
 
     def invert(self) -> Any:
-        return self
-
-    def erase(self, i: int, j: int, h: int, w: int, v: torch.Tensor) -> Any:
-        return self
-
-    def mixup(self, lam: float) -> Any:
-        return self
-
-    def cutmix(self, box: Tuple[int, int, int, int], lam_adjusted: float) -> Any:
         return self

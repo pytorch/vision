@@ -955,18 +955,7 @@ def test_adjust_gamma(device, dtype, config, channels):
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
-@pytest.mark.parametrize(
-    "pad",
-    [
-        2,
-        [
-            3,
-        ],
-        [0, 3],
-        (3, 3),
-        [4, 2, 4, 3],
-    ],
-)
+@pytest.mark.parametrize("pad", [2, [3], [0, 3], (3, 3), [4, 2, 4, 3]])
 @pytest.mark.parametrize(
     "config",
     [
