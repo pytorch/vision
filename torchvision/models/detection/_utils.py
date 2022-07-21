@@ -270,7 +270,7 @@ class BoxLinearCoder:
 
         return targets
 
-    def encode_all(self, reference_boxes: List[Tensor], proposals: List[Tensor]) -> Tensor:
+    def encode_all(self, reference_boxes: Tensor, proposals: Tensor) -> Tensor:
         """
         vectorized version of `encode_single`
         Args:
@@ -282,9 +282,6 @@ class BoxLinearCoder:
             decode the boxes.
 
         """
-
-        reference_boxes = torch.stack(reference_boxes)
-        proposals = torch.stack(proposals)
 
         # get the center of reference_boxes
         reference_boxes_ctr_x = 0.5 * (reference_boxes[..., 0] + reference_boxes[..., 2])
