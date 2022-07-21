@@ -28,7 +28,8 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
         if args.data_loading_only:
             continue
         start_time = time.time()
-        image, target = image.to(device), target.to(device)
+        if args.data_loader != "ffcv":
+            image, target = image.to(device), target.to(device)
         with torch.cuda.amp.autocast(enabled=scaler is not None):
             output = model(image)
             loss = criterion(output, target)
@@ -71,12 +72,16 @@ def evaluate(model, criterion, data_loader, device, args, print_freq=100, log_su
     metric_logger.add_meter("acc5", utils.SmoothedValue())
 
     num_processed_samples = 0
-    with torch.inference_mode():
+    cm = torch.no_grad() if args.data_loader.lower() == "ffcv" else torch.inference_mode()
+    with cm:
+        print("in cm")
         for image, target in metric_logger.log_every(data_loader, print_freq, header):
+            print("evaluate batch")
             if args.data_loading_only:
                 continue
-            image = image.to(device, non_blocking=True)
-            target = target.to(device, non_blocking=True)
+            if args.data_loader != "ffcv":
+                image = image.to(device, non_blocking=True)
+                target = target.to(device, non_blocking=True)
             output = model(image)
             loss = criterion(output, target)
 
@@ -171,7 +176,10 @@ def load_data(traindir, valdir, args):
         raise ValueError(f"Invalid value for args.ds_type ({args.ds_type})")
     print("Took", time.time() - st)
 
-    if args.data_loader.lower() == "v1":
+    data_loader_arg = args.data_loader.lower()
+    if data_loader_arg not in ("v1", "v2", "ffcv"):
+        raise ValueError(f"invalid data-loader param. Got {args.data_loader}")
+    if data_loader_arg == "v1":
         data_loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=args.batch_size,
@@ -188,7 +196,7 @@ def load_data(traindir, valdir, args):
             num_workers=args.workers,
             pin_memory=True,
         )
-    else:
+    elif data_loader_arg == "v2":
         if args.ds_type != "dp":
             raise ValueError("DataLoader2 only works with datapipes.")
 
@@ -202,10 +210,77 @@ def load_data(traindir, valdir, args):
             reading_service=MultiProcessingReadingService(num_workers=args.workers),
         )
 
-        dataset_test = dataset_test.batch(args.batch_size, drop_last=True).collate()
+        dataset_test = dataset_test.batch(args.batch_size, drop_last=True).collate()  # TODO: Do we need drop_last here?
         data_loader_test = DataLoader2(
             dataset_test,
             reading_service=MultiProcessingReadingService(num_workers=args.workers),
+        )
+    else:  # ffcv
+        import numpy as np
+        from ffcv.fields.basics import IntDecoder
+        from ffcv.fields.decoders import RandomResizedCropRGBImageDecoder, CenterCropRGBImageDecoder
+        from ffcv.loader import Loader, OrderOption
+        from ffcv.transforms import (
+            ToTensor,
+            ToDevice,
+            Squeeze,
+            NormalizeImage,
+            RandomHorizontalFlip,
+            ToTorchImage,
+        )
+
+        train_sampler = test_sampler = None
+
+        IMAGENET_MEAN = np.array([0.485, 0.456, 0.406]) * 255
+        IMAGENET_STD = np.array([0.229, 0.224, 0.225]) * 255
+        image_pipeline_train = [
+            RandomResizedCropRGBImageDecoder(
+                scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0), output_size=(train_crop_size, train_crop_size),
+            ),
+            RandomHorizontalFlip(0.5),
+            ToTensor(),
+            ToDevice(torch.device(args.gpu), non_blocking=True),
+            ToTorchImage(),
+            NormalizeImage(IMAGENET_MEAN, IMAGENET_STD, np.float32),  # Note: this is done on GPU
+        ]
+        image_pipeline_test = [
+            CenterCropRGBImageDecoder(
+                output_size=(val_crop_size, val_crop_size), ratio=val_crop_size / val_resize_size
+            ),  # See https://github.com/libffcv/ffcv-imagenet/blob/f134cbfff7f590954edc5c24275444b7dd2f57f6/train_imagenet.py#L265
+            ToTensor(),
+            ToDevice(torch.device(args.gpu), non_blocking=True),
+            ToTorchImage(),
+            NormalizeImage(IMAGENET_MEAN, IMAGENET_STD, np.float32),
+        ]
+        label_pipeline = [IntDecoder(), ToTensor(), Squeeze(), ToDevice(torch.device(args.gpu), non_blocking=True)]
+        data_loader = Loader(
+            "/data/home/nicolashug/cluster/work/downloads/imagenet_train_jpg.beton",
+            # "/data/home/nicolashug/cluster/work/downloads/imagenet_val_jpg.beton",
+            batch_size=args.batch_size,
+            drop_last=True,
+            num_workers=args.workers,
+            order=OrderOption[args.order.upper()],
+            os_cache=True,
+            pipelines={
+                "img": image_pipeline_train,
+                "label": label_pipeline,
+            },
+            distributed=True,
+            seed=0,
+            batches_ahead=2,  # Same default as prefetch_factor from DataLoader
+        )
+        data_loader_test = Loader(
+            "/data/home/nicolashug/cluster/work/downloads/imagenet_val_jpg.beton",
+            batch_size=args.batch_size,
+            num_workers=args.workers,
+            order=OrderOption.SEQUENTIAL,
+            os_cache=True,
+            pipelines={
+                "img": image_pipeline_test,
+                "label": label_pipeline,
+            },
+            distributed=True,
+            batches_ahead=2,  # Same default as prefetch_factor from DataLoader
         )
 
     return data_loader, data_loader_test, train_sampler
@@ -367,8 +442,11 @@ def main(args):
         if args.distributed and train_sampler is not None:
             train_sampler.set_epoch(epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema, scaler)
+        print("train_on_epoch done")
         lr_scheduler.step()
+        print("scheduler step done")
         evaluate(model, criterion, data_loader_test, device=device, args=args)
+        print("evaluate done")
         if model_ema:
             evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA", args=args)
         if args.output_dir:
@@ -385,10 +463,14 @@ def main(args):
                 checkpoint["scaler"] = scaler.state_dict()
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
+        print("checkpointing done")
+
+        if epoch == 0:
+            first_epoch_time = time.time() - start_time
 
     total_time = time.time() - start_time
-    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print(f"Training time {total_time_str}")
+    print(f"Training time: {datetime.timedelta(seconds=int(total_time))}")
+    print(f"Training time (w/o 1st epoch): {datetime.timedelta(seconds=int(total_time - first_epoch_time))}")
 
 
 def get_args_parser(add_help=True):
@@ -546,7 +628,13 @@ def get_args_parser(add_help=True):
         "--data-loader",
         default="V1",
         type=str,
-        help="'V1' or 'V2'. V2 only works for datapipes",
+        help="'V1' or 'V2' or 'FFCV'. V2 only works for datapipes",
+    )
+    parser.add_argument(
+        "--order",
+        default="RANDOM",
+        type=str,
+        help="'RANDOM' or 'QUASI_RANDOM' or 'SEQUENTIAL'. Only relevant for FFCV dataloader. QUASI_RANDOM doesn't work in distributed mode.",
     )
 
     return parser
