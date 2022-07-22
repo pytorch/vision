@@ -1,4 +1,4 @@
-from typing import Optional, List, Union
+from typing import List, Optional, Union
 
 import PIL.Image
 import torch

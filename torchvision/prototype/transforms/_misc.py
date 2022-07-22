@@ -1,8 +1,8 @@
 import functools
-from typing import Any, List, Type, Callable, Dict, Sequence, Union
+from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import torch
-from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.transforms import _setup_size
 
 

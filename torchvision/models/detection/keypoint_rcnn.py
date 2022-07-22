@@ -6,10 +6,10 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
 from ...transforms._presets import ObjectDetection
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from ._utils import overwrite_eps
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .faster_rcnn import FasterRCNN

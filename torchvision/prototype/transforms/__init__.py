@@ -2,38 +2,38 @@ from . import functional  # usort: skip
 
 from ._transform import Transform  # usort: skip
 
-from ._augment import RandomErasing, RandomMixup, RandomCutmix
-from ._auto_augment import RandAugment, TrivialAugmentWide, AutoAugment, AugMix
+from ._augment import RandomCutmix, RandomErasing, RandomMixup
+from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
 from ._color import (
     ColorJitter,
-    RandomPhotometricDistort,
+    RandomAdjustSharpness,
+    RandomAutocontrast,
     RandomEqualize,
     RandomInvert,
+    RandomPhotometricDistort,
     RandomPosterize,
     RandomSolarize,
-    RandomAutocontrast,
-    RandomAdjustSharpness,
 )
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
-    Resize,
-    CenterCrop,
-    RandomResizedCrop,
-    RandomCrop,
-    FiveCrop,
-    TenCrop,
     BatchMultiCrop,
-    RandomHorizontalFlip,
-    RandomVerticalFlip,
-    Pad,
-    RandomZoomOut,
-    RandomRotation,
-    RandomAffine,
-    RandomPerspective,
+    CenterCrop,
     ElasticTransform,
+    FiveCrop,
+    Pad,
+    RandomAffine,
+    RandomCrop,
+    RandomHorizontalFlip,
+    RandomPerspective,
+    RandomResizedCrop,
+    RandomRotation,
+    RandomVerticalFlip,
+    RandomZoomOut,
+    Resize,
+    TenCrop,
 )
-from ._meta import ConvertBoundingBoxFormat, ConvertImageDtype, ConvertImageColorSpace
-from ._misc import Identity, GaussianBlur, Normalize, ToDtype, Lambda
+from ._meta import ConvertBoundingBoxFormat, ConvertImageColorSpace, ConvertImageDtype
+from ._misc import GaussianBlur, Identity, Lambda, Normalize, ToDtype
 from ._type_conversion import DecodeImage, LabelToOneHot
 
 from ._deprecated import Grayscale, RandomGrayscale, ToTensor, ToPILImage, PILToTensor  # usort: skip

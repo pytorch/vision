@@ -2,7 +2,7 @@ import pytest
 import test_models as TM
 import torch
 import torchvision.prototype.models.depth.stereo.raft_stereo as raft_stereo
-from common_utils import set_rng_seed, cpu_and_gpu
+from common_utils import cpu_and_gpu, set_rng_seed
 
 
 @pytest.mark.parametrize("model_builder", (raft_stereo.raft_stereo_base, raft_stereo.raft_stereo_realtime))

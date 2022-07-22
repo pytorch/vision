@@ -4,15 +4,15 @@ import pytest
 import torch
 from common_utils import assert_equal
 from test_prototype_transforms_functional import (
-    make_images,
-    make_bounding_boxes,
     make_bounding_box,
-    make_one_hot_labels,
+    make_bounding_boxes,
+    make_images,
     make_label,
+    make_one_hot_labels,
     make_segmentation_mask,
 )
-from torchvision.prototype import transforms, features
-from torchvision.transforms.functional import to_pil_image, pil_to_tensor, InterpolationMode
+from torchvision.prototype import features, transforms
+from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 
 def make_vanilla_tensor_images(*args, **kwargs):
