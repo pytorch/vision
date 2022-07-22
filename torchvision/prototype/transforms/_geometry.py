@@ -551,3 +551,72 @@ class RandomPerspective(_RandomApplyTransform):
             fill=self.fill,
             interpolation=self.interpolation,
         )
+
+
+def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size: int = 2) -> Sequence[float]:
+    if not isinstance(arg, (float, Sequence)):
+        raise TypeError(f"{name} should be float or a sequence of floats. Got {type(arg)}")
+    if isinstance(arg, Sequence) and len(arg) != req_size:
+        raise ValueError(f"If {name} is a sequence its length should be one of {req_size}. Got {len(arg)}")
+    if isinstance(arg, Sequence):
+        for element in arg:
+            if not isinstance(element, float):
+                raise ValueError(f"{name} should be a sequence of floats. Got {type(element)}")
+
+    if isinstance(arg, float):
+        arg = [float(arg), float(arg)]
+    if isinstance(arg, (list, tuple)) and len(arg) == 1:
+        arg = [arg[0], arg[0]]
+    return arg
+
+
+class ElasticTransform(Transform):
+    def __init__(
+        self,
+        alpha: Union[float, Sequence[float]] = 50.0,
+        sigma: Union[float, Sequence[float]] = 5.0,
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    ) -> None:
+        super().__init__()
+        self.alpha = _setup_float_or_seq(alpha, "alpha", 2)
+        self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
+
+        _check_fill_arg(fill)
+
+        self.interpolation = interpolation
+        self.fill = fill
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        # Get image size
+        # TODO: make it work with bboxes and segm masks
+        image = query_image(sample)
+        _, *size = get_image_dimensions(image)
+
+        dx = torch.rand([1, 1] + size) * 2 - 1
+        if self.sigma[0] > 0.0:
+            kx = int(8 * self.sigma[0] + 1)
+            # if kernel size is even we have to make it odd
+            if kx % 2 == 0:
+                kx += 1
+            dx = F.gaussian_blur(dx, [kx, kx], list(self.sigma))
+        dx = dx * self.alpha[0] / size[0]
+
+        dy = torch.rand([1, 1] + size) * 2 - 1
+        if self.sigma[1] > 0.0:
+            ky = int(8 * self.sigma[1] + 1)
+            # if kernel size is even we have to make it odd
+            if ky % 2 == 0:
+                ky += 1
+            dy = F.gaussian_blur(dy, [ky, ky], list(self.sigma))
+        dy = dy * self.alpha[1] / size[1]
+        displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
+        return dict(displacement=displacement)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.elastic(
+            inpt,
+            **params,
+            fill=self.fill,
+            interpolation=self.interpolation,
+        )

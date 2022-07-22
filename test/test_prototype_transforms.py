@@ -397,6 +397,7 @@ class TestRandomZoomOut:
         fn = mocker.patch("torchvision.prototype.transforms.functional.pad")
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
+        # Otherwise, we can mock transform._get_params
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
@@ -456,6 +457,7 @@ class TestRandomRotation:
         inpt = mocker.MagicMock(spec=features.Image)
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
+        # Otherwise, we can mock transform._get_params
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
@@ -576,6 +578,7 @@ class TestRandomAffine:
 
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
+        # Otherwise, we can mock transform._get_params
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
@@ -645,6 +648,7 @@ class TestRandomCrop:
 
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
+        # Otherwise, we can mock transform._get_params
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
@@ -716,6 +720,7 @@ class TestGaussianBlur:
 
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
+        # Otherwise, we can mock transform._get_params
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
@@ -795,10 +800,80 @@ class TestRandomPerspective:
         inpt.image_size = (24, 32)
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
+        # Otherwise, we can mock transform._get_params
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
         torch.rand(1)  # random apply changes random state
         params = transform._get_params(inpt)
 
+        fn.assert_called_once_with(inpt, **params, fill=fill, interpolation=interpolation)
+
+
+class TestElasticTransform:
+    def test_assertions(self):
+
+        with pytest.raises(TypeError, match="alpha should be float or a sequence of floats"):
+            transforms.ElasticTransform({})
+
+        with pytest.raises(ValueError, match="alpha is a sequence its length should be one of 2"):
+            transforms.ElasticTransform([1.0, 2.0, 3.0])
+
+        with pytest.raises(ValueError, match="alpha should be a sequence of floats"):
+            transforms.ElasticTransform([1, 2])
+
+        with pytest.raises(TypeError, match="sigma should be float or a sequence of floats"):
+            transforms.ElasticTransform(1.0, {})
+
+        with pytest.raises(ValueError, match="sigma is a sequence its length should be one of 2"):
+            transforms.ElasticTransform(1.0, [1.0, 2.0, 3.0])
+
+        with pytest.raises(ValueError, match="sigma should be a sequence of floats"):
+            transforms.ElasticTransform(1.0, [1, 2])
+
+        with pytest.raises(TypeError, match="Got inappropriate fill arg"):
+            transforms.ElasticTransform(1.0, 2.0, fill="abc")
+
+    def test__get_params(self, mocker):
+        alpha = 2.0
+        sigma = 3.0
+        transform = transforms.ElasticTransform(alpha, sigma)
+        image = mocker.MagicMock(spec=features.Image)
+        image.num_channels = 3
+        image.image_size = (24, 32)
+
+        params = transform._get_params(image)
+
+        h, w = image.image_size
+        displacement = params["displacement"]
+        assert displacement.shape == (1, h, w, 2)
+        assert (-alpha / w <= displacement[0, ..., 0]).all() and (displacement[0, ..., 0] <= alpha / w).all()
+        assert (-alpha / h <= displacement[0, ..., 1]).all() and (displacement[0, ..., 1] <= alpha / h).all()
+
+    @pytest.mark.parametrize("alpha", [5.0, [5.0, 10.0]])
+    @pytest.mark.parametrize("sigma", [2.0, [2.0, 5.0]])
+    def test__transform(self, alpha, sigma, mocker):
+        interpolation = InterpolationMode.BILINEAR
+        fill = 12
+        transform = transforms.ElasticTransform(alpha, sigma=sigma, fill=fill, interpolation=interpolation)
+
+        if isinstance(alpha, float):
+            assert transform.alpha == [alpha, alpha]
+        else:
+            assert transform.alpha == alpha
+
+        if isinstance(sigma, float):
+            assert transform.sigma == [sigma, sigma]
+        else:
+            assert transform.sigma == sigma
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.elastic")
+        inpt = mocker.MagicMock(spec=features.Image)
+        inpt.num_channels = 3
+        inpt.image_size = (24, 32)
+
+        # Let's mock transform._get_params to control the output:
+        transform._get_params = mocker.MagicMock()
+        _ = transform(inpt)
+        params = transform._get_params(inpt)
         fn.assert_called_once_with(inpt, **params, fill=fill, interpolation=interpolation)

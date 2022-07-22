@@ -244,6 +244,19 @@ class Image(_Feature):
         output = _F.perspective_image_tensor(self, perspective_coeffs, interpolation=interpolation, fill=fill)
         return Image.new_like(self, output)
 
+    def elastic(
+        self,
+        displacement: torch.Tensor,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    ) -> Image:
+        from torchvision.prototype.transforms.functional import _geometry as _F
+
+        fill = _F._convert_fill_arg(fill)
+
+        output = _F.elastic_image_tensor(self, displacement, interpolation=interpolation, fill=fill)
+        return Image.new_like(self, output)
+
     def adjust_brightness(self, brightness_factor: float) -> Image:
         from torchvision.prototype.transforms import functional as _F
 

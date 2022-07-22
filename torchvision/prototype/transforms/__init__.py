@@ -30,11 +30,10 @@ from ._geometry import (
     RandomRotation,
     RandomAffine,
     RandomPerspective,
+    ElasticTransform,
 )
 from ._meta import ConvertBoundingBoxFormat, ConvertImageDtype, ConvertImageColorSpace
 from ._misc import Identity, GaussianBlur, Normalize, ToDtype, Lambda
 from ._type_conversion import DecodeImage, LabelToOneHot
 
 from ._deprecated import Grayscale, RandomGrayscale, ToTensor, ToPILImage, PILToTensor  # usort: skip
-
-# TODO: add RandomPerspective, ElasticTransform
