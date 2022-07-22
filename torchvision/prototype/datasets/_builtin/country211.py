@@ -1,12 +1,12 @@
 import pathlib
 from typing import Any, Dict, List, Tuple, Union
 
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter
+from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    path_comparator,
     hint_sharding,
     hint_shuffling,
+    path_comparator,
     read_categories_file,
 )
 from torchvision.prototype.features import EncodedImage, Label

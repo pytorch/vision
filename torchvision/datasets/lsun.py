@@ -7,7 +7,7 @@ from typing import Any, Callable, cast, List, Optional, Tuple, Union
 
 from PIL import Image
 
-from .utils import verify_str_arg, iterable_to_str
+from .utils import iterable_to_str, verify_str_arg
 from .vision import VisionDataset
 
 

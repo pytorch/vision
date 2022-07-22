@@ -3,7 +3,7 @@ import inspect
 import sys
 from dataclasses import dataclass, fields
 from inspect import signature
-from typing import Any, Callable, Dict, Mapping, cast
+from typing import Any, Callable, cast, Dict, Mapping
 
 from torchvision._utils import StrEnum
 

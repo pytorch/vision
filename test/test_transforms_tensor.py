@@ -6,19 +6,18 @@ import pytest
 import torch
 import torchvision.transforms._pil_constants as _pil_constants
 from common_utils import (
-    get_tmp_dir,
-    int_dtypes,
-    float_dtypes,
+    _assert_approx_equal_tensor_to_pil,
+    _assert_equal_tensor_to_pil,
     _create_data,
     _create_data_batch,
-    _assert_equal_tensor_to_pil,
-    _assert_approx_equal_tensor_to_pil,
-    cpu_and_gpu,
     assert_equal,
+    cpu_and_gpu,
+    float_dtypes,
+    get_tmp_dir,
+    int_dtypes,
 )
 from torchvision import transforms as T
-from torchvision.transforms import InterpolationMode
-from torchvision.transforms import functional as F
+from torchvision.transforms import functional as F, InterpolationMode
 from torchvision.transforms.autoaugment import _apply_op
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
