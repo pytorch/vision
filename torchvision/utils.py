@@ -1,6 +1,8 @@
+import collections
 import math
 import pathlib
 import warnings
+from itertools import repeat
 from types import FunctionType
 from typing import Any, BinaryIO, List, Optional, Tuple, Union
 
@@ -562,9 +564,25 @@ def _log_api_usage_once(obj: Any) -> None:
     Args:
         obj (class instance or method): an object to extract info from.
     """
-    if not obj.__module__.startswith("torchvision"):
-        return
+    module = obj.__module__
+    if not module.startswith("torchvision"):
+        module = f"torchvision.internal.{module}"
     name = obj.__class__.__name__
     if isinstance(obj, FunctionType):
         name = obj.__name__
-    torch._C._log_api_usage_once(f"{obj.__module__}.{name}")
+    torch._C._log_api_usage_once(f"{module}.{name}")
+
+
+def _make_ntuple(x: Any, n: int) -> Tuple[Any, ...]:
+    """
+    Make n-tuple from input x. If x is an iterable, then we just convert it to tuple.
+    Otherwise we will make a tuple of length n, all with value of x.
+    reference: https://github.com/pytorch/pytorch/blob/master/torch/nn/modules/utils.py#L8
+
+    Args:
+        x (Any): input value
+        n (int): length of the resulting tuple
+    """
+    if isinstance(x, collections.abc.Iterable):
+        return tuple(x)
+    return tuple(repeat(x, n))

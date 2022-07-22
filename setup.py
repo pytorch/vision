@@ -139,6 +139,27 @@ def get_extensions():
         + glob.glob(os.path.join(extensions_dir, "ops", "quantized", "cpu", "*.cpp"))
     )
 
+    print("Compiling extensions with following flags:")
+    compile_cpp_tests = os.getenv("WITH_CPP_MODELS_TEST", "0") == "1"
+    print(f"  WITH_CPP_MODELS_TEST: {compile_cpp_tests}")
+    force_cuda = os.getenv("FORCE_CUDA", "0") == "1"
+    print(f"  FORCE_CUDA: {force_cuda}")
+    debug_mode = os.getenv("DEBUG", "0") == "1"
+    print(f"  DEBUG: {debug_mode}")
+    use_png = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
+    print(f"  TORCHVISION_USE_PNG: {use_png}")
+    use_jpeg = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
+    print(f"  TORCHVISION_USE_JPEG: {use_jpeg}")
+    use_nvjpeg = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
+    print(f"  TORCHVISION_USE_NVJPEG: {use_nvjpeg}")
+    use_ffmpeg = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
+    print(f"  TORCHVISION_USE_FFMPEG: {use_ffmpeg}")
+    use_video_codec = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "1") == "1"
+    print(f"  TORCHVISION_USE_VIDEO_CODEC: {use_video_codec}")
+
+    nvcc_flags = os.getenv("NVCC_FLAGS", "")
+    print(f"  NVCC_FLAGS: {nvcc_flags}")
+
     is_rocm_pytorch = False
 
     if torch.__version__ >= "1.5":
@@ -168,8 +189,8 @@ def get_extensions():
     sources = main_file + source_cpu
     extension = CppExtension
 
-    compile_cpp_tests = os.getenv("WITH_CPP_MODELS_TEST", "0") == "1"
     if compile_cpp_tests:
+        print("Compiling CPP tests")
         test_dir = os.path.join(this_dir, "test")
         models_dir = os.path.join(this_dir, "torchvision", "csrc", "models")
         test_file = glob.glob(os.path.join(test_dir, "*.cpp"))
@@ -183,14 +204,11 @@ def get_extensions():
     define_macros = []
 
     extra_compile_args = {"cxx": []}
-    if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) or os.getenv(
-        "FORCE_CUDA", "0"
-    ) == "1":
+    if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) or force_cuda:
         extension = CUDAExtension
         sources += source_cuda
         if not is_rocm_pytorch:
             define_macros += [("WITH_CUDA", None)]
-            nvcc_flags = os.getenv("NVCC_FLAGS", "")
             if nvcc_flags == "":
                 nvcc_flags = []
             else:
@@ -205,9 +223,8 @@ def get_extensions():
         define_macros += [("USE_PYTHON", None)]
         extra_compile_args["cxx"].append("/MP")
 
-    debug_mode = os.getenv("DEBUG", "0") == "1"
     if debug_mode:
-        print("Compile in debug mode")
+        print("Compiling in debug mode")
         extra_compile_args["cxx"].append("-g")
         extra_compile_args["cxx"].append("-O0")
         if "nvcc" in extra_compile_args:
@@ -262,15 +279,17 @@ def get_extensions():
     libpng = shutil.which("libpng-config")
     pngfix = shutil.which("pngfix")
     png_found = libpng is not None or pngfix is not None
-    print(f"PNG found: {png_found}")
-    if png_found:
+
+    use_png = use_png and png_found
+    if use_png:
+        print("Found PNG library")
         if libpng is not None:
             # Linux / Mac
+            min_version = "1.6.0"
             png_version = subprocess.run([libpng, "--version"], stdout=subprocess.PIPE)
             png_version = png_version.stdout.strip().decode("utf-8")
-            print(f"libpng version: {png_version}")
             png_version = parse_version(png_version)
-            if png_version >= parse_version("1.6.0"):
+            if png_version >= parse_version(min_version):
                 print("Building torchvision with PNG image support")
                 png_lib = subprocess.run([libpng, "--libdir"], stdout=subprocess.PIPE)
                 png_lib = png_lib.stdout.strip().decode("utf-8")
@@ -279,12 +298,14 @@ def get_extensions():
                 png_include = subprocess.run([libpng, "--I_opts"], stdout=subprocess.PIPE)
                 png_include = png_include.stdout.strip().decode("utf-8")
                 _, png_include = png_include.split("-I")
-                print(f"libpng include path: {png_include}")
                 image_include += [png_include]
                 image_link_flags.append("png")
+                print(f"  libpng version: {png_version}")
+                print(f"  libpng include path: {png_include}")
             else:
-                print("libpng installed version is less than 1.6.0, disabling PNG support")
-                png_found = False
+                print("Could not add PNG image support to torchvision:")
+                print(f"  libpng minimum version {min_version}, found {png_version}")
+                use_png = False
         else:
             # Windows
             png_lib = os.path.join(os.path.dirname(os.path.dirname(pngfix)), "lib")
@@ -292,19 +313,23 @@ def get_extensions():
             image_library += [png_lib]
             image_include += [png_include]
             image_link_flags.append("libpng")
+    else:
+        print("Building torchvision without PNG image support")
+    image_macros += [("PNG_FOUND", str(int(use_png)))]
 
     # Locating libjpeg
     (jpeg_found, jpeg_conda, jpeg_include, jpeg_lib) = find_library("jpeglib", vision_include)
 
-    print(f"JPEG found: {jpeg_found}")
-    image_macros += [("PNG_FOUND", str(int(png_found)))]
-    image_macros += [("JPEG_FOUND", str(int(jpeg_found)))]
-    if jpeg_found:
+    use_jpeg = use_jpeg and jpeg_found
+    if use_jpeg:
         print("Building torchvision with JPEG image support")
         image_link_flags.append("jpeg")
         if jpeg_conda:
             image_library += [jpeg_lib]
             image_include += [jpeg_include]
+    else:
+        print("Building torchvision without JPEG image support")
+    image_macros += [("JPEG_FOUND", str(int(use_jpeg)))]
 
     # Locating nvjpeg
     # Should be included in CUDA_HOME for CUDA >= 10.1, which is the minimum version we have in the CI
@@ -314,11 +339,13 @@ def get_extensions():
         and os.path.exists(os.path.join(CUDA_HOME, "include", "nvjpeg.h"))
     )
 
-    print(f"NVJPEG found: {nvjpeg_found}")
-    image_macros += [("NVJPEG_FOUND", str(int(nvjpeg_found)))]
-    if nvjpeg_found:
+    use_nvjpeg = use_nvjpeg and nvjpeg_found
+    if use_nvjpeg:
         print("Building torchvision with NVJPEG image support")
         image_link_flags.append("nvjpeg")
+    else:
+        print("Building torchvision without NVJPEG image support")
+    image_macros += [("NVJPEG_FOUND", str(int(use_nvjpeg)))]
 
     image_path = os.path.join(extensions_dir, "io", "image")
     image_src = (
@@ -327,7 +354,7 @@ def get_extensions():
         + glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
     )
 
-    if png_found or jpeg_found:
+    if use_png or use_jpeg:
         ext_modules.append(
             extension(
                 "torchvision.image",
@@ -340,8 +367,10 @@ def get_extensions():
             )
         )
 
+    # Locating ffmpeg
     ffmpeg_exe = shutil.which("ffmpeg")
     has_ffmpeg = ffmpeg_exe is not None
+    ffmpeg_version = None
     # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
     # FIXME: causes crash. See the following GitHub issues for more details.
     # FIXME: https://github.com/pytorch/pytorch/issues/65000
@@ -351,16 +380,15 @@ def get_extensions():
     if has_ffmpeg:
         try:
             # This is to check if ffmpeg is installed properly.
-            subprocess.check_output(["ffmpeg", "-version"])
+            ffmpeg_version = subprocess.check_output(["ffmpeg", "-version"])
         except subprocess.CalledProcessError:
-            print("Error fetching ffmpeg version, ignoring ffmpeg.")
+            print("Building torchvision without ffmpeg support")
+            print("  Error fetching ffmpeg version, ignoring ffmpeg.")
             has_ffmpeg = False
 
-    use_ffmpeg = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
-    has_ffmpeg = has_ffmpeg and use_ffmpeg
-    print(f"FFmpeg found: {has_ffmpeg}")
+    use_ffmpeg = use_ffmpeg and has_ffmpeg
 
-    if has_ffmpeg:
+    if use_ffmpeg:
         ffmpeg_libraries = {"libavcodec", "libavformat", "libavutil", "libswresample", "libswscale"}
 
         ffmpeg_bin = os.path.dirname(ffmpeg_exe)
@@ -380,7 +408,6 @@ def get_extensions():
             ffmpeg_include_dir = [ffmpeg_include_dir]
             ffmpeg_library_dir = [ffmpeg_library_dir]
 
-        has_ffmpeg = True
         for library in ffmpeg_libraries:
             library_found = False
             for search_path in ffmpeg_include_dir + include_dirs:
@@ -388,12 +415,17 @@ def get_extensions():
                 library_found |= len(glob.glob(full_path)) > 0
 
             if not library_found:
-                print(f"{library} header files were not found, disabling ffmpeg support")
-                has_ffmpeg = False
+                print("Building torchvision without ffmpeg support")
+                print(f"  {library} header files were not found, disabling ffmpeg support")
+                use_ffmpeg = False
+    else:
+        print("Building torchvision without ffmpeg support")
 
-    if has_ffmpeg:
-        print(f"ffmpeg include path: {ffmpeg_include_dir}")
-        print(f"ffmpeg library_dir: {ffmpeg_library_dir}")
+    if use_ffmpeg:
+        print("Building torchvision with ffmpeg support")
+        print(f"  ffmpeg version: {ffmpeg_version}")
+        print(f"  ffmpeg include path: {ffmpeg_include_dir}")
+        print(f"  ffmpeg library_dir: {ffmpeg_library_dir}")
 
         # TorchVision base decoder + video reader
         video_reader_src_dir = os.path.join(this_dir, "torchvision", "csrc", "io", "video_reader")
@@ -445,13 +477,13 @@ def get_extensions():
         and any([os.path.exists(os.path.join(folder, "libnvcuvid.so")) for folder in library_dirs])
     )
 
-    print(f"video codec found: {video_codec_found}")
-
+    use_video_codec = use_video_codec and video_codec_found
     if (
-        video_codec_found
-        and has_ffmpeg
+        use_video_codec
+        and use_ffmpeg
         and any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
     ):
+        print("Building torchvision with video codec support")
         gpu_decoder_path = os.path.join(extensions_dir, "io", "decoder", "gpu")
         gpu_decoder_src = glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
         cuda_libs = os.path.join(CUDA_HOME, "lib64")
@@ -481,11 +513,17 @@ def get_extensions():
             )
         )
     else:
-        print(
-            "The installed version of ffmpeg is missing the header file 'bsf.h' which is "
-            "required for GPU video decoding. Please install the latest ffmpeg from conda-forge channel:"
-            " `conda install -c conda-forge ffmpeg`."
-        )
+        print("Building torchvision without video codec support")
+        if (
+            use_video_codec
+            and use_ffmpeg
+            and not any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
+        ):
+            print(
+                "  The installed version of ffmpeg is missing the header file 'bsf.h' which is "
+                "  required for GPU video decoding. Please install the latest ffmpeg from conda-forge channel:"
+                "   `conda install -c conda-forge ffmpeg`."
+            )
 
     return ext_modules
 
