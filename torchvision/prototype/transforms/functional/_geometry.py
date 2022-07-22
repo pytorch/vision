@@ -826,7 +826,8 @@ def elastic_bounding_box(
     image_size = displacement.shape[-3], displacement.shape[-2]
 
     id_grid = _FT._create_identity_grid(list(image_size)).to(bounding_box.device)
-    # We construct inverse grid vs grid = id_grid + displacement used for images
+    # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
+    # This is not an exact inverse of the grid
     inv_grid = id_grid - displacement
 
     # Get points from bboxes

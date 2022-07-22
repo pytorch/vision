@@ -59,7 +59,7 @@ def make_images(
         yield make_image(size, color_space=color_space, dtype=dtype)
 
     for color_space, dtype, extra_dims_ in itertools.product(color_spaces, dtypes, extra_dims):
-        yield make_image(color_space=color_space, extra_dims=extra_dims_, dtype=dtype)
+        yield make_image(size=sizes[0], color_space=color_space, extra_dims=extra_dims_, dtype=dtype)
 
 
 def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
@@ -149,12 +149,12 @@ def make_segmentation_mask(size=None, *, num_categories=80, extra_dims=(), dtype
 
 
 def make_segmentation_masks(
-    image_sizes=((16, 16), (7, 33), (31, 9)),
+    sizes=((16, 16), (7, 33), (31, 9)),
     dtypes=(torch.long,),
     extra_dims=((), (4,), (2, 3)),
 ):
-    for image_size, dtype, extra_dims_ in itertools.product(image_sizes, dtypes, extra_dims):
-        yield make_segmentation_mask(size=image_size, dtype=dtype, extra_dims=extra_dims_)
+    for size, dtype, extra_dims_ in itertools.product(sizes, dtypes, extra_dims):
+        yield make_segmentation_mask(size=size, dtype=dtype, extra_dims=extra_dims_)
 
 
 class SampleInput:
@@ -587,7 +587,7 @@ def center_crop_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def center_crop_segmentation_mask():
     for mask, output_size in itertools.product(
-        make_segmentation_masks(image_sizes=((16, 16), (7, 33), (31, 9))),
+        make_segmentation_masks(sizes=((16, 16), (7, 33), (31, 9))),
         [[4, 3], [42, 70], [4]],  # crop sizes < image sizes, crop_sizes > image sizes, single crop size
     ):
         yield SampleInput(mask, output_size)
@@ -1785,5 +1785,50 @@ def test_correctness_gaussian_blur_image_tensor(device, image_size, dt, ksize, s
         torch.tensor(true_cv2_results[gt_key]).reshape(shape[-2], shape[-1], shape[-3]).permute(2, 0, 1).to(tensor)
     )
 
-    out = fn(tensor, kernel_size=ksize, sigma=sigma)
+    image = features.Image(tensor)
+
+    out = fn(image, kernel_size=ksize, sigma=sigma)
     torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "fn, make_samples", [(F.elastic_image_tensor, make_images), (F.elastic_segmentation_mask, make_segmentation_masks)]
+)
+def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
+    in_box = [10, 15, 25, 35]
+    for sample in make_samples(sizes=((64, 76),), extra_dims=((), (4,))):
+        c, h, w = sample.shape[-3:]
+        # Setup a dummy image with 4 points
+        sample[..., in_box[1], in_box[0]] = torch.tensor([12, 34, 96, 112])[:c]
+        sample[..., in_box[3] - 1, in_box[0]] = torch.tensor([12, 34, 96, 112])[:c]
+        sample[..., in_box[3] - 1, in_box[2] - 1] = torch.tensor([12, 34, 96, 112])[:c]
+        sample[..., in_box[1], in_box[2] - 1] = torch.tensor([12, 34, 96, 112])[:c]
+        sample = sample.to(device)
+
+        if fn == F.elastic_image_tensor:
+            sample = features.Image(sample)
+            kwargs = {"interpolation": F.InterpolationMode.NEAREST}
+        else:
+            sample = features.SegmentationMask(sample)
+            kwargs = {}
+
+        # Create a displacement grid using sin
+        n, m = 5.0, 0.1
+        d1 = m * torch.sin(torch.arange(h, dtype=torch.float) * torch.pi * n / h)
+        d2 = m * torch.sin(torch.arange(w, dtype=torch.float) * torch.pi * n / w)
+
+        d1 = d1[:, None].expand((h, w))
+        d2 = d2[None, :].expand((h, w))
+
+        displacement = torch.cat([d1[..., None], d2[..., None]], dim=-1)
+        displacement = displacement.reshape(1, h, w, 2)
+
+        print(sample.dtype, sample.shape)
+        output = fn(sample, displacement=displacement, **kwargs)
+
+        # Check places where transformed points should be
+        torch.testing.assert_close(output[..., 12, 9], sample[..., in_box[1], in_box[0]])
+        torch.testing.assert_close(output[..., 17, 27], sample[..., in_box[1], in_box[2] - 1])
+        torch.testing.assert_close(output[..., 31, 6], sample[..., in_box[3] - 1, in_box[0]])
+        torch.testing.assert_close(output[..., 37, 23], sample[..., in_box[3] - 1, in_box[2] - 1])
