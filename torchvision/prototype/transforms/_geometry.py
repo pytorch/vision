@@ -561,7 +561,7 @@ def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size:
     if isinstance(arg, Sequence):
         for element in arg:
             if not isinstance(element, float):
-                raise TypeError(f"{name} should be a sequence of floats. Got {type(element)}")
+                raise ValueError(f"{name} should be a sequence of floats. Got {type(element)}")
 
     if isinstance(arg, float):
         arg = [float(arg), float(arg)]

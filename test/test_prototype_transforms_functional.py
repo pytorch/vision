@@ -1824,7 +1824,6 @@ def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
         displacement = torch.cat([d1[..., None], d2[..., None]], dim=-1)
         displacement = displacement.reshape(1, h, w, 2)
 
-        print(sample.dtype, sample.shape)
         output = fn(sample, displacement=displacement, **kwargs)
 
         # Check places where transformed points should be
