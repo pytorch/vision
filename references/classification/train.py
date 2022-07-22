@@ -74,9 +74,7 @@ def evaluate(model, criterion, data_loader, device, args, print_freq=100, log_su
     num_processed_samples = 0
     cm = torch.no_grad() if args.data_loader.lower() == "ffcv" else torch.inference_mode()
     with cm:
-        print("in cm")
         for image, target in metric_logger.log_every(data_loader, print_freq, header):
-            print("evaluate batch")
             if args.data_loading_only:
                 continue
             if args.data_loader != "ffcv":
@@ -260,7 +258,7 @@ def load_data(traindir, valdir, args):
             drop_last=True,
             num_workers=args.workers,
             order=OrderOption[args.order.upper()],
-            os_cache=True,
+            os_cache=args.os_cache,
             pipelines={
                 "img": image_pipeline_train,
                 "label": label_pipeline,
@@ -274,7 +272,7 @@ def load_data(traindir, valdir, args):
             batch_size=args.batch_size,
             num_workers=args.workers,
             order=OrderOption.SEQUENTIAL,
-            os_cache=True,
+            os_cache=args.os_cache,
             pipelines={
                 "img": image_pipeline_test,
                 "label": label_pipeline,
@@ -637,6 +635,11 @@ def get_args_parser(add_help=True):
         help="'RANDOM' or 'QUASI_RANDOM' or 'SEQUENTIAL'. Only relevant for FFCV dataloader. QUASI_RANDOM doesn't work in distributed mode.",
     )
 
+    parser.add_argument(
+        "--os-cache",
+        action="store_true",
+        help="Whether to use set os_cache param to True for FFCV DataLoader",
+    )
     return parser
 
 
