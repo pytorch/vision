@@ -1,9 +1,9 @@
-from typing import Union, Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.functional import convert_image_dtype
 
 from ._utils import is_simple_tensor

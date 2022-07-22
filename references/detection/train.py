@@ -29,10 +29,15 @@ import torchvision.models.detection
 import torchvision.models.detection.mask_rcnn
 import utils
 from coco_utils import get_coco, get_coco_kp
-from engine import train_one_epoch, evaluate
-from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from engine import evaluate, train_one_epoch
+from group_by_aspect_ratio import create_aspect_ratio_groups, GroupedBatchSampler
 from torchvision.transforms import InterpolationMode
 from transforms import SimpleCopyPaste
+
+
+def copypaste_collate_fn(batch):
+    copypaste = SimpleCopyPaste(blending=True, resize_interpolation=InterpolationMode.BILINEAR)
+    return copypaste(*utils.collate_fn(batch))
 
 
 def get_dataset(name, image_set, transform, data_path):
@@ -193,11 +198,6 @@ def main(args):
     if args.use_copypaste:
         if args.data_augmentation != "lsj":
             raise RuntimeError("SimpleCopyPaste algorithm currently only supports the 'lsj' data augmentation policies")
-
-        copypaste = SimpleCopyPaste(resize_interpolation=InterpolationMode.BILINEAR, blending=True)
-
-        def copypaste_collate_fn(batch):
-            return copypaste(*utils.collate_fn(batch))
 
         train_collate_fn = copypaste_collate_fn
 

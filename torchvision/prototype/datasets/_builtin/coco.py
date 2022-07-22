@@ -1,35 +1,30 @@
 import pathlib
 import re
-from collections import OrderedDict
-from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple, cast, BinaryIO, Union
+from collections import defaultdict, OrderedDict
+from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
 
 import torch
 from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Filter,
     Demultiplexer,
+    Filter,
     Grouper,
+    IterDataPipe,
     IterKeyZipper,
     JsonParser,
+    Mapper,
     UnBatcher,
 )
-from torchvision.prototype.datasets.utils import (
-    HttpResource,
-    OnlineResource,
-    Dataset,
-)
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    MappingIterator,
-    INFINITE_BUFFER_SIZE,
     getitem,
-    read_categories_file,
-    path_accessor,
     hint_sharding,
     hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    MappingIterator,
+    path_accessor,
+    read_categories_file,
 )
-from torchvision.prototype.features import BoundingBox, Label, _Feature, EncodedImage
+from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
 
 from .._api import register_dataset, register_info
 
@@ -151,7 +146,7 @@ class Coco(Dataset):
     )
 
     _META_FILE_PATTERN = re.compile(
-        fr"(?P<annotations>({'|'.join(_ANN_DECODERS.keys())}))_(?P<split>[a-zA-Z]+)(?P<year>\d+)[.]json"
+        rf"(?P<annotations>({'|'.join(_ANN_DECODERS.keys())}))_(?P<split>[a-zA-Z]+)(?P<year>\d+)[.]json"
     )
 
     def _filter_meta_files(self, data: Tuple[str, Any]) -> bool:
