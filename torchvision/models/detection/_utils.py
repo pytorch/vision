@@ -3,9 +3,9 @@ from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 from torch.nn import functional as F
-from torchvision.ops import FrozenBatchNorm2d, complete_box_iou_loss, distance_box_iou_loss, generalized_box_iou_loss
+from torchvision.ops import complete_box_iou_loss, distance_box_iou_loss, FrozenBatchNorm2d, generalized_box_iou_loss
 
 
 class BalancedPositiveNegativeSampler:

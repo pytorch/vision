@@ -2,21 +2,19 @@ import math
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Tuple, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 from torch import nn, Tensor
 
-from ...ops import sigmoid_focal_loss, generalized_box_iou_loss
-from ...ops import boxes as box_ops
-from ...ops import misc as misc_nn_ops
+from ...ops import boxes as box_ops, generalized_box_iou_loss, misc as misc_nn_ops, sigmoid_focal_loss
 from ...ops.feature_pyramid_network import LastLevelP6P7
 from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from . import _utils as det_utils
 from .anchor_utils import AnchorGenerator
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers

@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 
 from ..io.image import _read_png_16
-from .utils import verify_str_arg, _read_pfm
+from .utils import _read_pfm, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -466,7 +466,7 @@ def _read_16bits_png_with_flow_and_valid_mask(file_name):
 
     flow_and_valid = _read_png_16(file_name).to(torch.float32)
     flow, valid_flow_mask = flow_and_valid[:2, :, :], flow_and_valid[2, :, :]
-    flow = (flow - 2 ** 15) / 64  # This conversion is explained somewhere on the kitti archive
+    flow = (flow - 2**15) / 64  # This conversion is explained somewhere on the kitti archive
     valid_flow_mask = valid_flow_mask.bool()
 
     # For consistency with other datasets, we convert to numpy
