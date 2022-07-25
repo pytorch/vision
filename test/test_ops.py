@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 import torch
 import torch.fx
+import torch.nn.functional as F
 from common_utils import assert_equal, cpu_and_gpu, needs_cuda
 from PIL import Image
 from torch import nn, Tensor
@@ -78,7 +79,7 @@ class RoIOpTester(ABC):
         rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS opeartions.
-        n_channels = 2 * (pool_size ** 2)
+        n_channels = 2 * (pool_size**2)
         x = torch.rand(2, n_channels, 10, 10, dtype=x_dtype, device=device)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
@@ -114,7 +115,7 @@ class RoIOpTester(ABC):
     def test_backward(self, seed, device, contiguous):
         torch.random.manual_seed(seed)
         pool_size = 2
-        x = torch.rand(1, 2 * (pool_size ** 2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
+        x = torch.rand(1, 2 * (pool_size**2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
         rois = torch.tensor(
@@ -1257,6 +1258,134 @@ class TestGenBoxIou(BoxTestBase):
         self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
 
 
+class TestDistanceBoxIoU(BoxTestBase):
+    def _target_fn(self):
+        return (True, ops.distance_box_iou)
+
+    def _generate_int_input():
+        return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
+
+    def _generate_int_expected():
+        return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+
+    def _generate_float_input():
+        return [
+            [285.3538, 185.5758, 1193.5110, 851.4551],
+            [285.1472, 188.7374, 1192.4984, 851.0669],
+            [279.2440, 197.9812, 1189.4746, 849.2019],
+        ]
+
+    def _generate_float_expected():
+        return [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
+
+    @pytest.mark.parametrize(
+        "test_input, dtypes, tolerance, expected",
+        [
+            pytest.param(
+                _generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, _generate_int_expected()
+            ),
+            pytest.param(_generate_float_input(), [torch.float16], 0.002, _generate_float_expected()),
+            pytest.param(_generate_float_input(), [torch.float32, torch.float64], 0.001, _generate_float_expected()),
+        ],
+    )
+    def test_distance_iou(self, test_input, dtypes, tolerance, expected):
+        self._run_test(test_input, dtypes, tolerance, expected)
+
+    def test_distance_iou_jit(self):
+        self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+def test_distance_iou_loss(dtype, device):
+    box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
+    box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
+    box3 = torch.tensor([0, 1, 1, 2], dtype=dtype, device=device)
+    box4 = torch.tensor([1, 1, 2, 2], dtype=dtype, device=device)
+
+    box1s = torch.stack(
+        [box2, box2],
+        dim=0,
+    )
+    box2s = torch.stack(
+        [box3, box4],
+        dim=0,
+    )
+
+    def assert_distance_iou_loss(box1, box2, expected_output, reduction="none"):
+        output = ops.distance_box_iou_loss(box1, box2, reduction=reduction)
+        # TODO: When passing the dtype, the torch.half fails as usual.
+        expected_output = torch.tensor(expected_output, device=device)
+        tol = 1e-5 if dtype != torch.half else 1e-3
+        torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
+
+    assert_distance_iou_loss(box1, box1, 0.0)
+
+    assert_distance_iou_loss(box1, box2, 0.8125)
+
+    assert_distance_iou_loss(box1, box3, 1.1923)
+
+    assert_distance_iou_loss(box1, box4, 1.2500)
+
+    assert_distance_iou_loss(box1s, box2s, 1.2250, reduction="mean")
+    assert_distance_iou_loss(box1s, box2s, 2.4500, reduction="sum")
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+def test_empty_distance_iou_inputs(dtype, device) -> None:
+    box1 = torch.randn([0, 4], dtype=dtype, device=device).requires_grad_()
+    box2 = torch.randn([0, 4], dtype=dtype, device=device).requires_grad_()
+
+    loss = ops.distance_box_iou_loss(box1, box2, reduction="mean")
+    loss.backward()
+
+    tol = 1e-3 if dtype is torch.half else 1e-5
+    torch.testing.assert_close(loss, torch.tensor(0.0, device=device), rtol=tol, atol=tol)
+    assert box1.grad is not None, "box1.grad should not be None after backward is called"
+    assert box2.grad is not None, "box2.grad should not be None after backward is called"
+
+    loss = ops.distance_box_iou_loss(box1, box2, reduction="none")
+    assert loss.numel() == 0, "diou_loss for two empty box should be empty"
+
+
+class TestCompleteBoxIou(BoxTestBase):
+    def _target_fn(self) -> Tuple[bool, Callable]:
+        return (True, ops.complete_box_iou)
+
+    def _generate_int_input() -> List[List[int]]:
+        return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
+
+    def _generate_int_expected() -> List[List[float]]:
+        return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+
+    def _generate_float_input() -> List[List[float]]:
+        return [
+            [285.3538, 185.5758, 1193.5110, 851.4551],
+            [285.1472, 188.7374, 1192.4984, 851.0669],
+            [279.2440, 197.9812, 1189.4746, 849.2019],
+        ]
+
+    def _generate_float_expected() -> List[List[float]]:
+        return [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
+
+    @pytest.mark.parametrize(
+        "test_input, dtypes, tolerance, expected",
+        [
+            pytest.param(
+                _generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, _generate_int_expected()
+            ),
+            pytest.param(_generate_float_input(), [torch.float32, torch.float64], 0.002, _generate_float_expected()),
+            pytest.param(_generate_float_input(), [torch.float32, torch.float64], 0.001, _generate_float_expected()),
+        ],
+    )
+    def test_complete_iou(self, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List) -> None:
+        self._run_test(test_input, dtypes, tolerance, expected)
+
+    def test_ciou_jit(self) -> None:
+        self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
+
+
 class TestMasksToBoxes:
     def test_masks_box(self):
         def masks_box_check(masks, expected, tolerance=1e-4):
@@ -1448,6 +1577,228 @@ class TestDropBlock:
         assert len(graph_node_names) == 2
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
+
+
+class TestFocalLoss:
+    def _generate_diverse_input_target_pair(self, shape=(5, 2), **kwargs):
+        def logit(p: Tensor) -> Tensor:
+            return torch.log(p / (1 - p))
+
+        def generate_tensor_with_range_type(shape, range_type, **kwargs):
+            if range_type != "random_binary":
+                low, high = {
+                    "small": (0.0, 0.2),
+                    "big": (0.8, 1.0),
+                    "zeros": (0.0, 0.0),
+                    "ones": (1.0, 1.0),
+                    "random": (0.0, 1.0),
+                }[range_type]
+                return torch.testing.make_tensor(shape, low=low, high=high, **kwargs)
+            else:
+                return torch.randint(0, 2, shape, **kwargs)
+
+        # This function will return inputs and targets with shape: (shape[0]*9, shape[1])
+        inputs = []
+        targets = []
+        for input_range_type, target_range_type in [
+            ("small", "zeros"),
+            ("small", "ones"),
+            ("small", "random_binary"),
+            ("big", "zeros"),
+            ("big", "ones"),
+            ("big", "random_binary"),
+            ("random", "zeros"),
+            ("random", "ones"),
+            ("random", "random_binary"),
+        ]:
+            inputs.append(logit(generate_tensor_with_range_type(shape, input_range_type, **kwargs)))
+            targets.append(generate_tensor_with_range_type(shape, target_range_type, **kwargs))
+
+        return torch.cat(inputs), torch.cat(targets)
+
+    @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
+    @pytest.mark.parametrize("gamma", [0, 2])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    @pytest.mark.parametrize("seed", [0, 1])
+    def test_correct_ratio(self, alpha, gamma, device, dtype, seed) -> None:
+        if device == "cpu" and dtype is torch.half:
+            pytest.skip("Currently torch.half is not fully supported on cpu")
+        # For testing the ratio with manual calculation, we require the reduction to be "none"
+        reduction = "none"
+        torch.random.manual_seed(seed)
+        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+        focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction=reduction)
+
+        assert torch.all(
+            focal_loss <= ce_loss
+        ), "focal loss must be less or equal to cross entropy loss with same input"
+
+        loss_ratio = (focal_loss / ce_loss).squeeze()
+        prob = torch.sigmoid(inputs)
+        p_t = prob * targets + (1 - prob) * (1 - targets)
+        correct_ratio = (1.0 - p_t) ** gamma
+        if alpha >= 0:
+            alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
+            correct_ratio = correct_ratio * alpha_t
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(correct_ratio, loss_ratio, rtol=tol, atol=tol)
+
+    @pytest.mark.parametrize("reduction", ["mean", "sum"])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    @pytest.mark.parametrize("seed", [2, 3])
+    def test_equal_ce_loss(self, reduction, device, dtype, seed) -> None:
+        if device == "cpu" and dtype is torch.half:
+            pytest.skip("Currently torch.half is not fully supported on cpu")
+        # focal loss should be equal ce_loss if alpha=-1 and gamma=0
+        alpha = -1
+        gamma = 0
+        torch.random.manual_seed(seed)
+        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+        inputs_fl = inputs.clone().requires_grad_()
+        targets_fl = targets.clone()
+        inputs_ce = inputs.clone().requires_grad_()
+        targets_ce = targets.clone()
+        focal_loss = ops.sigmoid_focal_loss(inputs_fl, targets_fl, gamma=gamma, alpha=alpha, reduction=reduction)
+        ce_loss = F.binary_cross_entropy_with_logits(inputs_ce, targets_ce, reduction=reduction)
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(focal_loss, ce_loss, rtol=tol, atol=tol)
+
+        focal_loss.backward()
+        ce_loss.backward()
+        torch.testing.assert_close(inputs_fl.grad, inputs_ce.grad, rtol=tol, atol=tol)
+
+    @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
+    @pytest.mark.parametrize("gamma", [0, 2])
+    @pytest.mark.parametrize("reduction", ["none", "mean", "sum"])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    @pytest.mark.parametrize("seed", [4, 5])
+    def test_jit(self, alpha, gamma, reduction, device, dtype, seed) -> None:
+        if device == "cpu" and dtype is torch.half:
+            pytest.skip("Currently torch.half is not fully supported on cpu")
+        script_fn = torch.jit.script(ops.sigmoid_focal_loss)
+        torch.random.manual_seed(seed)
+        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+        focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        if device == "cpu":
+            scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        else:
+            with torch.jit.fuser("fuser2"):
+                # Use fuser2 to prevent a bug on fuser: https://github.com/pytorch/pytorch/issues/75476
+                # We may remove this condition once the bug is resolved
+                scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
+
+
+class TestGeneralizedBoxIouLoss:
+    # We refer to original test: https://github.com/facebookresearch/fvcore/blob/main/tests/test_giou_loss.py
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_giou_loss(self, dtype, device) -> None:
+        box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
+        box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
+        box3 = torch.tensor([0, 1, 1, 2], dtype=dtype, device=device)
+        box4 = torch.tensor([1, 1, 2, 2], dtype=dtype, device=device)
+
+        box1s = torch.stack([box2, box2], dim=0)
+        box2s = torch.stack([box3, box4], dim=0)
+
+        def assert_giou_loss(box1, box2, expected_loss, reduction="none"):
+            tol = 1e-3 if dtype is torch.half else 1e-5
+            computed_loss = ops.generalized_box_iou_loss(box1, box2, reduction=reduction)
+            expected_loss = torch.tensor(expected_loss, device=device)
+            torch.testing.assert_close(computed_loss, expected_loss, rtol=tol, atol=tol)
+
+        # Identical boxes should have loss of 0
+        assert_giou_loss(box1, box1, 0.0)
+
+        # quarter size box inside other box = IoU of 0.25
+        assert_giou_loss(box1, box2, 0.75)
+
+        # Two side by side boxes, area=union
+        # IoU=0 and GIoU=0 (loss 1.0)
+        assert_giou_loss(box2, box3, 1.0)
+
+        # Two diagonally adjacent boxes, area=2*union
+        # IoU=0 and GIoU=-0.5 (loss 1.5)
+        assert_giou_loss(box2, box4, 1.5)
+
+        # Test batched loss and reductions
+        assert_giou_loss(box1s, box2s, 2.5, reduction="sum")
+        assert_giou_loss(box1s, box2s, 1.25, reduction="mean")
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_empty_inputs(self, dtype, device) -> None:
+        box1 = torch.randn([0, 4], dtype=dtype).requires_grad_()
+        box2 = torch.randn([0, 4], dtype=dtype).requires_grad_()
+
+        loss = ops.generalized_box_iou_loss(box1, box2, reduction="mean")
+        loss.backward()
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(loss, torch.tensor(0.0), rtol=tol, atol=tol)
+        assert box1.grad is not None, "box1.grad should not be None after backward is called"
+        assert box2.grad is not None, "box2.grad should not be None after backward is called"
+
+        loss = ops.generalized_box_iou_loss(box1, box2, reduction="none")
+        assert loss.numel() == 0, "giou_loss for two empty box should be empty"
+
+
+class TestCIOULoss:
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_ciou_loss(self, dtype, device):
+        box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
+        box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
+        box3 = torch.tensor([0, 1, 1, 2], dtype=dtype, device=device)
+        box4 = torch.tensor([1, 1, 2, 2], dtype=dtype, device=device)
+
+        box1s = torch.stack([box2, box2], dim=0)
+        box2s = torch.stack([box3, box4], dim=0)
+
+        def assert_ciou_loss(box1, box2, expected_output, reduction="none"):
+
+            output = ops.complete_box_iou_loss(box1, box2, reduction=reduction)
+            # TODO: When passing the dtype, the torch.half test doesn't pass...
+            expected_output = torch.tensor(expected_output, device=device)
+            tol = 1e-5 if dtype != torch.half else 1e-3
+            torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
+
+        assert_ciou_loss(box1, box1, 0.0)
+
+        assert_ciou_loss(box1, box2, 0.8125)
+
+        assert_ciou_loss(box1, box3, 1.1923)
+
+        assert_ciou_loss(box1, box4, 1.2500)
+
+        assert_ciou_loss(box1s, box2s, 1.2250, reduction="mean")
+        assert_ciou_loss(box1s, box2s, 2.4500, reduction="sum")
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_empty_inputs(self, dtype, device) -> None:
+        box1 = torch.randn([0, 4], dtype=dtype).requires_grad_()
+        box2 = torch.randn([0, 4], dtype=dtype).requires_grad_()
+
+        loss = ops.complete_box_iou_loss(box1, box2, reduction="mean")
+        loss.backward()
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(loss, torch.tensor(0.0), rtol=tol, atol=tol)
+        assert box1.grad is not None, "box1.grad should not be None after backward is called"
+        assert box2.grad is not None, "box2.grad should not be None after backward is called"
+
+        loss = ops.complete_box_iou_loss(box1, box2, reduction="none")
+        assert loss.numel() == 0, "ciou_loss for two empty box should be empty"
 
 
 if __name__ == "__main__":

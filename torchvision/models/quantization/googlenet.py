@@ -1,22 +1,25 @@
 import warnings
-from typing import Any, Optional
+from functools import partial
+from typing import Any, Optional, Union
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
-from torchvision.models.googlenet import GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, model_urls
 
-from ..._internally_replaced_utils import load_state_dict_from_url
+from ...transforms._presets import ImageClassification
+from .._api import Weights, WeightsEnum
+from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _ovewrite_named_param, handle_legacy_interface
+from ..googlenet import BasicConv2d, GoogLeNet, GoogLeNet_Weights, GoogLeNetOutputs, Inception, InceptionAux
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
-__all__ = ["QuantizableGoogLeNet", "googlenet"]
-
-quant_model_urls = {
-    # fp32 GoogLeNet ported from TensorFlow, with weights quantized in PyTorch
-    "googlenet_fbgemm": "https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth",
-}
+__all__ = [
+    "QuantizableGoogLeNet",
+    "GoogLeNet_QuantizedWeights",
+    "googlenet",
+]
 
 
 class QuantizableBasicConv2d(BasicConv2d):
@@ -103,63 +106,115 @@ class QuantizableGoogLeNet(GoogLeNet):
                 m.fuse_model(is_qat)
 
 
+class GoogLeNet_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_FBGEMM_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            "num_params": 6624904,
+            "min_size": (15, 15),
+            "categories": _IMAGENET_CATEGORIES,
+            "backend": "fbgemm",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
+            "unquantized": GoogLeNet_Weights.IMAGENET1K_V1,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.826,
+                    "acc@5": 89.404,
+                }
+            },
+            "_docs": """
+                These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+                weights listed below.
+            """,
+        },
+    )
+    DEFAULT = IMAGENET1K_FBGEMM_V1
+
+
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: GoogLeNet_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else GoogLeNet_Weights.IMAGENET1K_V1,
+    )
+)
 def googlenet(
-    pretrained: bool = False,
+    *,
+    weights: Optional[Union[GoogLeNet_QuantizedWeights, GoogLeNet_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableGoogLeNet:
-    r"""GoogLeNet (Inception v1) model architecture from
-    `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
+    """GoogLeNet (Inception v1) model architecture from `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`__.
 
-    Note that quantize = True returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
-        aux_logits (bool): If True, adds two auxiliary branches that can improve training.
-            Default: *False* when pretrained is True otherwise *True*
-        transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: True if ``pretrained=True``, else False.
+        weights (:class:`~torchvision.models.quantization.GoogLeNet_QuantizedWeights` or :class:`~torchvision.models.GoogLeNet_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.GoogLeNet_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model. Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableGoogLeNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/googlenet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.GoogLeNet_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.GoogLeNet_Weights
+        :members:
+        :noindex:
     """
-    if pretrained:
+    weights = (GoogLeNet_QuantizedWeights if quantize else GoogLeNet_Weights).verify(weights)
+
+    original_aux_logits = kwargs.get("aux_logits", False)
+    if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if "aux_logits" not in kwargs:
-            kwargs["aux_logits"] = False
-        if kwargs["aux_logits"]:
-            warnings.warn(
-                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
-            )
-        original_aux_logits = kwargs["aux_logits"]
-        kwargs["aux_logits"] = True
-        kwargs["init_weights"] = False
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "init_weights", False)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if "backend" in weights.meta:
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
+    backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableGoogLeNet(**kwargs)
     _replace_relu(model)
-
     if quantize:
-        # TODO use pretrained as a string to specify the backend
-        backend = "fbgemm"
         quantize_model(model, backend)
-    else:
-        assert pretrained in [True, False]
 
-    if pretrained:
-        if quantize:
-            model_url = quant_model_urls["googlenet_" + backend]
-        else:
-            model_url = model_urls["googlenet"]
-
-        state_dict = load_state_dict_from_url(model_url, progress=progress)
-
-        model.load_state_dict(state_dict)
-
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not original_aux_logits:
             model.aux_logits = False
             model.aux1 = None  # type: ignore[assignment]
             model.aux2 = None  # type: ignore[assignment]
+        else:
+            warnings.warn(
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
+            )
+
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+from ..googlenet import model_urls  # noqa: F401
+
+
+quant_model_urls = _ModelURLs(
+    {
+        # fp32 GoogLeNet ported from TensorFlow, with weights quantized in PyTorch
+        "googlenet_fbgemm": GoogLeNet_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
+    }
+)

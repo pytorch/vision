@@ -4,13 +4,12 @@ from typing import List, Tuple
 
 import pytest
 import torch
-from common_utils import set_rng_seed, assert_equal
-from torchvision import models
-from torchvision import ops
+from common_utils import assert_equal, set_rng_seed
+from torchvision import models, ops
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
 from torchvision.models.detection.image_list import ImageList
 from torchvision.models.detection.roi_heads import RoIHeads
-from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from torchvision.models.detection.rpn import AnchorGenerator, RegionProposalNetwork, RPNHead
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.ops._register_onnx_ops import _onnx_opset_version
 
@@ -265,7 +264,7 @@ class TestONNXExporter:
 
         resolution = box_roi_pool.output_size[0]
         representation_size = 1024
-        box_head = TwoMLPHead(out_channels * resolution ** 2, representation_size)
+        box_head = TwoMLPHead(out_channels * resolution**2, representation_size)
 
         representation_size = 1024
         box_predictor = FastRCNNPredictor(representation_size, num_classes)
@@ -412,12 +411,13 @@ class TestONNXExporter:
     def get_image(self, rel_path: str, size: Tuple[int, int]) -> torch.Tensor:
         import os
 
+        import torchvision.transforms._pil_constants as _pil_constants
         from PIL import Image
         from torchvision.transforms import functional as F
 
         data_dir = os.path.join(os.path.dirname(__file__), "assets")
         path = os.path.join(data_dir, *rel_path.split("/"))
-        image = Image.open(path).convert("RGB").resize(size, Image.BILINEAR)
+        image = Image.open(path).convert("RGB").resize(size, _pil_constants.BILINEAR)
 
         return F.convert_image_dtype(F.pil_to_tensor(image))
 
@@ -430,7 +430,9 @@ class TestONNXExporter:
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(
+            weights=models.detection.faster_rcnn.FasterRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         # Test exported model on images of different size, or dummy input
@@ -486,7 +488,9 @@ class TestONNXExporter:
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(
+            weights=models.detection.mask_rcnn.MaskRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         # Test exported model on images of different size, or dummy input
@@ -548,7 +552,9 @@ class TestONNXExporter:
     def test_keypoint_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_images = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(
+            weights=models.detection.keypoint_rcnn.KeypointRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         self.run_model(
@@ -570,7 +576,7 @@ class TestONNXExporter:
         )
 
     def test_shufflenet_v2_dynamic_axes(self):
-        model = models.shufflenet_v2_x0_5(pretrained=True)
+        model = models.shufflenet_v2_x0_5(weights=models.ShuffleNet_V2_X0_5_Weights.DEFAULT)
         dummy_input = torch.randn(1, 3, 224, 224, requires_grad=True)
         test_inputs = torch.cat([dummy_input, dummy_input, dummy_input], 0)
 

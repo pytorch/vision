@@ -40,7 +40,7 @@ class TestModelsDetectionUtils:
         # be frozen for each trainable_backbone_layers parameter value
         # i.e all 53 params are frozen if trainable_backbone_layers=0
         # ad first 24 params are frozen if trainable_backbone_layers=2
-        model = backbone_utils.resnet_fpn_backbone("resnet50", pretrained=False, trainable_layers=train_layers)
+        model = backbone_utils.resnet_fpn_backbone("resnet50", weights=None, trainable_layers=train_layers)
         # boolean list that is true if the param at that index is frozen
         is_frozen = [not parameter.requires_grad for _, parameter in model.named_parameters()]
         # check that expected initial number of layers are frozen
@@ -49,18 +49,18 @@ class TestModelsDetectionUtils:
     def test_validate_resnet_inputs_detection(self):
         # default number of backbone layers to train
         ret = backbone_utils._validate_trainable_layers(
-            pretrained=True, trainable_backbone_layers=None, max_value=5, default_value=3
+            is_trained=True, trainable_backbone_layers=None, max_value=5, default_value=3
         )
         assert ret == 3
         # can't go beyond 5
         with pytest.raises(ValueError, match=r"Trainable backbone layers should be in the range"):
             ret = backbone_utils._validate_trainable_layers(
-                pretrained=True, trainable_backbone_layers=6, max_value=5, default_value=3
+                is_trained=True, trainable_backbone_layers=6, max_value=5, default_value=3
             )
-        # if not pretrained, should use all trainable layers and warn
+        # if not trained, should use all trainable layers and warn
         with pytest.warns(UserWarning):
             ret = backbone_utils._validate_trainable_layers(
-                pretrained=False, trainable_backbone_layers=0, max_value=5, default_value=3
+                is_trained=False, trainable_backbone_layers=0, max_value=5, default_value=3
             )
         assert ret == 5
 

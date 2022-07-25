@@ -1,20 +1,8 @@
+import csv
 import functools
 import pathlib
 import pickle
-from typing import BinaryIO
-from typing import (
-    Sequence,
-    Callable,
-    Union,
-    Any,
-    Tuple,
-    TypeVar,
-    Iterator,
-    Dict,
-    IO,
-    Sized,
-)
-from typing import cast
+from typing import Any, BinaryIO, Callable, cast, Dict, IO, Iterator, List, Sequence, Sized, Tuple, TypeVar, Union
 
 import torch
 import torch.distributed as dist
@@ -34,6 +22,7 @@ __all__ = [
     "path_comparator",
     "read_flo",
     "hint_sharding",
+    "hint_shuffling",
 ]
 
 K = TypeVar("K")
@@ -196,4 +185,12 @@ def hint_sharding(datapipe: IterDataPipe) -> ShardingFilter:
 
 
 def hint_shuffling(datapipe: IterDataPipe[D]) -> Shuffler[D]:
-    return Shuffler(datapipe, default=False, buffer_size=INFINITE_BUFFER_SIZE)
+    return Shuffler(datapipe, buffer_size=INFINITE_BUFFER_SIZE).set_shuffle(False)
+
+
+def read_categories_file(name: str) -> List[Union[str, Sequence[str]]]:
+    path = BUILTIN_DIR / f"{name}.categories"
+    with open(path, newline="") as file:
+        rows = list(csv.reader(file))
+        rows = [row[0] if len(row) == 1 else row for row in rows]
+        return rows

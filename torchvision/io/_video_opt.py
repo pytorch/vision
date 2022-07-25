@@ -1,7 +1,7 @@
 import math
 import warnings
 from fractions import Fraction
-from typing import List, Tuple, Dict, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 
@@ -67,13 +67,9 @@ class VideoMetaData:
 
 def _validate_pts(pts_range: Tuple[int, int]) -> None:
 
-    if pts_range[1] > 0:
-        assert (
-            pts_range[0] <= pts_range[1]
-        ), """Start pts should not be smaller than end pts, got
-            start pts: {:d} and end pts: {:d}""".format(
-            pts_range[0],
-            pts_range[1],
+    if pts_range[0] > pts_range[1] > 0:
+        raise ValueError(
+            f"Start pts should not be smaller than end pts, got start pts: {pts_range[0]} and end pts: {pts_range[1]}"
         )
 
 
@@ -427,16 +423,6 @@ def _probe_video_from_memory(
     return info
 
 
-def _convert_to_sec(
-    start_pts: Union[float, Fraction], end_pts: Union[float, Fraction], pts_unit: str, time_base: Fraction
-) -> Tuple[Union[float, Fraction], Union[float, Fraction], str]:
-    if pts_unit == "pts":
-        start_pts = float(start_pts * time_base)
-        end_pts = float(end_pts * time_base)
-        pts_unit = "sec"
-    return start_pts, end_pts, pts_unit
-
-
 def _read_video(
     filename: str,
     start_pts: Union[float, Fraction] = 0,
@@ -456,38 +442,28 @@ def _read_video(
 
     has_video = info.has_video
     has_audio = info.has_audio
-    video_pts_range = (0, -1)
-    video_timebase = default_timebase
-    audio_pts_range = (0, -1)
-    audio_timebase = default_timebase
-    time_base = default_timebase
-
-    if has_video:
-        video_timebase = Fraction(info.video_timebase.numerator, info.video_timebase.denominator)
-        time_base = video_timebase
-
-    if has_audio:
-        audio_timebase = Fraction(info.audio_timebase.numerator, info.audio_timebase.denominator)
-        time_base = time_base if time_base else audio_timebase
-
-    # video_timebase is the default time_base
-    start_pts_sec, end_pts_sec, pts_unit = _convert_to_sec(start_pts, end_pts, pts_unit, time_base)
 
     def get_pts(time_base):
-        start_offset = start_pts_sec
-        end_offset = end_pts_sec
+        start_offset = start_pts
+        end_offset = end_pts
         if pts_unit == "sec":
-            start_offset = int(math.floor(start_pts_sec * (1 / time_base)))
+            start_offset = int(math.floor(start_pts * (1 / time_base)))
             if end_offset != float("inf"):
-                end_offset = int(math.ceil(end_pts_sec * (1 / time_base)))
+                end_offset = int(math.ceil(end_pts * (1 / time_base)))
         if end_offset == float("inf"):
             end_offset = -1
         return start_offset, end_offset
 
+    video_pts_range = (0, -1)
+    video_timebase = default_timebase
     if has_video:
+        video_timebase = Fraction(info.video_timebase.numerator, info.video_timebase.denominator)
         video_pts_range = get_pts(video_timebase)
 
+    audio_pts_range = (0, -1)
+    audio_timebase = default_timebase
     if has_audio:
+        audio_timebase = Fraction(info.audio_timebase.numerator, info.audio_timebase.denominator)
         audio_pts_range = get_pts(audio_timebase)
 
     vframes, aframes, info = _read_video_from_file(

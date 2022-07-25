@@ -28,7 +28,7 @@ Stream::~Stream() {
 
 // look up the proper CODEC querying the function
 AVCodec* Stream::findCodec(AVCodecParameters* params) {
-  return avcodec_find_decoder(params->codec_id);
+  return (AVCodec*)avcodec_find_decoder(params->codec_id);
 }
 
 // Allocate memory for the AVCodecContext, which will hold the context for

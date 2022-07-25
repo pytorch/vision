@@ -14,10 +14,11 @@ import torch
 import torch.fx
 import torch.nn as nn
 from _utils_internal import get_relative_path
-from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
+from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
 from torchvision import models
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
+SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 
 
 def get_models_from_module(module):
@@ -118,7 +119,7 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
         torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
 
-def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out=None):
+def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
     """Check that a nn.Module's results in TorchScript match eager and that it can be exported"""
 
     def get_export_import_copy(m):
@@ -129,26 +130,11 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out
             imported = torch.jit.load(path)
         return imported
 
-    TEST_WITH_SLOW = os.getenv("PYTORCH_TEST_WITH_SLOW", "0") == "1"
-    if not TEST_WITH_SLOW or skip:
-        # TorchScript is not enabled, skip these tests
-        msg = (
-            f"The check_jit_scriptable test for {nn_module.__class__.__name__} was skipped. "
-            "This test checks if the module's results in TorchScript "
-            "match eager and that it can be exported. To run these "
-            "tests make sure you set the environment variable "
-            "PYTORCH_TEST_WITH_SLOW=1 and that the test is not "
-            "manually skipped."
-        )
-        warnings.warn(msg, RuntimeWarning)
-        return None
-
     sm = torch.jit.script(nn_module)
 
     if eager_out is None:
         with torch.no_grad(), freeze_rng_state():
-            if unwrapper:
-                eager_out = nn_module(*args)
+            eager_out = nn_module(*args)
 
     with torch.no_grad(), freeze_rng_state():
         script_out = sm(*args)
@@ -210,11 +196,14 @@ script_model_unwrapper = {
     "googlenet": lambda x: x.logits,
     "inception_v3": lambda x: x.logits,
     "fasterrcnn_resnet50_fpn": lambda x: x[1],
+    "fasterrcnn_resnet50_fpn_v2": lambda x: x[1],
     "fasterrcnn_mobilenet_v3_large_fpn": lambda x: x[1],
     "fasterrcnn_mobilenet_v3_large_320_fpn": lambda x: x[1],
     "maskrcnn_resnet50_fpn": lambda x: x[1],
+    "maskrcnn_resnet50_fpn_v2": lambda x: x[1],
     "keypointrcnn_resnet50_fpn": lambda x: x[1],
     "retinanet_resnet50_fpn": lambda x: x[1],
+    "retinanet_resnet50_fpn_v2": lambda x: x[1],
     "ssd300_vgg16": lambda x: x[1],
     "ssdlite320_mobilenet_v3_large": lambda x: x[1],
     "fcos_resnet50_fpn": lambda x: x[1],
@@ -242,6 +231,8 @@ autocast_flaky_numerics = (
     "fcn_resnet101",
     "lraspp_mobilenet_v3_large",
     "maskrcnn_resnet50_fpn",
+    "maskrcnn_resnet50_fpn_v2",
+    "keypointrcnn_resnet50_fpn",
 )
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
@@ -261,14 +252,27 @@ _model_params = {
         "max_size": 224,
         "input_shape": (3, 224, 224),
     },
+    "retinanet_resnet50_fpn_v2": {
+        "num_classes": 20,
+        "score_thresh": 0.01,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
     "keypointrcnn_resnet50_fpn": {
         "num_classes": 2,
         "min_size": 224,
         "max_size": 224,
-        "box_score_thresh": 0.15,
+        "box_score_thresh": 0.17,
         "input_shape": (3, 224, 224),
     },
     "fasterrcnn_resnet50_fpn": {
+        "num_classes": 20,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
+    "fasterrcnn_resnet50_fpn_v2": {
         "num_classes": 20,
         "min_size": 224,
         "max_size": 224,
@@ -287,6 +291,12 @@ _model_params = {
         "max_size": 224,
         "input_shape": (3, 224, 224),
     },
+    "maskrcnn_resnet50_fpn_v2": {
+        "num_classes": 10,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
     "fasterrcnn_mobilenet_v3_large_fpn": {
         "box_score_thresh": 0.02076,
     },
@@ -295,12 +305,20 @@ _model_params = {
         "rpn_pre_nms_top_n_test": 1000,
         "rpn_post_nms_top_n_test": 1000,
     },
+    "vit_h_14": {
+        "image_size": 56,
+        "input_shape": (1, 3, 56, 56),
+    },
+    "mvit_v1_b": {
+        "input_shape": (1, 3, 16, 224, 224),
+    },
 }
 # speeding up slow models:
 slow_models = [
     "convnext_base",
     "convnext_large",
     "resnext101_32x8d",
+    "resnext101_64x4d",
     "wide_resnet101_2",
     "efficientnet_b6",
     "efficientnet_b7",
@@ -311,16 +329,29 @@ slow_models = [
     "regnet_y_128gf",
     "regnet_x_16gf",
     "regnet_x_32gf",
+    "swin_t",
+    "swin_s",
+    "swin_b",
 ]
 for m in slow_models:
     _model_params[m] = {"input_shape": (1, 3, 64, 64)}
 
+
+# skip big models to reduce memory usage on CI test
+skipped_big_models = {
+    "vit_h_14",
+    "regnet_y_128gf",
+}
 
 # The following contains configuration and expected values to be used tests that are model specific
 _model_tests_values = {
     "retinanet_resnet50_fpn": {
         "max_trainable": 5,
         "n_trn_params_per_layer": [36, 46, 65, 78, 88, 89],
+    },
+    "retinanet_resnet50_fpn_v2": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [44, 74, 131, 170, 200, 203],
     },
     "keypointrcnn_resnet50_fpn": {
         "max_trainable": 5,
@@ -330,9 +361,17 @@ _model_tests_values = {
         "max_trainable": 5,
         "n_trn_params_per_layer": [30, 40, 59, 72, 82, 83],
     },
+    "fasterrcnn_resnet50_fpn_v2": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [50, 80, 137, 176, 206, 209],
+    },
     "maskrcnn_resnet50_fpn": {
         "max_trainable": 5,
         "n_trn_params_per_layer": [42, 52, 71, 84, 94, 95],
+    },
+    "maskrcnn_resnet50_fpn_v2": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [66, 96, 153, 192, 222, 225],
     },
     "fasterrcnn_mobilenet_v3_large_fpn": {
         "max_trainable": 6,
@@ -420,7 +459,7 @@ def test_mobilenet_norm_layer(model_fn):
     assert any(isinstance(x, nn.BatchNorm2d) for x in model.modules())
 
     def get_gn(num_channels):
-        return nn.GroupNorm(32, num_channels)
+        return nn.GroupNorm(1, num_channels)
 
     model = model_fn(norm_layer=get_gn)
     assert not (any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
@@ -428,7 +467,6 @@ def test_mobilenet_norm_layer(model_fn):
 
 
 def test_inception_v3_eval():
-    # replacement for models.inception_v3(pretrained=True) that does not download weights
     kwargs = {}
     kwargs["transform_input"] = True
     kwargs["aux_logits"] = True
@@ -444,7 +482,7 @@ def test_inception_v3_eval():
 
 
 def test_fasterrcnn_double():
-    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, weights=None, weights_backbone=None)
     model.double()
     model.eval()
     input_shape = (3, 300, 300)
@@ -460,7 +498,6 @@ def test_fasterrcnn_double():
 
 
 def test_googlenet_eval():
-    # replacement for models.googlenet(pretrained=True) that does not download weights
     kwargs = {}
     kwargs["transform_input"] = True
     kwargs["aux_logits"] = True
@@ -484,7 +521,7 @@ def test_fasterrcnn_switch_devices():
         assert "scores" in out[0]
         assert "labels" in out[0]
 
-    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, weights=None, weights_backbone=None)
     model.cuda()
     model.eval()
     input_shape = (3, 300, 300)
@@ -569,6 +606,8 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
+    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+        pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
@@ -583,7 +622,7 @@ def test_classification_model(model_fn, dev):
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
@@ -600,7 +639,7 @@ def test_segmentation_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 10,
-        "pretrained_backbone": False,
+        "weights_backbone": None,
         "input_shape": (1, 3, 32, 32),
     }
     model_name = model_fn.__name__
@@ -636,7 +675,7 @@ def test_segmentation_model(model_fn, dev):
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
@@ -662,7 +701,7 @@ def test_detection_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 50,
-        "pretrained_backbone": False,
+        "weights_backbone": None,
         "input_shape": (3, 300, 300),
     }
     model_name = model_fn.__name__
@@ -734,7 +773,7 @@ def test_detection_model(model_fn, dev):
     full_validation = check_out(out)
     _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(model_input)
             # See autocast_flaky_numerics comment at top of file.
@@ -757,53 +796,67 @@ def test_detection_model(model_fn, dev):
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
 def test_detection_model_validation(model_fn):
     set_rng_seed(0)
-    model = model_fn(num_classes=50, pretrained_backbone=False)
+    model = model_fn(num_classes=50, weights=None, weights_backbone=None)
     input_shape = (3, 300, 300)
     x = [torch.rand(input_shape)]
 
     # validate that targets are present in training
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         model(x)
 
     # validate type
     targets = [{"boxes": 0.0}]
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         model(x, targets=targets)
 
     # validate boxes shape
     for boxes in (torch.rand((4,)), torch.rand((1, 5))):
         targets = [{"boxes": boxes}]
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             model(x, targets=targets)
 
     # validate that no degenerate boxes are present
     boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
     targets = [{"boxes": boxes}]
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         model(x, targets=targets)
 
 
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.video))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_video_model(model_fn, dev):
+    set_rng_seed(0)
     # the default input shape is
     # bs * num_channels * clip_len * h *w
-    input_shape = (1, 3, 4, 112, 112)
+    defaults = {
+        "input_shape": (1, 3, 4, 112, 112),
+        "num_classes": 50,
+    }
     model_name = model_fn.__name__
+    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+        pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
+    kwargs = {**defaults, **_model_params.get(model_name, {})}
+    num_classes = kwargs.get("num_classes")
+    input_shape = kwargs.pop("input_shape")
     # test both basicblock and Bottleneck
-    model = model_fn(num_classes=50)
+    model = model_fn(**kwargs)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
+    _assert_expected(out.cpu(), model_name, prec=0.1)
+    assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
-    assert out.shape[-1] == 50
+    assert out.shape[-1] == num_classes
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
-            assert out.shape[-1] == 50
+            # See autocast_flaky_numerics comment at top of file.
+            if model_name not in autocast_flaky_numerics:
+                _assert_expected(out.cpu(), model_name, prec=0.1)
+            assert out.shape[-1] == num_classes
 
     _check_input_backprop(model, x)
 
@@ -821,7 +874,6 @@ def test_quantized_classification_model(model_fn):
     defaults = {
         "num_classes": 5,
         "input_shape": (1, 3, 224, 224),
-        "pretrained": False,
         "quantize": True,
     }
     model_name = model_fn.__name__
@@ -871,7 +923,7 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
     for trainable_layers in range(0, max_trainable + 1):
-        model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
+        model = model_fn(weights=None, weights_backbone="DEFAULT", trainable_backbone_layers=trainable_layers)
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]

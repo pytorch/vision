@@ -5,12 +5,11 @@ import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from itertools import chain
-from typing import Dict, Callable, List, Union, Optional, Tuple, Any
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
 import torchvision
-from torch import fx
-from torch import nn
+from torch import fx, nn
 from torch.fx.graph_module import _copy_attr
 
 
@@ -184,6 +183,23 @@ def _get_leaf_modules_for_ops() -> List[type]:
     return result
 
 
+def _set_default_tracer_kwargs(original_tr_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    default_autowrap_modules = (math, torchvision.ops)
+    default_leaf_modules = _get_leaf_modules_for_ops()
+    result_tracer_kwargs = {} if original_tr_kwargs is None else original_tr_kwargs
+    result_tracer_kwargs["autowrap_modules"] = (
+        tuple(set(result_tracer_kwargs["autowrap_modules"] + default_autowrap_modules))
+        if "autowrap_modules" in result_tracer_kwargs
+        else default_autowrap_modules
+    )
+    result_tracer_kwargs["leaf_modules"] = (
+        list(set(result_tracer_kwargs["leaf_modules"] + default_leaf_modules))
+        if "leaf_modules" in result_tracer_kwargs
+        else default_leaf_modules
+    )
+    return result_tracer_kwargs
+
+
 def get_graph_node_names(
     model: nn.Module,
     tracer_kwargs: Optional[Dict[str, Any]] = None,
@@ -209,10 +225,14 @@ def get_graph_node_names(
 
     Args:
         model (nn.Module): model for which we'd like to print node names
-        tracer_kwargs (dict, optional): a dictionary of keywork arguments for
+        tracer_kwargs (dict, optional): a dictionary of keyword arguments for
             ``NodePathTracer`` (they are eventually passed onto
             `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
-            By default it will be set to wrap and make leaf nodes all torchvision ops.
+            By default it will be set to wrap and make leaf nodes all torchvision ops:
+            {"autowrap_modules": (math, torchvision.ops,),"leaf_modules": _get_leaf_modules_for_ops(),}
+            WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
+            provided dictionary.
+
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
@@ -226,14 +246,7 @@ def get_graph_node_names(
         >>> model = torchvision.models.resnet18()
         >>> train_nodes, eval_nodes = get_graph_node_names(model)
     """
-    if tracer_kwargs is None:
-        tracer_kwargs = {
-            "autowrap_modules": (
-                math,
-                torchvision.ops,
-            ),
-            "leaf_modules": _get_leaf_modules_for_ops(),
-        }
+    tracer_kwargs = _set_default_tracer_kwargs(tracer_kwargs)
     is_training = model.training
     train_tracer = NodePathTracer(**tracer_kwargs)
     train_tracer.trace(model.train())
@@ -277,7 +290,8 @@ class DualGraphModule(fx.GraphModule):
         # eval graphs)
         for node in chain(iter(train_graph.nodes), iter(eval_graph.nodes)):
             if node.op in ["get_attr", "call_module"]:
-                assert isinstance(node.target, str)
+                if not isinstance(node.target, str):
+                    raise TypeError(f"node.target should be of type str instead of {type(node.target)}")
                 _copy_attr(root, self, node.target)
 
         # train mode by default
@@ -290,9 +304,10 @@ class DualGraphModule(fx.GraphModule):
         # Locally defined Tracers are not pickleable. This is needed because torch.package will
         # serialize a GraphModule without retaining the Graph, and needs to use the correct Tracer
         # to re-create the Graph during deserialization.
-        assert (
-            self.eval_graph._tracer_cls == self.train_graph._tracer_cls
-        ), "Train mode and eval mode should use the same tracer class"
+        if self.eval_graph._tracer_cls != self.train_graph._tracer_cls:
+            raise TypeError(
+                f"Train mode and eval mode should use the same tracer class. Instead got {self.eval_graph._tracer_cls} for eval vs {self.train_graph._tracer_cls} for train"
+            )
         self._tracer_cls = None
         if self.graph._tracer_cls and "<locals>" not in self.graph._tracer_cls.__qualname__:
             self._tracer_cls = self.graph._tracer_cls
@@ -373,10 +388,13 @@ def create_feature_extractor(
             for train mode are different than those from eval mode.
             If this is specified, ``train_return_nodes`` must also be specified,
             and `return_nodes` should not be specified.
-        tracer_kwargs (dict, optional): a dictionary of keywork arguments for
+        tracer_kwargs (dict, optional): a dictionary of keyword arguments for
             ``NodePathTracer`` (which passes them onto it's parent class
             `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
-            By default it will be set to wrap and make leaf nodes all torchvision ops.
+            By default it will be set to wrap and make leaf nodes all torchvision ops:
+            {"autowrap_modules": (math, torchvision.ops,),"leaf_modules": _get_leaf_modules_for_ops(),}
+            WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
+            provided dictionary.
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
@@ -421,27 +439,22 @@ def create_feature_extractor(
         >>>                    'autowrap_functions': [leaf_function]})
 
     """
-    if tracer_kwargs is None:
-        tracer_kwargs = {
-            "autowrap_modules": (
-                math,
-                torchvision.ops,
-            ),
-            "leaf_modules": _get_leaf_modules_for_ops(),
-        }
+    tracer_kwargs = _set_default_tracer_kwargs(tracer_kwargs)
     is_training = model.training
 
-    assert any(
-        arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]
-    ), "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
+    if all(arg is None for arg in [return_nodes, train_return_nodes, eval_return_nodes]):
 
-    assert not (
-        (train_return_nodes is None) ^ (eval_return_nodes is None)
-    ), "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
+        raise ValueError(
+            "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
+        )
 
-    assert (return_nodes is None) ^ (
-        train_return_nodes is None
-    ), "If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
+    if (train_return_nodes is None) ^ (eval_return_nodes is None):
+        raise ValueError(
+            "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
+        )
+
+    if not ((return_nodes is None) ^ (train_return_nodes is None)):
+        raise ValueError("If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified")
 
     # Put *_return_nodes into Dict[str, str] format
     def to_strdict(n) -> Dict[str, str]:
@@ -476,9 +489,10 @@ def create_feature_extractor(
 
         available_nodes = list(tracer.node_to_qualname.values())
         # FIXME We don't know if we should expect this to happen
-        assert len(set(available_nodes)) == len(
-            available_nodes
-        ), "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
+        if len(set(available_nodes)) != len(available_nodes):
+            raise ValueError(
+                "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
+            )
         # Check that all outputs in return_nodes are present in the model
         for query in mode_return_nodes[mode].keys():
             # To check if a query is available we need to check that at least
@@ -497,7 +511,9 @@ def create_feature_extractor(
         for n in reversed(graph_module.graph.nodes):
             if n.op == "output":
                 orig_output_nodes.append(n)
-        assert len(orig_output_nodes)
+        if not orig_output_nodes:
+            raise ValueError("No output nodes found in graph_module.graph.nodes")
+
         for n in orig_output_nodes:
             graph_module.graph.erase_node(n)
 

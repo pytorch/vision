@@ -2,25 +2,30 @@ import math
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Callable, Dict, List, Tuple, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 from torch import nn, Tensor
 
-from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops import sigmoid_focal_loss, generalized_box_iou_loss
-from ...ops import boxes as box_ops
-from ...ops import misc as misc_nn_ops
+from ...ops import boxes as box_ops, generalized_box_iou_loss, misc as misc_nn_ops, sigmoid_focal_loss
 from ...ops.feature_pyramid_network import LastLevelP6P7
+from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
-from ..resnet import resnet50
+from .._api import Weights, WeightsEnum
+from .._meta import _COCO_CATEGORIES
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from . import _utils as det_utils
 from .anchor_utils import AnchorGenerator
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 
 
-__all__ = ["FCOS", "fcos_resnet50_fpn"]
+__all__ = [
+    "FCOS",
+    "FCOS_ResNet50_FPN_Weights",
+    "fcos_resnet50_fpn",
+]
 
 
 class FCOSHead(nn.Module):
@@ -80,14 +85,12 @@ class FCOSHead(nn.Module):
         loss_cls = sigmoid_focal_loss(cls_logits, gt_classes_targets, reduction="sum")
 
         # regression loss: GIoU loss
-        # TODO: vectorize this instead of using a for loop
-        pred_boxes = [
-            self.box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
-            for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
-        ]
+
+        pred_boxes = self.box_coder.decode_all(bbox_regression, anchors)
+
         # amp issue: pred_boxes need to convert float
         loss_bbox_reg = generalized_box_iou_loss(
-            torch.stack(pred_boxes)[foregroud_mask].float(),
+            pred_boxes[foregroud_mask],
             torch.stack(all_gt_boxes_targets)[foregroud_mask],
             reduction="sum",
         )
@@ -194,7 +197,10 @@ class FCOSClassificationHead(nn.Module):
 
 class FCOSRegressionHead(nn.Module):
     """
-    A regression head for use in FCOS.
+    A regression head for use in FCOS, which combines regression branch and center-ness branch.
+    This can obtain better performance.
+
+    Reference: `FCOS: A simple and strong anchor-free object detector <https://arxiv.org/abs/2006.09214>`_.
 
     Args:
         in_channels (int): number of channels of the input feature
@@ -318,7 +324,7 @@ class FCOS(nn.Module):
         >>> from torchvision.models.detection.anchor_utils import AnchorGenerator
         >>> # load a pre-trained model for classification and return
         >>> # only the features
-        >>> backbone = torchvision.models.mobilenet_v2(pretrained=True).features
+        >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # FCOS needs to know the number of
         >>> # output channels in a backbone. For mobilenet_v2, it's 1280
         >>> # so we need to add it here
@@ -366,6 +372,7 @@ class FCOS(nn.Module):
         nms_thresh: float = 0.6,
         detections_per_img: int = 100,
         topk_candidates: int = 1000,
+        **kwargs,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -378,14 +385,20 @@ class FCOS(nn.Module):
             )
         self.backbone = backbone
 
-        assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
+        if not isinstance(anchor_generator, (AnchorGenerator, type(None))):
+            raise TypeError(
+                f"anchor_generator should be of type AnchorGenerator or None, instead  got {type(anchor_generator)}"
+            )
 
         if anchor_generator is None:
             anchor_sizes = ((8,), (16,), (32,), (64,), (128,))  # equal to strides of multi-level feature map
             aspect_ratios = ((1.0,),) * len(anchor_sizes)  # set only one anchor
             anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
         self.anchor_generator = anchor_generator
-        assert self.anchor_generator.num_anchors_per_location()[0] == 1
+        if self.anchor_generator.num_anchors_per_location()[0] != 1:
+            raise ValueError(
+                f"anchor_generator.num_anchors_per_location()[0] should be 1 instead of {anchor_generator.num_anchors_per_location()[0]}"
+            )
 
         if head is None:
             head = FCOSHead(backbone.out_channels, anchor_generator.num_anchors_per_location()[0], num_classes)
@@ -397,7 +410,7 @@ class FCOS(nn.Module):
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
-        self.transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+        self.transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std, **kwargs)
 
         self.center_sampling_radius = center_sampling_radius
         self.score_thresh = score_thresh
@@ -457,7 +470,7 @@ class FCOS(nn.Module):
             pairwise_match &= (pairwise_dist > lower_bound[:, None]) & (pairwise_dist < upper_bound[:, None])
 
             # match the GT box with minimum area, if there are multiple GT matches
-            gt_areas = (gt_boxes[:, 1] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])  # N
+            gt_areas = (gt_boxes[:, 2] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])  # N
             pairwise_match = pairwise_match.to(torch.float32) * (1e8 - gt_areas[None, :])
             min_values, matched_idx = pairwise_match.max(dim=1)  # R, per-anchor match
             matched_idx[min_values < 1e-5] = -1  # unmatched anchors are assigned -1
@@ -552,20 +565,25 @@ class FCOS(nn.Module):
                 like `scores`, `labels` and `mask` (for Mask R-CNN models).
         """
         if self.training:
+
             if targets is None:
-                raise ValueError("In training mode, targets should be passed")
-            for target in targets:
-                boxes = target["boxes"]
-                if isinstance(boxes, torch.Tensor):
-                    if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
-                else:
-                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                for target in targets:
+                    boxes = target["boxes"]
+                    torch._assert(isinstance(boxes, torch.Tensor), "Expected target boxes to be of type Tensor.")
+                    torch._assert(
+                        len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                        f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
+                    )
 
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            assert len(val) == 2
+            torch._assert(
+                len(val) == 2,
+                f"expecting the last two dimensions of the Tensor to be H and W instead got {img.shape[-2:]}",
+            )
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -580,9 +598,9 @@ class FCOS(nn.Module):
                     # print the first degenerate box
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
-                    raise ValueError(
-                        "All bounding boxes should have positive height and width."
-                        f" Found invalid box {degen_bb} for target at index {target_idx}."
+                    torch._assert(
+                        False,
+                        f"All bounding boxes should have positive height and width. Found invalid box {degen_bb} for target at index {target_idx}.",
                     )
 
         # get the features from the backbone
@@ -603,10 +621,11 @@ class FCOS(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            assert targets is not None
-
-            # compute the losses
-            losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                # compute the losses
+                losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
         else:
             # split outputs per level
             split_head_outputs: Dict[str, List[Tensor]] = {}
@@ -626,23 +645,46 @@ class FCOS(nn.Module):
         return self.eager_outputs(losses, detections)
 
 
-model_urls = {
-    "fcos_resnet50_fpn_coco": "https://download.pytorch.org/models/fcos_resnet50_fpn_coco-99b0c9b7.pth",
-}
+class FCOS_ResNet50_FPN_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/fcos_resnet50_fpn_coco-99b0c9b7.pth",
+        transforms=ObjectDetection,
+        meta={
+            "num_params": 32269600,
+            "categories": _COCO_CATEGORIES,
+            "min_size": (1, 1),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn",
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 39.2,
+                }
+            },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
+        },
+    )
+    DEFAULT = COCO_V1
 
 
+@handle_legacy_interface(
+    weights=("pretrained", FCOS_ResNet50_FPN_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
+)
 def fcos_resnet50_fpn(
-    pretrained: bool = False,
+    *,
+    weights: Optional[FCOS_ResNet50_FPN_Weights] = None,
     progress: bool = True,
-    num_classes: int = 91,
-    pretrained_backbone: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
     trainable_backbone_layers: Optional[int] = None,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> FCOS:
     """
     Constructs a FCOS model with a ResNet-50-FPN backbone.
 
-    Reference: `"FCOS: Fully Convolutional One-Stage Object Detection" <https://arxiv.org/abs/1904.01355>`_.
+    .. betastatus:: detection module
+
+    Reference: `FCOS: Fully Convolutional One-Stage Object Detection <https://arxiv.org/abs/1904.01355>`_.
+               `FCOS: A simple and strong anchor-free object detector <https://arxiv.org/abs/2006.09214>`_.
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
@@ -672,34 +714,63 @@ def fcos_resnet50_fpn(
 
     Example:
 
-        >>> model = torchvision.models.detection.fcos_resnet50_fpn(pretrained=True)
+        >>> model = torchvision.models.detection.fcos_resnet50_fpn(weights=FCOS_ResNet50_FPN_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        weights (:class:`~torchvision.models.detection.FCOS_ResNet50_FPN_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.detection.FCOS_ResNet50_FPN_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The pretrained weights for
+            the backbone.
         trainable_backbone_layers (int, optional): number of trainable (not frozen) resnet layers starting
             from final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are
             trainable. If ``None`` is passed (the default) this value is set to 3. Default: None
+        **kwargs: parameters passed to the ``torchvision.models.detection.FCOS``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/fcos.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.detection.FCOS_ResNet50_FPN_Weights
+        :members:
     """
-    is_trained = pretrained or pretrained_backbone
+    weights = FCOS_ResNet50_FPN_Weights.verify(weights)
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
+
+    is_trained = weights is not None or weights_backbone is not None
     trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
     norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
-    if pretrained:
-        # no need to download the backbone if pretrained is set
-        pretrained_backbone = False
-
-    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer)
+    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=norm_layer)
     backbone = _resnet_fpn_extractor(
         backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256)
     )
     model = FCOS(backbone, num_classes, **kwargs)
-    if pretrained:
-        state_dict = load_state_dict_from_url(model_urls["fcos_resnet50_fpn_coco"], progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "fcos_resnet50_fpn_coco": FCOS_ResNet50_FPN_Weights.COCO_V1.url,
+    }
+)

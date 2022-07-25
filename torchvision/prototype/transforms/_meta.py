@@ -1,9 +1,9 @@
-from typing import Union, Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.functional import convert_image_dtype
 
 from ._utils import is_simple_tensor
@@ -64,7 +64,7 @@ class ConvertImageColorSpace(Transform):
         elif is_simple_tensor(input):
             if self.old_color_space is None:
                 raise RuntimeError(
-                    f"In order to convert vanilla tensor images, `{type(self).__name__}(...)` "
+                    f"In order to convert simple tensor images, `{type(self).__name__}(...)` "
                     f"needs to be constructed with the `old_color_space=...` parameter."
                 )
 

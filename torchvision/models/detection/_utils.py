@@ -1,10 +1,11 @@
 import math
 from collections import OrderedDict
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
-from torch import Tensor, nn
-from torchvision.ops.misc import FrozenBatchNorm2d
+from torch import nn, Tensor
+from torch.nn import functional as F
+from torchvision.ops import complete_box_iou_loss, distance_box_iou_loss, FrozenBatchNorm2d, generalized_box_iou_loss
 
 
 class BalancedPositiveNegativeSampler:
@@ -159,8 +160,14 @@ class BoxCoder:
         return targets
 
     def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
-        assert isinstance(boxes, (list, tuple))
-        assert isinstance(rel_codes, torch.Tensor)
+        torch._assert(
+            isinstance(boxes, (list, tuple)),
+            "This function expects boxes of type list or tuple.",
+        )
+        torch._assert(
+            isinstance(rel_codes, torch.Tensor),
+            "This function expects rel_codes of type torch.Tensor.",
+        )
         boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
         box_sum = 0
@@ -293,6 +300,42 @@ class BoxLinearCoder:
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=1)
         return pred_boxes
 
+    def decode_all(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
+        """
+        Vectorized version of `decode_single` method.
+
+        Args:
+            rel_codes (Tensor): encoded boxes
+            boxes (List[Tensor]): List of reference boxes.
+
+        Returns:
+            Tensor: the predicted boxes with the encoded relative box offsets.
+
+        .. note::
+            This method assumes that ``rel_codes`` and ``boxes`` have same size for 0th dimension. i.e. ``len(rel_codes) == len(boxes)``.
+
+        """
+
+        boxes = torch.stack(boxes).to(dtype=rel_codes.dtype)
+
+        ctr_x = 0.5 * (boxes[..., 0] + boxes[..., 2])
+        ctr_y = 0.5 * (boxes[..., 1] + boxes[..., 3])
+
+        if self.normalize_by_size:
+            boxes_w = boxes[..., 2] - boxes[..., 0]
+            boxes_h = boxes[..., 3] - boxes[..., 1]
+
+            list_box_size = torch.stack((boxes_w, boxes_h, boxes_w, boxes_h), dim=-1)
+            rel_codes = rel_codes * list_box_size
+
+        pred_boxes1 = ctr_x - rel_codes[..., 0]
+        pred_boxes2 = ctr_y - rel_codes[..., 1]
+        pred_boxes3 = ctr_x + rel_codes[..., 2]
+        pred_boxes4 = ctr_y + rel_codes[..., 3]
+
+        pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=-1)
+        return pred_boxes
+
 
 class Matcher:
     """
@@ -333,7 +376,7 @@ class Matcher:
         """
         self.BELOW_LOW_THRESHOLD = -1
         self.BETWEEN_THRESHOLDS = -2
-        assert low_threshold <= high_threshold
+        torch._assert(low_threshold <= high_threshold, "low_threshold should be <= high_threshold")
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
@@ -371,8 +414,10 @@ class Matcher:
         matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
-            assert all_matches is not None
-            self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
+            if all_matches is None:
+                torch._assert(False, "all_matches should not be None")
+            else:
+                self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
         return matches
 
@@ -499,3 +544,31 @@ def _topk_min(input: Tensor, orig_kval: int, axis: int) -> int:
     axis_dim_val = torch._shape_as_tensor(input)[axis].unsqueeze(0)
     min_kval = torch.min(torch.cat((torch.tensor([orig_kval], dtype=axis_dim_val.dtype), axis_dim_val), 0))
     return _fake_cast_onnx(min_kval)
+
+
+def _box_loss(
+    type: str,
+    box_coder: BoxCoder,
+    anchors_per_image: Tensor,
+    matched_gt_boxes_per_image: Tensor,
+    bbox_regression_per_image: Tensor,
+    cnf: Optional[Dict[str, float]] = None,
+) -> Tensor:
+    torch._assert(type in ["l1", "smooth_l1", "ciou", "diou", "giou"], f"Unsupported loss: {type}")
+
+    if type == "l1":
+        target_regression = box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
+        return F.l1_loss(bbox_regression_per_image, target_regression, reduction="sum")
+    elif type == "smooth_l1":
+        target_regression = box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
+        beta = cnf["beta"] if cnf is not None and "beta" in cnf else 1.0
+        return F.smooth_l1_loss(bbox_regression_per_image, target_regression, reduction="sum", beta=beta)
+    else:
+        bbox_per_image = box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
+        eps = cnf["eps"] if cnf is not None and "eps" in cnf else 1e-7
+        if type == "ciou":
+            return complete_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
+        if type == "diou":
+            return distance_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
+        # otherwise giou
+        return generalized_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)

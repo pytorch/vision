@@ -1225,7 +1225,7 @@ class TestVideoReader:
 
     @pytest.mark.parametrize("test_video", test_videos.keys())
     @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
-    @pytest.mark.parametrize("start_offset", [0, 1000])
+    @pytest.mark.parametrize("start_offset", [0, 500])
     @pytest.mark.parametrize("end_offset", [3000, None])
     def test_audio_present_pts(self, test_video, backend, start_offset, end_offset):
         """Test if audio frames are returned with pts unit."""

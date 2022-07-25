@@ -1,7 +1,9 @@
 import datetime
 import os
 import time
+import warnings
 
+import datasets
 import presets
 import torch
 import torch.utils.data
@@ -10,12 +12,7 @@ import torchvision.datasets.video_utils
 import utils
 from torch import nn
 from torch.utils.data.dataloader import default_collate
-from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
-
-try:
-    from torchvision import prototype
-except ImportError:
-    prototype = None
+from torchvision.datasets.samplers import DistributedSampler, RandomClipSampler, UniformClipSampler
 
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):
@@ -25,7 +22,7 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
     metric_logger.add_meter("clips/s", utils.SmoothedValue(window_size=10, fmt="{value:.3f}"))
 
     header = f"Epoch: [{epoch}]"
-    for video, target in metric_logger.log_every(data_loader, print_freq, header):
+    for video, target, _ in metric_logger.log_every(data_loader, print_freq, header):
         start_time = time.time()
         video, target = video.to(device), target.to(device)
         with torch.cuda.amp.autocast(enabled=scaler is not None):
@@ -55,12 +52,25 @@ def evaluate(model, criterion, data_loader, device):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test:"
+    num_processed_samples = 0
+    # Group and aggregate output of a video
+    num_videos = len(data_loader.dataset.samples)
+    num_classes = len(data_loader.dataset.classes)
+    agg_preds = torch.zeros((num_videos, num_classes), dtype=torch.float32, device=device)
+    agg_targets = torch.zeros((num_videos), dtype=torch.int32, device=device)
     with torch.inference_mode():
-        for video, target in metric_logger.log_every(data_loader, 100, header):
+        for video, target, video_idx in metric_logger.log_every(data_loader, 100, header):
             video = video.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
             output = model(video)
             loss = criterion(output, target)
+
+            # Use softmax to convert output into prediction probability
+            preds = torch.softmax(output, dim=1)
+            for b in range(video.size(0)):
+                idx = video_idx[b].item()
+                agg_preds[idx] += preds[b].detach()
+                agg_targets[idx] = target[b].detach().item()
 
             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             # FIXME need to take into account that the datasets
@@ -69,7 +79,28 @@ def evaluate(model, criterion, data_loader, device):
             metric_logger.update(loss=loss.item())
             metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
             metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
+            num_processed_samples += batch_size
     # gather the stats from all processes
+    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+    if isinstance(data_loader.sampler, DistributedSampler):
+        # Get the len of UniformClipSampler inside DistributedSampler
+        num_data_from_sampler = len(data_loader.sampler.dataset)
+    else:
+        num_data_from_sampler = len(data_loader.sampler)
+
+    if (
+        hasattr(data_loader.dataset, "__len__")
+        and num_data_from_sampler != num_processed_samples
+        and torch.distributed.get_rank() == 0
+    ):
+        # See FIXME above
+        warnings.warn(
+            f"It looks like the sampler has {num_data_from_sampler} samples, but {num_processed_samples} "
+            "samples were used for the validation, which might bias the results. "
+            "Try adjusting the batch size and / or the world size. "
+            "Setting the world size to 1 is always a safe bet."
+        )
+
     metric_logger.synchronize_between_processes()
 
     print(
@@ -77,13 +108,19 @@ def evaluate(model, criterion, data_loader, device):
             top1=metric_logger.acc1, top5=metric_logger.acc5
         )
     )
+    # Reduce the agg_preds and agg_targets from all gpu and show result
+    agg_preds = utils.reduce_across_processes(agg_preds)
+    agg_targets = utils.reduce_across_processes(agg_targets, op=torch.distributed.ReduceOp.MAX)
+    agg_acc1, agg_acc5 = utils.accuracy(agg_preds, agg_targets, topk=(1, 5))
+    print(" * Video Acc@1 {acc1:.3f} Video Acc@5 {acc5:.3f}".format(acc1=agg_acc1, acc5=agg_acc5))
     return metric_logger.acc1.global_avg
 
 
-def _get_cache_path(filepath):
+def _get_cache_path(filepath, args):
     import hashlib
 
-    h = hashlib.sha1(filepath.encode()).hexdigest()
+    value = f"{filepath}-{args.clip_len}-{args.kinetics_version}-{args.frame_rate}"
+    h = hashlib.sha1(value.encode()).hexdigest()
     cache_path = os.path.join("~", ".torch", "vision", "datasets", "kinetics", h[:10] + ".pt")
     cache_path = os.path.expanduser(cache_path)
     return cache_path
@@ -91,36 +128,34 @@ def _get_cache_path(filepath):
 
 def collate_fn(batch):
     # remove audio from the batch
-    batch = [(d[0], d[2]) for d in batch]
+    batch = [(d[0], d[2], d[3]) for d in batch]
     return default_collate(batch)
 
 
 def main(args):
-    if args.prototype and prototype is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
-    if not args.prototype and args.weights:
-        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
     utils.init_distributed_mode(args)
     print(args)
-    print("torch version: ", torch.__version__)
-    print("torchvision version: ", torchvision.__version__)
 
     device = torch.device(args.device)
 
-    torch.backends.cudnn.benchmark = True
+    if args.use_deterministic_algorithms:
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True)
+    else:
+        torch.backends.cudnn.benchmark = True
 
     # Data loading code
     print("Loading data")
-    traindir = os.path.join(args.data_path, args.train_dir)
-    valdir = os.path.join(args.data_path, args.val_dir)
+    traindir = os.path.join(args.data_path, "train")
+    valdir = os.path.join(args.data_path, "val")
 
     print("Loading training data")
     st = time.time()
-    cache_path = _get_cache_path(traindir)
-    transform_train = presets.VideoClassificationPresetTrain((128, 171), (112, 112))
+    cache_path = _get_cache_path(traindir, args)
+    transform_train = presets.VideoClassificationPresetTrain(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_train from {cache_path}")
@@ -129,16 +164,19 @@ def main(args):
     else:
         if args.distributed:
             print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
-        dataset = torchvision.datasets.Kinetics400(
-            traindir,
+        dataset = datasets.KineticsWithVideoId(
+            args.data_path,
             frames_per_clip=args.clip_len,
+            num_classes=args.kinetics_version,
+            split="train",
             step_between_clips=1,
             transform=transform_train,
-            frame_rate=15,
+            frame_rate=args.frame_rate,
             extensions=(
                 "avi",
                 "mp4",
             ),
+            output_format="TCHW",
         )
         if args.cache_dataset:
             print(f"Saving dataset_train to {cache_path}")
@@ -148,16 +186,13 @@ def main(args):
     print("Took", time.time() - st)
 
     print("Loading validation data")
-    cache_path = _get_cache_path(valdir)
+    cache_path = _get_cache_path(valdir, args)
 
-    if not args.prototype:
-        transform_test = presets.VideoClassificationPresetEval(resize_size=(128, 171), crop_size=(112, 112))
+    if args.weights and args.test_only:
+        weights = torchvision.models.get_weight(args.weights)
+        transform_test = weights.transforms()
     else:
-        if args.weights:
-            weights = prototype.models.get_weight(args.weights)
-            transform_test = weights.transforms()
-        else:
-            transform_test = prototype.transforms.VideoClassificationEval(crop_size=(112, 112), resize_size=(128, 171))
+        transform_test = presets.VideoClassificationPresetEval(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")
@@ -166,16 +201,19 @@ def main(args):
     else:
         if args.distributed:
             print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
-        dataset_test = torchvision.datasets.Kinetics400(
-            valdir,
+        dataset_test = datasets.KineticsWithVideoId(
+            args.data_path,
             frames_per_clip=args.clip_len,
+            num_classes=args.kinetics_version,
+            split="val",
             step_between_clips=1,
             transform=transform_test,
-            frame_rate=15,
+            frame_rate=args.frame_rate,
             extensions=(
                 "avi",
                 "mp4",
             ),
+            output_format="TCHW",
         )
         if args.cache_dataset:
             print(f"Saving dataset_test to {cache_path}")
@@ -187,7 +225,7 @@ def main(args):
     test_sampler = UniformClipSampler(dataset_test.video_clips, args.clips_per_video)
     if args.distributed:
         train_sampler = DistributedSampler(train_sampler)
-        test_sampler = DistributedSampler(test_sampler)
+        test_sampler = DistributedSampler(test_sampler, shuffle=False)
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
@@ -208,10 +246,7 @@ def main(args):
     )
 
     print("Creating model")
-    if not args.prototype:
-        model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
-    else:
-        model = prototype.models.video.__dict__[args.model](weights=args.weights)
+    model = torchvision.models.video.__dict__[args.model](weights=args.weights)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -265,6 +300,9 @@ def main(args):
             scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
+        # We disable the cudnn benchmarking because it can noticeably affect the accuracy
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
@@ -293,17 +331,19 @@ def main(args):
     print(f"Training time {total_time_str}")
 
 
-def parse_args():
+def get_args_parser(add_help=True):
     import argparse
 
-    parser = argparse.ArgumentParser(description="PyTorch Video Classification Training")
+    parser = argparse.ArgumentParser(description="PyTorch Video Classification Training", add_help=add_help)
 
     parser.add_argument("--data-path", default="/datasets01_101/kinetics/070618/", type=str, help="dataset path")
-    parser.add_argument("--train-dir", default="train_avi-480p", type=str, help="name of train dir")
-    parser.add_argument("--val-dir", default="val_avi-480p", type=str, help="name of val dir")
+    parser.add_argument(
+        "--kinetics-version", default="400", type=str, choices=["400", "600"], help="Select kinetics version"
+    )
     parser.add_argument("--model", default="r2plus1d_18", type=str, help="model name")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument("--clip-len", default=16, type=int, metavar="N", help="number of frames per clip")
+    parser.add_argument("--frame-rate", default=15, type=int, metavar="N", help="the frame rate")
     parser.add_argument(
         "--clips-per-video", default=5, type=int, metavar="N", help="maximum number of clips per video to consider"
     )
@@ -353,33 +393,21 @@ def parse_args():
         action="store_true",
     )
     parser.add_argument(
-        "--pretrained",
-        dest="pretrained",
-        help="Use pre-trained models from the modelzoo",
-        action="store_true",
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
-    # Prototype models only
-    parser.add_argument(
-        "--prototype",
-        dest="prototype",
-        help="Use prototype model builders instead those from main area",
-        action="store_true",
-    )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
-    args = parser.parse_args()
-
-    return args
+    return parser
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = get_args_parser().parse_args()
     main(args)

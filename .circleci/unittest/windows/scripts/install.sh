@@ -22,13 +22,19 @@ else
     elif [[ ${#CU_VERSION} -eq 5 ]]; then
         CUDA_VERSION="${CU_VERSION:2:2}.${CU_VERSION:4:1}"
     fi
+
+    cuda_toolkit_pckg="cudatoolkit"
+    if [[ "$CU_VERSION" == cu116 ]]; then
+        cuda_toolkit_pckg="cuda"
+    fi
+
     echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION"
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
-    cudatoolkit="cudatoolkit=${version}"
+    cudatoolkit="${cuda_toolkit_pckg}=${version}"
 fi
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
-conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c nvidia "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}" pytest
+conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c nvidia "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}"
 
 torch_cuda=$(python -c "import torch; print(torch.cuda.is_available())")
 echo torch.cuda.is_available is $torch_cuda

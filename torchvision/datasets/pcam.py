@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Tuple
 
 from PIL import Image
 
-from .utils import download_file_from_google_drive, _decompress, verify_str_arg
+from .utils import _decompress, download_file_from_google_drive, verify_str_arg
 from .vision import VisionDataset
 
 
