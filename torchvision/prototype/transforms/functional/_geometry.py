@@ -1,19 +1,19 @@
 import numbers
 import warnings
-from typing import Tuple, List, Optional, Sequence, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
+from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 from torchvision.transforms.functional import (
-    pil_modes_mapping,
+    _compute_output_size,
     _get_inverse_affine_matrix,
     InterpolationMode,
-    _compute_output_size,
+    pil_modes_mapping,
 )
 
-from ._meta import convert_bounding_box_format, get_dimensions_image_tensor, get_dimensions_image_pil
+from ._meta import convert_bounding_box_format, get_dimensions_image_pil, get_dimensions_image_tensor
 
 
 # shortcut type
