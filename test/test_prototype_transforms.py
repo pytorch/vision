@@ -525,8 +525,10 @@ class TestRandomAffine:
             assert degrees[0] <= params["angle"] <= degrees[1]
 
         if translate is not None:
-            assert -translate[0] * w <= params["translations"][0] <= translate[0] * w
-            assert -translate[1] * h <= params["translations"][1] <= translate[1] * h
+            w_max = int(round(translate[0] * w))
+            h_max = int(round(translate[1] * h))
+            assert -w_max <= params["translations"][0] <= w_max
+            assert -h_max <= params["translations"][1] <= h_max
         else:
             assert params["translations"] == (0, 0)
 
