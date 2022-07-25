@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional, Callable, List, Any
+from typing import Any, Callable, List, Optional
 
 import torch
 import torch.nn.functional as F
@@ -9,7 +9,7 @@ from ..ops.misc import MLP, Permute
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param
 
@@ -23,6 +23,15 @@ __all__ = [
     "swin_s",
     "swin_b",
 ]
+
+
+def _patch_merging_pad(x):
+    H, W, _ = x.shape[-3:]
+    x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+    return x
+
+
+torch.fx.wrap("_patch_merging_pad")
 
 
 class PatchMerging(nn.Module):
@@ -46,8 +55,7 @@ class PatchMerging(nn.Module):
         Returns:
             Tensor with layout of [..., H/2, W/2, 2*C]
         """
-        H, W, _ = x.shape[-3:]
-        x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+        x = _patch_merging_pad(x)
 
         x0 = x[..., 0::2, 0::2, :]  # ... H/2 W/2 C
         x1 = x[..., 1::2, 0::2, :]  # ... H/2 W/2 C
@@ -98,6 +106,7 @@ def shifted_window_attention(
     x = F.pad(input, (0, 0, 0, pad_r, 0, pad_b))
     _, pad_H, pad_W, _ = x.shape
 
+    shift_size = shift_size.copy()
     # If window size is larger than feature size, there is no need to shift window
     if window_size[0] >= pad_H:
         shift_size[0] = 0
@@ -357,7 +366,7 @@ class SwinTransformer(nn.Module):
         # build SwinTransformer blocks
         for i_stage in range(len(depths)):
             stage: List[nn.Module] = []
-            dim = embed_dim * 2 ** i_stage
+            dim = embed_dim * 2**i_stage
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)

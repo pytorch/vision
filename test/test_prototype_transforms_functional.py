@@ -201,30 +201,56 @@ def horizontal_flip_bounding_box():
 
 @register_kernel_info_from_sample_inputs_fn
 def resize_image_tensor():
-    for image, interpolation in itertools.product(
+    for image, interpolation, max_size, antialias in itertools.product(
         make_images(),
-        [
-            F.InterpolationMode.BILINEAR,
-            F.InterpolationMode.NEAREST,
-        ],
+        [F.InterpolationMode.BILINEAR, F.InterpolationMode.NEAREST],  # interpolation
+        [None, 34],  # max_size
+        [False, True],  # antialias
     ):
+
+        if antialias and interpolation == F.InterpolationMode.NEAREST:
+            continue
+
         height, width = image.shape[-2:]
         for size in [
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield SampleInput(image, size=size, interpolation=interpolation)
+            if max_size is not None:
+                size = [size[0]]
+            yield SampleInput(image, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def resize_bounding_box():
-    for bounding_box in make_bounding_boxes():
+    for bounding_box, max_size in itertools.product(
+        make_bounding_boxes(),
+        [None, 34],  # max_size
+    ):
         height, width = bounding_box.image_size
         for size in [
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
+            if max_size is not None:
+                size = [size[0]]
             yield SampleInput(bounding_box, size=size, image_size=bounding_box.image_size)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def resize_segmentation_mask():
+    for mask, max_size in itertools.product(
+        make_segmentation_masks(),
+        [None, 34],  # max_size
+    ):
+        height, width = mask.shape[-2:]
+        for size in [
+            (height, width),
+            (int(height * 0.75), int(width * 1.25)),
+        ]:
+            if max_size is not None:
+                size = [size[0]]
+            yield SampleInput(mask, size=size, max_size=max_size)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -285,6 +311,22 @@ def affine_segmentation_mask():
 
 
 @register_kernel_info_from_sample_inputs_fn
+def rotate_image_tensor():
+    for image, angle, expand, center, fill in itertools.product(
+        make_images(extra_dims=((), (4,))),
+        [-87, 15, 90],  # angle
+        [True, False],  # expand
+        [None, [12, 23]],  # center
+        [None, [128], [12.0]],  # fill
+    ):
+        if center is not None and expand:
+            # Skip warning: The provided center argument is ignored if expand is True
+            continue
+
+        yield SampleInput(image, angle=angle, expand=expand, center=center, fill=fill)
+
+
+@register_kernel_info_from_sample_inputs_fn
 def rotate_bounding_box():
     for bounding_box, angle, expand, center in itertools.product(
         make_bounding_boxes(), [-87, 15, 90], [True, False], [None, [12, 23]]
@@ -320,6 +362,18 @@ def rotate_segmentation_mask():
             angle=angle,
             expand=expand,
             center=center,
+        )
+
+
+@register_kernel_info_from_sample_inputs_fn
+def crop_image_tensor():
+    for image, top, left, height, width in itertools.product(make_images(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20]):
+        yield SampleInput(
+            image,
+            top=top,
+            left=left,
+            height=height,
+            width=width,
         )
 
 
@@ -370,6 +424,17 @@ def resized_crop_segmentation_mask():
         make_segmentation_masks(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20], [(32, 32), (16, 18)]
     ):
         yield SampleInput(mask, top=top, left=left, height=height, width=width, size=size)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def pad_image_tensor():
+    for image, padding, fill, padding_mode in itertools.product(
+        make_images(),
+        [[1], [1, 1], [1, 1, 2, 2]],  # padding
+        [12, 12.0],  # fill
+        ["constant", "symmetric", "edge", "reflect"],  # padding mode,
+    ):
+        yield SampleInput(image, padding=padding, fill=fill, padding_mode=padding_mode)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -455,6 +520,39 @@ def center_crop_segmentation_mask():
 )
 def test_scriptable(kernel):
     jit.script(kernel)
+
+
+# Test below is intended to test mid-level op vs low-level ops it calls
+# For example, resize -> resize_image_tensor, resize_bounding_boxes etc
+# TODO: Rewrite this tests as sample args may include more or less params
+# than needed by functions
+@pytest.mark.parametrize(
+    "func",
+    [
+        pytest.param(func, id=name)
+        for name, func in F.__dict__.items()
+        if not name.startswith("_")
+        and callable(func)
+        and all(
+            feature_type not in name for feature_type in {"image", "segmentation_mask", "bounding_box", "label", "pil"}
+        )
+        and name not in {"to_image_tensor", "InterpolationMode", "decode_video_with_av", "crop", "rotate"}
+        # We skip 'crop' due to missing 'height' and 'width'
+        # We skip 'rotate' due to non implemented yet expand=True case for bboxes
+    ],
+)
+def test_functional_mid_level(func):
+    finfos = [finfo for finfo in FUNCTIONAL_INFOS if f"{func.__name__}_" in finfo.name]
+    for finfo in finfos:
+        for sample_input in finfo.sample_inputs():
+            expected = finfo(sample_input)
+            kwargs = dict(sample_input.kwargs)
+            for key in ["format", "image_size"]:
+                if key in kwargs:
+                    del kwargs[key]
+            output = func(*sample_input.args, **kwargs)
+            torch.testing.assert_close(output, expected, msg=f"finfo={finfo}, output={output}, expected={expected}")
+            break
 
 
 @pytest.mark.parametrize(
