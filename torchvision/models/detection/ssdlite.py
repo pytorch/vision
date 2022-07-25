@@ -10,10 +10,10 @@ from ...ops.misc import Conv2dNormActivation
 from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
 from .. import mobilenet
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..mobilenetv3 import mobilenet_v3_large, MobileNet_V3_Large_Weights
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
@@ -221,6 +221,8 @@ def ssdlite320_mobilenet_v3_large(
     """SSDlite model architecture with input size 320x320 and a MobileNetV3 Large backbone, as
     described at `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`__ and
     `MobileNetV2: Inverted Residuals and Linear Bottlenecks <https://arxiv.org/abs/1801.04381>`__.
+
+    .. betastatus:: detection module
 
     See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.
 

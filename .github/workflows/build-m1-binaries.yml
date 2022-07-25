@@ -6,7 +6,15 @@ on:
   push:
     branches:
       - nightly
+      - main
+      - release/*
+    tags:
+        # NOTE: Binary build pipelines should only get triggered on release candidate builds
+        # Release candidate tags look like: v1.11.0-rc1
+        - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
+env:
+  CHANNEL: "nightly"
 jobs:
   build_wheels:
     name: "Build TorchVision M1 wheels"
@@ -17,19 +25,58 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Set CHANNEL (only for tagged pushes)
+        if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') }}
+        run: |
+          # reference ends with an RC suffix
+          if [[ ${GITHUB_REF_NAME} = *-rc[0-9]* ]]; then
+            echo "CHANNEL=test" >> "$GITHUB_ENV"
+          fi
+      - name: Set Release CHANNEL (for release)
+        if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }}
+        run: |
+          echo "CHANNEL=test" >> "$GITHUB_ENV"
       - name: Build TorchVision M1 wheel
         shell: arch -arch arm64 bash {0}
         env:
           ENV_NAME: conda-env-${{ github.run_id }}
           PY_VERS: ${{ matrix.py_vers }}
         run: |
-          echo $PATH
           . ~/miniconda3/etc/profile.d/conda.sh
+          # Needed for JPEG library detection as setup.py detects conda presence by running `shlex.which('conda')`
+          export PATH=~/miniconda3/bin:$PATH
           set -ex
-          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng openjpeg wheel pkg-config
-          conda run -p ${ENV_NAME} python3 -mpip install torch --extra-index-url=https://download.pytorch.org/whl/nightly torch
+          . packaging/pkg_helpers.bash
+          # if we are uploading to test channell, our version consist only of the base: 0.x.x - no date string or suffix added
+          if [[ $CHANNEL == "test" ]]; then
+            setup_base_build_version
+          else
+            setup_build_version
+          fi
+
+          WHL_NAME=torchvision-${BUILD_VERSION}-cp${PY_VERS/.}-cp${PY_VERS/.}-macosx_11_0_arm64.whl
+          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg wheel pkg-config
+          conda run -p ${ENV_NAME} python3 -mpip install torch --pre --extra-index-url=https://download.pytorch.org/whl/${CHANNEL}
           conda run -p ${ENV_NAME} python3 -mpip install delocate
           conda run -p ${ENV_NAME} python3 setup.py bdist_wheel
+          export PYTORCH_VERSION="$(conda run -p ${ENV_NAME} python3 -mpip show torch | grep ^Version: | sed 's/Version:  *//')"
+          conda run -p ${ENV_NAME} DYLD_FALLBACK_LIBRARY_PATH="${ENV_NAME}/lib" delocate-wheel -v --ignore-missing-dependencies dist/${WHL_NAME}
+          conda env remove -p ${ENV_NAME}
+      - name: Test wheel
+        shell: arch -arch arm64 bash {0}
+        env:
+          ENV_NAME: conda-test-env-${{ github.run_id }}
+          PY_VERS: ${{ matrix.py_vers }}
+        run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          set -ex
+          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy
+          conda run -p ${ENV_NAME} python3 -mpip install torch --pre --extra-index-url=https://download.pytorch.org/whl/${CHANNEL}
+          conda run -p ${ENV_NAME} python3 -mpip install dist/*.whl
+          # Test torch is importable, by changing cwd and running import commands
+          conda run --cwd /tmp -p ${ENV_NAME} python3 -c "import torchvision;print('torchvision version is ', torchvision.__version__)"
+          conda run --cwd /tmp -p ${ENV_NAME} python3 -c "import torch;import torchvision;print('Is torchvision useable?', all(x is not None for x in [torch.ops.image.decode_png, torch.ops.torchvision.roi_align]))"
+          conda run --cwd /tmp -p ${ENV_NAME} python3 -c "import torchvision;print(torchvision.io.read_image('${PWD}/gallery/assets/dog1.jpg').shape)"
           conda env remove -p ${ENV_NAME}
       - name: Upload wheel to GitHub
         uses: actions/upload-artifact@v3
@@ -37,12 +84,76 @@ jobs:
           name: torchvision-py${{ matrix.py_vers }}-macos11-m1
           path: dist/
       - name: Upload wheel to S3
+        if: ${{ github.event_name == 'push' && (github.event.ref == 'refs/heads/nightly' || startsWith(github.event.ref, 'refs/tags/')) }}
         shell: arch -arch arm64 bash {0}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY }}
-          CHANNEL: nightly
         run: |
           for pkg in dist/*; do
             aws s3 cp "$pkg" "s3://pytorch/whl/${CHANNEL}/cpu/" --acl public-read
           done
+  build_conda:
+    name: "Build TorchVision M1 conda packages"
+    runs-on: macos-m1
+    strategy:
+      matrix:
+        py_vers: [ "3.8", "3.9", "3.10" ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Set CHANNEL (only for tagged pushes)
+        if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') }}
+        run: |
+          # reference ends with an RC suffix
+          if [[ ${GITHUB_REF_NAME} = *-rc[0-9]* ]]; then
+            echo "CHANNEL=test" >> "$GITHUB_ENV"
+          fi
+      - name: Set CHANNEL Release (for release)
+        if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }}
+        run: |
+          echo "CHANNEL=test" >> "$GITHUB_ENV"
+      - name: Install conda-build and purge previous artifacts
+        shell: arch -arch arm64 bash {0}
+        run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          conda install -yq conda-build
+          conda build purge-all
+
+      - name: Build TorchVision M1 conda package
+        shell: arch -arch arm64 bash {0}
+        env:
+          ENV_NAME: conda-env-${{ github.run_id }}
+          PYTHON_VERSION: ${{ matrix.py_vers }}
+          CU_VERSION: cpu
+        run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          set -ex
+          . packaging/pkg_helpers.bash
+
+          if [[ $CHANNEL == "test" ]]; then
+            setup_base_build_version
+          else
+            setup_build_version
+          fi
+
+          setup_conda_pytorch_constraint
+          export SOURCE_ROOT_DIR=$(pwd)
+          conda build -c defaults $CONDA_CHANNEL_FLAGS --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
+          mkdir -p dist
+          cp ~/miniconda3/conda-bld/osx-arm64/*.tar.bz2 dist/
+      - name: Upload package to GitHub
+        uses: actions/upload-artifact@v3
+        with:
+          name: torchvision-py${{ matrix.py_vers }}-macos11-m1-conda
+          path: dist/
+      - name: Upload package to conda
+        if: ${{ github.event_name == 'push' && (github.event.ref == 'refs/heads/nightly' || startsWith(github.event.ref, 'refs/tags/')) }}
+        shell: arch -arch arm64 bash {0}
+        env:
+          CONDA_PYTORCHBOT_TOKEN: ${{ secrets.CONDA_PYTORCHBOT_TOKEN }}
+        run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          conda install -yq anaconda-client
+          set -x
+          anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload ~/miniconda3/conda-bld/osx-arm64/*.tar.bz2 -u "pytorch-${CHANNEL}" --label main --no-progress --force

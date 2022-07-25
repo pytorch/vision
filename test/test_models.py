@@ -14,7 +14,7 @@ import torch
 import torch.fx
 import torch.nn as nn
 from _utils_internal import get_relative_path
-from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
+from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
 from torchvision import models
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
@@ -308,6 +308,9 @@ _model_params = {
     "vit_h_14": {
         "image_size": 56,
         "input_shape": (1, 3, 56, 56),
+    },
+    "mvit_v1_b": {
+        "input_shape": (1, 3, 16, 224, 224),
     },
 }
 # speeding up slow models:
@@ -603,7 +606,7 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
-    if dev == "cuda" and SKIP_BIG_MODEL and model_name in skipped_big_models:
+    if SKIP_BIG_MODEL and model_name in skipped_big_models:
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
@@ -830,6 +833,8 @@ def test_video_model(model_fn, dev):
         "num_classes": 50,
     }
     model_name = model_fn.__name__
+    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+        pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")

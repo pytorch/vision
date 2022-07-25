@@ -1,11 +1,11 @@
-from typing import Any, Optional, Tuple, Union, Type, Iterator
+from typing import Any, Iterator, Optional, Tuple, Type, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.utils._internal import query_recursively
 
-from .functional._meta import get_dimensions_image_tensor, get_dimensions_image_pil
+from .functional._meta import get_dimensions_image_pil, get_dimensions_image_tensor
 
 
 def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:

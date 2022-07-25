@@ -7,17 +7,17 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
 from ...transforms._presets import ObjectDetection
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..mobilenetv3 import mobilenet_v3_large, MobileNet_V3_Large_Weights
+from ..resnet import resnet50, ResNet50_Weights
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
-from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers, _mobilenet_extractor
+from .backbone_utils import _mobilenet_extractor, _resnet_fpn_extractor, _validate_trainable_layers
 from .generalized_rcnn import GeneralizedRCNN
 from .roi_heads import RoIHeads
-from .rpn import RPNHead, RegionProposalNetwork
+from .rpn import RegionProposalNetwork, RPNHead
 from .transform import GeneralizedRCNNTransform
 
 
@@ -250,7 +250,7 @@ class FasterRCNN(GeneralizedRCNN):
         if box_head is None:
             resolution = box_roi_pool.output_size[0]
             representation_size = 1024
-            box_head = TwoMLPHead(out_channels * resolution ** 2, representation_size)
+            box_head = TwoMLPHead(out_channels * resolution**2, representation_size)
 
         if box_predictor is None:
             representation_size = 1024
@@ -469,6 +469,8 @@ def fasterrcnn_resnet50_fpn(
     Detection with Region Proposal Networks <https://arxiv.org/abs/1506.01497>`__
     paper.
 
+    .. betastatus:: detection module
+
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
@@ -579,6 +581,8 @@ def fasterrcnn_resnet50_fpn_v2(
     """
     Constructs an improved Faster R-CNN model with a ResNet-50-FPN backbone from `Benchmarking Detection
     Transfer Learning with Vision Transformers <https://arxiv.org/abs/2111.11429>`__ paper.
+
+    .. betastatus:: detection module
 
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
@@ -697,6 +701,8 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     """
     Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tunned for mobile use cases.
 
+    .. betastatus:: detection module
+
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
     details.
@@ -767,6 +773,9 @@ def fasterrcnn_mobilenet_v3_large_fpn(
 ) -> FasterRCNN:
     """
     Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
+
+    .. betastatus:: detection module
+
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
     details.

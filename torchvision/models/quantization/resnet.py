@@ -1,12 +1,12 @@
 from functools import partial
-from typing import Any, Type, Union, List, Optional
+from typing import Any, List, Optional, Type, Union
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 from torchvision.models.resnet import (
-    Bottleneck,
     BasicBlock,
+    Bottleneck,
     ResNet,
     ResNet18_Weights,
     ResNet50_Weights,
@@ -15,9 +15,9 @@ from torchvision.models.resnet import (
 )
 
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
@@ -302,7 +302,7 @@ def resnet18(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNet18_QuantizedWeights
@@ -351,7 +351,7 @@ def resnet50(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNet50_QuantizedWeights
@@ -400,7 +400,7 @@ def resnext101_32x8d(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights
@@ -443,7 +443,7 @@ def resnext101_64x4d(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNeXt101_64X4D_QuantizedWeights
