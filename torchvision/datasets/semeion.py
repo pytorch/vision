@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Tuple
 import numpy as np
 from PIL import Image
 
-from .utils import download_url, check_integrity
+from .utils import check_integrity, download_url
 from .vision import VisionDataset
 
 
