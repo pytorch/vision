@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
 from .folder import default_loader
-from .utils import verify_str_arg, check_integrity, download_and_extract_archive
+from .utils import check_integrity, download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
