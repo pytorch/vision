@@ -7,6 +7,7 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
+from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 from ._transform import _RandomApplyTransform
 from ._utils import get_image_dimensions, has_all, has_any, query_image
@@ -92,8 +93,9 @@ class RandomErasing(_RandomApplyTransform):
                 return features.Image.new_like(inpt, output)
             return output
         elif isinstance(inpt, PIL.Image.Image):
-            # TODO: We should implement a fallback to tensor, like gaussian_blur etc
-            raise RuntimeError("Not implemented")
+            t_img = pil_to_tensor(inpt)
+            output = F.erase_image_tensor(t_img, **params)
+            return to_pil_image(output, mode=inpt.mode)
         else:
             return inpt
 
