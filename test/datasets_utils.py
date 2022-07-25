@@ -16,6 +16,8 @@ import zipfile
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
+import numpy as np
+
 import PIL
 import PIL.Image
 import pytest
@@ -23,6 +25,7 @@ import torch
 import torchvision.datasets
 import torchvision.io
 from common_utils import disable_console_output, get_tmp_dir
+from torchvision.transforms.functional import get_dimensions
 
 
 __all__ = [
@@ -746,6 +749,49 @@ def create_image_folder(
         create_image_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size, **kwargs)
         for idx in range(num_examples)
     ]
+
+
+def shape_test_for_stereo_gt_w_mask(
+    left: PIL.Image.Image, right: PIL.Image.Image, disparity: np.ndarray, valid_mask: np.ndarray
+):
+    left_dims = get_dimensions(left)
+    right_dims = get_dimensions(right)
+    c, h, w = left_dims
+    # check that left and right are the same size
+    assert left_dims == right_dims
+    # check general shapes
+    assert c == 3
+    assert disparity.ndim == 3
+    assert disparity.shape == (1, h, w)
+    # check that valid mask is the same size as the disparity
+
+    _, dh, dw = disparity.shape
+    mh, mw = valid_mask.shape
+    assert dh == mh
+    assert dw == mw
+
+
+def shape_test_for_stereo_gt_no_mask(left: PIL.Image.Image, right: PIL.Image.Image, disparity: np.ndarray):
+    left_dims = get_dimensions(left)
+    right_dims = get_dimensions(right)
+    c, h, w = left_dims
+    # check that left and right are the same size
+    assert left_dims == right_dims
+    # check general shapes
+    assert c == 3
+    assert disparity.ndim == 3
+    assert disparity.shape == (1, h, w)
+
+
+def shape_test_for_stereo_no_gt(left: PIL.Image.Image, right: PIL.Image.Image, disparity: None):
+    left_dims = get_dimensions(left)
+    right_dims = get_dimensions(right)
+    c, _, _ = left_dims
+    # check that left and right are the same size
+    assert left_dims == right_dims
+    # check general shapes
+    assert c == 3
+    assert disparity is None
 
 
 @requires_lazy_imports("av")
