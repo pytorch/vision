@@ -173,20 +173,11 @@ class BoundingBox(_Feature):
         image_size = self.image_size
         if expand:
             # The way we recompute image_size is not optimal due to redundant computations of
-            # - rotation matrix
-            # - points dot matrix
+            # - rotation matrix (_get_inverse_affine_matrix)
+            # - points dot matrix (_compute_output_size)
             # Alternatively, we could return new image size by _F.rotate_bounding_box
-            translate = [0.0, 0.0]
-            scale = 1.0
-            shear = [0.0, 0.0]
             height, width = image_size
-            center_f = [width * 0.5, height * 0.5]
-            rotation_matrix = torch.tensor(
-                _get_inverse_affine_matrix(center_f, angle, translate, scale, shear, inverted=False),
-                dtype=self.dtype,
-                device=self.device,
-            ).view(2, 3)
-
+            rotation_matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0])
             new_width, new_height = _compute_output_size(rotation_matrix, width, height)
             image_size = (new_height, new_width)
 
