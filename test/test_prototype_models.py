@@ -1,6 +1,7 @@
 import pytest
 import test_models as TM
 import torch
+import torchvision.prototype.models.depth.stereo.crestereo as crestereo
 import torchvision.prototype.models.depth.stereo.raft_stereo as raft_stereo
 from common_utils import set_rng_seed, cpu_and_gpu
 
@@ -36,3 +37,43 @@ def test_raft_stereo(model_builder, model_mode, dev):
 
     # Test against expected file output
     TM._assert_expected(depth_pred, name=model_builder.__name__, atol=1e-2, rtol=1e-2)
+
+
+@pytest.mark.parametrize("model_builder", (crestereo.crestereo_base,))
+@pytest.mark.parametrize("model_mode", ("standard", "scripted"))
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_crestereo(model_builder, model_mode, dev):
+    set_rng_seed(0)
+
+    model = model_builder().eval().to(dev)
+
+    if model_mode == "scripted":
+        model = torch.jit.script(model)
+
+    img1 = torch.rand(1, 3, 256, 256).to(dev)
+    img2 = torch.rand(1, 3, 256, 256).to(dev)
+    iterations = 3
+
+    preds = model(img1, img2, flow_init=None, iterations=iterations)
+    disparity_pred = preds[-1]
+
+    # all the pyramid levels except the highest res make only half the number of iterations
+    expected_iterations = (iterations // 2) * (len(model.resolutions) - 1)
+    expected_iterations += iterations
+    assert (
+        len(preds) == expected_iterations
+    ), "Number of predictions should be the number of iterations multiplied by the number of pyramid levels"
+
+    assert disparity_pred.shape == torch.Size(
+        [1, 2, 256, 256]
+    ), f"Predicted disparity should have the same spatial shape as the input. Inputs shape {img1.shape[2:]}, Prediction shape {disparity_pred.shape[2:]}"
+
+    assert all(
+        d.shape == torch.Size([1, 2, 256, 256]) for d in preds
+    ), "All predicted disparities are expected to have the same shape"
+
+    # test a backward pass with a dummy loss as well
+    preds = torch.stack(preds, dim=0)
+    targets = torch.ones_like(preds, requires_grad=False)
+    loss = torch.nn.functional.mse_loss(preds, targets)
+    loss.backward()
