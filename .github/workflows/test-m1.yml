@@ -14,7 +14,7 @@ env:
 jobs:
   tests:
     name: "Unit-tests on M1"
-    runs-on: macos-m1
+    runs-on: macos-m1-12
     strategy:
       matrix:
         py_vers: [ "3.8"]
