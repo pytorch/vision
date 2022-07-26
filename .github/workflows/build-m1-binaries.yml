@@ -18,7 +18,7 @@ env:
 jobs:
   build_wheels:
     name: "Build TorchVision M1 wheels"
-    runs-on: macos-m1
+    runs-on: macos-m1-12
     strategy:
       matrix:
         py_vers: [ "3.8", "3.9", "3.10" ]
@@ -54,13 +54,12 @@ jobs:
             setup_build_version
           fi
 
-          WHL_NAME=torchvision-${BUILD_VERSION}-cp${PY_VERS/.}-cp${PY_VERS/.}-macosx_11_0_arm64.whl
           conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg wheel pkg-config
           conda run -p ${ENV_NAME} python3 -mpip install torch --pre --extra-index-url=https://download.pytorch.org/whl/${CHANNEL}
           conda run -p ${ENV_NAME} python3 -mpip install delocate
           conda run -p ${ENV_NAME} python3 setup.py bdist_wheel
           export PYTORCH_VERSION="$(conda run -p ${ENV_NAME} python3 -mpip show torch | grep ^Version: | sed 's/Version:  *//')"
-          conda run -p ${ENV_NAME} DYLD_FALLBACK_LIBRARY_PATH="${ENV_NAME}/lib" delocate-wheel -v --ignore-missing-dependencies dist/${WHL_NAME}
+          conda run -p ${ENV_NAME} DYLD_FALLBACK_LIBRARY_PATH="${ENV_NAME}/lib" delocate-wheel -v --ignore-missing-dependencies dist/*.whl
           conda env remove -p ${ENV_NAME}
       - name: Test wheel
         shell: arch -arch arm64 bash {0}
@@ -95,7 +94,7 @@ jobs:
           done
   build_conda:
     name: "Build TorchVision M1 conda packages"
-    runs-on: macos-m1
+    runs-on: macos-m1-12
     strategy:
       matrix:
         py_vers: [ "3.8", "3.9", "3.10" ]
@@ -139,9 +138,13 @@ jobs:
 
           setup_conda_pytorch_constraint
           export SOURCE_ROOT_DIR=$(pwd)
-          conda build -c defaults $CONDA_CHANNEL_FLAGS --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
-          mkdir -p dist
-          cp ~/miniconda3/conda-bld/osx-arm64/*.tar.bz2 dist/
+          conda build \
+            -c defaults \
+            $CONDA_CHANNEL_FLAGS \
+            --no-anaconda-upload \
+            --python "$PYTHON_VERSION" \
+            --output-folder=dist/ \
+            packaging/torchvision
       - name: Upload package to GitHub
         uses: actions/upload-artifact@v3
         with:
