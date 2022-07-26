@@ -634,7 +634,7 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
     cmax = torch.ceil((max_vals / tol).trunc_() * tol)
     cmin = torch.floor((min_vals / tol).trunc_() * tol)
     size = cmax - cmin
-    return int(size[0]), int(size[1])
+    return int(size[0]), int(size[1])  # w, h
 
 
 def rotate(

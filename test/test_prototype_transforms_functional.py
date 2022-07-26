@@ -693,13 +693,11 @@ def test_scriptable(kernel):
             "InterpolationMode",
             "decode_video_with_av",
             "crop",
-            "rotate",
             "perspective",
             "elastic_transform",
             "elastic",
         }
         # We skip 'crop' due to missing 'height' and 'width'
-        # We skip 'rotate' due to non implemented yet expand=True case for bboxes
         # We skip 'perspective' as it requires different input args than perspective_image_tensor etc
         # Skip 'elastic', TODO: inspect why test is failing
     ],
@@ -998,6 +996,9 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             out_bbox[1] -= tr_y
             out_bbox[2] -= tr_x
             out_bbox[3] -= tr_y
+
+            # image_size should be updated, but it is OK here to skip its computation
+            # as we do not compute it in F.rotate_bounding_box
 
         out_bbox = features.BoundingBox(
             out_bbox,

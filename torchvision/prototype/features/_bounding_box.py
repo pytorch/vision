@@ -5,6 +5,8 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms import InterpolationMode
+from torchvision.transforms.functional import _get_inverse_affine_matrix
+from torchvision.transforms.functional_tensor import _compute_output_size
 
 from ._feature import _Feature
 
@@ -168,10 +170,27 @@ class BoundingBox(_Feature):
         output = _F.rotate_bounding_box(
             self, format=self.format, image_size=self.image_size, angle=angle, expand=expand, center=center
         )
-        # TODO: update output image size if expand is True
+        image_size = self.image_size
         if expand:
-            raise RuntimeError("Not yet implemented")
-        return BoundingBox.new_like(self, output, dtype=output.dtype)
+            # The way we recompute image_size is not optimal due to redundant computations of
+            # - rotation matrix
+            # - points dot matrix
+            # Alternatively, we could return new image size by _F.rotate_bounding_box
+            translate = [0.0, 0.0]
+            scale = 1.0
+            shear = [0.0, 0.0]
+            height, width = image_size
+            center_f = [width * 0.5, height * 0.5]
+            rotation_matrix = torch.tensor(
+                _get_inverse_affine_matrix(center_f, angle, translate, scale, shear, inverted=False),
+                dtype=self.dtype,
+                device=self.device,
+            ).view(2, 3)
+
+            new_width, new_height = _compute_output_size(rotation_matrix, width, height)
+            image_size = (new_height, new_width)
+
+        return BoundingBox.new_like(self, output, dtype=output.dtype, image_size=image_size)
 
     def affine(
         self,
