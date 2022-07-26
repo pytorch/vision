@@ -190,7 +190,7 @@ binary_common: &binary_common
     build_version:
       description: "version number of release binary; by default, build a nightly"
       type: string
-      default: "0.13.0"
+      default: "0.13.1"
     pytorch_version:
       description: "PyTorch version to build against; by default, use a nightly"
       type: string
@@ -1064,7 +1064,7 @@ jobs:
             # Don't use "checkout" step since it uses ssh, which cannot git push
             # https://circleci.com/docs/2.0/configuration-reference/#checkout
             set -ex
-            # Change v1.12.1rc1 into 1.12 (only major.minor)
+            # Change v1.12.1rc1 into 3  (only major.minor)
             tag=$(echo $CIRCLE_TAG | sed -e 's/v*\([0-9]*\.[0-9]*\).*/\1/')
             target=${tag:-main}
             ~/workspace/.circleci/build_docs/commit_docs.sh ~/workspace $target
