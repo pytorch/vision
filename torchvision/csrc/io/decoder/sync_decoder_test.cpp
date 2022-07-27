@@ -50,7 +50,7 @@ void gotFilesStats(std::vector<VideoFileStats>& stats) {
     fseek(f, 0, SEEK_END);
     std::vector<uint8_t> buffer(ftell(f));
     rewind(f);
-    CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
+    TORCH_CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
     fclose(f);
 
     for (size_t i = 0; i < rounds; ++i) {
@@ -66,7 +66,7 @@ void gotFilesStats(std::vector<VideoFileStats>& stats) {
       avgProvUs +=
           std::chrono::duration_cast<std::chrono::microseconds>(then - now)
               .count();
-      CHECK_EQ(metadata.size(), 1);
+      TORCH_CHECK_EQ(metadata.size(), 1);
       item.num = metadata[0].num;
       item.den = metadata[0].den;
       item.fps = metadata[0].fps;
@@ -90,7 +90,7 @@ size_t measurePerformanceUs(
     fseek(f, 0, SEEK_END);
     std::vector<uint8_t> buffer(ftell(f));
     rewind(f);
-    CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
+    TORCH_CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
     fclose(f);
 
     for (size_t i = 0; i < rounds; ++i) {
@@ -324,7 +324,7 @@ TEST(SyncDecoder, TestMemoryBuffer) {
   fseek(f, 0, SEEK_END);
   std::vector<uint8_t> buffer(ftell(f));
   rewind(f);
-  CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
+  TORCH_CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
   fclose(f);
   CHECK(decoder.init(
       params,
@@ -349,7 +349,7 @@ TEST(SyncDecoder, TestMemoryBufferNoSeekableWithFullRead) {
   fseek(f, 0, SEEK_END);
   std::vector<uint8_t> buffer(ftell(f));
   rewind(f);
-  CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
+  TORCH_CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
   fclose(f);
 
   params.maxSeekableBytes = buffer.size() + 1;
@@ -388,7 +388,7 @@ TEST(SyncDecoder, TestMemoryBufferNoSeekableWithPartialRead) {
   fseek(f, 0, SEEK_END);
   std::vector<uint8_t> buffer(ftell(f));
   rewind(f);
-  CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
+  TORCH_CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
   fclose(f);
 
   params.maxSeekableBytes = buffer.size() / 2;
