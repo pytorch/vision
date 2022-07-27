@@ -326,7 +326,8 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
         lines[:] = [
             "The model builder above accepts the following values as the ``weights`` parameter.",
-            f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
+            f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``. You can also use strings, e.g. "
+            f"``weights='DEFAULT'`` or ``weights='{str(list(obj)[0]).split('.')[1]}'``.",
         ]
 
         if obj.__doc__ != "An enumeration.":
