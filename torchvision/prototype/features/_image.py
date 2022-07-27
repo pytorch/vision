@@ -74,7 +74,7 @@ class Image(_Feature):
 
     @property
     def image_size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], self.shape[-2:])
+        return cast(Tuple[int, int], tuple(self.shape[-2:]))
 
     @property
     def num_channels(self) -> int:

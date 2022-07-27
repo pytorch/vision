@@ -467,6 +467,20 @@ class TestRandomRotation:
 
         fn.assert_called_once_with(inpt, **params, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
+    @pytest.mark.parametrize("angle", [34, -87])
+    @pytest.mark.parametrize("expand", [False, True])
+    def test_boundingbox_image_size(self, angle, expand):
+        # Specific test for BoundingBox.rotate
+        bbox = features.BoundingBox(
+            torch.tensor([1, 2, 3, 4]), format=features.BoundingBoxFormat.XYXY, image_size=(32, 32)
+        )
+        img = features.Image(torch.rand(1, 3, 32, 32))
+
+        out_img = img.rotate(angle, expand=expand)
+        out_bbox = bbox.rotate(angle, expand=expand)
+
+        assert out_img.image_size == out_bbox.image_size
+
 
 class TestRandomAffine:
     def test_assertions(self):
