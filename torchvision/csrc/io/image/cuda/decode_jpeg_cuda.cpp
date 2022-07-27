@@ -13,7 +13,7 @@
 namespace vision {
 namespace image {
 
-#if !NVJPEG_FOUND
+#ifndef WITH_NVJPEG
 
 torch::Tensor decode_jpeg_cuda(
     const torch::Tensor& data,

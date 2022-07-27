@@ -27,9 +27,7 @@ static auto registry = torch::RegisterOperators()
                            .op("image::read_file", &read_file)
                            .op("image::write_file", &write_file)
                            .op("image::decode_image", &decode_image)
-#ifdef WITH_NVJPEG
                            .op("image::decode_jpeg_cuda", &decode_jpeg_cuda)
-#endif
     ;
 
 } // namespace image
