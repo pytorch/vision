@@ -3,7 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from itertools import product
-from typing import Tuple, Callable, List
+from typing import Callable, List, Tuple
 
 import numpy as np
 import pytest
@@ -1138,11 +1138,11 @@ class TestBoxArea:
 
     def test_float16_box(self):
         box_tensor = torch.tensor(
-            [[28.25, 18.625, 39.0, 48.5], [28.25, 48.75, 192.0, 51.0], [29.25, 18.0, 89.0, 49.0]],
-            dtype=torch.float16,
+            [[2.825, 1.8625, 3.90, 4.85], [2.825, 4.875, 19.20, 5.10], [2.925, 1.80, 8.90, 4.90]], dtype=torch.float16
         )
-        expected = torch.tensor([321.1562, 368.4375, 1852.2500], dtype=torch.float16)
-        self.area_check(box_tensor, expected, atol=0.3)
+
+        expected = torch.tensor([3.2170, 3.7108, 18.5071], dtype=torch.float16)
+        self.area_check(box_tensor, expected, atol=0.01)
 
     def test_box_area_jit(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
