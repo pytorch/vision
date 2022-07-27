@@ -654,6 +654,13 @@ def adjust_sharpness_image_tensor():
         yield SampleInput(image, sharpness_factor=sharpness_factor)
 
 
+@register_kernel_info_from_sample_inputs_fn
+def erase_image_tensor():
+    for image in make_images():
+        c = image.shape[-3]
+        yield SampleInput(image, i=1, j=2, h=6, w=7, v=torch.rand(c, 6, 7))
+
+
 @pytest.mark.parametrize(
     "kernel",
     [
