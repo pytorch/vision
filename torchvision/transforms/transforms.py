@@ -1855,7 +1855,7 @@ class GaussianNoise(torch.nn.Module):
 
     """
 
-    def __init__(self, mean, sigma=(0.1, 2.0)):
+    def __init__(self, mean: float, sigma: float = (0.1, 2.0)):
         super().__init__()
         _log_api_usage_once(self)
 
