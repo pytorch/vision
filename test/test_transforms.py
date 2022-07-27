@@ -1318,7 +1318,7 @@ def test_gaussian_noise():
     np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
     img = F.to_pil_image(np_img, "RGB")
     out = transforms.GaussianNoise(2.0, (0.1, 2.0))(img)
-    assert F._is_pil_image(out) is True
+    assert isinstance(out, PIL.Image.Image)
 
     with pytest.raises(TypeError, match="Tensor is not a torch image"):
         out = transforms.GaussianNoise(2.0, (0.1, 2.0))(torch.ones((4)))
