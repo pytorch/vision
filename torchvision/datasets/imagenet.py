@@ -2,7 +2,7 @@ import os
 import shutil
 import tempfile
 from contextlib import contextmanager
-from typing import Any, Dict, List, Iterator, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import torch
 

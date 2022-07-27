@@ -9,7 +9,7 @@ import torch.utils.data
 import torchvision
 import utils
 from torch import nn
-from train import train_one_epoch, evaluate, load_data
+from train import evaluate, load_data, train_one_epoch
 
 
 def main(args):

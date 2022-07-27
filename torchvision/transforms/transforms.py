@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import Tuple, List, Optional
+from typing import List, Optional, Tuple
 
 import torch
 from torch import Tensor
@@ -15,7 +15,7 @@ except ImportError:
 
 from ..utils import _log_api_usage_once
 from . import functional as F
-from .functional import InterpolationMode, _interpolation_modes_from_int
+from .functional import _interpolation_modes_from_int, InterpolationMode
 
 __all__ = [
     "Compose",
@@ -630,7 +630,7 @@ class RandomCrop(torch.nn.Module):
         th, tw = output_size
 
         if h + 1 < th or w + 1 < tw:
-            raise ValueError(f"Required crop size {(th, tw)} is larger then input image size {(h, w)}")
+            raise ValueError(f"Required crop size {(th, tw)} is larger than input image size {(h, w)}")
 
         if w == tw and h == th:
             return 0, 0, h, w

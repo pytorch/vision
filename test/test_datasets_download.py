@@ -9,15 +9,15 @@ from distutils import dir_util
 from os import path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
-from urllib.request import urlopen, Request
+from urllib.request import Request, urlopen
 
 import pytest
 from torchvision import datasets
 from torchvision.datasets.utils import (
-    download_url,
+    _get_redirect_url,
     check_integrity,
     download_file_from_google_drive,
-    _get_redirect_url,
+    download_url,
     USER_AGENT,
 )
 

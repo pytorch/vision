@@ -6,10 +6,10 @@ from typing import Any, Dict, Tuple
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.prototype.transforms import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_image, get_image_dimensions, has_any, has_all
+from ._utils import get_image_dimensions, has_all, has_any, query_image
 
 
 class RandomErasing(_RandomApplyTransform):

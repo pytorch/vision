@@ -3,7 +3,7 @@ from typing import Union
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
+from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
 
 # shortcut type
