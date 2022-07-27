@@ -1,19 +1,15 @@
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, CSVDictParser, Zipper, Demultiplexer
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    OnlineResource,
-    HttpResource,
-)
+from torchdata.datapipes.iter import CSVDictParser, Demultiplexer, Filter, IterDataPipe, Mapper, Zipper
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    path_comparator,
     hint_sharding,
     hint_shuffling,
     INFINITE_BUFFER_SIZE,
+    path_comparator,
 )
-from torchvision.prototype.features import Label, BoundingBox, EncodedImage
+from torchvision.prototype.features import BoundingBox, EncodedImage, Label
 
 from .._api import register_dataset, register_info
 

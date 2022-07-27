@@ -3,9 +3,9 @@ from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 from torch.nn import functional as F
-from torchvision.ops import FrozenBatchNorm2d, complete_box_iou_loss, distance_box_iou_loss, generalized_box_iou_loss
+from torchvision.ops import complete_box_iou_loss, distance_box_iou_loss, FrozenBatchNorm2d, generalized_box_iou_loss
 
 
 class BalancedPositiveNegativeSampler:
@@ -270,7 +270,43 @@ class BoxLinearCoder:
 
         return targets
 
+
+    def encode_all(self, reference_boxes: Tensor, proposals: Tensor) -> Tensor:
+        """
+        vectorized version of `encode_single`
+        Args:
+            reference_boxes (Tensor): reference boxes
+            proposals (Tensor): boxes to be encoded
+
+        Returns:
+            Tensor: the encoded relative box offsets that can be used to
+            decode the boxes.
+
+        """
+
+        # get the center of reference_boxes
+        reference_boxes_ctr_x = 0.5 * (reference_boxes[..., 0] + reference_boxes[..., 2])
+        reference_boxes_ctr_y = 0.5 * (reference_boxes[..., 1] + reference_boxes[..., 3])
+
+        # get box regression transformation deltas
+        target_l = reference_boxes_ctr_x - proposals[..., 0]
+        target_t = reference_boxes_ctr_y - proposals[..., 1]
+        target_r = proposals[..., 2] - reference_boxes_ctr_x
+        target_b = proposals[..., 3] - reference_boxes_ctr_y
+
+        targets = torch.stack((target_l, target_t, target_r, target_b), dim=-1)
+
+        if self.normalize_by_size:
+            reference_boxes_w = reference_boxes[..., 2] - reference_boxes[..., 0]
+            reference_boxes_h = reference_boxes[..., 3] - reference_boxes[..., 1]
+            reference_boxes_size = torch.stack(
+                (reference_boxes_w, reference_boxes_h, reference_boxes_w, reference_boxes_h), dim=-1
+            )
+            targets = targets / reference_boxes_size
+        return targets
+
     def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
+
         """
         From a set of original boxes and encoded relative box offsets,
         get the decoded boxes.

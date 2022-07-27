@@ -1,7 +1,7 @@
 import torch
 
 from ..utils import _log_api_usage_once
-from ._utils import _upcast_non_float, _loss_inter_union
+from ._utils import _loss_inter_union, _upcast_non_float
 
 
 def generalized_box_iou_loss(
