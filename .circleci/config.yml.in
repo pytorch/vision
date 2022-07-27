@@ -190,11 +190,11 @@ binary_common: &binary_common
     build_version:
       description: "version number of release binary; by default, build a nightly"
       type: string
-      default: "0.13.0"
+      default: "0.13.1"
     pytorch_version:
       description: "PyTorch version to build against; by default, use a nightly"
       type: string
-      default: "1.12.0"
+      default: "1.12.1"
     # Don't edit these
     python_version:
       description: "Python version to build against (e.g., 3.7)"
@@ -220,6 +220,7 @@ binary_common: &binary_common
     PYTORCH_VERSION: << parameters.pytorch_version >>
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
+    MACOSX_DEPLOYMENT_TARGET: 10.9
 
 torchvision_ios_params: &torchvision_ios_params
   parameters:
