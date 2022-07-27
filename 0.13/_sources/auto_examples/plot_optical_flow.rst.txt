@@ -139,8 +139,6 @@ single model input.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     /home/circleci/project/torchvision/io/video.py:162: UserWarning: The pts_unit 'pts' gives wrong results. Please use pts_unit 'sec'.
@@ -185,8 +183,6 @@ required ``[-1, 1]`` interval.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     shape = torch.Size([2, 3, 520, 960]), dtype = torch.float32
@@ -227,8 +223,6 @@ builder, which is smaller and faster to run, sacrificing a bit of accuracy.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     type = <class 'list'>
@@ -267,8 +261,6 @@ w.r.t. the dimensions of the images.
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -363,28 +355,23 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  6.392 seconds)
+   **Total running time of the script:** ( 0 minutes  6.708 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_optical_flow.py:
 
+.. only:: html
 
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-example
+  .. container:: sphx-glr-footer sphx-glr-footer-example
 
 
+    .. container:: sphx-glr-download sphx-glr-download-python
 
-  .. container:: sphx-glr-download sphx-glr-download-python
+      :download:`Download Python source code: plot_optical_flow.py <plot_optical_flow.py>`
 
-     :download:`Download Python source code: plot_optical_flow.py <plot_optical_flow.py>`
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-     :download:`Download Jupyter notebook: plot_optical_flow.ipynb <plot_optical_flow.ipynb>`
+      :download:`Download Jupyter notebook: plot_optical_flow.ipynb <plot_optical_flow.ipynb>`
 
 
 .. only:: html

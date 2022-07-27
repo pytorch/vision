@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+9b6233d ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+9a40530 ) &#x25BC</a>
     </div>
     
 
@@ -388,7 +388,6 @@ To create it, we need to define the path and the stream we want to use.</p>
 <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">video_path</span></a> <span class="o">=</span> <span class="s2">&quot;./WUzgd7C1pWA.mp4&quot;</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading https://raw.githubusercontent.com/pytorch/vision/main/test/assets/videos/WUzgd7C1pWA.mp4 to ./WUzgd7C1pWA.mp4
 
 3.7%
@@ -430,7 +429,6 @@ Firstly, let’s get the metadata for our particular video:</p>
 <span class="n">video</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">()</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;video&#39;: {&#39;duration&#39;: [10.9109], &#39;fps&#39;: [29.97002997002997]}, &#39;audio&#39;: {&#39;duration&#39;: [10.9], &#39;framerate&#39;: [48000.0]}, &#39;subtitles&#39;: {&#39;duration&#39;: []}, &#39;cc&#39;: {&#39;duration&#39;: []}}
 </pre></div>
 </div>
@@ -464,7 +462,6 @@ If only stream type is passed, the decoder auto-detects first stream of that typ
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Read data size: &quot;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">frames</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">frames</span></a><span class="p">))</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>PTS for first five frames  [0.0, 0.021332999999999998, 0.042667, 0.064, 0.08533299999999999]
 Total number of frames:  511
 Approx total number of datapoints we can expect:  523200.0
@@ -489,7 +486,6 @@ we can leverage itertools to simplify the process and make it more pythonic.</p>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total number of frames: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">frames</span></a><span class="p">))</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Total number of frames:  10
 </pre></div>
 </div>
@@ -510,7 +506,6 @@ correct number of frames:</p>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Tensor size: &quot;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">frames</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Total number of frames:  90
 We can expect approx:  89.91008991008991
 Tensor size:  torch.Size([3, 256, 340])
@@ -560,7 +555,6 @@ the same API to the existing <code class="docutils literal notranslate"><span cl
 <span class="nb">print</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">vf</span></a><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">af</span></a><span class="o">.</span><span class="n">size</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>torch.Size([327, 3, 256, 340]) torch.Size([523264, 1])
 </pre></div>
 </div>
@@ -605,7 +599,6 @@ Here, we are going to build an example dataset that reads randomly selected 10 f
 <span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading https://raw.githubusercontent.com/pytorch/vision/main/test/assets/videos/WUzgd7C1pWA.mp4 to ./dataset/1/WUzgd7C1pWA.mp4
 
 3.7%
@@ -831,8 +824,7 @@ class allows us to naturally oversample clips or images from each video if neede
 <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">data</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;video&#39;: [&#39;./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi&#39;, &#39;./dataset/2/v_SoccerJuggling_g23_c01.avi&#39;, &#39;./dataset/2/v_SoccerJuggling_g23_c01.avi&#39;, &#39;./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi&#39;, &#39;./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi&#39;], &#39;start&#39;: [1.4774815178652194, 4.101184540196025, 4.303360648029582, 1.5232406805903045, 0.70939383011209], &#39;end&#39;: [2.0, 4.6046, 4.8048, 2.033333, 1.233333], &#39;tensorsize&#39;: [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;video&#39;: [&#39;./dataset/2/v_SoccerJuggling_g24_c01.avi&#39;, &#39;./dataset/2/SOX5yA1l24A.mp4&#39;, &#39;./dataset/1/WUzgd7C1pWA.mp4&#39;, &#39;./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi&#39;, &#39;./dataset/2/v_SoccerJuggling_g23_c01.avi&#39;], &#39;start&#39;: [1.670631673499531, 9.824161054699015, 3.640047167706128, 0.9002782777217307, 5.269417285232347], &#39;end&#39;: [2.2022, 10.343667, 4.170833, 1.433333, 5.7724329999999995], &#39;tensorsize&#39;: [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 </pre></div>
 </div>
 </div>
@@ -855,8 +847,8 @@ class allows us to naturally oversample clips or images from each video if neede
 <a href="https://docs.python.org/3/library/shutil.html#shutil.rmtree" title="shutil.rmtree" class="sphx-glr-backref-module-shutil sphx-glr-backref-type-py-function"><span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span></a><span class="p">(</span><span class="s2">&quot;./dataset&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  3.457 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-video-api-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  3.605 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-video-api-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/19a6d5f6ec4c29d7cbcc4a07a4b5339c/plot_video_api.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_video_api.py</span></code></a></p>
 </div>

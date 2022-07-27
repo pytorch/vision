@@ -135,8 +135,6 @@ Notice that the spatial dimensions of image and mask match.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     torch.Size([1, 498, 533])
@@ -195,8 +193,6 @@ belongs to the segmentation mask of the image.
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -281,8 +277,6 @@ It returns the boxes in ``(xmin, ymin, xmax, ymax)`` format.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     torch.Size([3, 4])
@@ -351,8 +345,6 @@ Here is demo with a Faster R-CNN model loaded from
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -429,28 +421,23 @@ Here is an example where we re-purpose the dataset from the
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.440 seconds)
+   **Total running time of the script:** ( 0 minutes  1.557 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_repurposing_annotations.py:
 
+.. only:: html
 
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-example
+  .. container:: sphx-glr-footer sphx-glr-footer-example
 
 
+    .. container:: sphx-glr-download sphx-glr-download-python
 
-  .. container:: sphx-glr-download sphx-glr-download-python
+      :download:`Download Python source code: plot_repurposing_annotations.py <plot_repurposing_annotations.py>`
 
-     :download:`Download Python source code: plot_repurposing_annotations.py <plot_repurposing_annotations.py>`
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-     :download:`Download Jupyter notebook: plot_repurposing_annotations.ipynb <plot_repurposing_annotations.ipynb>`
+      :download:`Download Jupyter notebook: plot_repurposing_annotations.ipynb <plot_repurposing_annotations.ipynb>`
 
 
 .. only:: html
