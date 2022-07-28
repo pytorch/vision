@@ -233,6 +233,8 @@ def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
         raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
 
 
+# TODO: let's use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)
+# https://github.com/pytorch/vision/issues/6250
 def _check_padding_mode_arg(padding_mode: Literal["constant", "edge", "reflect", "symmetric"]) -> None:
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
@@ -437,17 +439,17 @@ class RandomCrop(Transform):
 
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-        if padding is not None:
-            _check_padding_arg(padding)
-
-        if (padding is not None) or pad_if_needed:
-            _check_padding_mode_arg(padding_mode)
-            _check_fill_arg(fill)
-
         self.padding = padding
         self.pad_if_needed = pad_if_needed
         self.fill = fill
         self.padding_mode = padding_mode
+
+        self._pad_op = None
+        if self.padding is not None:
+            self._pad_op = Pad(self.padding, fill=self.fill, padding_mode=self.padding_mode)
+
+        if self.pad_if_needed:
+            self._pad_op = Pad(0, fill=self.fill, padding_mode=self.padding_mode)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
@@ -466,34 +468,36 @@ class RandomCrop(Transform):
         left = torch.randint(0, width - output_width + 1, size=(1,)).item()
         return dict(top=top, left=left, height=output_height, width=output_width)
 
-    def _forward(self, flat_inputs: List[Any]) -> List[Any]:
-        if self.padding is not None:
-            flat_inputs = [F.pad(flat_input, self.padding, self.fill, self.padding_mode) for flat_input in flat_inputs]
-
-        image = query_image(flat_inputs)
-        _, height, width = get_image_dimensions(image)
-
-        # pad the width if needed
-        if self.pad_if_needed and width < self.size[1]:
-            padding = [self.size[1] - width, 0]
-            flat_inputs = [F.pad(flat_input, padding, self.fill, self.padding_mode) for flat_input in flat_inputs]
-        # pad the height if needed
-        if self.pad_if_needed and height < self.size[0]:
-            padding = [0, self.size[0] - height]
-            flat_inputs = [F.pad(flat_input, padding, self.fill, self.padding_mode) for flat_input in flat_inputs]
-
-        params = self._get_params(flat_inputs)
-
-        return [F.crop(flat_input, **params) for flat_input in flat_inputs]
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.crop(inpt, **params)
 
     def forward(self, *inputs: Any) -> Any:
-        from torch.utils._pytree import tree_flatten, tree_unflatten
-
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        flat_inputs, spec = tree_flatten(sample)
-        out_flat_inputs = self._forward(flat_inputs)
-        return tree_unflatten(out_flat_inputs, spec)
+        if self._pad_op is not None:
+            sample = self._pad_op(sample)
+
+        image = query_image(sample)
+        _, height, width = get_image_dimensions(image)
+
+        if self.pad_if_needed:
+            # This check is to explicitly ensure that self._pad_op is defined
+            if self._pad_op is None:
+                raise RuntimeError(
+                    "Internal error, self._pad_op is None. "
+                    "Please, fill an issue about that on https://github.com/pytorch/vision/issues"
+                )
+
+            # pad the width if needed
+            if width < self.size[1]:
+                self._pad_op.padding = [self.size[1] - width, 0]
+                sample = self._pad_op(sample)
+            # pad the height if needed
+            if height < self.size[0]:
+                self._pad_op.padding = [0, self.size[0] - height]
+                sample = self._pad_op(sample)
+
+        return super().forward(sample)
 
 
 class RandomPerspective(_RandomApplyTransform):

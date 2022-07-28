@@ -814,6 +814,7 @@ def elastic_bounding_box(
     format: features.BoundingBoxFormat,
     displacement: torch.Tensor,
 ) -> torch.Tensor:
+    # TODO: add in docstring about approximation we are doing for grid inversion
     displacement = displacement.to(bounding_box.device)
 
     original_shape = bounding_box.shape

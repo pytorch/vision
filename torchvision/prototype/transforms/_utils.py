@@ -1,10 +1,9 @@
-from typing import Any, Iterator, Optional, Tuple, Type, Union
+from typing import Any, Tuple, Type, Union
 
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten
 from torchvision.prototype import features
-from torchvision.prototype.utils._internal import query_recursively
 
 from .functional._meta import get_dimensions_image_pil, get_dimensions_image_tensor
 
@@ -16,22 +15,6 @@ def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Im
             return i
 
     raise TypeError("No image was found in the sample")
-
-
-# vfdev-5: let's use tree_flatten instead of query_recursively and internal fn to make the code simplier
-def query_image_(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
-    def fn(
-        id: Tuple[Any, ...], input: Any
-    ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
-        if type(input) == torch.Tensor or isinstance(input, (PIL.Image.Image, features.Image)):
-            return id, input
-
-        return None
-
-    try:
-        return next(query_recursively(fn, sample))[1]
-    except StopIteration:
-        raise TypeError("No image was found in the sample")
 
 
 def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
@@ -47,16 +30,14 @@ def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Im
     return channels, height, width
 
 
-def _extract_types(sample: Any) -> Iterator[Type]:
-    return query_recursively(lambda id, input: type(input), sample)
-
-
 def has_any(sample: Any, *types: Type) -> bool:
-    return any(issubclass(type, types) for type in _extract_types(sample))
+    flat_sample, _ = tree_flatten(sample)
+    return any(issubclass(type(obj), types) for obj in flat_sample)
 
 
 def has_all(sample: Any, *types: Type) -> bool:
-    return not bool(set(types) - set(_extract_types(sample)))
+    flat_sample, _ = tree_flatten(sample)
+    return not bool(set(types) - set([type(obj) for obj in flat_sample]))
 
 
 def is_simple_tensor(input: Any) -> bool:
