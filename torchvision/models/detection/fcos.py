@@ -88,19 +88,20 @@ class FCOSHead(nn.Module):
 
         pred_boxes = self.box_coder.decode_all(bbox_regression, anchors)
 
+        # List[Tensor] to Tensor conversion of  `all_gt_boxes_target` and `anchors`
+        all_gt_boxes_targets, anchors = torch.stack(all_gt_boxes_targets), torch.stack(anchors)
+
         # amp issue: pred_boxes need to convert float
         loss_bbox_reg = generalized_box_iou_loss(
             pred_boxes[foregroud_mask],
-            torch.stack(all_gt_boxes_targets)[foregroud_mask],
+            all_gt_boxes_targets[foregroud_mask],
             reduction="sum",
         )
 
         # ctrness loss
-        bbox_reg_targets = [
-            self.box_coder.encode_single(anchors_per_image, boxes_targets_per_image)
-            for anchors_per_image, boxes_targets_per_image in zip(anchors, all_gt_boxes_targets)
-        ]
-        bbox_reg_targets = torch.stack(bbox_reg_targets, dim=0)
+
+        bbox_reg_targets = self.box_coder.encode_all(anchors, all_gt_boxes_targets)
+
         if len(bbox_reg_targets) == 0:
             gt_ctrness_targets = bbox_reg_targets.new_zeros(bbox_reg_targets.size()[:-1])
         else:
