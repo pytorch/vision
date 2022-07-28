@@ -3,7 +3,9 @@ import inspect
 import sys
 from dataclasses import dataclass, fields
 from inspect import signature
-from typing import Any, Callable, cast, Dict, Mapping
+from torch import nn
+from types import ModuleType
+from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Type, TypeVar
 
 from torchvision._utils import StrEnum
 
@@ -140,3 +142,50 @@ def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
         )
 
     return cast(WeightsEnum, weights_enum)
+
+
+M = TypeVar("M", bound=Type[nn.Module])
+
+BUILTIN_MODELS = {}
+
+
+def register_model(name: str, overwrite: bool = False) -> Callable[[Callable[..., M]], Callable[..., M]]:
+    def wrapper(fn: Callable[..., M]) -> Callable[..., M]:
+        if name in BUILTIN_MODELS and not overwrite:
+            raise ValueError(f"A model is already registered under tha name '{name}'.")
+        BUILTIN_MODELS[name] = fn
+        return fn
+    return wrapper
+
+
+def list_models(module: Optional[ModuleType] = None) -> List[str]:
+    """
+    Returns a list with the names of registred models.
+
+    Args:
+        module (ModuleType, optional): The module from which we want to extract the available models.
+
+    Returns:
+        models (list): A list with the names of available models.
+    """
+    models = [k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__ == module]
+    return sorted(models)
+
+
+def load(name: str, **config: Any) -> M:
+    """
+    Gets the model name and configuration and returns an instantiated model.
+
+    Args:
+        name (str): The name under which the model is registered.
+        **config (Any): parameters passed to the model builder method.
+
+    Returns:
+        model (nn.Module): The initialized model.
+    """
+    name = name.lower()
+    try:
+        fn = BUILTIN_MODELS[name]
+    except KeyError:
+        raise ValueError(f"Unknown model {name}")
+    return fn(**config)
