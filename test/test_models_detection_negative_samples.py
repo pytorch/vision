@@ -4,7 +4,7 @@ import torchvision.models
 from common_utils import assert_equal
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
 from torchvision.models.detection.roi_heads import RoIHeads
-from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from torchvision.models.detection.rpn import AnchorGenerator, RegionProposalNetwork, RPNHead
 from torchvision.ops import MultiScaleRoIAlign
 
 
@@ -60,7 +60,7 @@ class TestModelsDetectionNegativeSamples:
 
         resolution = box_roi_pool.output_size[0]
         representation_size = 1024
-        box_head = TwoMLPHead(4 * resolution ** 2, representation_size)
+        box_head = TwoMLPHead(4 * resolution**2, representation_size)
 
         representation_size = 1024
         box_predictor = FastRCNNPredictor(representation_size, 2)

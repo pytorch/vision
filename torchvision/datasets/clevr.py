@@ -1,6 +1,6 @@
 import json
 import pathlib
-from typing import Any, Callable, Optional, Tuple, List
+from typing import Any, Callable, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from PIL import Image

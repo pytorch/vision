@@ -14,14 +14,14 @@ import torchvision.transforms.functional as F
 import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional_tensor as F_t
 from common_utils import (
-    cpu_and_gpu,
-    needs_cuda,
+    _assert_approx_equal_tensor_to_pil,
+    _assert_equal_tensor_to_pil,
     _create_data,
     _create_data_batch,
-    _assert_equal_tensor_to_pil,
-    _assert_approx_equal_tensor_to_pil,
     _test_fn_on_batch,
     assert_equal,
+    cpu_and_gpu,
+    needs_cuda,
 )
 from torchvision.transforms import InterpolationMode
 
@@ -917,18 +917,7 @@ def test_adjust_gamma(device, dtype, config, channels):
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
-@pytest.mark.parametrize(
-    "pad",
-    [
-        2,
-        [
-            3,
-        ],
-        [0, 3],
-        (3, 3),
-        [4, 2, 4, 3],
-    ],
-)
+@pytest.mark.parametrize("pad", [2, [3], [0, 3], (3, 3), [4, 2, 4, 3]])
 @pytest.mark.parametrize(
     "config",
     [

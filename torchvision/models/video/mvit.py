@@ -7,10 +7,10 @@ import torch
 import torch.fx
 import torch.nn as nn
 
-from ...ops import StochasticDepth, MLP
+from ...ops import MLP, StochasticDepth
 from ...transforms._presets import VideoClassification
 from ...utils import _log_api_usage_once
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _KINETICS400_CATEGORIES
 from .._utils import _ovewrite_named_param
 

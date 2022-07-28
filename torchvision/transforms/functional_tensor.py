@@ -1,9 +1,9 @@
 import warnings
-from typing import Optional, Tuple, List, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
-from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
+from torch.nn.functional import conv2d, grid_sample, interpolate, pad as torch_pad
 
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
@@ -247,7 +247,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     if not torch.is_floating_point(img):
         result = convert_image_dtype(result, torch.float32)
 
-    result = (gain * result ** gamma).clamp(0, 1)
+    result = (gain * result**gamma).clamp(0, 1)
 
     result = convert_image_dtype(result, dtype)
     return result
@@ -350,7 +350,7 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
         raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
-def _parse_pad_padding(padding: List[int]) -> List[int]:
+def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
     if isinstance(padding, int):
         if torch.jit.is_scripting():
             # This maybe unreachable
@@ -370,7 +370,9 @@ def _parse_pad_padding(padding: List[int]) -> List[int]:
     return [pad_left, pad_right, pad_top, pad_bottom]
 
 
-def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
+def pad(
+    img: Tensor, padding: Union[int, List[int]], fill: Union[int, float] = 0, padding_mode: str = "constant"
+) -> Tensor:
     _assert_image_tensor(img)
 
     if not isinstance(padding, (int, tuple, list)):
@@ -383,8 +385,13 @@ def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mo
     if isinstance(padding, tuple):
         padding = list(padding)
 
-    if isinstance(padding, list) and len(padding) not in [1, 2, 4]:
-        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
+    if isinstance(padding, list):
+        # TODO: Jit is failing on loading this op when scripted and saved
+        # https://github.com/pytorch/pytorch/issues/81100
+        if len(padding) not in [1, 2, 4]:
+            raise ValueError(
+                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
+            )
 
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")

@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Dict, List, Tuple, Iterator, BinaryIO, Union
+from typing import Any, BinaryIO, Dict, Iterator, List, Tuple, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
@@ -7,8 +7,8 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
     path_comparator,
-    read_mat,
     read_categories_file,
+    read_mat,
 )
 from torchvision.prototype.features import BoundingBox, EncodedImage, Label
 
