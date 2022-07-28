@@ -152,7 +152,7 @@ BUILTIN_MODELS = {}
 def register_model(name: str, overwrite: bool = False) -> Callable[[Callable[..., M]], Callable[..., M]]:
     def wrapper(fn: Callable[..., M]) -> Callable[..., M]:
         if name in BUILTIN_MODELS and not overwrite:
-            raise ValueError(f"A model is already registered under tha name '{name}'.")
+            raise ValueError(f"An entry is already registered under the name '{name}'.")
         BUILTIN_MODELS[name] = fn
         return fn
     return wrapper
