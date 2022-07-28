@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Sequence, Union
 
+import torch
 from torchvision.transforms import InterpolationMode
 
 from ._feature import _Feature
@@ -119,3 +120,14 @@ class SegmentationMask(_Feature):
 
         output = _F.perspective_segmentation_mask(self, perspective_coeffs)
         return SegmentationMask.new_like(self, output)
+
+    def elastic(
+        self,
+        displacement: torch.Tensor,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    ) -> SegmentationMask:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.elastic_segmentation_mask(self, displacement)
+        return SegmentationMask.new_like(self, output, dtype=output.dtype)
