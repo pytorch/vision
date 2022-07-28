@@ -751,47 +751,31 @@ def create_image_folder(
     ]
 
 
-def shape_test_for_stereo_gt_w_mask(
-    left: PIL.Image.Image, right: PIL.Image.Image, disparity: np.ndarray, valid_mask: np.ndarray
+def shape_test_for_stereo(
+    left: PIL.Image.Image,
+    right: PIL.Image.Image,
+    disparity: Optional[np.ndarray] = None,
+    valid_mask: Optional[np.ndarray] = None,
 ):
     left_dims = get_dimensions(left)
     right_dims = get_dimensions(right)
     c, h, w = left_dims
     # check that left and right are the same size
     assert left_dims == right_dims
-    # check general shapes
     assert c == 3
-    assert disparity.ndim == 3
-    assert disparity.shape == (1, h, w)
-    # check that valid mask is the same size as the disparity
 
-    _, dh, dw = disparity.shape
-    mh, mw = valid_mask.shape
-    assert dh == mh
-    assert dw == mw
+    # check that the disparity has the same spatial dimensions
+    # as the input
+    if disparity is not None:
+        assert disparity.ndim == 3
+        assert disparity.shape == (1, h, w)
 
-
-def shape_test_for_stereo_gt_no_mask(left: PIL.Image.Image, right: PIL.Image.Image, disparity: np.ndarray):
-    left_dims = get_dimensions(left)
-    right_dims = get_dimensions(right)
-    c, h, w = left_dims
-    # check that left and right are the same size
-    assert left_dims == right_dims
-    # check general shapes
-    assert c == 3
-    assert disparity.ndim == 3
-    assert disparity.shape == (1, h, w)
-
-
-def shape_test_for_stereo_no_gt(left: PIL.Image.Image, right: PIL.Image.Image, disparity: None):
-    left_dims = get_dimensions(left)
-    right_dims = get_dimensions(right)
-    c, _, _ = left_dims
-    # check that left and right are the same size
-    assert left_dims == right_dims
-    # check general shapes
-    assert c == 3
-    assert disparity is None
+    if valid_mask is not None:
+        # check that valid mask is the same size as the disparity
+        _, dh, dw = disparity.shape
+        mh, mw = valid_mask.shape
+        assert dh == mh
+        assert dw == mw
 
 
 @requires_lazy_imports("av")

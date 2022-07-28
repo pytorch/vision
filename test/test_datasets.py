@@ -2718,14 +2718,15 @@ class Kitti2012StereoTestCase(datasets_utils.ImageDatasetTestCase):
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, mask in dataset:
                     assert mask is None
-                    datasets_utils.shape_test_for_stereo_gt_no_mask(left, right, disparity)
+                    datasets_utils.shape_test_for_stereo(left, right, disparity)
 
     def test_test_split(self):
         for split in ["test"]:
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, mask in dataset:
                     assert mask is None
-                    datasets_utils.shape_test_for_stereo_no_gt(left, right, disparity)
+                    assert disparity is None
+                    datasets_utils.shape_test_for_stereo(left, right)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -2788,14 +2789,15 @@ class Kitti2015StereoTestCase(datasets_utils.ImageDatasetTestCase):
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, mask in dataset:
                     assert mask is None
-                    datasets_utils.shape_test_for_stereo_gt_no_mask(left, right, disparity)
+                    datasets_utils.shape_test_for_stereo(left, right, disparity)
 
     def test_test_split(self):
         for split in ["test"]:
             with self.create_dataset(split=split) as (dataset, _):
                 for left, right, disparity, mask in dataset:
                     assert mask is None
-                    datasets_utils.shape_test_for_stereo_no_gt(left, right, disparity)
+                    assert disparity is None
+                    datasets_utils.shape_test_for_stereo(left, right)
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
@@ -2836,7 +2838,7 @@ class CarlaStereoTestCase(datasets_utils.ImageDatasetTestCase):
     def test_train_splits(self):
         with self.create_dataset() as (dataset, _):
             for left, right, disparity in dataset:
-                datasets_utils.shape_test_for_stereo_gt_no_mask(left, right, disparity)
+                datasets_utils.shape_test_for_stereo(left, right, disparity)
 
 
 if __name__ == "__main__":

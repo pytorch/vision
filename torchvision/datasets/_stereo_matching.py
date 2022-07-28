@@ -1,9 +1,8 @@
 import functools
-import os
 from abc import ABC, abstractmethod
 from glob import glob
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -46,8 +45,8 @@ class StereoMatchingDataset(ABC, VisionDataset):
         super().__init__(root=root)
         self.transforms = transforms
 
-        self._images: List[Tuple[str, str]] = []
-        self._disparities: List[Tuple[str, str]] = []
+        self._images = []  # type: ignore
+        self._disparities = []  # type: ignore
 
     def _read_img(self, file_path: str) -> Image.Image:
         img = Image.open(file_path)
@@ -55,15 +54,14 @@ class StereoMatchingDataset(ABC, VisionDataset):
             img = img.convert("RGB")
         return img
 
-    def _scan_pairs(
-        self, paths_left_pattern: str, paths_right_pattern: str, fill_empty: bool = False
-    ) -> List[Tuple[str, str]]:
-        left_paths: List[str] = sorted(glob(paths_left_pattern))
-        right_paths: List[str] = sorted(glob(paths_right_pattern))
+    def _scan_pairs(self, paths_left_pattern: str, paths_right_pattern: Optional[str] = None):
 
-        # used when dealing with inexistent disparity for the right image
-        if fill_empty:
-            right_paths = list("" for _ in left_paths)
+        left_paths = list(sorted(glob(paths_left_pattern)))  # type: ignore
+
+        if paths_right_pattern:
+            right_paths = list(sorted(glob(paths_right_pattern)))  # type: ignore
+        else:
+            right_paths = list(None for _ in left_paths)  # type: ignore
 
         if not left_paths:
             raise FileNotFoundError(f"Could not find any files matching the patterns: {paths_left_pattern}")
@@ -78,8 +76,8 @@ class StereoMatchingDataset(ABC, VisionDataset):
                 f"right pattern: {paths_right_pattern}\n"
             )
 
-        images = list((left, right) for left, right in zip(left_paths, right_paths))
-        return images
+        paths = list((left, right) for left, right in zip(left_paths, right_paths))
+        return paths
 
     @abstractmethod
     def _read_disparity(self, file_path: str) -> Tuple:
@@ -151,19 +149,18 @@ class CarlaStereo(StereoMatchingDataset):
 
     def __init__(self, root: str, transforms: Optional[Callable] = None):
         super().__init__(root, transforms)
-        self._has_built_in_disparity_mask = False
 
         root = Path(root) / "carla-highres"
 
         left_image_pattern = str(root / "trainingF" / "*" / "im0.png")
         right_image_pattern = str(root / "trainingF" / "*" / "im1.png")
         imgs = self._scan_pairs(left_image_pattern, right_image_pattern)
-        self._images += imgs
+        self._images = imgs
 
         left_disparity_pattern = str(root / "trainingF" / "*" / "disp0GT.pfm")
         right_disparity_pattern = str(root / "trainingF" / "*" / "disp1GT.pfm")
         disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
-        self._disparities += disparities
+        self._disparities = disparities
 
     def _read_disparity(self, file_path: str) -> Tuple:
         disparity_map = _read_pfm_file(file_path)
@@ -204,9 +201,10 @@ class Kitti2012Stereo(StereoMatchingDataset):
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
+    _has_built_in_disparity_mask = True
+
     def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
         super().__init__(root, transforms)
-        self._has_built_in_disparity_mask = True
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
 
@@ -214,17 +212,17 @@ class Kitti2012Stereo(StereoMatchingDataset):
 
         left_img_pattern = str(root / "colored_0" / "*_10.png")
         right_img_pattern = str(root / "colored_1" / "*_10.png")
-        self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
+        self._images = self._scan_pairs(left_img_pattern, right_img_pattern)
 
         if split == "train":
             disparity_pattern = str(root / "disp_noc" / "*.png")
-            self._disparities += self._scan_pairs(disparity_pattern, "", fill_empty=True)
+            self._disparities = self._scan_pairs(disparity_pattern, None)
         else:
-            self._disparities = list(("", "") for _ in self._images)
+            self._disparities = list((None, None) for _ in self._images)
 
     def _read_disparity(self, file_path: str) -> Tuple:
         # test split has no disparity maps
-        if not os.path.exists(file_path):
+        if file_path is None:
             return None, None
 
         disparity_map = np.asarray(Image.open(file_path)) / 256.0
@@ -285,27 +283,28 @@ class Kitti2015Stereo(StereoMatchingDataset):
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
+    _has_built_in_disparity_mask = True
+
     def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
         super().__init__(root, transforms)
-        self._has_built_in_disparity_mask = True
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
 
         root = Path(root) / "Kitti2015" / (split + "ing")
         left_img_pattern = str(root / "image_2" / "*.png")
         right_img_pattern = str(root / "image_3" / "*.png")
-        self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
+        self._images = self._scan_pairs(left_img_pattern, right_img_pattern)
 
         if split == "train":
             left_disparity_pattern = str(root / "disp_occ_0" / "*.png")
             right_disparity_pattern = str(root / "disp_occ_1" / "*.png")
-            self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
+            self._disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
         else:
-            self._disparities = list(("", "") for _ in self._images)
+            self._disparities = list((None, None) for _ in self._images)
 
     def _read_disparity(self, file_path: str) -> Tuple:
         # test split has no disparity maps
-        if not os.path.exists(file_path):
+        if file_path is None:
             return None, None
 
         disparity_map = np.asarray(Image.open(file_path)) / 256.0
