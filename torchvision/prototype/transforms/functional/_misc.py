@@ -15,12 +15,12 @@ normalize_image_tensor = _FT.normalize
 
 
 def normalize(inpt: DType, mean: List[float], std: List[float], inplace: bool = False) -> DType:
-    if isinstance(inpt, features.Image):
-        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
-    elif type(inpt) == torch.Tensor:
-        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
-    else:
+    if isinstance(inpt, features._Feature):
+        return inpt.normalize(mean=mean, std=std, inplace=inplace)
+    elif isinstance(inpt, PIL.Image.Image):
         raise TypeError("Unsupported input type")
+    else:
+        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
 
 
 def gaussian_blur_image_tensor(
