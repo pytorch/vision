@@ -157,6 +157,14 @@ class _Feature(torch.Tensor):
     ) -> Any:
         return self
 
+    def elastic(
+        self,
+        displacement: torch.Tensor,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    ) -> Any:
+        return self
+
     def adjust_brightness(self, brightness_factor: float) -> Any:
         return self
 
@@ -188,4 +196,7 @@ class _Feature(torch.Tensor):
         return self
 
     def invert(self) -> Any:
+        return self
+
+    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Any:
         return self
