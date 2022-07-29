@@ -168,7 +168,9 @@ def list_models(module: Optional[ModuleType] = None) -> List[str]:
     Returns:
         models (list): A list with the names of available models.
     """
-    models = [k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__ == module]
+    models = [
+        k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__.rsplit(".", 1)[0] == module.__name__
+    ]
     return sorted(models)
 
 
