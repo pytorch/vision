@@ -162,7 +162,7 @@ def register_model(name: str, overwrite: bool = False) -> Callable[[Callable[...
 
 def list_models(module: Optional[ModuleType] = None) -> List[str]:
     """
-    Returns a list with the names of registred models.
+    Returns a list with the names of registered models.
 
     Args:
         module (ModuleType, optional): The module from which we want to extract the available models.
