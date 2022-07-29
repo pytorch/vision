@@ -3,9 +3,10 @@ import inspect
 import sys
 from dataclasses import dataclass, fields
 from inspect import signature
-from torch import nn
 from types import ModuleType
 from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Type, TypeVar
+
+from torch import nn
 
 from torchvision._utils import StrEnum
 
@@ -155,6 +156,7 @@ def register_model(name: str, overwrite: bool = False) -> Callable[[Callable[...
             raise ValueError(f"An entry is already registered under the name '{name}'.")
         BUILTIN_MODELS[name] = fn
         return fn
+
     return wrapper
 
 

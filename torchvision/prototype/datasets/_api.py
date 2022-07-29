@@ -12,7 +12,9 @@ D = TypeVar("D", bound=Type[Dataset])
 BUILTIN_INFOS: Dict[str, Dict[str, Any]] = {}
 
 
-def register_info(name: str, overwrite: bool = False) -> Callable[[Callable[[], Dict[str, Any]]], Callable[[], Dict[str, Any]]]:
+def register_info(
+    name: str, overwrite: bool = False
+) -> Callable[[Callable[[], Dict[str, Any]]], Callable[[], Dict[str, Any]]]:
     def wrapper(fn: Callable[[], Dict[str, Any]]) -> Callable[[], Dict[str, Any]]:
         if name in BUILTIN_INFOS and not overwrite:
             raise ValueError(f"An entry is already registered under the name '{name}'.")
