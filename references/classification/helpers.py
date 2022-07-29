@@ -143,3 +143,38 @@ class MapStyleToIterable(torch.utils.data.IterableDataset):
 
         samples = (self.dataset[i] for i in indices)
         yield from samples
+
+
+class PIMMPreFetcher:
+    def __init__(self, loader):
+        self.loader = loader
+
+    def __iter__(self):
+        stream = torch.cuda.Stream()
+        first = True
+
+        for next_input, next_target in self.loader:
+            with torch.cuda.stream(stream):
+                next_input = next_input.cuda(non_blocking=True)
+                next_target = next_target.cuda(non_blocking=True)
+            if not first:
+                yield input, target
+            else:
+                first = False
+
+            torch.cuda.current_stream().wait_stream(stream)
+            input = next_input
+            target = next_target
+
+        yield input, target
+
+    def __len__(self):
+        return len(self.loader)
+
+    @property
+    def sampler(self):
+        return self.loader.sampler
+
+    @property
+    def dataset(self):
+        return self.loader.dataset

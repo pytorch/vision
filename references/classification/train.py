@@ -28,7 +28,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
         if args.data_loading_only:
             continue
         start_time = time.time()
-        if args.data_loader != "ffcv":
+        if args.data_loader != "ffcv" or not args.pimm_pre_fetcher:
             image, target = image.to(device), target.to(device)
         with torch.cuda.amp.autocast(enabled=scaler is not None):
             output = model(image)
@@ -77,7 +77,7 @@ def evaluate(model, criterion, data_loader, device, args, print_freq=100, log_su
         for image, target in metric_logger.log_every(data_loader, print_freq, header):
             if args.data_loading_only:
                 continue
-            if args.data_loader != "ffcv":
+            if args.data_loader != "ffcv" or not args.pimm_pre_fetcher:
                 image = image.to(device, non_blocking=True)
                 target = target.to(device, non_blocking=True)
             output = model(image)
@@ -233,7 +233,9 @@ def load_data(traindir, valdir, args):
         IMAGENET_STD = np.array([0.229, 0.224, 0.225]) * 255
         image_pipeline_train = [
             RandomResizedCropRGBImageDecoder(
-                scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0), output_size=(train_crop_size, train_crop_size),
+                scale=(0.08, 1.0),
+                ratio=(3.0 / 4.0, 4.0 / 3.0),
+                output_size=(train_crop_size, train_crop_size),
             ),
             RandomHorizontalFlip(0.5),
             ToTensor(),
@@ -251,9 +253,11 @@ def load_data(traindir, valdir, args):
             NormalizeImage(IMAGENET_MEAN, IMAGENET_STD, np.float32),
         ]
         label_pipeline = [IntDecoder(), ToTensor(), Squeeze(), ToDevice(torch.device(args.gpu), non_blocking=True)]
+
+        suffix = "_500k" if args.small else ""
+
         data_loader = Loader(
-            "/data/home/nicolashug/cluster/work/downloads/imagenet_train_jpg.beton",
-            # "/data/home/nicolashug/cluster/work/downloads/imagenet_val_jpg.beton",
+            f"/data/home/nicolashug/cluster/work/downloads/imagenet_train_jpg{suffix}.beton",
             batch_size=args.batch_size,
             drop_last=True,
             num_workers=args.workers,
@@ -280,6 +284,10 @@ def load_data(traindir, valdir, args):
             distributed=True,
             batches_ahead=2,  # Same default as prefetch_factor from DataLoader
         )
+
+    if args.pimm_pre_fetcher:
+        data_loader = helpers.PIMMPreFetcher(data_loader)
+        data_loader_test = helpers.PIMMPreFetcher(data_loader_test)
 
     return data_loader, data_loader_test, train_sampler
 
@@ -639,6 +647,17 @@ def get_args_parser(add_help=True):
         "--os-cache",
         action="store_true",
         help="Whether to use set os_cache param to True for FFCV DataLoader",
+    )
+
+    parser.add_argument(
+        "--small",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--pimm-pre-fetcher",
+        action="store_true",
+        help="If passed, use PIMM's pre-fetcher. https://github.com/rwightman/pytorch-image-models/blob/7430a85d07a7f335e18c2225fda4a5e7b60b995c/timm/data/loader.py#L68:L68",
     )
     return parser
 
