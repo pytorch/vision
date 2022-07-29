@@ -163,8 +163,6 @@ refer to :ref:`instance_seg_output`.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     [{'boxes': tensor([[215.9767, 171.1661, 402.0078, 378.7391],
@@ -246,8 +244,6 @@ at the output of the model.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     torch.Size([2, 21, 500, 500]) -7.089669704437256 14.858256340026855
@@ -326,8 +322,6 @@ masks to be boolean masks, but our masks above contain probabilities in ``[0,
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -413,8 +407,6 @@ single image, and then we'll generalize to the batch
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     dog1_masks shape = torch.Size([21, 500, 500]), dtype = torch.float32
@@ -466,8 +458,6 @@ but involves a bit more juggling with the dimensions.
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -521,8 +511,6 @@ use the normalized batch.
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -608,8 +596,6 @@ models.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     shape = torch.Size([3, 1, 500, 500]), dtype = torch.float32, min = 0.0, max = 0.9999863505363464
@@ -637,8 +623,6 @@ Let's see which labels were predicted for the instances of the first image.
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -683,8 +667,6 @@ those masks into boolean values is to threshold them with the 0.5 probability
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     shape = torch.Size([3, 1, 500, 500]), dtype = torch.bool
@@ -710,8 +692,6 @@ relevant masks:
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -802,8 +782,6 @@ We will first have a look at output of the model.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     [{'boxes': tensor([[124.3751, 177.9242, 327.6353, 574.7064],
@@ -878,8 +856,6 @@ In our case above there are 2 instances detected in the image.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     tensor([[[208.0176, 214.2409,   1.0000],
@@ -947,8 +923,6 @@ Let us set a threshold of 0.75 and filter out the keypoints corresponding to the
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -1092,28 +1066,23 @@ We pass the above list to the connectivity parameter to connect the keypoints.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.528 seconds)
+   **Total running time of the script:** ( 0 minutes  8.664 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_visualization_utils.py:
 
+.. only:: html
 
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-example
+  .. container:: sphx-glr-footer sphx-glr-footer-example
 
 
+    .. container:: sphx-glr-download sphx-glr-download-python
 
-  .. container:: sphx-glr-download sphx-glr-download-python
+      :download:`Download Python source code: plot_visualization_utils.py <plot_visualization_utils.py>`
 
-     :download:`Download Python source code: plot_visualization_utils.py <plot_visualization_utils.py>`
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-     :download:`Download Jupyter notebook: plot_visualization_utils.ipynb <plot_visualization_utils.ipynb>`
+      :download:`Download Jupyter notebook: plot_visualization_utils.ipynb <plot_visualization_utils.ipynb>`
 
 
 .. only:: html

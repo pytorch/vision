@@ -72,8 +72,6 @@ Chosen video statistics:
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     Downloading https://raw.githubusercontent.com/pytorch/vision/main/test/assets/videos/WUzgd7C1pWA.mp4 to ./WUzgd7C1pWA.mp4
@@ -103,8 +101,6 @@ Firstly, let's get the metadata for our particular video:
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -159,8 +155,6 @@ The return fields are:
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     PTS for first five frames  [0.0, 0.021332999999999998, 0.042667, 0.064, 0.08533299999999999]
@@ -205,8 +199,6 @@ For example, if we wanted to read ten frames from second second:
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     Total number of frames:  10
@@ -243,8 +235,6 @@ correct number of frames:
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -311,8 +301,6 @@ the same API to the existing ``read_video`` function.
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -388,8 +376,6 @@ Download the videos
 
 
 .. rst-class:: sphx-glr-script-out
-
- Out:
 
  .. code-block:: none
 
@@ -564,11 +550,9 @@ We can generate a dataloader and test the dataset.
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
-    {'video': ['./dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/1/WUzgd7C1pWA.mp4', './dataset/1/WUzgd7C1pWA.mp4', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi'], 'start': [7.2043375391827364, 7.165096587127738, 0.6529404829277882, 5.230628832767514, 0.2518867488077144], 'end': [7.7077, 7.674333, 1.167833, 5.7390669999999995, 0.766667], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+    {'video': ['./dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/2/SOX5yA1l24A.mp4', './dataset/1/WUzgd7C1pWA.mp4', './dataset/2/SOX5yA1l24A.mp4', './dataset/2/SOX5yA1l24A.mp4'], 'start': [5.321668596972753, 9.933701732903058, 7.612596917201502, 6.186693783093067, 8.454095611407265], 'end': [5.839167, 10.443767, 8.141467, 6.7067, 8.975633], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 
 
 
@@ -626,28 +610,23 @@ Cleanup the video and dataset:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.379 seconds)
+   **Total running time of the script:** ( 0 minutes  3.414 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_video_api.py:
 
+.. only:: html
 
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-example
+  .. container:: sphx-glr-footer sphx-glr-footer-example
 
 
+    .. container:: sphx-glr-download sphx-glr-download-python
 
-  .. container:: sphx-glr-download sphx-glr-download-python
+      :download:`Download Python source code: plot_video_api.py <plot_video_api.py>`
 
-     :download:`Download Python source code: plot_video_api.py <plot_video_api.py>`
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-     :download:`Download Jupyter notebook: plot_video_api.ipynb <plot_video_api.ipynb>`
+      :download:`Download Jupyter notebook: plot_video_api.ipynb <plot_video_api.ipynb>`
 
 
 .. only:: html
