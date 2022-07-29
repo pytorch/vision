@@ -13,7 +13,7 @@ from torchvision._utils import StrEnum
 from .._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ["WeightsEnum", "Weights", "get_model", "get_model_weight", "get_weight", "list_models"]
+__all__ = ["WeightsEnum", "Weights", "get_model", "get_model_weights", "get_weight", "list_models"]
 
 
 @dataclass
@@ -78,7 +78,7 @@ class WeightsEnum(StrEnum):
 
 def get_weight(name: str) -> WeightsEnum:
     """
-    Gets the weight enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"
+    Gets the weights enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"
 
     Args:
         name (str): The name of the weight enum entry.
@@ -113,9 +113,9 @@ def get_weight(name: str) -> WeightsEnum:
 W = TypeVar("W", bound=Type[WeightsEnum])
 
 
-def get_model_weight(model: Union[Callable, str]) -> W:
+def get_model_weights(model: Union[Callable, str]) -> W:
     """
-    Retuns the Weights Enum of a model.
+    Retuns the weights enum class associated to the given model.
 
     Args:
         name (callable or str): The model builder function or the name under which it is registered.
