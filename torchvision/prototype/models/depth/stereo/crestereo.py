@@ -19,16 +19,15 @@ class ResidualBlock(raft.ResidualBlock):
 
         # the CREStereo base architecture changes the number of channels
         # even on grids with the same spatial resolution
-        if in_channels != out_channels:
-            self.downsample = Conv2dNormActivation(
-                in_channels,
-                out_channels,
-                norm_layer=norm_layer,
-                kernel_size=1,
-                stride=stride,
-                bias=True,
-                activation_layer=None,
-            )
+        self.downsample = Conv2dNormActivation(
+            in_channels,
+            out_channels,
+            norm_layer=norm_layer,
+            kernel_size=1,
+            stride=stride,
+            bias=True,
+            activation_layer=None,
+        )
 
 
 class FeatureEncoder(raft.FeatureEncoder):
@@ -251,7 +250,7 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         left_groups = torch.chunk(left_feature, self.groups, dim=1)
         right_groups = torch.chunk(right_feature, self.groups, dim=1)
 
-        num_search_candidates = 9
+        num_search_candidates = self.search_window_2d[1] * self.search_window_2d[0]
         # for each pixel (i, j) we have a number of search candidates
         # thus, for each candidate we should have an X-axis and Y-axis offset value
         extra_offset = extra_offset.reshape(B, num_search_candidates, 2, H, W).permute(0, 1, 3, 4, 2)
@@ -293,9 +292,9 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
             right_group = grid_sample(right_group, coords, mode="bilinear", align_corners=True)
             # we do not need to perform any window shifting because the grid sample op
             # will return a multi-view right based on the num_search_candidates dimension in the offsets
-            right_group = right_group.reshape(B, -1, group_channels, H, W)
-            left_group = left_group.reshape(B, -1, group_channels, H, W)
-            correlation = torch.mean(left_group * right_group, dim=2)
+            right_group = right_group.reshape(B, group_channels, -1, H, W)
+            left_group = left_group.reshape(B, group_channels, -1, H, W)
+            correlation = torch.mean(left_group * right_group, dim=1)
             correlations.append(correlation)
 
         final_correlation = torch.cat(correlations, dim=1)
@@ -317,7 +316,7 @@ class LinearAttention(nn.Module):
     def __init__(self, eps: float = 1e-6, feature_map_fn: Callable[[Tensor], Tensor] = elu_feature_map) -> None:
         super().__init__()
         self.eps = eps
-        self.feature_map_fn = elu_feature_map
+        self.feature_map_fn = feature_map_fn
 
     def forward(
         self,
@@ -338,7 +337,7 @@ class LinearAttention(nn.Module):
             queried_values (torch.Tensor): [N, S1, H, D]
         """
         queries = self.feature_map_fn(queries)
-        values = self.feature_map_fn(values)
+        keys = self.feature_map_fn(keys)
 
         if q_mask is not None:
             queries = queries * q_mask[:, :, None, None]
@@ -406,7 +405,10 @@ class PositionalEncodingSine(nn.Module):
     Sinusoidal positonal encodings
 
     Using the scaling term from https://github.com/megvii-research/CREStereo/blob/master/nets/attention/position_encoding.py
-    Reference implementation from https://github.com/facebookresearch/detr/blob/8a144f83a287f4d3fece4acdf073f387c5af387d/models/position_encoding.py#L28-L48
+
+    Unlike cannonical implementations: https://github.com/facebookresearch/detr/blob/8a144f83a287f4d3fece4acdf073f387c5af387d/models/position_encoding.py#L28-L48
+    This implementation of positional encodings interleaves the X-axis and Y-axis signals on the channel dimension
+    instead of concatennating them. This result in attention heads that attend to
     """
 
     def __init__(self, dim_model: int) -> None:
@@ -424,18 +426,23 @@ class PositionalEncodingSine(nn.Module):
             f"PositionalEncodingSine requires a 4-D dimensional input. Provided tensor is of shape {x.shape}",
         )
 
-        coords = torch.ones(size=x.shape[2:], dtype=x.dtype, device=x.device)
-        positions_y = coords.cumsum(0).unsqueeze(0).unsqueeze(-1)
-        positions_x = coords.cumsum(1).unsqueeze(0).unsqueeze(-1)
+        B, C, H, W = x.shape
 
-        div_term = torch.exp(torch.arange(0, self.dim_model // 2, dtype=x.dtype, device=x.device) * self.scale_factor)
-        positions_x = positions_x * div_term
-        positions_y = positions_y * div_term
+        coords = torch.ones(size=(H, W), dtype=x.dtype, device=x.device)
+        positions_y = coords.cumsum(0).unsqueeze(0)
+        positions_x = coords.cumsum(1).unsqueeze(0)
 
-        positions_x = torch.stack((positions_x[..., 0::2].sin(), positions_x[..., 1::2].cos()), dim=4).flatten(3)
-        positions_y = torch.stack((positions_y[..., 0::2].sin(), positions_y[..., 1::2].cos()), dim=4).flatten(3)
+        div_term = torch.exp(
+            torch.arange(0, self.dim_model // 2, step=2, dtype=x.dtype, device=x.device) * self.scale_factor
+        )
+        div_term = div_term[:, None, None]
 
-        positional_embeddings = torch.cat((positions_x, positions_y), dim=3).permute(0, 3, 1, 2)
+        positional_embeddings = torch.zeros((self.dim_model, H, W), device=x.device, dtype=x.dtype)
+        positional_embeddings[0::4, :, :] = torch.sin(positions_x * div_term)
+        positional_embeddings[1::4, :, :] = torch.cos(positions_x * div_term)
+        positional_embeddings[2::4, :, :] = torch.sin(positions_y * div_term)
+        positional_embeddings[3::4, :, :] = torch.cos(positions_y * div_term)
+
         return x + positional_embeddings
 
 
@@ -503,7 +510,7 @@ class LocalFeatureEncoderLayer(nn.Module):
 
         # ffn operation
         message = self.ffn(torch.cat([x, message], dim=2))
-        message = self.attention_norm(message)
+        message = self.ffn_norm(message)
 
         return x + message
 
@@ -756,8 +763,15 @@ class CREStereo(nn.Module):
         if flow_init is not None:
             scale = l_pyramid[max_res].shape[2] // flow_init.shape[2]
             # in CREStereo implementation they multiply with -scale instead of scale
-            # upsample_flow multiples with scale, therefor we add the - in front
-            flow_estimates[max_res] = -upsample_flow(flow_init, up_mask=None, factor=scale)
+            # this can be either a downsample or an upsample based on the cascaded inference
+            # configuration
+            flow_estimates[max_res] = -scale * F.interpolate(
+                input=flow_init,
+                size=l_pyramid[max_res].shape[2:],
+                mode="bilinear",
+                align_corners=True,
+            )
+
         # when not provided with a flow prior, we construct one using the lower resolution maps
         else:
             # initialize a zero flow with the smallest resolution
