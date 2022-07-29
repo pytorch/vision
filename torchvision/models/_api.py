@@ -13,7 +13,7 @@ from torchvision._utils import StrEnum
 from .._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ["WeightsEnum", "Weights", "get_weight", "list_models", "get_model", "get_model_weight"]
+__all__ = ["WeightsEnum", "Weights", "get_model", "get_model_weight", "get_weight", "list_models"]
 
 
 @dataclass
@@ -124,7 +124,7 @@ def get_model_weight(model: Union[Callable, str]) -> W:
         weights_enum (W): The weights enum class associated with the model.
     """
     if isinstance(model, str):
-        model = _find_model(model)
+        model = find_model(model)
     return _get_enum_from_fn(model)
 
 
@@ -194,7 +194,7 @@ def list_models(module: Optional[ModuleType] = None) -> List[str]:
     return sorted(models)
 
 
-def _find_model(name: str) -> Callable[..., M]:
+def find_model(name: str) -> Callable[..., M]:
     name = name.lower()
     try:
         fn = BUILTIN_MODELS[name]
@@ -214,5 +214,5 @@ def get_model(name: str, **config: Any) -> M:
     Returns:
         model (nn.Module): The initialized model.
     """
-    fn = _find_model(name)
+    fn = find_model(name)
     return fn(**config)
