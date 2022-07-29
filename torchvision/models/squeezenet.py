@@ -7,7 +7,7 @@ import torch.nn.init as init
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import Weights, WeightsEnum
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param, handle_legacy_interface
 
@@ -159,6 +159,7 @@ class SqueezeNet1_1_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", SqueezeNet1_0_Weights.IMAGENET1K_V1))
 def squeezenet1_0(
     *, weights: Optional[SqueezeNet1_0_Weights] = None, progress: bool = True, **kwargs: Any
@@ -187,6 +188,7 @@ def squeezenet1_0(
     return _squeezenet("1_0", weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", SqueezeNet1_1_Weights.IMAGENET1K_V1))
 def squeezenet1_1(
     *, weights: Optional[SqueezeNet1_1_Weights] = None, progress: bool = True, **kwargs: Any

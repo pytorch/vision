@@ -23,10 +23,11 @@ SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 
 def get_models_from_module(module):
     # TODO add a registration mechanism to torchvision.models
+    non_model_fn = {"get_model", "get_model_weights", "get_weight", "list_models"}
     return [
         v
         for k, v in module.__dict__.items()
-        if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k != "get_weight"
+        if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k not in non_model_fn
     ]
 
 
