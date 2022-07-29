@@ -162,7 +162,7 @@ def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
     return cast(WeightsEnum, weights_enum)
 
 
-M = TypeVar("M", bound=Type[nn.Module])
+M = TypeVar("M", bound=nn.Module)
 
 BUILTIN_MODELS = {}
 
