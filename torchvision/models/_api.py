@@ -110,7 +110,7 @@ def get_weight(name: str) -> WeightsEnum:
     return weights_enum.from_str(value_name)
 
 
-W = TypeVar("W", bound=Type[WeightsEnum])
+W = TypeVar("W", bound=WeightsEnum)
 
 
 def get_model_weights(model: Union[Callable, str]) -> W:
