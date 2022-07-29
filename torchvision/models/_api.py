@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass, fields
 from inspect import signature
 from types import ModuleType
-from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Type, TypeVar
+from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Type, TypeVar, Union
 
 from torch import nn
 
@@ -113,18 +113,19 @@ def get_weight(name: str) -> WeightsEnum:
 W = TypeVar("W", bound=Type[WeightsEnum])
 
 
-def get_model_weight(name: str) -> W:
+def get_model_weight(model: Union[Callable, str]) -> W:
     """
-    Retuns the Weights Enum from the model name.
+    Retuns the Weights Enum of a model.
 
     Args:
-        name (str): The name under which the model is registered.
+        name (callable or str): The model builder function or the name under which it is registered.
 
     Returns:
         weights_enum (W): The weights enum class associated with the model.
     """
-    fn = _find_model(name)
-    return _get_enum_from_fn(fn)
+    if isinstance(model, str):
+        model = _find_model(model)
+    return _get_enum_from_fn(model)
 
 
 def _get_enum_from_fn(fn: Callable) -> W:
