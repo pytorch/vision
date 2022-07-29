@@ -2,7 +2,7 @@ import functools
 from abc import ABC, abstractmethod
 from glob import glob
 from pathlib import Path
-from typing import Callable, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image
@@ -56,12 +56,13 @@ class StereoMatchingDataset(ABC, VisionDataset):
 
     def _scan_pairs(self, paths_left_pattern: str, paths_right_pattern: Optional[str] = None):
 
-        left_paths = list(sorted(glob(paths_left_pattern)))  # type: ignore
+        left_paths = list(sorted(glob(paths_left_pattern)))
 
+        right_paths: List[Union[None, str]]
         if paths_right_pattern:
-            right_paths = list(sorted(glob(paths_right_pattern)))  # type: ignore
+            right_paths = list(sorted(glob(paths_right_pattern)))
         else:
-            right_paths = list(None for _ in left_paths)  # type: ignore
+            right_paths = list(None for _ in left_paths)
 
         if not left_paths:
             raise FileNotFoundError(f"Could not find any files matching the patterns: {paths_left_pattern}")
@@ -126,6 +127,7 @@ class CarlaStereo(StereoMatchingDataset):
     Carla simulator data linked in the `CREStereo github repo <https://github.com/megvii-research/CREStereo>`_.
 
     The dataset is expected to have the following structure: ::
+
         root
             carla-highres
                 trainingF
@@ -141,7 +143,8 @@ class CarlaStereo(StereoMatchingDataset):
                         disp0GT.pfm
                         disp1GT.pfm
                         calib.txt
-                ...
+                    ...
+
     Args:
         root (string): Root directory where `carla-highres` is located.
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
@@ -182,22 +185,41 @@ class CarlaStereo(StereoMatchingDataset):
 
 
 class Kitti2012Stereo(StereoMatchingDataset):
-    """Kitti dataset from the `2012 <http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php>`_ stereo evaluation benchmark.
-    Uses the RGB images for consistency with Kitti 2015.
+    """
+    KITTI dataset from the `2012 stereo evaluation benchmark <http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php>`_.
+    Uses the RGB images for consistency with KITTI 2015.
+
     The dataset is expected to have the following structure: ::
+
         root
             Kitti2012
                 testing
                     colored_0
+                        1_10.png
+                        2_10.png
+                        ...
                     colored_1
+                        1_10.png
+                        2_10.png
+                        ...
                 training
                     colored_0
+                        1_10.png
+                        2_10.png
+                        ...
                     colored_1
+                        1_10.png
+                        2_10.png
+                        ...
                     disp_noc
+                        1.png
+                        2.png
+                        ...
                     calib
+
     Args:
-        root (string): Root directory where Kitti2012 is located.
-        split (string, optional): The dataset split of scenes, either "train" (default), test, or "additional"
+        root (string): Root directory where `Kitti2012` is located.
+        split (string, optional): The dataset split of scenes, either "train" (default) or "test".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
@@ -246,8 +268,11 @@ class Kitti2012Stereo(StereoMatchingDataset):
 
 
 class Kitti2015Stereo(StereoMatchingDataset):
-    """Kitti dataset from the `2015 <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php>`_ stereo evaluation benchmark.
+    """
+    KITTI dataset from the `2015 stereo evaluation benchmark <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php>`_.
+
     The dataset is expected to have the following structure: ::
+
         root
             Kitti2015
                 testing
@@ -277,9 +302,10 @@ class Kitti2015Stereo(StereoMatchingDataset):
                         img2.png
                         ...
                     calib
+
     Args:
-        root (string): Root directory where Kitti2015 is located.
-        split (string, optional): The dataset split of scenes, either "train" (default) or test.
+        root (string): Root directory where `Kitti2015` is located.
+        split (string, optional): The dataset split of scenes, either "train" (default) or "test".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
