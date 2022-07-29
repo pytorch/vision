@@ -150,16 +150,16 @@ class FiveCrop(Transform):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, features.Image):
-            output = F.five_crop_image_tensor(input, self.size)
-            return MultiCropResult(features.Image.new_like(input, o) for o in output)
-        elif is_simple_tensor(input):
-            return MultiCropResult(F.five_crop_image_tensor(input, self.size))
-        elif isinstance(input, PIL.Image.Image):
-            return MultiCropResult(F.five_crop_image_pil(input, self.size))
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, features.Image):
+            output = F.five_crop_image_tensor(inpt, self.size)
+            return MultiCropResult(features.Image.new_like(inpt, o) for o in output)
+        elif is_simple_tensor(inpt):
+            return MultiCropResult(F.five_crop_image_tensor(inpt, self.size))
+        elif isinstance(inpt, PIL.Image.Image):
+            return MultiCropResult(F.five_crop_image_pil(inpt, self.size))
         else:
-            return input
+            return inpt
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
@@ -174,16 +174,16 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, features.Image):
-            output = F.ten_crop_image_tensor(input, self.size, vertical_flip=self.vertical_flip)
-            return MultiCropResult(features.Image.new_like(input, o) for o in output)
-        elif is_simple_tensor(input):
-            return MultiCropResult(F.ten_crop_image_tensor(input, self.size))
-        elif isinstance(input, PIL.Image.Image):
-            return MultiCropResult(F.ten_crop_image_pil(input, self.size))
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, features.Image):
+            output = F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip)
+            return MultiCropResult(features.Image.new_like(inpt, o) for o in output)
+        elif is_simple_tensor(inpt):
+            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size))
+        elif isinstance(inpt, PIL.Image.Image):
+            return MultiCropResult(F.ten_crop_image_pil(inpt, self.size))
         else:
-            return input
+            return inpt
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
