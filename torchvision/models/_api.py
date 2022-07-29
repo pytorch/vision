@@ -125,10 +125,10 @@ def get_model_weight(model: Union[Callable, str]) -> W:
     """
     if isinstance(model, str):
         model = find_model(model)
-    return _get_enum_from_fn(model)
+    return cast(W, _get_enum_from_fn(model))
 
 
-def _get_enum_from_fn(fn: Callable) -> W:
+def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
     """
     Internal method that gets the weight enum of a specific model builder method.
 
@@ -159,7 +159,7 @@ def _get_enum_from_fn(fn: Callable) -> W:
             "The WeightsEnum class for the specific method couldn't be retrieved. Make sure the typing info is correct."
         )
 
-    return cast(W, weights_enum)
+    return cast(WeightsEnum, weights_enum)
 
 
 M = TypeVar("M", bound=Type[nn.Module])
