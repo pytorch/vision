@@ -150,11 +150,12 @@ M = TypeVar("M", bound=Type[nn.Module])
 BUILTIN_MODELS = {}
 
 
-def register_model(name: str, overwrite: bool = False) -> Callable[[Callable[..., M]], Callable[..., M]]:
+def register_model(name: Optional[str] = None, overwrite: bool = False) -> Callable[[Callable[..., M]], Callable[..., M]]:
     def wrapper(fn: Callable[..., M]) -> Callable[..., M]:
-        if name in BUILTIN_MODELS and not overwrite:
-            raise ValueError(f"An entry is already registered under the name '{name}'.")
-        BUILTIN_MODELS[name] = fn
+        key = name if name is not None else fn.__name__
+        if key in BUILTIN_MODELS and not overwrite:
+            raise ValueError(f"An entry is already registered under the name '{key}'.")
+        BUILTIN_MODELS[key] = fn
         return fn
 
     return wrapper

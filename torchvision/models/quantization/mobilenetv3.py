@@ -184,7 +184,7 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
     DEFAULT = IMAGENET1K_QNNPACK_V1
 
 
-@register_model("quantized_mobilenet_v3_large")
+@register_model(name="quantized_mobilenet_v3_large")
 @handle_legacy_interface(
     weights=(
         "pretrained",
