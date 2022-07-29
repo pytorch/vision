@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass, fields
 from inspect import signature
 from types import ModuleType
-from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Type, TypeVar, Union
+from typing import Any, Callable, cast, Dict, List, Mapping, Optional, TypeVar, Union
 
 from torch import nn
 
