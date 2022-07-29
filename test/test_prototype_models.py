@@ -1,8 +1,8 @@
 import pytest
 import test_models as TM
 import torch
-from torchvision.prototype import models
 from common_utils import cpu_and_gpu, set_rng_seed
+from torchvision.prototype import models
 
 
 @pytest.mark.parametrize("model_fn", TM.list_model_fns(models.depth.stereo))
