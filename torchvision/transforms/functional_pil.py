@@ -260,15 +260,15 @@ def _parse_fill(
 ) -> Dict[str, Optional[Union[float, List[float], Tuple[float, ...]]]]:
 
     # Process fill color for affine transforms
-    num_bands = len(img.getbands())
+    num_channels = get_image_num_channels(img)
     if fill is None:
         fill = 0
-    if isinstance(fill, (int, float)) and num_bands > 1:
-        fill = tuple([fill] * num_bands)
+    if isinstance(fill, (int, float)) and num_channels > 1:
+        fill = tuple([fill] * num_channels)
     if isinstance(fill, (list, tuple)):
-        if len(fill) != num_bands:
-            msg = "The number of elements in 'fill' does not match the number of bands of the image ({} != {})"
-            raise ValueError(msg.format(len(fill), num_bands))
+        if len(fill) != num_channels:
+            msg = "The number of elements in 'fill' does not match the number of channels of the image ({} != {})"
+            raise ValueError(msg.format(len(fill), num_channels))
 
         fill = tuple(fill)
 

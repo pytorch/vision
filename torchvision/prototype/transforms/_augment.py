@@ -92,8 +92,7 @@ class RandomErasing(_RandomApplyTransform):
                 return features.Image.new_like(inpt, output)
             return output
         elif isinstance(inpt, PIL.Image.Image):
-            # TODO: We should implement a fallback to tensor, like gaussian_blur etc
-            raise RuntimeError("Not implemented")
+            return F.erase_image_pil(inpt, **params)
         else:
             return inpt
 

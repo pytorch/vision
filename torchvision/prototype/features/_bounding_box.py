@@ -5,6 +5,8 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms import InterpolationMode
+from torchvision.transforms.functional import _get_inverse_affine_matrix
+from torchvision.transforms.functional_tensor import _compute_output_size
 
 from ._feature import _Feature
 
@@ -168,10 +170,18 @@ class BoundingBox(_Feature):
         output = _F.rotate_bounding_box(
             self, format=self.format, image_size=self.image_size, angle=angle, expand=expand, center=center
         )
-        # TODO: update output image size if expand is True
+        image_size = self.image_size
         if expand:
-            raise RuntimeError("Not yet implemented")
-        return BoundingBox.new_like(self, output, dtype=output.dtype)
+            # The way we recompute image_size is not optimal due to redundant computations of
+            # - rotation matrix (_get_inverse_affine_matrix)
+            # - points dot matrix (_compute_output_size)
+            # Alternatively, we could return new image size by _F.rotate_bounding_box
+            height, width = image_size
+            rotation_matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+            new_width, new_height = _compute_output_size(rotation_matrix, width, height)
+            image_size = (new_height, new_width)
+
+        return BoundingBox.new_like(self, output, dtype=output.dtype, image_size=image_size)
 
     def affine(
         self,
@@ -206,4 +216,15 @@ class BoundingBox(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.perspective_bounding_box(self, self.format, perspective_coeffs)
+        return BoundingBox.new_like(self, output, dtype=output.dtype)
+
+    def elastic(
+        self,
+        displacement: torch.Tensor,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    ) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.elastic_bounding_box(self, self.format, displacement)
         return BoundingBox.new_like(self, output, dtype=output.dtype)
