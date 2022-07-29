@@ -19,16 +19,15 @@ class ResidualBlock(raft.ResidualBlock):
 
         # the CREStereo base architecture changes the number of channels
         # even on grids with the same spatial resolution
-        if in_channels != out_channels:
-            self.downsample = Conv2dNormActivation(
-                in_channels,
-                out_channels,
-                norm_layer=norm_layer,
-                kernel_size=1,
-                stride=stride,
-                bias=True,
-                activation_layer=None,
-            )
+        self.downsample = Conv2dNormActivation(
+            in_channels,
+            out_channels,
+            norm_layer=norm_layer,
+            kernel_size=1,
+            stride=stride,
+            bias=True,
+            activation_layer=None,
+        )
 
 
 class FeatureEncoder(raft.FeatureEncoder):
@@ -71,8 +70,8 @@ class ConvexMaskPredictor(nn.Module):
         self.multiplier = multiplier
 
     def forward(self, x: Tensor) -> Tensor:
-        x = self.mask_head(x) * self.multiplier
-        return x
+        x = self.mask_head(x)
+        return x * self.multiplier
 
 
 class AdaptiveGroupCorrelationLayer(nn.Module):
@@ -251,7 +250,7 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         left_groups = torch.chunk(left_feature, self.groups, dim=1)
         right_groups = torch.chunk(right_feature, self.groups, dim=1)
 
-        num_search_candidates = 9
+        num_search_candidates = self.search_window_2d[0] * self.search_window_2d[1]
         # for each pixel (i, j) we have a number of search candidates
         # thus, for each candidate we should have an X-axis and Y-axis offset value
         extra_offset = extra_offset.reshape(B, num_search_candidates, 2, H, W).permute(0, 1, 3, 4, 2)
@@ -293,9 +292,9 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
             right_group = grid_sample(right_group, coords, mode="bilinear", align_corners=True)
             # we do not need to perform any window shifting because the grid sample op
             # will return a multi-view right based on the num_search_candidates dimension in the offsets
-            right_group = right_group.reshape(B, -1, group_channels, H, W)
-            left_group = left_group.reshape(B, -1, group_channels, H, W)
-            correlation = torch.mean(left_group * right_group, dim=2)
+            right_group = right_group.reshape(B, group_channels, -1, H, W)
+            left_group = left_group.reshape(B, group_channels, -1, H, W)
+            correlation = torch.mean(left_group * right_group, dim=1)
             correlations.append(correlation)
 
         final_correlation = torch.cat(correlations, dim=1)
@@ -317,7 +316,7 @@ class LinearAttention(nn.Module):
     def __init__(self, eps: float = 1e-6, feature_map_fn: Callable[[Tensor], Tensor] = elu_feature_map) -> None:
         super().__init__()
         self.eps = eps
-        self.feature_map_fn = elu_feature_map
+        self.feature_map_fn = feature_map_fn
 
     def forward(
         self,
@@ -338,7 +337,7 @@ class LinearAttention(nn.Module):
             queried_values (torch.Tensor): [N, S1, H, D]
         """
         queries = self.feature_map_fn(queries)
-        values = self.feature_map_fn(values)
+        keys = self.feature_map_fn(keys)
 
         if q_mask is not None:
             queries = queries * q_mask[:, :, None, None]
@@ -423,7 +422,7 @@ class PositionalEncodingSine(nn.Module):
             len(x.shape) == 4,
             f"PositionalEncodingSine requires a 4-D dimensional input. Provided tensor is of shape {x.shape}",
         )
-
+        """
         coords = torch.ones(size=x.shape[2:], dtype=x.dtype, device=x.device)
         positions_y = coords.cumsum(0).unsqueeze(0).unsqueeze(-1)
         positions_x = coords.cumsum(1).unsqueeze(0).unsqueeze(-1)
@@ -436,7 +435,22 @@ class PositionalEncodingSine(nn.Module):
         positions_y = torch.stack((positions_y[..., 0::2].sin(), positions_y[..., 1::2].cos()), dim=4).flatten(3)
 
         positional_embeddings = torch.cat((positions_x, positions_y), dim=3).permute(0, 3, 1, 2)
-        return x + positional_embeddings
+        """
+
+        b, c, h, w = x.shape
+        pe = torch.zeros((self.dim_model, *(256, 256)), dtype=torch.float32)
+        y_positions = torch.ones((256, 256)).cumsum(0).float().unsqueeze(0)
+        x_positions = torch.ones((256, 256)).cumsum(1).float().unsqueeze(0)
+        div_term = torch.exp(torch.arange(0.0, self.dim_model // 2, 2) * (-math.log(10000.0) / self.dim_model // 2))
+        div_term = div_term[:, None, None]
+        pe[0::4, :, :] = torch.sin(x_positions * div_term)
+        pe[1::4, :, :] = torch.cos(x_positions * div_term)
+        pe[2::4, :, :] = torch.sin(y_positions * div_term)
+        pe[3::4, :, :] = torch.cos(y_positions * div_term)
+        pe = pe.unsqueeze(0)
+        return x + pe[:, :, :h, :w]
+
+        # return x + positional_embeddings
 
 
 class LocalFeatureEncoderLayer(nn.Module):
@@ -500,12 +514,14 @@ class LocalFeatureEncoderLayer(nn.Module):
         # concatenating attention heads together before passing throught projection layer
         message = self.merge(message.reshape(B, S, D))
         message = self.attention_norm(message)
-
         # ffn operation
+        # print(x)
+        # print("tv", message)
+        # print(self.state_dict()["ffn.2.weight"])
         message = self.ffn(torch.cat([x, message], dim=2))
-        message = self.attention_norm(message)
-
-        return x + message
+        # print(message)
+        message = self.ffn_norm(message)
+        return message + x
 
 
 class LocalFeatureTransformer(nn.Module):
@@ -573,6 +589,8 @@ class LocalFeatureTransformer(nn.Module):
                 left_features = layer(left_features, right_features, left_mask, right_mask)
                 right_features = layer(right_features, left_features, right_mask, left_mask)
 
+            else:
+                raise KeyError
         return left_features, right_features
 
 
@@ -755,13 +773,20 @@ class CREStereo(nn.Module):
 
         if flow_init is not None:
             scale = l_pyramid[max_res].shape[2] // flow_init.shape[2]
-            # in CREStereo implementation they multiply with -scale instead of scale
-            # upsample_flow multiples with scale, therefor we add the - in front
-            flow_estimates[max_res] = -upsample_flow(flow_init, up_mask=None, factor=scale)
+            # based on the cascaded inference configuration this might be a downsample
+            # instead of an upsample, therefor we use bilinear interpolation
+            flow_estimates[max_res] = -scale * F.interpolate(
+                input=flow_init,
+                size=l_pyramid[max_res].shape[2:],
+                mode="bilinear",
+                align_corners=True,
+            )
         # when not provided with a flow prior, we construct one using the lower resolution maps
         else:
             # initialize a zero flow with the smallest resolution
-            flow = torch.zeros(size=(B, 2, MIN_H, MIN_W), device=left_features.device, dtype=left_features.dtype)
+            flow_pred_prior = torch.zeros(
+                size=(B, 2, MIN_H, MIN_W), device=left_features.device, dtype=left_features.dtype
+            )
 
             # flows from coarse resolutions are refined similarly
             # we always need to fetch the next pyramid feature map as well
@@ -771,7 +796,7 @@ class CREStereo(nn.Module):
             fine_grained_resolution = max_res
 
             # set the coarsest flow to the zero flow
-            flow_estimates[coarse_resolutions[0]] = flow
+            flow_estimates[min_res] = flow_pred_prior
 
             # the correlation layer ModuleDict will contain layers ordered from coarse to fine resolution
             # i.e ["1 / 16", "1 / 8", "1 / 4"]
@@ -985,7 +1010,7 @@ def crestereo_base(*, weights: Optional[WeightsEnum] = None, progress=True, **kw
         # Motion encoder
         motion_encoder_corr_layers=(256, 192),
         motion_encoder_flow_layers=(128, 64),
-        motion_encoder_out_channels=256,
+        motion_encoder_out_channels=128,
         # Recurrent block
         recurrent_block_hidden_state_size=128,
         recurrent_block_kernel_size=((1, 5), (5, 1)),
@@ -1005,3 +1030,12 @@ def crestereo_base(*, weights: Optional[WeightsEnum] = None, progress=True, **kw
         corr_search_window_1d=(1, 9),
         corr_search_dilate_1d=(1, 1),
     )
+
+
+if __name__ == "__main__":
+    model = crestereo_base()
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+
+    for n, p in model.named_parameters():
+        print(n, "\t", p.shape)

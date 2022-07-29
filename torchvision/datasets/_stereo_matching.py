@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
 import numpy as np
+import torch
 from PIL import Image
 
 from .utils import download_and_extract_archive, verify_str_arg, _read_pfm
@@ -99,6 +100,9 @@ class StereoMatchingDataset(ABC, VisionDataset):
 
         images = list((left, right) for left, right in zip(left_paths, right_paths))
         return images
+
+    def __rmul__(self, v):
+        return torch.utils.data.ConcatDataset([self] * v)
 
     @abstractmethod
     def _read_disparity(self, file_path: str) -> Tuple:
