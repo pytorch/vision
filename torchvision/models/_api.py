@@ -13,7 +13,7 @@ from torchvision._utils import StrEnum
 from .._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ["WeightsEnum", "Weights", "get_weight"]
+__all__ = ["WeightsEnum", "Weights", "get_weight", "list_models", "get_model", "get_model_weight"]
 
 
 @dataclass
@@ -110,10 +110,26 @@ def get_weight(name: str) -> WeightsEnum:
     return weights_enum.from_str(value_name)
 
 
-def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
+W = TypeVar("W", bound=Type[WeightsEnum])
+
+
+def get_model_weight(name: str) -> W:
+    """
+    Retuns the Weights Enum from the model name.
+
+    Args:
+        name (str): The name under which the model is registered.
+
+    Returns:
+        weights_enum (W): The weights enum class associated with the model.
+    """
+    fn = _find_model(name)
+    return _get_enum_from_fn(fn)
+
+
+def _get_enum_from_fn(fn: Callable) -> W:
     """
     Internal method that gets the weight enum of a specific model builder method.
-    Might be removed after the handle_legacy_interface is removed.
 
     Args:
         fn (Callable): The builder method used to create the model.
@@ -142,7 +158,7 @@ def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
             "The WeightsEnum class for the specific method couldn't be retrieved. Make sure the typing info is correct."
         )
 
-    return cast(WeightsEnum, weights_enum)
+    return cast(W, weights_enum)
 
 
 M = TypeVar("M", bound=Type[nn.Module])
@@ -177,7 +193,16 @@ def list_models(module: Optional[ModuleType] = None) -> List[str]:
     return sorted(models)
 
 
-def load_model(name: str, **config: Any) -> M:
+def _find_model(name: str) -> Callable[..., M]:
+    name = name.lower()
+    try:
+        fn = BUILTIN_MODELS[name]
+    except KeyError:
+        raise ValueError(f"Unknown model {name}")
+    return fn
+
+
+def get_model(name: str, **config: Any) -> M:
     """
     Gets the model name and configuration and returns an instantiated model.
 
@@ -188,9 +213,5 @@ def load_model(name: str, **config: Any) -> M:
     Returns:
         model (nn.Module): The initialized model.
     """
-    name = name.lower()
-    try:
-        fn = BUILTIN_MODELS[name]
-    except KeyError:
-        raise ValueError(f"Unknown model {name}")
+    fn = _find_model(name)
     return fn(**config)

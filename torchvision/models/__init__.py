@@ -14,4 +14,4 @@ from .vgg import *
 from .vision_transformer import *
 from .swin_transformer import *
 from . import detection, optical_flow, quantization, segmentation, video
-from ._api import get_weight, list_models, load_model
+from ._api import get_weight, list_models, get_model, get_model_weight
