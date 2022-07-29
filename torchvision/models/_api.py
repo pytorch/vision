@@ -150,10 +150,10 @@ M = TypeVar("M", bound=Type[nn.Module])
 BUILTIN_MODELS = {}
 
 
-def register_model(name: Optional[str] = None, overwrite: bool = False) -> Callable[[Callable[..., M]], Callable[..., M]]:
+def register_model(name: Optional[str] = None) -> Callable[[Callable[..., M]], Callable[..., M]]:
     def wrapper(fn: Callable[..., M]) -> Callable[..., M]:
         key = name if name is not None else fn.__name__
-        if key in BUILTIN_MODELS and not overwrite:
+        if key in BUILTIN_MODELS:
             raise ValueError(f"An entry is already registered under the name '{key}'.")
         BUILTIN_MODELS[key] = fn
         return fn
@@ -177,7 +177,7 @@ def list_models(module: Optional[ModuleType] = None) -> List[str]:
     return sorted(models)
 
 
-def load(name: str, **config: Any) -> M:
+def load_model(name: str, **config: Any) -> M:
     """
     Gets the model name and configuration and returns an instantiated model.
 
