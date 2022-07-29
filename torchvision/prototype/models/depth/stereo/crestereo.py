@@ -999,7 +999,7 @@ def crestereo_base(*, weights: Optional[WeightsEnum] = None, progress=True, **kw
         # Motion encoder
         motion_encoder_corr_layers=(256, 192),
         motion_encoder_flow_layers=(128, 64),
-        motion_encoder_out_channels=256,
+        motion_encoder_out_channels=128,
         # Recurrent block
         recurrent_block_hidden_state_size=128,
         recurrent_block_kernel_size=((1, 5), (5, 1)),
