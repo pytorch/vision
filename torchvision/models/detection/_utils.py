@@ -237,43 +237,10 @@ class BoxLinearCoder:
         """
         self.normalize_by_size = normalize_by_size
 
-    def encode_single(self, reference_boxes: Tensor, proposals: Tensor) -> Tensor:
+    def encode(self, reference_boxes: Tensor, proposals: Tensor) -> Tensor:
         """
         Encode a set of proposals with respect to some reference boxes
 
-        Args:
-            reference_boxes (Tensor): reference boxes
-            proposals (Tensor): boxes to be encoded
-
-        Returns:
-            Tensor: the encoded relative box offsets that can be used to
-            decode the boxes.
-        """
-        # get the center of reference_boxes
-        reference_boxes_ctr_x = 0.5 * (reference_boxes[:, 0] + reference_boxes[:, 2])
-        reference_boxes_ctr_y = 0.5 * (reference_boxes[:, 1] + reference_boxes[:, 3])
-
-        # get box regression transformation deltas
-        target_l = reference_boxes_ctr_x - proposals[:, 0]
-        target_t = reference_boxes_ctr_y - proposals[:, 1]
-        target_r = proposals[:, 2] - reference_boxes_ctr_x
-        target_b = proposals[:, 3] - reference_boxes_ctr_y
-
-        targets = torch.stack((target_l, target_t, target_r, target_b), dim=1)
-        if self.normalize_by_size:
-            reference_boxes_w = reference_boxes[:, 2] - reference_boxes[:, 0]
-            reference_boxes_h = reference_boxes[:, 3] - reference_boxes[:, 1]
-            reference_boxes_size = torch.stack(
-                (reference_boxes_w, reference_boxes_h, reference_boxes_w, reference_boxes_h), dim=1
-            )
-            targets = targets / reference_boxes_size
-
-        return targets
-
-
-    def encode_all(self, reference_boxes: Tensor, proposals: Tensor) -> Tensor:
-        """
-        vectorized version of `encode_single`
         Args:
             reference_boxes (Tensor): reference boxes
             proposals (Tensor): boxes to be encoded
@@ -305,7 +272,7 @@ class BoxLinearCoder:
             targets = targets / reference_boxes_size
         return targets
 
-    def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
+    def decode(self, rel_codes: Tensor, boxes: Tensor) -> Tensor:
 
         """
         From a set of original boxes and encoded relative box offsets,
@@ -313,7 +280,7 @@ class BoxLinearCoder:
 
         Args:
             rel_codes (Tensor): encoded boxes
-            boxes (List[Tensor]): List of reference boxes.
+            boxes (Tensor): reference boxes.
 
         Returns:
             Tensor: the predicted boxes with the encoded relative box offsets.
@@ -323,7 +290,7 @@ class BoxLinearCoder:
 
         """
 
-        boxes = torch.stack(boxes).to(dtype=rel_codes.dtype)
+        boxes = boxes.to(dtype=rel_codes.dtype)
 
         ctr_x = 0.5 * (boxes[..., 0] + boxes[..., 2])
         ctr_y = 0.5 * (boxes[..., 1] + boxes[..., 3])
