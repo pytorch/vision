@@ -55,13 +55,18 @@ class TestVideoApi:
     @pytest.mark.parametrize("test_video", test_videos.keys())
     def test_frame_reading(self, test_video):
         full_path = os.path.join(VIDEO_DIR, test_video)
+
         with av.open(full_path) as av_reader:
-            if av_reader.streams.video:
+            is_video = True if av_reader.streams.video else False
+
+            if is_video:
                 av_frames, vr_frames = [], []
                 av_pts, vr_pts = [], []
                 # get av frames
                 for av_frame in av_reader.decode(av_reader.streams.video[0]):
-                    av_frames.append(torch.tensor(av_frame.to_rgb().to_ndarray()).permute(2, 0, 1))
+                    av_frames.append(
+                        torch.tensor(av_frame.to_rgb(src_colorspace="ITU709").to_ndarray()).permute(2, 0, 1)
+                    )
                     av_pts.append(av_frame.pts * av_frame.time_base)
 
                 # get vr frames
@@ -88,7 +93,9 @@ class TestVideoApi:
 
         # test audio reading compared to PYAV
         with av.open(full_path) as av_reader:
-            if av_reader.streams.audio:
+            is_audio = True if av_reader.streams.audio else False
+
+            if is_audio:
                 av_frames, vr_frames = [], []
                 av_pts, vr_pts = [], []
                 # get av frames
