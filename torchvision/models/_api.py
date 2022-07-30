@@ -80,6 +80,8 @@ def get_weight(name: str) -> WeightsEnum:
     """
     Gets the weights enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"
 
+    .. betastatus:: method
+
     Args:
         name (str): The name of the weight enum entry.
 
@@ -116,6 +118,8 @@ W = TypeVar("W", bound=WeightsEnum)
 def get_model_weights(model: Union[Callable, str]) -> W:
     """
     Retuns the weights enum class associated to the given model.
+
+    .. betastatus:: method
 
     Args:
         name (callable or str): The model builder function or the name under which it is registered.
@@ -182,6 +186,8 @@ def list_models(module: Optional[ModuleType] = None) -> List[str]:
     """
     Returns a list with the names of registered models.
 
+    .. betastatus:: method
+
     Args:
         module (ModuleType, optional): The module from which we want to extract the available models.
 
@@ -206,6 +212,8 @@ def find_model(name: str) -> Callable[..., M]:
 def get_model(name: str, **config: Any) -> M:
     """
     Gets the model name and configuration and returns an instantiated model.
+
+    .. betastatus:: method
 
     Args:
         name (str): The name under which the model is registered.
