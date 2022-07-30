@@ -126,7 +126,7 @@ class TestFxFeatureExtraction:
         eval_nodes = [n for n in eval_nodes if not any(x in n for x in exclude_nodes_filter)]
         return random.sample(train_nodes, 10), random.sample(eval_nodes, 10)
 
-    @pytest.mark.parametrize("model_name", models.list_models())
+    @pytest.mark.parametrize("model_name", models.list_models(models))
     def test_build_fx_feature_extractor(self, model_name):
         set_rng_seed(0)
         model = models.get_model(model_name, **self.model_defaults).eval()
@@ -163,7 +163,7 @@ class TestFxFeatureExtraction:
         train_nodes, _ = get_graph_node_names(model)
         assert all(a == b for a, b in zip(train_nodes, test_module_nodes))
 
-    @pytest.mark.parametrize("model_name", models.list_models())
+    @pytest.mark.parametrize("model_name", models.list_models(models))
     def test_forward_backward(self, model_name):
         model = models.get_model(model_name, **self.model_defaults).train()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
@@ -202,7 +202,7 @@ class TestFxFeatureExtraction:
         for k in ilg_out.keys():
             assert ilg_out[k].equal(fgn_out[k])
 
-    @pytest.mark.parametrize("model_name", models.list_models())
+    @pytest.mark.parametrize("model_name", models.list_models(models))
     def test_jit_forward_backward(self, model_name):
         set_rng_seed(0)
         model = models.get_model(model_name, **self.model_defaults).train()
