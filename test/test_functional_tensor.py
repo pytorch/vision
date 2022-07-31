@@ -1352,16 +1352,24 @@ def test_ten_crop(device):
         assert_equal(transformed_batch, s_transformed_batch)
 
 
+def test_elastic_transform_asserts():
+    with pytest.raises(TypeError, match="Argument displacement should be a Tensor"):
+        _ = F.elastic_transform("abc", displacement=None)
+
+    with pytest.raises(TypeError, match="img should be PIL Image or Tensor"):
+        _ = F.elastic_transform("abc", displacement=torch.rand(1))
+
+    img_tensor = torch.rand(1, 3, 32, 24)
+    with pytest.raises(ValueError, match="Argument displacement shape should"):
+        _ = F.elastic_transform(img_tensor, displacement=torch.rand(1, 2))
+
+
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR, BICUBIC])
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
 @pytest.mark.parametrize(
     "fill",
-    [
-        None,
-        [255, 255, 255],
-        (2.0,),
-    ],
+    [None, [255, 255, 255], (2.0,)],
 )
 def test_elastic_transform_consistency(device, interpolation, dt, fill):
     script_elastic_transform = torch.jit.script(F.elastic_transform)

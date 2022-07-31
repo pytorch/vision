@@ -1855,7 +1855,7 @@ def _check_sequence_input(x, name, req_sizes):
     if not isinstance(x, Sequence):
         raise TypeError(f"{name} should be a sequence of length {msg}.")
     if len(x) not in req_sizes:
-        raise ValueError(f"{name} should be sequence of length {msg}.")
+        raise ValueError(f"{name} should be a sequence of length {msg}.")
 
 
 def _setup_angle(x, name, req_sizes=(2,)):

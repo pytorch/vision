@@ -16,12 +16,12 @@ class ConvertBoundingBoxFormat(Transform):
             format = features.BoundingBoxFormat[format]
         self.format = format
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, features.BoundingBox):
-            output = F.convert_bounding_box_format(input, old_format=input.format, new_format=params["format"])
-            return features.BoundingBox.new_like(input, output, format=params["format"])
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, features.BoundingBox):
+            output = F.convert_bounding_box_format(inpt, old_format=inpt.format, new_format=params["format"])
+            return features.BoundingBox.new_like(inpt, output, format=params["format"])
         else:
-            return input
+            return inpt
 
 
 class ConvertImageDtype(Transform):
@@ -29,14 +29,14 @@ class ConvertImageDtype(Transform):
         super().__init__()
         self.dtype = dtype
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, features.Image):
-            output = convert_image_dtype(input, dtype=self.dtype)
-            return features.Image.new_like(input, output, dtype=self.dtype)
-        elif is_simple_tensor(input):
-            return convert_image_dtype(input, dtype=self.dtype)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, features.Image):
+            output = convert_image_dtype(inpt, dtype=self.dtype)
+            return features.Image.new_like(inpt, output, dtype=self.dtype)
+        elif is_simple_tensor(inpt):
+            return convert_image_dtype(inpt, dtype=self.dtype)
         else:
-            return input
+            return inpt
 
 
 class ConvertImageColorSpace(Transform):
@@ -55,13 +55,13 @@ class ConvertImageColorSpace(Transform):
             old_color_space = features.ColorSpace.from_str(old_color_space)
         self.old_color_space = old_color_space
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, features.Image):
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, features.Image):
             output = F.convert_image_color_space_tensor(
-                input, old_color_space=input.color_space, new_color_space=self.color_space
+                inpt, old_color_space=inpt.color_space, new_color_space=self.color_space
             )
-            return features.Image.new_like(input, output, color_space=self.color_space)
-        elif is_simple_tensor(input):
+            return features.Image.new_like(inpt, output, color_space=self.color_space)
+        elif is_simple_tensor(inpt):
             if self.old_color_space is None:
                 raise RuntimeError(
                     f"In order to convert simple tensor images, `{type(self).__name__}(...)` "
@@ -69,9 +69,9 @@ class ConvertImageColorSpace(Transform):
                 )
 
             return F.convert_image_color_space_tensor(
-                input, old_color_space=self.old_color_space, new_color_space=self.color_space
+                inpt, old_color_space=self.old_color_space, new_color_space=self.color_space
             )
-        elif isinstance(input, PIL.Image.Image):
-            return F.convert_image_color_space_pil(input, color_space=self.color_space)
+        elif isinstance(inpt, PIL.Image.Image):
+            return F.convert_image_color_space_pil(inpt, color_space=self.color_space)
         else:
-            return input
+            return inpt
