@@ -321,7 +321,7 @@ std::tuple<torch::Tensor, double> Video::Next() {
           static_cast<AVSampleFormat>(format.format.audio.format));
       int frameSizeTotal = out.payload->length();
 
-      CHECK_EQ(frameSizeTotal % (outAudioChannels * bytesPerSample), 0);
+      TORCH_CHECK_EQ(frameSizeTotal % (outAudioChannels * bytesPerSample), 0);
       int numAudioSamples =
           frameSizeTotal / (outAudioChannels * bytesPerSample);
 
