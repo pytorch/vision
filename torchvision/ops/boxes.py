@@ -360,7 +360,7 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
 
     boxes1 = _upcast(boxes1)
     boxes2 = _upcast(boxes2)
-    diou, _ = _box_diou_iou(boxes1, boxes2)
+    diou, _ = _box_diou_iou(boxes1, boxes2, eps)
     return diou
 
 
