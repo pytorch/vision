@@ -14,7 +14,7 @@ def complete_box_iou_loss(
 
     """
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
-    boxes do not overlap overlap area, This loss function considers important geometrical
+    boxes do not overlap area, This loss function considers important geometrical
     factors such as  overlap area, normalized central point distance and aspect ratio.
     This loss is symmetric, so the boxes1 and boxes2 arguments are interchangeable.
 
@@ -35,7 +35,7 @@ def complete_box_iou_loss(
         Tensor: Loss tensor with the reduction option applied.
 
     Reference:
-        Zhaohui Zheng et. al: Complete Intersection over Union Loss:
+        Zhaohui Zheng et al.: Complete Intersection over Union Loss:
         https://arxiv.org/abs/1911.08287
 
     """

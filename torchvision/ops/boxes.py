@@ -331,7 +331,9 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     w_gt = boxes2[:, 2] - boxes2[:, 0]
     h_gt = boxes2[:, 3] - boxes2[:, 1]
 
-    v = (4 / (torch.pi**2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2)
+    aspect_gt = torch.atan(w_gt / h_gt)
+    aspect_pred = torch.atan(w_pred / h_pred)
+    v = (4 / (torch.pi**2)) * torch.pow((aspect_gt - aspect_pred[:, None]), 2)
     with torch.no_grad():
         alpha = v / (1 - iou + v + eps)
     return diou - alpha * v
@@ -364,6 +366,9 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
 
 def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tuple[Tensor, Tensor]:
 
+    # if boxes1.size(0) > boxes2.size(0):
+    #     boxes1, boxes2 = boxes2, boxes1
+
     iou = box_iou(boxes1, boxes2)
     lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
     rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
@@ -375,10 +380,14 @@ def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tuple[Te
     x_g = (boxes2[:, 0] + boxes2[:, 2]) / 2
     y_g = (boxes2[:, 1] + boxes2[:, 3]) / 2
     # The distance between boxes' centers squared.
-    centers_distance_squared = (_upcast(x_p - x_g) ** 2) + (_upcast(y_p - y_g) ** 2)
+    centers_distance_squared = (_upcast((x_p - x_g[:, None]).diag()) ** 2) + (_upcast((y_p - y_g[:, None]).diag()) ** 2)
     # The distance IoU is the IoU penalized by a normalized
     # distance between boxes' centers squared.
-    return iou - (centers_distance_squared / diagonal_distance_squared), iou
+    if boxes1.size(0) > boxes2.size(0):
+        center_distance_ratio = centers_distance_squared[None, :] / diagonal_distance_squared
+    else:
+        center_distance_ratio = centers_distance_squared[:, None] / diagonal_distance_squared
+    return iou - center_distance_ratio, iou
 
 
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:

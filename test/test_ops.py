@@ -1111,14 +1111,6 @@ class TestBoxConvert:
         torch.testing.assert_close(scripted_cxcywh, box_cxcywh)
 
 
-INT_BOXES = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
-FLOAT_BOXES = [
-    [285.3538, 185.5758, 1193.5110, 851.4551],
-    [285.1472, 188.7374, 1192.4984, 851.0669],
-    [279.2440, 197.9812, 1189.4746, 849.2019],
-]
-
-
 class TestBoxArea:
     def area_check(self, box, expected, atol=1e-4):
         out = ops.box_area(box)
@@ -1152,18 +1144,28 @@ class TestBoxArea:
         torch.testing.assert_close(scripted_area, expected)
 
 
+INT_BOXES = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300], [0, 0, 25, 25]]
+INT_BOXES2 = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
+FLOAT_BOXES = [
+    [285.3538, 185.5758, 1193.5110, 851.4551],
+    [285.1472, 188.7374, 1192.4984, 851.0669],
+    [279.2440, 197.9812, 1189.4746, 849.2019],
+]
+
+
 class TestIouBase:
     @staticmethod
-    def _run_test(target_fn: Callable, test_input: List, dtypes: List[torch.dtype], atol: float, expected: List):
+    def _run_test(target_fn: Callable, actual_box1, actual_box2, dtypes, atol, expected):
         for dtype in dtypes:
-            actual_box = torch.tensor(test_input, dtype=dtype)
+            actual_box1 = torch.tensor(actual_box1, dtype=dtype)
+            actual_box2 = torch.tensor(actual_box2, dtype=dtype)
             expected_box = torch.tensor(expected)
-            out = target_fn(actual_box, actual_box)
+            out = target_fn(actual_box1, actual_box2)
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
-    def _run_jit_test(target_fn: Callable, test_input: List):
-        box_tensor = torch.tensor(test_input, dtype=torch.float)
+    def _run_jit_test(target_fn: Callable, actual_box1: List):
+        box_tensor = torch.tensor(actual_box1, dtype=torch.float)
         expected = target_fn(box_tensor, box_tensor)
         scripted_fn = torch.jit.script(target_fn)
         scripted_out = scripted_fn(box_tensor, box_tensor)
@@ -1171,76 +1173,84 @@ class TestIouBase:
 
 
 class TestBoxIou(TestIouBase):
-    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
+    int_expected2 = [[1.0, 0.25, 0.0, 0.0625], [0.25, 1.0, 0.0, 0.25], [0.0, 0.0, 1.0, 0.0]]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, atol, expected",
+        "actual_box1, actual_box2, dtypes, atol, expected",
         [
-            pytest.param(INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(FLOAT_BOXES, [torch.float16], 0.002, float_expected),
-            pytest.param(FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(INT_BOXES2, INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected2),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, atol, expected):
-        self._run_test(ops.box_iou, test_input, dtypes, atol, expected)
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.box_iou, INT_BOXES)
 
 
 class TestGeneralizedBoxIou(TestIouBase):
-    int_expected = [[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0]]
+    int_expected = [[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0], [0.0625, 0.25, -0.8819]]
+    int_expected2 = [[1.0, 0.25, -0.7778, 0.0625], [0.25, 1.0, -0.8611, 0.25], [-0.7778, -0.8611, 1.0, -0.8819]]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, atol, expected",
+        "actual_box1, actual_box2, dtypes, atol, expected",
         [
-            pytest.param(INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(FLOAT_BOXES, [torch.float16], 0.002, float_expected),
-            pytest.param(FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(INT_BOXES2, INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected2),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, atol, expected):
-        self._run_test(ops.generalized_box_iou, test_input, dtypes, atol, expected)
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.generalized_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.generalized_box_iou, INT_BOXES)
 
 
 class TestDistanceBoxIoU(TestIouBase):
-    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
+    int_expected2 = [[1.0, 0.25, 0.0, 0.0625], [0.25, 1.0, 0.0, 0.25], [0.0, 0.0, 1.0, 0.0]]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, atol, expected",
+        "actual_box1, actual_box2, dtypes, atol, expected",
         [
-            pytest.param(INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(FLOAT_BOXES, [torch.float16], 0.002, float_expected),
-            pytest.param(FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(INT_BOXES2, INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected2),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, atol, expected):
-        self._run_test(ops.distance_box_iou, test_input, dtypes, atol, expected)
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.distance_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.distance_box_iou, INT_BOXES)
 
 
 class TestCompleteBoxIou(TestIouBase):
-    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
+    int_expected2 = [[1.0, 0.25, 0.0, 0.0625], [0.25, 1.0, 0.0, 0.25], [0.0, 0.0, 1.0, 0.0]]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, atol, expected",
+        "actual_box1, actual_box2, dtypes, atol, expected",
         [
-            pytest.param(INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(FLOAT_BOXES, [torch.float16], 0.002, float_expected),
-            pytest.param(FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(INT_BOXES2, INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected2),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, atol, expected):
-        self._run_test(ops.complete_box_iou, test_input, dtypes, atol, expected)
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.complete_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.complete_box_iou, INT_BOXES)
