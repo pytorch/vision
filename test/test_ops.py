@@ -1165,8 +1165,8 @@ class TestIouBase:
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
-    def _run_jit_test(target_fn: Callable, actual_box1: List):
-        box_tensor = torch.tensor(actual_box1, dtype=torch.float)
+    def _run_jit_test(target_fn: Callable, actual_box: List):
+        box_tensor = torch.tensor(actual_box, dtype=torch.float)
         expected = target_fn(box_tensor, box_tensor)
         scripted_fn = torch.jit.script(target_fn)
         scripted_out = scripted_fn(box_tensor, box_tensor)
