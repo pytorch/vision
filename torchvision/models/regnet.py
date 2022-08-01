@@ -1392,10 +1392,6 @@ def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress
 
     .. autoclass:: torchvision.models.RegNet_X_1_6GF_Weights
         :members:
-
-    Args:
-        weights (RegNet_X_1_6GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = RegNet_X_1_6GF_Weights.verify(weights)
 
@@ -1422,10 +1418,6 @@ def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress
 
     .. autoclass:: torchvision.models.RegNet_X_3_2GF_Weights
         :members:
-
-    Args:
-        weights (RegNet_X_3_2GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = RegNet_X_3_2GF_Weights.verify(weights)
 
@@ -1452,10 +1444,6 @@ def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bo
 
     .. autoclass:: torchvision.models.RegNet_X_8GF_Weights
         :members:
-
-    Args:
-        weights (RegNet_X_8GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = RegNet_X_8GF_Weights.verify(weights)
 
@@ -1482,10 +1470,6 @@ def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: 
 
     .. autoclass:: torchvision.models.RegNet_X_16GF_Weights
         :members:
-
-    Args:
-        weights (RegNet_X_16GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = RegNet_X_16GF_Weights.verify(weights)
 
@@ -1512,10 +1496,6 @@ def regnet_x_32gf(*, weights: Optional[RegNet_X_32GF_Weights] = None, progress: 
 
     .. autoclass:: torchvision.models.RegNet_X_32GF_Weights
         :members:
-
-    Args:
-        weights (RegNet_X_32GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = RegNet_X_32GF_Weights.verify(weights)
 
