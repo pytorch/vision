@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="AlexNet" href="models/alexnet.html" />
+    <link rel="next" title="get_model" href="generated/torchvision.models.get_model.html" />
     <link rel="prev" title="vflip" href="generated/torchvision.transforms.functional.vflip.html" />
   <!-- Google Analytics -->
   
@@ -209,7 +209,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+44e63bd ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+d0f0e8c ) &#x25BC</a>
     </div>
     
 
@@ -430,6 +430,51 @@ behavior, such as batch normalization. To switch between these modes, use
 <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 </pre></div>
 </div>
+</section>
+<section id="model-registration-mechanism">
+<h3>Model Registration Mechanism<a class="headerlink" href="#model-registration-mechanism" title="Permalink to this heading">¶</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The registration mechanism is in Beta stage, and backward compatibility is not guaranteed.</p>
+</div>
+<p>As of v0.14, TorchVision offers a new model registration mechanism which allows retreaving models
+and weights by their names. Here are a few examples on how to use them:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># List available models</span>
+<span class="n">all_models</span> <span class="o">=</span> <span class="n">list_models</span><span class="p">()</span>
+<span class="n">classification_models</span> <span class="o">=</span> <span class="n">list_models</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="p">)</span>
+
+<span class="c1"># Initialize models</span>
+<span class="n">m1</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="s2">&quot;mobilenet_v3_large&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="s2">&quot;quantized_mobilenet_v3_large&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;DEFAULT&quot;</span><span class="p">)</span>
+
+<span class="c1"># Fetch weights</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">get_weight</span><span class="p">(</span><span class="s2">&quot;MobileNet_V3_Large_QuantizedWeights.DEFAULT&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">weights</span> <span class="o">==</span> <span class="n">MobileNet_V3_Large_QuantizedWeights</span><span class="o">.</span><span class="n">DEFAULT</span>
+
+<span class="n">weights_enum</span> <span class="o">=</span> <span class="n">get_model_weights</span><span class="p">(</span><span class="s2">&quot;quantized_mobilenet_v3_large&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">weights_enum</span> <span class="o">==</span> <span class="n">MobileNet_V3_Large_QuantizedWeights</span>
+
+<span class="n">weights_enum2</span> <span class="o">=</span> <span class="n">get_model_weights</span><span class="p">(</span><span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">mobilenet_v3_large</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">weights_enum</span> <span class="o">==</span> <span class="n">weights_enum2</span>
+</pre></div>
+</div>
+<p>Here are the available public methods of the model registration mechanism:</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.get_model.html#torchvision.models.get_model" title="torchvision.models.get_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_model</span></code></a>(name, **config)</p></td>
+<td><p>Gets the model name and configuration and returns an instantiated model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.get_model_weights.html#torchvision.models.get_model_weights" title="torchvision.models.get_model_weights"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_model_weights</span></code></a>(model)</p></td>
+<td><p>Retuns the weights enum class associated to the given model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.get_weight.html#torchvision.models.get_weight" title="torchvision.models.get_weight"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_weight</span></code></a>(name)</p></td>
+<td><p>Gets the weights enum value by its full name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.list_models.html#torchvision.models.list_models" title="torchvision.models.list_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_models</span></code></a>([module])</p></td>
+<td><p>Returns a list with the names of registered models.</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="using-models-from-hub">
 <h3>Using models from Hub<a class="headerlink" href="#using-models-from-hub" title="Permalink to this heading">¶</a></h3>
@@ -1789,7 +1834,7 @@ pre-trained weights:</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="models/alexnet.html" class="btn btn-neutral float-right" title="AlexNet" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="generated/torchvision.models.get_model.html" class="btn btn-neutral float-right" title="get_model" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
         <a href="generated/torchvision.transforms.functional.vflip.html" class="btn btn-neutral" title="vflip" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
@@ -1828,6 +1873,7 @@ pre-trained weights:</p>
 <li><a class="reference internal" href="#general-information-on-pre-trained-weights">General information on pre-trained weights</a><ul>
 <li><a class="reference internal" href="#initializing-pre-trained-models">Initializing pre-trained models</a></li>
 <li><a class="reference internal" href="#using-the-pre-trained-models">Using the pre-trained models</a></li>
+<li><a class="reference internal" href="#model-registration-mechanism">Model Registration Mechanism</a></li>
 <li><a class="reference internal" href="#using-models-from-hub">Using models from Hub</a></li>
 </ul>
 </li>

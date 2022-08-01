@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+44e63bd ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+d0f0e8c ) &#x25BC</a>
     </div>
     
 
@@ -337,7 +337,7 @@
 <span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
 
 <span class="kn">from</span> <span class="nn">...transforms._presets</span> <span class="kn">import</span> <span class="n">ImageClassification</span>
-<span class="kn">from</span> <span class="nn">.._api</span> <span class="kn">import</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
+<span class="kn">from</span> <span class="nn">.._api</span> <span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
 <span class="kn">from</span> <span class="nn">.._meta</span> <span class="kn">import</span> <span class="n">_IMAGENET_CATEGORIES</span>
 <span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
 <span class="kn">from</span> <span class="nn">..googlenet</span> <span class="kn">import</span> <span class="n">BasicConv2d</span><span class="p">,</span> <span class="n">GoogLeNet</span><span class="p">,</span> <span class="n">GoogLeNet_Weights</span><span class="p">,</span> <span class="n">GoogLeNetOutputs</span><span class="p">,</span> <span class="n">Inception</span><span class="p">,</span> <span class="n">InceptionAux</span>
@@ -461,7 +461,8 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_FBGEMM_V1</span></div>
 
 
-<div class="viewcode-block" id="googlenet"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.googlenet.html#torchvision.models.quantization.googlenet">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span>
+<div class="viewcode-block" id="googlenet"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.googlenet.html#torchvision.models.quantization.googlenet">[docs]</a><span class="nd">@register_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;quantized_googlenet&quot;</span><span class="p">)</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span>
     <span class="n">weights</span><span class="o">=</span><span class="p">(</span>
         <span class="s2">&quot;pretrained&quot;</span><span class="p">,</span>
         <span class="k">lambda</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">GoogLeNet_QuantizedWeights</span><span class="o">.</span><span class="n">IMAGENET1K_FBGEMM_V1</span>
