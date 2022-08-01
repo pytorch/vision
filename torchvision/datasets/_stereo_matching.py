@@ -89,6 +89,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
         """Return example at given index.
         Args:
             index(int): The index of the example to retrieve
+
         Returns:
             tuple: A 3 or 4-tuple with ``(img_left, img_right, disparity, Optional[valid_mask])`` where ``valid_mask``
                 can be a numpy boolean mask of shape (H, W) if the dataset provides a file
@@ -175,6 +176,7 @@ class CarlaStereo(StereoMatchingDataset):
         """Return example at given index.
         Args:
             index(int): The index of the example to retrieve
+
         Returns:
             tuple: A 3-tuple with ``(img_left, img_right, disparity)``.
             The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
@@ -257,6 +259,7 @@ class Kitti2012Stereo(StereoMatchingDataset):
         """Return example at given index.
         Args:
             index(int): The index of the example to retrieve
+
         Returns:
             tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.
             The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
@@ -343,6 +346,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
         """Return example at given index.
         Args:
             index(int): The index of the example to retrieve
+
         Returns:
             tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.
             The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
