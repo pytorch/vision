@@ -40,5 +40,5 @@ def has_all(sample: Any, *types: Type) -> bool:
     return not bool(set(types) - set([type(obj) for obj in flat_sample]))
 
 
-def is_simple_tensor(input: Any) -> bool:
-    return isinstance(input, torch.Tensor) and not isinstance(input, features._Feature)
+def is_simple_tensor(inpt: Any) -> bool:
+    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, features._Feature)
