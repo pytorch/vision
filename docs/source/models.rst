@@ -148,6 +148,9 @@ and weights by their names. Here are a few examples on how to use them:
     weights_enum2 = get_model_weights(torchvision.models.quantization.mobilenet_v3_large)
     assert weights_enum == weights_enum2
 
+Here are the available public methods of the model registration mechanism:
+
+.. currentmodule:: torchvision.models
 .. autosummary::
     :toctree: generated/
     :template: function.rst
