@@ -10,7 +10,7 @@ import torch.nn as nn
 from ...ops import MLP, StochasticDepth
 from ...transforms._presets import VideoClassification
 from ...utils import _log_api_usage_once
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _KINETICS400_CATEGORIES
 from .._utils import _ovewrite_named_param
 
@@ -461,6 +461,7 @@ class MViT_V1_B_Weights(WeightsEnum):
     DEFAULT = KINETICS400_V1
 
 
+@register_model()
 def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
     """
     Constructs a base MViTV1 architecture from
