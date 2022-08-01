@@ -325,15 +325,13 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
 
     diou, iou = _box_diou_iou(boxes1, boxes2, eps)
 
-    w_pred = boxes1[:, 2] - boxes1[:, 0]
-    h_pred = boxes1[:, 3] - boxes1[:, 1]
+    w_pred = boxes1[:, None, 2] - boxes1[:, None, 0]
+    h_pred = boxes1[:, None, 3] - boxes1[:, None, 1]
 
-    w_gt = boxes2[:, 2] - boxes2[:, 0]
-    h_gt = boxes2[:, 3] - boxes2[:, 1]
+    w_gt = boxes2[:, None, 2] - boxes2[:, None, 0]
+    h_gt = boxes2[:, None, 3] - boxes2[:, None, 1]
 
-    aspect_gt = torch.atan(w_gt / h_gt)
-    aspect_pred = torch.atan(w_pred / h_pred)
-    v = (4 / (torch.pi**2)) * torch.pow((aspect_gt - aspect_pred[:, None]), 2)
+    v = (4 / (torch.pi**2)) * torch.pow(torch.atan(w_pred / h_pred) - torch.atan(w_gt / h_gt).t(), 2)
     with torch.no_grad():
         alpha = v / (1 - iou + v + eps)
     return diou - alpha * v
@@ -360,7 +358,7 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
 
     boxes1 = _upcast(boxes1)
     boxes2 = _upcast(boxes2)
-    diou, _ = _box_diou_iou(boxes1, boxes2, eps)
+    diou, _ = _box_diou_iou(boxes1, boxes2, eps=eps)
     return diou
 
 
@@ -377,14 +375,12 @@ def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tuple[Te
     x_g = (boxes2[:, 0] + boxes2[:, 2]) / 2
     y_g = (boxes2[:, 1] + boxes2[:, 3]) / 2
     # The distance between boxes' centers squared.
-    centers_distance_squared = (_upcast((x_p - x_g[:, None]).diag()) ** 2) + (_upcast((y_p - y_g[:, None]).diag()) ** 2)
+    centers_distance_squared = (_upcast((x_p[:, None] - x_g[None, :])) ** 2) + (
+        _upcast((y_p[:, None] - y_g[None, :])) ** 2
+    )
     # The distance IoU is the IoU penalized by a normalized
     # distance between boxes' centers squared.
-    if boxes1.size(0) > boxes2.size(0):
-        center_distance_ratio = centers_distance_squared[None, :] / diagonal_distance_squared
-    else:
-        center_distance_ratio = centers_distance_squared[:, None] / diagonal_distance_squared
-    return iou - center_distance_ratio, iou
+    return iou - (centers_distance_squared / diagonal_distance_squared), iou
 
 
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:

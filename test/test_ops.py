@@ -1161,6 +1161,7 @@ class TestIouBase:
             actual_box2 = torch.tensor(actual_box2, dtype=dtype)
             expected_box = torch.tensor(expected)
             out = target_fn(actual_box1, actual_box2)
+            print(out)
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
@@ -1174,14 +1175,12 @@ class TestIouBase:
 
 class TestBoxIou(TestIouBase):
     int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
-    int_expected2 = [[1.0, 0.25, 0.0, 0.0625], [0.25, 1.0, 0.0, 0.25], [0.0, 0.0, 1.0, 0.0]]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
         "actual_box1, actual_box2, dtypes, atol, expected",
         [
             pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(INT_BOXES2, INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected2),
             pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
             pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
@@ -1195,14 +1194,12 @@ class TestBoxIou(TestIouBase):
 
 class TestGeneralizedBoxIou(TestIouBase):
     int_expected = [[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0], [0.0625, 0.25, -0.8819]]
-    int_expected2 = [[1.0, 0.25, -0.7778, 0.0625], [0.25, 1.0, -0.8611, 0.25], [-0.7778, -0.8611, 1.0, -0.8819]]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
         "actual_box1, actual_box2, dtypes, atol, expected",
         [
             pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(INT_BOXES2, INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected2),
             pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
             pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
@@ -1215,15 +1212,18 @@ class TestGeneralizedBoxIou(TestIouBase):
 
 
 class TestDistanceBoxIoU(TestIouBase):
-    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
-    int_expected2 = [[1.0, 0.25, 0.0, 0.0625], [0.25, 1.0, 0.0, 0.25], [0.0, 0.0, 1.0, 0.0]]
+    int_expected = [
+        [1.0000, 0.1875, -0.4444],
+        [0.1875, 1.0000, -0.5625],
+        [-0.4444, -0.5625, 1.0000],
+        [-0.0781, 0.1875, -0.6267],
+    ]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
         "actual_box1, actual_box2, dtypes, atol, expected",
         [
             pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(INT_BOXES2, INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected2),
             pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
             pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
@@ -1237,14 +1237,12 @@ class TestDistanceBoxIoU(TestIouBase):
 
 class TestCompleteBoxIou(TestIouBase):
     int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
-    int_expected2 = [[1.0, 0.25, 0.0, 0.0625], [0.25, 1.0, 0.0, 0.25], [0.0, 0.0, 1.0, 0.0]]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
         "actual_box1, actual_box2, dtypes, atol, expected",
         [
             pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(INT_BOXES2, INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected2),
             pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
             pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
