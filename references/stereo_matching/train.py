@@ -2,6 +2,7 @@ import argparse
 import warnings
 from math import ceil
 from pathlib import Path
+from typing import Callable, Optional
 
 import numpy as np
 import torch
@@ -16,8 +17,6 @@ from torchvision.datasets import (
     SceneFlowStereo,
     FallingThingsStereo,
     Middlebury2014Stereo,
-    Kitti2012Stereo,
-    Kitti2015Stereo,
 )
 
 
@@ -49,37 +48,54 @@ class ArrayScheduler(_LRScheduler):
         return self.schedule[self._step_count]
 
 
-def get_train_dataset(stage, dataset_root):
-    if stage == "train-cre":
-        transforms = StereoMatchingPresetCRETrain(crop_size=(384, 512))
-        cre_dataset = CREStereo(root=dataset_root, transforms=transforms)
-        ins_dataset = InStereo2k(root=dataset_root, transforms=transforms)
-        sin_dataset = SintelStereo(root=dataset_root, transforms=transforms)
-        fly_dataset = SceneFlowStereo(
-            root=dataset_root, transforms=transforms, split="FlyingThings3D", pass_name="both"
+def get_dataset_by_name(name: str, root: str, transforms: Callable):
+    """Helper function to return a speciffic dataset configuration given it's name"""
+    if name == "cre-synthetic":
+        return CREStereo(root=root, transforms=transforms)
+    elif name == "instereo":
+        return InStereo2k(root=root, transforms=transforms)
+    elif name == "sintel":
+        return SintelStereo(root=root, transforms=transforms)
+    elif name == "sceneflow-monkaa":
+        return SceneFlowStereo(root=root, transforms=transforms, split="Monkaa", pass_name="both")
+    elif name == "sceneflow-flyingthings":
+        return SceneFlowStereo(root=root, transforms=transforms, split="FlyingThings3D", pass_name="both")
+    elif name == "sceneflow-driving":
+        return SceneFlowStereo(root=root, transforms=transforms, split="Driving", pass_name="both")
+    elif name == "fallingthings":
+        return FallingThingsStereo(root=root, transforms=transforms, split=["both"])
+
+
+def shuffle_dataset(dataset):
+    """Shuffle the dataset"""
+    perm = torch.randperm(len(dataset))
+    return torch.utils.data.Subset(dataset, perm)
+
+
+def get_train_dataset(dataset_root: str, args: argparse.Namespace):
+    datasets = []
+    for dataset_name in args.train_dataset:
+        datasets.append(
+            get_dataset_by_name(dataset_name, dataset_root, StereoMatchingPresetCRETrain(crop_size=(384, 512)))
         )
-        mka_dataset = SceneFlowStereo(root=dataset_root, transforms=transforms, split="Monkaa", pass_name="both")
-        drv_dataset = SceneFlowStereo(root=dataset_root, transforms=transforms, split="Driving", pass_name="both")
-        fal_dataset = FallingThingsStereo(root=dataset_root, transforms=transforms, split=["both"])
-        kit_2012_dataset = Kitti2012Stereo(root=dataset_root, transforms=transforms, split="train")
-        kit_2015_dataset = Kitti2015Stereo(root=dataset_root, transforms=transforms, split="train")
 
-        dataset = (
-            1 * cre_dataset
-            + 1 * ins_dataset
-            + 1 * sin_dataset
-            + 1 * fly_dataset
-            + 1 * mka_dataset
-            + 1 * drv_dataset
-            + 1 * fal_dataset
-            + 1 * kit_2012_dataset
-            + 1 * kit_2015_dataset
-        )
+    if len(datasets) == 0:
+        raise ValueError("No datasets specified for training")
 
-    else:
-        raise ValueError(f"Unknown stage {stage}")
+    samples_per_step = args.world_size * args.batch_size
 
-    return dataset
+    for idx, (dataset, steps_per_dataset) in enumerate(zip(datasets, args.dataset_steps)):
+        # compute how much we have to expand the dataset to make it fit the desired number of steps
+        dataset_size = len(dataset)
+        # compute how many steps we can make by default with the dataset as is
+        steps_in_dataset = ceil(dataset_size / samples_per_step)
+        # see how how much we have to enlarge the dataset by
+        dataset_multiplier = steps_per_dataset / steps_in_dataset
+        # expand the dataset by the desired amount
+        datasets[idx] = dataset * dataset_multiplier
+        datasets[idx] = shuffle_dataset(datasets[idx])
+
+    dataset = torch.utils.data.ConcatDataset(datasets)
 
 
 @torch.no_grad()
@@ -214,14 +230,15 @@ def train(model, optimizer, scheduler, train_loader, logger, args):
         scheduler.step()
 
         if not args.distributed or args.rank == 0:
+            model_without_ddp = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
             checkpoint = {
                 "model": model_without_ddp.state_dict(),
                 "optimizer": optimizer.state_dict(),
                 "scheduler": scheduler.state_dict(),
-                "epoch": epoch,
+                "step": step,
                 "args": args,
             }
-            torch.save(checkpoint, Path(args.output_dir) / f"{args.name}_{epoch}.pth")
+            torch.save(checkpoint, Path(args.output_dir) / f"{args.name}_{step}.pth")
             torch.save(checkpoint, Path(args.output_dir) / f"{args.name}.pth")
 
 
@@ -239,7 +256,7 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
-    model = torchvision.models.optical_flow.__dict__[args.model](weights=args.weights)
+    model = torchvision.prototype.model.depth.stereo.__dict__[args.model](weights=args.weights)
 
     if args.distributed:
         model = model.to(args.local_rank)
@@ -324,6 +341,7 @@ def main(args):
 
 def get_args_parser(add_help=True):
     parser = argparse.ArgumentParser(add_help=add_help, description="Train or evaluate an optical-flow model.")
+    # saving and loading parameters
     parser.add_argument(
         "--name",
         default="raft",
@@ -337,17 +355,29 @@ def get_args_parser(add_help=True):
         help="A path to previously saved weights. Used to re-start training from, or evaluate a pre-saved model.",
     )
 
+    # dataloader parameters
     parser.add_argument("--workers", type=int, default=12, help="Number of workers for the data loading part.")
+    parser.add_argument("--shuffle", type=bool, default=False, help="Wether or not to shuffle dataset indices.")
 
+    # train dataset configuration parameters
     parser.add_argument(
         "--train-dataset",
         type=str,
-        help="The dataset to use for training. If not passed, only validation is performed (and you probably want to pass --resume).",
+        nargs="+",
+        help="The dataset(s) to use for training. If not passed, only validation is performed (and you probably want to pass --resume).",
     )
+    parser.add_argument(
+        "--dataset-steps",
+        type=Optional[int],
+        nargs="+",
+        help="The number of steps in a dataset chain schedule. If not provided will use the same dataset throughout all the provided number of optimization steps",
+    )
+    parser.add_argument("--iterations", type=int, default=350_000, help="The total number steps to train.")
+    parser.add_argument("--batch-size", type=int, default=2, help="Batch size per GPU.")
+
+    # validation dataset parameters
     parser.add_argument("--val-dataset", type=str, nargs="+", help="The dataset(s) to use for validation.")
-    parser.add_argument("--val-freq", type=int, default=2, help="Validate every X epochs")
-    parser.add_argument("--epochs", type=int, default=20, help="The total number of epochs to train.")
-    parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--val-freq", type=int, default=10_000, help="Validate every X optimization steps")
 
     parser.add_argument("--lr", type=float, default=0.00002, help="Learning rate for AdamW optimizer")
     parser.add_argument("--weight-decay", type=float, default=0.00005, help="Weight decay for AdamW optimizer")

@@ -515,11 +515,7 @@ class LocalFeatureEncoderLayer(nn.Module):
         message = self.merge(message.reshape(B, S, D))
         message = self.attention_norm(message)
         # ffn operation
-        # print(x)
-        # print("tv", message)
-        # print(self.state_dict()["ffn.2.weight"])
         message = self.ffn(torch.cat([x, message], dim=2))
-        # print(message)
         message = self.ffn_norm(message)
         return message + x
 
@@ -1030,12 +1026,3 @@ def crestereo_base(*, weights: Optional[WeightsEnum] = None, progress=True, **kw
         corr_search_window_1d=(1, 9),
         corr_search_dilate_1d=(1, 1),
     )
-
-
-if __name__ == "__main__":
-    model = crestereo_base()
-    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
-    params = sum([np.prod(p.size()) for p in model_parameters])
-
-    for n, p in model.named_parameters():
-        print(n, "\t", p.shape)
