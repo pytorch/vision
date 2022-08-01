@@ -52,15 +52,14 @@ def test_list_models(module):
         return [
             v.__name__
             for k, v in module.__dict__.items()
-            if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k not in models._api.__all__
+            if callable(v) and k[0].islower() and k[0] != "_" and k not in models._api.__all__
         ]
 
     a = set(get_models_from_module(module))
     b = set(x.replace("quantized_", "") for x in models.list_models(module))
 
     assert len(b) > 0
-    assert len(a - b) == 0
-    assert len(b - a) == 0
+    assert a == b
 
 
 @pytest.mark.parametrize(
