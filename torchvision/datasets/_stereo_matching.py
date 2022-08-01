@@ -87,6 +87,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
 
     def __getitem__(self, index: int) -> Tuple:
         """Return example at given index.
+
         Args:
             index(int): The index of the example to retrieve
 
@@ -174,6 +175,7 @@ class CarlaStereo(StereoMatchingDataset):
 
     def __getitem__(self, index: int) -> Tuple:
         """Return example at given index.
+
         Args:
             index(int): The index of the example to retrieve
 
@@ -257,6 +259,7 @@ class Kitti2012Stereo(StereoMatchingDataset):
 
     def __getitem__(self, index: int) -> Tuple:
         """Return example at given index.
+
         Args:
             index(int): The index of the example to retrieve
 
@@ -344,6 +347,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
 
     def __getitem__(self, index: int) -> Tuple:
         """Return example at given index.
+
         Args:
             index(int): The index of the example to retrieve
 
