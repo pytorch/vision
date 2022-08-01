@@ -12,7 +12,7 @@ from torchvision.ops import StochasticDepth
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._api import Weights, WeightsEnum
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _make_divisible, _ovewrite_named_param, handle_legacy_interface
 
@@ -729,6 +729,7 @@ class EfficientNet_V2_L_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B0_Weights.IMAGENET1K_V1))
 def efficientnet_b0(
     *, weights: Optional[EfficientNet_B0_Weights] = None, progress: bool = True, **kwargs: Any
@@ -757,6 +758,7 @@ def efficientnet_b0(
     return _efficientnet(inverted_residual_setting, 0.2, last_channel, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B1_Weights.IMAGENET1K_V1))
 def efficientnet_b1(
     *, weights: Optional[EfficientNet_B1_Weights] = None, progress: bool = True, **kwargs: Any
@@ -785,6 +787,7 @@ def efficientnet_b1(
     return _efficientnet(inverted_residual_setting, 0.2, last_channel, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B2_Weights.IMAGENET1K_V1))
 def efficientnet_b2(
     *, weights: Optional[EfficientNet_B2_Weights] = None, progress: bool = True, **kwargs: Any
@@ -813,6 +816,7 @@ def efficientnet_b2(
     return _efficientnet(inverted_residual_setting, 0.3, last_channel, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B3_Weights.IMAGENET1K_V1))
 def efficientnet_b3(
     *, weights: Optional[EfficientNet_B3_Weights] = None, progress: bool = True, **kwargs: Any
@@ -841,6 +845,7 @@ def efficientnet_b3(
     return _efficientnet(inverted_residual_setting, 0.3, last_channel, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B4_Weights.IMAGENET1K_V1))
 def efficientnet_b4(
     *, weights: Optional[EfficientNet_B4_Weights] = None, progress: bool = True, **kwargs: Any
@@ -869,6 +874,7 @@ def efficientnet_b4(
     return _efficientnet(inverted_residual_setting, 0.4, last_channel, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B5_Weights.IMAGENET1K_V1))
 def efficientnet_b5(
     *, weights: Optional[EfficientNet_B5_Weights] = None, progress: bool = True, **kwargs: Any
@@ -905,6 +911,7 @@ def efficientnet_b5(
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B6_Weights.IMAGENET1K_V1))
 def efficientnet_b6(
     *, weights: Optional[EfficientNet_B6_Weights] = None, progress: bool = True, **kwargs: Any
@@ -941,6 +948,7 @@ def efficientnet_b6(
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B7_Weights.IMAGENET1K_V1))
 def efficientnet_b7(
     *, weights: Optional[EfficientNet_B7_Weights] = None, progress: bool = True, **kwargs: Any
@@ -977,6 +985,7 @@ def efficientnet_b7(
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_V2_S_Weights.IMAGENET1K_V1))
 def efficientnet_v2_s(
     *, weights: Optional[EfficientNet_V2_S_Weights] = None, progress: bool = True, **kwargs: Any
@@ -1014,6 +1023,7 @@ def efficientnet_v2_s(
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_V2_M_Weights.IMAGENET1K_V1))
 def efficientnet_v2_m(
     *, weights: Optional[EfficientNet_V2_M_Weights] = None, progress: bool = True, **kwargs: Any
@@ -1051,6 +1061,7 @@ def efficientnet_v2_m(
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_V2_L_Weights.IMAGENET1K_V1))
 def efficientnet_v2_l(
     *, weights: Optional[EfficientNet_V2_L_Weights] = None, progress: bool = True, **kwargs: Any
