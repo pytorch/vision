@@ -10,7 +10,7 @@ from torchvision.ops import Conv2dNormActivation
 
 from ...transforms._presets import OpticalFlow
 from ...utils import _log_api_usage_once
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._utils import handle_legacy_interface
 from ._utils import grid_sample, make_coords_grid, upsample_flow
 
@@ -800,6 +800,7 @@ def _raft(
     return model
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", Raft_Large_Weights.C_T_SKHT_V2))
 def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT model from
@@ -855,6 +856,7 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", Raft_Small_Weights.C_T_V2))
 def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT "small" model from

@@ -3,14 +3,17 @@ import inspect
 import sys
 from dataclasses import dataclass, fields
 from inspect import signature
-from typing import Any, Callable, cast, Dict, Mapping
+from types import ModuleType
+from typing import Any, Callable, cast, Dict, List, Mapping, Optional, TypeVar, Union
+
+from torch import nn
 
 from torchvision._utils import StrEnum
 
 from .._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ["WeightsEnum", "Weights", "get_weight"]
+__all__ = ["WeightsEnum", "Weights", "get_model", "get_model_weights", "get_weight", "list_models"]
 
 
 @dataclass
@@ -75,7 +78,9 @@ class WeightsEnum(StrEnum):
 
 def get_weight(name: str) -> WeightsEnum:
     """
-    Gets the weight enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"
+    Gets the weights enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"
+
+    .. betastatus:: function
 
     Args:
         name (str): The name of the weight enum entry.
@@ -107,10 +112,29 @@ def get_weight(name: str) -> WeightsEnum:
     return weights_enum.from_str(value_name)
 
 
+W = TypeVar("W", bound=WeightsEnum)
+
+
+def get_model_weights(model: Union[Callable, str]) -> W:
+    """
+    Retuns the weights enum class associated to the given model.
+
+    .. betastatus:: function
+
+    Args:
+        name (callable or str): The model builder function or the name under which it is registered.
+
+    Returns:
+        weights_enum (W): The weights enum class associated with the model.
+    """
+    if isinstance(model, str):
+        model = find_model(model)
+    return cast(W, _get_enum_from_fn(model))
+
+
 def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
     """
     Internal method that gets the weight enum of a specific model builder method.
-    Might be removed after the handle_legacy_interface is removed.
 
     Args:
         fn (Callable): The builder method used to create the model.
@@ -140,3 +164,63 @@ def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
         )
 
     return cast(WeightsEnum, weights_enum)
+
+
+M = TypeVar("M", bound=nn.Module)
+
+BUILTIN_MODELS = {}
+
+
+def register_model(name: Optional[str] = None) -> Callable[[Callable[..., M]], Callable[..., M]]:
+    def wrapper(fn: Callable[..., M]) -> Callable[..., M]:
+        key = name if name is not None else fn.__name__
+        if key in BUILTIN_MODELS:
+            raise ValueError(f"An entry is already registered under the name '{key}'.")
+        BUILTIN_MODELS[key] = fn
+        return fn
+
+    return wrapper
+
+
+def list_models(module: Optional[ModuleType] = None) -> List[str]:
+    """
+    Returns a list with the names of registered models.
+
+    .. betastatus:: function
+
+    Args:
+        module (ModuleType, optional): The module from which we want to extract the available models.
+
+    Returns:
+        models (list): A list with the names of available models.
+    """
+    models = [
+        k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__.rsplit(".", 1)[0] == module.__name__
+    ]
+    return sorted(models)
+
+
+def find_model(name: str) -> Callable[..., M]:
+    name = name.lower()
+    try:
+        fn = BUILTIN_MODELS[name]
+    except KeyError:
+        raise ValueError(f"Unknown model {name}")
+    return fn
+
+
+def get_model(name: str, **config: Any) -> M:
+    """
+    Gets the model name and configuration and returns an instantiated model.
+
+    .. betastatus:: function
+
+    Args:
+        name (str): The name under which the model is registered.
+        **config (Any): parameters passed to the model builder method.
+
+    Returns:
+        model (nn.Module): The initialized model.
+    """
+    fn = find_model(name)
+    return fn(**config)
