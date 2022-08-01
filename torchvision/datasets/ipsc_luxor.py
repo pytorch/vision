@@ -1,7 +1,10 @@
 import os
-from torchvision.datasets.utils import check_integrity, download_and_extract_archive, verify_str_arg
+import glob
+import numpy as np
+from torchvision.datasets.utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
 from torchvision.datasets.vision import VisionDataset
 from typing import Any, Callable, Optional, Tuple, Union, List, Dict
+from PIL import Image
 
 class IPSCLuxor(VisionDataset):
     """`IPSC Luxor Catch-ya! <https://ipsc.ksp.sk/2016/real/problems/l.html>`_ Dataset.
@@ -24,9 +27,15 @@ class IPSCLuxor(VisionDataset):
     base_url = "https://ipsc.ksp.sk/2016/real/"
 
     resources = [
-        (base_url + "problems/l.zip", "md5"),
-        (base_url + "solutions/l1.out", "md5"),
-        (base_url + "solutions/l2.out", "md5"),
+        base_url + "problems/l.zip",
+        base_url + "solutions/l1.out",
+        base_url + "solutions/l2.out",
+    ]
+
+    files = [
+        ("l.zip", "md5"),
+        ("l1.out", "md5"),
+        ("l2.out", "md5"),
     ]
 
 
@@ -39,7 +48,7 @@ class IPSCLuxor(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super().__init__(os.path.join(root, "ipsc_luxor"), transform=transform, target_transform=target_transform)
+        super().__init__(os.path.join(root, IPSCLuxor.base_folder), transform=transform, target_transform=target_transform)
         os.makedirs(self.root, exist_ok=True)
         if isinstance(subproblem, str):
             subproblem = [subproblem]
@@ -53,6 +62,22 @@ class IPSCLuxor(VisionDataset):
 
         self.classes = list("abcdegijklmnopqrstuvwyz") # no "f", "h", or "x"
 
+        self.data = []
+        data_files = sorted(glob.glob(os.path.join(self.root, "l", subproblem[0], "*.in")))
+        for filename in data_files:
+            print(f"Loading {filename}...")
+            xs = np.loadtxt(filename)
+            xs = np.split(xs, 6, axis=1)
+            self.data.extend(xs)
+
+        self.targets = []
+        with open(os.path.join(self.root, f"{subproblem[0]}.out")) as f:
+            for line in f:
+                for i in range(6): # for each letter in line
+                    self.targets.append(ord(line[i]) - ord('a'))
+
+    def __len__(self) -> int:
+        return len(self.data)
 
     def __getitem__(self, index: int) -> Tuple[Any, int]:
         """
@@ -75,11 +100,12 @@ class IPSCLuxor(VisionDataset):
 
         return img, target
 
+    def __len__(self) -> int:
+        return len(self.data)
 
     def _check_integrity(self) -> bool:
-        for filename, md5 in self.resources[0:]:
-            fpath = os.path.join(self.root, self.base_folder, filename)
-            print("check", fpath)
+        for filename, md5 in IPSCLuxor.files:
+            fpath = os.path.join(self.root, filename)
             if not check_integrity(fpath):
                 return False
         return True
@@ -89,7 +115,9 @@ class IPSCLuxor(VisionDataset):
         if self._check_integrity():
             print("Files already downloaded and verified")
             return
-        download_and_extract_archive(IPSCLuxor.resources[0][0], self.root)
+        download_and_extract_archive(IPSCLuxor.resources[0], self.root)
+        download_url(IPSCLuxor.resources[1], self.root)
+        download_url(IPSCLuxor.resources[2], self.root)
 
     @property
     def class_to_idx(self) -> Dict[str, int]:
