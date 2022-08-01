@@ -1236,7 +1236,12 @@ class TestDistanceBoxIoU(TestIouBase):
 
 
 class TestCompleteBoxIou(TestIouBase):
-    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
+    int_expected = [
+        [1.0000, 0.1875, -0.4444],
+        [0.1875, 1.0000, -0.5625],
+        [-0.4444, -0.5625, 1.0000],
+        [-0.0781, 0.1875, -0.6267],
+    ]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
