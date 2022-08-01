@@ -120,6 +120,46 @@ behavior, such as batch normalization. To switch between these modes, use
     # Set model to eval mode
     model.eval()
 
+Model Registration Mechanism
+----------------------------
+
+.. betastatus:: registration mechanism
+
+As of v0.14, TorchVision offers a new model registration mechanism which allows retreaving models
+and weights by their names. Here are a few examples on how to use them:
+
+.. code:: python
+
+    # List available models
+    all_models = list_models()
+    classification_models = list_models(module=torchvision.models)
+
+    # Initialize models
+    m1 = get_model("mobilenet_v3_large", weights=None)
+    m2 = get_model("quantized_mobilenet_v3_large", weights="DEFAULT")
+
+    # Fetch weights
+    weights = get_weight("MobileNet_V3_Large_QuantizedWeights.DEFAULT")
+    assert weights == MobileNet_V3_Large_QuantizedWeights.DEFAULT
+
+    weights_enum = get_model_weights("quantized_mobilenet_v3_large")
+    assert weights_enum == MobileNet_V3_Large_QuantizedWeights
+
+    weights_enum2 = get_model_weights(torchvision.models.quantization.mobilenet_v3_large)
+    assert weights_enum == weights_enum2
+
+Here are the available public methods of the model registration mechanism:
+
+.. currentmodule:: torchvision.models
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    get_model
+    get_model_weights
+    get_weight
+    list_models
+
 Using models from Hub
 ---------------------
 

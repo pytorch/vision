@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models.optical_flow.raft as raft
 from torch import Tensor
-from torchvision.models._api import WeightsEnum
+from torchvision.models._api import register_model, WeightsEnum
 from torchvision.models.optical_flow._utils import grid_sample, make_coords_grid, upsample_flow
 from torchvision.models.optical_flow.raft import FlowHead, MotionEncoder, ResidualBlock
 from torchvision.ops import Conv2dNormActivation
@@ -617,6 +617,7 @@ class Raft_Stereo_Base_Weights(WeightsEnum):
     pass
 
 
+@register_model()
 def raft_stereo_realtime(
     *, weights: Optional[Raft_Stereo_Realtime_Weights] = None, progress=True, **kwargs
 ) -> RaftStereo:
@@ -676,6 +677,7 @@ def raft_stereo_realtime(
     )
 
 
+@register_model()
 def raft_stereo_base(*, weights: Optional[Raft_Stereo_Base_Weights] = None, progress=True, **kwargs) -> RaftStereo:
     """RAFT-Stereo model from
     `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
