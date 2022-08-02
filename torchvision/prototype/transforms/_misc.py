@@ -7,8 +7,8 @@ from torchvision.transforms.transforms import _setup_size
 
 
 class Identity(Transform):
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        return input
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return inpt
 
 
 class Lambda(Transform):
@@ -17,11 +17,11 @@ class Lambda(Transform):
         self.fn = fn
         self.types = types
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) in self.types:
-            return self.fn(input)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if type(inpt) in self.types:
+            return self.fn(inpt)
         else:
-            return input
+            return inpt
 
     def extra_repr(self) -> str:
         extras = []
@@ -38,13 +38,13 @@ class Normalize(Transform):
         self.mean = mean
         self.std = std
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, torch.Tensor):
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, torch.Tensor):
             # We don't need to differentiate between vanilla tensors and features.Image's here, since the result of the
             # normalization transform is no longer a features.Image
-            return F.normalize_image_tensor(input, mean=self.mean, std=self.std)
+            return F.normalize_image_tensor(inpt, mean=self.mean, std=self.std)
         else:
-            return input
+            return inpt
 
 
 class GaussianBlur(Transform):
