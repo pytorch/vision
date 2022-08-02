@@ -113,7 +113,7 @@ Stereo Matching
     Kitti2015Stereo
     SceneFlowStereo
     SintelStereo
-
+    InStereo2k
 
 Image pairs
 ~~~~~~~~~~~
