@@ -7,7 +7,7 @@ from torch import Tensor
 from torchvision.models import shufflenetv2
 
 from ...transforms._presets import ImageClassification
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import _ovewrite_named_param, handle_legacy_interface
 from ..shufflenetv2 import (
@@ -203,6 +203,7 @@ class ShuffleNet_V2_X2_0_QuantizedWeights(WeightsEnum):
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
+@register_model(name="quantized_shufflenet_v2_x0_5")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -256,6 +257,7 @@ def shufflenet_v2_x0_5(
     )
 
 
+@register_model(name="quantized_shufflenet_v2_x1_0")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -309,6 +311,7 @@ def shufflenet_v2_x1_0(
     )
 
 
+@register_model(name="quantized_shufflenet_v2_x1_5")
 def shufflenet_v2_x1_5(
     *,
     weights: Optional[Union[ShuffleNet_V2_X1_5_QuantizedWeights, ShuffleNet_V2_X1_5_Weights]] = None,
@@ -354,6 +357,7 @@ def shufflenet_v2_x1_5(
     )
 
 
+@register_model(name="quantized_shufflenet_v2_x2_0")
 def shufflenet_v2_x2_0(
     *,
     weights: Optional[Union[ShuffleNet_V2_X2_0_QuantizedWeights, ShuffleNet_V2_X2_0_Weights]] = None,
