@@ -585,6 +585,6 @@ class SintelStereo(StereoMatchingDataset):
         Returns:
             tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
             The disparity is a numpy array of shape (1, H, W) and the images are PIL images whilst
-                the valid_mask is a numpy array of shape (H, W)
+            the valid_mask is a numpy array of shape (H, W).
         """
         return super().__getitem__(index)
