@@ -67,7 +67,7 @@ class LazyImporter:
         "h5py",
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         modules = defaultdict(list)
         for module in self.MODULES:
             module, *submodules = module.split(".", 1)
@@ -528,12 +528,12 @@ class DatasetTestCase(unittest.TestCase):
                     mocks[patcher.target] = stack.enter_context(patcher)
             yield mocks
 
-    def test_not_found_or_corrupted(self):
+    def test_not_found_or_corrupted(self) -> None:
         with pytest.raises((FileNotFoundError, RuntimeError)):
             with self.create_dataset(inject_fake_data=False):
                 pass
 
-    def test_smoke(self):
+    def test_smoke(self) -> None:
         with self.create_dataset() as (dataset, _):
             assert isinstance(dataset, torchvision.datasets.VisionDataset)
 

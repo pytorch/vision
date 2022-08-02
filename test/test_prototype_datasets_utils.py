@@ -286,7 +286,7 @@ class TestHttpResource:
 
 def test_missing_dependency_error():
     class DummyDataset(Dataset):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__(root="root", dependencies=("fake_dependency",))
 
         def _resources(self):
@@ -295,7 +295,7 @@ def test_missing_dependency_error():
         def _datapipe(self, resource_dps):
             pass
 
-        def __len__(self):
+        def __len__(self) -> int:
             pass
 
     with pytest.raises(ModuleNotFoundError, match="depends on the third-party package 'fake_dependency'"):

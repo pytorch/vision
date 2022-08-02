@@ -19,7 +19,7 @@ with warnings.catch_warnings(record=True):
 
 
 class TestVideoTransforms:
-    def test_random_crop_video(self):
+    def test_random_crop_video(self) -> None:
         numFrames = random.randint(4, 128)
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
@@ -37,7 +37,7 @@ class TestVideoTransforms:
 
         transforms.RandomCropVideo((oheight, owidth)).__repr__()
 
-    def test_random_resized_crop_video(self):
+    def test_random_resized_crop_video(self) -> None:
         numFrames = random.randint(4, 128)
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
@@ -55,7 +55,7 @@ class TestVideoTransforms:
 
         transforms.RandomResizedCropVideo((oheight, owidth)).__repr__()
 
-    def test_center_crop_video(self):
+    def test_center_crop_video(self) -> None:
         numFrames = random.randint(4, 128)
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
@@ -139,7 +139,7 @@ class TestVideoTransforms:
 
         transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True).__repr__()
 
-    def test_to_tensor_video(self):
+    def test_to_tensor_video(self) -> None:
         numFrames, height, width = 64, 4, 4
         trans = transforms.ToTensorVideo()
 

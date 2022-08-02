@@ -139,7 +139,7 @@ class TestRotate:
         center = (20, 22)
         _test_fn_on_batch(batch_tensors, F.rotate, angle=32, interpolation=NEAREST, expand=True, center=center)
 
-    def test_rotate_deprecation_resample(self):
+    def test_rotate_deprecation_resample(self) -> None:
         tensor, _ = _create_data(26, 26)
         # assert deprecation warning and non-BC
         with pytest.warns(
@@ -153,7 +153,7 @@ class TestRotate:
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             assert_equal(res1, res2)
 
-    def test_rotate_interpolation_type(self):
+    def test_rotate_interpolation_type(self) -> None:
         tensor, _ = _create_data(26, 26)
         # assert changed type warning
         with pytest.warns(

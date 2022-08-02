@@ -25,11 +25,11 @@ class TestHub:
     # - After the first test is run, torchvision is already in sys.modules due to
     #   Python cache as we run all hub tests in the same python process.
 
-    def test_load_from_github(self):
+    def test_load_from_github(self) -> None:
         hub_model = hub.load("pytorch/vision", "resnet18", weights="DEFAULT", progress=False)
         assert sum_of_model_parameters(hub_model).item() == pytest.approx(SUM_OF_PRETRAINED_RESNET18_PARAMS)
 
-    def test_set_dir(self):
+    def test_set_dir(self) -> None:
         temp_dir = tempfile.gettempdir()
         hub.set_dir(temp_dir)
         hub_model = hub.load("pytorch/vision", "resnet18", weights="DEFAULT", progress=False)
@@ -37,7 +37,7 @@ class TestHub:
         assert os.path.exists(temp_dir + "/pytorch_vision_master")
         shutil.rmtree(temp_dir + "/pytorch_vision_master")
 
-    def test_list_entrypoints(self):
+    def test_list_entrypoints(self) -> None:
         entry_lists = hub.list("pytorch/vision", force_reload=True)
         assert "resnet18" in entry_lists
 

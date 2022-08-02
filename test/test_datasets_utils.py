@@ -56,14 +56,14 @@ class TestDatasetsUtils:
         assert mock.call_count == 1
         assert mock.call_args[0][0].full_url == url
 
-    def test_check_md5(self):
+    def test_check_md5(self) -> None:
         fpath = TEST_FILE
         correct_md5 = "9c0bb82894bb3af7f7675ef2b3b6dcdc"
         false_md5 = ""
         assert utils.check_md5(fpath, correct_md5)
         assert not utils.check_md5(fpath, false_md5)
 
-    def test_check_integrity(self):
+    def test_check_integrity(self) -> None:
         existing_fpath = TEST_FILE
         nonexisting_fpath = ""
         correct_md5 = "9c0bb82894bb3af7f7675ef2b3b6dcdc"
@@ -73,14 +73,14 @@ class TestDatasetsUtils:
         assert utils.check_integrity(existing_fpath)
         assert not utils.check_integrity(nonexisting_fpath)
 
-    def test_get_google_drive_file_id(self):
+    def test_get_google_drive_file_id(self) -> None:
         url = "https://drive.google.com/file/d/1GO-BHUYRuvzr1Gtp2_fqXRsr9TIeYbhV/view"
         expected = "1GO-BHUYRuvzr1Gtp2_fqXRsr9TIeYbhV"
 
         actual = utils._get_google_drive_file_id(url)
         assert actual == expected
 
-    def test_get_google_drive_file_id_invalid_url(self):
+    def test_get_google_drive_file_id_invalid_url(self) -> None:
         url = "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz"
 
         assert utils._get_google_drive_file_id(url) is None
@@ -134,7 +134,7 @@ class TestDatasetsUtils:
         with open(file) as fh:
             assert fh.read() == content
 
-    def test_decompress_no_compression(self):
+    def test_decompress_no_compression(self) -> None:
         with pytest.raises(RuntimeError):
             utils._decompress("foo.tar")
 
@@ -210,7 +210,7 @@ class TestDatasetsUtils:
         with open(file) as fh:
             assert fh.read() == content
 
-    def test_verify_str_arg(self):
+    def test_verify_str_arg(self) -> None:
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
         pytest.raises(ValueError, utils.verify_str_arg, 0, ("a",), "arg")
         pytest.raises(ValueError, utils.verify_str_arg, "b", ("a",), "arg")

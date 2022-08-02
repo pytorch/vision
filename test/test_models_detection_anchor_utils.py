@@ -6,7 +6,7 @@ from torchvision.models.detection.image_list import ImageList
 
 
 class Tester:
-    def test_incorrect_anchors(self):
+    def test_incorrect_anchors(self) -> None:
         incorrect_sizes = (
             (2, 4, 8),
             (32, 8),
@@ -36,7 +36,7 @@ class Tester:
         features = [torch.rand(2, 8, s0 // 5, s1 // 5)]
         return features
 
-    def test_anchor_generator(self):
+    def test_anchor_generator(self) -> None:
         images = torch.randn(2, 3, 15, 15)
         features = self.get_features(images)
         image_shapes = [i.shape[-2:] for i in images]
@@ -73,7 +73,7 @@ class Tester:
         assert_equal(anchors[0], anchors_output)
         assert_equal(anchors[1], anchors_output)
 
-    def test_defaultbox_generator(self):
+    def test_defaultbox_generator(self) -> None:
         images = torch.zeros(2, 3, 15, 15)
         features = [torch.zeros(2, 8, 1, 1)]
         image_shapes = [i.shape[-2:] for i in images]

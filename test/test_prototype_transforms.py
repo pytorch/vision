@@ -332,7 +332,7 @@ class TestRandomVerticalFlip:
 
 
 class TestPad:
-    def test_assertions(self):
+    def test_assertions(self) -> None:
         with pytest.raises(TypeError, match="Got inappropriate padding arg"):
             transforms.Pad("abc")
 
@@ -359,7 +359,7 @@ class TestPad:
 
 
 class TestRandomZoomOut:
-    def test_assertions(self):
+    def test_assertions(self) -> None:
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomZoomOut(fill="abc")
 
@@ -410,7 +410,7 @@ class TestRandomZoomOut:
 
 
 class TestRandomRotation:
-    def test_assertions(self):
+    def test_assertions(self) -> None:
         with pytest.raises(ValueError, match="is a single number, it must be positive"):
             transforms.RandomRotation(-0.7)
 
@@ -427,7 +427,7 @@ class TestRandomRotation:
         with pytest.raises(ValueError, match="center should be a sequence of length"):
             transforms.RandomRotation(12, center=[1, 2, 3])
 
-    def test__get_params(self):
+    def test__get_params(self) -> None:
         angle_bound = 34
         transform = transforms.RandomRotation(angle_bound)
 
@@ -483,7 +483,7 @@ class TestRandomRotation:
 
 
 class TestRandomAffine:
-    def test_assertions(self):
+    def test_assertions(self) -> None:
         with pytest.raises(ValueError, match="is a single number, it must be positive"):
             transforms.RandomAffine(-0.7)
 
@@ -606,7 +606,7 @@ class TestRandomAffine:
 
 
 class TestRandomCrop:
-    def test_assertions(self):
+    def test_assertions(self) -> None:
         with pytest.raises(ValueError, match="Please provide only two dimensions"):
             transforms.RandomCrop([10, 12, 14])
 
@@ -689,7 +689,7 @@ class TestRandomCrop:
 
 
 class TestGaussianBlur:
-    def test_assertions(self):
+    def test_assertions(self) -> None:
         with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
             transforms.GaussianBlur([10, 12, 14])
 
@@ -773,7 +773,7 @@ class TestRandomColorOp:
 
 
 class TestRandomPerspective:
-    def test_assertions(self):
+    def test_assertions(self) -> None:
         with pytest.raises(ValueError, match="Argument distortion_scale value should be between 0 and 1"):
             transforms.RandomPerspective(distortion_scale=-1.0)
 
@@ -829,7 +829,7 @@ class TestRandomPerspective:
 
 
 class TestElasticTransform:
-    def test_assertions(self):
+    def test_assertions(self) -> None:
 
         with pytest.raises(TypeError, match="alpha should be float or a sequence of floats"):
             transforms.ElasticTransform({})

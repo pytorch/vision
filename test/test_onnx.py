@@ -89,7 +89,7 @@ class TestONNXExporter:
                 else:
                     raise
 
-    def test_nms(self):
+    def test_nms(self) -> None:
         num_boxes = 100
         boxes = torch.rand(num_boxes, 4)
         boxes[:, 2:] += boxes[:, :2]
@@ -101,7 +101,7 @@ class TestONNXExporter:
 
         self.run_model(Module(), [(boxes, scores)])
 
-    def test_batched_nms(self):
+    def test_batched_nms(self) -> None:
         num_boxes = 100
         boxes = torch.rand(num_boxes, 4)
         boxes[:, 2:] += boxes[:, :2]
@@ -114,7 +114,7 @@ class TestONNXExporter:
 
         self.run_model(Module(), [(boxes, scores, idxs)])
 
-    def test_clip_boxes_to_image(self):
+    def test_clip_boxes_to_image(self) -> None:
         boxes = torch.randn(5, 4) * 500
         boxes[:, 2:] += boxes[:, :2]
         size = torch.randn(200, 300)
@@ -129,7 +129,7 @@ class TestONNXExporter:
             Module(), [(boxes, size), (boxes, size_2)], input_names=["boxes", "size"], dynamic_axes={"size": [0, 1]}
         )
 
-    def test_roi_align(self):
+    def test_roi_align(self) -> None:
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2)
@@ -141,7 +141,7 @@ class TestONNXExporter:
         self.run_model(model, [(x, single_roi)])
 
     @pytest.mark.skip(reason="ROIAlign with aligned=True is not supported in ONNX, but will be supported in opset 16.")
-    def test_roi_align_aligned(self):
+    def test_roi_align_aligned(self) -> None:
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 1.5, 1.5, 3, 3]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2, aligned=True)
@@ -168,13 +168,13 @@ class TestONNXExporter:
         self.run_model(model, [(x, single_roi)])
 
     @pytest.mark.skip(reason="Issue in exporting ROIAlign with aligned = True for malformed boxes")
-    def test_roi_align_malformed_boxes(self):
+    def test_roi_align_malformed_boxes(self) -> None:
         x = torch.randn(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 2, 0.3, 1.5, 1.5]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 1, aligned=True)
         self.run_model(model, [(x, single_roi)])
 
-    def test_roi_pool(self):
+    def test_roi_pool(self) -> None:
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         rois = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
         pool_h = 5
@@ -182,7 +182,7 @@ class TestONNXExporter:
         model = ops.RoIPool((pool_h, pool_w), 2)
         self.run_model(model, [(x, rois)])
 
-    def test_resize_images(self):
+    def test_resize_images(self) -> None:
         class TransformModule(torch.nn.Module):
             def __init__(self_module):
                 super().__init__()
@@ -197,7 +197,7 @@ class TestONNXExporter:
             TransformModule(), [(input,), (input_test,)], input_names=["input1"], dynamic_axes={"input1": [0, 1, 2]}
         )
 
-    def test_transform_images(self):
+    def test_transform_images(self) -> None:
         class TransformModule(torch.nn.Module):
             def __init__(self_module):
                 super().__init__()
@@ -296,7 +296,7 @@ class TestONNXExporter:
         features = OrderedDict(features)
         return features
 
-    def test_rpn(self):
+    def test_rpn(self) -> None:
         set_rng_seed(0)
 
         class RPNModule(torch.nn.Module):
@@ -332,9 +332,9 @@ class TestONNXExporter:
             },
         )
 
-    def test_multi_scale_roi_align(self):
+    def test_multi_scale_roi_align(self) -> None:
         class TransformModule(torch.nn.Module):
-            def __init__(self):
+            def __init__(self) -> None:
                 super().__init__()
                 self.model = ops.MultiScaleRoIAlign(["feat1", "feat2"], 3, 2)
                 self.image_sizes = [(512, 512)]
@@ -368,7 +368,7 @@ class TestONNXExporter:
             ],
         )
 
-    def test_roi_heads(self):
+    def test_roi_heads(self) -> None:
         class RoiHeadsModule(torch.nn.Module):
             def __init__(self_module):
                 super().__init__()
@@ -427,7 +427,7 @@ class TestONNXExporter:
             [self.get_image("fakedata/logos/rgb_pytorch.png", (250, 380))],
         )
 
-    def test_faster_rcnn(self):
+    def test_faster_rcnn(self) -> None:
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(
@@ -457,7 +457,7 @@ class TestONNXExporter:
     # Verify that paste_mask_in_image beahves the same in tracing.
     # This test also compares both paste_masks_in_image and _onnx_paste_masks_in_image
     # (since jit_trace witll call _onnx_paste_masks_in_image).
-    def test_paste_mask_in_image(self):
+    def test_paste_mask_in_image(self) -> None:
         masks = torch.rand(10, 1, 26, 26)
         boxes = torch.rand(10, 4)
         boxes[:, 2:] += torch.rand(10, 2)
@@ -485,7 +485,7 @@ class TestONNXExporter:
 
         assert torch.all(out2.eq(out_trace2))
 
-    def test_mask_rcnn(self):
+    def test_mask_rcnn(self) -> None:
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(
@@ -527,7 +527,7 @@ class TestONNXExporter:
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
     # This test also compares both heatmaps_to_keypoints and _onnx_heatmaps_to_keypoints
     # (since jit_trace witll call _heatmaps_to_keypoints).
-    def test_heatmaps_to_keypoints(self):
+    def test_heatmaps_to_keypoints(self) -> None:
         maps = torch.rand(10, 1, 26, 26)
         rois = torch.rand(10, 4)
         from torchvision.models.detection.roi_heads import heatmaps_to_keypoints
@@ -549,7 +549,7 @@ class TestONNXExporter:
         assert_equal(out2[0], out_trace2[0])
         assert_equal(out2[1], out_trace2[1])
 
-    def test_keypoint_rcnn(self):
+    def test_keypoint_rcnn(self) -> None:
         images, test_images = self.get_test_images()
         dummy_images = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(
@@ -575,7 +575,7 @@ class TestONNXExporter:
             tolerate_small_mismatch=True,
         )
 
-    def test_shufflenet_v2_dynamic_axes(self):
+    def test_shufflenet_v2_dynamic_axes(self) -> None:
         model = models.shufflenet_v2_x0_5(weights=models.ShuffleNet_V2_X0_5_Weights.DEFAULT)
         dummy_input = torch.randn(1, 3, 224, 224, requires_grad=True)
         test_inputs = torch.cat([dummy_input, dummy_input, dummy_input], 0)

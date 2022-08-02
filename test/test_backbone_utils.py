@@ -49,7 +49,7 @@ def leaf_function(x):
 # Needed by TestFXFeatureExtraction. Checking that node naming conventions
 # are respected. Particularly the index postfix of repeated node names
 class TestSubModule(torch.nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.relu = torch.nn.ReLU()
 
@@ -62,7 +62,7 @@ class TestSubModule(torch.nn.Module):
 
 
 class TestModule(torch.nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.submodule = TestSubModule()
         self.relu = torch.nn.ReLU()
@@ -158,7 +158,7 @@ class TestFxFeatureExtraction:
             else:  # otherwise skip this check
                 raise ValueError
 
-    def test_node_name_conventions(self):
+    def test_node_name_conventions(self) -> None:
         model = TestModule()
         train_nodes, _ = get_graph_node_names(model)
         assert all(a == b for a, b in zip(train_nodes, test_module_nodes))
@@ -182,7 +182,7 @@ class TestFxFeatureExtraction:
                 out_agg += node_out.float().mean()
         out_agg.backward()
 
-    def test_feature_extraction_methods_equivalence(self):
+    def test_feature_extraction_methods_equivalence(self) -> None:
         model = models.resnet18(**self.model_defaults).eval()
         return_layers = {"layer1": "layer1", "layer2": "layer2", "layer3": "layer3", "layer4": "layer4"}
 
@@ -223,9 +223,9 @@ class TestFxFeatureExtraction:
                 out_agg += node_out.float().mean()
         out_agg.backward()
 
-    def test_train_eval(self):
+    def test_train_eval(self) -> None:
         class TestModel(torch.nn.Module):
-            def __init__(self):
+            def __init__(self) -> None:
                 super().__init__()
                 self.dropout = torch.nn.Dropout(p=1.0)
 
@@ -290,7 +290,7 @@ class TestFxFeatureExtraction:
         fx_model.train()
         checks(fx_model, "train")
 
-    def test_leaf_module_and_function(self):
+    def test_leaf_module_and_function(self) -> None:
         class LeafModule(torch.nn.Module):
             def forward(self, x):
                 # This would raise a TypeError if it were not in a leaf module
@@ -298,7 +298,7 @@ class TestFxFeatureExtraction:
                 return torch.nn.functional.relu(x + 4)
 
         class TestModule(torch.nn.Module):
-            def __init__(self):
+            def __init__(self) -> None:
                 super().__init__()
                 self.conv = torch.nn.Conv2d(3, 1, 3)
                 self.leaf_module = LeafModule()

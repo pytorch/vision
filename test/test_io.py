@@ -71,21 +71,21 @@ class TestVideo:
     # 6 in 0-255 range
     TOLERANCE = 6
 
-    def test_write_read_video(self):
+    def test_write_read_video(self) -> None:
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             lv, _, info = io.read_video(f_name)
             assert_equal(data, lv)
             assert info["video_fps"] == 5
 
     @pytest.mark.skipif(not io._HAS_VIDEO_OPT, reason="video_reader backend is not chosen")
-    def test_probe_video_from_file(self):
+    def test_probe_video_from_file(self) -> None:
         with temp_video(10, 300, 300, 5) as (f_name, data):
             video_info = io._probe_video_from_file(f_name)
             assert pytest.approx(2, rel=0.0, abs=0.1) == video_info.video_duration
             assert pytest.approx(5, rel=0.0, abs=0.1) == video_info.video_fps
 
     @pytest.mark.skipif(not io._HAS_VIDEO_OPT, reason="video_reader backend is not chosen")
-    def test_probe_video_from_memory(self):
+    def test_probe_video_from_memory(self) -> None:
         with temp_video(10, 300, 300, 5) as (f_name, data):
             with open(f_name, "rb") as fp:
                 filebuffer = fp.read()
@@ -93,7 +93,7 @@ class TestVideo:
             assert pytest.approx(2, rel=0.0, abs=0.1) == video_info.video_duration
             assert pytest.approx(5, rel=0.0, abs=0.1) == video_info.video_fps
 
-    def test_read_timestamps(self):
+    def test_read_timestamps(self) -> None:
         with temp_video(10, 300, 300, 5) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
             # note: not all formats/codecs provide accurate information for computing the
@@ -147,7 +147,7 @@ class TestVideo:
                 assert len(lv) == 3
                 assert_equal(data[5:8], lv, rtol=0.0, atol=self.TOLERANCE)
 
-    def test_read_packed_b_frames_divx_file(self):
+    def test_read_packed_b_frames_divx_file(self) -> None:
         name = "hmdb51_Turnk_r_Pippi_Michel_cartwheel_f_cm_np2_le_med_6.avi"
         f_name = os.path.join(VIDEO_DIR, name)
         pts, fps = io.read_video_timestamps(f_name)
@@ -155,7 +155,7 @@ class TestVideo:
         assert pts == sorted(pts)
         assert fps == 30
 
-    def test_read_timestamps_from_packet(self):
+    def test_read_timestamps_from_packet(self) -> None:
         with temp_video(10, 300, 300, 5, video_codec="mpeg4") as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
             # note: not all formats/codecs provide accurate information for computing the
@@ -171,7 +171,7 @@ class TestVideo:
 
             assert pts == expected_pts
 
-    def test_read_video_pts_unit_sec(self):
+    def test_read_video_pts_unit_sec(self) -> None:
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             lv, _, info = io.read_video(f_name, pts_unit="sec")
 
@@ -179,7 +179,7 @@ class TestVideo:
             assert info["video_fps"] == 5
             assert info == {"video_fps": 5}
 
-    def test_read_timestamps_pts_unit_sec(self):
+    def test_read_timestamps_pts_unit_sec(self) -> None:
         with temp_video(10, 300, 300, 5) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name, pts_unit="sec")
 
@@ -213,7 +213,7 @@ class TestVideo:
                 assert len(lv) == 4
                 assert_equal(data[4:8], lv)
 
-    def test_read_video_corrupted_file(self):
+    def test_read_video_corrupted_file(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".mp4") as f:
             f.write(b"This is not an mpg4 file")
             video, audio, info = io.read_video(f.name)
@@ -223,7 +223,7 @@ class TestVideo:
             assert audio.numel() == 0
             assert info == {}
 
-    def test_read_video_timestamps_corrupted_file(self):
+    def test_read_video_timestamps_corrupted_file(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".mp4") as f:
             f.write(b"This is not an mpg4 file")
             video_pts, video_fps = io.read_video_timestamps(f.name)
@@ -231,7 +231,7 @@ class TestVideo:
             assert video_fps is None
 
     @pytest.mark.skip(reason="Temporarily disabled due to new pyav")
-    def test_read_video_partially_corrupted_file(self):
+    def test_read_video_partially_corrupted_file(self) -> None:
         with temp_video(5, 4, 4, 5, lossless=True) as (f_name, data):
             with open(f_name, "r+b") as f:
                 size = os.path.getsize(f_name)
