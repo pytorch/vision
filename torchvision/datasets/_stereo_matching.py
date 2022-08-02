@@ -362,7 +362,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
 
 
 class ETH3DStereo(StereoMatchingDataset):
-    """ "ETH3D `Low-Res Two-View <https://www.eth3d.net/datasets>`_ dataset.
+    """ETH3D `Low-Res Two-View <https://www.eth3d.net/datasets>`_ dataset.
 
     The dataset is expected to have the following structure: ::
 
