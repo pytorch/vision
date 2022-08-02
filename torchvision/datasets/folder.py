@@ -305,7 +305,7 @@ class ImageFolder(DatasetFolder):
         target_transform: Optional[Callable] = None,
         loader: Callable[[str], Any] = default_loader,
         is_valid_file: Optional[Callable[[str], bool]] = None,
-    ):
+    ) -> None:
         super().__init__(
             root,
             loader,

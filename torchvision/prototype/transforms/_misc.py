@@ -12,7 +12,7 @@ class Identity(Transform):
 
 
 class Lambda(Transform):
-    def __init__(self, fn: Callable[[Any], Any], *types: Type):
+    def __init__(self, fn: Callable[[Any], Any], *types: Type) -> None:
         super().__init__()
         self.fn = fn
         self.types = types
@@ -33,7 +33,7 @@ class Lambda(Transform):
 
 
 class Normalize(Transform):
-    def __init__(self, mean: List[float], std: List[float]):
+    def __init__(self, mean: List[float], std: List[float]) -> None:
         super().__init__()
         self.mean = mean
         self.std = std

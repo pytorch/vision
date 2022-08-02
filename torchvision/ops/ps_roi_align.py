@@ -67,7 +67,7 @@ class PSRoIAlign(nn.Module):
         output_size: int,
         spatial_scale: float,
         sampling_ratio: int,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.output_size = output_size

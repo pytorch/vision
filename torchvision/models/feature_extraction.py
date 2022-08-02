@@ -23,7 +23,7 @@ class LeafModuleAwareTracer(fx.Tracer):
     having single nodes referencing calls to the leaf modules' forward methods.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self.leaf_modules = {}
         if "leaf_modules" in kwargs:
             leaf_modules = kwargs.pop("leaf_modules")
@@ -55,7 +55,7 @@ class NodePathTracer(LeafModuleAwareTracer):
           _{int} is added. The counter starts from 1.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         # Track the qualified name of the Node being traced
         self.current_module_qualname = ""
@@ -271,7 +271,7 @@ class DualGraphModule(fx.GraphModule):
 
     def __init__(
         self, root: torch.nn.Module, train_graph: fx.Graph, eval_graph: fx.Graph, class_name: str = "GraphModule"
-    ):
+    ) -> None:
         """
         Args:
             root (nn.Module): module from which the copied module hierarchy is

@@ -64,7 +64,7 @@ class LevelMapper:
         canonical_scale: int = 224,
         canonical_level: int = 4,
         eps: float = 1e-6,
-    ):
+    ) -> None:
         self.k_min = k_min
         self.k_max = k_max
         self.s0 = canonical_scale
@@ -274,7 +274,7 @@ class MultiScaleRoIAlign(nn.Module):
         *,
         canonical_scale: int = 224,
         canonical_level: int = 4,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
         if isinstance(output_size, int):

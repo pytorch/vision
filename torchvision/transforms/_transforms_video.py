@@ -26,7 +26,7 @@ warnings.warn(
 
 
 class RandomCropVideo(RandomCrop):
-    def __init__(self, size):
+    def __init__(self, size) -> None:
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
@@ -82,7 +82,7 @@ class RandomResizedCropVideo(RandomResizedCrop):
 
 
 class CenterCropVideo:
-    def __init__(self, crop_size):
+    def __init__(self, crop_size) -> None:
         if isinstance(crop_size, numbers.Number):
             self.crop_size = (int(crop_size), int(crop_size))
         else:
@@ -111,7 +111,7 @@ class NormalizeVideo:
         inplace (boolean): whether do in-place normalization
     """
 
-    def __init__(self, mean, std, inplace=False):
+    def __init__(self, mean, std, inplace=False) -> None:
         self.mean = mean
         self.std = std
         self.inplace = inplace
@@ -133,7 +133,7 @@ class ToTensorVideo:
     permute the dimensions of clip tensor
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def __call__(self, clip):
@@ -156,7 +156,7 @@ class RandomHorizontalFlipVideo:
         p (float): probability of the clip being flipped. Default value is 0.5
     """
 
-    def __init__(self, p=0.5):
+    def __init__(self, p=0.5) -> None:
         self.p = p
 
     def __call__(self, clip):

@@ -218,7 +218,7 @@ class FCOSRegressionHead(nn.Module):
         num_anchors: int,
         num_convs: int = 4,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-    ):
+    ) -> None:
         super().__init__()
 
         if norm_layer is None:
@@ -376,7 +376,7 @@ class FCOS(nn.Module):
         detections_per_img: int = 100,
         topk_candidates: int = 1000,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
 

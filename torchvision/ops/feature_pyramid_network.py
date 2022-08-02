@@ -80,7 +80,7 @@ class FeaturePyramidNetwork(nn.Module):
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.inner_blocks = nn.ModuleList()
@@ -225,7 +225,7 @@ class LastLevelP6P7(ExtraFPNBlock):
     This module is used in RetinaNet to generate extra layers, P6 and P7.
     """
 
-    def __init__(self, in_channels: int, out_channels: int):
+    def __init__(self, in_channels: int, out_channels: int) -> None:
         super().__init__()
         self.p6 = nn.Conv2d(in_channels, out_channels, 3, 2, 1)
         self.p7 = nn.Conv2d(out_channels, out_channels, 3, 2, 1)

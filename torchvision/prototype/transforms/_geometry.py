@@ -52,7 +52,7 @@ class Resize(Transform):
 
 
 class CenterCrop(Transform):
-    def __init__(self, output_size: List[int]):
+    def __init__(self, output_size: List[int]) -> None:
         super().__init__()
         self.output_size = output_size
 

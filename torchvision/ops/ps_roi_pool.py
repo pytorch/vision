@@ -54,7 +54,7 @@ class PSRoIPool(nn.Module):
     See :func:`ps_roi_pool`.
     """
 
-    def __init__(self, output_size: int, spatial_scale: float):
+    def __init__(self, output_size: int, spatial_scale: float) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.output_size = output_size

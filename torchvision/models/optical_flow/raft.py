@@ -27,7 +27,7 @@ __all__ = (
 class ResidualBlock(nn.Module):
     """Slightly modified Residual block with extra relu and biases."""
 
-    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
+    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1) -> None:
         super().__init__()
 
         # Note regarding bias=True:
@@ -71,7 +71,7 @@ class ResidualBlock(nn.Module):
 class BottleneckBlock(nn.Module):
     """Slightly modified BottleNeck block (extra relu and biases)"""
 
-    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
+    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1) -> None:
         super().__init__()
 
         # See note in ResidualBlock for the reason behind bias=True
@@ -207,7 +207,7 @@ class MotionEncoder(nn.Module):
 class ConvGRU(nn.Module):
     """Convolutional Gru unit."""
 
-    def __init__(self, *, input_size, hidden_size, kernel_size, padding):
+    def __init__(self, *, input_size, hidden_size, kernel_size, padding) -> None:
         super().__init__()
         self.convz = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
         self.convr = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
@@ -268,7 +268,7 @@ class FlowHead(nn.Module):
     Takes the hidden state of the recurrent unit as input, and outputs the predicted "delta flow".
     """
 
-    def __init__(self, *, in_channels, hidden_size):
+    def __init__(self, *, in_channels, hidden_size) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels, hidden_size, 3, padding=1)
         self.conv2 = nn.Conv2d(hidden_size, 2, 3, padding=1)
@@ -284,7 +284,7 @@ class UpdateBlock(nn.Module):
     It must expose a ``hidden_state_size`` attribute which is the hidden state size of its recurrent block.
     """
 
-    def __init__(self, *, motion_encoder, recurrent_block, flow_head):
+    def __init__(self, *, motion_encoder, recurrent_block, flow_head) -> None:
         super().__init__()
         self.motion_encoder = motion_encoder
         self.recurrent_block = recurrent_block
@@ -308,7 +308,7 @@ class MaskPredictor(nn.Module):
     This is not used in the raft-small model.
     """
 
-    def __init__(self, *, in_channels, hidden_size, multiplier=0.25):
+    def __init__(self, *, in_channels, hidden_size, multiplier=0.25) -> None:
         super().__init__()
         self.convrelu = Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3)
         # 8 * 8 * 9 because the predicted flow is downsampled by 8, from the downsampling of the initial FeatureEncoder
@@ -337,7 +337,7 @@ class CorrBlock(nn.Module):
     Note: typo in the paper, it should be infinity norm, not 1-norm.
     """
 
-    def __init__(self, *, num_levels: int = 4, radius: int = 4):
+    def __init__(self, *, num_levels: int = 4, radius: int = 4) -> None:
         super().__init__()
         self.num_levels = num_levels
         self.radius = radius
@@ -412,7 +412,7 @@ class CorrBlock(nn.Module):
 
 
 class RAFT(nn.Module):
-    def __init__(self, *, feature_encoder, context_encoder, corr_block, update_block, mask_predictor=None):
+    def __init__(self, *, feature_encoder, context_encoder, corr_block, update_block, mask_predictor=None) -> None:
         """RAFT model from
         `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 

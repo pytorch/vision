@@ -73,7 +73,7 @@ class PCAM(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
-    ):
+    ) -> None:
         try:
             import h5py
 

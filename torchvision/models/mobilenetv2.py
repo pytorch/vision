@@ -18,7 +18,7 @@ __all__ = ["MobileNetV2", "MobileNet_V2_Weights", "mobilenet_v2"]
 
 # necessary for backwards compatibility
 class _DeprecatedConvBNAct(Conv2dNormActivation):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         warnings.warn(
             "The ConvBNReLU/ConvBNActivation classes are deprecated since 0.12 and will be removed in 0.14. "
             "Use torchvision.ops.misc.Conv2dNormActivation instead.",

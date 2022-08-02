@@ -20,7 +20,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
 
     _has_built_in_disparity_mask = False
 
-    def __init__(self, root: str, transforms: Optional[Callable] = None):
+    def __init__(self, root: str, transforms: Optional[Callable] = None) -> None:
         """
         Args:
             root(str): Root directory of the dataset.
@@ -152,7 +152,7 @@ class CarlaStereo(StereoMatchingDataset):
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
-    def __init__(self, root: str, transforms: Optional[Callable] = None):
+    def __init__(self, root: str, transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         root = Path(root) / "carla-highres"
@@ -229,7 +229,7 @@ class Kitti2012Stereo(StereoMatchingDataset):
 
     _has_built_in_disparity_mask = True
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
+    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
@@ -317,7 +317,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
 
     _has_built_in_disparity_mask = True
 
-    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
+    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None) -> None:
         super().__init__(root, transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))

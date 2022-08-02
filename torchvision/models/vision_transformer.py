@@ -42,7 +42,7 @@ class MLPBlock(MLP):
 
     _version = 2
 
-    def __init__(self, in_dim: int, mlp_dim: int, dropout: float):
+    def __init__(self, in_dim: int, mlp_dim: int, dropout: float) -> None:
         super().__init__(in_dim, [mlp_dim, in_dim], activation_layer=nn.GELU, inplace=None, dropout=dropout)
 
         for m in self.modules():

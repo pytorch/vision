@@ -159,7 +159,7 @@ class DefaultBoxGenerator(nn.Module):
         scales: Optional[List[float]] = None,
         steps: Optional[List[int]] = None,
         clip: bool = True,
-    ):
+    ) -> None:
         super().__init__()
         if steps is not None and len(aspect_ratios) != len(steps):
             raise ValueError("aspect_ratios and steps should have the same length")
