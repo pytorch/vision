@@ -7,6 +7,7 @@ from ._stereo_matching import (
     Kitti2015Stereo,
     SceneFlowStereo,
     SintelStereo,
+    ETH3DStereo,
 )
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
@@ -121,4 +122,5 @@ __all__ = (
     "SceneFlowStereo",
     "SintelStereo",
     "InStereo2k",
+    "ETH3DStereo",
 )
