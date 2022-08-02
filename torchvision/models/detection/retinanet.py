@@ -65,7 +65,13 @@ class RetinaNetHead(nn.Module):
         norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
     """
 
-    def __init__(self, in_channels, num_anchors, num_classes, norm_layer: Optional[Callable[..., nn.Module]] = None) -> None:
+    def __init__(
+        self,
+        in_channels,
+        num_anchors,
+        num_classes,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+    ) -> None:
         super().__init__()
         self.classification_head = RetinaNetClassificationHead(
             in_channels, num_anchors, num_classes, norm_layer=norm_layer
