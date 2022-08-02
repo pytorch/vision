@@ -359,3 +359,105 @@ class Kitti2015Stereo(StereoMatchingDataset):
             Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.
         """
         return super().__getitem__(index)
+
+
+class SceneFlowStereo(StereoMatchingDataset):
+    """Dataset interface for `Scene Flow <https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html>`_ datasets.
+    This interface provides access to the `FlyingThings3D, `Monkaa` and `Driving` datasets.
+
+    The dataset is expected to have the following structre: ::
+
+        root
+            SceneFlow
+                Monkaa
+                    frames_cleanpass
+                        scene1
+                            left
+                                img1.png
+                                img2.png
+                            right
+                                img1.png
+                                img2.png
+                        scene2
+                            left
+                                img1.png
+                                img2.png
+                            right
+                                img1.png
+                                img2.png
+                    frames_finalpass
+                        scene1
+                            left
+                                img1.png
+                                img2.png
+                            right
+                                img1.png
+                                img2.png
+                        ...
+                        ...
+                    disparity
+                        scene1
+                            left
+                                img1.pfm
+                                img2.pfm
+                            right
+                                img1.pfm
+                                img2.pfm
+                FlyingThings3D
+                    ...
+                    ...
+
+    Args:
+        root (string): Root directory where SceneFlow is located.
+        split (string): Which dataset variant to user, "FlyingThings3D" (default), "Monkaa" or "Driving".
+        pass_name (string): Which pass to use, "clean" (default), "final" or "both".
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+
+    """
+
+    def __init__(
+        self, root: str, split: str = "FlyingThings3D", pass_name: str = "clean", transforms: Optional[Callable] = None
+    ):
+        super().__init__(root, transforms)
+
+        root = Path(root) / "SceneFlow"
+
+        verify_str_arg(split, "split", valid_values=("FlyingThings3D", "Driving", "Monkaa"))
+        verify_str_arg(pass_name, "pass_name", valid_values=("clean", "final", "both"))
+
+        passes = {
+            "clean": ["frames_cleanpass"],
+            "final": ["frames_finalpass"],
+            "both": ["frames_cleanpass, frames_finalpass"],
+        }[pass_name]
+
+        root = root / split
+
+        for p in passes:
+            left_image_pattern = str(root / p / "*" / "left" / "*.png")
+            right_image_pattern = str(root / p / "*" / "right" / "*.png")
+            self._images += self._scan_pairs(left_image_pattern, right_image_pattern)
+
+            left_disparity_pattern = str(root / "disparity" / "*" / "left" / "*.pfm")
+            right_disparity_pattern = str(root / "disparity" / "*" / "right" / "*.pfm")
+            self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        disparity_map = _read_pfm_file(file_path)
+        disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
+        valid_mask = None
+        return disparity_map, valid_mask
+
+    def __getitem__(self, index: int) -> Tuple:
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: A 3-tuple with ``(img_left, img_right, disparity)``.
+            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
+            If a ``valid_mask`` is generated within the ``transforms`` parameter,
+            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
+        """
+        return super().__getitem__(index)

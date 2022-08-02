@@ -13,7 +13,7 @@ import string
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
-from typing import Union
+from typing import Callable, Tuple, Union
 
 import datasets_utils
 import numpy as np
@@ -2839,6 +2839,80 @@ class CarlaStereoTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset() as (dataset, _):
             for left, right, disparity in dataset:
                 datasets_utils.shape_test_for_stereo(left, right, disparity)
+
+
+class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SceneFlowStereo
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("FlyingThings3D", "Driving", "Monkaa"), pass_name=("clean", "final")
+    )
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+
+    @staticmethod
+    def _create_pfm_folder(
+        root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: Tuple[int, int]
+    ) -> None:
+        root = pathlib.Path(root) / name
+        os.makedirs(root, exist_ok=True)
+
+        for i in range(num_examples):
+            datasets_utils.make_fake_pfm_file(size[0], size[1], root / file_name_fn(i))
+
+    def inject_fake_data(self, tmpdir, config):
+        scene_flow_dir = pathlib.Path(tmpdir) / "SceneFlow"
+        os.makedirs(scene_flow_dir, exist_ok=True)
+
+        split_dir = scene_flow_dir / config["split"]
+        os.makedirs(split_dir, exist_ok=True)
+
+        pass_dir_map = {
+            "clean": "frames_cleanpass",
+            "final": "frames_finalpass",
+        }
+
+        num_examples = 1
+        pass_dir_name = pass_dir_map.get(config["pass_name"], None)
+
+        # create pass directories
+        pass_dir = split_dir / pass_dir_name
+        disp_dir = split_dir / "disparity"
+        os.makedirs(pass_dir, exist_ok=True)
+        os.makedirs(disp_dir, exist_ok=True)
+
+        num_examples = {"FlyingThings3D": 4, "Driving": 6, "Monkaa": 5}.get(config["split"], 0)
+
+        for direction in ["left", "right"]:
+            for scene_idx in range(num_examples):
+                os.makedirs(pass_dir / f"scene_{scene_idx:06d}", exist_ok=True)
+                datasets_utils.create_image_folder(
+                    root=pass_dir / f"scene_{scene_idx:06d}",
+                    name=direction,
+                    file_name_fn=lambda i: f"{i:06d}.png",
+                    num_examples=1,
+                    size=(3, 200, 100),
+                )
+
+                os.makedirs(disp_dir / f"scene_{scene_idx:06d}", exist_ok=True)
+                self._create_pfm_folder(
+                    root=disp_dir / f"scene_{scene_idx:06d}",
+                    name=direction,
+                    file_name_fn=lambda i: f"{i:06d}.pfm",
+                    num_examples=1,
+                    size=(100, 200),
+                )
+
+        return num_examples
+
+    def test_splits(self):
+        for split_name, pass_name in itertools.product(["FlyingThings3D", "Driving", "Monkaa"], ["clean", "final"]):
+            with self.create_dataset(split=split_name, pass_name=pass_name) as (dataset, _):
+                for left, right, disparity in dataset:
+                    datasets_utils.shape_test_for_stereo(left, right, disparity)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
 
 
 if __name__ == "__main__":
