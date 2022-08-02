@@ -111,6 +111,7 @@ Stereo Matching
     CarlaStereo
     Kitti2012Stereo
     Kitti2015Stereo
+    Middlebury2014Stereo
 
 Image pairs
 ~~~~~~~~~~~
