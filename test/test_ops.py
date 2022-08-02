@@ -996,6 +996,7 @@ class TestFrozenBNT:
 
 
 class TestBoxConversionToRoi:
+    @staticmethod
     def _get_box_sequences():
         # Define here the argument type of `boxes` supported by region pooling operations
         box_tensor = torch.tensor([[0, 0, 0, 100, 100], [1, 0, 0, 100, 100]], dtype=torch.float)
@@ -1153,6 +1154,12 @@ FLOAT_BOXES = [
 ]
 
 
+def gen_box(size, dtype=torch.float):
+    xy1 = torch.rand((size, 2), dtype=dtype)
+    xy2 = xy1 + torch.rand((size, 2), dtype=dtype)
+    return torch.cat([xy1, xy2], axis=-1)
+
+
 class TestIouBase:
     @staticmethod
     def _run_test(target_fn: Callable, actual_box1, actual_box2, dtypes, atol, expected):
@@ -1161,7 +1168,6 @@ class TestIouBase:
             actual_box2 = torch.tensor(actual_box2, dtype=dtype)
             expected_box = torch.tensor(expected)
             out = target_fn(actual_box1, actual_box2)
-            print(out)
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
@@ -1171,6 +1177,24 @@ class TestIouBase:
         scripted_fn = torch.jit.script(target_fn)
         scripted_out = scripted_fn(box_tensor, box_tensor)
         torch.testing.assert_close(scripted_out, expected)
+
+    @staticmethod
+    def _cartesian_product(boxes1, boxes2, target_fn: Callable):
+        N = boxes1.size(0)
+        M = boxes2.size(0)
+        result = torch.zeros((N, M))
+        for i in range(N):
+            for j in range(M):
+                result[i, j] = target_fn(boxes1[i].unsqueeze(0), boxes2[j].unsqueeze(0))
+        return result
+
+    @staticmethod
+    def _run_cartesian_test(target_fn: Callable):
+        boxes1 = gen_box(5)
+        boxes2 = gen_box(7)
+        a = TestIouBase._cartesian_product(boxes1, boxes2, target_fn)
+        b = target_fn(boxes1, boxes2)
+        assert torch.allclose(a, b)
 
 
 class TestBoxIou(TestIouBase):
@@ -1191,6 +1215,9 @@ class TestBoxIou(TestIouBase):
     def test_iou_jit(self):
         self._run_jit_test(ops.box_iou, INT_BOXES)
 
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.box_iou)
+
 
 class TestGeneralizedBoxIou(TestIouBase):
     int_expected = [[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0], [0.0625, 0.25, -0.8819]]
@@ -1209,6 +1236,9 @@ class TestGeneralizedBoxIou(TestIouBase):
 
     def test_iou_jit(self):
         self._run_jit_test(ops.generalized_box_iou, INT_BOXES)
+
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.generalized_box_iou)
 
 
 class TestDistanceBoxIoU(TestIouBase):
@@ -1234,6 +1264,9 @@ class TestDistanceBoxIoU(TestIouBase):
     def test_iou_jit(self):
         self._run_jit_test(ops.distance_box_iou, INT_BOXES)
 
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.distance_box_iou)
+
 
 class TestCompleteBoxIou(TestIouBase):
     int_expected = [
@@ -1257,6 +1290,9 @@ class TestCompleteBoxIou(TestIouBase):
 
     def test_iou_jit(self):
         self._run_jit_test(ops.complete_box_iou, INT_BOXES)
+
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.complete_box_iou)
 
 
 def get_boxes(dtype, device):
