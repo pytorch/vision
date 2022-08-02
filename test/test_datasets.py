@@ -2873,8 +2873,6 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
             "both": ["frames_cleanpass", "frames_finalpass"],
         }.get(config["pass_name"], [])
 
-        # pass_dir_name = pass_dir_map.get(config["pass_name"], None)
-
         for pass_dir_name in passes:
             # create pass directories
             pass_dir = variant_dir / pass_dir_name
