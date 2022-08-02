@@ -2894,7 +2894,7 @@ class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
             root=split_dir / "disparities",
             name="scene1",
             file_name_fn=lambda i: f"{i:06d}.png",
-            num_examples=2,
+            num_examples=max(num_examples.values()),
             size=(3, 100, 200),
         )
 
