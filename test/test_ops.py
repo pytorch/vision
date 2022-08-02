@@ -996,7 +996,6 @@ class TestFrozenBNT:
 
 
 class TestBoxConversionToRoi:
-    @staticmethod
     def _get_box_sequences():
         # Define here the argument type of `boxes` supported by region pooling operations
         box_tensor = torch.tensor([[0, 0, 0, 100, 100], [1, 0, 0, 100, 100]], dtype=torch.float)
