@@ -402,24 +402,24 @@ class FallingThingsStereo(StereoMatchingDataset):
 
     Args:
         root (string): Root directory where FallingThings is located.
-        split (string): Which split to use. Either "single", "mixed", or "both".
+        variant (string): Which variant to use. Either "single", "mixed", or "both".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
-    def __init__(self, root: str, split: str = "single", transforms: Optional[Callable] = None):
+    def __init__(self, root: str, variant: str = "single", transforms: Optional[Callable] = None):
         super().__init__(root, transforms)
 
         root = Path(root) / "FallingThings"
 
-        verify_str_arg(split, "split", valid_values=("single", "mixed", "both"))
+        verify_str_arg(variant, "variant", valid_values=("single", "mixed", "both"))
 
-        splits = {
+        variants = {
             "single": ["single"],
             "mixed": ["mixed"],
             "both": ["single", "mixed"],
-        }[split]
+        }[variant]
 
-        for s in splits:
+        for s in variants:
             left_img_pattern = str(root / s / "*" / "*.left.jpg")
             right_img_pattern = str(root / s / "*" / "*.right.jpg")
             self._images += self._scan_pairs(left_img_pattern, right_img_pattern)

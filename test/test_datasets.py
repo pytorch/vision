@@ -2843,7 +2843,7 @@ class CarlaStereoTestCase(datasets_utils.ImageDatasetTestCase):
 
 class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.FallingThingsStereo
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("single", "mixed"))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(variant=("single", "mixed", "both"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
 
     @staticmethod
@@ -2871,29 +2871,36 @@ class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
         fallingthings_dir = pathlib.Path(tmpdir) / "FallingThings"
         os.makedirs(fallingthings_dir, exist_ok=True)
 
-        split_dir = pathlib.Path(fallingthings_dir) / config["split"]
-        os.makedirs(split_dir, exist_ok=True)
+        num_examples = {"single": 2, "mixed": 3, "both": 4}.get(config["variant"], 0)
+        variants = {
+            "single": ["single"],
+            "mixed": ["mixed"],
+            "both": ["single", "mixed"],
+        }.get(config["variant"], [])
 
-        num_examples = {"single": 2, "mixed": 3}.get(config["split"], 0)
+        for variant_name in variants:
+            variant_dir = pathlib.Path(fallingthings_dir) / variant_name
+            os.makedirs(variant_dir, exist_ok=True)
+            for i in range(num_examples):
+                self._make_scene_folder(
+                    root=variant_dir,
+                    scene_name=f"scene_{i:06d}",
+                    size=(100, 200),
+                )
 
-        for i in range(num_examples):
-            self._make_scene_folder(
-                root=split_dir,
-                scene_name=f"scene_{i:06d}",
-                size=(100, 200),
-            )
-
+        if config["variant"] == "both":
+            num_examples *= 2
         return num_examples
 
     def test_splits(self):
-        for split_name in ["single", "mixed"]:
-            with self.create_dataset(split=split_name) as (dataset, _):
+        for variant_name in ["single", "mixed"]:
+            with self.create_dataset(variant=variant_name) as (dataset, _):
                 for left, right, disparity in dataset:
                     datasets_utils.shape_test_for_stereo(left, right, disparity)
 
     def test_bad_input(self):
-        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
-            with self.create_dataset(split="bad"):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument variant"):
+            with self.create_dataset(variant="bad"):
                 pass
 
 
