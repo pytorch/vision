@@ -1,4 +1,5 @@
 import functools
+import os
 from abc import ABC, abstractmethod
 from glob import glob
 from pathlib import Path
@@ -357,5 +358,126 @@ class Kitti2015Stereo(StereoMatchingDataset):
             ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not
             generate a valid mask.
             Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.
+        """
+        return super().__getitem__(index)
+
+
+class SintelStereo(StereoMatchingDataset):
+    """ "Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
+
+    The dataset is expected to have the following structure: ::
+
+        root
+            Sintel
+                training
+                    final_left
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    final_right
+                        scene2
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    disparities
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    occlusions
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    outofframe
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+
+    Args:
+        root (string): Root directory where Sintel Stereo is located.
+        pass_name (string): The name of the pass to use, either "final" or "clean".
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+    """
+
+    _has_built_in_disparity_mask = True
+
+    def __init__(self, root: str, pass_name: str = "final", transforms: Optional[Callable] = None):
+        super().__init__(root, transforms)
+
+        verify_str_arg(pass_name, "pass_name", valid_values=("final", "clean", "both"))
+
+        root = Path(root) / "Sintel"
+        pass_names = {
+            "final": ["final"],
+            "clean": ["clean"],
+            "both": ["final", "clean"],
+        }[pass_name]
+
+        for p in pass_names:
+            left_img_pattern = str(root / "training" / f"{p}_left" / "*" / "*.png")
+            right_img_pattern = str(root / "training" / f"{p}_right" / "*" / "*.png")
+            self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
+
+            disparity_pattern = str(root / "training" / "disparities" / "*" / "*.png")
+            self._disparities += self._scan_pairs(disparity_pattern, None)
+
+    def _get_oclussion_mask_paths(self, file_path: str) -> Tuple[str, str]:
+        # helper function to get the occlusion mask paths
+        path_tokens = file_path.split(os.sep)
+        # if the file path is absolute, the split will omit the first token
+        # so when joining back together, we need to add the root directory
+        prefix = os.sep if file_path[0] == os.sep else ""
+
+        # a path will look like  .../.../.../training/final_left/scene1/img1.png
+        path_tokens[-3] = "occlusions"
+        occlusion_mask_path = prefix + os.path.join(*path_tokens)
+        if not os.path.exists(occlusion_mask_path):
+            raise FileNotFoundError(f"Could not find occlusion mask at {occlusion_mask_path}")
+
+        path_tokens[-3] = "outofframe"
+        outofframe_mask_path = prefix + os.path.join(*path_tokens)
+        if not os.path.exists(outofframe_mask_path):
+            raise FileNotFoundError(f"Could not find outofframe mask at {outofframe_mask_path}")
+
+        return (occlusion_mask_path, outofframe_mask_path)
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        if file_path is None:
+            return None, None
+
+        # disparity decoding as per Sintel instructions in the README provided with the dataset
+        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
+        r, g, b = np.split(disparity_map, 3, axis=-1)
+        disparity_map = r * 4 + g / (2**6) + b / (2**14)
+        # reshape into (C, H, W) format
+        disparity_map = np.transpose(disparity_map, (2, 0, 1))
+        # find the appropiate file paths
+        occlued_mask_path, out_of_frame_mask_path = self._get_oclussion_mask_paths(file_path)
+        # occlusion masks
+        valid_mask = np.asarray(Image.open(occlued_mask_path)) == 0
+        # out of frame masks
+        off_mask = np.asarray(Image.open(out_of_frame_mask_path)) == 0
+        # combine the masks together
+        valid_mask = np.logical_and(off_mask, valid_mask)
+        return disparity_map, valid_mask
+
+    def __getitem__(self, index: int) -> Tuple:
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:.
+            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
+            The disparity is a numpy array of shape (1, H, W) and the images are PIL images whilst
+                the valid_mask is a numpy array of shape (H, W)
         """
         return super().__getitem__(index)
