@@ -9,7 +9,7 @@ from ..ops.misc import MLP, Permute
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._api import Weights, WeightsEnum
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param
 
@@ -515,6 +515,7 @@ class Swin_B_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
@@ -551,6 +552,7 @@ def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, *
     )
 
 
+@register_model()
 def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_small architecture from
@@ -587,6 +589,7 @@ def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, *
     )
 
 
+@register_model()
 def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_base architecture from
