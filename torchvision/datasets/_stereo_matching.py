@@ -409,29 +409,33 @@ class SceneFlowStereo(StereoMatchingDataset):
 
     Args:
         root (string): Root directory where SceneFlow is located.
-        split (string): Which dataset variant to user, "FlyingThings3D" (default), "Monkaa" or "Driving".
+        variant (string): Which dataset variant to user, "FlyingThings3D" (default), "Monkaa" or "Driving".
         pass_name (string): Which pass to use, "clean" (default), "final" or "both".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
 
     """
 
     def __init__(
-        self, root: str, split: str = "FlyingThings3D", pass_name: str = "clean", transforms: Optional[Callable] = None
+        self,
+        root: str,
+        variant: str = "FlyingThings3D",
+        pass_name: str = "clean",
+        transforms: Optional[Callable] = None,
     ):
         super().__init__(root, transforms)
 
         root = Path(root) / "SceneFlow"
 
-        verify_str_arg(split, "split", valid_values=("FlyingThings3D", "Driving", "Monkaa"))
+        verify_str_arg(variant, "variant", valid_values=("FlyingThings3D", "Driving", "Monkaa"))
         verify_str_arg(pass_name, "pass_name", valid_values=("clean", "final", "both"))
 
         passes = {
             "clean": ["frames_cleanpass"],
             "final": ["frames_finalpass"],
-            "both": ["frames_cleanpass, frames_finalpass"],
+            "both": ["frames_cleanpass", "frames_finalpass"],
         }[pass_name]
 
-        root = root / split
+        root = root / variant
 
         for p in passes:
             left_image_pattern = str(root / p / "*" / "left" / "*.png")
