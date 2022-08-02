@@ -112,6 +112,7 @@ Stereo Matching
     Kitti2012Stereo
     Kitti2015Stereo
     SceneFlowStereo
+    SintelStereo
 
 Image pairs
 ~~~~~~~~~~~
