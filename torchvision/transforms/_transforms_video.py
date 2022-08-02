@@ -26,7 +26,7 @@ warnings.warn(
 
 
 class RandomCropVideo(RandomCrop):
-    def __init__(self, size) -> None:
+    def __init__(self, size):
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
@@ -82,7 +82,7 @@ class RandomResizedCropVideo(RandomResizedCrop):
 
 
 class CenterCropVideo:
-    def __init__(self, crop_size) -> None:
+    def __init__(self, crop_size):
         if isinstance(crop_size, numbers.Number):
             self.crop_size = (int(crop_size), int(crop_size))
         else:

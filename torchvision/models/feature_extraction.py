@@ -55,7 +55,7 @@ class NodePathTracer(LeafModuleAwareTracer):
           _{int} is added. The counter starts from 1.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Track the qualified name of the Node being traced
         self.current_module_qualname = ""

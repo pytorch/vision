@@ -27,7 +27,7 @@ __all__ = (
 class ResidualBlock(nn.Module):
     """Slightly modified Residual block with extra relu and biases."""
 
-    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1) -> None:
+    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
         super().__init__()
 
         # Note regarding bias=True:
@@ -71,7 +71,7 @@ class ResidualBlock(nn.Module):
 class BottleneckBlock(nn.Module):
     """Slightly modified BottleNeck block (extra relu and biases)"""
 
-    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1) -> None:
+    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
         super().__init__()
 
         # See note in ResidualBlock for the reason behind bias=True
