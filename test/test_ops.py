@@ -1266,7 +1266,11 @@ class TestDistanceBoxIoU(BoxTestBase):
         return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
 
     def _generate_int_expected():
-        return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+        return [
+            [1.0000, 0.1875, -0.4444],
+            [0.1875, 1.0000, -0.5625],
+            [-0.4444, -0.5625, 1.0000],
+        ]
 
     def _generate_float_input():
         return [
@@ -1357,7 +1361,11 @@ class TestCompleteBoxIou(BoxTestBase):
         return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
 
     def _generate_int_expected() -> List[List[float]]:
-        return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+        return [
+            [1.0000, 0.1875, -0.4444],
+            [0.1875, 1.0000, -0.5625],
+            [-0.4444, -0.5625, 1.0000],
+        ]
 
     def _generate_float_input() -> List[List[float]]:
         return [
