@@ -111,6 +111,7 @@ Stereo Matching
     CarlaStereo
     Kitti2012Stereo
     Kitti2015Stereo
+    InStereo2k
 
 Image pairs
 ~~~~~~~~~~~
