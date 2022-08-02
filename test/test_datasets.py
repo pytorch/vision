@@ -13,7 +13,7 @@ import string
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
-from typing import Union
+from typing import Tuple, Union
 
 import datasets_utils
 import numpy as np
@@ -2839,6 +2839,62 @@ class CarlaStereoTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset() as (dataset, _):
             for left, right, disparity in dataset:
                 datasets_utils.shape_test_for_stereo(left, right, disparity)
+
+
+class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FallingThingsStereo
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("single", "mixed"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+
+    @staticmethod
+    def _make_dummy_depth_map(root: str, name: str, size: Tuple[int, int]):
+        file = pathlib.Path(root) / name
+        image = np.ones((size[0], size[1]), dtype=np.uint8)
+        PIL.Image.fromarray(image).save(file)
+
+    @staticmethod
+    def _make_scene_folder(root: str, scene_name: str, size: Tuple[int, int]) -> None:
+        root = pathlib.Path(root) / scene_name
+        os.makedirs(root, exist_ok=True)
+        # jpg images
+        datasets_utils.create_image_file(root, "image1.left.jpg", size=(3, size[1], size[0]))
+        datasets_utils.create_image_file(root, "image1.right.jpg", size=(3, size[1], size[0]))
+        # single channel depth maps
+        FallingThingsStereoTestCase._make_dummy_depth_map(root, "image1.left.depth.png", size=(size[0], size[1]))
+        FallingThingsStereoTestCase._make_dummy_depth_map(root, "image1.right.depth.png", size=(size[0], size[1]))
+        # camera settings json. Minimal example for _read_disparity function testing
+        settings_json = {"camera_settings": [{"intrinsic_settings": {"fx": 1}}]}
+        with open(root / "_camera_settings.json", "w") as f:
+            json.dump(settings_json, f)
+
+    def inject_fake_data(self, tmpdir, config):
+        fallingthings_dir = pathlib.Path(tmpdir) / "FallingThings"
+        os.makedirs(fallingthings_dir, exist_ok=True)
+
+        split_dir = pathlib.Path(fallingthings_dir) / config["split"]
+        os.makedirs(split_dir, exist_ok=True)
+
+        num_examples = {"single": 2, "mixed": 3}.get(config["split"], 0)
+
+        for i in range(num_examples):
+            self._make_scene_folder(
+                root=split_dir,
+                scene_name=f"scene_{i:06d}",
+                size=(100, 200),
+            )
+
+        return num_examples
+
+    def test_splits(self):
+        for split_name in ["single", "mixed"]:
+            with self.create_dataset(split=split_name) as (dataset, _):
+                for left, right, disparity in dataset:
+                    datasets_utils.shape_test_for_stereo(left, right, disparity)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
 
 
 if __name__ == "__main__":
