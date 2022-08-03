@@ -431,23 +431,24 @@ class SintelStereo(StereoMatchingDataset):
 
     def _get_oclussion_mask_paths(self, file_path: str) -> Tuple[str, str]:
         # helper function to get the occlusion mask paths
-        path_tokens = file_path.split(os.sep)
-        # if the file path is absolute, the split will omit the first token
-        # so when joining back together, we need to add the root directory
-        prefix = os.sep if file_path[0] == os.sep else ""
+        # a path will look like  .../.../.../training/disparities/scene1/img1.png
+        # we want to get something like .../.../.../training/occlusions/scene1/img1.png
+        fpath = Path(file_path)
+        basename = fpath.name
+        scenedir = fpath.parent
+        # the parent of the scenedir is actually the disparity dir
+        sampledir = scenedir.parent.parent
 
-        # a path will look like  .../.../.../training/final_left/scene1/img1.png
-        path_tokens[-3] = "occlusions"
-        occlusion_mask_path = prefix + os.path.join(*path_tokens)
-        if not os.path.exists(occlusion_mask_path):
-            raise FileNotFoundError(f"Could not find occlusion mask at {occlusion_mask_path}")
+        occlusion_path = str(sampledir / "occlusions" / scenedir.name / basename)
+        outofframe_path = str(sampledir / "outofframe" / scenedir.name / basename)
 
-        path_tokens[-3] = "outofframe"
-        outofframe_mask_path = prefix + os.path.join(*path_tokens)
-        if not os.path.exists(outofframe_mask_path):
-            raise FileNotFoundError(f"Could not find outofframe mask at {outofframe_mask_path}")
+        if not os.path.exists(occlusion_path):
+            raise FileNotFoundError(f"Occlusion mask {occlusion_path} does not exist")
 
-        return (occlusion_mask_path, outofframe_mask_path)
+        if not os.path.exists(outofframe_path):
+            raise FileNotFoundError(f"Out of frame mask {outofframe_path} does not exist")
+
+        return occlusion_path, outofframe_path
 
     def _read_disparity(self, file_path: str) -> Tuple:
         if file_path is None:
