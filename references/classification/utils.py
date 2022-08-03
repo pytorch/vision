@@ -6,6 +6,7 @@ import os
 import time
 from collections import defaultdict, deque, OrderedDict
 from typing import List, Optional, Tuple
+from abc import ABC, abstractmethod
 
 import torch
 import torch.distributed as dist
@@ -67,9 +68,10 @@ class SmoothedValue:
 
 
 class MetricLogger:
-    def __init__(self, delimiter="\t"):
+    def __init__(self, delimiter="\t", filepath=None):
         self.meters = defaultdict(SmoothedValue)
         self.delimiter = delimiter
+        self.filepath = filepath
 
     def update(self, **kwargs):
         for k, v in kwargs.items():
@@ -99,6 +101,9 @@ class MetricLogger:
         self.meters[name] = meter
 
     def log_every(self, iterable, print_freq, header=None):
+        if self.filepath:
+            f = open(self.filepath, "w+")
+
         i = 0
         if not header:
             header = ""
@@ -132,29 +137,45 @@ class MetricLogger:
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
                 if torch.cuda.is_available():
-                    print(
-                        log_msg.format(
-                            i,
-                            len(iterable),
-                            eta=eta_string,
-                            meters=str(self),
-                            time=str(iter_time),
-                            data=str(data_time),
-                            memory=torch.cuda.max_memory_allocated() / MB,
+                    cuda_str = log_msg.format(
+                        i,
+                        len(iterable),
+                        eta=eta_string,
+                        meters=str(self),
+                        time=str(iter_time),
+                        data=str(data_time),
+                        memory=torch.cuda.max_memory_allocated() / MB,
                         )
-                    )
+
+                    f.write(cuda_str) if self.filepath else print(cuda_str)
+
                 else:
-                    print(
-                        log_msg.format(
-                            i, len(iterable), eta=eta_string, meters=str(self), time=str(iter_time), data=str(data_time)
-                        )
-                    )
+                    cpu_str = log_msg.format(i, len(iterable), eta=eta_string, meters=str(self), time=str(iter_time), data=str(data_time))
+                    f.write(cpu_str) if self.filepath else print(cpu_str)
             i += 1
             end = time.time()
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-        print(f"{header} Total time: {total_time_str}")
+        total = f"{header} Total time: {total_time_str}"
 
+        if self.filepath:
+            f.write(total)
+            f.close()
+        else:
+            print(total)
+
+# Will remove this
+# class MetricExporter(ABC):
+#     @abstractmethod
+#     def export(metric_logger : MetricLogger) -> None:
+#         pass
+
+# class CSVExporter(MetricExporter):
+#     def export(metric_logger : MetricLogger, filepath : str) -> None:
+#         with open(filepath, "w") as f:
+#             for name, meter in metric_logger.meters.items():
+#                 f.write(f"{name},{meter}")
+                                
 
 class ExponentialMovingAverage(torch.optim.swa_utils.AveragedModel):
     """Maintains moving averages of model parameters using an exponential decay.
