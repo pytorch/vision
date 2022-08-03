@@ -50,7 +50,8 @@ void gotFilesStats(std::vector<VideoFileStats>& stats) {
     fseek(f, 0, SEEK_END);
     std::vector<uint8_t> buffer(ftell(f));
     rewind(f);
-    TORCH_CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
+    size_t s = fread(buffer.data(), 1, buffer.size(), f);
+    TORCH_CHECK_EQ(buffer.size(), s);
     fclose(f);
 
     for (size_t i = 0; i < rounds; ++i) {
@@ -90,7 +91,8 @@ size_t measurePerformanceUs(
     fseek(f, 0, SEEK_END);
     std::vector<uint8_t> buffer(ftell(f));
     rewind(f);
-    TORCH_CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
+    size_t s = fread(buffer.data(), 1, buffer.size(), f);
+    TORCH_CHECK_EQ(buffer.size(), s);
     fclose(f);
 
     for (size_t i = 0; i < rounds; ++i) {
@@ -324,7 +326,8 @@ TEST(SyncDecoder, TestMemoryBuffer) {
   fseek(f, 0, SEEK_END);
   std::vector<uint8_t> buffer(ftell(f));
   rewind(f);
-  TORCH_CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
+  size_t s = fread(buffer.data(), 1, buffer.size(), f);
+  TORCH_CHECK_EQ(buffer.size(), s);
   fclose(f);
   CHECK(decoder.init(
       params,
@@ -349,7 +352,8 @@ TEST(SyncDecoder, TestMemoryBufferNoSeekableWithFullRead) {
   fseek(f, 0, SEEK_END);
   std::vector<uint8_t> buffer(ftell(f));
   rewind(f);
-  TORCH_CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
+  size_t s = fread(buffer.data(), 1, buffer.size(), f);
+  TORCH_CHECK_EQ(buffer.size(), s);
   fclose(f);
 
   params.maxSeekableBytes = buffer.size() + 1;
@@ -388,7 +392,8 @@ TEST(SyncDecoder, TestMemoryBufferNoSeekableWithPartialRead) {
   fseek(f, 0, SEEK_END);
   std::vector<uint8_t> buffer(ftell(f));
   rewind(f);
-  TORCH_CHECK_EQ(buffer.size(), fread(buffer.data(), 1, buffer.size(), f));
+  size_t s = fread(buffer.data(), 1, buffer.size(), f);
+  TORCH_CHECK_EQ(buffer.size(), s);
   fclose(f);
 
   params.maxSeekableBytes = buffer.size() / 2;
