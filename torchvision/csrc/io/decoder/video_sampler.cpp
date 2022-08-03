@@ -68,23 +68,25 @@ int transformImage(
   if (context) {
     // NOTE: srcY stride always 0: this is a parameter of YUV format
     if ((result = sws_scale(
-            context, srcSlice, srcStride, 0, inFormat.height, planes, lines)) <
+             context, srcSlice, srcStride, 0, inFormat.height, planes, lines)) <
         0) {
-      LOG(ERROR) << "sws_scale failed, err: " << Util::generateErrorDesc(result);
+      LOG(ERROR) << "sws_scale failed, err: "
+                 << Util::generateErrorDesc(result);
       return result;
     }
-  } else if (inFormat.width == outFormat.width &&
-    inFormat.height == outFormat.height &&
-    inFormat.format == outFormat.format) {
+  } else if (
+      inFormat.width == outFormat.width &&
+      inFormat.height == outFormat.height &&
+      inFormat.format == outFormat.format) {
     // Copy planes without using sws_scale if sws_getContext failed.
     av_image_copy(
-      planes,
-      lines,
-      (const uint8_t**)srcSlice,
-      srcStride,
-      (AVPixelFormat)inFormat.format,
-      inFormat.width,
-      inFormat.height);
+        planes,
+        lines,
+        (const uint8_t**)srcSlice,
+        srcStride,
+        (AVPixelFormat)inFormat.format,
+        inFormat.width,
+        inFormat.height);
   } else {
     LOG(ERROR) << "Invalid scale context format " << inFormat.format;
     return AVERROR(EINVAL);
