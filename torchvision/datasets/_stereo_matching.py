@@ -363,7 +363,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
 
 
 class SintelStereo(StereoMatchingDataset):
-    """ "Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
+    """Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
 
     The dataset is expected to have the following structure: ::
 
@@ -403,7 +403,7 @@ class SintelStereo(StereoMatchingDataset):
 
     Args:
         root (string): Root directory where Sintel Stereo is located.
-        pass_name (string): The name of the pass to use, either "final" or "clean".
+        pass_name (string): The name of the pass to use, either "final", "clean" or "both".
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
     """
 
@@ -429,7 +429,7 @@ class SintelStereo(StereoMatchingDataset):
             disparity_pattern = str(root / "training" / "disparities" / "*" / "*.png")
             self._disparities += self._scan_pairs(disparity_pattern, None)
 
-    def _get_oclussion_mask_paths(self, file_path: str) -> Tuple[str, str]:
+    def _get_occlussion_mask_paths(self, file_path: str) -> Tuple[str, str]:
         # helper function to get the occlusion mask paths
         # a path will look like  .../.../.../training/disparities/scene1/img1.png
         # we want to get something like .../.../.../training/occlusions/scene1/img1.png
@@ -461,7 +461,7 @@ class SintelStereo(StereoMatchingDataset):
         # reshape into (C, H, W) format
         disparity_map = np.transpose(disparity_map, (2, 0, 1))
         # find the appropiate file paths
-        occlued_mask_path, out_of_frame_mask_path = self._get_oclussion_mask_paths(file_path)
+        occlued_mask_path, out_of_frame_mask_path = self._get_occlussion_mask_paths(file_path)
         # occlusion masks
         valid_mask = np.asarray(Image.open(occlued_mask_path)) == 0
         # out of frame masks

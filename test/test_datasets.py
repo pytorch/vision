@@ -2854,7 +2854,7 @@ class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
         os.makedirs(split_dir, exist_ok=True)
 
         # a single setting, since there are no splits
-        num_examples = {"final": 2, "clean": 2}
+        num_examples = {"final": 2, "clean": 3}
         pass_names = {
             "final": ["final"],
             "clean": ["clean"],
