@@ -2892,15 +2892,11 @@ class ETH3DStereoestCase(datasets_utils.ImageDatasetTestCase):
 
     def test_training_splits(self):
         with self.create_dataset(split="train") as (dataset, _):
-            assert dataset._images and len(dataset._images) == len(
-                dataset._disparities
-            ), "Training images do not match with training disparities"
             for left, right, disparity, valid_mask in dataset:
                 datasets_utils.shape_test_for_stereo(left, right, disparity, valid_mask)
 
     def test_testing_splits(self):
         with self.create_dataset(split="test") as (dataset, _):
-            assert all(d == (None, None) for d in dataset._disparities)
             for left, right, disparity, valid_mask in dataset:
                 assert valid_mask is None
                 datasets_utils.shape_test_for_stereo(left, right, disparity)
