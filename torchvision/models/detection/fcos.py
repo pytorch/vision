@@ -11,7 +11,7 @@ from ...ops import boxes as box_ops, generalized_box_iou_loss, misc as misc_nn_o
 from ...ops.feature_pyramid_network import LastLevelP6P7
 from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
 from .._utils import _ovewrite_value_param, handle_legacy_interface
 from ..resnet import resnet50, ResNet50_Weights
@@ -74,7 +74,13 @@ class FCOSHead(nn.Module):
             all_gt_classes_targets.append(gt_classes_targets)
             all_gt_boxes_targets.append(gt_boxes_targets)
 
-        all_gt_classes_targets = torch.stack(all_gt_classes_targets)
+        # List[Tensor] to Tensor conversion of  `all_gt_boxes_target`, `all_gt_classes_targets` and `anchors`
+        all_gt_boxes_targets, all_gt_classes_targets, anchors = (
+            torch.stack(all_gt_boxes_targets),
+            torch.stack(all_gt_classes_targets),
+            torch.stack(anchors),
+        )
+
         # compute foregroud
         foregroud_mask = all_gt_classes_targets >= 0
         num_foreground = foregroud_mask.sum().item()
@@ -84,14 +90,10 @@ class FCOSHead(nn.Module):
         gt_classes_targets[foregroud_mask, all_gt_classes_targets[foregroud_mask]] = 1.0
         loss_cls = sigmoid_focal_loss(cls_logits, gt_classes_targets, reduction="sum")
 
-        # regression loss: GIoU loss
-
-        pred_boxes = self.box_coder.decode_all(bbox_regression, anchors)
-
-        # List[Tensor] to Tensor conversion of  `all_gt_boxes_target` and `anchors`
-        all_gt_boxes_targets, anchors = torch.stack(all_gt_boxes_targets), torch.stack(anchors)
-
         # amp issue: pred_boxes need to convert float
+        pred_boxes = self.box_coder.decode(bbox_regression, anchors)
+
+        # regression loss: GIoU loss
         loss_bbox_reg = generalized_box_iou_loss(
             pred_boxes[foregroud_mask],
             all_gt_boxes_targets[foregroud_mask],
@@ -100,7 +102,7 @@ class FCOSHead(nn.Module):
 
         # ctrness loss
 
-        bbox_reg_targets = self.box_coder.encode_all(anchors, all_gt_boxes_targets)
+        bbox_reg_targets = self.box_coder.encode(anchors, all_gt_boxes_targets)
 
         if len(bbox_reg_targets) == 0:
             gt_ctrness_targets = bbox_reg_targets.new_zeros(bbox_reg_targets.size()[:-1])
@@ -522,7 +524,7 @@ class FCOS(nn.Module):
                 anchor_idxs = torch.div(topk_idxs, num_classes, rounding_mode="floor")
                 labels_per_level = topk_idxs % num_classes
 
-                boxes_per_level = self.box_coder.decode_single(
+                boxes_per_level = self.box_coder.decode(
                     box_regression_per_level[anchor_idxs], anchors_per_level[anchor_idxs]
                 )
                 boxes_per_level = box_ops.clip_boxes_to_image(boxes_per_level, image_shape)
@@ -666,6 +668,7 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
     DEFAULT = COCO_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FCOS_ResNet50_FPN_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),

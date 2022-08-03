@@ -15,7 +15,7 @@ from torchvision.models.resnet import (
 )
 
 from ...transforms._presets import ImageClassification
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import _ovewrite_named_param, handle_legacy_interface
 from .utils import _fuse_modules, _replace_relu, quantize_model
@@ -268,6 +268,7 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
+@register_model(name="quantized_resnet18")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -317,6 +318,7 @@ def resnet18(
     return _resnet(QuantizableBasicBlock, [2, 2, 2, 2], weights, progress, quantize, **kwargs)
 
 
+@register_model(name="quantized_resnet50")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -366,6 +368,7 @@ def resnet50(
     return _resnet(QuantizableBottleneck, [3, 4, 6, 3], weights, progress, quantize, **kwargs)
 
 
+@register_model(name="quantized_resnext101_32x8d")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -417,6 +420,7 @@ def resnext101_32x8d(
     return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)
 
 
+@register_model(name="quantized_resnext101_64x4d")
 def resnext101_64x4d(
     *,
     weights: Optional[Union[ResNeXt101_64X4D_QuantizedWeights, ResNeXt101_64X4D_Weights]] = None,
