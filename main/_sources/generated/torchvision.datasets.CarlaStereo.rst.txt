@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+CarlaStereo
+===========
+
+.. autoclass:: CarlaStereo
+    :members:
+        __getitem__,
+        
+    :special-members:
