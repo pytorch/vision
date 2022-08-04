@@ -156,8 +156,12 @@ def main(args):
         dataset_test, batch_size=1, sampler=test_sampler, num_workers=args.workers, collate_fn=utils.collate_fn
     )
 
-    model = torchvision.models.segmentation.__dict__[args.model](
-        weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, aux_loss=args.aux_loss
+    model = torchvision.models.get_model(
+        args.model,
+        weights=args.weights,
+        weights_backbone=args.weights_backbone,
+        num_classes=num_classes,
+        aux_loss=args.aux_loss,
     )
     model.to(device)
     if args.distributed:
