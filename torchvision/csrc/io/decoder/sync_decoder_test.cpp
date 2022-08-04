@@ -67,7 +67,7 @@ void gotFilesStats(std::vector<VideoFileStats>& stats) {
       avgProvUs +=
           std::chrono::duration_cast<std::chrono::microseconds>(then - now)
               .count();
-      TORCH_CHECK_EQ(metadata.size(), 1);
+      TORCH_CHECK_MSG(metadata.size(), 1);
       item.num = metadata[0].num;
       item.den = metadata[0].den;
       item.fps = metadata[0].fps;
