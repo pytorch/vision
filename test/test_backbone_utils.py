@@ -11,15 +11,6 @@ from torchvision.models.detection.backbone_utils import BackboneWithFPN, mobilen
 from torchvision.models.feature_extraction import create_feature_extractor, get_graph_node_names
 
 
-def get_available_models():
-    # TODO add a registration mechanism to torchvision.models
-    return [
-        k
-        for k, v in models.__dict__.items()
-        if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k != "get_weight"
-    ]
-
-
 @pytest.mark.parametrize("backbone_name", ("resnet18", "resnet50"))
 def test_resnet_fpn_backbone(backbone_name):
     x = torch.rand(1, 3, 300, 300, dtype=torch.float32, device="cpu")
@@ -135,10 +126,10 @@ class TestFxFeatureExtraction:
         eval_nodes = [n for n in eval_nodes if not any(x in n for x in exclude_nodes_filter)]
         return random.sample(train_nodes, 10), random.sample(eval_nodes, 10)
 
-    @pytest.mark.parametrize("model_name", get_available_models())
+    @pytest.mark.parametrize("model_name", models.list_models(models))
     def test_build_fx_feature_extractor(self, model_name):
         set_rng_seed(0)
-        model = models.__dict__[model_name](**self.model_defaults).eval()
+        model = models.get_model(model_name, **self.model_defaults).eval()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
         # Check that it works with both a list and dict for return nodes
         self._create_feature_extractor(
@@ -172,9 +163,9 @@ class TestFxFeatureExtraction:
         train_nodes, _ = get_graph_node_names(model)
         assert all(a == b for a, b in zip(train_nodes, test_module_nodes))
 
-    @pytest.mark.parametrize("model_name", get_available_models())
+    @pytest.mark.parametrize("model_name", models.list_models(models))
     def test_forward_backward(self, model_name):
-        model = models.__dict__[model_name](**self.model_defaults).train()
+        model = models.get_model(model_name, **self.model_defaults).train()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
         model = self._create_feature_extractor(
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
@@ -211,10 +202,10 @@ class TestFxFeatureExtraction:
         for k in ilg_out.keys():
             assert ilg_out[k].equal(fgn_out[k])
 
-    @pytest.mark.parametrize("model_name", get_available_models())
+    @pytest.mark.parametrize("model_name", models.list_models(models))
     def test_jit_forward_backward(self, model_name):
         set_rng_seed(0)
-        model = models.__dict__[model_name](**self.model_defaults).train()
+        model = models.get_model(model_name, **self.model_defaults).train()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
         model = self._create_feature_extractor(
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes

@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import List, Tuple, Any, Optional, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -15,8 +15,7 @@ except ImportError:
     accimage = None
 
 from ..utils import _log_api_usage_once
-from . import functional_pil as F_pil
-from . import functional_tensor as F_t
+from . import functional_pil as F_pil, functional_tensor as F_t
 
 
 class InterpolationMode(Enum):
@@ -1555,7 +1554,7 @@ def elastic_transform(
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
             If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
-        displacement (Tensor): The displacement field.
+        displacement (Tensor): The displacement field. Expected shape is [1, H, W, 2].
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``.
@@ -1577,13 +1576,22 @@ def elastic_transform(
         interpolation = _interpolation_modes_from_int(interpolation)
 
     if not isinstance(displacement, torch.Tensor):
-        raise TypeError("displacement should be a Tensor")
+        raise TypeError("Argument displacement should be a Tensor")
 
     t_img = img
     if not isinstance(img, torch.Tensor):
         if not F_pil._is_pil_image(img):
             raise TypeError(f"img should be PIL Image or Tensor. Got {type(img)}")
         t_img = pil_to_tensor(img)
+
+    shape = t_img.shape
+    shape = (1,) + shape[-2:] + (2,)
+    if shape != displacement.shape:
+        raise ValueError(f"Argument displacement shape should be {shape}, but given {displacement.shape}")
+
+    # TODO: if image shape is [N1, N2, ..., C, H, W] and
+    # displacement is [1, H, W, 2] we need to reshape input image
+    # such grid_sampler takes internal code for 4D input
 
     output = F_t.elastic_transform(
         t_img,

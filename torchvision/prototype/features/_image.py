@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, List, Optional, Union, Sequence, Tuple, cast
+from typing import Any, cast, List, Optional, Sequence, Tuple, Union
 
 import torch
 from torchvision._utils import StrEnum
-from torchvision.transforms.functional import to_pil_image, InterpolationMode
-from torchvision.utils import draw_bounding_boxes
-from torchvision.utils import make_grid
+from torchvision.transforms.functional import InterpolationMode, to_pil_image
+from torchvision.utils import draw_bounding_boxes, make_grid
 
 from ._bounding_box import BoundingBox
 from ._feature import _Feature
@@ -75,7 +74,7 @@ class Image(_Feature):
 
     @property
     def image_size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], self.shape[-2:])
+        return cast(Tuple[int, int], tuple(self.shape[-2:]))
 
     @property
     def num_channels(self) -> int:
@@ -244,6 +243,19 @@ class Image(_Feature):
         output = _F.perspective_image_tensor(self, perspective_coeffs, interpolation=interpolation, fill=fill)
         return Image.new_like(self, output)
 
+    def elastic(
+        self,
+        displacement: torch.Tensor,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    ) -> Image:
+        from torchvision.prototype.transforms.functional import _geometry as _F
+
+        fill = _F._convert_fill_arg(fill)
+
+        output = _F.elastic_image_tensor(self, displacement, interpolation=interpolation, fill=fill)
+        return Image.new_like(self, output)
+
     def adjust_brightness(self, brightness_factor: float) -> Image:
         from torchvision.prototype.transforms import functional as _F
 
@@ -308,4 +320,10 @@ class Image(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.invert_image_tensor(self)
+        return Image.new_like(self, output)
+
+    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Image:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.gaussian_blur_image_tensor(self, kernel_size=kernel_size, sigma=sigma)
         return Image.new_like(self, output)
