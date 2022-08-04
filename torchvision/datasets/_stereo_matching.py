@@ -466,8 +466,8 @@ class SceneFlowStereo(StereoMatchingDataset):
             If a ``valid_mask`` is generated within the ``transforms`` parameter,
             a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
         """
+        return super().__getitem__(index)
 
-    
 
 class SintelStereo(StereoMatchingDataset):
     """Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
