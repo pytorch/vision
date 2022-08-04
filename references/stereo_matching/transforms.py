@@ -46,9 +46,9 @@ class MakeValidDisparityMask(torch.nn.Module):
         for idx, disparity in enumerate(disparities):
             mask = masks[idx]
             if mask is None:
-                mask = disparity < self.threshold if disparity is not None else None
-            valid_masks += mask
-        return valid_masks
+                mask = (disparity < self.threshold).squeeze(0) if disparity is not None else None
+            valid_masks += (mask,)
+        return images, disparities, valid_masks
 
 
 class ConvertImageDtype(torch.nn.Module):
@@ -77,6 +77,7 @@ class Normalize(torch.nn.Module):
     def forward(
         self, images: Tuple[Tensor, Tensor], disparities: Tuple[Tensor, Tensor], masks: Tuple[Tensor, Tensor]
     ) -> Tuple[Tuple, Tuple, Tuple]:
+
         img_left = F.normalize(images[0], mean=self.mean, std=self.std)
         img_right = F.normalize(images[1], mean=self.mean, std=self.std)
 
@@ -93,14 +94,19 @@ class ToTensor(torch.nn.Module):
         disparities: Tuple[Union[np.ndarray, None], Union[np.ndarray, None]],
         masks: Tuple[Union[np.ndarray, None], Union[np.ndarray, None]],
     ) -> Tuple[Tuple, Tuple, Tuple]:
+        if images[0] is None:
+            raise ValueError("img_left is None")
+        if images[1] is None:
+            raise ValueError("img_right is None")
+
         img_left = F.pil_to_tensor(images[0])
         img_right = F.pil_to_tensor(images[1])
         disparity_tensors = ()
         mask_tensors = ()
 
-        for idx in range(len(2)):
-            disparity_tensors += torch.from_numpy(disparities[idx]) if disparities[idx] is not None else None
-            mask_tensors += torch.from_numpy(disparities[idx]) if disparities[idx] is not None else None
+        for idx in range(2):
+            disparity_tensors += (torch.from_numpy(disparities[idx]),) if disparities[idx] is not None else (None,)
+            mask_tensors += (torch.from_numpy(disparities[idx]),) if disparities[idx] is not None else (None,)
 
         return (img_left, img_right), disparity_tensors, masks
 
@@ -145,7 +151,7 @@ class AsymetricGammaAdjust(torch.nn.Module):
         masks: Tuple[Union[np.ndarray, None], Union[np.ndarray, None]],
     ) -> Tuple[Tuple, Tuple, Tuple]:
 
-        gamma = rand_float_range(1, low=self.gamma_range[0], high=self.gamma_range[1])
+        gamma = rand_float_range((1,), low=self.gamma_range[0], high=self.gamma_range[1])
 
         if torch.rand(1) < self.p:
             # asymmetric: different transform for img1 and img2
@@ -168,6 +174,7 @@ class RandomErase(torch.nn.Module):
     # 2 erase with .25 proba
     # and there's no accurate way to achieve this otherwise.
     def __init__(self, p=0.5, min_px_erase: int = 50, max_px_erase: int = 100, value=0, inplace=False, max_erase=2):
+        super().__init__()
         self.min_px_erase = min_px_erase
         self.max_px_erase = max_px_erase
         if self.max_px_erase < 0:
@@ -215,6 +222,7 @@ class RandomOcclusion(torch.nn.Module):
     # the occluded patch works as a patch erase the erase value is the mean
     # of the pixels from the selected zone
     def __init__(self, p=0.5, min_px_occlusion: int = 50, max_px_occlusion: int = 100, inplace=False):
+        super().__init__()
         self.min_px_occlusion = min_px_occlusion
         self.max_px_occlusion = max_px_occlusion
         if self.max_px_occlusion < 0:
@@ -239,7 +247,7 @@ class RandomOcclusion(torch.nn.Module):
         if torch.rand(1) > self.p:
             return images, disparities, masks
 
-        for _ in range(torch.randint(self.max_erase, size=(1,)).item()):
+        for _ in range(torch.randint(self.min_px_occlusion, self.max_px_occlusion, size=(1,)).item()):
             x, y, h, w, v = self._get_params(right_image)
             right_image = F.erase(right_image, x, y, h, w, v, self.inplace)
 
@@ -248,17 +256,17 @@ class RandomOcclusion(torch.nn.Module):
     def _get_params(self, img: torch.Tensor) -> Tuple[int, int, int, int, float]:
         img_h, img_w = img.shape[-2:]
         crop_h, crop_w = (
-            random.randint(self.min_px_occlusion, img_h - self.max_px_occlusion),
-            random.randint(self.min_px_occlusion, img_w - self.max_px_occlusion),
+            random.randint(self.min_px_occlusion, self.max_px_occlusion),
+            random.randint(self.min_px_occlusion, self.max_px_occlusion),
         )
-        crop_x, crop_y = (random.randint(0, img_w - 1), random.randint(0, img_h - 1))
+        crop_x, crop_y = (random.randint(0, img_w - crop_w), random.randint(0, img_h - crop_h))
 
         return (
             crop_x,
             crop_y,
             crop_h,
             crop_w,
-            torch.mean(img[:, crop_y : crop_y + crop_h, crop_x : crop_x + crop_w], dim=1),
+            torch.mean(img[..., crop_y : crop_y + crop_h, crop_x : crop_x + crop_w], dim=(1, 2), keepdim=True),
         )
 
 
@@ -315,7 +323,7 @@ class RandomHorizontalFlip(torch.nn.Module):
             dsp_left, dsp_right = F.hflip(dsp_left), F.hflip(dsp_right)
             if mask_left is not None and mask_right is not None:
                 mask_left, mask_right = F.hflip(mask_left), F.hflip(mask_right)
-            return ((mask_right, mask_left), (dsp_right, dsp_left), (mask_right, mask_left))
+            return ((img_right, img_left), (dsp_right, dsp_left), (mask_right, mask_left))
 
         return images, disparities, masks
 
@@ -332,14 +340,16 @@ class RandomResizeAndCrop(torch.nn.Module):
     # because of the way the random parameters are sampled in both transforms,
     # which leads to fairly different resuts (and different epe). For more details see
     # https://github.com/pytorch/vision/pull/5026/files#r762932579
-    def __init__(self, crop_size, min_scale=-0.2, max_scale=0.5, stretch_prob=0.8):
+    def __init__(
+        self, crop_size, min_scale=-0.2, max_scale=0.5, stretch_prob=0.8, resize_prob=0.8, max_strech=0.2
+    ) -> None:
         super().__init__()
         self.crop_size = crop_size
         self.min_scale = min_scale
         self.max_scale = max_scale
         self.stretch_prob = stretch_prob
-        self.resize_prob = 0.8
-        self.max_stretch = 0.2
+        self.resize_prob = resize_prob
+        self.max_stretch = max_strech
 
     def forward(
         self,
@@ -379,16 +389,20 @@ class RandomResizeAndCrop(torch.nn.Module):
 
             for disparity, mask in zip(disparities, masks):
                 if mask is None:
-                    resized_disparity = F.resize(resized_disparity, size=(new_h, new_w))
-                    resized_disparity = resized_disparity * torch.tensor([scale_x, scale_y])[:, None, None]
+                    resized_disparity = F.resize(disparity, size=(new_h, new_w))
+                    resized_disparity = resized_disparity * torch.tensor([scale_x])[:, None, None]
                     resized_mask = None
                 else:
                     resized_disparity, resized_mask = self._resize_sparse_flow(
                         disparity, mask, scale_x=scale_x, scale_y=scale_y
                     )
 
-                resized_masks += resized_mask
-                resized_disparities += resized_disparity
+                resized_masks += (resized_mask,)
+                resized_disparities += (resized_disparity,)
+
+        else:
+            resized_disparities = disparities
+            resized_masks = masks
 
         disparities = resized_disparities
         masks = resized_masks
@@ -408,7 +422,7 @@ class RandomResizeAndCrop(torch.nn.Module):
         for mask in masks:
             if mask is not None:
                 mask = F.crop(mask, y0, x0, self.crop_size[0], self.crop_size[1])
-            cropped_masks += mask
+            cropped_masks += (mask,)
 
         return ((img_left, img_right), (dsp_left, dsp_right), cropped_masks)
 
@@ -418,10 +432,11 @@ class RandomResizeAndCrop(torch.nn.Module):
         # So for example if scale_x = scale_y = 2, the sparsity of the output flow is multiplied by 4
 
         h, w = flow.shape[-2:]
+        print("Flow shape is", flow.shape)
 
         h_new = int(round(h * scale_y))
         w_new = int(round(w * scale_x))
-        flow_new = torch.zeros(size=[2, h_new, w_new], dtype=flow.dtype)
+        flow_new = torch.zeros(size=[1, h_new, w_new], dtype=flow.dtype)
         valid_new = torch.zeros(size=[h_new, w_new], dtype=valid_flow_mask.dtype)
 
         jj, ii = torch.meshgrid(torch.arange(w), torch.arange(h), indexing="xy")
@@ -440,7 +455,6 @@ class RandomResizeAndCrop(torch.nn.Module):
 
         valid_flow_new = flow[:, ii_valid, jj_valid]
         valid_flow_new[0] *= scale_x
-        valid_flow_new[1] *= scale_y
 
         flow_new[:, ii_valid_new, jj_valid_new] = valid_flow_new
         valid_new[ii_valid_new, jj_valid_new] = 1

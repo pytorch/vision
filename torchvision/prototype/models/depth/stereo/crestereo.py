@@ -172,8 +172,7 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         di_y, di_x = dilate[0], dilate[1]
         pad_y, pad_x = window_size[0] // 2 * di_y, window_size[1] // 2 * di_x
 
-        right_padded = F.pad(right_feature, (pad_x, pad_x, pad_y, pad_y), mode="replicate")
-        right_padded = right_padded.detach()
+        right_padded = F.pad(right_feature.detach(), (pad_x, pad_x, pad_y, pad_y), mode="replicate")
         # in order to vectorize the correlation computation over all pixel candidates
         # we create multiple shifted right images which we stack on an extra dimension
         right_padded = F.unfold(right_padded, kernel_size=(H, W), dilation=dilate)

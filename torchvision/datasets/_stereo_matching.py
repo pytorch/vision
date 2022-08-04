@@ -1,5 +1,6 @@
 import functools
 import json
+import math
 import os
 import random
 import shutil
@@ -101,9 +102,6 @@ class StereoMatchingDataset(ABC, VisionDataset):
         images = list((left, right) for left, right in zip(left_paths, right_paths))
         return images
 
-    def __rmul__(self, v):
-        return torch.utils.data.ConcatDataset([self] * v)
-
     @abstractmethod
     def _read_disparity(self, file_path: str) -> Tuple:
         # function that returns a disparity map and an occlusion map
@@ -146,6 +144,28 @@ class StereoMatchingDataset(ABC, VisionDataset):
 
     def __len__(self) -> int:
         return len(self._images)
+
+    def __mul__(self, v):
+        return self.__rmul__(v)
+
+    def __rmul__(self, v):
+        if isinstance(v, int):
+            return torch.utils.data.ConcatDataset([self] * v)
+
+        elif isinstance(v, float):
+            # take the integer part of the float
+            q = int(math.floor(v))
+            # get the remainder
+            r = v - q
+            # get the end index given the remainder
+            end = int(math.floor(len(self) * r))
+            # return a concatenated dataset
+            # between q chunks of the original dataset
+            # and a subset of up to `end` index
+            return torch.utils.data.ConcatDataset([self] * q + [torch.utils.data.Subset(self, range(end))])
+
+        else:
+            raise TypeError(f"unsupported type: {type(v)}")
 
 
 class CREStereo(StereoMatchingDataset):
@@ -886,6 +906,7 @@ class SintelStereo(StereoMatchingDataset):
         off_mask = np.asarray(Image.open(out_of_frame_mask_path)) == 0
         # combine the masks together
         valid_mask = np.logical_and(off_mask, valid_mask)
+        print(disparity_map.shape)
         return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple:

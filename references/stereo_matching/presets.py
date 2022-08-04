@@ -7,7 +7,14 @@ class StereoMatchingPresetEval(torch.nn.Module):
         super().__init__()
 
         self.transforms = T.Compose(
-            [T.ToTensor(), T.ConvertImageDtype(torch.float32), T.Normalize(mean=0.5, std=0.5), T.ValidateModelInput()]
+            [
+                T.ToTensor(),
+                T.MakeValidDisparityMask(256),  # we keep this transform for API consistency
+                T.ConvertImageDtype(torch.float32),
+                T.RandomResizeAndCrop((384, 512), stretch_prob=0.0, resize_prob=0.0),
+                T.Normalize(mean=0.5, std=0.5),
+                T.ValidateModelInput(),
+            ]
         )
 
     def forward(self, images, disparities, masks):
@@ -43,8 +50,9 @@ class StereoMatchingPresetCRETrain(torch.nn.Module):
             ),
             T.AsymetricGammaAdjust(p=asymmetric_jitter_prob, gamma_range=(0.8, 1.2)),
             T.RandomResizeAndCrop(
-                crop_size=crop_size, min_scale=min_scale, max_scale=max_scale, strech_prob=stretch_prob
+                crop_size=crop_size, min_scale=min_scale, max_scale=max_scale, stretch_prob=stretch_prob
             ),
+            T.ConvertImageDtype(torch.float32),
             T.RandomOcclusion(),
         ]
 
@@ -52,7 +60,6 @@ class StereoMatchingPresetCRETrain(torch.nn.Module):
             transforms += [T.RandomHorizontalFlip()]
 
         transforms += [
-            T.ConvertImageDtype(torch.float32),
             T.Normalize(mean=0.5, std=0.5),
             T.MakeValidDisparityMask(max_disparity),
             T.ValidateModelInput(),
