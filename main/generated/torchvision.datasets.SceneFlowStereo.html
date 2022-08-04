@@ -10,7 +10,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>RandomAdjustSharpness &mdash; Torchvision main documentation</title>
+  <title>SceneFlowStereo &mdash; Torchvision main documentation</title>
   
 
   
@@ -38,8 +38,8 @@
   <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="RandomAutocontrast" href="torchvision.transforms.RandomAutocontrast.html" />
-    <link rel="prev" title="RandomSolarize" href="torchvision.transforms.RandomSolarize.html" />
+    <link rel="next" title="LFWPairs" href="torchvision.datasets.LFWPairs.html" />
+    <link rel="prev" title="Kitti2015Stereo" href="torchvision.datasets.Kitti2015Stereo.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -235,9 +235,9 @@
             
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../io.html">Reading/Writing images and videos</a></li>
@@ -297,15 +297,15 @@
       </li>
 
         
-          <li><a href="../transforms.html">Transforming and augmenting images</a> &gt;</li>
+          <li><a href="../datasets.html">Datasets</a> &gt;</li>
         
-      <li>RandomAdjustSharpness</li>
+      <li>SceneFlowStereo</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
         
             
-            <a href="../_sources/generated/torchvision.transforms.RandomAdjustSharpness.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
+            <a href="../_sources/generated/torchvision.datasets.SceneFlowStereo.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
           
         
       </li>
@@ -331,39 +331,85 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <section id="randomadjustsharpness">
-<h1>RandomAdjustSharpness<a class="headerlink" href="#randomadjustsharpness" title="Permalink to this heading">¶</a></h1>
+  <section id="sceneflowstereo">
+<h1>SceneFlowStereo<a class="headerlink" href="#sceneflowstereo" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="torchvision.transforms.RandomAdjustSharpness">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.transforms.</span></span><span class="sig-name descname"><span class="pre">RandomAdjustSharpness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sharpness_factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/transforms/transforms.html#RandomAdjustSharpness"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomAdjustSharpness" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adjust the sharpness of the image randomly with a given probability. If the image is torch Tensor,
-it is expected to have […, 1 or 3, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
+<dt class="sig sig-object py" id="torchvision.datasets.SceneFlowStereo">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.datasets.</span></span><span class="sig-name descname"><span class="pre">SceneFlowStereo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">variant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'FlyingThings3D'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pass_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'clean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transforms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.10)"><span class="pre">Callable</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/datasets/_stereo_matching.html#SceneFlowStereo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.SceneFlowStereo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dataset interface for <a class="reference external" href="https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html">Scene Flow</a> datasets.
+This interface provides access to the <cite>FlyingThings3D, `Monkaa</cite> and <cite>Driving</cite> datasets.</p>
+<p>The dataset is expected to have the following structre:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span>
+    <span class="n">SceneFlow</span>
+        <span class="n">Monkaa</span>
+            <span class="n">frames_cleanpass</span>
+                <span class="n">scene1</span>
+                    <span class="n">left</span>
+                        <span class="n">img1</span><span class="o">.</span><span class="n">png</span>
+                        <span class="n">img2</span><span class="o">.</span><span class="n">png</span>
+                    <span class="n">right</span>
+                        <span class="n">img1</span><span class="o">.</span><span class="n">png</span>
+                        <span class="n">img2</span><span class="o">.</span><span class="n">png</span>
+                <span class="n">scene2</span>
+                    <span class="n">left</span>
+                        <span class="n">img1</span><span class="o">.</span><span class="n">png</span>
+                        <span class="n">img2</span><span class="o">.</span><span class="n">png</span>
+                    <span class="n">right</span>
+                        <span class="n">img1</span><span class="o">.</span><span class="n">png</span>
+                        <span class="n">img2</span><span class="o">.</span><span class="n">png</span>
+            <span class="n">frames_finalpass</span>
+                <span class="n">scene1</span>
+                    <span class="n">left</span>
+                        <span class="n">img1</span><span class="o">.</span><span class="n">png</span>
+                        <span class="n">img2</span><span class="o">.</span><span class="n">png</span>
+                    <span class="n">right</span>
+                        <span class="n">img1</span><span class="o">.</span><span class="n">png</span>
+                        <span class="n">img2</span><span class="o">.</span><span class="n">png</span>
+                <span class="o">...</span>
+                <span class="o">...</span>
+            <span class="n">disparity</span>
+                <span class="n">scene1</span>
+                    <span class="n">left</span>
+                        <span class="n">img1</span><span class="o">.</span><span class="n">pfm</span>
+                        <span class="n">img2</span><span class="o">.</span><span class="n">pfm</span>
+                    <span class="n">right</span>
+                        <span class="n">img1</span><span class="o">.</span><span class="n">pfm</span>
+                        <span class="n">img2</span><span class="o">.</span><span class="n">pfm</span>
+        <span class="n">FlyingThings3D</span>
+            <span class="o">...</span>
+            <span class="o">...</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>sharpness_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – How much to adjust the sharpness. Can be
-any non negative number. 0 gives a blurred image, 1 gives the
-original image while 2 increases the sharpness by a factor of 2.</p></li>
-<li><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – probability of the image being sharpened. Default value is 0.5</p></li>
+<li><p><strong>root</strong> (<em>string</em>) – Root directory where SceneFlow is located.</p></li>
+<li><p><strong>variant</strong> (<em>string</em>) – Which dataset variant to user, “FlyingThings3D” (default), “Monkaa” or “Driving”.</p></li>
+<li><p><strong>pass_name</strong> (<em>string</em>) – Which pass to use, “clean” (default), “final” or “both”.</p></li>
+<li><p><strong>transforms</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in a sample and returns a transformed version.</p></li>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomAdjustSharpness</span></code>:</p>
-<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><img alt="Illustration of transforms" src="../_images/sphx_glr_plot_transforms_thumb.png" />
-<p><a class="reference internal" href="../auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></p>
-  <div class="sphx-glr-thumbnail-title">Illustration of transforms</div>
-</div></div></div><dl class="py method">
-<dt class="sig sig-object py" id="torchvision.transforms.RandomAdjustSharpness.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/transforms/transforms.html#RandomAdjustSharpness.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomAdjustSharpness.forward" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dl class="field-list simple">
+<dt class="field-odd">Special-members<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchvision.datasets.SceneFlowStereo.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.10)"><span class="pre">Tuple</span></a></span></span><a class="reference internal" href="../_modules/torchvision/datasets/_stereo_matching.html#SceneFlowStereo.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.SceneFlowStereo.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return example at given index.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be sharpened.</p>
+<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The index of the example to retrieve</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Randomly sharpened image.</p>
+<dd class="field-even"><p>A 3-tuple with <code class="docutils literal notranslate"><span class="pre">(img_left,</span> <span class="pre">img_right,</span> <span class="pre">disparity)</span></code>.
+The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
+If a <code class="docutils literal notranslate"><span class="pre">valid_mask</span></code> is generated within the <code class="docutils literal notranslate"><span class="pre">transforms</span></code> parameter,
+a 4-tuple with <code class="docutils literal notranslate"><span class="pre">(img_left,</span> <span class="pre">img_right,</span> <span class="pre">disparity,</span> <span class="pre">valid_mask)</span></code> is returned.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>PIL Image or Tensor</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -380,10 +426,10 @@ original image while 2 increases the sharpness by a factor of 2.</p></li>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="torchvision.transforms.RandomAutocontrast.html" class="btn btn-neutral float-right" title="RandomAutocontrast" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="torchvision.datasets.LFWPairs.html" class="btn btn-neutral float-right" title="LFWPairs" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="torchvision.transforms.RandomSolarize.html" class="btn btn-neutral" title="RandomSolarize" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="torchvision.datasets.Kitti2015Stereo.html" class="btn btn-neutral" title="Kitti2015Stereo" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -415,7 +461,7 @@ original image while 2 increases the sharpness by a factor of 2.</p></li>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">RandomAdjustSharpness</a></li>
+<li><a class="reference internal" href="#">SceneFlowStereo</a></li>
 </ul>
 
             </div>
