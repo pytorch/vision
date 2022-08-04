@@ -23,10 +23,13 @@ else
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
 
     cuda_toolkit_pckg="cudatoolkit"
+    cudatoolkit=""
     if [[ "$CU_VERSION" == cu116 ]]; then
         cuda_toolkit_pckg="cuda"
+        cudatoolkit="nvidia::${cuda_toolkit_pckg}=${version}"
+    else
+        cudatoolkit="-c nvidia cuda=11.6 atalman::pytorch-cuda=1.0=cuda11.6"
     fi
-    cudatoolkit="nvidia::${cuda_toolkit_pckg}=${version}"
 fi
 
 case "$(uname -s)" in
@@ -38,7 +41,7 @@ printf "Installing PyTorch with %s\n" "${cudatoolkit}"
 if [ "${os}" == "MacOSX" ]; then
     conda install -y -c "pytorch-${UPLOAD_CHANNEL}" "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}"
 else
-    conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c nvidia "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}"
+    conda install -y -c "pytorch-${UPLOAD_CHANNEL} pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}"
 fi
 
 printf "* Installing torchvision\n"

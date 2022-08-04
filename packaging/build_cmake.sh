@@ -42,7 +42,12 @@ else
   PYTORCH_MUTEX_CONSTRAINT=''
 fi
 
-conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $PYTORCH_MUTEX_CONSTRAINT $MKL_CONSTRAINT numpy -c nvidia -c "pytorch-${UPLOAD_CHANNEL}"
+if [[ $CU_VERSION == "cu116" ]]; then
+    conda install -yq \pytorch=$PYTORCH_VERSION  -c nvidia cuda=11.6 atalman::pytorch-cuda=1.0=cuda11.6 $PYTORCH_MUTEX_CONSTRAINT $MKL_CONSTRAINT numpy -c nvidia -c "pytorch-${UPLOAD_CHANNEL}"
+else
+    conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $PYTORCH_MUTEX_CONSTRAINT $MKL_CONSTRAINT numpy -c nvidia -c "pytorch-${UPLOAD_CHANNEL}"
+fi
+
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
