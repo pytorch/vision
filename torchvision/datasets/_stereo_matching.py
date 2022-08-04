@@ -454,8 +454,7 @@ class SceneFlowStereo(StereoMatchingDataset):
         return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple:
-        """
-        Return example at given index.
+        """Return example at given index.
 
         Args:
             index(int): The index of the example to retrieve
