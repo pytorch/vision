@@ -38,7 +38,6 @@ class StereoMatchingDataset(ABC, VisionDataset):
 
     def __init__(self, root: str, transforms: Optional[Callable] = None):
         """
-
         Args:
             root(str): Root directory of the dataset.
             transforms(callable, optional): A function/transform that takes in Tuples of
@@ -707,7 +706,6 @@ class Kitti2012Stereo(StereoMatchingDataset):
             The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
             ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not
             generate a valid mask.
-
             Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.
         """
         return super().__getitem__(index)
@@ -794,7 +792,6 @@ class Kitti2015Stereo(StereoMatchingDataset):
             The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
             ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not
             generate a valid mask.
-
             Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.
         """
         return super().__getitem__(index)

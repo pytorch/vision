@@ -49,12 +49,12 @@ class _AutoAugmentBase(Transform):
         unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask),
     ) -> Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]:
         def fn(
-            id: Tuple[Any, ...], input: Any
+            id: Tuple[Any, ...], inpt: Any
         ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
-            if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
-                return id, input
-            elif isinstance(input, unsupported_types):
-                raise TypeError(f"Inputs of type {type(input).__name__} are not supported by {type(self).__name__}()")
+            if type(inpt) in {torch.Tensor, features.Image} or isinstance(inpt, PIL.Image.Image):
+                return id, inpt
+            elif isinstance(inpt, unsupported_types):
+                raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
             else:
                 return None
 
@@ -494,7 +494,7 @@ class AugMix(_AutoAugmentBase):
 
         if isinstance(orig_image, torch.Tensor):
             image = orig_image
-        else:  # isinstance(input, PIL.Image.Image):
+        else:  # isinstance(inpt, PIL.Image.Image):
             image = pil_to_tensor(orig_image)
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE

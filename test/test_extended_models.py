@@ -1,11 +1,10 @@
-import importlib
 import os
 
 import pytest
 import test_models as TM
 import torch
 from torchvision import models
-from torchvision.models._api import Weights, WeightsEnum
+from torchvision.models._api import get_model_weights, Weights, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface
 
 
@@ -15,23 +14,52 @@ run_if_test_with_extended = pytest.mark.skipif(
 )
 
 
-def _get_parent_module(model_fn):
-    parent_module_name = ".".join(model_fn.__module__.split(".")[:-1])
-    module = importlib.import_module(parent_module_name)
-    return module
+@pytest.mark.parametrize(
+    "name, model_class",
+    [
+        ("resnet50", models.ResNet),
+        ("retinanet_resnet50_fpn_v2", models.detection.RetinaNet),
+        ("raft_large", models.optical_flow.RAFT),
+        ("quantized_resnet50", models.quantization.QuantizableResNet),
+        ("lraspp_mobilenet_v3_large", models.segmentation.LRASPP),
+        ("mvit_v1_b", models.video.MViT),
+    ],
+)
+def test_get_model(name, model_class):
+    assert isinstance(models.get_model(name), model_class)
 
 
-def _get_model_weights(model_fn):
-    module = _get_parent_module(model_fn)
-    weights_name = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
-    try:
-        return next(
-            v
+@pytest.mark.parametrize(
+    "name, weight",
+    [
+        ("resnet50", models.ResNet50_Weights),
+        ("retinanet_resnet50_fpn_v2", models.detection.RetinaNet_ResNet50_FPN_V2_Weights),
+        ("raft_large", models.optical_flow.Raft_Large_Weights),
+        ("quantized_resnet50", models.quantization.ResNet50_QuantizedWeights),
+        ("lraspp_mobilenet_v3_large", models.segmentation.LRASPP_MobileNet_V3_Large_Weights),
+        ("mvit_v1_b", models.video.MViT_V1_B_Weights),
+    ],
+)
+def test_get_model_weights(name, weight):
+    assert models.get_model_weights(name) == weight
+
+
+@pytest.mark.parametrize(
+    "module", [models, models.detection, models.quantization, models.segmentation, models.video, models.optical_flow]
+)
+def test_list_models(module):
+    def get_models_from_module(module):
+        return [
+            v.__name__
             for k, v in module.__dict__.items()
-            if k.endswith(weights_name) and k.replace(weights_name, "").lower() == model_fn.__name__
-        )
-    except StopIteration:
-        return None
+            if callable(v) and k[0].islower() and k[0] != "_" and k not in models._api.__all__
+        ]
+
+    a = set(get_models_from_module(module))
+    b = set(x.replace("quantized_", "") for x in models.list_models(module))
+
+    assert len(b) > 0
+    assert a == b
 
 
 @pytest.mark.parametrize(
@@ -55,27 +83,27 @@ def test_get_weight(name, weight):
 
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(models)
-    + TM.get_models_from_module(models.detection)
-    + TM.get_models_from_module(models.quantization)
-    + TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video)
-    + TM.get_models_from_module(models.optical_flow),
+    TM.list_model_fns(models)
+    + TM.list_model_fns(models.detection)
+    + TM.list_model_fns(models.quantization)
+    + TM.list_model_fns(models.segmentation)
+    + TM.list_model_fns(models.video)
+    + TM.list_model_fns(models.optical_flow),
 )
 def test_naming_conventions(model_fn):
-    weights_enum = _get_model_weights(model_fn)
+    weights_enum = get_model_weights(model_fn)
     assert weights_enum is not None
     assert len(weights_enum) == 0 or hasattr(weights_enum, "DEFAULT")
 
 
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(models)
-    + TM.get_models_from_module(models.detection)
-    + TM.get_models_from_module(models.quantization)
-    + TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video)
-    + TM.get_models_from_module(models.optical_flow),
+    TM.list_model_fns(models)
+    + TM.list_model_fns(models.detection)
+    + TM.list_model_fns(models.quantization)
+    + TM.list_model_fns(models.segmentation)
+    + TM.list_model_fns(models.video)
+    + TM.list_model_fns(models.optical_flow),
 )
 @run_if_test_with_extended
 def test_schema_meta_validation(model_fn):
@@ -112,7 +140,7 @@ def test_schema_meta_validation(model_fn):
     module_name = model_fn.__module__.split(".")[-2]
     expected_fields = defaults["all"] | defaults[module_name]
 
-    weights_enum = _get_model_weights(model_fn)
+    weights_enum = get_model_weights(model_fn)
     if len(weights_enum) == 0:
         pytest.skip(f"Model '{model_name}' doesn't have any pre-trained weights.")
 
@@ -153,17 +181,17 @@ def test_schema_meta_validation(model_fn):
 
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(models)
-    + TM.get_models_from_module(models.detection)
-    + TM.get_models_from_module(models.quantization)
-    + TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video)
-    + TM.get_models_from_module(models.optical_flow),
+    TM.list_model_fns(models)
+    + TM.list_model_fns(models.detection)
+    + TM.list_model_fns(models.quantization)
+    + TM.list_model_fns(models.segmentation)
+    + TM.list_model_fns(models.video)
+    + TM.list_model_fns(models.optical_flow),
 )
 @run_if_test_with_extended
 def test_transforms_jit(model_fn):
     model_name = model_fn.__name__
-    weights_enum = _get_model_weights(model_fn)
+    weights_enum = get_model_weights(model_fn)
     if len(weights_enum) == 0:
         pytest.skip(f"Model '{model_name}' doesn't have any pre-trained weights.")
 

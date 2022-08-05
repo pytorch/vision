@@ -1,8 +1,6 @@
 name: Unit-tests on M1
 on:
   pull_request:
-    paths:
-      - .github/workflows/test-m1.yml
   push:
     branches:
       - nightly
