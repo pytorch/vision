@@ -24,7 +24,7 @@ try:
 except ImportError:
     stats = None
 
-from common_utils import cycle_over, int_dtypes, float_dtypes, assert_equal
+from common_utils import assert_equal, cycle_over, float_dtypes, int_dtypes
 
 
 GRACE_HOPPER = get_file_path_2(
@@ -1672,7 +1672,7 @@ def test_random_crop():
 
     t = transforms.RandomCrop(48)
     img = torch.ones(3, 32, 32)
-    with pytest.raises(ValueError, match=r"Required crop size .+ is larger then input image size .+"):
+    with pytest.raises(ValueError, match=r"Required crop size .+ is larger than input image size .+"):
         t(img)
 
 

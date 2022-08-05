@@ -8,10 +8,10 @@ from torch import Tensor
 from torch.nn import functional as F
 
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..googlenet import GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, GoogLeNet_Weights
+from .._utils import _ovewrite_named_param, handle_legacy_interface
+from ..googlenet import BasicConv2d, GoogLeNet, GoogLeNet_Weights, GoogLeNetOutputs, Inception, InceptionAux
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 

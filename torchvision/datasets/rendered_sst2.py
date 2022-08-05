@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Any, Tuple, Callable, Optional
+from typing import Any, Callable, Optional, Tuple
 
 import PIL.Image
 
 from .folder import make_dataset
-from .utils import verify_str_arg, download_and_extract_archive
+from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 

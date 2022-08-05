@@ -4,7 +4,7 @@ Implements the Generalized R-CNN framework
 
 import warnings
 from collections import OrderedDict
-from typing import Tuple, List, Dict, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 from torch import nn, Tensor
