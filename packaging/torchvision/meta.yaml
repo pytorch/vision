@@ -32,6 +32,7 @@ requirements:
     - pytorch-mutex 1.0 {{ build_variant }}  # [not osx ]
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT', '') }}
+    {{ environ.get('CONDA_PYTORCH_CUDA_CONSTRAINT', '')}}
 
   {% if build_variant == 'cpu' %}
   run_constrained:
