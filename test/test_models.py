@@ -594,6 +594,14 @@ def test_vitc_models(model_fn, dev):
     test_classification_model(model_fn, dev)
 
 
+@pytest.mark.parametrize(
+    "model_fn", [models.max_vit_T_224, models.max_vit_S_224, models.max_vit_B_224, models.max_vit_L_224]
+)
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_max_vit(model_fn, dev):
+    test_classification_model(model_fn, dev)
+
+
 @pytest.mark.parametrize("model_fn", list_model_fns(models))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_classification_model(model_fn, dev):

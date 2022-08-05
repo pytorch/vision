@@ -1,15 +1,12 @@
 import math
-from typing import Any, Callable, List, Optional, OrderedDict, Sequence, Tuple
+from typing import Any, Callable, List, OrderedDict, Sequence, Tuple
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
-from torchvision.models._api import register_model, WeightsEnum
-from torchvision.models._utils import _ovewrite_named_param
 from torchvision.ops.misc import Conv2dNormActivation, SqueezeExcitation
 from torchvision.ops.stochastic_depth import StochasticDepth
-from torchvision.utils import _log_api_usage_once
 
 
 def get_relative_position_index(height: int, width: int) -> torch.Tensor:
@@ -21,6 +18,20 @@ def get_relative_position_index(height: int, width: int) -> torch.Tensor:
     relative_coords[:, :, 1] += width - 1
     relative_coords[:, :, 0] *= 2 * width - 1
     return relative_coords.sum(-1)
+
+
+class GeluWrapper(nn.Module):
+    """
+    Gelu wrapper to make it compatible with `ConvNormActivation2D` which passed inplace=True
+    to the activation function construction.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__()
+        self._op = F.gelu
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self._op(x)
 
 
 class MBConv(nn.Module):
@@ -54,28 +65,20 @@ class MBConv(nn.Module):
         _layers = OrderedDict()
         _layers["pre_norm"] = normalization_fn(in_channels)
         _layers["conv_a"] = Conv2dNormActivation(
-            in_channels,
-            mid_channels,
-            kernel_size=1,
-            stride=1,
-            padding=0,
-            activation_layer=activation_fn,
-            norm_layer=normalization_fn,
-            inplace=None,
+            in_channels, mid_channels, 1, 1, 0, activation_layer=activation_fn, norm_layer=normalization_fn
         )
         _layers["conv_b"] = Conv2dNormActivation(
             mid_channels,
             mid_channels,
-            kernel_size=3,
-            stride=stride,
-            padding=1,
+            3,
+            stride,
+            1,
             activation_layer=activation_fn,
             norm_layer=normalization_fn,
             groups=mid_channels,
-            inplace=None,
         )
         _layers["squeeze_excitation"] = SqueezeExcitation(mid_channels, sqz_channels)
-        _layers["conv_c"] = nn.Conv2d(in_channels=mid_channels, out_channels=out_channels, kernel_size=1, bias=True)
+        _layers["conv_c"] = nn.Conv2d(in_channels=mid_channels, out_channels=out_channels, kernel_size=1, bias=False)
 
         self.layers = nn.Sequential(_layers)
 
@@ -113,13 +116,14 @@ class RelativePositionalMultiHeadAttention(nn.Module):
         # initialize with truncated normal the bias
         self.positional_bias.data.normal_(mean=0, std=0.02)
 
-    def get_relative_positional_bias(self) -> torch.Tensor:
+    def _get_relative_positional_bias(self) -> torch.Tensor:
         bias_index = self.relative_position_index.view(-1)  # type: ignore
         relative_bias = self.positional_bias[bias_index].view(self.max_seq_len, self.max_seq_len, -1)  # type: ignore
         relative_bias = relative_bias.permute(2, 0, 1).contiguous()
         return relative_bias.unsqueeze(0)
 
     def forward(self, x: Tensor) -> Tensor:
+        # X, Y and stand for X-axis group dim, Y-axis group dim
         B, G, P, D = x.shape
         H, DH = self.n_heads, self.head_dim
 
@@ -131,8 +135,9 @@ class RelativePositionalMultiHeadAttention(nn.Module):
         v = v.reshape(B, G, P, H, DH).permute(0, 1, 3, 2, 4)
 
         k = k * self.scale_factor
+        # X, Y and stand for X-axis group dim, Y-axis group dim
         dot_prod = torch.einsum("B G H I D, B G H J D -> B G H I J", q, k)
-        pos_bias = self.get_relative_positional_bias()
+        pos_bias = self._get_relative_positional_bias()
 
         dot_prod = F.softmax(dot_prod + pos_bias, dim=-1)
 
@@ -199,6 +204,34 @@ class WindowDepartition(nn.Module):
         return x
 
 
+class MLP(nn.Module):
+    def __init__(
+        self,
+        in_dim: int,
+        hidden_dim: int,
+        activation_fn: Callable[..., nn.Module],
+        normalization_fn: Callable[..., nn.Module],
+        dropout: float,
+    ) -> None:
+        super().__init__()
+        self.in_dim = in_dim
+        self.hidden_dim = hidden_dim
+        self.activation_fn = activation_fn
+        self.normalization_fn = normalization_fn
+        self.dropout = dropout
+
+        self.layers = nn.Sequential(
+            self.normalization_fn(in_dim),
+            nn.Linear(in_dim, hidden_dim),
+            self.activation_fn(),
+            nn.Linear(hidden_dim, in_dim),
+            nn.Dropout(dropout),
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        return x + self.layers(x)
+
+
 class PartitionAttentionLayer(nn.Module):
     def __init__(
         self,
@@ -249,14 +282,7 @@ class PartitionAttentionLayer(nn.Module):
             nn.Dropout(attn_dropout),
         )
 
-        # pre-normalization similar to transformer layers
-        self.mlp_layer = nn.Sequential(
-            nn.LayerNorm(in_channels),
-            nn.Linear(in_channels, in_channels * mlp_ratio),
-            activation_fn(),
-            nn.Linear(in_channels * mlp_ratio, in_channels),
-            nn.Dropout(mlp_dropout),
-        )
+        self.mlp_layer = MLP(in_channels, in_channels * mlp_ratio, activation_fn, normalization_fn, mlp_dropout)
 
         # layer scale factors
         self.attn_layer_scale = nn.parameter.Parameter(torch.ones(in_channels) * 1e-6)
@@ -264,8 +290,8 @@ class PartitionAttentionLayer(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.partition_op(x)
-        x = x + self.attn_layer(x) * self.attn_layer_scale
-        x = x + self.mlp_layer(x) * self.mlp_layer_scale
+        x = self.attn_layer(x) * self.attn_layer_scale
+        x = self.mlp_layer(x) * self.mlp_layer_scale
         x = self.departition_op(x)
         return x
 
@@ -360,8 +386,9 @@ class MaxVitBlock(nn.Module):
         p_stochastic: List[float],
     ) -> None:
         super().__init__()
-        if not len(p_stochastic) == n_layers:
-            raise ValueError(f"p_stochastic must have length n_layers={n_layers}, got p_stochastic={p_stochastic}.")
+        assert (
+            len(p_stochastic) == n_layers
+        ), f"p_stochastic must have length n_layers={n_layers}, got p_stochastic={p_stochastic}."
 
         self.layers = nn.ModuleList()
         # account for the first stride of the first layer
@@ -397,12 +424,11 @@ class MaxVitBlock(nn.Module):
 class MaxVit(nn.Module):
     def __init__(
         self,
-        # input size parameters
-        input_size: Tuple[int, int],
         # stem and task parameters
         input_channels: int,
         stem_channels: int,
-        num_classes: int,
+        input_size: Tuple[int, int],
+        out_classes: int,
         # block parameters
         block_channels: List[int],
         block_layers: List[int],
@@ -424,7 +450,6 @@ class MaxVit(nn.Module):
         partition_size: int,
     ) -> None:
         super().__init__()
-        _log_api_usage_once(self)
 
         # stem
         self.stem = nn.Sequential(
@@ -475,7 +500,7 @@ class MaxVit(nn.Module):
         self.classifier = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(),
-            nn.Linear(block_channels[-1], num_classes, bias=False),
+            nn.Linear(block_channels[-1], out_classes, bias=False),
         )
 
     def forward(self, x: Tensor) -> Tensor:
@@ -486,87 +511,85 @@ class MaxVit(nn.Module):
         return x
 
 
-def _maxvit(
-    # stem and task parameters
-    stem_channels: int,
-    num_classes: int,
-    # block parameters
-    block_channels: List[int],
-    block_layers: List[int],
-    stochastic_depth_prob: float,
-    # conv parameters
-    squeeze_ratio: float,
-    expansion_ratio: float,
-    # conv + transformer parameters
-    # normalization_fn is applied only to the conv layers
-    # activation_fn is applied both to conv and transformer layers
-    normalization_fn: Callable[..., nn.Module],
-    activation_fn: Callable[..., nn.Module],
-    # transformer parameters
-    head_dim: int,
-    mlp_ratio: int,
-    mlp_dropout: float,
-    attn_dropout: float,
-    # partitioning parameters
-    partition_size: int,
-    # Weights API
-    weights: Optional[WeightsEnum],
-    progress: bool,
-    # kwargs,
-    **kwargs,
-) -> MaxVit:
-    if weights is not None:
-        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
-        assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
-        _ovewrite_named_param(kwargs, "input_size", weights.meta["min_size"][0])
-        _ovewrite_named_param(kwargs, "input_channels", weights.meta["input_channels"])
-
-    input_size = kwargs.pop("input_size", (224, 224))
-    input_channels = kwargs.pop("input_channels", 3)
-
-    model = MaxVit(
-        input_channels=input_channels,
-        stem_channels=stem_channels,
-        num_classes=num_classes,
-        block_channels=block_channels,
-        block_layers=block_layers,
-        stochastic_depth_prob=stochastic_depth_prob,
-        squeeze_ratio=squeeze_ratio,
-        expansion_ratio=expansion_ratio,
-        normalization_fn=normalization_fn,
-        activation_fn=activation_fn,
-        head_dim=head_dim,
-        mlp_ratio=mlp_ratio,
-        mlp_dropout=mlp_dropout,
-        attn_dropout=attn_dropout,
-        partition_size=partition_size,
-        input_size=input_size,
-        **kwargs,
-    )
-
-    if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
-
-    return model
-
-
-@register_model(name="maxvit_t")
-def maxvit_t(*, weights: Optional[WeightsEnum] = None, progress: bool = True, **kwargs: Any) -> MaxVit:
-    return _maxvit(
+def max_vit_T_224(num_classes: int) -> MaxVit:
+    return MaxVit(
+        input_channels=3,
         stem_channels=64,
+        input_size=(224, 224),
+        out_classes=num_classes,
         block_channels=[64, 128, 256, 512],
         block_layers=[2, 2, 5, 2],
         stochastic_depth_prob=0.2,
         squeeze_ratio=0.25,
         expansion_ratio=4.0,
         normalization_fn=nn.BatchNorm2d,
-        activation_fn=nn.GELU,
+        activation_fn=GeluWrapper,
         head_dim=32,
         mlp_ratio=2,
         mlp_dropout=0.0,
         attn_dropout=0.0,
         partition_size=7,
-        weights=weights,
-        progress=progress,
-        **kwargs,
+    )
+
+
+def max_vit_S_224(num_classes: int) -> MaxVit:
+    return MaxVit(
+        input_channels=3,
+        stem_channels=64,
+        input_size=(224, 224),
+        out_classes=num_classes,
+        block_channels=[96, 192, 384, 768],
+        block_layers=[2, 2, 5, 2],
+        stochastic_depth_prob=0.3,
+        squeeze_ratio=0.25,
+        expansion_ratio=4.0,
+        normalization_fn=nn.BatchNorm2d,
+        activation_fn=GeluWrapper,
+        head_dim=32,
+        mlp_ratio=2,
+        mlp_dropout=0.0,
+        attn_dropout=0.0,
+        partition_size=7,
+    )
+
+
+def max_vit_B_224(num_classes: int) -> MaxVit:
+    return MaxVit(
+        input_channels=3,
+        stem_channels=64,
+        input_size=(224, 224),
+        out_classes=num_classes,
+        block_channels=[96, 192, 384, 768],
+        block_layers=[2, 6, 14, 2],
+        stochastic_depth_prob=0.4,
+        squeeze_ratio=0.25,
+        expansion_ratio=4.0,
+        normalization_fn=nn.BatchNorm2d,
+        activation_fn=GeluWrapper,
+        head_dim=32,
+        mlp_ratio=2,
+        mlp_dropout=0.0,
+        attn_dropout=0.0,
+        partition_size=7,
+    )
+
+
+def max_vit_L_224(num_classes: int) -> MaxVit:
+    return MaxVit(
+        input_channels=3,
+        stem_channels=128,
+        input_size=(224, 224),
+        out_classes=num_classes,
+        block_channels=[128, 256, 512, 1024],
+        block_layers=[2, 6, 14, 2],
+        stochastic_depth_prob=0.6,
+        squeeze_ratio=0.25,
+        expansion_ratio=4.0,
+        normalization_fn=nn.BatchNorm2d,
+        activation_fn=GeluWrapper,
+        head_dim=32,
+        mlp_ratio=2,
+        mlp_dropout=0.0,
+        attn_dropout=0.0,
+        partition_size=7,
     )
