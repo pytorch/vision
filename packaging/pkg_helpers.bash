@@ -257,12 +257,14 @@ setup_conda_pytorch_constraint() {
 # Translate CUDA_VERSION into CUDA_CUDATOOLKIT_CONSTRAINT
 setup_conda_cudatoolkit_constraint() {
   export CONDA_BUILD_VARIANT="cuda"
+  export CONDA_PYTORCH_CUDA_CONSTRAINT=""
   if [[ "$(uname)" == Darwin ]]; then
     export CONDA_BUILD_VARIANT="cpu"
   else
     case "$CU_VERSION" in
       cu116)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cuda >=11.6,<11.7 # [not osx]"
+        export CONDA_PYTORCH_CUDA_CONSTRAINT="- atalman::pytorch-cuda=1.0=cuda11.6"
         ;;
       cu113)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.3,<11.4 # [not osx]"
