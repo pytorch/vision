@@ -447,7 +447,7 @@ class PositionalEncodingSine(nn.Module):
         pe[2::4, :, :] = torch.sin(y_positions * div_term)
         pe[3::4, :, :] = torch.cos(y_positions * div_term)
         pe = pe.unsqueeze(0)
-        return x + pe[:, :, :h, :w]
+        return x + pe[:, :, :h, :w].to(x.device)
 
         # return x + positional_embeddings
 

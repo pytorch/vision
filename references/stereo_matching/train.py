@@ -5,7 +5,7 @@ import warnings
 from math import ceil
 from pathlib import Path
 from typing import Callable, List, Union
-
+from torch import nn
 import numpy as np
 import torch
 import torchvision.models.optical_flow
@@ -87,7 +87,7 @@ class ArrayScheduler(_LRScheduler):
 
 def get_dataset_by_name(name: str, root: str, transforms: Callable):
     """Helper function to return a speciffic dataset configuration given it's name"""
-    if name == "cre-synthetic":
+    if name == "crestereo":
         return CREStereo(root=root, transforms=transforms)
     elif name == "instereo":
         return InStereo2k(root=root, transforms=transforms)
@@ -101,13 +101,11 @@ def get_dataset_by_name(name: str, root: str, transforms: Callable):
         return SceneFlowStereo(root=root, transforms=transforms, split="Driving", pass_name="both")
     elif name == "fallingthings":
         return FallingThingsStereo(root=root, transforms=transforms, split=["both"])
-    elif name == "middlebury-train":
-        return Middlebury2014Stereo(root=root, transforms=transforms, split="train")
     elif name == "eth3d-train":
         return ETH3DStereo(root=root, transforms=transforms, split="train")
     elif name == "instereo-2k":
         return InStereo2k(root=root, transforms=transforms, split="train")
-    elif name == "middlebury-2014-train":
+    elif name == "middlebury2014-train":
         return Middlebury2014Stereo(root=root, transforms=transforms, split="train", calibration="perfect")
     else:
         raise ValueError(f"Unknown dataset {name}")
@@ -184,7 +182,7 @@ def _evaluate(model, args, val_dataset, *, padder_mode, iterations=None, batch_s
 
         if blob[0].dim() == 3:
             # input is not batched so we add an extra dim for consistency
-            blob = [x[None, :, :, :] if x is not None else None for x in blob]
+            blob = [x.unsqueeze(0) if x is not None else None for x in blob]
 
         image_left, image_right, disp_gt = blob[:3]
         valid_disp_mask = None if len(blob) == 3 else blob[-1]
@@ -263,18 +261,17 @@ def evaluate(model, args):
                 f"Batch-size={args.batch_size} was passed. For technical reasons, evaluating on Middlebury can only be done with a batch-size of 1."
             )
 
-            val_dataset = get_dataset_by_name(root=args.dataset_root, name=name, transforms=preprocessing)
-            _evaluate(
-                model,
-                args,
-                val_dataset,
-                iterations=args.recurrent_updates * 2,
-                padder_mode="kitti",
-                header="Kitti val",
-                batch_size=1,
-            )
-        else:
-            warnings.warn(f"Can't validate on {val_dataset}, skipping.")
+        val_dataset = get_dataset_by_name(root=args.dataset_root, name=name, transforms=preprocessing)
+        _evaluate(
+            model,
+            args,
+            val_dataset,
+            iterations=args.recurrent_updates * 2,
+            padder_mode="kitti",
+            header="Kitti val",
+            batch_size=1,
+        )
+        
 
 
 def run(model, optimizer, scheduler, train_loader, logger, args):
@@ -336,7 +333,10 @@ def run(model, optimizer, scheduler, train_loader, logger, args):
             evaluate(model, args)
             model.train()
             if args.freeze_batch_norm:
-                utils.freeze_batch_norm(model_without_ddp)
+                if isinstance(model, nn.parallel.DistributedDataParallel):
+                    utils.freeze_batch_norm(model.module)
+                else:
+                    utils.freeze_batch_norm(model)
 
 
 def main(args):
@@ -460,5 +460,6 @@ if __name__ == "__main__":
         config = yaml.safe_load(f)
     config_name = construct_experiment_name(config)
     config = argparse.Namespace(**config)
+    config.experiment_name = args.config.split(os.sep)[-1].replace(".yml", "")
     print(config)
     main(config)

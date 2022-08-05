@@ -27,7 +27,7 @@ save_freq: 10_000
 
 # optimizer
 lr: 4.0e-4
-wd: 4.0e-5
+wd: 0.0e-5
 clip_grad_norm: 1.0e+0
 
 # learning rate scheduler

@@ -7,7 +7,7 @@ resume: null
 # train dataset parameters
 dataset_root: "/fsx/users/teodorponcu/datasets"
 train_dataset: ["crestereo"]
-dataset_steps: [200_000, 150_000]
+dataset_steps: [300_000]
 
 # dataloader parameters
 workers: 10
@@ -21,14 +21,14 @@ schedule_shuffle: False
 batch_size: 2
 
 # validation datasets
-valid_dataset: "middlebury2014-train"
+valid_dataset: ["middlebury2014-train"]
 valid_freq: 10_000
 save_freq: 10_000
 
 # optimizer
 lr: 4.0e-4
-wd: 4.0e-5
-clip_grad_norm: 1.0e+0
+wd: 0.0e-5
+clip_grad_norm: 1.0e+1
 
 # learning rate scheduler
 warm_up_steps: 6_000
@@ -47,7 +47,7 @@ gamma: 0.8
 # distributed parameters
 dist_url: "env://"
 world_size: 8
-device: "cpu"
+device: "cuda"
 
 # deterministic behaviour
 seed: 0
