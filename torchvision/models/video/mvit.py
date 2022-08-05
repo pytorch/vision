@@ -19,7 +19,111 @@ __all__ = [
     "MViT",
     "MViT_V1_B_Weights",
     "mvit_v1_b",
+    "MViT_V2_S_Weights",
+    "mvit_v2_s",
 ]
+
+
+# Reference: https://github.com/facebookresearch/SlowFast/commit/1aebd71a2efad823d52b827a3deaf15a56cf4932#
+
+def get_rel_pos(rel_pos: torch.Tensor, d: int) -> torch.Tensor:
+    if rel_pos.shape[0] == d:
+        return rel_pos
+
+    return (
+        nn.functional.interpolate(
+            rel_pos.permute(1, 0).unsqueeze(0),
+            size=d,
+            mode="linear",
+        )
+        .squeeze(0)
+        .permute(1, 0)
+    )
+
+
+def cal_rel_pos_spatial(
+    attn: torch.Tensor,
+    q: torch.Tensor,
+    q_shape: Tuple[int, int, int],
+    k_shape: Tuple[int, int, int],
+    rel_pos_h: torch.Tensor,
+    rel_pos_w: torch.Tensor,
+) -> torch.Tensor:
+    q_t, q_h, q_w = q_shape
+    k_t, k_h, k_w = k_shape
+    dh = int(2 * max(q_h, k_h) - 1)
+    dw = int(2 * max(q_w, k_w) - 1)
+
+    # Scale up rel pos if shapes for q and k are different.
+    q_h_ratio = max(k_h / q_h, 1.0)
+    k_h_ratio = max(q_h / k_h, 1.0)
+    dist_h = torch.arange(q_h)[:, None] * q_h_ratio - torch.arange(k_h)[None, :] * k_h_ratio
+    dist_h += (k_h - 1) * k_h_ratio
+    q_w_ratio = max(k_w / q_w, 1.0)
+    k_w_ratio = max(q_w / k_w, 1.0)
+    dist_w = torch.arange(q_w)[:, None] * q_w_ratio - torch.arange(k_w)[None, :] * k_w_ratio
+    dist_w += (k_w - 1) * k_w_ratio
+
+    # Intepolate rel pos if needed.
+    rel_pos_h = get_rel_pos(rel_pos_h, dh)
+    rel_pos_w = get_rel_pos(rel_pos_w, dw)
+    Rh = rel_pos_h[dist_h.long()]
+    Rw = rel_pos_w[dist_w.long()]
+
+    B, n_head, q_N, dim = q.shape
+
+    r_q = q[:, :, 1:].reshape(B, n_head, q_t, q_h, q_w, dim)
+    rel_h_q = torch.einsum("bythwc,hkc->bythwk", r_q, Rh)  # [B, H, q_t, qh, qw, k_h]
+    rel_w_q = torch.einsum("bythwc,wkc->bythwk", r_q, Rw)  # [B, H, q_t, qh, qw, k_w]
+
+    attn[:, :, 1:, 1:] = (
+        attn[:, :, 1:, 1:].view(B, -1, q_t, q_h, q_w, k_t, k_h, k_w)
+        + rel_h_q[:, :, :, :, :, None, :, None]
+        + rel_w_q[:, :, :, :, :, None, None, :]
+    ).view(B, -1, q_t * q_h * q_w, k_t * k_h * k_w)
+
+    return attn
+
+
+def cal_rel_pos_temporal(
+    attn: torch.Tensor,
+    q: torch.Tensor,
+    q_shape: Tuple[int, int, int],
+    k_shape: Tuple[int, int, int],
+    rel_pos_t: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Temporal Relative Positional Embeddings.
+    """
+    q_t, q_h, q_w = q_shape
+    k_t, k_h, k_w = k_shape
+    dt = int(2 * max(q_t, k_t) - 1)
+    # Intepolate rel pos if needed.
+    rel_pos_t = get_rel_pos(rel_pos_t, dt)
+
+    # Scale up rel pos if shapes for q and k are different.
+    q_t_ratio = max(k_t / q_t, 1.0)
+    k_t_ratio = max(q_t / k_t, 1.0)
+    dist_t = torch.arange(q_t)[:, None] * q_t_ratio - torch.arange(k_t)[None, :] * k_t_ratio
+    dist_t += (k_t - 1) * k_t_ratio
+    Rt = rel_pos_t[dist_t.long()]
+
+    B, n_head, q_N, dim = q.shape
+
+    r_q = q[:, :, 1:].reshape(B, n_head, q_t, q_h, q_w, dim)
+    # [B, H, q_t, q_h, q_w, dim] -> [q_t, B, H, q_h, q_w, dim] -> [q_t, B*H*q_h*q_w, dim]
+    r_q = r_q.permute(2, 0, 1, 3, 4, 5).reshape(q_t, B * n_head * q_h * q_w, dim)
+
+    # [q_t, B*H*q_h*q_w, dim] * [q_t, dim, k_t] = [q_t, B*H*q_h*q_w, k_t] -> [B*H*q_h*q_w, q_t, k_t]
+    rel = torch.matmul(r_q, Rt.transpose(1, 2)).transpose(0, 1)
+    # [B*H*q_h*q_w, q_t, k_t] -> [B, H, q_t, q_h, q_w, k_t]
+    rel = rel.view(B, n_head, q_h, q_w, q_t, k_t).permute(0, 1, 4, 2, 3, 5)
+
+    attn[:, :, 1:, 1:] = (
+        attn[:, :, 1:, 1:].view(B, -1, q_t, q_h, q_w, k_t, k_h, k_w) + rel[:, :, :, :, :, :, None, None]
+    ).view(B, -1, q_t * q_h * q_w, k_t * k_h * k_w)
+
+    return attn
 
 
 # TODO: Consider handle 2d input if Temporal is 1
@@ -106,28 +210,37 @@ class Pool(nn.Module):
         return x, (T, H, W)
 
 
+torch.fx.wrap("get_rel_pos")
+torch.fx.wrap("cal_rel_pos_spatial")
+torch.fx.wrap("cal_rel_pos_temporal")
+
+
 class MultiscaleAttention(nn.Module):
     def __init__(
         self,
         embed_dim: int,
+        dim_out: int,
+        input_size: Tuple[int, int, int],  # TODO: switch to List
         num_heads: int,
         kernel_q: List[int],
         kernel_kv: List[int],
         stride_q: List[int],
         stride_kv: List[int],
         residual_pool: bool,
+        rel_pos: bool,
         dropout: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ) -> None:
         super().__init__()
         self.embed_dim = embed_dim
+        self.dim_out = dim_out
         self.num_heads = num_heads
-        self.head_dim = embed_dim // num_heads
+        self.head_dim = dim_out // num_heads
         self.scaler = 1.0 / math.sqrt(self.head_dim)
         self.residual_pool = residual_pool
 
-        self.qkv = nn.Linear(embed_dim, 3 * embed_dim)
-        layers: List[nn.Module] = [nn.Linear(embed_dim, embed_dim)]
+        self.qkv = nn.Linear(embed_dim, 3 * dim_out)
+        layers: List[nn.Module] = [nn.Linear(dim_out, dim_out)]
         if dropout > 0.0:
             layers.append(nn.Dropout(dropout, inplace=True))
         self.project = nn.Sequential(*layers)
@@ -177,24 +290,59 @@ class MultiscaleAttention(nn.Module):
                 norm_layer(self.head_dim),
             )
 
+        self.rel_pos_h: Optional[nn.Module] = None
+        self.rel_pos_w: Optional[nn.Module] = None
+        self.rel_pos_t: Optional[nn.Module] = None
+        if rel_pos:
+            assert input_size[1] == input_size[2]  # TODO: remove this limitation
+            size = input_size[1]
+            q_size = size // stride_q[1] if len(stride_q) > 0 else size
+            kv_size = size // stride_kv[1] if len(stride_kv) > 0 else size
+            rel_sp_dim = 2 * max(q_size, kv_size) - 1
+            self.rel_pos_h = nn.Parameter(torch.zeros(rel_sp_dim, self.head_dim))
+            self.rel_pos_w = nn.Parameter(torch.zeros(rel_sp_dim, self.head_dim))
+            self.rel_pos_t = nn.Parameter(torch.zeros(2 * input_size[0] - 1, self.head_dim))
+            nn.init.trunc_normal_(self.rel_pos_h, std=0.02)
+            nn.init.trunc_normal_(self.rel_pos_w, std=0.02)
+            nn.init.trunc_normal_(self.rel_pos_t, std=0.02)
+
     def forward(self, x: torch.Tensor, thw: Tuple[int, int, int]) -> Tuple[torch.Tensor, Tuple[int, int, int]]:
         B, N, C = x.shape
         q, k, v = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).transpose(1, 3).unbind(dim=2)
 
         if self.pool_k is not None:
-            k = self.pool_k(k, thw)[0]
+            k, k_shape = self.pool_k(k, thw)
+        else:
+            k_shape = thw
         if self.pool_v is not None:
             v = self.pool_v(v, thw)[0]
         if self.pool_q is not None:
             q, thw = self.pool_q(q, thw)
 
         attn = torch.matmul(self.scaler * q, k.transpose(2, 3))
+        if self.rel_pos_h is not None and self.rel_pos_w is not None:
+            attn = cal_rel_pos_spatial(
+                attn,
+                q,
+                thw,
+                k_shape,
+                self.rel_pos_h,
+                self.rel_pos_w,
+            )
+        if self.rel_pos_t is not None:
+            attn = cal_rel_pos_temporal(
+                attn,
+                q,
+                thw,
+                k_shape,
+                self.rel_pos_t,
+            )
         attn = attn.softmax(dim=-1)
 
         x = torch.matmul(attn, v)
         if self.residual_pool:
-            x.add_(q)
-        x = x.transpose(1, 2).reshape(B, -1, C)
+            x.add_(q)  # TODO: check x[:, :, 1:, :] += q[:, :, 1:, :]
+        x = x.transpose(1, 2).reshape(B, -1, self.dim_out)
         x = self.project(x)
 
         return x, thw
@@ -203,13 +351,17 @@ class MultiscaleAttention(nn.Module):
 class MultiscaleBlock(nn.Module):
     def __init__(
         self,
+        input_size: Tuple[int, int, int],  # TODO: switch to List
         cnf: MSBlockConfig,
         residual_pool: bool,
+        rel_pos: bool,
+        dim_mul_in_att: bool,
         dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ) -> None:
         super().__init__()
+        self.dim_mul_in_att = dim_mul_in_att
 
         self.pool_skip: Optional[nn.Module] = None
         if _prod(cnf.stride_q) > 1:
@@ -219,24 +371,29 @@ class MultiscaleBlock(nn.Module):
                 nn.MaxPool3d(kernel_skip, stride=cnf.stride_q, padding=padding_skip), None  # type: ignore[arg-type]
             )
 
+        att_dim = cnf.output_channels if dim_mul_in_att else cnf.input_channels
+
         self.norm1 = norm_layer(cnf.input_channels)
-        self.norm2 = norm_layer(cnf.input_channels)
+        self.norm2 = norm_layer(att_dim)
         self.needs_transposal = isinstance(self.norm1, nn.BatchNorm1d)
 
         self.attn = MultiscaleAttention(
             cnf.input_channels,
+            att_dim,
+            input_size,
             cnf.num_heads,
             kernel_q=cnf.kernel_q,
             kernel_kv=cnf.kernel_kv,
             stride_q=cnf.stride_q,
             stride_kv=cnf.stride_kv,
+            rel_pos=rel_pos,
             residual_pool=residual_pool,
             dropout=dropout,
             norm_layer=norm_layer,
         )
         self.mlp = MLP(
-            cnf.input_channels,
-            [4 * cnf.input_channels, cnf.output_channels],
+            att_dim,
+            [4 * att_dim, cnf.output_channels],
             activation_layer=nn.GELU,
             dropout=dropout,
             inplace=None,
@@ -249,36 +406,45 @@ class MultiscaleBlock(nn.Module):
             self.project = nn.Linear(cnf.input_channels, cnf.output_channels)
 
     def forward(self, x: torch.Tensor, thw: Tuple[int, int, int]) -> Tuple[torch.Tensor, Tuple[int, int, int]]:
+        x_norm1 = self.norm1(x.transpose(1, 2)).transpose(1, 2) if self.needs_transposal else self.norm1(x)
+        x_att, thw_new = self.attn(x_norm1, thw)
+        x = x if self.project is None or not self.dim_mul_in_att else self.project(x_norm1)
         x_skip = x if self.pool_skip is None else self.pool_skip(x, thw)[0]
+        x = x_skip + self.stochastic_depth(x_att)
 
-        x = self.norm1(x.transpose(1, 2)).transpose(1, 2) if self.needs_transposal else self.norm1(x)
-        x, thw = self.attn(x, thw)
-        x = x_skip + self.stochastic_depth(x)
+        x_norm2 = self.norm2(x.transpose(1, 2)).transpose(1, 2) if self.needs_transposal else self.norm2(x)
+        x_proj = x if self.project is None or self.dim_mul_in_att else self.project(x_norm2)
 
-        x_norm = self.norm2(x.transpose(1, 2)).transpose(1, 2) if self.needs_transposal else self.norm2(x)
-        x_proj = x if self.project is None else self.project(x_norm)
-
-        return x_proj + self.stochastic_depth(self.mlp(x_norm)), thw
+        return x_proj + self.stochastic_depth(self.mlp(x_norm2)), thw_new
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, embed_size: int, spatial_size: Tuple[int, int], temporal_size: int) -> None:
+    def __init__(self, embed_size: int, spatial_size: Tuple[int, int], temporal_size: int, rel_pos: bool) -> None:
         super().__init__()
         self.spatial_size = spatial_size
         self.temporal_size = temporal_size
 
         self.class_token = nn.Parameter(torch.zeros(embed_size))
-        self.spatial_pos = nn.Parameter(torch.zeros(self.spatial_size[0] * self.spatial_size[1], embed_size))
-        self.temporal_pos = nn.Parameter(torch.zeros(self.temporal_size, embed_size))
-        self.class_pos = nn.Parameter(torch.zeros(embed_size))
+        self.spatial_pos: Optional[nn.Parameter] = None
+        self.temporal_pos: Optional[nn.Parameter] = None
+        self.class_pos: Optional[nn.Parameter] = None
+        if not rel_pos:
+            self.spatial_pos = nn.Parameter(torch.zeros(self.spatial_size[0] * self.spatial_size[1], embed_size))
+            self.temporal_pos = nn.Parameter(torch.zeros(self.temporal_size, embed_size))
+            self.class_pos = nn.Parameter(torch.zeros(embed_size))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        hw_size, embed_size = self.spatial_pos.shape
-        pos_embedding = torch.repeat_interleave(self.temporal_pos, hw_size, dim=0)
-        pos_embedding.add_(self.spatial_pos.unsqueeze(0).expand(self.temporal_size, -1, -1).reshape(-1, embed_size))
-        pos_embedding = torch.cat((self.class_pos.unsqueeze(0), pos_embedding), dim=0).unsqueeze(0)
         class_token = self.class_token.expand(x.size(0), -1).unsqueeze(1)
-        return torch.cat((class_token, x), dim=1).add_(pos_embedding)
+        x = torch.cat((class_token, x), dim=1)
+
+        if self.spatial_pos is not None and self.temporal_pos is not None and self.class_pos is not None:
+            hw_size, embed_size = self.spatial_pos.shape
+            pos_embedding = torch.repeat_interleave(self.temporal_pos, hw_size, dim=0)
+            pos_embedding.add_(self.spatial_pos.unsqueeze(0).expand(self.temporal_size, -1, -1).reshape(-1, embed_size))
+            pos_embedding = torch.cat((self.class_pos.unsqueeze(0), pos_embedding), dim=0).unsqueeze(0)
+            x.add_(pos_embedding)
+
+        return x
 
 
 class MViT(nn.Module):
@@ -288,6 +454,8 @@ class MViT(nn.Module):
         temporal_size: int,
         block_setting: Sequence[MSBlockConfig],
         residual_pool: bool,
+        rel_pos: bool,
+        dim_mul_in_att: bool,
         dropout: float = 0.5,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
@@ -335,11 +503,14 @@ class MViT(nn.Module):
             padding=(1, 3, 3),
         )
 
+        input_size = [size // stride for size, stride in zip((temporal_size,) + spatial_size, self.conv_proj.stride)]
+
         # Spatio-Temporal Class Positional Encoding
         self.pos_encoding = PositionalEncoding(
             embed_size=block_setting[0].input_channels,
-            spatial_size=(spatial_size[0] // self.conv_proj.stride[1], spatial_size[1] // self.conv_proj.stride[2]),
-            temporal_size=temporal_size // self.conv_proj.stride[0],
+            spatial_size=tuple(input_size[1:]),
+            temporal_size=input_size[0],
+            rel_pos=rel_pos,
         )
 
         # Encoder module
@@ -350,13 +521,19 @@ class MViT(nn.Module):
 
             self.blocks.append(
                 block(
+                    input_size=input_size,
                     cnf=cnf,
                     residual_pool=residual_pool,
+                    rel_pos=rel_pos,
+                    dim_mul_in_att=dim_mul_in_att,
                     dropout=attention_dropout,
                     stochastic_depth_prob=sd_prob,
                     norm_layer=norm_layer,
                 )
             )
+
+            if len(cnf.stride_q) > 0:
+                input_size = [size // stride for size, stride in zip(input_size, cnf.stride_q)]
         self.norm = norm_layer(block_setting[-1].output_channels)
 
         # Classifier module
@@ -420,6 +597,8 @@ def _mvit(
         temporal_size=temporal_size,
         block_setting=block_setting,
         residual_pool=kwargs.pop("residual_pool", False),
+        rel_pos=kwargs.pop("rel_pos", False),
+        dim_mul_in_att=kwargs.pop("dim_mul_in_att", False),
         stochastic_depth_prob=stochastic_depth_prob,
         **kwargs,
     )
@@ -459,6 +638,10 @@ class MViT_V1_B_Weights(WeightsEnum):
         },
     )
     DEFAULT = KINETICS400_V1
+
+
+class MViT_V2_S_Weights(WeightsEnum):
+    pass
 
 
 @register_model()
@@ -548,6 +731,116 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
         temporal_size=16,
         block_setting=block_setting,
         residual_pool=False,
+        stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.2),
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+@register_model()
+def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
+    weights = MViT_V1_B_Weights.verify(weights)
+
+    config: Dict[str, List] = {
+        "num_heads": [1, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 8, 8],
+        "input_channels": [96, 96, 192, 192, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 768],
+        "output_channels": [96, 192, 192, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 768, 768],
+        "kernel_q": [
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+        ],
+        "kernel_kv": [
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+            [3, 3, 3],
+        ],
+        "stride_q": [
+            [1, 1, 1],
+            [1, 2, 2],
+            [1, 1, 1],
+            [1, 2, 2],
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 2, 2],
+            [1, 1, 1],
+        ],
+        "stride_kv": [
+            [1, 8, 8],
+            [1, 4, 4],
+            [1, 4, 4],
+            [1, 2, 2],
+            [1, 2, 2],
+            [1, 2, 2],
+            [1, 2, 2],
+            [1, 2, 2],
+            [1, 2, 2],
+            [1, 2, 2],
+            [1, 2, 2],
+            [1, 2, 2],
+            [1, 2, 2],
+            [1, 2, 2],
+            [1, 1, 1],
+            [1, 1, 1],
+        ],
+    }
+
+    block_setting = []
+    for i in range(len(config["num_heads"])):
+        block_setting.append(
+            MSBlockConfig(
+                num_heads=config["num_heads"][i],
+                input_channels=config["input_channels"][i],
+                output_channels=config["output_channels"][i],
+                kernel_q=config["kernel_q"][i],
+                kernel_kv=config["kernel_kv"][i],
+                stride_q=config["stride_q"][i],
+                stride_kv=config["stride_kv"][i],
+            )
+        )
+
+    return _mvit(
+        spatial_size=(224, 224),
+        temporal_size=16,
+        block_setting=block_setting,
+        residual_pool=True,
+        rel_pos=True,
+        dim_mul_in_att=True,
         stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.2),
         weights=weights,
         progress=progress,
