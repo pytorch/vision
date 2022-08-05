@@ -249,6 +249,11 @@ setup_conda_pytorch_constraint() {
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX}"
     export CONDA_PYTORCH_CONSTRAINT="- pytorch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX}"
   fi
+
+  if [[ "$CU_VERSION" == cu116 ]]; then
+    export CONDA_PYTORCH_BUILD_CONSTRAINT="${CONDA_PYTORCH_BUILD_CONSTRAINT} atalman::pytorch-cuda=1.0=cuda11.6"
+  fi
+
   if [[ "$OSTYPE" == msys && "$CU_VERSION" == cu92 ]]; then
     export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c defaults -c numba/label/dev"
   fi
