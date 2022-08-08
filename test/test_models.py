@@ -614,7 +614,7 @@ def test_classification_model(model_fn, dev):
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
-    _assert_expected(out.cpu(), model_name, prec=1e-5)
+    _assert_expected(out.cpu(), model_name, prec=1e-3)
     assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
