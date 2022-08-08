@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, Any, List, Optional
+from typing import Any, Callable, List, Optional
 
 import torch
 import torch.nn as nn
@@ -7,9 +7,9 @@ from torch import Tensor
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -276,6 +276,7 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x0_5(
     *, weights: Optional[ShuffleNet_V2_X0_5_Weights] = None, progress: bool = True, **kwargs: Any
@@ -306,6 +307,7 @@ def shufflenet_v2_x0_5(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x1_0(
     *, weights: Optional[ShuffleNet_V2_X1_0_Weights] = None, progress: bool = True, **kwargs: Any
@@ -336,6 +338,7 @@ def shufflenet_v2_x1_0(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x1_5(
     *, weights: Optional[ShuffleNet_V2_X1_5_Weights] = None, progress: bool = True, **kwargs: Any
@@ -366,6 +369,7 @@ def shufflenet_v2_x1_5(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x2_0(
     *, weights: Optional[ShuffleNet_V2_X2_0_Weights] = None, progress: bool = True, **kwargs: Any

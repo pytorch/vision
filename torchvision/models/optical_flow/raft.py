@@ -10,7 +10,7 @@ from torchvision.ops import Conv2dNormActivation
 
 from ...transforms._presets import OpticalFlow
 from ...utils import _log_api_usage_once
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._utils import handle_legacy_interface
 from ._utils import grid_sample, make_coords_grid, upsample_flow
 
@@ -116,7 +116,9 @@ class FeatureEncoder(nn.Module):
     It must downsample its input by 8.
     """
 
-    def __init__(self, *, block=ResidualBlock, layers=(64, 64, 96, 128, 256), norm_layer=nn.BatchNorm2d):
+    def __init__(
+        self, *, block=ResidualBlock, layers=(64, 64, 96, 128, 256), strides=(2, 1, 2, 2), norm_layer=nn.BatchNorm2d
+    ):
         super().__init__()
 
         if len(layers) != 5:
@@ -124,12 +126,12 @@ class FeatureEncoder(nn.Module):
 
         # See note in ResidualBlock for the reason behind bias=True
         self.convnormrelu = Conv2dNormActivation(
-            3, layers[0], norm_layer=norm_layer, kernel_size=7, stride=2, bias=True
+            3, layers[0], norm_layer=norm_layer, kernel_size=7, stride=strides[0], bias=True
         )
 
-        self.layer1 = self._make_2_blocks(block, layers[0], layers[1], norm_layer=norm_layer, first_stride=1)
-        self.layer2 = self._make_2_blocks(block, layers[1], layers[2], norm_layer=norm_layer, first_stride=2)
-        self.layer3 = self._make_2_blocks(block, layers[2], layers[3], norm_layer=norm_layer, first_stride=2)
+        self.layer1 = self._make_2_blocks(block, layers[0], layers[1], norm_layer=norm_layer, first_stride=strides[1])
+        self.layer2 = self._make_2_blocks(block, layers[1], layers[2], norm_layer=norm_layer, first_stride=strides[2])
+        self.layer3 = self._make_2_blocks(block, layers[2], layers[3], norm_layer=norm_layer, first_stride=strides[3])
 
         self.conv = nn.Conv2d(layers[3], layers[4], kernel_size=1)
 
@@ -798,6 +800,7 @@ def _raft(
     return model
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", Raft_Large_Weights.C_T_SKHT_V2))
 def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT model from
@@ -853,6 +856,7 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", Raft_Small_Weights.C_T_V2))
 def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT "small" model from

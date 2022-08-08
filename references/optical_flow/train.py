@@ -6,8 +6,8 @@ from pathlib import Path
 import torch
 import torchvision.models.optical_flow
 import utils
-from presets import OpticalFlowPresetTrain, OpticalFlowPresetEval
-from torchvision.datasets import KittiFlow, FlyingChairs, FlyingThings3D, Sintel, HD1K
+from presets import OpticalFlowPresetEval, OpticalFlowPresetTrain
+from torchvision.datasets import FlyingChairs, FlyingThings3D, HD1K, KittiFlow, Sintel
 
 
 def get_train_dataset(stage, dataset_root):
@@ -215,7 +215,7 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
-    model = torchvision.models.optical_flow.__dict__[args.model](weights=args.weights)
+    model = torchvision.models.get_model(args.model, weights=args.weights)
 
     if args.distributed:
         model = model.to(args.local_rank)

@@ -170,7 +170,7 @@ vf, af, info, meta = example_read_video(video)
 print(vf.size(), af.size())
 
 ####################################
-# 3. Building an example randomly sampled dataset (can be applied to training dataest of kinetics400)
+# 3. Building an example randomly sampled dataset (can be applied to training dataset of kinetics400)
 # -------------------------------------------------------------------------------------------------------
 # Cool, so now we can use the same principle to make the sample dataset.
 # We suggest trying out iterable dataset for this purpose.
