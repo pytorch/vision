@@ -706,7 +706,27 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
 
 @register_model()
 def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
-    weights = MViT_V1_B_Weights.verify(weights)
+    """
+    Constructs a small MViTV2 architecture from
+    `Multiscale Vision Transformers <https://arxiv.org/abs/2104.11227>`__.
+
+    Args:
+        weights (:class:`~torchvision.models.video.MViT_V2_S_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.MViT_V2_S_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.MViT``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvit.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.video.MViT_V2_S_Weights
+        :members:
+    """
+    weights = MViT_V2_S_Weights.verify(weights)
 
     config: Dict[str, List] = {
         "num_heads": [1, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 8, 8],
