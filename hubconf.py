@@ -1,7 +1,7 @@
 # Optional list of dependencies required by the package
 dependencies = ["torch"]
 
-from torchvision.models import get_weight
+from torchvision.models import get_model_weights, get_weight
 from torchvision.models.alexnet import alexnet
 from torchvision.models.convnext import convnext_base, convnext_large, convnext_small, convnext_tiny
 from torchvision.models.densenet import densenet121, densenet161, densenet169, densenet201
