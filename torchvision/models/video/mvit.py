@@ -270,10 +270,11 @@ class MultiscaleAttention(nn.Module):
             size = input_size[1]
             q_size = size // stride_q[1] if len(stride_q) > 0 else size
             kv_size = size // stride_kv[1] if len(stride_kv) > 0 else size
-            rel_sp_dim = 2 * max(q_size, kv_size) - 1
-            self.rel_pos_h = nn.Parameter(torch.zeros(rel_sp_dim, self.head_dim))
-            self.rel_pos_w = nn.Parameter(torch.zeros(rel_sp_dim, self.head_dim))
-            self.rel_pos_t = nn.Parameter(torch.zeros(2 * input_size[0] - 1, self.head_dim))
+            spatial_dim = 2 * max(q_size, kv_size) - 1
+            temporal_dim = 2 * input_size[0] - 1
+            self.rel_pos_h = nn.Parameter(torch.zeros(spatial_dim, self.head_dim))
+            self.rel_pos_w = nn.Parameter(torch.zeros(spatial_dim, self.head_dim))
+            self.rel_pos_t = nn.Parameter(torch.zeros(temporal_dim, self.head_dim))
             nn.init.trunc_normal_(self.rel_pos_h, std=0.02)
             nn.init.trunc_normal_(self.rel_pos_w, std=0.02)
             nn.init.trunc_normal_(self.rel_pos_t, std=0.02)
