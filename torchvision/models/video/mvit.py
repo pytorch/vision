@@ -24,13 +24,13 @@ __all__ = [
 ]
 
 
-def _interpolate(rel_pos: torch.Tensor, d: int) -> torch.Tensor:
-    if rel_pos.shape[0] == d:
-        return rel_pos
+def _interpolate(embedding: torch.Tensor, d: int) -> torch.Tensor:
+    if embedding.shape[0] == d:
+        return embedding
 
     return (
         nn.functional.interpolate(
-            rel_pos.permute(1, 0).unsqueeze(0),
+            embedding.permute(1, 0).unsqueeze(0),
             size=d,
             mode="linear",
         )
@@ -42,15 +42,15 @@ def _interpolate(rel_pos: torch.Tensor, d: int) -> torch.Tensor:
 def add_rel_pos(
     attn: torch.Tensor,
     q: torch.Tensor,
-    q_shape: Tuple[int, int, int],
-    k_shape: Tuple[int, int, int],
+    q_thw: Tuple[int, int, int],
+    k_thw: Tuple[int, int, int],
     rel_pos_h: torch.Tensor,
     rel_pos_w: torch.Tensor,
     rel_pos_t: torch.Tensor,
 ) -> torch.Tensor:
     # Modified code from: https://github.com/facebookresearch/SlowFast/commit/1aebd71a2efad823d52b827a3deaf15a56cf4932
-    q_t, q_h, q_w = q_shape
-    k_t, k_h, k_w = k_shape
+    q_t, q_h, q_w = q_thw
+    k_t, k_h, k_w = k_thw
     dh = int(2 * max(q_h, k_h) - 1)
     dw = int(2 * max(q_w, k_w) - 1)
     dt = int(2 * max(q_t, k_t) - 1)
@@ -189,9 +189,9 @@ torch.fx.wrap("add_rel_pos")
 class MultiscaleAttention(nn.Module):
     def __init__(
         self,
+        input_size: List[int],
         embed_dim: int,
-        dim_out: int,
-        input_size: Tuple[int, int, int],  # TODO: switch to List
+        output_dim: int,
         num_heads: int,
         kernel_q: List[int],
         kernel_kv: List[int],
@@ -204,14 +204,14 @@ class MultiscaleAttention(nn.Module):
     ) -> None:
         super().__init__()
         self.embed_dim = embed_dim
-        self.dim_out = dim_out
+        self.output_dim = output_dim
         self.num_heads = num_heads
-        self.head_dim = dim_out // num_heads
+        self.head_dim = output_dim // num_heads
         self.scaler = 1.0 / math.sqrt(self.head_dim)
         self.residual_pool = residual_pool
 
-        self.qkv = nn.Linear(embed_dim, 3 * dim_out)
-        layers: List[nn.Module] = [nn.Linear(dim_out, dim_out)]
+        self.qkv = nn.Linear(embed_dim, 3 * output_dim)
+        layers: List[nn.Module] = [nn.Linear(output_dim, output_dim)]
         if dropout > 0.0:
             layers.append(nn.Dropout(dropout, inplace=True))
         self.project = nn.Sequential(*layers)
@@ -306,7 +306,7 @@ class MultiscaleAttention(nn.Module):
         x = torch.matmul(attn, v)
         if self.residual_pool:
             x.add_(q)  # TODO: check x[:, :, 1:, :] += q[:, :, 1:, :]
-        x = x.transpose(1, 2).reshape(B, -1, self.dim_out)
+        x = x.transpose(1, 2).reshape(B, -1, self.output_dim)
         x = self.project(x)
 
         return x, thw
@@ -315,17 +315,17 @@ class MultiscaleAttention(nn.Module):
 class MultiscaleBlock(nn.Module):
     def __init__(
         self,
-        input_size: Tuple[int, int, int],  # TODO: switch to List
+        input_size: List[int],
         cnf: MSBlockConfig,
         residual_pool: bool,
         rel_pos: bool,
-        dim_mul_in_att: bool,
+        proj_after_att: bool,
         dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ) -> None:
         super().__init__()
-        self.dim_mul_in_att = dim_mul_in_att
+        self.proj_after_att = proj_after_att
 
         self.pool_skip: Optional[nn.Module] = None
         if _prod(cnf.stride_q) > 1:
@@ -335,16 +335,16 @@ class MultiscaleBlock(nn.Module):
                 nn.MaxPool3d(kernel_skip, stride=cnf.stride_q, padding=padding_skip), None  # type: ignore[arg-type]
             )
 
-        att_dim = cnf.output_channels if dim_mul_in_att else cnf.input_channels
+        attn_dim = cnf.output_channels if proj_after_att else cnf.input_channels
 
         self.norm1 = norm_layer(cnf.input_channels)
-        self.norm2 = norm_layer(att_dim)
+        self.norm2 = norm_layer(attn_dim)
         self.needs_transposal = isinstance(self.norm1, nn.BatchNorm1d)
 
         self.attn = MultiscaleAttention(
-            cnf.input_channels,
-            att_dim,
             input_size,
+            cnf.input_channels,
+            attn_dim,
             cnf.num_heads,
             kernel_q=cnf.kernel_q,
             kernel_kv=cnf.kernel_kv,
@@ -356,8 +356,8 @@ class MultiscaleBlock(nn.Module):
             norm_layer=norm_layer,
         )
         self.mlp = MLP(
-            att_dim,
-            [4 * att_dim, cnf.output_channels],
+            attn_dim,
+            [4 * attn_dim, cnf.output_channels],
             activation_layer=nn.GELU,
             dropout=dropout,
             inplace=None,
@@ -372,12 +372,12 @@ class MultiscaleBlock(nn.Module):
     def forward(self, x: torch.Tensor, thw: Tuple[int, int, int]) -> Tuple[torch.Tensor, Tuple[int, int, int]]:
         x_norm1 = self.norm1(x.transpose(1, 2)).transpose(1, 2) if self.needs_transposal else self.norm1(x)
         x_att, thw_new = self.attn(x_norm1, thw)
-        x = x if self.project is None or not self.dim_mul_in_att else self.project(x_norm1)
+        x = x if self.project is None or not self.proj_after_att else self.project(x_norm1)
         x_skip = x if self.pool_skip is None else self.pool_skip(x, thw)[0]
         x = x_skip + self.stochastic_depth(x_att)
 
         x_norm2 = self.norm2(x.transpose(1, 2)).transpose(1, 2) if self.needs_transposal else self.norm2(x)
-        x_proj = x if self.project is None or self.dim_mul_in_att else self.project(x_norm2)
+        x_proj = x if self.project is None or self.proj_after_att else self.project(x_norm2)
 
         return x_proj + self.stochastic_depth(self.mlp(x_norm2)), thw_new
 
@@ -419,7 +419,7 @@ class MViT(nn.Module):
         block_setting: Sequence[MSBlockConfig],
         residual_pool: bool,
         rel_pos: bool,
-        dim_mul_in_att: bool,
+        proj_after_att: bool,
         dropout: float = 0.5,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
@@ -435,8 +435,8 @@ class MViT(nn.Module):
             temporal_size (int): The temporal size ``T`` of the input.
             block_setting (sequence of MSBlockConfig): The Network structure.
             residual_pool (bool): If True, use MViTv2 pooling residual connection.
-            rel_pos (bool): TODO
-            dim_mul_in_att (bool): TODO
+            rel_pos (bool): If True, use MViTv2's relative positional embeddings.
+            proj_after_att (bool): If True, do the projection step on the attention output.
             dropout (float): Dropout rate. Default: 0.0.
             attention_dropout (float): Attention dropout rate. Default: 0.0.
             stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
@@ -491,7 +491,7 @@ class MViT(nn.Module):
                     cnf=cnf,
                     residual_pool=residual_pool,
                     rel_pos=rel_pos,
-                    dim_mul_in_att=dim_mul_in_att,
+                    proj_after_att=proj_after_att,
                     dropout=attention_dropout,
                     stochastic_depth_prob=sd_prob,
                     norm_layer=norm_layer,
@@ -564,7 +564,7 @@ def _mvit(
         block_setting=block_setting,
         residual_pool=kwargs.pop("residual_pool", False),
         rel_pos=kwargs.pop("rel_pos", False),
-        dim_mul_in_att=kwargs.pop("dim_mul_in_att", False),
+        proj_after_att=kwargs.pop("proj_after_att", False),
         stochastic_depth_prob=stochastic_depth_prob,
         **kwargs,
     )
@@ -806,7 +806,7 @@ def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = T
         block_setting=block_setting,
         residual_pool=True,
         rel_pos=True,
-        dim_mul_in_att=True,
+        proj_after_att=True,
         stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.2),
         weights=weights,
         progress=progress,
