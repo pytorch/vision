@@ -319,13 +319,13 @@ class MultiscaleBlock(nn.Module):
         cnf: MSBlockConfig,
         residual_pool: bool,
         rel_pos: bool,
-        proj_after_att: bool,
+        proj_after_attn: bool,
         dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ) -> None:
         super().__init__()
-        self.proj_after_att = proj_after_att
+        self.proj_after_attn = proj_after_attn
 
         self.pool_skip: Optional[nn.Module] = None
         if _prod(cnf.stride_q) > 1:
@@ -335,7 +335,7 @@ class MultiscaleBlock(nn.Module):
                 nn.MaxPool3d(kernel_skip, stride=cnf.stride_q, padding=padding_skip), None  # type: ignore[arg-type]
             )
 
-        attn_dim = cnf.output_channels if proj_after_att else cnf.input_channels
+        attn_dim = cnf.output_channels if proj_after_attn else cnf.input_channels
 
         self.norm1 = norm_layer(cnf.input_channels)
         self.norm2 = norm_layer(attn_dim)
@@ -371,13 +371,13 @@ class MultiscaleBlock(nn.Module):
 
     def forward(self, x: torch.Tensor, thw: Tuple[int, int, int]) -> Tuple[torch.Tensor, Tuple[int, int, int]]:
         x_norm1 = self.norm1(x.transpose(1, 2)).transpose(1, 2) if self.needs_transposal else self.norm1(x)
-        x_att, thw_new = self.attn(x_norm1, thw)
-        x = x if self.project is None or not self.proj_after_att else self.project(x_norm1)
+        x_attn, thw_new = self.attn(x_norm1, thw)
+        x = x if self.project is None or not self.proj_after_attn else self.project(x_norm1)
         x_skip = x if self.pool_skip is None else self.pool_skip(x, thw)[0]
-        x = x_skip + self.stochastic_depth(x_att)
+        x = x_skip + self.stochastic_depth(x_attn)
 
         x_norm2 = self.norm2(x.transpose(1, 2)).transpose(1, 2) if self.needs_transposal else self.norm2(x)
-        x_proj = x if self.project is None or self.proj_after_att else self.project(x_norm2)
+        x_proj = x if self.project is None or self.proj_after_attn else self.project(x_norm2)
 
         return x_proj + self.stochastic_depth(self.mlp(x_norm2)), thw_new
 
@@ -419,7 +419,7 @@ class MViT(nn.Module):
         block_setting: Sequence[MSBlockConfig],
         residual_pool: bool,
         rel_pos: bool,
-        proj_after_att: bool,
+        proj_after_attn: bool,
         dropout: float = 0.5,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
@@ -436,7 +436,7 @@ class MViT(nn.Module):
             block_setting (sequence of MSBlockConfig): The Network structure.
             residual_pool (bool): If True, use MViTv2 pooling residual connection.
             rel_pos (bool): If True, use MViTv2's relative positional embeddings.
-            proj_after_att (bool): If True, do the projection step on the attention output.
+            proj_after_attn (bool): If True, do the projection step on the attention output.
             dropout (float): Dropout rate. Default: 0.0.
             attention_dropout (float): Attention dropout rate. Default: 0.0.
             stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
@@ -491,7 +491,7 @@ class MViT(nn.Module):
                     cnf=cnf,
                     residual_pool=residual_pool,
                     rel_pos=rel_pos,
-                    proj_after_att=proj_after_att,
+                    proj_after_attn=proj_after_attn,
                     dropout=attention_dropout,
                     stochastic_depth_prob=sd_prob,
                     norm_layer=norm_layer,
@@ -564,7 +564,7 @@ def _mvit(
         block_setting=block_setting,
         residual_pool=kwargs.pop("residual_pool", False),
         rel_pos=kwargs.pop("rel_pos", False),
-        proj_after_att=kwargs.pop("proj_after_att", False),
+        proj_after_attn=kwargs.pop("proj_after_attn", False),
         stochastic_depth_prob=stochastic_depth_prob,
         **kwargs,
     )
@@ -806,7 +806,7 @@ def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = T
         block_setting=block_setting,
         residual_pool=True,
         rel_pos=True,
-        proj_after_att=True,
+        proj_after_attn=True,
         stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.2),
         weights=weights,
         progress=progress,
