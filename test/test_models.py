@@ -884,7 +884,7 @@ def test_quantized_classification_model(model_fn):
     out = model(x)
 
     if model_name not in quantized_flaky_models:
-        _assert_expected(out, model_name + "_quantized", prec=1e-3)
+        _assert_expected(out, model_name + "_quantized", prec=2e-2)
         assert out.shape[-1] == 5
         _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
         _check_fx_compatible(model, x, eager_out=out)
