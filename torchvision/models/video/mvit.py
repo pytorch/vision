@@ -437,7 +437,7 @@ class MViT(nn.Module):
             block_setting (sequence of MSBlockConfig): The Network structure.
             residual_pool (bool): If True, use MViTv2 pooling residual connection.
             rel_pos (bool): If True, use MViTv2's relative positional embeddings.
-            proj_after_attn (bool): If True, do the projection step on the attention output.
+            proj_after_attn (bool): If True, apply the projection after the attention.
             dropout (float): Dropout rate. Default: 0.0.
             attention_dropout (float): Attention dropout rate. Default: 0.0.
             stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
