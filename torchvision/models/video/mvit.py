@@ -183,7 +183,16 @@ def _add_rel_pos(
     return attn
 
 
+def _add_shortcut(x: torch.Tensor, shortcut: torch.Tensor, skip_cls: bool):
+    if skip_cls:
+        x[:, :, 1:, :] += shortcut[:, :, 1:, :]
+    else:
+        x.add_(shortcut)
+    return x
+
+
 torch.fx.wrap("_add_rel_pos")
+torch.fx.wrap("_add_shortcut")
 
 
 class MultiscaleAttention(nn.Module):
@@ -306,7 +315,7 @@ class MultiscaleAttention(nn.Module):
 
         x = torch.matmul(attn, v)
         if self.residual_pool:
-            x.add_(q)  # TODO: check x[:, :, 1:, :] += q[:, :, 1:, :]
+            _add_shortcut(x, q, self.rel_pos)
         x = x.transpose(1, 2).reshape(B, -1, self.output_dim)
         x = self.project(x)
 
