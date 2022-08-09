@@ -23,6 +23,8 @@ class ToTensor(Transform):
         super().__init__()
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # TODO: Transforms allows to pass only (torch.Tensor, _Feature, PIL.Image.Image)
+        # so input as np.ndarray is not possible. We need to make it possible
         if isinstance(inpt, (PIL.Image.Image, np.ndarray)):
             return _F.to_tensor(inpt)
         else:
@@ -54,6 +56,8 @@ class ToPILImage(Transform):
         self.mode = mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # TODO: Transforms allows to pass only (torch.Tensor, _Feature, PIL.Image.Image)
+        # so input as np.ndarray is not possible. We need to make it possible
         if is_simple_tensor(inpt) or isinstance(inpt, (features.Image, np.ndarray)):
             return _F.to_pil_image(inpt, mode=self.mode)
         else:
