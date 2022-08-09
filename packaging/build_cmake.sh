@@ -43,7 +43,7 @@ else
 fi
 
 if [[ $CU_VERSION == "cu116" ]]; then
-    conda install -yq \pytorch=$PYTORCH_VERSION  -c nvidia -c pytorch-nightly cuda=11.6 pytorch-cuda=1.0=cuda11.6 $PYTORCH_MUTEX_CONSTRAINT $MKL_CONSTRAINT numpy -c nvidia -c "pytorch-${UPLOAD_CHANNEL}"
+    conda install -yq \pytorch=$PYTORCH_VERSION  -c nvidia -c pytorch-nightly pytorch-cuda=11.6 $PYTORCH_MUTEX_CONSTRAINT $MKL_CONSTRAINT numpy -c nvidia -c "pytorch-${UPLOAD_CHANNEL}"
 else
     conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $PYTORCH_MUTEX_CONSTRAINT $MKL_CONSTRAINT numpy -c nvidia -c "pytorch-${UPLOAD_CHANNEL}"
 fi
