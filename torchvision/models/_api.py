@@ -48,7 +48,7 @@ class WeightsEnum(StrEnum):
         value (Weights): The data class entry with the weight information.
     """
 
-    def __init__(self, value: Weights):
+    def __init__(self, value: Weights) -> None:
         self._value_ = value
 
     @classmethod

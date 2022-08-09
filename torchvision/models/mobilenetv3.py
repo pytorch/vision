@@ -25,7 +25,7 @@ __all__ = [
 class SqueezeExcitation(SElayer):
     """DEPRECATED"""
 
-    def __init__(self, input_channels: int, squeeze_factor: int = 4):
+    def __init__(self, input_channels: int, squeeze_factor: int = 4) -> None:
         squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
         super().__init__(input_channels, squeeze_channels, scale_activation=nn.Hardsigmoid)
         self.relu = self.activation
@@ -50,7 +50,7 @@ class InvertedResidualConfig:
         stride: int,
         dilation: int,
         width_mult: float,
-    ):
+    ) -> None:
         self.input_channels = self.adjust_channels(input_channels, width_mult)
         self.kernel = kernel
         self.expanded_channels = self.adjust_channels(expanded_channels, width_mult)

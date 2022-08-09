@@ -122,7 +122,7 @@ class DeformConv2d(nn.Module):
         dilation: int = 1,
         groups: int = 1,
         bias: bool = True,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
 

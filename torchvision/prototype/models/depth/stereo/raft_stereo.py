@@ -60,7 +60,7 @@ class FeatureEncoder(nn.Module):
         output_dim: int = 256,
         shared_base: bool = False,
         block: Callable[..., nn.Module] = ResidualBlock,
-    ):
+    ) -> None:
         super().__init__()
         self.base_encoder = base_encoder
         self.base_downsampling_ratio = base_encoder.downsampling_ratio
@@ -106,7 +106,7 @@ class MultiLevelContextEncoder(nn.Module):
         out_with_blocks: List[bool],
         output_dim: int = 256,
         block: Callable[..., nn.Module] = ResidualBlock,
-    ):
+    ) -> None:
         super().__init__()
         self.num_level = len(out_with_blocks)
         self.base_encoder = base_encoder
@@ -171,7 +171,7 @@ class MultiLevelUpdateBlock(nn.Module):
     It must expose a ``hidden_dims`` attribute which is the hidden dimension size of its gru blocks
     """
 
-    def __init__(self, *, motion_encoder: MotionEncoder, hidden_dims: List[int]):
+    def __init__(self, *, motion_encoder: MotionEncoder, hidden_dims: List[int]) -> None:
         super().__init__()
         self.motion_encoder = motion_encoder
 
@@ -244,7 +244,7 @@ class MaskPredictor(raft.MaskPredictor):
     """Mask predictor to be used when upsampling the predicted depth."""
 
     # We add out_channels compared to raft.MaskPredictor
-    def __init__(self, *, in_channels: int, hidden_size: int, out_channels: int, multiplier: float = 0.25):
+    def __init__(self, *, in_channels: int, hidden_size: int, out_channels: int, multiplier: float = 0.25) -> None:
         super(raft.MaskPredictor, self).__init__()
         self.convrelu = Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3)
         self.conv = nn.Conv2d(hidden_size, out_channels, kernel_size=1, padding=0)
@@ -258,7 +258,7 @@ class CorrPyramid1d(nn.Module):
     this correlation pyramid will later be used as index to create correlation features using CorrBlock1d.
     """
 
-    def __init__(self, num_levels: int = 4):
+    def __init__(self, num_levels: int = 4) -> None:
         super().__init__()
         self.num_levels = num_levels
 
@@ -300,7 +300,7 @@ class CorrBlock1d(nn.Module):
     within radius
     """
 
-    def __init__(self, *, num_levels: int = 4, radius: int = 4):
+    def __init__(self, *, num_levels: int = 4, radius: int = 4) -> None:
         super().__init__()
         self.radius = radius
         self.out_channels = num_levels * (2 * radius + 1)
@@ -348,7 +348,7 @@ class RaftStereo(nn.Module):
         depth_head: nn.Module,
         mask_predictor: Optional[nn.Module] = None,
         slow_fast: bool = False,
-    ):
+    ) -> None:
         """RAFT-Stereo model from
         `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
 

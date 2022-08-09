@@ -75,7 +75,7 @@ class _VOCBase(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         transforms: Optional[Callable] = None,
-    ):
+    ) -> None:
         super().__init__(root, transforms, transform, target_transform)
         if year == "2007-test":
             if image_set == "test":

@@ -57,7 +57,7 @@ class Kitti(VisionDataset):
         target_transform: Optional[Callable] = None,
         transforms: Optional[Callable] = None,
         download: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             root,
             transform=transform,

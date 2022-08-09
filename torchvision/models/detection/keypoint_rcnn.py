@@ -199,7 +199,7 @@ class KeypointRCNN(FasterRCNN):
         keypoint_predictor=None,
         num_keypoints=None,
         **kwargs,
-    ):
+    ) -> None:
 
         if not isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None))):
             raise TypeError(
@@ -269,7 +269,7 @@ class KeypointRCNN(FasterRCNN):
 
 
 class KeypointRCNNHeads(nn.Sequential):
-    def __init__(self, in_channels, layers):
+    def __init__(self, in_channels, layers) -> None:
         d = []
         next_feature = in_channels
         for out_channels in layers:
@@ -284,7 +284,7 @@ class KeypointRCNNHeads(nn.Sequential):
 
 
 class KeypointRCNNPredictor(nn.Module):
-    def __init__(self, in_channels, num_keypoints):
+    def __init__(self, in_channels, num_keypoints) -> None:
         super().__init__()
         input_features = in_channels
         deconv_kernel = 4

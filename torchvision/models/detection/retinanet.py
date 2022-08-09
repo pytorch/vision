@@ -65,7 +65,13 @@ class RetinaNetHead(nn.Module):
         norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
     """
 
-    def __init__(self, in_channels, num_anchors, num_classes, norm_layer: Optional[Callable[..., nn.Module]] = None):
+    def __init__(
+        self,
+        in_channels,
+        num_anchors,
+        num_classes,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+    ) -> None:
         super().__init__()
         self.classification_head = RetinaNetClassificationHead(
             in_channels, num_anchors, num_classes, norm_layer=norm_layer
@@ -104,7 +110,7 @@ class RetinaNetClassificationHead(nn.Module):
         num_classes,
         prior_probability=0.01,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-    ):
+    ) -> None:
         super().__init__()
 
         conv = []
@@ -223,7 +229,7 @@ class RetinaNetRegressionHead(nn.Module):
         "box_coder": det_utils.BoxCoder,
     }
 
-    def __init__(self, in_channels, num_anchors, norm_layer: Optional[Callable[..., nn.Module]] = None):
+    def __init__(self, in_channels, num_anchors, norm_layer: Optional[Callable[..., nn.Module]] = None) -> None:
         super().__init__()
 
         conv = []
@@ -430,7 +436,7 @@ class RetinaNet(nn.Module):
         bg_iou_thresh=0.4,
         topk_candidates=1000,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
 

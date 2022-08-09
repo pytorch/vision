@@ -101,7 +101,7 @@ class DatasetBenchmark:
         legacy_config_map=None,
         legacy_special_options_map=None,
         prepare_legacy_root=None,
-    ):
+    ) -> None:
         self.name = name
         self.variant = variant
 
@@ -315,7 +315,7 @@ class Measurement:
         return cls._format(iterations_per_second, unit="it/s")
 
     class Timer:
-        def __init__(self):
+        def __init__(self) -> None:
             self._start = None
             self._stop = None
 
@@ -400,7 +400,7 @@ def base_folder(rel_folder=None):
 
 
 class JointTransform:
-    def __init__(self, *transforms):
+    def __init__(self, *transforms) -> None:
         self.transforms = transforms
 
     def __call__(self, *inputs):

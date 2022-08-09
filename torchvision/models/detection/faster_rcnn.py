@@ -196,7 +196,7 @@ class FasterRCNN(GeneralizedRCNN):
         box_positive_fraction=0.25,
         bbox_reg_weights=None,
         **kwargs,
-    ):
+    ) -> None:
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
@@ -289,7 +289,7 @@ class TwoMLPHead(nn.Module):
         representation_size (int): size of the intermediate representation
     """
 
-    def __init__(self, in_channels, representation_size):
+    def __init__(self, in_channels, representation_size) -> None:
         super().__init__()
 
         self.fc6 = nn.Linear(in_channels, representation_size)
@@ -311,7 +311,7 @@ class FastRCNNConvFCHead(nn.Sequential):
         conv_layers: List[int],
         fc_layers: List[int],
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-    ):
+    ) -> None:
         """
         Args:
             input_size (Tuple[int, int, int]): the input size in CHW format.
@@ -351,7 +351,7 @@ class FastRCNNPredictor(nn.Module):
         num_classes (int): number of output classes (including background)
     """
 
-    def __init__(self, in_channels, num_classes):
+    def __init__(self, in_channels, num_classes) -> None:
         super().__init__()
         self.cls_score = nn.Linear(in_channels, num_classes)
         self.bbox_pred = nn.Linear(in_channels, num_classes * 4)

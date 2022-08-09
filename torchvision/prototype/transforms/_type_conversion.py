@@ -18,7 +18,7 @@ class DecodeImage(Transform):
 
 
 class LabelToOneHot(Transform):
-    def __init__(self, num_categories: int = -1):
+    def __init__(self, num_categories: int = -1) -> None:
         super().__init__()
         self.num_categories = num_categories
 

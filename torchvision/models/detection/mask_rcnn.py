@@ -198,7 +198,7 @@ class MaskRCNN(FasterRCNN):
         mask_head=None,
         mask_predictor=None,
         **kwargs,
-    ):
+    ) -> None:
 
         if not isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None))):
             raise TypeError(
@@ -268,7 +268,7 @@ class MaskRCNN(FasterRCNN):
 class MaskRCNNHeads(nn.Sequential):
     _version = 2
 
-    def __init__(self, in_channels, layers, dilation, norm_layer: Optional[Callable[..., nn.Module]] = None):
+    def __init__(self, in_channels, layers, dilation, norm_layer: Optional[Callable[..., nn.Module]] = None) -> None:
         """
         Args:
             in_channels (int): number of input channels
@@ -332,7 +332,7 @@ class MaskRCNNHeads(nn.Sequential):
 
 
 class MaskRCNNPredictor(nn.Sequential):
-    def __init__(self, in_channels, dim_reduced, num_classes):
+    def __init__(self, in_channels, dim_reduced, num_classes) -> None:
         super().__init__(
             OrderedDict(
                 [

@@ -38,7 +38,7 @@ class _LFW(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
-    ):
+    ) -> None:
         super().__init__(os.path.join(root, self.base_folder), transform=transform, target_transform=target_transform)
 
         self.image_set = verify_str_arg(image_set.lower(), "image_set", self.file_dict.keys())
@@ -119,7 +119,7 @@ class LFWPeople(_LFW):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
-    ):
+    ) -> None:
         super().__init__(root, split, image_set, "people", transform, target_transform, download)
 
         self.class_to_idx = self._get_classes()
@@ -201,7 +201,7 @@ class LFWPairs(_LFW):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
-    ):
+    ) -> None:
         super().__init__(root, split, image_set, "pairs", transform, target_transform, download)
 
         self.pair_names, self.data, self.targets = self._get_pairs(self.images_dir)

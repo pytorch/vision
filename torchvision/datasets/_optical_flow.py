@@ -70,7 +70,7 @@ class FlowDataset(ABC, VisionDataset):
         else:
             return img1, img2, flow
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._image_list)
 
     def __rmul__(self, v):
@@ -118,7 +118,7 @@ class Sintel(FlowDataset):
             return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.
     """
 
-    def __init__(self, root, split="train", pass_name="clean", transforms=None):
+    def __init__(self, root, split="train", pass_name="clean", transforms=None) -> None:
         super().__init__(root=root, transforms=transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
@@ -180,7 +180,7 @@ class KittiFlow(FlowDataset):
 
     _has_builtin_flow_mask = True
 
-    def __init__(self, root, split="train", transforms=None):
+    def __init__(self, root, split="train", transforms=None) -> None:
         super().__init__(root=root, transforms=transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
@@ -245,7 +245,7 @@ class FlyingChairs(FlowDataset):
             return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.
     """
 
-    def __init__(self, root, split="train", transforms=None):
+    def __init__(self, root, split="train", transforms=None) -> None:
         super().__init__(root=root, transforms=transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "val"))
@@ -316,7 +316,7 @@ class FlyingThings3D(FlowDataset):
             return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.
     """
 
-    def __init__(self, root, split="train", pass_name="clean", camera="left", transforms=None):
+    def __init__(self, root, split="train", pass_name="clean", camera="left", transforms=None) -> None:
         super().__init__(root=root, transforms=transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
@@ -401,7 +401,7 @@ class HD1K(FlowDataset):
 
     _has_builtin_flow_mask = True
 
-    def __init__(self, root, split="train", transforms=None):
+    def __init__(self, root, split="train", transforms=None) -> None:
         super().__init__(root=root, transforms=transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))

@@ -23,7 +23,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
         self,
         num_features: int,
         eps: float = 1e-5,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.eps = eps
@@ -282,7 +282,7 @@ class MLP(torch.nn.Sequential):
         inplace: Optional[bool] = True,
         bias: bool = True,
         dropout: float = 0.0,
-    ):
+    ) -> None:
         # The addition of `norm_layer` is inspired from the implementation of TorchMultimodal:
         # https://github.com/facebookresearch/multimodal/blob/5dec8a/torchmultimodal/modules/layers/mlp.py
         params = {} if inplace is None else {"inplace": inplace}
@@ -311,7 +311,7 @@ class Permute(torch.nn.Module):
         dims (List[int]): The desired ordering of dimensions
     """
 
-    def __init__(self, dims: List[int]):
+    def __init__(self, dims: List[int]) -> None:
         super().__init__()
         self.dims = dims
 

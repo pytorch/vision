@@ -412,7 +412,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
-    ):
+    ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
 

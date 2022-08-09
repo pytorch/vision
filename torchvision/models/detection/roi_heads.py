@@ -518,7 +518,7 @@ class RoIHeads(nn.Module):
         keypoint_roi_pool=None,
         keypoint_head=None,
         keypoint_predictor=None,
-    ):
+    ) -> None:
         super().__init__()
 
         self.box_similarity = box_ops.box_iou

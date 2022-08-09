@@ -92,7 +92,7 @@ class GeneralizedRCNNTransform(nn.Module):
         size_divisible: int = 32,
         fixed_size: Optional[Tuple[int, int]] = None,
         **kwargs: Any,
-    ):
+    ) -> None:
         super().__init__()
         if not isinstance(min_size, (list, tuple)):
             min_size = (min_size,)

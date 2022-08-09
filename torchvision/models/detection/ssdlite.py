@@ -81,7 +81,7 @@ def _normal_init(conv: nn.Module):
 class SSDLiteHead(nn.Module):
     def __init__(
         self, in_channels: List[int], num_anchors: List[int], num_classes: int, norm_layer: Callable[..., nn.Module]
-    ):
+    ) -> None:
         super().__init__()
         self.classification_head = SSDLiteClassificationHead(in_channels, num_anchors, num_classes, norm_layer)
         self.regression_head = SSDLiteRegressionHead(in_channels, num_anchors, norm_layer)
@@ -96,7 +96,7 @@ class SSDLiteHead(nn.Module):
 class SSDLiteClassificationHead(SSDScoringHead):
     def __init__(
         self, in_channels: List[int], num_anchors: List[int], num_classes: int, norm_layer: Callable[..., nn.Module]
-    ):
+    ) -> None:
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(_prediction_block(channels, num_classes * anchors, 3, norm_layer))
@@ -105,7 +105,7 @@ class SSDLiteClassificationHead(SSDScoringHead):
 
 
 class SSDLiteRegressionHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], norm_layer: Callable[..., nn.Module]):
+    def __init__(self, in_channels: List[int], num_anchors: List[int], norm_layer: Callable[..., nn.Module]) -> None:
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(_prediction_block(channels, 4 * anchors, 3, norm_layer))
@@ -121,7 +121,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         norm_layer: Callable[..., nn.Module],
         width_mult: float = 1.0,
         min_depth: int = 16,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
 

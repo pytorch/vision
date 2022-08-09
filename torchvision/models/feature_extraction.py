@@ -23,7 +23,7 @@ class LeafModuleAwareTracer(fx.Tracer):
     having single nodes referencing calls to the leaf modules' forward methods.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self.leaf_modules = {}
         if "leaf_modules" in kwargs:
             leaf_modules = kwargs.pop("leaf_modules")
@@ -271,7 +271,7 @@ class DualGraphModule(fx.GraphModule):
 
     def __init__(
         self, root: torch.nn.Module, train_graph: fx.Graph, eval_graph: fx.Graph, class_name: str = "GraphModule"
-    ):
+    ) -> None:
         """
         Args:
             root (nn.Module): module from which the copied module hierarchy is

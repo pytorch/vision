@@ -85,7 +85,7 @@ class Compose:
 
     """
 
-    def __init__(self, transforms):
+    def __init__(self, transforms) -> None:
         if not torch.jit.is_scripting() and not torch.jit.is_tracing():
             _log_api_usage_once(self)
         self.transforms = transforms
@@ -211,7 +211,7 @@ class ToPILImage:
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
 
-    def __init__(self, mode=None):
+    def __init__(self, mode=None) -> None:
         _log_api_usage_once(self)
         self.mode = mode
 
@@ -252,7 +252,7 @@ class Normalize(torch.nn.Module):
 
     """
 
-    def __init__(self, mean, std, inplace=False):
+    def __init__(self, mean, std, inplace=False) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.mean = mean
@@ -314,7 +314,7 @@ class Resize(torch.nn.Module):
             This can help making the output for PIL images and tensors closer.
     """
 
-    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias=None):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias=None) -> None:
         super().__init__()
         _log_api_usage_once(self)
         if not isinstance(size, (int, Sequence)):
@@ -362,7 +362,7 @@ class CenterCrop(torch.nn.Module):
             made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
     """
 
-    def __init__(self, size):
+    def __init__(self, size) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -419,7 +419,7 @@ class Pad(torch.nn.Module):
               will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
-    def __init__(self, padding, fill=0, padding_mode="constant"):
+    def __init__(self, padding, fill=0, padding_mode="constant") -> None:
         super().__init__()
         _log_api_usage_once(self)
         if not isinstance(padding, (numbers.Number, tuple, list)):
@@ -461,7 +461,7 @@ class Lambda:
         lambd (function): Lambda/function to be used for transform.
     """
 
-    def __init__(self, lambd):
+    def __init__(self, lambd) -> None:
         _log_api_usage_once(self)
         if not callable(lambd):
             raise TypeError(f"Argument lambd should be callable, got {repr(type(lambd).__name__)}")
@@ -481,7 +481,7 @@ class RandomTransforms:
         transforms (sequence): list of transformations
     """
 
-    def __init__(self, transforms):
+    def __init__(self, transforms) -> None:
         _log_api_usage_once(self)
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence")
@@ -519,7 +519,7 @@ class RandomApply(torch.nn.Module):
         p (float): probability
     """
 
-    def __init__(self, transforms, p=0.5):
+    def __init__(self, transforms, p=0.5) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.transforms = transforms
@@ -556,7 +556,7 @@ class RandomOrder(RandomTransforms):
 class RandomChoice(RandomTransforms):
     """Apply single transformation randomly picked from a list. This transform does not support torchscript."""
 
-    def __init__(self, transforms, p=None):
+    def __init__(self, transforms, p=None) -> None:
         super().__init__(transforms)
         if p is not None and not isinstance(p, Sequence):
             raise TypeError("Argument p should be a sequence")
@@ -638,7 +638,7 @@ class RandomCrop(torch.nn.Module):
         j = torch.randint(0, w - tw + 1, size=(1,)).item()
         return i, j, th, tw
 
-    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
+    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant") -> None:
         super().__init__()
         _log_api_usage_once(self)
 
@@ -688,7 +688,7 @@ class RandomHorizontalFlip(torch.nn.Module):
         p (float): probability of the image being flipped. Default value is 0.5
     """
 
-    def __init__(self, p=0.5):
+    def __init__(self, p=0.5) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.p = p
@@ -719,7 +719,7 @@ class RandomVerticalFlip(torch.nn.Module):
         p (float): probability of the image being flipped. Default value is 0.5
     """
 
-    def __init__(self, p=0.5):
+    def __init__(self, p=0.5) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.p = p
@@ -758,7 +758,7 @@ class RandomPerspective(torch.nn.Module):
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
     """
 
-    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=InterpolationMode.BILINEAR, fill=0):
+    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=InterpolationMode.BILINEAR, fill=0) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.p = p
@@ -1000,7 +1000,7 @@ class FiveCrop(torch.nn.Module):
          >>> result_avg = result.view(bs, ncrops, -1).mean(1) # avg over crops
     """
 
-    def __init__(self, size):
+    def __init__(self, size) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -1049,7 +1049,7 @@ class TenCrop(torch.nn.Module):
          >>> result_avg = result.view(bs, ncrops, -1).mean(1) # avg over crops
     """
 
-    def __init__(self, size, vertical_flip=False):
+    def __init__(self, size, vertical_flip=False) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -1088,7 +1088,7 @@ class LinearTransformation(torch.nn.Module):
         mean_vector (Tensor): tensor [D], D = C x H x W
     """
 
-    def __init__(self, transformation_matrix, mean_vector):
+    def __init__(self, transformation_matrix, mean_vector) -> None:
         super().__init__()
         _log_api_usage_once(self)
         if transformation_matrix.size(0) != transformation_matrix.size(1):
@@ -1172,7 +1172,7 @@ class ColorJitter(torch.nn.Module):
             or use an interpolation that generates negative values before using this function.
     """
 
-    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.brightness = self._check_input(brightness, "brightness")
@@ -1300,7 +1300,7 @@ class RandomRotation(torch.nn.Module):
 
     def __init__(
         self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=0, resample=None
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
         if resample is not None:
@@ -1430,7 +1430,7 @@ class RandomAffine(torch.nn.Module):
         fillcolor=None,
         resample=None,
         center=None,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
         if resample is not None:
@@ -1578,7 +1578,7 @@ class Grayscale(torch.nn.Module):
 
     """
 
-    def __init__(self, num_output_channels=1):
+    def __init__(self, num_output_channels=1) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.num_output_channels = num_output_channels
@@ -1613,7 +1613,7 @@ class RandomGrayscale(torch.nn.Module):
 
     """
 
-    def __init__(self, p=0.1):
+    def __init__(self, p=0.1) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.p = p
@@ -1879,7 +1879,7 @@ class RandomInvert(torch.nn.Module):
         p (float): probability of the image being color inverted. Default value is 0.5
     """
 
-    def __init__(self, p=0.5):
+    def __init__(self, p=0.5) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.p = p
@@ -1911,7 +1911,7 @@ class RandomPosterize(torch.nn.Module):
         p (float): probability of the image being posterized. Default value is 0.5
     """
 
-    def __init__(self, bits, p=0.5):
+    def __init__(self, bits, p=0.5) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.bits = bits
@@ -1944,7 +1944,7 @@ class RandomSolarize(torch.nn.Module):
         p (float): probability of the image being solarized. Default value is 0.5
     """
 
-    def __init__(self, threshold, p=0.5):
+    def __init__(self, threshold, p=0.5) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.threshold = threshold
@@ -1977,7 +1977,7 @@ class RandomAdjustSharpness(torch.nn.Module):
         p (float): probability of the image being sharpened. Default value is 0.5
     """
 
-    def __init__(self, sharpness_factor, p=0.5):
+    def __init__(self, sharpness_factor, p=0.5) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.sharpness_factor = sharpness_factor
@@ -2009,7 +2009,7 @@ class RandomAutocontrast(torch.nn.Module):
         p (float): probability of the image being autocontrasted. Default value is 0.5
     """
 
-    def __init__(self, p=0.5):
+    def __init__(self, p=0.5) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.p = p
@@ -2040,7 +2040,7 @@ class RandomEqualize(torch.nn.Module):
         p (float): probability of the image being equalized. Default value is 0.5
     """
 
-    def __init__(self, p=0.5):
+    def __init__(self, p=0.5) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.p = p
@@ -2085,7 +2085,7 @@ class ElasticTransform(torch.nn.Module):
 
     """
 
-    def __init__(self, alpha=50.0, sigma=5.0, interpolation=InterpolationMode.BILINEAR, fill=0):
+    def __init__(self, alpha=50.0, sigma=5.0, interpolation=InterpolationMode.BILINEAR, fill=0) -> None:
         super().__init__()
         _log_api_usage_once(self)
         if not isinstance(alpha, (float, Sequence)):

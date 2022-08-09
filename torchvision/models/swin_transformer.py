@@ -41,7 +41,7 @@ class PatchMerging(nn.Module):
         norm_layer (nn.Module): Normalization layer. Default: nn.LayerNorm.
     """
 
-    def __init__(self, dim: int, norm_layer: Callable[..., nn.Module] = nn.LayerNorm):
+    def __init__(self, dim: int, norm_layer: Callable[..., nn.Module] = nn.LayerNorm) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.dim = dim
@@ -187,7 +187,7 @@ class ShiftedWindowAttention(nn.Module):
         proj_bias: bool = True,
         attention_dropout: float = 0.0,
         dropout: float = 0.0,
-    ):
+    ) -> None:
         super().__init__()
         if len(window_size) != 2 or len(shift_size) != 2:
             raise ValueError("window_size and shift_size must be of length 2")
@@ -276,7 +276,7 @@ class SwinTransformerBlock(nn.Module):
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_layer: Callable[..., nn.Module] = ShiftedWindowAttention,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
@@ -338,7 +338,7 @@ class SwinTransformer(nn.Module):
         num_classes: int = 1000,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         block: Optional[Callable[..., nn.Module]] = None,
-    ):
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.num_classes = num_classes
