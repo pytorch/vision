@@ -375,12 +375,11 @@ class TestRandomZoomOut:
         transform = transforms.RandomZoomOut(fill=fill, side_range=side_range)
 
         image = mocker.MagicMock(spec=features.Image)
-        c = image.num_channels = 3
         h, w = image.image_size = (24, 32)
 
         params = transform._get_params(image)
 
-        assert params["fill"] == (fill if not isinstance(fill, int) else [fill] * c)
+        assert params["fill"] == fill
         assert len(params["padding"]) == 4
         assert 0 <= params["padding"][0] <= (side_range[1] - 1) * w
         assert 0 <= params["padding"][1] <= (side_range[1] - 1) * h
