@@ -22,13 +22,10 @@ else
     echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION"
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
 
-    cuda_toolkit_pckg="cudatoolkit"
-    cudatoolkit=""
+    cudatoolkit="nvidia::cudatoolkit=${version}"
+
     if [[ "$CU_VERSION" == cu116 ]]; then
-        cuda_toolkit_pckg="cuda"
         cudatoolkit=" -c nvidia -c pytorch-nightly pytorch-cuda=11.6"
-    else
-        cudatoolkit="nvidia::${cuda_toolkit_pckg}=${version}"
     fi
 fi
 
