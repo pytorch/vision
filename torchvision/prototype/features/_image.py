@@ -327,9 +327,3 @@ class Image(_Feature):
 
         output = _F.gaussian_blur_image_tensor(self, kernel_size=kernel_size, sigma=sigma)
         return Image.new_like(self, output)
-
-    def normalize(self, mean: List[float], std: List[float], inplace: bool = False) -> Image:
-        from torchvision.prototype.transforms import functional as _F
-
-        output = _F.normalize_image_tensor(self, mean=mean, std=std, inplace=inplace)
-        return Image.new_like(self, output)

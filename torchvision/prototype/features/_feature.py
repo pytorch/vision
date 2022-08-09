@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Callable, cast, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import torch
@@ -84,10 +86,10 @@ class _Feature(torch.Tensor):
         else:
             return output
 
-    def horizontal_flip(self) -> F:
+    def horizontal_flip(self) -> _Feature:
         return self
 
-    def vertical_flip(self) -> F:
+    def vertical_flip(self) -> _Feature:
         return self
 
     # TODO: We have to ignore override mypy error as there is torch.Tensor built-in deprecated op: Tensor.resize
@@ -98,13 +100,13 @@ class _Feature(torch.Tensor):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: bool = False,
-    ) -> F:
+    ) -> _Feature:
         return self
 
-    def crop(self, top: int, left: int, height: int, width: int) -> F:
+    def crop(self, top: int, left: int, height: int, width: int) -> _Feature:
         return self
 
-    def center_crop(self, output_size: List[int]) -> F:
+    def center_crop(self, output_size: List[int]) -> _Feature:
         return self
 
     def resized_crop(
@@ -116,7 +118,7 @@ class _Feature(torch.Tensor):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = False,
-    ) -> F:
+    ) -> _Feature:
         return self
 
     def pad(
@@ -124,7 +126,7 @@ class _Feature(torch.Tensor):
         padding: Union[int, Sequence[int]],
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         padding_mode: str = "constant",
-    ) -> F:
+    ) -> _Feature:
         return self
 
     def rotate(
@@ -134,7 +136,7 @@ class _Feature(torch.Tensor):
         expand: bool = False,
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
-    ) -> F:
+    ) -> _Feature:
         return self
 
     def affine(
@@ -146,7 +148,7 @@ class _Feature(torch.Tensor):
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
-    ) -> F:
+    ) -> _Feature:
         return self
 
     def perspective(
@@ -154,7 +156,7 @@ class _Feature(torch.Tensor):
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
-    ) -> F:
+    ) -> _Feature:
         return self
 
     def elastic(
@@ -162,44 +164,41 @@ class _Feature(torch.Tensor):
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
-    ) -> F:
+    ) -> _Feature:
         return self
 
-    def adjust_brightness(self, brightness_factor: float) -> F:
+    def adjust_brightness(self, brightness_factor: float) -> _Feature:
         return self
 
-    def adjust_saturation(self, saturation_factor: float) -> F:
+    def adjust_saturation(self, saturation_factor: float) -> _Feature:
         return self
 
-    def adjust_contrast(self, contrast_factor: float) -> F:
+    def adjust_contrast(self, contrast_factor: float) -> _Feature:
         return self
 
-    def adjust_sharpness(self, sharpness_factor: float) -> F:
+    def adjust_sharpness(self, sharpness_factor: float) -> _Feature:
         return self
 
-    def adjust_hue(self, hue_factor: float) -> F:
+    def adjust_hue(self, hue_factor: float) -> _Feature:
         return self
 
-    def adjust_gamma(self, gamma: float, gain: float = 1) -> F:
+    def adjust_gamma(self, gamma: float, gain: float = 1) -> _Feature:
         return self
 
-    def posterize(self, bits: int) -> F:
+    def posterize(self, bits: int) -> _Feature:
         return self
 
-    def solarize(self, threshold: float) -> F:
+    def solarize(self, threshold: float) -> _Feature:
         return self
 
-    def autocontrast(self) -> F:
+    def autocontrast(self) -> _Feature:
         return self
 
-    def equalize(self) -> F:
+    def equalize(self) -> _Feature:
         return self
 
-    def invert(self) -> F:
+    def invert(self) -> _Feature:
         return self
 
-    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> F:
-        return self
-
-    def normalize(self, mean: List[float], std: List[float], inplace: bool = False) -> F:
+    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> _Feature:
         return self
