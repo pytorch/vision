@@ -265,9 +265,7 @@ class MultiscaleAttention(nn.Module):
         self.rel_pos_w: Optional[nn.Parameter] = None
         self.rel_pos_t: Optional[nn.Parameter] = None
         if rel_pos:
-            if input_size[1] != input_size[2]:
-                raise ValueError("Relative Positional Embeddings require square input shape.")
-            size = input_size[1]
+            size = max(input_size[1:])
             q_size = size // stride_q[1] if len(stride_q) > 0 else size
             kv_size = size // stride_kv[1] if len(stride_kv) > 0 else size
             spatial_dim = 2 * max(q_size, kv_size) - 1
