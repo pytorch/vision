@@ -561,7 +561,7 @@ class SwinTransformer(nn.Module):
         # build SwinTransformer blocks
         for i_stage in range(len(depths)):
             stage: List[nn.Module] = []
-            dim = embed_dim * 2**i_stage
+            dim = embed_dim * 2 ** i_stage
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
@@ -713,15 +713,72 @@ class Swin_B_Weights(WeightsEnum):
 
 
 class Swin_V2_T_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/swin_v2_t-b137f0e2.pth",
+        transforms=partial(
+            ImageClassification, crop_size=256, resize_size=260, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META,
+            "num_params": 28351570,
+            "min_size": (256, 256),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer-v2",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 82.072,
+                    "acc@5": 96.132,
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class Swin_V2_S_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/swin_v2_s-637d8ceb.pth",
+        transforms=partial(
+            ImageClassification, crop_size=256, resize_size=260, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META,
+            "num_params": 49737442,
+            "min_size": (256, 256),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer-v2",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.712,
+                    "acc@5": 96.816,
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class Swin_V2_B_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/swin_v2_b-781e5279.pth",
+        transforms=partial(
+            ImageClassification, crop_size=256, resize_size=272, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META,
+            "num_params": 87930848,
+            "min_size": (256, 256),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer-v2",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 84.112,
+                    "acc@5": 96.864,
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 @register_model()
