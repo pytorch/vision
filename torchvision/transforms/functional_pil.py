@@ -146,7 +146,7 @@ def adjust_gamma(
 def pad(
     img: Image.Image,
     padding: Union[int, List[int], Tuple[int, ...]],
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    fill: Union[float, List[float], Tuple[float, ...]] = 0,
     padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
 ) -> Image.Image:
 
