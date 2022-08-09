@@ -12,7 +12,7 @@ from torchvision.utils import _log_api_usage_once
 class Transform(nn.Module):
 
     # Class attribute defining transformed types. Other types are passed-through without any transformation
-    transformed_types: Tuple[Type, ...] = (torch.Tensor, _Feature, PIL.Image.Image)
+    _transformed_types: Tuple[Type, ...] = (torch.Tensor, _Feature, PIL.Image.Image)
 
     def __init__(self) -> None:
         super().__init__()
@@ -31,7 +31,7 @@ class Transform(nn.Module):
 
         flat_inputs, spec = tree_flatten(sample)
         flat_outputs = [
-            self._transform(inpt, params) if isinstance(inpt, self.transformed_types) else inpt for inpt in flat_inputs
+            self._transform(inpt, params) if isinstance(inpt, self._transformed_types) else inpt for inpt in flat_inputs
         ]
         return tree_unflatten(flat_outputs, spec)
 
