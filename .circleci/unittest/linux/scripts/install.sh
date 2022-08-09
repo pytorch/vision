@@ -26,7 +26,7 @@ else
     cudatoolkit=""
     if [[ "$CU_VERSION" == cu116 ]]; then
         cuda_toolkit_pckg="cuda"
-        cudatoolkit="-c nvidia cuda=11.6 atalman::pytorch-cuda=1.0=cuda11.6"
+        cudatoolkit=" -c nvidia -c pytorch-nightly pytorch-cuda=11.6"
     else
         cudatoolkit="nvidia::${cuda_toolkit_pckg}=${version}"
     fi
