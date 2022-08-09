@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import PIL.Image
+import torch
 from torchvision.prototype import features
 from torchvision.prototype.features import ColorSpace
 from torchvision.prototype.transforms import Transform
@@ -15,6 +16,10 @@ from ._utils import is_simple_tensor
 
 
 class ToTensor(Transform):
+
+    # Updated transformed types for ToTensor
+    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+
     def __init__(self) -> None:
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
@@ -45,6 +50,10 @@ class PILToTensor(Transform):
 
 
 class ToPILImage(Transform):
+
+    # Updated transformed types for ToPILImage
+    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+
     def __init__(self, mode: Optional[str] = None) -> None:
         warnings.warn(
             "The transform `ToPILImage()` is deprecated and will be removed in a future release. "
