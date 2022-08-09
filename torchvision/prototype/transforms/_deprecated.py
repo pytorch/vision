@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import PIL.Image
+import torch
 from torchvision.prototype import features
 from torchvision.prototype.features import ColorSpace
 from torchvision.prototype.transforms import Transform
@@ -15,6 +16,10 @@ from ._utils import is_simple_tensor
 
 
 class ToTensor(Transform):
+
+    # Updated transformed types for ToTensor
+    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+
     def __init__(self) -> None:
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
@@ -23,8 +28,6 @@ class ToTensor(Transform):
         super().__init__()
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        # TODO: Transforms allows to pass only (torch.Tensor, _Feature, PIL.Image.Image)
-        # so input as np.ndarray is not possible. We need to make it possible
         if isinstance(inpt, (PIL.Image.Image, np.ndarray)):
             return _F.to_tensor(inpt)
         else:
@@ -47,6 +50,10 @@ class PILToTensor(Transform):
 
 
 class ToPILImage(Transform):
+
+    # Updated transformed types for ToPILImage
+    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+
     def __init__(self, mode: Optional[str] = None) -> None:
         warnings.warn(
             "The transform `ToPILImage()` is deprecated and will be removed in a future release. "
@@ -56,8 +63,6 @@ class ToPILImage(Transform):
         self.mode = mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        # TODO: Transforms allows to pass only (torch.Tensor, _Feature, PIL.Image.Image)
-        # so input as np.ndarray is not possible. We need to make it possible
         if is_simple_tensor(inpt) or isinstance(inpt, (features.Image, np.ndarray)):
             return _F.to_pil_image(inpt, mode=self.mode)
         else:

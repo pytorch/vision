@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Dict
+from typing import Any, Dict, Tuple, Type
 
 import PIL.Image
 import torch
@@ -10,6 +10,10 @@ from torchvision.utils import _log_api_usage_once
 
 
 class Transform(nn.Module):
+
+    # Class attribute defining transformed types. Other types are passed-through without any transformation
+    _transformed_types: Tuple[Type, ...] = (torch.Tensor, _Feature, PIL.Image.Image)
+
     def __init__(self) -> None:
         super().__init__()
         _log_api_usage_once(self)
@@ -26,9 +30,8 @@ class Transform(nn.Module):
         params = self._get_params(sample)
 
         flat_inputs, spec = tree_flatten(sample)
-        transformed_types = (torch.Tensor, _Feature, PIL.Image.Image)
         flat_outputs = [
-            self._transform(inpt, params) if isinstance(inpt, transformed_types) else inpt for inpt in flat_inputs
+            self._transform(inpt, params) if isinstance(inpt, self._transformed_types) else inpt for inpt in flat_inputs
         ]
         return tree_unflatten(flat_outputs, spec)
 
