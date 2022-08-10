@@ -146,7 +146,7 @@ def adjust_gamma(
 def pad(
     img: Image.Image,
     padding: Union[int, List[int], Tuple[int, ...]],
-    fill: Union[float, List[float], Tuple[float, ...]] = 0,
+    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
     padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
 ) -> Image.Image:
 
@@ -155,7 +155,7 @@ def pad(
 
     if not isinstance(padding, (numbers.Number, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
-    if not isinstance(fill, (numbers.Number, tuple, list)):
+    if fill is not None and not isinstance(fill, (numbers.Number, tuple, list)):
         raise TypeError("Got inappropriate fill arg")
     if not isinstance(padding_mode, str):
         raise TypeError("Got inappropriate padding_mode arg")

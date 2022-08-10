@@ -608,9 +608,6 @@ def pad(
     if isinstance(inpt, features._Feature):
         return inpt.pad(padding, fill=fill, padding_mode=padding_mode)
     elif isinstance(inpt, PIL.Image.Image):
-        if fill is None:
-            fill = 0
-
         return pad_image_pil(inpt, padding, fill=fill, padding_mode=padding_mode)
     else:
         # This cast does Sequence[int] -> List[int] and is required to make mypy happy
