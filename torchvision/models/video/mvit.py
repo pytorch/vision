@@ -183,8 +183,8 @@ def _add_rel_pos(
     return attn
 
 
-def _add_shortcut(x: torch.Tensor, shortcut: torch.Tensor, residual_cls: bool):
-    if residual_cls:
+def _add_shortcut(x: torch.Tensor, shortcut: torch.Tensor, residual_with_cls_embed: bool):
+    if residual_with_cls_embed:
         x.add_(shortcut)
     else:
         x[:, :, 1:, :] += shortcut[:, :, 1:, :]
@@ -207,8 +207,8 @@ class MultiscaleAttention(nn.Module):
         stride_q: List[int],
         stride_kv: List[int],
         residual_pool: bool,
-        residual_cls: bool,
-        rel_pos: bool,
+        residual_with_cls_embed: bool,
+        rel_pos_embed: bool,
         dropout: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ) -> None:
@@ -219,8 +219,7 @@ class MultiscaleAttention(nn.Module):
         self.head_dim = output_dim // num_heads
         self.scaler = 1.0 / math.sqrt(self.head_dim)
         self.residual_pool = residual_pool
-        self.rel_pos = rel_pos
-        self.residual_cls = residual_cls
+        self.residual_with_cls_embed = residual_with_cls_embed
 
         self.qkv = nn.Linear(embed_dim, 3 * output_dim)
         layers: List[nn.Module] = [nn.Linear(output_dim, output_dim)]
@@ -276,7 +275,7 @@ class MultiscaleAttention(nn.Module):
         self.rel_pos_h: Optional[nn.Parameter] = None
         self.rel_pos_w: Optional[nn.Parameter] = None
         self.rel_pos_t: Optional[nn.Parameter] = None
-        if self.rel_pos:
+        if rel_pos_embed:
             size = max(input_size[1:])
             q_size = size // stride_q[1] if len(stride_q) > 0 else size
             kv_size = size // stride_kv[1] if len(stride_kv) > 0 else size
@@ -317,7 +316,7 @@ class MultiscaleAttention(nn.Module):
 
         x = torch.matmul(attn, v)
         if self.residual_pool:
-            _add_shortcut(x, q, self.residual_cls)
+            _add_shortcut(x, q, self.residual_with_cls_embed)
         x = x.transpose(1, 2).reshape(B, -1, self.output_dim)
         x = self.project(x)
 
@@ -330,8 +329,8 @@ class MultiscaleBlock(nn.Module):
         input_size: List[int],
         cnf: MSBlockConfig,
         residual_pool: bool,
-        residual_cls: bool,
-        rel_pos: bool,
+        residual_with_cls_embed: bool,
+        rel_pos_embed: bool,
         proj_after_attn: bool,
         dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
@@ -363,9 +362,9 @@ class MultiscaleBlock(nn.Module):
             kernel_kv=cnf.kernel_kv,
             stride_q=cnf.stride_q,
             stride_kv=cnf.stride_kv,
-            rel_pos=rel_pos,
+            rel_pos_embed=rel_pos_embed,
             residual_pool=residual_pool,
-            residual_cls=residual_cls,
+            residual_with_cls_embed=residual_with_cls_embed,
             dropout=dropout,
             norm_layer=norm_layer,
         )
@@ -397,7 +396,7 @@ class MultiscaleBlock(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, embed_size: int, spatial_size: Tuple[int, int], temporal_size: int, rel_pos: bool) -> None:
+    def __init__(self, embed_size: int, spatial_size: Tuple[int, int], temporal_size: int, rel_pos_embed: bool) -> None:
         super().__init__()
         self.spatial_size = spatial_size
         self.temporal_size = temporal_size
@@ -406,7 +405,7 @@ class PositionalEncoding(nn.Module):
         self.spatial_pos: Optional[nn.Parameter] = None
         self.temporal_pos: Optional[nn.Parameter] = None
         self.class_pos: Optional[nn.Parameter] = None
-        if not rel_pos:
+        if not rel_pos_embed:
             self.spatial_pos = nn.Parameter(torch.zeros(self.spatial_size[0] * self.spatial_size[1], embed_size))
             self.temporal_pos = nn.Parameter(torch.zeros(self.temporal_size, embed_size))
             self.class_pos = nn.Parameter(torch.zeros(embed_size))
@@ -432,8 +431,8 @@ class MViT(nn.Module):
         temporal_size: int,
         block_setting: Sequence[MSBlockConfig],
         residual_pool: bool,
-        residual_cls: bool,
-        rel_pos: bool,
+        residual_with_cls_embed: bool,
+        rel_pos_embed: bool,
         proj_after_attn: bool,
         dropout: float = 0.5,
         attention_dropout: float = 0.0,
@@ -453,8 +452,9 @@ class MViT(nn.Module):
             temporal_size (int): The temporal size ``T`` of the input.
             block_setting (sequence of MSBlockConfig): The Network structure.
             residual_pool (bool): If True, use MViTv2 pooling residual connection.
-            residual_cls (bool): If True, the addition on the residual connection will include the class embedding.
-            rel_pos (bool): If True, use MViTv2's relative positional embeddings.
+            residual_with_cls_embed (bool): If True, the addition on the residual connection will include
+                the class embedding.
+            rel_pos_embed (bool): If True, use MViTv2's relative positional embeddings.
             proj_after_attn (bool): If True, apply the projection after the attention.
             dropout (float): Dropout rate. Default: 0.0.
             attention_dropout (float): Attention dropout rate. Default: 0.0.
@@ -498,7 +498,7 @@ class MViT(nn.Module):
             embed_size=block_setting[0].input_channels,
             spatial_size=(input_size[1], input_size[2]),
             temporal_size=input_size[0],
-            rel_pos=rel_pos,
+            rel_pos_embed=rel_pos_embed,
         )
 
         # Encoder module
@@ -512,8 +512,8 @@ class MViT(nn.Module):
                     input_size=input_size,
                     cnf=cnf,
                     residual_pool=residual_pool,
-                    residual_cls=residual_cls,
-                    rel_pos=rel_pos,
+                    residual_with_cls_embed=residual_with_cls_embed,
+                    rel_pos_embed=rel_pos_embed,
                     proj_after_attn=proj_after_attn,
                     dropout=attention_dropout,
                     stochastic_depth_prob=sd_prob,
@@ -588,8 +588,8 @@ def _mvit(
         temporal_size=temporal_size,
         block_setting=block_setting,
         residual_pool=kwargs.pop("residual_pool", False),
-        residual_cls=kwargs.pop("residual_cls", True),
-        rel_pos=kwargs.pop("rel_pos", False),
+        residual_with_cls_embed=kwargs.pop("residual_with_cls_embed", True),
+        rel_pos_embed=kwargs.pop("rel_pos_embed", False),
         proj_after_attn=kwargs.pop("proj_after_attn", False),
         stochastic_depth_prob=stochastic_depth_prob,
         **kwargs,
@@ -750,7 +750,7 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
         temporal_size=16,
         block_setting=block_setting,
         residual_pool=False,
-        residual_cls=False,
+        residual_with_cls_embed=False,
         stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.2),
         weights=weights,
         progress=progress,
@@ -879,8 +879,8 @@ def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = T
         temporal_size=16,
         block_setting=block_setting,
         residual_pool=True,
-        residual_cls=False,
-        rel_pos=True,
+        residual_with_cls_embed=False,
+        rel_pos_embed=True,
         proj_after_attn=True,
         stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.2),
         weights=weights,
