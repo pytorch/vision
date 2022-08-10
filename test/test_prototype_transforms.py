@@ -1,5 +1,7 @@
 import itertools
 
+import numpy as np
+
 import PIL.Image
 
 import pytest
@@ -375,12 +377,11 @@ class TestRandomZoomOut:
         transform = transforms.RandomZoomOut(fill=fill, side_range=side_range)
 
         image = mocker.MagicMock(spec=features.Image)
-        c = image.num_channels = 3
         h, w = image.image_size = (24, 32)
 
         params = transform._get_params(image)
 
-        assert params["fill"] == (fill if not isinstance(fill, int) else [fill] * c)
+        assert params["fill"] == fill
         assert len(params["padding"]) == 4
         assert 0 <= params["padding"][0] <= (side_range[1] - 1) * w
         assert 0 <= params["padding"][1] <= (side_range[1] - 1) * h
@@ -991,3 +992,94 @@ class TestRandomErasing:
             fn.assert_called_once_with(erase_image_tensor_inpt, **params)
         else:
             fn.call_count == 0
+
+
+class TestTransform:
+    @pytest.mark.parametrize(
+        "inpt_type",
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+    )
+    def test_check_transformed_types(self, inpt_type, mocker):
+        # This test ensures that we correctly handle which types to transform and which to bypass
+        t = transforms.Transform()
+        inpt = mocker.MagicMock(spec=inpt_type)
+
+        if inpt_type in (np.ndarray, str, int):
+            output = t(inpt)
+            assert output is inpt
+        else:
+            with pytest.raises(NotImplementedError):
+                t(inpt)
+
+
+class TestToImageTensor:
+    @pytest.mark.parametrize(
+        "inpt_type",
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+    )
+    def test__transform(self, inpt_type, mocker):
+        fn = mocker.patch(
+            "torchvision.prototype.transforms.functional.to_image_tensor",
+            return_value=torch.rand(1, 3, 8, 8),
+        )
+
+        inpt = mocker.MagicMock(spec=inpt_type)
+        transform = transforms.ToImageTensor()
+        transform(inpt)
+        if inpt_type in (features.BoundingBox, str, int):
+            fn.call_count == 0
+        else:
+            fn.assert_called_once_with(inpt, copy=transform.copy)
+
+
+class TestToImagePIL:
+    @pytest.mark.parametrize(
+        "inpt_type",
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+    )
+    def test__transform(self, inpt_type, mocker):
+        fn = mocker.patch("torchvision.prototype.transforms.functional.to_image_pil")
+
+        inpt = mocker.MagicMock(spec=inpt_type)
+        transform = transforms.ToImagePIL()
+        transform(inpt)
+        if inpt_type in (features.BoundingBox, str, int):
+            fn.call_count == 0
+        else:
+            fn.assert_called_once_with(inpt, copy=transform.copy)
+
+
+class TestToPILImage:
+    @pytest.mark.parametrize(
+        "inpt_type",
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+    )
+    def test__transform(self, inpt_type, mocker):
+        fn = mocker.patch("torchvision.transforms.functional.to_pil_image")
+
+        inpt = mocker.MagicMock(spec=inpt_type)
+        with pytest.warns(UserWarning, match="deprecated and will be removed"):
+            transform = transforms.ToPILImage()
+        transform(inpt)
+        if inpt_type in (PIL.Image.Image, features.BoundingBox, str, int):
+            fn.call_count == 0
+        else:
+            fn.assert_called_once_with(inpt, mode=transform.mode)
+
+
+class TestToTensor:
+    @pytest.mark.parametrize(
+        "inpt_type",
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+    )
+    def test__transform(self, inpt_type, mocker):
+        fn = mocker.patch("torchvision.transforms.functional.to_tensor")
+
+        inpt = mocker.MagicMock(spec=inpt_type)
+        with pytest.warns(UserWarning, match="deprecated and will be removed"):
+            transform = transforms.ToTensor()
+        transform(inpt)
+        if inpt_type in (features.Image, torch.Tensor, features.BoundingBox, str, int):
+            fn.call_count == 0
+        else:
+            fn.assert_called_once_with(inpt)

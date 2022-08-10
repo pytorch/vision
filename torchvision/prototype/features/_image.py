@@ -174,11 +174,8 @@ class Image(_Feature):
         if not isinstance(padding, int):
             padding = list(padding)
 
-        if fill is None:
-            fill = 0
-
         # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
-        if isinstance(fill, (int, float)):
+        if isinstance(fill, (int, float)) or fill is None:
             output = _F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
         else:
             from torchvision.prototype.transforms.functional._geometry import _pad_with_vector_fill

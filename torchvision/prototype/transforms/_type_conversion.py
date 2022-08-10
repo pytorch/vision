@@ -2,6 +2,8 @@ from typing import Any, Dict
 
 import numpy as np
 import PIL.Image
+
+import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
@@ -40,13 +42,15 @@ class LabelToOneHot(Transform):
 
 
 class ToImageTensor(Transform):
+
+    # Updated transformed types for ToImageTensor
+    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+
     def __init__(self, *, copy: bool = False) -> None:
         super().__init__()
         self.copy = copy
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        # TODO: Transforms allows to pass only (torch.Tensor, _Feature, PIL.Image.Image)
-        # so input as np.ndarray is not possible. We need to make it possible
         if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
             output = F.to_image_tensor(inpt, copy=self.copy)
             return features.Image(output)
@@ -55,13 +59,15 @@ class ToImageTensor(Transform):
 
 
 class ToImagePIL(Transform):
+
+    # Updated transformed types for ToImagePIL
+    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+
     def __init__(self, *, copy: bool = False) -> None:
         super().__init__()
         self.copy = copy
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        # TODO: Transforms allows to pass only (torch.Tensor, _Feature, PIL.Image.Image)
-        # so input as np.ndarray is not possible. We need to make it possible
         if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
             return F.to_image_pil(inpt, copy=self.copy)
         else:
