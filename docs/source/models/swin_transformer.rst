@@ -30,4 +30,3 @@ more details about this class.
     swin_v2_t
     swin_v2_s
     swin_v2_b
-
