@@ -531,7 +531,7 @@ pad_image_pil = _FP.pad
 
 
 def pad_image_tensor(
-    img: torch.Tensor, padding: Union[int, List[int]], fill: Union[int, float] = 0, padding_mode: str = "constant"
+    img: torch.Tensor, padding: Union[int, List[int]], fill: Optional[Union[int, float]] = 0, padding_mode: str = "constant"
 ) -> torch.Tensor:
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
@@ -614,11 +614,8 @@ def pad(
         if not isinstance(padding, int):
             padding = list(padding)
 
-        if fill is None:
-            fill = 0
-
         # TODO: PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
-        if isinstance(fill, (int, float)):
+        if isinstance(fill, (int, float)) or fill is None:
             return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
         return _pad_with_vector_fill(inpt, padding, fill=fill, padding_mode=padding_mode)
 
