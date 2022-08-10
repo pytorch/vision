@@ -48,7 +48,7 @@ TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     conda install -yq libpng jpeg
 else
-    yum install -y libpng-devel libjpeg-turbo-devel
+    yum install -y libpng libpng-devel libjpeg-turbo libjpeg-turbo-devel
 fi
 
 if [[ "$OSTYPE" == "msys" ]]; then
