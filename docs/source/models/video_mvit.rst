@@ -12,7 +12,7 @@ The MViT model is based on the
 Model builders
 --------------
 
-The following model builders can be used to instantiate a MViT model, with or
+The following model builders can be used to instantiate a MViT v1 or v2 model, with or
 without pre-trained weights. All the model builders internally rely on the
 ``torchvision.models.video.MViT`` base class. Please refer to the `source
 code
@@ -24,3 +24,4 @@ more details about this class.
     :template: function.rst
 
     mvit_v1_b
+    mvit_v2_s
