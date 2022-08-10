@@ -441,6 +441,9 @@ class MViT(nn.Module):
         num_classes: int = 400,
         block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
+        patch_embed_kernel: Tuple[int, int, int] = (3, 7, 7),
+        patch_embed_stride: Tuple[int, int, int] = (2, 4, 4),
+        patch_embed_padding: Tuple[int, int, int] = (1, 3, 3),
     ) -> None:
         """
         MViT main class.
@@ -459,6 +462,9 @@ class MViT(nn.Module):
             num_classes (int): The number of classes.
             block (callable, optional): Module specifying the layer which consists of the attention and mlp.
             norm_layer (callable, optional): Module specifying the normalization layer to use.
+            patch_embed_kernel (tuple of ints): The kernel of the convolution that patchifies the input.
+            patch_embed_stride (tuple of ints): The stride of the convolution that patchifies the input.
+            patch_embed_padding (tuple of ints): The padding of the convolution that patchifies the input.
         """
         super().__init__()
         # This implementation employs a different parameterization scheme than the one used at PyTorch Video:
@@ -480,9 +486,9 @@ class MViT(nn.Module):
         self.conv_proj = nn.Conv3d(
             in_channels=3,
             out_channels=block_setting[0].input_channels,
-            kernel_size=(3, 7, 7),
-            stride=(2, 4, 4),
-            padding=(1, 3, 3),
+            kernel_size=patch_embed_kernel,
+            stride=patch_embed_stride,
+            padding=patch_embed_padding,
         )
 
         input_size = [size // stride for size, stride in zip((temporal_size,) + spatial_size, self.conv_proj.stride)]
@@ -540,6 +546,8 @@ class MViT(nn.Module):
                     nn.init.trunc_normal_(weights, std=0.02)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Convert if necessary (B, C, H, W) -> (B, C, 1, H, W)
+        x = _unsqueeze(x, 5, 2)[0]
         # patchify and reshape: (B, C, T, H, W) -> (B, embed_channels[0], T', H', W') -> (B, THW', embed_channels[0])
         x = self.conv_proj(x)
         x = x.flatten(2).transpose(1, 2)
