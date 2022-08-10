@@ -531,7 +531,10 @@ pad_image_pil = _FP.pad
 
 
 def pad_image_tensor(
-    img: torch.Tensor, padding: Union[int, List[int]], fill: Optional[Union[int, float]] = 0, padding_mode: str = "constant"
+    img: torch.Tensor,
+    padding: Union[int, List[int]],
+    fill: Optional[Union[int, float]] = 0,
+    padding_mode: str = "constant",
 ) -> torch.Tensor:
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
