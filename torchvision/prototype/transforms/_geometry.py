@@ -468,7 +468,6 @@ class RandomCrop(Transform):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        # if self._pad_op is not None:
         if self.padding is not None:
             sample = F.pad(sample, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
 
