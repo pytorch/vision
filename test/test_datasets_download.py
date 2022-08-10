@@ -433,7 +433,9 @@ def make_parametrize_kwargs(download_configs):
 @pytest.mark.parametrize(
     **make_parametrize_kwargs(
         itertools.chain(
-            places365(),
+            # The Places365 server is currently under maintenance. See https://github.com/pytorch/vision/issues/6268 for
+            # details.
+            # places365(),
             caltech101(),
             caltech256(),
             cifar10(),
