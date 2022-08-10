@@ -1,5 +1,6 @@
 from torchvision.transforms import InterpolationMode  # usort: skip
 from ._meta import (
+    clamp_bounding_box,
     convert_bounding_box_format,
     convert_image_color_space_tensor,
     convert_image_color_space_pil,

@@ -61,6 +61,13 @@ def convert_bounding_box_format(
     return bounding_box
 
 
+def clamp_bounding_box(bounding_box: torch.Tensor, format: BoundingBoxFormat, image_size: Tuple[int, int]):
+    xyxy_boxes = convert_bounding_box_format(bounding_box, format, BoundingBoxFormat.XYXY)
+    xyxy_boxes[..., 0::2].clamp_(min=0, max=image_size[1])
+    xyxy_boxes[..., 1::2].clamp_(min=0, max=image_size[0])
+    return convert_bounding_box_format(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
+
+
 def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     return image[..., :-1, :, :], image[..., -1:, :, :]
 

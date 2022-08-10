@@ -1102,3 +1102,13 @@ class TestCompose:
         inpt = torch.rand(1, 3, 32, 32)
         output = c(inpt)
         assert isinstance(output, torch.Tensor)
+
+
+class TestRandomIoUCrop:
+    def test__get_params(self):
+        # TODO:
+        pass
+
+    def test__transform(self):
+        # TODO:
+        pass

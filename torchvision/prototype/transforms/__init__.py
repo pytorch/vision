@@ -24,6 +24,7 @@ from ._geometry import (
     RandomAffine,
     RandomCrop,
     RandomHorizontalFlip,
+    RandomIoUCrop,
     RandomPerspective,
     RandomResizedCrop,
     RandomRotation,
