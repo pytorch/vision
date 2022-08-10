@@ -1839,3 +1839,25 @@ def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
         torch.testing.assert_close(output[..., 17, 27], sample[..., in_box[1], in_box[2] - 1])
         torch.testing.assert_close(output[..., 31, 6], sample[..., in_box[3] - 1, in_box[0]])
         torch.testing.assert_close(output[..., 37, 23], sample[..., in_box[3] - 1, in_box[2] - 1])
+
+
+def test_midlevel_normalize_output_type():
+    inpt = torch.rand(1, 3, 32, 32)
+    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
+    assert isinstance(output, torch.Tensor)
+    torch.testing.assert_close(inpt - 0.5, output)
+
+    inpt = make_segmentation_mask()
+    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
+    assert isinstance(output, features.SegmentationMask)
+    torch.testing.assert_close(inpt, output)
+
+    inpt = make_bounding_box(format="XYXY")
+    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
+    assert isinstance(output, features.BoundingBox)
+    torch.testing.assert_close(inpt, output)
+
+    inpt = make_image(color_space=features.ColorSpace.RGB)
+    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
+    assert isinstance(output, torch.Tensor)
+    torch.testing.assert_close(inpt - 0.5, output)
