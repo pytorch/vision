@@ -1,19 +1,20 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import torch
 from torchvision.prototype.transforms import Transform
+from torchvision.utils import _log_api_usage_once
 
 from ._transform import _RandomApplyTransform
 
 
-class Compose(Transform):
-    def __init__(self, *transforms: Transform) -> None:
-        super().__init__()
+class Compose:
+    def __init__(self, transforms: Sequence[Callable]) -> None:
+        _log_api_usage_once(self)
+        if not isinstance(transforms, Sequence):
+            raise TypeError("Argument transforms should be a sequence of callables")
         self.transforms = transforms
-        for idx, transform in enumerate(transforms):
-            self.add_module(str(idx), transform)
 
-    def forward(self, *inputs: Any) -> Any:
+    def __call__(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         for transform in self.transforms:
             sample = transform(sample)
