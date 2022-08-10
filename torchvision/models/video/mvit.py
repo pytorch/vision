@@ -24,9 +24,6 @@ __all__ = [
 ]
 
 
-# TODO: Consider handle 2d input if Temporal is 1
-
-
 @dataclass
 class MSBlockConfig:
     num_heads: int
