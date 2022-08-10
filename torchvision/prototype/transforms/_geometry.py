@@ -294,12 +294,7 @@ class RandomZoomOut(_RandomApplyTransform):
         bottom = canvas_height - (top + orig_h)
         padding = [left, top, right, bottom]
 
-        # vfdev-5: Can we put that into pad_image_tensor ?
-        fill = self.fill
-        if not isinstance(fill, collections.abc.Sequence):
-            fill = [fill] * orig_c
-
-        return dict(padding=padding, fill=fill)
+        return dict(padding=padding, fill=self.fill)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.pad(inpt, **params)
