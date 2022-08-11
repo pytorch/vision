@@ -1083,3 +1083,22 @@ class TestToTensor:
             fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt)
+
+
+class TestCompose:
+    def test_assertions(self):
+        with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
+            transforms.Compose(123)
+
+    @pytest.mark.parametrize(
+        "trfms",
+        [
+            [transforms.Pad(2), transforms.RandomCrop(28)],
+            [lambda x: 2.0 * x],
+        ],
+    )
+    def test_ctor(self, trfms):
+        c = transforms.Compose(trfms)
+        inpt = torch.rand(1, 3, 32, 32)
+        output = c(inpt)
+        assert isinstance(output, torch.Tensor)
