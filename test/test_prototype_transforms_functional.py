@@ -11,8 +11,9 @@ from common_utils import cpu_and_gpu
 from torch import jit
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
+from torchvision.prototype.constants import BoundingBoxFormat, ColorSpace
+from torchvision.prototype.kernels import convert_bounding_box_format
 from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
-from torchvision.prototype.transforms.functional._meta import convert_bounding_box_format
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
@@ -24,10 +25,10 @@ def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, co
 
     try:
         num_channels = {
-            features.ColorSpace.GRAY: 1,
-            features.ColorSpace.GRAY_ALPHA: 2,
-            features.ColorSpace.RGB: 3,
-            features.ColorSpace.RGB_ALPHA: 4,
+            ColorSpace.GRAY: 1,
+            ColorSpace.GRAY_ALPHA: 2,
+            ColorSpace.RGB: 3,
+            ColorSpace.RGB_ALPHA: 4,
         }[color_space]
     except KeyError as error:
         raise pytest.UsageError() from error
@@ -35,22 +36,22 @@ def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, co
     shape = (*extra_dims, num_channels, *size)
     max_value = get_max_value(dtype)
     data = make_tensor(shape, low=0, high=max_value, dtype=dtype)
-    if color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
+    if color_space in {ColorSpace.GRAY_ALPHA, ColorSpace.RGB_ALPHA} and constant_alpha:
         data[..., -1, :, :] = max_value
     return features.Image(data, color_space=color_space)
 
 
-make_grayscale_image = functools.partial(make_image, color_space=features.ColorSpace.GRAY)
-make_rgb_image = functools.partial(make_image, color_space=features.ColorSpace.RGB)
+make_grayscale_image = functools.partial(make_image, color_space=ColorSpace.GRAY)
+make_rgb_image = functools.partial(make_image, color_space=ColorSpace.RGB)
 
 
 def make_images(
     sizes=((16, 16), (7, 33), (31, 9)),
     color_spaces=(
-        features.ColorSpace.GRAY,
-        features.ColorSpace.GRAY_ALPHA,
-        features.ColorSpace.RGB,
-        features.ColorSpace.RGB_ALPHA,
+        ColorSpace.GRAY,
+        ColorSpace.GRAY_ALPHA,
+        ColorSpace.RGB,
+        ColorSpace.RGB_ALPHA,
     ),
     dtypes=(torch.float32, torch.uint8),
     extra_dims=((4,), (2, 3)),
@@ -76,23 +77,23 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
 
 def make_bounding_box(*, format, image_size=(32, 32), extra_dims=(), dtype=torch.int64):
     if isinstance(format, str):
-        format = features.BoundingBoxFormat[format]
+        format = BoundingBoxFormat[format]
 
     height, width = image_size
 
-    if format == features.BoundingBoxFormat.XYXY:
+    if format == BoundingBoxFormat.XYXY:
         x1 = torch.randint(0, width // 2, extra_dims)
         y1 = torch.randint(0, height // 2, extra_dims)
         x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
         y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
         parts = (x1, y1, x2, y2)
-    elif format == features.BoundingBoxFormat.XYWH:
+    elif format == BoundingBoxFormat.XYWH:
         x = torch.randint(0, width // 2, extra_dims)
         y = torch.randint(0, height // 2, extra_dims)
         w = randint_with_tensor_bounds(1, width - x)
         h = randint_with_tensor_bounds(1, height - y)
         parts = (x, y, w, h)
-    elif format == features.BoundingBoxFormat.CXCYWH:
+    elif format == BoundingBoxFormat.CXCYWH:
         cx = torch.randint(1, width - 1, ())
         cy = torch.randint(1, height - 1, ())
         w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
@@ -104,11 +105,11 @@ def make_bounding_box(*, format, image_size=(32, 32), extra_dims=(), dtype=torch
     return features.BoundingBox(torch.stack(parts, dim=-1).to(dtype), format=format, image_size=image_size)
 
 
-make_xyxy_bounding_box = functools.partial(make_bounding_box, format=features.BoundingBoxFormat.XYXY)
+make_xyxy_bounding_box = functools.partial(make_bounding_box, format=BoundingBoxFormat.XYXY)
 
 
 def make_bounding_boxes(
-    formats=(features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH),
+    formats=(BoundingBoxFormat.XYXY, BoundingBoxFormat.XYWH, BoundingBoxFormat.CXCYWH),
     image_sizes=((32, 32),),
     dtypes=(torch.int64, torch.float32),
     extra_dims=((4,), (2, 3)),
@@ -188,22 +189,23 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
     return sample_inputs_fn
 
 
-@register_kernel_info_from_sample_inputs_fn
-def horizontal_flip_image_tensor():
-    for image in make_images():
-        yield SampleInput(image)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def horizontal_flip_bounding_box():
-    for bounding_box in make_bounding_boxes(formats=[features.BoundingBoxFormat.XYXY]):
-        yield SampleInput(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def horizontal_flip_segmentation_mask():
-    for mask in make_segmentation_masks():
-        yield SampleInput(mask)
+# FIXME: these are disabled now since these kernels now live in a different location
+# @register_kernel_info_from_sample_inputs_fn
+# def horizontal_flip_image_tensor():
+#     for image in make_images():
+#         yield SampleInput(image)
+#
+#
+# @register_kernel_info_from_sample_inputs_fn
+# def horizontal_flip_bounding_box():
+#     for bounding_box in make_bounding_boxes(formats=[BoundingBoxFormat.XYXY]):
+#         yield SampleInput(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
+#
+#
+# @register_kernel_info_from_sample_inputs_fn
+# def horizontal_flip_segmentation_mask():
+#     for mask in make_segmentation_masks():
+#         yield SampleInput(mask)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -214,7 +216,7 @@ def vertical_flip_image_tensor():
 
 @register_kernel_info_from_sample_inputs_fn
 def vertical_flip_bounding_box():
-    for bounding_box in make_bounding_boxes(formats=[features.BoundingBoxFormat.XYXY]):
+    for bounding_box in make_bounding_boxes(formats=[BoundingBoxFormat.XYXY]):
         yield SampleInput(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
 
 
@@ -605,7 +607,7 @@ def gaussian_blur_image_tensor():
 
 @register_kernel_info_from_sample_inputs_fn
 def equalize_image_tensor():
-    for image in make_images(extra_dims=(), color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+    for image in make_images(extra_dims=(), color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         if image.dtype != torch.uint8:
             continue
         yield SampleInput(image)
@@ -613,14 +615,14 @@ def equalize_image_tensor():
 
 @register_kernel_info_from_sample_inputs_fn
 def invert_image_tensor():
-    for image in make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+    for image in make_images(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield SampleInput(image)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def posterize_image_tensor():
     for image, bits in itertools.product(
-        make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
+        make_images(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)),
         [1, 4, 8],
     ):
         if image.dtype != torch.uint8:
@@ -631,7 +633,7 @@ def posterize_image_tensor():
 @register_kernel_info_from_sample_inputs_fn
 def solarize_image_tensor():
     for image, threshold in itertools.product(
-        make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
+        make_images(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)),
         [0.1, 0.5, 127.0],
     ):
         if image.is_floating_point() and threshold > 1.0:
@@ -641,14 +643,14 @@ def solarize_image_tensor():
 
 @register_kernel_info_from_sample_inputs_fn
 def autocontrast_image_tensor():
-    for image in make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+    for image in make_images(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield SampleInput(image)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def adjust_sharpness_image_tensor():
     for image, sharpness_factor in itertools.product(
-        make_images(extra_dims=((4,),), color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
+        make_images(extra_dims=((4,),), color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)),
         [0.1, 0.5],
     ):
         yield SampleInput(image, sharpness_factor=sharpness_factor)
@@ -773,9 +775,7 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
         affine_matrix = _compute_affine_matrix(angle_, translate_, scale_, shear_, center_)
         affine_matrix = affine_matrix[:2, :]
 
-        bbox_xyxy = convert_bounding_box_format(
-            bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
-        )
+        bbox_xyxy = convert_bounding_box_format(bbox, old_format=bbox.format, new_format=BoundingBoxFormat.XYXY)
         points = np.array(
             [
                 [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
@@ -793,13 +793,13 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
         ]
         out_bbox = features.BoundingBox(
             out_bbox,
-            format=features.BoundingBoxFormat.XYXY,
+            format=BoundingBoxFormat.XYXY,
             image_size=bbox.image_size,
             dtype=torch.float32,
             device=bbox.device,
         )
         return convert_bounding_box_format(
-            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
+            out_bbox, old_format=BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
 
     image_size = (32, 38)
@@ -856,7 +856,7 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         [1, 1, 5, 5],
     ]
     in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
+        in_boxes, format=BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
     )
     # Tested parameters
     angle = 63
@@ -973,9 +973,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
         affine_matrix = affine_matrix[:2, :]
 
         image_size = bbox.image_size
-        bbox_xyxy = convert_bounding_box_format(
-            bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
-        )
+        bbox_xyxy = convert_bounding_box_format(bbox, old_format=bbox.format, new_format=BoundingBoxFormat.XYXY)
         points = np.array(
             [
                 [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
@@ -1009,13 +1007,13 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
 
         out_bbox = features.BoundingBox(
             out_bbox,
-            format=features.BoundingBoxFormat.XYXY,
+            format=BoundingBoxFormat.XYXY,
             image_size=image_size,
             dtype=torch.float32,
             device=bbox.device,
         )
         return convert_bounding_box_format(
-            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
+            out_bbox, old_format=BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
 
     image_size = (32, 38)
@@ -1069,7 +1067,7 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
         [image_size[1] // 2 - 10, image_size[0] // 2 - 10, image_size[1] // 2 + 10, image_size[0] // 2 + 10],
     ]
     in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
+        in_boxes, format=BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
     )
     # Tested parameters
     angle = 45
@@ -1201,7 +1199,7 @@ def test_correctness_rotate_segmentation_mask_on_fixed_input(device):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "format",
-    [features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH],
+    [BoundingBoxFormat.XYXY, BoundingBoxFormat.XYWH, BoundingBoxFormat.CXCYWH],
 )
 @pytest.mark.parametrize(
     "top, left, height, width, expected_bboxes",
@@ -1231,9 +1229,9 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
         [50.0, 5.0, 70.0, 22.0],
         [45.0, 46.0, 56.0, 62.0],
     ]
-    in_boxes = features.BoundingBox(in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=size, device=device)
-    if format != features.BoundingBoxFormat.XYXY:
-        in_boxes = convert_bounding_box_format(in_boxes, features.BoundingBoxFormat.XYXY, format)
+    in_boxes = features.BoundingBox(in_boxes, format=BoundingBoxFormat.XYXY, image_size=size, device=device)
+    if format != BoundingBoxFormat.XYXY:
+        in_boxes = convert_bounding_box_format(in_boxes, BoundingBoxFormat.XYXY, format)
 
     output_boxes = F.crop_bounding_box(
         in_boxes,
@@ -1242,8 +1240,8 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
         left,
     )
 
-    if format != features.BoundingBoxFormat.XYXY:
-        output_boxes = convert_bounding_box_format(output_boxes, format, features.BoundingBoxFormat.XYXY)
+    if format != BoundingBoxFormat.XYXY:
+        output_boxes = convert_bounding_box_format(output_boxes, format, BoundingBoxFormat.XYXY)
 
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
 
@@ -1316,7 +1314,7 @@ def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "format",
-    [features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH],
+    [BoundingBoxFormat.XYXY, BoundingBoxFormat.XYWH, BoundingBoxFormat.CXCYWH],
 )
 @pytest.mark.parametrize(
     "top, left, height, width, size",
@@ -1345,16 +1343,14 @@ def test_correctness_resized_crop_bounding_box(device, format, top, left, height
         expected_bboxes.append(_compute_expected_bbox(list(in_box), top, left, height, width, size))
     expected_bboxes = torch.tensor(expected_bboxes, device=device)
 
-    in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, device=device
-    )
-    if format != features.BoundingBoxFormat.XYXY:
-        in_boxes = convert_bounding_box_format(in_boxes, features.BoundingBoxFormat.XYXY, format)
+    in_boxes = features.BoundingBox(in_boxes, format=BoundingBoxFormat.XYXY, image_size=image_size, device=device)
+    if format != BoundingBoxFormat.XYXY:
+        in_boxes = convert_bounding_box_format(in_boxes, BoundingBoxFormat.XYXY, format)
 
     output_boxes = F.resized_crop_bounding_box(in_boxes, format, top, left, height, width, size)
 
-    if format != features.BoundingBoxFormat.XYXY:
-        output_boxes = convert_bounding_box_format(output_boxes, format, features.BoundingBoxFormat.XYXY)
+    if format != BoundingBoxFormat.XYXY:
+        output_boxes = convert_bounding_box_format(output_boxes, format, BoundingBoxFormat.XYXY)
 
     torch.testing.assert_close(output_boxes, expected_bboxes)
 
@@ -1404,14 +1400,12 @@ def test_correctness_pad_bounding_box(device, padding):
 
         bbox_format = bbox.format
         bbox_dtype = bbox.dtype
-        bbox = convert_bounding_box_format(bbox, old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY)
+        bbox = convert_bounding_box_format(bbox, old_format=bbox_format, new_format=BoundingBoxFormat.XYXY)
 
         bbox[0::2] += pad_left
         bbox[1::2] += pad_up
 
-        bbox = convert_bounding_box_format(
-            bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
-        )
+        bbox = convert_bounding_box_format(bbox, old_format=BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False)
         if bbox.dtype != bbox_dtype:
             # Temporary cast to original dtype
             # e.g. float32 -> int
@@ -1532,9 +1526,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             ]
         )
 
-        bbox_xyxy = convert_bounding_box_format(
-            bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
-        )
+        bbox_xyxy = convert_bounding_box_format(bbox, old_format=bbox.format, new_format=BoundingBoxFormat.XYXY)
         points = np.array(
             [
                 [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
@@ -1554,13 +1546,13 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         ]
         out_bbox = features.BoundingBox(
             out_bbox,
-            format=features.BoundingBoxFormat.XYXY,
+            format=BoundingBoxFormat.XYXY,
             image_size=bbox.image_size,
             dtype=torch.float32,
             device=bbox.device,
         )
         return convert_bounding_box_format(
-            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
+            out_bbox, old_format=BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
 
     image_size = (32, 38)
@@ -1672,7 +1664,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
     def _compute_expected_bbox(bbox, output_size_):
         format_ = bbox.format
         image_size_ = bbox.image_size
-        bbox = convert_bounding_box_format(bbox, format_, features.BoundingBoxFormat.XYWH)
+        bbox = convert_bounding_box_format(bbox, format_, BoundingBoxFormat.XYWH)
 
         if len(output_size_) == 1:
             output_size_.append(output_size_[-1])
@@ -1687,12 +1679,12 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         ]
         out_bbox = features.BoundingBox(
             out_bbox,
-            format=features.BoundingBoxFormat.XYWH,
+            format=BoundingBoxFormat.XYWH,
             image_size=output_size_,
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_bounding_box_format(out_bbox, features.BoundingBoxFormat.XYWH, format_, copy=False)
+        return convert_bounding_box_format(out_bbox, BoundingBoxFormat.XYWH, format_, copy=False)
 
     for bboxes in make_bounding_boxes(
         image_sizes=[(32, 32), (24, 33), (32, 25)],
@@ -1857,7 +1849,7 @@ def test_midlevel_normalize_output_type():
     assert isinstance(output, features.BoundingBox)
     torch.testing.assert_close(inpt, output)
 
-    inpt = make_image(color_space=features.ColorSpace.RGB)
+    inpt = make_image(color_space=ColorSpace.RGB)
     output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
     assert isinstance(output, torch.Tensor)
     torch.testing.assert_close(inpt - 0.5, output)

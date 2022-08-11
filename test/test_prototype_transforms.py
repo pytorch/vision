@@ -16,6 +16,7 @@ from test_prototype_transforms_functional import (
     make_segmentation_mask,
 )
 from torchvision.prototype import features, transforms
+from torchvision.prototype.constants import BoundingBoxFormat, ColorSpace
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 
@@ -141,8 +142,8 @@ class TestSmoke:
                 itertools.chain.from_iterable(
                     fn(
                         color_spaces=[
-                            features.ColorSpace.GRAY,
-                            features.ColorSpace.RGB,
+                            ColorSpace.GRAY,
+                            ColorSpace.RGB,
                         ],
                         dtypes=[torch.uint8],
                         extra_dims=[(4,)],
@@ -170,7 +171,7 @@ class TestSmoke:
             (
                 transforms.Normalize(mean=[0.0, 0.0, 0.0], std=[1.0, 1.0, 1.0]),
                 itertools.chain.from_iterable(
-                    fn(color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32])
+                    fn(color_spaces=[ColorSpace.RGB], dtypes=[torch.float32])
                     for fn in [
                         make_images,
                         make_vanilla_tensor_images,
@@ -214,10 +215,10 @@ class TestSmoke:
             )
             for old_color_space, new_color_space in itertools.product(
                 [
-                    features.ColorSpace.GRAY,
-                    features.ColorSpace.GRAY_ALPHA,
-                    features.ColorSpace.RGB,
-                    features.ColorSpace.RGB_ALPHA,
+                    ColorSpace.GRAY,
+                    ColorSpace.GRAY_ALPHA,
+                    ColorSpace.RGB,
+                    ColorSpace.RGB_ALPHA,
                 ],
                 repeat=2,
             )
@@ -268,7 +269,7 @@ class TestRandomHorizontalFlip:
         assert_equal(features.SegmentationMask(expected), actual)
 
     def test_features_bounding_box(self, p):
-        input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
+        input = features.BoundingBox([0, 0, 5, 5], format=BoundingBoxFormat.XYXY, image_size=(10, 10))
         transform = transforms.RandomHorizontalFlip(p=p)
 
         actual = transform(input)
@@ -321,7 +322,7 @@ class TestRandomVerticalFlip:
         assert_equal(features.SegmentationMask(expected), actual)
 
     def test_features_bounding_box(self, p):
-        input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
+        input = features.BoundingBox([0, 0, 5, 5], format=BoundingBoxFormat.XYXY, image_size=(10, 10))
         transform = transforms.RandomVerticalFlip(p=p)
 
         actual = transform(input)
@@ -473,9 +474,7 @@ class TestRandomRotation:
     @pytest.mark.parametrize("expand", [False, True])
     def test_boundingbox_image_size(self, angle, expand):
         # Specific test for BoundingBox.rotate
-        bbox = features.BoundingBox(
-            torch.tensor([1, 2, 3, 4]), format=features.BoundingBoxFormat.XYXY, image_size=(32, 32)
-        )
+        bbox = features.BoundingBox(torch.tensor([1, 2, 3, 4]), format=BoundingBoxFormat.XYXY, image_size=(32, 32))
         img = features.Image(torch.rand(1, 3, 32, 32))
 
         out_img = img.rotate(angle, expand=expand)
