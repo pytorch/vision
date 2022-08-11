@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar, Union
 import PIL.Image
 import torch
 from torchvision.prototype import features
+from torchvision.prototype.constants import ColorSpace
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms import functional as _F
 
@@ -101,7 +102,7 @@ class _RandomChannelShuffle(Transform):
         output = image[..., params["permutation"], :, :]
 
         if isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.OTHER)
+            output = features.Image.new_like(inpt, output, color_space=ColorSpace.OTHER)
         elif isinstance(inpt, PIL.Image.Image):
             output = _F.to_pil_image(output)
 
