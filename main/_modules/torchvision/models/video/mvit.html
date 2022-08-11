@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+9f7ef86 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+203cfb0 ) &#x25BC</a>
     </div>
     
 
@@ -348,10 +348,9 @@
     <span class="s2">&quot;MViT&quot;</span><span class="p">,</span>
     <span class="s2">&quot;MViT_V1_B_Weights&quot;</span><span class="p">,</span>
     <span class="s2">&quot;mvit_v1_b&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;MViT_V2_S_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mvit_v2_s&quot;</span><span class="p">,</span>
 <span class="p">]</span>
-
-
-<span class="c1"># TODO: Consider handle 2d input if Temporal is 1</span>
 
 
 <span class="nd">@dataclass</span>
@@ -435,28 +434,121 @@
         <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span>
 
 
+<span class="k">def</span> <span class="nf">_interpolate</span><span class="p">(</span><span class="n">embedding</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">embedding</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">d</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">embedding</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span>
+            <span class="n">embedding</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">d</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_add_rel_pos</span><span class="p">(</span>
+    <span class="n">attn</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">q</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">q_thw</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="n">k_thw</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="n">rel_pos_h</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">rel_pos_w</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">rel_pos_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># Modified code from: https://github.com/facebookresearch/SlowFast/commit/1aebd71a2efad823d52b827a3deaf15a56cf4932</span>
+    <span class="n">q_t</span><span class="p">,</span> <span class="n">q_h</span><span class="p">,</span> <span class="n">q_w</span> <span class="o">=</span> <span class="n">q_thw</span>
+    <span class="n">k_t</span><span class="p">,</span> <span class="n">k_h</span><span class="p">,</span> <span class="n">k_w</span> <span class="o">=</span> <span class="n">k_thw</span>
+    <span class="n">dh</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">q_h</span><span class="p">,</span> <span class="n">k_h</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">dw</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">q_w</span><span class="p">,</span> <span class="n">k_w</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">q_t</span><span class="p">,</span> <span class="n">k_t</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Scale up rel pos if shapes for q and k are different.</span>
+    <span class="n">q_h_ratio</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">k_h</span> <span class="o">/</span> <span class="n">q_h</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">k_h_ratio</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">q_h</span> <span class="o">/</span> <span class="n">k_h</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">dist_h</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">q_h</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">q_h_ratio</span> <span class="o">-</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">k_h</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">k_h</span><span class="p">))</span> <span class="o">*</span> <span class="n">k_h_ratio</span>
+    <span class="n">q_w_ratio</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">k_w</span> <span class="o">/</span> <span class="n">q_w</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">k_w_ratio</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">q_w</span> <span class="o">/</span> <span class="n">k_w</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">dist_w</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">q_w</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">q_w_ratio</span> <span class="o">-</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">k_w</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">k_w</span><span class="p">))</span> <span class="o">*</span> <span class="n">k_w_ratio</span>
+    <span class="n">q_t_ratio</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">k_t</span> <span class="o">/</span> <span class="n">q_t</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">k_t_ratio</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">q_t</span> <span class="o">/</span> <span class="n">k_t</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">dist_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">q_t</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">q_t_ratio</span> <span class="o">-</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">k_t</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">k_t</span><span class="p">))</span> <span class="o">*</span> <span class="n">k_t_ratio</span>
+
+    <span class="c1"># Intepolate rel pos if needed.</span>
+    <span class="n">rel_pos_h</span> <span class="o">=</span> <span class="n">_interpolate</span><span class="p">(</span><span class="n">rel_pos_h</span><span class="p">,</span> <span class="n">dh</span><span class="p">)</span>
+    <span class="n">rel_pos_w</span> <span class="o">=</span> <span class="n">_interpolate</span><span class="p">(</span><span class="n">rel_pos_w</span><span class="p">,</span> <span class="n">dw</span><span class="p">)</span>
+    <span class="n">rel_pos_t</span> <span class="o">=</span> <span class="n">_interpolate</span><span class="p">(</span><span class="n">rel_pos_t</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+    <span class="n">Rh</span> <span class="o">=</span> <span class="n">rel_pos_h</span><span class="p">[</span><span class="n">dist_h</span><span class="o">.</span><span class="n">long</span><span class="p">()]</span>
+    <span class="n">Rw</span> <span class="o">=</span> <span class="n">rel_pos_w</span><span class="p">[</span><span class="n">dist_w</span><span class="o">.</span><span class="n">long</span><span class="p">()]</span>
+    <span class="n">Rt</span> <span class="o">=</span> <span class="n">rel_pos_t</span><span class="p">[</span><span class="n">dist_t</span><span class="o">.</span><span class="n">long</span><span class="p">()]</span>
+
+    <span class="n">B</span><span class="p">,</span> <span class="n">n_head</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">r_q</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">n_head</span><span class="p">,</span> <span class="n">q_t</span><span class="p">,</span> <span class="n">q_h</span><span class="p">,</span> <span class="n">q_w</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+    <span class="n">rel_h_q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bythwc,hkc-&gt;bythwk&quot;</span><span class="p">,</span> <span class="n">r_q</span><span class="p">,</span> <span class="n">Rh</span><span class="p">)</span>  <span class="c1"># [B, H, q_t, qh, qw, k_h]</span>
+    <span class="n">rel_w_q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bythwc,wkc-&gt;bythwk&quot;</span><span class="p">,</span> <span class="n">r_q</span><span class="p">,</span> <span class="n">Rw</span><span class="p">)</span>  <span class="c1"># [B, H, q_t, qh, qw, k_w]</span>
+    <span class="c1"># [B, H, q_t, q_h, q_w, dim] -&gt; [q_t, B, H, q_h, q_w, dim] -&gt; [q_t, B*H*q_h*q_w, dim]</span>
+    <span class="n">r_q</span> <span class="o">=</span> <span class="n">r_q</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">q_t</span><span class="p">,</span> <span class="n">B</span> <span class="o">*</span> <span class="n">n_head</span> <span class="o">*</span> <span class="n">q_h</span> <span class="o">*</span> <span class="n">q_w</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+    <span class="c1"># [q_t, B*H*q_h*q_w, dim] * [q_t, dim, k_t] = [q_t, B*H*q_h*q_w, k_t] -&gt; [B*H*q_h*q_w, q_t, k_t]</span>
+    <span class="n">rel_q_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">r_q</span><span class="p">,</span> <span class="n">Rt</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># [B*H*q_h*q_w, q_t, k_t] -&gt; [B, H, q_t, q_h, q_w, k_t]</span>
+    <span class="n">rel_q_t</span> <span class="o">=</span> <span class="n">rel_q_t</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">n_head</span><span class="p">,</span> <span class="n">q_h</span><span class="p">,</span> <span class="n">q_w</span><span class="p">,</span> <span class="n">q_t</span><span class="p">,</span> <span class="n">k_t</span><span class="p">)</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="c1"># Combine rel pos.</span>
+    <span class="n">rel_pos</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">rel_h_q</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="o">+</span> <span class="n">rel_w_q</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="o">+</span> <span class="n">rel_q_t</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">n_head</span><span class="p">,</span> <span class="n">q_t</span> <span class="o">*</span> <span class="n">q_h</span> <span class="o">*</span> <span class="n">q_w</span><span class="p">,</span> <span class="n">k_t</span> <span class="o">*</span> <span class="n">k_h</span> <span class="o">*</span> <span class="n">k_w</span><span class="p">)</span>
+
+    <span class="c1"># Add it to attention</span>
+    <span class="n">attn</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">+=</span> <span class="n">rel_pos</span>
+
+    <span class="k">return</span> <span class="n">attn</span>
+
+
+<span class="k">def</span> <span class="nf">_add_shortcut</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">shortcut</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">residual_with_cls_embed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">residual_with_cls_embed</span><span class="p">:</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">shortcut</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:]</span> <span class="o">+=</span> <span class="n">shortcut</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:]</span>
+    <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;_add_rel_pos&quot;</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;_add_shortcut&quot;</span><span class="p">)</span>
+
+
 <span class="k">class</span> <span class="nc">MultiscaleAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">embed_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">output_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">num_heads</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">kernel_q</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">kernel_kv</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">stride_q</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">stride_kv</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">residual_pool</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">residual_with_cls_embed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">rel_pos_embed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embed_dim</span> <span class="o">=</span> <span class="n">embed_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dim</span> <span class="o">=</span> <span class="n">output_dim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span> <span class="o">=</span> <span class="n">num_heads</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span> <span class="o">=</span> <span class="n">embed_dim</span> <span class="o">//</span> <span class="n">num_heads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span> <span class="o">=</span> <span class="n">output_dim</span> <span class="o">//</span> <span class="n">num_heads</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">residual_pool</span> <span class="o">=</span> <span class="n">residual_pool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">residual_with_cls_embed</span> <span class="o">=</span> <span class="n">residual_with_cls_embed</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">qkv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">embed_dim</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">embed_dim</span><span class="p">)</span>
-        <span class="n">layers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">embed_dim</span><span class="p">,</span> <span class="n">embed_dim</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qkv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">embed_dim</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">output_dim</span><span class="p">)</span>
+        <span class="n">layers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">output_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)]</span>
         <span class="k">if</span> <span class="n">dropout</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
@@ -506,24 +598,52 @@
                 <span class="n">norm_layer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span><span class="p">),</span>
             <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_h</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_t</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">rel_pos_embed</span><span class="p">:</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">input_size</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="n">q_size</span> <span class="o">=</span> <span class="n">size</span> <span class="o">//</span> <span class="n">stride_q</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stride_q</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">size</span>
+            <span class="n">kv_size</span> <span class="o">=</span> <span class="n">size</span> <span class="o">//</span> <span class="n">stride_kv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stride_kv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">size</span>
+            <span class="n">spatial_dim</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">q_size</span><span class="p">,</span> <span class="n">kv_size</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">temporal_dim</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">input_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_h</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">spatial_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_w</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">spatial_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_t</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">temporal_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span><span class="p">))</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">trunc_normal_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_h</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">trunc_normal_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_w</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">trunc_normal_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_t</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">thw</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
         <span class="n">B</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qkv</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_k</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_k</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">thw</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">k</span><span class="p">,</span> <span class="n">k_thw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_k</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">thw</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k_thw</span> <span class="o">=</span> <span class="n">thw</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_v</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">thw</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_q</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">q</span><span class="p">,</span> <span class="n">thw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_q</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">thw</span><span class="p">)</span>
 
         <span class="n">attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">*</span> <span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attn</span> <span class="o">=</span> <span class="n">_add_rel_pos</span><span class="p">(</span>
+                <span class="n">attn</span><span class="p">,</span>
+                <span class="n">q</span><span class="p">,</span>
+                <span class="n">thw</span><span class="p">,</span>
+                <span class="n">k_thw</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_h</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_w</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rel_pos_t</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="n">attn</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">attn</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_pool</span><span class="p">:</span>
-            <span class="n">x</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">C</span><span class="p">)</span>
+            <span class="n">_add_shortcut</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_with_cls_embed</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dim</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">thw</span>
@@ -532,13 +652,18 @@
 <span class="k">class</span> <span class="nc">MultiscaleBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">cnf</span><span class="p">:</span> <span class="n">MSBlockConfig</span><span class="p">,</span>
         <span class="n">residual_pool</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">residual_with_cls_embed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">rel_pos_embed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">proj_after_attn</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="n">stochastic_depth_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proj_after_attn</span> <span class="o">=</span> <span class="n">proj_after_attn</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">pool_skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">_prod</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">stride_q</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -548,24 +673,30 @@
                 <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool3d</span><span class="p">(</span><span class="n">kernel_skip</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">stride_q</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding_skip</span><span class="p">),</span> <span class="kc">None</span>  <span class="c1"># type: ignore[arg-type]</span>
             <span class="p">)</span>
 
+        <span class="n">attn_dim</span> <span class="o">=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">output_channels</span> <span class="k">if</span> <span class="n">proj_after_attn</span> <span class="k">else</span> <span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">norm1</span> <span class="o">=</span> <span class="n">norm_layer</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">norm2</span> <span class="o">=</span> <span class="n">norm_layer</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm2</span> <span class="o">=</span> <span class="n">norm_layer</span><span class="p">(</span><span class="n">attn_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">needs_transposal</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">norm1</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">attn</span> <span class="o">=</span> <span class="n">MultiscaleAttention</span><span class="p">(</span>
+            <span class="n">input_size</span><span class="p">,</span>
             <span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span>
+            <span class="n">attn_dim</span><span class="p">,</span>
             <span class="n">cnf</span><span class="o">.</span><span class="n">num_heads</span><span class="p">,</span>
             <span class="n">kernel_q</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">kernel_q</span><span class="p">,</span>
             <span class="n">kernel_kv</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">kernel_kv</span><span class="p">,</span>
             <span class="n">stride_q</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">stride_q</span><span class="p">,</span>
             <span class="n">stride_kv</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">stride_kv</span><span class="p">,</span>
+            <span class="n">rel_pos_embed</span><span class="o">=</span><span class="n">rel_pos_embed</span><span class="p">,</span>
             <span class="n">residual_pool</span><span class="o">=</span><span class="n">residual_pool</span><span class="p">,</span>
+            <span class="n">residual_with_cls_embed</span><span class="o">=</span><span class="n">residual_with_cls_embed</span><span class="p">,</span>
             <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
             <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span>
-            <span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span>
-            <span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">output_channels</span><span class="p">],</span>
+            <span class="n">attn_dim</span><span class="p">,</span>
+            <span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="n">attn_dim</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">output_channels</span><span class="p">],</span>
             <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">GELU</span><span class="p">,</span>
             <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
             <span class="n">inplace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -578,36 +709,45 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">output_channels</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">thw</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+        <span class="n">x_norm1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm1</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">needs_transposal</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x_attn</span><span class="p">,</span> <span class="n">thw_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span><span class="n">x_norm1</span><span class="p">,</span> <span class="n">thw</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj_after_attn</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="n">x_norm1</span><span class="p">)</span>
         <span class="n">x_skip</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_skip</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_skip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">thw</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x_skip</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span><span class="p">(</span><span class="n">x_attn</span><span class="p">)</span>
 
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm1</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">needs_transposal</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">x</span><span class="p">,</span> <span class="n">thw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">thw</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">x_skip</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x_norm2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm2</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">needs_transposal</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x_proj</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj_after_attn</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="n">x_norm2</span><span class="p">)</span>
 
-        <span class="n">x_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm2</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">needs_transposal</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">x_proj</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="n">x_norm</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">x_proj</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">x_norm</span><span class="p">)),</span> <span class="n">thw</span>
+        <span class="k">return</span> <span class="n">x_proj</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">x_norm2</span><span class="p">)),</span> <span class="n">thw_new</span>
 
 
 <span class="k">class</span> <span class="nc">PositionalEncoding</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">embed_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">spatial_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">temporal_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">embed_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">spatial_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">temporal_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rel_pos_embed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spatial_size</span> <span class="o">=</span> <span class="n">spatial_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">temporal_size</span> <span class="o">=</span> <span class="n">temporal_size</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">class_token</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">embed_size</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">spatial_pos</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spatial_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spatial_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">embed_size</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">temporal_pos</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temporal_size</span><span class="p">,</span> <span class="n">embed_size</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">class_pos</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">embed_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spatial_pos</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temporal_pos</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">class_pos</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">rel_pos_embed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spatial_pos</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spatial_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spatial_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">embed_size</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">temporal_pos</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temporal_size</span><span class="p">,</span> <span class="n">embed_size</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">class_pos</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">embed_size</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="n">hw_size</span><span class="p">,</span> <span class="n">embed_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spatial_pos</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">pos_embedding</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temporal_pos</span><span class="p">,</span> <span class="n">hw_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">pos_embedding</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spatial_pos</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temporal_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">embed_size</span><span class="p">))</span>
-        <span class="n">pos_embedding</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">class_pos</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">pos_embedding</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">class_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_token</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">class_token</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">pos_embedding</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">class_token</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spatial_pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">temporal_pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hw_size</span><span class="p">,</span> <span class="n">embed_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spatial_pos</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">pos_embedding</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temporal_pos</span><span class="p">,</span> <span class="n">hw_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">pos_embedding</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spatial_pos</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temporal_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">embed_size</span><span class="p">))</span>
+            <span class="n">pos_embedding</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">class_pos</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">pos_embedding</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">pos_embedding</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">x</span>
 
 
 <span class="k">class</span> <span class="nc">MViT</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -617,12 +757,18 @@
         <span class="n">temporal_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">block_setting</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">MSBlockConfig</span><span class="p">],</span>
         <span class="n">residual_pool</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">residual_with_cls_embed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">rel_pos_embed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">proj_after_attn</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
         <span class="n">attention_dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="n">stochastic_depth_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">400</span><span class="p">,</span>
         <span class="n">block</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">patch_embed_kernel</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
+        <span class="n">patch_embed_stride</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="n">patch_embed_padding</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        MViT main class.</span>
@@ -632,12 +778,19 @@
 <span class="sd">            temporal_size (int): The temporal size ``T`` of the input.</span>
 <span class="sd">            block_setting (sequence of MSBlockConfig): The Network structure.</span>
 <span class="sd">            residual_pool (bool): If True, use MViTv2 pooling residual connection.</span>
+<span class="sd">            residual_with_cls_embed (bool): If True, the addition on the residual connection will include</span>
+<span class="sd">                the class embedding.</span>
+<span class="sd">            rel_pos_embed (bool): If True, use MViTv2&#39;s relative positional embeddings.</span>
+<span class="sd">            proj_after_attn (bool): If True, apply the projection after the attention.</span>
 <span class="sd">            dropout (float): Dropout rate. Default: 0.0.</span>
 <span class="sd">            attention_dropout (float): Attention dropout rate. Default: 0.0.</span>
 <span class="sd">            stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.</span>
 <span class="sd">            num_classes (int): The number of classes.</span>
 <span class="sd">            block (callable, optional): Module specifying the layer which consists of the attention and mlp.</span>
 <span class="sd">            norm_layer (callable, optional): Module specifying the normalization layer to use.</span>
+<span class="sd">            patch_embed_kernel (tuple of ints): The kernel of the convolution that patchifies the input.</span>
+<span class="sd">            patch_embed_stride (tuple of ints): The stride of the convolution that patchifies the input.</span>
+<span class="sd">            patch_embed_padding (tuple of ints): The padding of the convolution that patchifies the input.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="c1"># This implementation employs a different parameterization scheme than the one used at PyTorch Video:</span>
@@ -659,16 +812,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv3d</span><span class="p">(</span>
             <span class="n">in_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
             <span class="n">out_channels</span><span class="o">=</span><span class="n">block_setting</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span>
-            <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
-            <span class="n">stride</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-            <span class="n">padding</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="n">patch_embed_kernel</span><span class="p">,</span>
+            <span class="n">stride</span><span class="o">=</span><span class="n">patch_embed_stride</span><span class="p">,</span>
+            <span class="n">padding</span><span class="o">=</span><span class="n">patch_embed_padding</span><span class="p">,</span>
         <span class="p">)</span>
+
+        <span class="n">input_size</span> <span class="o">=</span> <span class="p">[</span><span class="n">size</span> <span class="o">//</span> <span class="n">stride</span> <span class="k">for</span> <span class="n">size</span><span class="p">,</span> <span class="n">stride</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">((</span><span class="n">temporal_size</span><span class="p">,)</span> <span class="o">+</span> <span class="n">spatial_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">stride</span><span class="p">)]</span>
 
         <span class="c1"># Spatio-Temporal Class Positional Encoding</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pos_encoding</span> <span class="o">=</span> <span class="n">PositionalEncoding</span><span class="p">(</span>
             <span class="n">embed_size</span><span class="o">=</span><span class="n">block_setting</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span>
-            <span class="n">spatial_size</span><span class="o">=</span><span class="p">(</span><span class="n">spatial_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">stride</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">spatial_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">stride</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
-            <span class="n">temporal_size</span><span class="o">=</span><span class="n">temporal_size</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">stride</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">spatial_size</span><span class="o">=</span><span class="p">(</span><span class="n">input_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">input_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+            <span class="n">temporal_size</span><span class="o">=</span><span class="n">input_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">rel_pos_embed</span><span class="o">=</span><span class="n">rel_pos_embed</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Encoder module</span>
@@ -679,13 +835,20 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">block</span><span class="p">(</span>
+                    <span class="n">input_size</span><span class="o">=</span><span class="n">input_size</span><span class="p">,</span>
                     <span class="n">cnf</span><span class="o">=</span><span class="n">cnf</span><span class="p">,</span>
                     <span class="n">residual_pool</span><span class="o">=</span><span class="n">residual_pool</span><span class="p">,</span>
+                    <span class="n">residual_with_cls_embed</span><span class="o">=</span><span class="n">residual_with_cls_embed</span><span class="p">,</span>
+                    <span class="n">rel_pos_embed</span><span class="o">=</span><span class="n">rel_pos_embed</span><span class="p">,</span>
+                    <span class="n">proj_after_attn</span><span class="o">=</span><span class="n">proj_after_attn</span><span class="p">,</span>
                     <span class="n">dropout</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span>
                     <span class="n">stochastic_depth_prob</span><span class="o">=</span><span class="n">sd_prob</span><span class="p">,</span>
                     <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">stride_q</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">input_size</span> <span class="o">=</span> <span class="p">[</span><span class="n">size</span> <span class="o">//</span> <span class="n">stride</span> <span class="k">for</span> <span class="n">size</span><span class="p">,</span> <span class="n">stride</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">stride_q</span><span class="p">)]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">norm_layer</span><span class="p">(</span><span class="n">block_setting</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">output_channels</span><span class="p">)</span>
 
         <span class="c1"># Classifier module</span>
@@ -709,6 +872,8 @@
                     <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">trunc_normal_</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="c1"># Convert if necessary (B, C, H, W) -&gt; (B, C, 1, H, W)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">_unsqueeze</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="c1"># patchify and reshape: (B, C, T, H, W) -&gt; (B, embed_channels[0], T&#39;, H&#39;, W&#39;) -&gt; (B, THW&#39;, embed_channels[0])</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -749,6 +914,9 @@
         <span class="n">temporal_size</span><span class="o">=</span><span class="n">temporal_size</span><span class="p">,</span>
         <span class="n">block_setting</span><span class="o">=</span><span class="n">block_setting</span><span class="p">,</span>
         <span class="n">residual_pool</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;residual_pool&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="n">residual_with_cls_embed</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;residual_with_cls_embed&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="n">rel_pos_embed</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;rel_pos_embed&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="n">proj_after_attn</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;proj_after_attn&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
         <span class="n">stochastic_depth_prob</span><span class="o">=</span><span class="n">stochastic_depth_prob</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
@@ -783,6 +951,37 @@
                 <span class="s2">&quot;Kinetics-400&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.477</span><span class="p">,</span>
                     <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.582</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">KINETICS400_V1</span></div>
+
+
+<div class="viewcode-block" id="MViT_V2_S_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.mvit_v2_s.html#torchvision.models.video.MViT_V2_S_Weights">[docs]</a><span class="k">class</span> <span class="nc">MViT_V2_S_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">KINETICS400_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/mvit_v2_s-ae3be167.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
+            <span class="n">VideoClassification</span><span class="p">,</span>
+            <span class="n">crop_size</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+            <span class="n">resize_size</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,),</span>
+            <span class="n">mean</span><span class="o">=</span><span class="p">(</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">),</span>
+            <span class="n">std</span><span class="o">=</span><span class="p">(</span><span class="mf">0.225</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+            <span class="s2">&quot;min_temporal_size&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+            <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_KINETICS400_CATEGORIES</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/facebookresearch/SlowFast/blob/main/MODEL_ZOO.md&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;The weights were ported from the paper. The accuracies are estimated on video-level &quot;</span>
+                <span class="s2">&quot;with parameters `frame_rate=7.5`, `clips_per_video=5`, and `clip_len=16`&quot;</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">34537744</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Kinetics-400&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.757</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.665</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
         <span class="p">},</span>
@@ -877,6 +1076,138 @@
         <span class="n">temporal_size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
         <span class="n">block_setting</span><span class="o">=</span><span class="n">block_setting</span><span class="p">,</span>
         <span class="n">residual_pool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">residual_with_cls_embed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">stochastic_depth_prob</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;stochastic_depth_prob&quot;</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+        <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mvit_v2_s"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.mvit_v2_s.html#torchvision.models.video.mvit_v2_s">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">mvit_v2_s</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MViT_V2_S_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MViT</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constructs a small MViTV2 architecture from</span>
+<span class="sd">    `Multiscale Vision Transformers &lt;https://arxiv.org/abs/2104.11227&gt;`__.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        weights (:class:`~torchvision.models.video.MViT_V2_S_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.video.MViT_V2_S_Weights` below for</span>
+<span class="sd">            more details, and possible values. By default, no pre-trained</span>
+<span class="sd">            weights are used.</span>
+<span class="sd">        progress (bool, optional): If True, displays a progress bar of the</span>
+<span class="sd">            download to stderr. Default is True.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.video.MViT``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvit.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
+
+<span class="sd">    .. autoclass:: torchvision.models.video.MViT_V2_S_Weights</span>
+<span class="sd">        :members:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">MViT_V2_S_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="n">config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;num_heads&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
+        <span class="s2">&quot;input_channels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">768</span><span class="p">],</span>
+        <span class="s2">&quot;output_channels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">768</span><span class="p">],</span>
+        <span class="s2">&quot;kernel_q&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;kernel_kv&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;stride_q&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;stride_kv&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="n">block_setting</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;num_heads&quot;</span><span class="p">])):</span>
+        <span class="n">block_setting</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">MSBlockConfig</span><span class="p">(</span>
+                <span class="n">num_heads</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;num_heads&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">input_channels</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;input_channels&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">output_channels</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;output_channels&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">kernel_q</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;kernel_q&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">kernel_kv</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;kernel_kv&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">stride_q</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stride_q&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">stride_kv</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stride_kv&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_mvit</span><span class="p">(</span>
+        <span class="n">spatial_size</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+        <span class="n">temporal_size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+        <span class="n">block_setting</span><span class="o">=</span><span class="n">block_setting</span><span class="p">,</span>
+        <span class="n">residual_pool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">residual_with_cls_embed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">rel_pos_embed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">proj_after_attn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">stochastic_depth_prob</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;stochastic_depth_prob&quot;</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
         <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
         <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
