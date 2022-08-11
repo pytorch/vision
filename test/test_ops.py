@@ -74,7 +74,7 @@ class PoolWrapper(nn.Module):
         super().__init__()
         self.pool = pool
 
-    def forward(self, imgs: Tensor, boxes: List[Tensor]):
+    def forward(self, imgs: Tensor, boxes: List[Tensor]) -> Tensor:
         return self.pool(imgs, boxes)
 
 
@@ -159,6 +159,14 @@ class RoIOpTester(ABC):
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
             ops.roi_pool(a, [boxes], output_size=(2, 2))
 
+    def _helper_jit_boxes_list(self, model):
+        x = torch.rand(2, 1, 10, 10)
+        roi = torch.tensor([[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]], dtype=torch.float).t()
+        rois = [roi, roi]
+        scriped = torch.jit.script(model)
+        y = scriped(x, rois)
+        assert y.shape == (10, 1, 3, 3)
+
     @abstractmethod
     def fn(*args, **kwargs):
         pass
@@ -221,7 +229,7 @@ class TestRoiPool(RoIOpTester):
 
     def test_jit_boxes_list(self):
         model = PoolWrapper(ops.RoIPool(output_size=[3, 3], spatial_scale=1.0))
-        torch.jit.script(model)
+        self._helper_jit_boxes_list(model)
 
 
 class TestPSRoIPool(RoIOpTester):
@@ -465,7 +473,7 @@ class TestRoIAlign(RoIOpTester):
 
     def test_jit_boxes_list(self):
         model = PoolWrapper(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
-        torch.jit.script(model)
+        self._helper_jit_boxes_list(model)
 
 
 class TestPSRoIAlign(RoIOpTester):
