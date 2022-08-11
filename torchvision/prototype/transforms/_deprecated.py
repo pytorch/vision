@@ -5,7 +5,7 @@ import numpy as np
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.features import ColorSpace
+from torchvision.prototype.constants import ColorSpace
 from torchvision.prototype.transforms import Transform
 from torchvision.transforms import functional as _F
 from typing_extensions import Literal

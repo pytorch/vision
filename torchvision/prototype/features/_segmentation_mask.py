@@ -5,14 +5,14 @@ from typing import List, Optional, Sequence, Union
 import torch
 from torchvision.transforms import InterpolationMode
 
+from .. import kernels as K
+
 from ._feature import _Feature
 
 
 class SegmentationMask(_Feature):
     def horizontal_flip(self) -> SegmentationMask:
-        from torchvision.prototype.transforms import functional as _F
-
-        output = _F.horizontal_flip_segmentation_mask(self)
+        output = K.horizontal_flip_segmentation_mask(self)
         return SegmentationMask.new_like(self, output)
 
     def vertical_flip(self) -> SegmentationMask:

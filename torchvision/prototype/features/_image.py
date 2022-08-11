@@ -4,33 +4,15 @@ import warnings
 from typing import Any, cast, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchvision._utils import StrEnum
+
+from torchvision.prototype.constants import ColorSpace
 from torchvision.transforms.functional import InterpolationMode, to_pil_image
 from torchvision.utils import draw_bounding_boxes, make_grid
 
+from .. import kernels as K
+
 from ._bounding_box import BoundingBox
 from ._feature import _Feature
-
-
-class ColorSpace(StrEnum):
-    OTHER = StrEnum.auto()
-    GRAY = StrEnum.auto()
-    GRAY_ALPHA = StrEnum.auto()
-    RGB = StrEnum.auto()
-    RGB_ALPHA = StrEnum.auto()
-
-    @classmethod
-    def from_pil_mode(cls, mode: str) -> ColorSpace:
-        if mode == "L":
-            return cls.GRAY
-        elif mode == "LA":
-            return cls.GRAY_ALPHA
-        elif mode == "RGB":
-            return cls.RGB
-        elif mode == "RGBA":
-            return cls.RGB_ALPHA
-        else:
-            return cls.OTHER
 
 
 class Image(_Feature):
@@ -110,9 +92,7 @@ class Image(_Feature):
         return Image.new_like(self, draw_bounding_boxes(self, bounding_box.to_format("xyxy").view(-1, 4), **kwargs))
 
     def horizontal_flip(self) -> Image:
-        from torchvision.prototype.transforms import functional as _F
-
-        output = _F.horizontal_flip_image_tensor(self)
+        output = K.horizontal_flip_image_tensor(self)
         return Image.new_like(self, output)
 
     def vertical_flip(self) -> Image:

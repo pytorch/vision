@@ -4,7 +4,9 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
-from torchvision.prototype import features
+
+from torchvision.prototype import features, kernels as K
+from torchvision.prototype.constants import BoundingBoxFormat
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 from torchvision.transforms.functional import (
     _compute_output_size,
@@ -16,44 +18,20 @@ from torchvision.transforms.functional import (
     to_pil_image,
 )
 
-from ._meta import convert_bounding_box_format, get_dimensions_image_pil, get_dimensions_image_tensor
+from ._meta import get_dimensions_image_pil, get_dimensions_image_tensor
 
 
 # shortcut type
 DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
 
 
-horizontal_flip_image_tensor = _FT.hflip
-horizontal_flip_image_pil = _FP.hflip
-
-
-def horizontal_flip_segmentation_mask(segmentation_mask: torch.Tensor) -> torch.Tensor:
-    return horizontal_flip_image_tensor(segmentation_mask)
-
-
-def horizontal_flip_bounding_box(
-    bounding_box: torch.Tensor, format: features.BoundingBoxFormat, image_size: Tuple[int, int]
-) -> torch.Tensor:
-    shape = bounding_box.shape
-
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    ).view(-1, 4)
-
-    bounding_box[:, [0, 2]] = image_size[1] - bounding_box[:, [2, 0]]
-
-    return convert_bounding_box_format(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    ).view(shape)
-
-
 def horizontal_flip(inpt: DType) -> DType:
     if isinstance(inpt, features._Feature):
         return inpt.horizontal_flip()
     elif isinstance(inpt, PIL.Image.Image):
-        return horizontal_flip_image_pil(inpt)
+        return K.horizontal_flip_image_pil(inpt)
     else:
-        return horizontal_flip_image_tensor(inpt)
+        return K.horizontal_flip_image_tensor(inpt)
 
 
 vertical_flip_image_tensor = _FT.vflip
@@ -65,18 +43,18 @@ def vertical_flip_segmentation_mask(segmentation_mask: torch.Tensor) -> torch.Te
 
 
 def vertical_flip_bounding_box(
-    bounding_box: torch.Tensor, format: features.BoundingBoxFormat, image_size: Tuple[int, int]
+    bounding_box: torch.Tensor, format: BoundingBoxFormat, image_size: Tuple[int, int]
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    bounding_box = K.convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
     bounding_box[:, [1, 3]] = image_size[0] - bounding_box[:, [3, 1]]
 
-    return convert_bounding_box_format(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    return K.convert_bounding_box_format(
+        bounding_box, old_format=BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
 
 
@@ -330,7 +308,7 @@ def _affine_bounding_box_xyxy(
 
 def affine_bounding_box(
     bounding_box: torch.Tensor,
-    format: features.BoundingBoxFormat,
+    format: BoundingBoxFormat,
     image_size: Tuple[int, int],
     angle: float,
     translate: List[float],
@@ -339,16 +317,16 @@ def affine_bounding_box(
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     original_shape = bounding_box.shape
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    bounding_box = K.convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
     out_bboxes = _affine_bounding_box_xyxy(bounding_box, image_size, angle, translate, scale, shear, center)
 
     # out_bboxes should be of shape [N boxes, 4]
 
-    return convert_bounding_box_format(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    return K.convert_bounding_box_format(
+        out_bboxes, old_format=BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
 
 
@@ -472,7 +450,7 @@ def rotate_image_pil(
 
 def rotate_bounding_box(
     bounding_box: torch.Tensor,
-    format: features.BoundingBoxFormat,
+    format: BoundingBoxFormat,
     image_size: Tuple[int, int],
     angle: float,
     expand: bool = False,
@@ -483,14 +461,14 @@ def rotate_bounding_box(
         center = None
 
     original_shape = bounding_box.shape
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    bounding_box = K.convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
     out_bboxes = _affine_bounding_box_xyxy(bounding_box, image_size, angle=-angle, center=center, expand=expand)
 
-    return convert_bounding_box_format(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    return K.convert_bounding_box_format(
+        out_bboxes, old_format=BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
 
 
@@ -584,7 +562,7 @@ def pad_segmentation_mask(
 
 
 def pad_bounding_box(
-    bounding_box: torch.Tensor, padding: Union[int, List[int]], format: features.BoundingBoxFormat
+    bounding_box: torch.Tensor, padding: Union[int, List[int]], format: BoundingBoxFormat
 ) -> torch.Tensor:
     left, _, top, _ = _FT._parse_pad_padding(padding)
 
@@ -593,7 +571,7 @@ def pad_bounding_box(
     # this works without conversion since padding only affects xy coordinates
     bounding_box[..., 0] += left
     bounding_box[..., 1] += top
-    if format == features.BoundingBoxFormat.XYXY:
+    if format == BoundingBoxFormat.XYXY:
         bounding_box[..., 2] += left
         bounding_box[..., 3] += top
     return bounding_box
@@ -629,21 +607,17 @@ crop_image_pil = _FP.crop
 
 def crop_bounding_box(
     bounding_box: torch.Tensor,
-    format: features.BoundingBoxFormat,
+    format: BoundingBoxFormat,
     top: int,
     left: int,
 ) -> torch.Tensor:
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    )
+    bounding_box = K.convert_bounding_box_format(bounding_box, old_format=format, new_format=BoundingBoxFormat.XYXY)
 
     # Crop or implicit pad if left and/or top have negative values:
     bounding_box[..., 0::2] -= left
     bounding_box[..., 1::2] -= top
 
-    return convert_bounding_box_format(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    )
+    return K.convert_bounding_box_format(bounding_box, old_format=BoundingBoxFormat.XYXY, new_format=format, copy=False)
 
 
 def crop_segmentation_mask(img: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
@@ -679,7 +653,7 @@ def perspective_image_pil(
 
 def perspective_bounding_box(
     bounding_box: torch.Tensor,
-    format: features.BoundingBoxFormat,
+    format: BoundingBoxFormat,
     perspective_coeffs: List[float],
 ) -> torch.Tensor:
 
@@ -687,8 +661,8 @@ def perspective_bounding_box(
         raise ValueError("Argument perspective_coeffs should have 8 float values")
 
     original_shape = bounding_box.shape
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    bounding_box = K.convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
@@ -757,8 +731,8 @@ def perspective_bounding_box(
 
     # out_bboxes should be of shape [N boxes, 4]
 
-    return convert_bounding_box_format(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    return K.convert_bounding_box_format(
+        out_bboxes, old_format=BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
 
 
@@ -811,15 +785,15 @@ def elastic_image_pil(
 
 def elastic_bounding_box(
     bounding_box: torch.Tensor,
-    format: features.BoundingBoxFormat,
+    format: BoundingBoxFormat,
     displacement: torch.Tensor,
 ) -> torch.Tensor:
     # TODO: add in docstring about approximation we are doing for grid inversion
     displacement = displacement.to(bounding_box.device)
 
     original_shape = bounding_box.shape
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    bounding_box = K.convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
     # Question (vfdev-5): should we rely on good displacement shape and fetch image size from it
@@ -844,8 +818,8 @@ def elastic_bounding_box(
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
 
-    return convert_bounding_box_format(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    return K.convert_bounding_box_format(
+        out_bboxes, old_format=BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
 
 
@@ -932,7 +906,7 @@ def center_crop_image_pil(img: PIL.Image.Image, output_size: List[int]) -> PIL.I
 
 def center_crop_bounding_box(
     bounding_box: torch.Tensor,
-    format: features.BoundingBoxFormat,
+    format: BoundingBoxFormat,
     output_size: List[int],
     image_size: Tuple[int, int],
 ) -> torch.Tensor:
@@ -983,7 +957,7 @@ def resized_crop_image_pil(
 
 def resized_crop_bounding_box(
     bounding_box: torch.Tensor,
-    format: features.BoundingBoxFormat,
+    format: BoundingBoxFormat,
     top: int,
     left: int,
     height: int,
@@ -1084,7 +1058,7 @@ def ten_crop_image_tensor(img: torch.Tensor, size: List[int], vertical_flip: boo
     if vertical_flip:
         img = vertical_flip_image_tensor(img)
     else:
-        img = horizontal_flip_image_tensor(img)
+        img = K.horizontal_flip_image_tensor(img)
 
     tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_tensor(img, size)
 
@@ -1097,7 +1071,7 @@ def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: boo
     if vertical_flip:
         img = vertical_flip_image_pil(img)
     else:
-        img = horizontal_flip_image_pil(img)
+        img = K.horizontal_flip_image_pil(img)
 
     tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_pil(img, size)
 

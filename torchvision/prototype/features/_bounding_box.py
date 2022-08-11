@@ -3,18 +3,14 @@ from __future__ import annotations
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchvision._utils import StrEnum
+from torchvision.prototype import kernels as K
+
+from torchvision.prototype.constants import BoundingBoxFormat
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms.functional import _get_inverse_affine_matrix
 from torchvision.transforms.functional_tensor import _compute_output_size
 
 from ._feature import _Feature
-
-
-class BoundingBoxFormat(StrEnum):
-    XYXY = StrEnum.auto()
-    XYWH = StrEnum.auto()
-    CXCYWH = StrEnum.auto()
 
 
 class BoundingBox(_Feature):
@@ -62,21 +58,15 @@ class BoundingBox(_Feature):
     def to_format(self, format: Union[str, BoundingBoxFormat]) -> BoundingBox:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
         #  promote this out of the prototype state
-
-        # import at runtime to avoid cyclic imports
-        from torchvision.prototype.transforms.functional import convert_bounding_box_format
-
         if isinstance(format, str):
             format = BoundingBoxFormat.from_str(format.upper())
 
         return BoundingBox.new_like(
-            self, convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
+            self, K.convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
         )
 
     def horizontal_flip(self) -> BoundingBox:
-        from torchvision.prototype.transforms import functional as _F
-
-        output = _F.horizontal_flip_bounding_box(self, format=self.format, image_size=self.image_size)
+        output = K.horizontal_flip_bounding_box(self, format=self.format, image_size=self.image_size)
         return BoundingBox.new_like(self, output)
 
     def vertical_flip(self) -> BoundingBox:

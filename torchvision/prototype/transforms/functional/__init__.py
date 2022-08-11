@@ -1,6 +1,5 @@
 from torchvision.transforms import InterpolationMode  # usort: skip
 from ._meta import (
-    convert_bounding_box_format,
     convert_image_color_space_tensor,
     convert_image_color_space_pil,
 )  # usort: skip
@@ -66,10 +65,6 @@ from ._geometry import (
     five_crop_image_pil,
     five_crop_image_tensor,
     horizontal_flip,
-    horizontal_flip_bounding_box,
-    horizontal_flip_image_pil,
-    horizontal_flip_image_tensor,
-    horizontal_flip_segmentation_mask,
     pad,
     pad_bounding_box,
     pad_image_pil,
