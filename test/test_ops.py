@@ -69,7 +69,7 @@ class DropBlockWrapper(nn.Module):
         self.layer(a)
 
 
-class PoolWrapper(torch.nn.Module):
+class PoolWrapper(nn.Module):
     def __init__(self, pool: nn.Module):
         super().__init__()
         self.pool = pool
