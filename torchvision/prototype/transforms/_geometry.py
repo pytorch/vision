@@ -15,7 +15,7 @@ from torchvision.transforms.transforms import _check_sequence_input, _setup_angl
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import get_image_dimensions, has_any, is_simple_tensor, query_bboxes, query_image
+from ._utils import get_image_dimensions, has_all, has_any, is_simple_tensor, query_bboxes, query_image
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -704,3 +704,11 @@ class RandomIoUCrop(Transform):
             output = features.BoundingBox.new_like(output, bboxes)
 
         return output
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        if not has_all(sample, features.Image, features.BoundingBox, features.Label):
+            raise TypeError(f"{type(self).__name__}() is only defined for Images, BoundingBoxes and Labels.")
+        if has_any(sample, features.OneHotLabel):
+            raise TypeError(f"{type(self).__name__}() does not support OneHotLabels.")
+        return super().forward(*inputs)
