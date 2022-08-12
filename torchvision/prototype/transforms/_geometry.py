@@ -9,6 +9,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor
+from torchvision.transforms.functional_tensor import _parse_pad_padding
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size
 from typing_extensions import Literal
 
@@ -448,7 +449,22 @@ class RandomCrop(Transform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
         _, height, width = get_image_dimensions(image)
+
+        if self.padding is not None:
+            # update height, width with static padding data
+            pad_left, pad_right, pad_top, pad_bottom = _parse_pad_padding(self.padding)
+            height += pad_top + pad_bottom
+            width += pad_left + pad_right
+
         output_height, output_width = self.size
+
+        if self.pad_if_needed:
+            # pad width if needed
+            if width < output_width:
+                width = output_width
+            # pad height if needed
+            if height < output_height:
+                height = output_height
 
         if height + 1 < output_height or width + 1 < output_width:
             raise ValueError(
@@ -460,31 +476,29 @@ class RandomCrop(Transform):
 
         top = torch.randint(0, height - output_height + 1, size=(1,)).item()
         left = torch.randint(0, width - output_width + 1, size=(1,)).item()
-        return dict(top=top, left=left, height=output_height, width=output_width)
+
+        return dict(
+            top=top, left=left, height=output_height, width=output_width,
+            input_width=width, input_height=height
+        )
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.crop(inpt, **params)
-
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
 
         if self.padding is not None:
-            sample = F.pad(sample, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
-
-        image = query_image(sample)
-        _, height, width = get_image_dimensions(image)
+            inpt = F.pad(inpt, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
 
         if self.pad_if_needed:
-            # pad the width if needed
-            if width < self.size[1]:
-                padding = [self.size[1] - width, 0]
+            input_width, input_height = params["input_width"], params["input_height"]
+            if input_width < self.size[1]:
+                padding = [self.size[1] - input_width, 0]
                 sample = F.pad(sample, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
-            # pad the height if needed
-            if height < self.size[0]:
-                padding = [0, self.size[0] - height]
+            if input_height < self.size[0]:
+                padding = [0, self.size[0] - input_height]
                 sample = F.pad(sample, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
 
-        return super().forward(sample)
+        return F.crop(
+            inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+        )
 
 
 class RandomPerspective(_RandomApplyTransform):
