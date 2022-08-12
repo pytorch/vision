@@ -413,7 +413,7 @@ def generate_weights_table(
         )
         table_file.write(f"{table_description}\n\n")
         table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
-        table_file.write(".. table::\n")
+        table_file.write(f".. table:: {table_name}\n")
         table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
