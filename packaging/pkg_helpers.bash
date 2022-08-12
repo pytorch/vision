@@ -261,8 +261,11 @@ setup_conda_cudatoolkit_constraint() {
     export CONDA_BUILD_VARIANT="cpu"
   else
     case "$CU_VERSION" in
+      cu117)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- pytorch-cuda=11.7 # [not osx]"
+        ;;
       cu116)
-        export CONDA_CUDATOOLKIT_CONSTRAINT="- cuda >=11.6,<11.7 # [not osx]"
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- pytorch-cuda=11.6 # [not osx]"
         ;;
       cu113)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.3,<11.4 # [not osx]"
@@ -290,8 +293,11 @@ setup_conda_cudatoolkit_plain_constraint() {
     export CMAKE_USE_CUDA=0
   else
     case "$CU_VERSION" in
+      cu117)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="pytorch-cuda=11.7"
+        ;;
       cu116)
-        export CONDA_CUDATOOLKIT_CONSTRAINT="cuda=11.6"
+        export CONDA_CUDATOOLKIT_CONSTRAINT="pytorch-cuda=11.6"
         ;;
       cu113)
         export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.3"
