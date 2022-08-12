@@ -1,8 +1,8 @@
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import PIL.Image
 import torch
-from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
+from torchvision.prototype.features import _Feature, BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
 get_dimensions_image_tensor = _FT.get_dimensions
@@ -154,3 +154,21 @@ def convert_image_color_space_pil(
         return image
 
     return image.convert(new_mode)
+
+
+def convert_color_space(
+    inpt: Any, *, color_space: ColorSpace, old_color_space: Optional[ColorSpace] = None, copy: bool = True
+) -> Any:
+    if isinstance(inpt, _Feature):
+        return inpt.convert_color_space(color_space, copy=copy)
+    elif isinstance(inpt, PIL.Image.Image):
+        return convert_image_color_space_pil(inpt, color_space, copy=copy)
+    else:
+        if old_color_space is None:
+            raise RuntimeError(
+                "In order to convert the color space of simple tensor images, "
+                "the `old_color_space=...` parameter needs to be passed."
+            )
+        return convert_image_color_space_tensor(
+            inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
+        )

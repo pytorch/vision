@@ -3,6 +3,7 @@ from ._meta import (
     convert_bounding_box_format,
     convert_image_color_space_tensor,
     convert_image_color_space_pil,
+    convert_color_space,
 )  # usort: skip
 
 from ._augment import erase_image_pil, erase_image_tensor
