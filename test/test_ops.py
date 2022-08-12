@@ -69,6 +69,15 @@ class DropBlockWrapper(nn.Module):
         self.layer(a)
 
 
+class PoolWrapper(nn.Module):
+    def __init__(self, pool: nn.Module):
+        super().__init__()
+        self.pool = pool
+
+    def forward(self, imgs: Tensor, boxes: List[Tensor]) -> Tensor:
+        return self.pool(imgs, boxes)
+
+
 class RoIOpTester(ABC):
     dtype = torch.float64
 
@@ -150,6 +159,14 @@ class RoIOpTester(ABC):
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
             ops.roi_pool(a, [boxes], output_size=(2, 2))
 
+    def _helper_jit_boxes_list(self, model):
+        x = torch.rand(2, 1, 10, 10)
+        roi = torch.tensor([[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]], dtype=torch.float).t()
+        rois = [roi, roi]
+        scriped = torch.jit.script(model)
+        y = scriped(x, rois)
+        assert y.shape == (10, 1, 3, 3)
+
     @abstractmethod
     def fn(*args, **kwargs):
         pass
@@ -209,6 +226,10 @@ class TestRoiPool(RoIOpTester):
 
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
+
+    def test_jit_boxes_list(self):
+        model = PoolWrapper(ops.RoIPool(output_size=[3, 3], spatial_scale=1.0))
+        self._helper_jit_boxes_list(model)
 
 
 class TestPSRoIPool(RoIOpTester):
@@ -449,6 +470,10 @@ class TestRoIAlign(RoIOpTester):
         qrois = torch.quantize_per_tensor(rois, scale=1, zero_point=0, dtype=torch.qint8)
         with pytest.raises(RuntimeError, match="Only one image per batch is allowed"):
             ops.roi_align(qx, qrois, output_size=5)
+
+    def test_jit_boxes_list(self):
+        model = PoolWrapper(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
+        self._helper_jit_boxes_list(model)
 
 
 class TestPSRoIAlign(RoIOpTester):

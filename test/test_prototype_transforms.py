@@ -377,12 +377,11 @@ class TestRandomZoomOut:
         transform = transforms.RandomZoomOut(fill=fill, side_range=side_range)
 
         image = mocker.MagicMock(spec=features.Image)
-        c = image.num_channels = 3
         h, w = image.image_size = (24, 32)
 
         params = transform._get_params(image)
 
-        assert params["fill"] == (fill if not isinstance(fill, int) else [fill] * c)
+        assert params["fill"] == fill
         assert len(params["padding"]) == 4
         assert 0 <= params["padding"][0] <= (side_range[1] - 1) * w
         assert 0 <= params["padding"][1] <= (side_range[1] - 1) * h
@@ -1084,3 +1083,22 @@ class TestToTensor:
             fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt)
+
+
+class TestCompose:
+    def test_assertions(self):
+        with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
+            transforms.Compose(123)
+
+    @pytest.mark.parametrize(
+        "trfms",
+        [
+            [transforms.Pad(2), transforms.RandomCrop(28)],
+            [lambda x: 2.0 * x],
+        ],
+    )
+    def test_ctor(self, trfms):
+        c = transforms.Compose(trfms)
+        inpt = torch.rand(1, 3, 32, 32)
+        output = c(inpt)
+        assert isinstance(output, torch.Tensor)

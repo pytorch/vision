@@ -82,7 +82,7 @@ class RoIAlign(nn.Module):
         self.sampling_ratio = sampling_ratio
         self.aligned = aligned
 
-    def forward(self, input: Tensor, rois: Tensor) -> Tensor:
+    def forward(self, input: Tensor, rois: Union[Tensor, List[Tensor]]) -> Tensor:
         return roi_align(input, rois, self.output_size, self.spatial_scale, self.sampling_ratio, self.aligned)
 
     def __repr__(self) -> str:

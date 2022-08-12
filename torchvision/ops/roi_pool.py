@@ -62,7 +62,7 @@ class RoIPool(nn.Module):
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 
-    def forward(self, input: Tensor, rois: Tensor) -> Tensor:
+    def forward(self, input: Tensor, rois: Union[Tensor, List[Tensor]]) -> Tensor:
         return roi_pool(input, rois, self.output_size, self.spatial_scale)
 
     def __repr__(self) -> str:
