@@ -229,10 +229,28 @@ def crop(
     left: int,
     height: int,
     width: int,
+    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
+    pad_both_sides: bool = False,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
+
+    _, input_height, input_width = get_dimensions(img)
+
+    if pad_both_sides:
+        if width > input_width:
+            left -= width - input_width
+        if height > input_height:
+            top -= height - input_height
+
+    if not (padding_mode == "constant" and isinstance(fill, (int, float)) and fill == 0):
+        # use F.pad to pad and/or crop
+        right = left + width
+        bottom = top + height
+        padding = [max(-left, 0), max(-top, 0), max(right - input_width, 0), max(bottom - input_height, 0)]
+        return pad(img, padding=padding, padding_mode=padding_mode, fill=fill)
 
     return img.crop((left, top, left + width, top + height))
 

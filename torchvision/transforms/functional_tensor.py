@@ -129,16 +129,34 @@ def hflip(img: Tensor) -> Tensor:
     return img.flip(-1)
 
 
-def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
+def crop(
+    img: Tensor,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    fill: Optional[Union[int, float]] = 0,
+    padding_mode: str = "constant",
+    pad_both_sides: bool = False,
+) -> Tensor:
     _assert_image_tensor(img)
 
-    _, h, w = get_dimensions(img)
+    _, input_height, input_width = get_dimensions(img)
+
+    if pad_both_sides:
+        if width > input_width:
+            left -= width - input_width
+        if height > input_height:
+            top -= height - input_height
+
     right = left + width
     bottom = top + height
 
-    if left < 0 or top < 0 or right > w or bottom > h:
-        padding_ltrb = [max(-left, 0), max(-top, 0), max(right - w, 0), max(bottom - h, 0)]
-        return pad(img[..., max(top, 0) : bottom, max(left, 0) : right], padding_ltrb, fill=0)
+    if left < 0 or top < 0 or right > input_width or bottom > input_height:
+        padding_ltrb = [max(-left, 0), max(-top, 0), max(right - input_width, 0), max(bottom - input_height, 0)]
+        return pad(
+            img[..., max(top, 0) : bottom, max(left, 0) : right], padding_ltrb, fill=fill, padding_mode=padding_mode
+        )
     return img[..., top:bottom, left:right]
 
 

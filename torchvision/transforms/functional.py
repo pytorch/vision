@@ -522,7 +522,16 @@ def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mo
     return F_t.pad(img, padding=padding, fill=fill, padding_mode=padding_mode)
 
 
-def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
+def crop(
+    img: Tensor,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    fill: Union[int, float] = 0,
+    padding_mode: str = "constant",
+    pad_both_sides: bool = False,
+) -> Tensor:
     """Crop the given image at specified location and output size.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -542,9 +551,11 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(crop)
     if not isinstance(img, torch.Tensor):
-        return F_pil.crop(img, top, left, height, width)
+        return F_pil.crop(
+            img, top, left, height, width, fill=fill, padding_mode=padding_mode, pad_both_sides=pad_both_sides
+        )
 
-    return F_t.crop(img, top, left, height, width)
+    return F_t.crop(img, top, left, height, width, fill=fill, padding_mode=padding_mode, pad_both_sides=pad_both_sides)
 
 
 def center_crop(img: Tensor, output_size: List[int]) -> Tensor:

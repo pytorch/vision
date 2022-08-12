@@ -671,6 +671,7 @@ class RandomCrop(torch.nn.Module):
             img = F.pad(img, padding, self.fill, self.padding_mode)
 
         i, j, h, w = self.get_params(img, self.size)
+        print("-", F.get_dimensions(img), i, j, h, w)
 
         return F.crop(img, i, j, h, w)
 
