@@ -215,7 +215,7 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
-    model = torchvision.models.optical_flow.__dict__[args.model](weights=args.weights)
+    model = torchvision.models.get_model(args.model, weights=args.weights)
 
     if args.distributed:
         model = model.to(args.local_rank)
