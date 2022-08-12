@@ -8,10 +8,10 @@ from torch import Tensor
 from torch.nn import functional as F
 
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..googlenet import GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, GoogLeNet_Weights
+from .._utils import _ovewrite_named_param, handle_legacy_interface
+from ..googlenet import BasicConv2d, GoogLeNet, GoogLeNet_Weights, GoogLeNetOutputs, Inception, InceptionAux
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
@@ -132,6 +132,7 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
+@register_model(name="quantized_googlenet")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -165,7 +166,7 @@ def googlenet(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableGoogLeNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.googlenet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/googlenet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.GoogLeNet_QuantizedWeights

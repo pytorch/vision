@@ -221,8 +221,13 @@ setup_pip_pytorch_version() {
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
     export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c pytorch-nightly -c pytorch"
+    PYTHON="python"
+    # Check if we have python 3 instead and prefer that
+    if python3 --version >/dev/null 2>/dev/null; then
+      PYTHON="python3"
+    fi
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
-                              python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
+                              ${PYTHON} -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
                                cuver_1 = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
                                cuver_2 = (cuver[:-1] + '.' + cuver[-1]).replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
                                print(re.sub(r'\\+.*$', '', \
@@ -257,7 +262,7 @@ setup_conda_cudatoolkit_constraint() {
   else
     case "$CU_VERSION" in
       cu116)
-        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.6,<11.7 # [not osx]"
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cuda >=11.6,<11.7 # [not osx]"
         ;;
       cu113)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.3,<11.4 # [not osx]"
@@ -286,7 +291,7 @@ setup_conda_cudatoolkit_plain_constraint() {
   else
     case "$CU_VERSION" in
       cu116)
-        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.6"
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cuda=11.6"
         ;;
       cu113)
         export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.3"

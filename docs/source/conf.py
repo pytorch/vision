@@ -21,6 +21,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import os
+import sys
 import textwrap
 from copy import copy
 from pathlib import Path
@@ -30,6 +31,7 @@ import torchvision
 import torchvision.models as M
 from tabulate import tabulate
 
+sys.path.append(os.path.abspath("."))
 
 # -- General configuration ------------------------------------------------
 
@@ -50,6 +52,7 @@ extensions = [
     "sphinx.ext.duration",
     "sphinx_gallery.gen_gallery",
     "sphinx_copybutton",
+    "beta_status",
 ]
 
 sphinx_gallery_conf = {
@@ -323,7 +326,8 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
         lines[:] = [
             "The model builder above accepts the following values as the ``weights`` parameter.",
-            f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
+            f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``. You can also use strings, e.g. "
+            f"``weights='DEFAULT'`` or ``weights='{str(list(obj)[0]).split('.')[1]}'``.",
         ]
 
         if obj.__doc__ != "An enumeration.":

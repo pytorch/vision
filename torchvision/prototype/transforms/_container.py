@@ -1,4 +1,4 @@
-from typing import Any, Optional, List, Dict
+from typing import Any, Dict, List, Optional
 
 import torch
 from torchvision.prototype.transforms import Transform
@@ -25,8 +25,8 @@ class RandomApply(_RandomApplyTransform):
         super().__init__(p=p)
         self.transform = transform
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        return self.transform(input)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self.transform(inpt)
 
     def extra_repr(self) -> str:
         return f"p={self.p}"

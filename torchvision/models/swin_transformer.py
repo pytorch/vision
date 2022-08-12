@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional, Callable, List, Any
+from typing import Any, Callable, List, Optional
 
 import torch
 import torch.nn.functional as F
@@ -9,7 +9,7 @@ from ..ops.misc import MLP, Permute
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param
 
@@ -25,6 +25,15 @@ __all__ = [
 ]
 
 
+def _patch_merging_pad(x):
+    H, W, _ = x.shape[-3:]
+    x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+    return x
+
+
+torch.fx.wrap("_patch_merging_pad")
+
+
 class PatchMerging(nn.Module):
     """Patch Merging Layer.
     Args:
@@ -34,6 +43,7 @@ class PatchMerging(nn.Module):
 
     def __init__(self, dim: int, norm_layer: Callable[..., nn.Module] = nn.LayerNorm):
         super().__init__()
+        _log_api_usage_once(self)
         self.dim = dim
         self.reduction = nn.Linear(4 * dim, 2 * dim, bias=False)
         self.norm = norm_layer(4 * dim)
@@ -45,8 +55,7 @@ class PatchMerging(nn.Module):
         Returns:
             Tensor with layout of [..., H/2, W/2, 2*C]
         """
-        H, W, _ = x.shape[-3:]
-        x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+        x = _patch_merging_pad(x)
 
         x0 = x[..., 0::2, 0::2, :]  # ... H/2 W/2 C
         x1 = x[..., 1::2, 0::2, :]  # ... H/2 W/2 C
@@ -97,6 +106,7 @@ def shifted_window_attention(
     x = F.pad(input, (0, 0, 0, pad_r, 0, pad_b))
     _, pad_H, pad_W, _ = x.shape
 
+    shift_size = shift_size.copy()
     # If window size is larger than feature size, there is no need to shift window
     if window_size[0] >= pad_H:
         shift_size[0] = 0
@@ -268,6 +278,7 @@ class SwinTransformerBlock(nn.Module):
         attn_layer: Callable[..., nn.Module] = ShiftedWindowAttention,
     ):
         super().__init__()
+        _log_api_usage_once(self)
 
         self.norm1 = norm_layer(dim)
         self.attn = attn_layer(
@@ -355,7 +366,7 @@ class SwinTransformer(nn.Module):
         # build SwinTransformer blocks
         for i_stage in range(len(depths)):
             stage: List[nn.Module] = []
-            dim = embed_dim * 2 ** i_stage
+            dim = embed_dim * 2**i_stage
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
@@ -504,6 +515,7 @@ class Swin_B_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
@@ -540,6 +552,7 @@ def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, *
     )
 
 
+@register_model()
 def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_small architecture from
@@ -576,6 +589,7 @@ def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, *
     )
 
 
+@register_model()
 def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_base architecture from

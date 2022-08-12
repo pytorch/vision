@@ -1,9 +1,9 @@
 import warnings
-from typing import Optional, Tuple, List
+from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
-from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
+from torch.nn.functional import conv2d, grid_sample, interpolate, pad as torch_pad
 
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
@@ -247,7 +247,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     if not torch.is_floating_point(img):
         result = convert_image_dtype(result, torch.float32)
 
-    result = (gain * result ** gamma).clamp(0, 1)
+    result = (gain * result**gamma).clamp(0, 1)
 
     result = convert_image_dtype(result, dtype)
     return result
@@ -350,7 +350,7 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
         raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
-def _parse_pad_padding(padding: List[int]) -> List[int]:
+def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
     if isinstance(padding, int):
         if torch.jit.is_scripting():
             # This maybe unreachable
@@ -370,7 +370,9 @@ def _parse_pad_padding(padding: List[int]) -> List[int]:
     return [pad_left, pad_right, pad_top, pad_bottom]
 
 
-def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
+def pad(
+    img: Tensor, padding: Union[int, List[int]], fill: Union[int, float] = 0, padding_mode: str = "constant"
+) -> Tensor:
     _assert_image_tensor(img)
 
     if not isinstance(padding, (int, tuple, list)):
@@ -383,8 +385,13 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     if isinstance(padding, tuple):
         padding = list(padding)
 
-    if isinstance(padding, list) and len(padding) not in [1, 2, 4]:
-        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
+    if isinstance(padding, list):
+        # TODO: Jit is failing on loading this op when scripted and saved
+        # https://github.com/pytorch/pytorch/issues/81100
+        if len(padding) not in [1, 2, 4]:
+            raise ValueError(
+                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
+            )
 
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
@@ -430,32 +437,12 @@ def resize(
     img: Tensor,
     size: List[int],
     interpolation: str = "bilinear",
-    max_size: Optional[int] = None,
     antialias: Optional[bool] = None,
 ) -> Tensor:
     _assert_image_tensor(img)
 
-    if not isinstance(size, (int, tuple, list)):
-        raise TypeError("Got inappropriate size arg")
-    if not isinstance(interpolation, str):
-        raise TypeError("Got inappropriate interpolation arg")
-
-    if interpolation not in ["nearest", "bilinear", "bicubic"]:
-        raise ValueError("This interpolation mode is unsupported with Tensor input")
-
     if isinstance(size, tuple):
         size = list(size)
-
-    if isinstance(size, list):
-        if len(size) not in [1, 2]:
-            raise ValueError(
-                f"Size must be an int or a 1 or 2 element tuple/list, not a {len(size)} element tuple/list"
-            )
-        if max_size is not None and len(size) != 1:
-            raise ValueError(
-                "max_size should only be passed if size specifies the length of the smaller edge, "
-                "i.e. size should be an int or a sequence of length 1 in torchscript mode."
-            )
 
     if antialias is None:
         antialias = False
@@ -463,37 +450,12 @@ def resize(
     if antialias and interpolation not in ["bilinear", "bicubic"]:
         raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
 
-    _, h, w = get_dimensions(img)
-
-    if isinstance(size, int) or len(size) == 1:  # specified size only for the smallest edge
-        short, long = (w, h) if w <= h else (h, w)
-        requested_new_short = size if isinstance(size, int) else size[0]
-
-        new_short, new_long = requested_new_short, int(requested_new_short * long / short)
-
-        if max_size is not None:
-            if max_size <= requested_new_short:
-                raise ValueError(
-                    f"max_size = {max_size} must be strictly greater than the requested "
-                    f"size for the smaller edge size = {size}"
-                )
-            if new_long > max_size:
-                new_short, new_long = int(max_size * new_short / new_long), max_size
-
-        new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
-
-        if (w, h) == (new_w, new_h):
-            return img
-
-    else:  # specified both h and w
-        new_w, new_h = size[1], size[0]
-
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [torch.float32, torch.float64])
 
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
-    img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners, antialias=antialias)
+    img = interpolate(img, size=size, mode=interpolation, align_corners=align_corners, antialias=antialias)
 
     if interpolation == "bicubic" and out_dtype == torch.uint8:
         img = img.clamp(min=0, max=255)
@@ -672,7 +634,7 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
     cmax = torch.ceil((max_vals / tol).trunc_() * tol)
     cmin = torch.floor((min_vals / tol).trunc_() * tol)
     size = cmax - cmin
-    return int(size[0]), int(size[1])
+    return int(size[0]), int(size[1])  # w, h
 
 
 def rotate(
@@ -968,3 +930,27 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
 
     img[..., i : i + h, j : j + w] = v
     return img
+
+
+def _create_identity_grid(size: List[int]) -> Tensor:
+    hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in size]
+    grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
+    return torch.stack([grid_x, grid_y], -1).unsqueeze(0)  # 1 x H x W x 2
+
+
+def elastic_transform(
+    img: Tensor,
+    displacement: Tensor,
+    interpolation: str = "bilinear",
+    fill: Optional[List[float]] = None,
+) -> Tensor:
+
+    if not (isinstance(img, torch.Tensor)):
+        raise TypeError(f"img should be Tensor. Got {type(img)}")
+
+    size = list(img.shape[-2:])
+    displacement = displacement.to(img.device)
+
+    identity_grid = _create_identity_grid(size)
+    grid = identity_grid.to(img.device) + displacement
+    return _apply_grid_transform(img, grid, interpolation, fill)
