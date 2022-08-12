@@ -452,19 +452,24 @@ class RandomCrop(Transform):
 
         if self.padding is not None:
             # update height, width with static padding data
-            pad_left, pad_right, pad_top, pad_bottom = _parse_pad_padding(self.padding)
+            padding = self.padding
+            if isinstance(padding, Sequence):
+                padding = list(padding)
+            pad_left, pad_right, pad_top, pad_bottom = _parse_pad_padding(padding)
             height += pad_top + pad_bottom
             width += pad_left + pad_right
 
         output_height, output_width = self.size
+        # We have to store maybe padded image size for pad_if_needed branch in _transform
+        input_height, input_width = height, width
 
         if self.pad_if_needed:
             # pad width if needed
             if width < output_width:
-                width = output_width
+                width += 2 * (output_width - width)
             # pad height if needed
             if height < output_height:
-                height = output_height
+                height += 2 * (output_height - height)
 
         if height + 1 < output_height or width + 1 < output_width:
             raise ValueError(
@@ -472,18 +477,21 @@ class RandomCrop(Transform):
             )
 
         if width == output_width and height == output_height:
-            return dict(top=0, left=0, height=height, width=width)
+            return dict(top=0, left=0, height=height, width=width, input_width=input_width, input_height=input_height)
 
         top = torch.randint(0, height - output_height + 1, size=(1,)).item()
         left = torch.randint(0, width - output_width + 1, size=(1,)).item()
 
         return dict(
-            top=top, left=left, height=output_height, width=output_width,
-            input_width=width, input_height=height
+            top=top,
+            left=left,
+            height=output_height,
+            width=output_width,
+            input_width=input_width,
+            input_height=input_height,
         )
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-
         if self.padding is not None:
             inpt = F.pad(inpt, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
 
@@ -491,14 +499,12 @@ class RandomCrop(Transform):
             input_width, input_height = params["input_width"], params["input_height"]
             if input_width < self.size[1]:
                 padding = [self.size[1] - input_width, 0]
-                sample = F.pad(sample, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
+                inpt = F.pad(inpt, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
             if input_height < self.size[0]:
                 padding = [0, self.size[0] - input_height]
-                sample = F.pad(sample, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
+                inpt = F.pad(inpt, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
 
-        return F.crop(
-            inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
-        )
+        return F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
 
 class RandomPerspective(_RandomApplyTransform):
