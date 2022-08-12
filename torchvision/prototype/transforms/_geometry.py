@@ -179,9 +179,9 @@ class TenCrop(Transform):
             output = F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip)
             return MultiCropResult(features.Image.new_like(inpt, o) for o in output)
         elif is_simple_tensor(inpt):
-            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size))
+            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip))
         elif isinstance(inpt, PIL.Image.Image):
-            return MultiCropResult(F.ten_crop_image_pil(inpt, self.size))
+            return MultiCropResult(F.ten_crop_image_pil(inpt, self.size, vertical_flip=self.vertical_flip))
         else:
             return inpt
 
