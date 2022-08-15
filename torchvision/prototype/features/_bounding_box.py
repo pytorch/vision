@@ -60,14 +60,13 @@ class BoundingBox(_Feature):
         )
 
     def to_format(self, format: Union[str, BoundingBoxFormat]) -> BoundingBox:
-        # import at runtime to avoid cyclic imports
-        from torchvision.prototype.transforms.functional import convert_bounding_box_format
+        from torchvision.prototype.transforms import functional as _F
 
         if isinstance(format, str):
             format = BoundingBoxFormat.from_str(format.upper())
 
         return BoundingBox.new_like(
-            self, convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
+            self, _F.convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
         )
 
     def horizontal_flip(self) -> BoundingBox:

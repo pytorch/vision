@@ -100,15 +100,14 @@ class Image(_Feature):
             return ColorSpace.OTHER
 
     def to_color_space(self, color_space: Union[str, ColorSpace], copy: bool = True) -> Image:
-        # import at runtime to avoid cyclic imports
-        from torchvision.prototype.transforms.functional import convert_color_space_image_tensor
+        from torchvision.prototype.transforms import functional as _F
 
         if isinstance(color_space, str):
             color_space = ColorSpace.from_str(color_space.upper())
 
         return Image.new_like(
             self,
-            convert_color_space_image_tensor(
+            _F.convert_color_space_image_tensor(
                 self, old_color_space=self.color_space, new_color_space=color_space, copy=copy
             ),
             color_space=color_space,
