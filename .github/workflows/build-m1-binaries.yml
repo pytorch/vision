@@ -154,4 +154,4 @@ jobs:
           conda install -yq anaconda-client
           set -x
           export ANACONDA_PATH=$(conda info --base)/bin
-          $ANACONDA_PATH/anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload dist/*.tar.bz2 -u "pytorch-${CHANNEL}" --label main --no-progress --force
+          $ANACONDA_PATH/anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload dist/osx-arm64/*.tar.bz2 -u "pytorch-${CHANNEL}" --label main --no-progress --force
