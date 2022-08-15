@@ -157,7 +157,7 @@ class S3D(nn.Module):
 
 class S3D_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
-        url="https://download.pytorch.org/models/s3d.pt",
+        url="https://download.pytorch.org/models/S3D_Kinetics400_dev.pt",
         transforms=partial(
             VideoClassification,
             crop_size=(224, 224),
