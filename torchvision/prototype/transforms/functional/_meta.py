@@ -2,7 +2,7 @@ from typing import Any, Optional, Tuple
 
 import PIL.Image
 import torch
-from torchvision.prototype.features import _Feature, BoundingBoxFormat, ColorSpace, Image
+from torchvision.prototype.features import BoundingBoxFormat, ColorSpace, Image
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
 get_dimensions_image_tensor = _FT.get_dimensions
@@ -161,8 +161,6 @@ def convert_color_space(
 ) -> Any:
     if isinstance(inpt, Image):
         return inpt.to_color_space(color_space, copy=copy)
-    if isinstance(inpt, _Feature):
-        return inpt
     elif isinstance(inpt, PIL.Image.Image):
         return convert_color_space_image_pil(inpt, color_space, copy=copy)
     else:

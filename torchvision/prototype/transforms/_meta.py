@@ -1,5 +1,7 @@
 from typing import Any, Dict, Optional, Union
 
+import PIL.Image
+
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
@@ -39,6 +41,9 @@ class ConvertImageDtype(Transform):
 
 
 class ConvertColorSpace(Transform):
+    # F.convert_color_space does NOT handle `_Feature`'s in general
+    _transformed_types = (torch.Tensor, features.Image, PIL.Image.Image)
+
     def __init__(
         self,
         color_space: Union[str, features.ColorSpace],
