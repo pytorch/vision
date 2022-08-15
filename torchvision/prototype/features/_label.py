@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 import torch
 from torch.utils._pytree import tree_map
