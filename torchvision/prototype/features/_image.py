@@ -99,6 +99,21 @@ class Image(_Feature):
         else:
             return ColorSpace.OTHER
 
+    def to_color_space(self, color_space: Union[str, ColorSpace], copy: bool = True) -> Image:
+        # import at runtime to avoid cyclic imports
+        from torchvision.prototype.transforms.functional import convert_color_space_image_tensor
+
+        if isinstance(color_space, str):
+            color_space = ColorSpace.from_str(color_space.upper())
+
+        return Image.new_like(
+            self,
+            convert_color_space_image_tensor(
+                self, old_color_space=self.color_space, new_color_space=color_space, copy=copy
+            ),
+            format=color_space,
+        )
+
     def show(self) -> None:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
         #  promote this out of the prototype state

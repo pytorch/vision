@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Callable, cast, List, Mapping, Optional, Sequence, Tuple, Type, TYPE_CHECKING, TypeVar, Union
+from typing import Any, Callable, cast, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import torch
 from torch._C import _TensorBase, DisableTorchFunction
 from torchvision.transforms import InterpolationMode
-
-if TYPE_CHECKING:
-    from ._image import ColorSpace
 
 F = TypeVar("F", bound="_Feature")
 
@@ -204,7 +201,4 @@ class _Feature(torch.Tensor):
         return self
 
     def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> _Feature:
-        return self
-
-    def convert_color_space(self, color_space: "ColorSpace", *, copy: bool = True) -> _Feature:
         return self
