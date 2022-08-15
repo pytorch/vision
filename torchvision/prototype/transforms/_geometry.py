@@ -614,7 +614,7 @@ class ElasticTransform(Transform):
 
 
 class FixedSizeCrop(Transform):
-    def __init__(self, size, fill=0, padding_mode="constant"):
+    def __init__(self, size: Union[int, Sequence[int]], fill=0, padding_mode="constant") -> None:
         super().__init__()
         size = tuple(_setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
         self.crop_height = size[0]
