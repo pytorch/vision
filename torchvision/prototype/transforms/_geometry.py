@@ -611,3 +611,60 @@ class ElasticTransform(Transform):
             fill=self.fill,
             interpolation=self.interpolation,
         )
+
+
+class FixedSizeCrop(Transform):
+    def __init__(self, size, fill=0, padding_mode="constant"):
+        super().__init__()
+        size = tuple(_setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
+        self.crop_height = size[0]
+        self.crop_width = size[1]
+        self.fill = fill  # TODO: Fill is currently respected only on PIL. Apply tensor patch.
+        self.padding_mode = padding_mode
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        _, height, width = get_image_dimensions(image)
+        new_height = min(height, self.crop_height)
+        new_width = min(width, self.crop_width)
+
+        needs_crop = new_height != height or new_width != width
+
+        offset_height = max(height - self.crop_height, 0)
+        offset_width = max(width - self.crop_width, 0)
+
+        r = torch.rand(1)
+        top = int(offset_height * r)
+        left = int(offset_width * r)
+
+        pad_bottom = max(self.crop_height - new_height, 0)
+        pad_right = max(self.crop_width - new_width, 0)
+
+        needs_pad = pad_bottom != 0 or pad_right != 0
+
+        return dict(
+            needs_crop=needs_crop,
+            top=top,
+            left=left,
+            height=new_height,
+            width=new_width,
+            padding=[0, 0, pad_right, pad_bottom],
+            needs_pad=needs_pad,
+        )
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if params["needs_crop"]:
+            inpt = F.crop(
+                inpt,
+                top=params["top"],
+                left=params["left"],
+                height=params["height"],
+                width=params["width"],
+            )
+            # TODO: cull invalid bounding boxes and labels after we have resolved the preferred way in
+            #  https://github.com/pytorch/vision/pull/6401
+
+        if params["needs_pad"]:
+            inpt = F.pad(inpt, params["padding"], fill=self.fill, padding_mode=self.padding_mode)
+
+        return inpt
