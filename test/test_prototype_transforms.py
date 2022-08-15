@@ -1148,17 +1148,17 @@ class TestScaleJitter:
         assert int(target_size[1] * scale_range[0]) <= width <= int(target_size[1] * scale_range[1])
 
     def test__transform(self, mocker):
-        interpolation_sentinel = object()
+        interpolation_sentinel = mocker.MagicMock()
 
         transform = transforms.ScaleJitter(target_size=(16, 12), interpolation=interpolation_sentinel)
-        transform._transformed_types = (object,)
+        transform._transformed_types = (mocker.MagicMock,)
 
-        size_sentinel = object()
+        size_sentinel = mocker.MagicMock()
         mocker.patch(
             "torchvision.prototype.transforms._geometry.ScaleJitter._get_params", return_value=dict(size=size_sentinel)
         )
 
-        inpt_sentinel = object()
+        inpt_sentinel = mocker.MagicMock()
 
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
         transform(inpt_sentinel)
