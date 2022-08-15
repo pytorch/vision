@@ -159,4 +159,4 @@ jobs:
           . ~/miniconda3/etc/profile.d/conda.sh
           conda install -yq anaconda-client
           set -x
-          anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload ~/miniconda3/conda-bld/osx-arm64/*.tar.bz2 -u "pytorch-${CHANNEL}" --label main --no-progress --force
+          ~/miniconda3/bin/anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload ~/miniconda3/conda-bld/osx-arm64/*.tar.bz2 -u "pytorch-${CHANNEL}" --label main --no-progress --force
