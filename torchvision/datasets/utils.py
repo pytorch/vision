@@ -458,7 +458,7 @@ T = TypeVar("T", str, bytes)
 def verify_str_arg(
     value: T,
     arg: Optional[str] = None,
-    valid_values: Iterable[T] = None,
+    valid_values: Optional[Iterable[T]] = None,
     custom_msg: Optional[str] = None,
 ) -> T:
     if not isinstance(value, torch._six.string_classes):
