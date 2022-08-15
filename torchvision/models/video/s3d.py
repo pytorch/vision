@@ -5,6 +5,7 @@ import torch
 from torch import nn
 from torchvision.ops.misc import Conv3dNormActivation
 
+from ...transforms._presets import VideoClassification
 from .._api import register_model, Weights, WeightsEnum
 from .._meta import _KINETICS400_CATEGORIES
 from .._utils import _ovewrite_named_param
@@ -158,6 +159,7 @@ class S3D_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
         url="https://download.pytorch.org/models/s3d.pt",
         transforms=partial(
+            VideoClassification,
             crop_size=(224, 224),
             resize_size=(256, 256),
             mean=(0.5, 0.5, 0.5),
