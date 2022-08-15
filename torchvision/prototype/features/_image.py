@@ -111,7 +111,7 @@ class Image(_Feature):
             convert_color_space_image_tensor(
                 self, old_color_space=self.color_space, new_color_space=color_space, copy=copy
             ),
-            format=color_space,
+            color_space=color_space,
         )
 
     def show(self) -> None:

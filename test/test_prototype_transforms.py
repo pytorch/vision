@@ -223,7 +223,7 @@ class TestSmoke:
             )
         ]
     )
-    def test_convert_image_color_space(self, transform, input):
+    def test_convertolor_space(self, transform, input):
         transform(input)
 
 
