@@ -1,13 +1,16 @@
+import PIL.Image
+
+import torch
 from torchvision.transforms import functional_tensor as _FT
+from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 
 erase_image_tensor = _FT.erase
 
 
-# TODO: Don't forget to clean up from the primitives kernels those that shouldn't be kernels.
-# Like the mixup and cutmix stuff
-
-# This function is copy-pasted to Image and OneHotLabel and may be refactored
-# def _mixup_tensor(input: torch.Tensor, batch_dim: int, lam: float) -> torch.Tensor:
-#     input = input.clone()
-#     return input.roll(1, batch_dim).mul_(1 - lam).add_(input.mul_(lam))
+def erase_image_pil(
+    img: PIL.Image.Image, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
+) -> PIL.Image.Image:
+    t_img = pil_to_tensor(img)
+    output = erase_image_tensor(t_img, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+    return to_pil_image(output, mode=img.mode)

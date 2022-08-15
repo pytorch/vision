@@ -1,9 +1,9 @@
 import warnings
-from typing import Optional, Tuple, List, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
-from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
+from torch.nn.functional import conv2d, grid_sample, interpolate, pad as torch_pad
 
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
@@ -247,7 +247,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     if not torch.is_floating_point(img):
         result = convert_image_dtype(result, torch.float32)
 
-    result = (gain * result ** gamma).clamp(0, 1)
+    result = (gain * result**gamma).clamp(0, 1)
 
     result = convert_image_dtype(result, dtype)
     return result
@@ -371,9 +371,12 @@ def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
 
 
 def pad(
-    img: Tensor, padding: Union[int, List[int]], fill: Union[int, float] = 0, padding_mode: str = "constant"
+    img: Tensor, padding: Union[int, List[int]], fill: Optional[Union[int, float]] = 0, padding_mode: str = "constant"
 ) -> Tensor:
     _assert_image_tensor(img)
+
+    if fill is None:
+        fill = 0
 
     if not isinstance(padding, (int, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
@@ -634,7 +637,7 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
     cmax = torch.ceil((max_vals / tol).trunc_() * tol)
     cmin = torch.floor((min_vals / tol).trunc_() * tol)
     size = cmax - cmin
-    return int(size[0]), int(size[1])
+    return int(size[0]), int(size[1])  # w, h
 
 
 def rotate(
@@ -932,6 +935,12 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     return img
 
 
+def _create_identity_grid(size: List[int]) -> Tensor:
+    hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in size]
+    grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
+    return torch.stack([grid_x, grid_y], -1).unsqueeze(0)  # 1 x H x W x 2
+
+
 def elastic_transform(
     img: Tensor,
     displacement: Tensor,
@@ -945,8 +954,6 @@ def elastic_transform(
     size = list(img.shape[-2:])
     displacement = displacement.to(img.device)
 
-    hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in size]
-    grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
-    identity_grid = torch.stack([grid_x, grid_y], -1).unsqueeze(0)  # 1 x H x W x 2
+    identity_grid = _create_identity_grid(size)
     grid = identity_grid.to(img.device) + displacement
     return _apply_grid_transform(img, grid, interpolation, fill)

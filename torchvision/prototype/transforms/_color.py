@@ -1,14 +1,14 @@
 import collections.abc
-from typing import Any, Dict, Union, Tuple, Optional, Sequence, TypeVar
+from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms import functional as _F
 
 from ._transform import _RandomApplyTransform
-from ._utils import is_simple_tensor, get_image_dimensions, query_image
+from ._utils import get_image_dimensions, is_simple_tensor, query_image
 
 T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
 
@@ -151,8 +151,42 @@ class RandomPhotometricDistort(Transform):
 
 
 class RandomEqualize(_RandomApplyTransform):
-    def __init__(self, p: float = 0.5):
-        super().__init__(p=p)
-
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.equalize(inpt)
+
+
+class RandomInvert(_RandomApplyTransform):
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.invert(inpt)
+
+
+class RandomPosterize(_RandomApplyTransform):
+    def __init__(self, bits: int, p: float = 0.5) -> None:
+        super().__init__(p=p)
+        self.bits = bits
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.posterize(inpt, bits=self.bits)
+
+
+class RandomSolarize(_RandomApplyTransform):
+    def __init__(self, threshold: float, p: float = 0.5) -> None:
+        super().__init__(p=p)
+        self.threshold = threshold
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.solarize(inpt, threshold=self.threshold)
+
+
+class RandomAutocontrast(_RandomApplyTransform):
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.autocontrast(inpt)
+
+
+class RandomAdjustSharpness(_RandomApplyTransform):
+    def __init__(self, sharpness_factor: float, p: float = 0.5) -> None:
+        super().__init__(p=p)
+        self.sharpness_factor = sharpness_factor
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.adjust_sharpness(inpt, sharpness_factor=self.sharpness_factor)

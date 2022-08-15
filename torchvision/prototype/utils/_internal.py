@@ -3,18 +3,7 @@ import difflib
 import io
 import mmap
 import platform
-from typing import (
-    Any,
-    BinaryIO,
-    Callable,
-    Collection,
-    Iterator,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-    Optional,
-)
+from typing import Any, BinaryIO, Callable, Collection, Iterator, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
 import torch
