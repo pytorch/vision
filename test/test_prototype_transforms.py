@@ -6,7 +6,7 @@ import PIL.Image
 
 import pytest
 import torch
-from common_utils import assert_equal
+from common_utils import assert_equal, cpu_and_gpu
 from test_prototype_transforms_functional import (
     make_bounding_box,
     make_bounding_boxes,
@@ -15,6 +15,7 @@ from test_prototype_transforms_functional import (
     make_one_hot_labels,
     make_segmentation_mask,
 )
+from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features, transforms
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
@@ -1128,9 +1129,51 @@ class TestCompose:
 
 
 class TestRandomIoUCrop:
-    def test__get_params(self):
-        # TODO:
-        pass
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("options", [[0.5, 0.9], [2.0]])
+    def test__get_params(self, device, options, mocker):
+        image = mocker.MagicMock(spec=features.Image)
+        image.num_channels = 3
+        image.image_size = (24, 32)
+        bboxes = features.BoundingBox(
+            torch.tensor(
+                [
+                    [1, 1, 10, 10],
+                    [20, 20, 23, 23],
+                    [1, 20, 10, 23],
+                    [20, 1, 23, 10],
+                ]
+            ),
+            format="XYXY",
+            image_size=image.image_size,
+            device=device,
+        )
+        sample = [image, bboxes]
+
+        transform = transforms.RandomIoUCrop(sampler_options=options)
+
+        n_samples = 5
+        for _ in range(n_samples):
+
+            params = transform._get_params(sample)
+
+            if options == [2.0]:
+                assert len(params) == 0
+                return
+
+            assert len(params["is_within_crop_area"]) > 0
+            orig_h = image.image_size[0]
+            orig_w = image.image_size[1]
+            assert int(transform.min_scale * orig_h) <= params["height"] <= int(transform.max_scale * orig_h)
+            assert int(transform.min_scale * orig_w) <= params["width"] <= int(transform.max_scale * orig_w)
+
+            left, top = params["left"], params["top"]
+            new_h, new_w = params["height"], params["width"]
+            ious = box_iou(
+                bboxes,
+                torch.tensor([[left, top, left + new_w, top + new_h]], dtype=bboxes.dtype, device=bboxes.device),
+            )
+            assert ious.max() >= options[0] or ious.max() >= options[1], f"{ious} vs {options}"
 
     def test__transform(self):
         # TODO:
