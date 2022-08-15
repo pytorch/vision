@@ -1136,14 +1136,7 @@ class TestRandomIoUCrop:
         image.num_channels = 3
         image.image_size = (24, 32)
         bboxes = features.BoundingBox(
-            torch.tensor(
-                [
-                    [1, 1, 10, 10],
-                    [20, 20, 23, 23],
-                    [1, 20, 10, 23],
-                    [20, 1, 23, 10],
-                ]
-            ),
+            torch.tensor([[1, 1, 10, 10], [20, 20, 23, 23], [1, 20, 10, 23], [20, 1, 23, 10]]),
             format="XYXY",
             image_size=image.image_size,
             device=device,
@@ -1174,6 +1167,17 @@ class TestRandomIoUCrop:
                 torch.tensor([[left, top, left + new_w, top + new_h]], dtype=bboxes.dtype, device=bboxes.device),
             )
             assert ious.max() >= options[0] or ious.max() >= options[1], f"{ious} vs {options}"
+
+    def test__transform_empty_params(self, mocker):
+        transform = transforms.RandomIoUCrop(sampler_options=[2.0])
+        image = features.Image(torch.rand(1, 3, 4, 4))
+        bboxes = features.BoundingBox(torch.tensor([[1, 1, 2, 2]]), format="XYXY", image_size=(4, 4))
+        label = features.Label(torch.tensor([1]))
+        sample = [image, bboxes, label]
+        # Let's mock transform._get_params to control the output:
+        transform._get_params = mocker.MagicMock(return_value={})
+        output = transform(sample)
+        torch.testing.assert_close(output, sample)
 
     def test__transform(self):
         # TODO:
