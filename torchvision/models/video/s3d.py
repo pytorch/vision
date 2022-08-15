@@ -55,32 +55,33 @@ class SepInceptionBlock3D(nn.Module):
         norm_layer (Optional[Callable]): Module specifying the normalization layer to use.
     """
 
-    def __init__(self, in_planes: int, branch_layers: List[List[int]], norm_layer: Optional[Callable] = None):
+    def __init__(
+        self,
+        in_planes: int,
+        b0_out: int,
+        b1_mid: int,
+        b1_out: int,
+        b2_mid: int,
+        b2_out: int,
+        b3_out: int,
+        norm_layer: Optional[Callable] = None,
+    ):
         super().__init__()
-        [b0_out], [b1_mid, b1_out], [b2_mid, b2_out], [b3_out] = branch_layers
-        if norm_layer is None: 
-            norm_layer = partial(nn.BatchNorm3d, eps=0.001, momentum=0.001) 
+        if norm_layer is None:
+            norm_layer = partial(nn.BatchNorm3d, eps=0.001, momentum=0.001)
 
-        self.branch0 = Conv3dNormActivation(
-            in_planes, b0_out, kernel_size=1, stride=1, norm_layer=norm_layer
-        )
+        self.branch0 = Conv3dNormActivation(in_planes, b0_out, kernel_size=1, stride=1, norm_layer=norm_layer)
         self.branch1 = nn.Sequential(
-            Conv3dNormActivation(
-                in_planes, b1_mid, kernel_size=1, stride=1, norm_layer=norm_layer
-            ),
+            Conv3dNormActivation(in_planes, b1_mid, kernel_size=1, stride=1, norm_layer=norm_layer),
             TemporalSeparableConv(b1_mid, b1_out, kernel_size=3, stride=1, padding=1),
         )
         self.branch2 = nn.Sequential(
-            Conv3dNormActivation(
-                in_planes, b2_mid, kernel_size=1, stride=1, norm_layer=norm_layer
-            ),
+            Conv3dNormActivation(in_planes, b2_mid, kernel_size=1, stride=1, norm_layer=norm_layer),
             TemporalSeparableConv(b2_mid, b2_out, kernel_size=3, stride=1, padding=1),
         )
         self.branch3 = nn.Sequential(
             nn.MaxPool3d(kernel_size=(3, 3, 3), stride=1, padding=1),
-            Conv3dNormActivation(
-                in_planes, b3_out, kernel_size=1, stride=1, norm_layer=norm_layer
-            ),
+            Conv3dNormActivation(in_planes, b3_out, kernel_size=1, stride=1, norm_layer=norm_layer),
         )
 
     def forward(self, x):
@@ -112,14 +113,18 @@ class S3D(nn.Module):
         dropout: float = 0.2,
     ) -> None:
         super().__init__()
-        if norm_layer is None: 
-            norm_layer = partial(nn.BatchNorm3d, eps=0.001, momentum=0.001) 
+        if norm_layer is None:
+            norm_layer = partial(nn.BatchNorm3d, eps=0.001, momentum=0.001)
 
         self.features = nn.Sequential(
             TemporalSeparableConv(3, 64, kernel_size=7, stride=2, padding=3),
             nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(1, 2, 2), padding=(0, 1, 1)),
             Conv3dNormActivation(
-                64, 64, kernel_size=1, stride=1, norm_layer=norm_layer,
+                64,
+                64,
+                kernel_size=1,
+                stride=1,
+                norm_layer=norm_layer,
             ),
             TemporalSeparableConv(64, 192, kernel_size=3, stride=1, padding=1),
             nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(1, 2, 2), padding=(0, 1, 1)),
@@ -156,7 +161,7 @@ class S3D_Weights(WeightsEnum):
             crop_size=(224, 224),
             resize_size=(256, 256),
             mean=(0.5, 0.5, 0.5),
-            std=(0.5 ,0.5, 0.5),
+            std=(0.5, 0.5, 0.5),
         ),
         meta={
             "min_size": (224, 224),
