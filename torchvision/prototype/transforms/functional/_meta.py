@@ -91,7 +91,7 @@ def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
 _rgb_to_gray = _FT.rgb_to_grayscale
 
 
-def convert_image_color_space_tensor(
+def convert_color_space_image_tensor(
     image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
 ) -> torch.Tensor:
     if new_color_space == old_color_space:
@@ -141,7 +141,7 @@ _COLOR_SPACE_TO_PIL_MODE = {
 }
 
 
-def convert_image_color_space_pil(
+def convert_color_space_image_pil(
     image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
 ) -> PIL.Image.Image:
     old_mode = image.mode
@@ -162,13 +162,13 @@ def convert_color_space(
     if isinstance(inpt, _Feature):
         return inpt.convert_color_space(color_space, copy=copy)
     elif isinstance(inpt, PIL.Image.Image):
-        return convert_image_color_space_pil(inpt, color_space, copy=copy)
+        return convert_color_space_image_pil(inpt, color_space, copy=copy)
     else:
         if old_color_space is None:
             raise RuntimeError(
                 "In order to convert the color space of simple tensor images, "
                 "the `old_color_space=...` parameter needs to be passed."
             )
-        return convert_image_color_space_tensor(
+        return convert_color_space_image_tensor(
             inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
         )

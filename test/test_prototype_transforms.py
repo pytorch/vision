@@ -200,7 +200,7 @@ class TestSmoke:
     @parametrize(
         [
             (
-                transforms.ConvertImageColorSpace(color_space=new_color_space, old_color_space=old_color_space),
+                transforms.ConvertColorSpace(color_space=new_color_space, old_color_space=old_color_space),
                 itertools.chain.from_iterable(
                     [
                         fn(color_spaces=[old_color_space])

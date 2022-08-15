@@ -38,7 +38,7 @@ class ConvertImageDtype(Transform):
             return inpt
 
 
-class ConvertImageColorSpace(Transform):
+class ConvertColorSpace(Transform):
     def __init__(
         self,
         color_space: Union[str, features.ColorSpace],
