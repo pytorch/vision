@@ -611,3 +611,31 @@ class ElasticTransform(Transform):
             fill=self.fill,
             interpolation=self.interpolation,
         )
+
+
+class RandomShortestSize(Transform):
+    def __init__(
+        self,
+        min_size: Union[List[int], Tuple[int], int],
+        max_size: int,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    ):
+        super().__init__()
+        self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
+        self.max_size = max_size
+        self.interpolation = interpolation
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        _, orig_height, orig_width = get_image_dimensions(image)
+
+        min_size = self.min_size[torch.randint(len(self.min_size), (1,)).item()]
+        r = min(min_size / min(orig_height, orig_width), self.max_size / max(orig_height, orig_width))
+
+        new_width = int(orig_width * r)
+        new_height = int(orig_height * r)
+
+        return dict(size=(new_height, new_width))
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.resize(inpt, size=params["size"], interpolation=self.interpolation)

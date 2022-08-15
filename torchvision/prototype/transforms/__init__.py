@@ -27,6 +27,7 @@ from ._geometry import (
     RandomPerspective,
     RandomResizedCrop,
     RandomRotation,
+    RandomShortestSize,
     RandomVerticalFlip,
     RandomZoomOut,
     Resize,
