@@ -629,7 +629,7 @@ class RandomShortestSize(Transform):
         image = query_image(sample)
         _, orig_height, orig_width = get_image_dimensions(image)
 
-        min_size = self.min_size[torch.randint(len(self.min_size), (1,)).item()]
+        min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
         r = min(min_size / min(orig_height, orig_width), self.max_size / max(orig_height, orig_width))
 
         new_width = int(orig_width * r)
