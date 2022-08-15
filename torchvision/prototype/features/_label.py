@@ -49,7 +49,7 @@ class Label(_Feature):
         return tree_map(lambda idx: self.categories[idx], self.tolist())
 
 
-class OneHotLabel(_Feature):
+class OneHotLabel(Label):
     categories: Optional[Sequence[str]]
 
     def __new__(
@@ -77,3 +77,21 @@ class OneHotLabel(_Feature):
         return super().new_like(
             other, data, categories=categories if categories is not None else other.categories, **kwargs
         )
+
+    @classmethod
+    def from_category(
+        cls,
+        category: str,
+        *,
+        categories: Sequence[str],
+        **kwargs: Any,
+    ) -> Label:
+        ohe_tensor = torch.zeros(len(categories), dtype=torch.long)
+        ohe_tensor[categories.index(category)] = 1
+        return cls(ohe_tensor, categories=categories, **kwargs)
+
+    def to_categories(self) -> Any:
+        if self.categories is None:
+            raise RuntimeError("OneHotLabel does not have categories")
+        label = self.argmax(dim=-1)
+        return tree_map(lambda idx: self.categories[idx], label.tolist())
