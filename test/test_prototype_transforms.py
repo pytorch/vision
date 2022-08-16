@@ -623,25 +623,49 @@ class TestRandomCrop:
         with pytest.raises(ValueError, match="Padding mode should be either"):
             transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
 
-    def test__get_params(self, mocker):
+    @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
+    @pytest.mark.parametrize("size, pad_if_needed", [((10, 10), False), ((50, 25), True)])
+    def test__get_params(self, padding, pad_if_needed, size, mocker):
         image = mocker.MagicMock(spec=features.Image)
         image.num_channels = 3
         image.image_size = (24, 32)
         h, w = image.image_size
 
-        transform = transforms.RandomCrop([10, 10])
+        transform = transforms.RandomCrop(size, padding=padding, pad_if_needed=pad_if_needed)
         params = transform._get_params(image)
 
-        assert 0 <= params["top"] <= h - transform.size[0] + 1
-        assert 0 <= params["left"] <= w - transform.size[1] + 1
-        assert params["height"] == 10
-        assert params["width"] == 10
+        if padding is not None:
+            if isinstance(padding, int):
+                h += 2 * padding
+                w += 2 * padding
+            elif isinstance(padding, list) and len(padding) == 2:
+                w += 2 * padding[0]
+                h += 2 * padding[1]
+            elif isinstance(padding, list) and len(padding) == 4:
+                w += padding[0] + padding[2]
+                h += padding[1] + padding[3]
+
+        expected_input_width = w
+        expected_input_height = h
+
+        if pad_if_needed:
+            if w < size[1]:
+                w += 2 * (size[1] - w)
+            if h < size[0]:
+                h += 2 * (size[0] - h)
+
+        assert 0 <= params["top"] <= h - size[0] + 1
+        assert 0 <= params["left"] <= w - size[1] + 1
+        assert params["height"] == size[0]
+        assert params["width"] == size[1]
+        assert params["input_width"] == expected_input_width
+        assert params["input_height"] == expected_input_height
 
     @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
     @pytest.mark.parametrize("pad_if_needed", [False, True])
     @pytest.mark.parametrize("fill", [False, True])
     @pytest.mark.parametrize("padding_mode", ["constant", "edge"])
-    def test_forward(self, padding, pad_if_needed, fill, padding_mode, mocker):
+    def test__transform(self, padding, pad_if_needed, fill, padding_mode, mocker):
         output_size = [10, 12]
         transform = transforms.RandomCrop(
             output_size, padding=padding, pad_if_needed=pad_if_needed, fill=fill, padding_mode=padding_mode
@@ -671,13 +695,12 @@ class TestRandomCrop:
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
+        params = transform._get_params(inpt)
         if padding is None and not pad_if_needed:
-            params = transform._get_params(inpt)
             fn_crop.assert_called_once_with(
                 inpt, top=params["top"], left=params["left"], height=output_size[0], width=output_size[1]
             )
         elif not pad_if_needed:
-            params = transform._get_params(expected)
             fn_crop.assert_called_once_with(
                 expected, top=params["top"], left=params["left"], height=output_size[0], width=output_size[1]
             )
@@ -1102,3 +1125,42 @@ class TestCompose:
         inpt = torch.rand(1, 3, 32, 32)
         output = c(inpt)
         assert isinstance(output, torch.Tensor)
+
+
+class TestScaleJitter:
+    def test__get_params(self, mocker):
+        image_size = (24, 32)
+        target_size = (16, 12)
+        scale_range = (0.5, 1.5)
+
+        transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
+
+        sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
+        params = transform._get_params(sample)
+
+        assert "size" in params
+        size = params["size"]
+
+        assert isinstance(size, tuple) and len(size) == 2
+        height, width = size
+
+        assert int(target_size[0] * scale_range[0]) <= height <= int(target_size[0] * scale_range[1])
+        assert int(target_size[1] * scale_range[0]) <= width <= int(target_size[1] * scale_range[1])
+
+    def test__transform(self, mocker):
+        interpolation_sentinel = mocker.MagicMock()
+
+        transform = transforms.ScaleJitter(target_size=(16, 12), interpolation=interpolation_sentinel)
+        transform._transformed_types = (mocker.MagicMock,)
+
+        size_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.ScaleJitter._get_params", return_value=dict(size=size_sentinel)
+        )
+
+        inpt_sentinel = mocker.MagicMock()
+
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        transform(inpt_sentinel)
+
+        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)

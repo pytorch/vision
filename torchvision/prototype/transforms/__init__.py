@@ -31,6 +31,7 @@ from ._geometry import (
     RandomVerticalFlip,
     RandomZoomOut,
     Resize,
+    ScaleJitter,
     TenCrop,
 )
 from ._meta import ConvertBoundingBoxFormat, ConvertImageColorSpace, ConvertImageDtype
