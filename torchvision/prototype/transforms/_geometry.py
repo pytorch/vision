@@ -1,4 +1,3 @@
-import collections.abc
 import math
 import numbers
 import warnings
@@ -6,6 +5,7 @@ from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
+from torch.utils._pytree import tree_map
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor
@@ -194,31 +194,22 @@ class TenCrop(Transform):
 
 
 class BatchMultiCrop(Transform):
+    def _batch(self, crops: Any) -> Any:
+        if not isinstance(crops, MultiCropResult):
+            return crops
+
+        if isinstance(crops[0], PIL.Image.Image):
+            crops = [pil_to_tensor(crop) for crop in crops]
+
+        batch = torch.stack(crops)
+
+        if isinstance(crops[0], features.Image):
+            batch = features.Image.new_like(crops[0], batch)
+
+        return batch
+
     def forward(self, *inputs: Any) -> Any:
-        # This is basically the functionality of `torchvision.prototype.utils._internal.apply_recursively` with one
-        # significant difference:
-        # Since we need multiple images to batch them together, we need to explicitly exclude `MultiCropResult` from
-        # the sequence case.
-        def apply_recursively(obj: Any) -> Any:
-            if isinstance(obj, MultiCropResult):
-                crops = obj
-                if isinstance(obj[0], PIL.Image.Image):
-                    crops = [pil_to_tensor(crop) for crop in crops]  # type: ignore[assignment]
-
-                batch = torch.stack(crops)
-
-                if isinstance(obj[0], features.Image):
-                    batch = features.Image.new_like(obj[0], batch)
-
-                return batch
-            elif isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
-                return [apply_recursively(item) for item in obj]
-            elif isinstance(obj, collections.abc.Mapping):
-                return {key: apply_recursively(item) for key, item in obj.items()}
-            else:
-                return obj
-
-        return apply_recursively(inputs if len(inputs) > 1 else inputs[0])
+        return tree_map(self._batch, inputs if len(inputs) > 1 else inputs[0])
 
 
 def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> None:
