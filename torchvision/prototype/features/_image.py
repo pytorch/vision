@@ -99,6 +99,20 @@ class Image(_Feature):
         else:
             return ColorSpace.OTHER
 
+    def to_color_space(self, color_space: Union[str, ColorSpace], copy: bool = True) -> Image:
+        from torchvision.prototype.transforms import functional as _F
+
+        if isinstance(color_space, str):
+            color_space = ColorSpace.from_str(color_space.upper())
+
+        return Image.new_like(
+            self,
+            _F.convert_color_space_image_tensor(
+                self, old_color_space=self.color_space, new_color_space=color_space, copy=copy
+            ),
+            color_space=color_space,
+        )
+
     def show(self) -> None:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
         #  promote this out of the prototype state
@@ -174,11 +188,8 @@ class Image(_Feature):
         if not isinstance(padding, int):
             padding = list(padding)
 
-        if fill is None:
-            fill = 0
-
         # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
-        if isinstance(fill, (int, float)):
+        if isinstance(fill, (int, float)) or fill is None:
             output = _F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
         else:
             from torchvision.prototype.transforms.functional._geometry import _pad_with_vector_fill

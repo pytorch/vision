@@ -3,18 +3,23 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import PIL.Image
+import torch
+import torchvision.prototype.transforms.functional as F
 from torchvision.prototype import features
 from torchvision.prototype.features import ColorSpace
 from torchvision.prototype.transforms import Transform
 from torchvision.transforms import functional as _F
 from typing_extensions import Literal
 
-from ._meta import ConvertImageColorSpace
 from ._transform import _RandomApplyTransform
 from ._utils import is_simple_tensor
 
 
 class ToTensor(Transform):
+
+    # Updated transformed types for ToTensor
+    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+
     def __init__(self) -> None:
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
@@ -45,6 +50,10 @@ class PILToTensor(Transform):
 
 
 class ToPILImage(Transform):
+
+    # Updated transformed types for ToPILImage
+    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+
     def __init__(self, mode: Optional[str] = None) -> None:
         warnings.warn(
             "The transform `ToPILImage()` is deprecated and will be removed in a future release. "
@@ -81,13 +90,11 @@ class Grayscale(Transform):
 
         super().__init__()
         self.num_output_channels = num_output_channels
-        self._rgb_to_gray = ConvertImageColorSpace(old_color_space=ColorSpace.RGB, color_space=ColorSpace.GRAY)
-        self._gray_to_rgb = ConvertImageColorSpace(old_color_space=ColorSpace.GRAY, color_space=ColorSpace.RGB)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        output = self._rgb_to_gray(inpt)
+        output = F.convert_color_space(inpt, color_space=ColorSpace.GRAY, old_color_space=ColorSpace.RGB)
         if self.num_output_channels == 3:
-            output = self._gray_to_rgb(output)
+            output = F.convert_color_space(inpt, color_space=ColorSpace.RGB, old_color_space=ColorSpace.GRAY)
         return output
 
 
@@ -106,8 +113,7 @@ class RandomGrayscale(_RandomApplyTransform):
         )
 
         super().__init__(p=p)
-        self._rgb_to_gray = ConvertImageColorSpace(old_color_space=ColorSpace.RGB, color_space=ColorSpace.GRAY)
-        self._gray_to_rgb = ConvertImageColorSpace(old_color_space=ColorSpace.GRAY, color_space=ColorSpace.RGB)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._gray_to_rgb(self._rgb_to_gray(inpt))
+        output = F.convert_color_space(inpt, color_space=ColorSpace.GRAY, old_color_space=ColorSpace.RGB)
+        return F.convert_color_space(output, color_space=ColorSpace.RGB, old_color_space=ColorSpace.GRAY)

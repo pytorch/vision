@@ -176,6 +176,15 @@ Most pre-trained models can be accessed directly via PyTorch Hub without having 
     weights = torch.hub.load("pytorch/vision", "get_weight", weights="ResNet50_Weights.IMAGENET1K_V2")
     model = torch.hub.load("pytorch/vision", "resnet50", weights=weights)
 
+You can also retrieve all the available weights of a specific model via PyTorch Hub by doing:
+
+.. code:: python
+
+    import torch
+
+    weight_enum = torch.hub.load("pytorch/vision", "get_model_weights", name="resnet50")
+    print([weight for weight in weight_enum])
+
 The only exception to the above are the detection models included on
 :mod:`torchvision.models.detection`. These models require TorchVision
 to be installed because they depend on custom C++ operators.

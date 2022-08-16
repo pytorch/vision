@@ -27,13 +27,15 @@ from ._geometry import (
     RandomPerspective,
     RandomResizedCrop,
     RandomRotation,
+    RandomShortestSize,
     RandomVerticalFlip,
     RandomZoomOut,
     Resize,
+    ScaleJitter,
     TenCrop,
 )
-from ._meta import ConvertBoundingBoxFormat, ConvertImageColorSpace, ConvertImageDtype
+from ._meta import ConvertBoundingBoxFormat, ConvertColorSpace, ConvertImageDtype
 from ._misc import GaussianBlur, Identity, Lambda, Normalize, ToDtype
-from ._type_conversion import DecodeImage, LabelToOneHot
+from ._type_conversion import DecodeImage, LabelToOneHot, ToImagePIL, ToImageTensor
 
 from ._deprecated import Grayscale, RandomGrayscale, ToTensor, ToPILImage, PILToTensor  # usort: skip

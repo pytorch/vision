@@ -309,6 +309,9 @@ _model_params = {
     "mvit_v1_b": {
         "input_shape": (1, 3, 16, 224, 224),
     },
+    "mvit_v2_s": {
+        "input_shape": (1, 3, 16, 224, 224),
+    },
 }
 # speeding up slow models:
 slow_models = [
@@ -329,6 +332,9 @@ slow_models = [
     "swin_t",
     "swin_s",
     "swin_b",
+    "swin_v2_t",
+    "swin_v2_s",
+    "swin_v2_b",
 ]
 for m in slow_models:
     _model_params[m] = {"input_shape": (1, 3, 64, 64)}
@@ -614,7 +620,7 @@ def test_classification_model(model_fn, dev):
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
-    _assert_expected(out.cpu(), model_name, prec=0.1)
+    _assert_expected(out.cpu(), model_name, prec=1e-3)
     assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
@@ -841,7 +847,7 @@ def test_video_model(model_fn, dev):
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
-    _assert_expected(out.cpu(), model_name, prec=0.1)
+    _assert_expected(out.cpu(), model_name, prec=1e-5)
     assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
@@ -884,7 +890,7 @@ def test_quantized_classification_model(model_fn):
     out = model(x)
 
     if model_name not in quantized_flaky_models:
-        _assert_expected(out, model_name + "_quantized", prec=0.1)
+        _assert_expected(out, model_name + "_quantized", prec=2e-2)
         assert out.shape[-1] == 5
         _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
         _check_fx_compatible(model, x, eager_out=out)
