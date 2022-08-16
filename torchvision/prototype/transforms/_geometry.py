@@ -5,7 +5,6 @@ from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
-from torch.utils._pytree import tree_map
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor
@@ -194,22 +193,19 @@ class TenCrop(Transform):
 
 
 class BatchMultiCrop(Transform):
-    def _batch(self, crops: Any) -> Any:
-        if not isinstance(crops, MultiCropResult):
-            return crops
+    _transformed_types = (MultiCropResult,)
 
-        if isinstance(crops[0], PIL.Image.Image):
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        crops = inpt
+        if isinstance(inpt[0], PIL.Image.Image):
             crops = [pil_to_tensor(crop) for crop in crops]
 
         batch = torch.stack(crops)
 
-        if isinstance(crops[0], features.Image):
-            batch = features.Image.new_like(crops[0], batch)
+        if isinstance(inpt[0], features.Image):
+            batch = features.Image.new_like(inpt[0], batch)
 
         return batch
-
-    def forward(self, *inputs: Any) -> Any:
-        return tree_map(self._batch, inputs if len(inputs) > 1 else inputs[0])
 
 
 def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> None:
