@@ -2992,6 +2992,5 @@ class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
-
 if __name__ == "__main__":
     unittest.main()
