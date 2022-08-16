@@ -13,7 +13,7 @@ from torchvision.transforms.transforms import _check_sequence_input, _setup_angl
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import get_image_dimensions, has_any, is_simple_tensor, query_image
+from ._utils import get_image_dimensions, has_any, is_simple_tensor, query_bboxes, query_image
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -698,6 +698,20 @@ class FixedSizeCrop(Transform):
         top = int(offset_height * r)
         left = int(offset_width * r)
 
+        if needs_crop:
+            bounding_boxes = query_bboxes(sample)
+            bounding_boxes = F.crop(bounding_boxes, top=top, left=left, height=height, width=width)
+            bounding_boxes = features.BoundingBox.new_like(
+                bounding_boxes,
+                F.clamp_bounding_box(
+                    bounding_boxes, format=bounding_boxes.format, image_size=bounding_boxes.image_size
+                ),
+            )
+            height_and_width = bounding_boxes.to_format(features.BoundingBoxFormat.XYWH)[..., 2:]
+            is_valid = torch.all(height_and_width > 0, dim=-1)
+        else:
+            is_valid = None
+
         pad_bottom = max(self.crop_height - new_height, 0)
         pad_right = max(self.crop_width - new_width, 0)
 
@@ -709,6 +723,7 @@ class FixedSizeCrop(Transform):
             left=left,
             height=new_height,
             width=new_width,
+            is_valid=is_valid,
             padding=[0, 0, pad_right, pad_bottom],
             needs_pad=needs_pad,
         )
@@ -722,8 +737,13 @@ class FixedSizeCrop(Transform):
                 height=params["height"],
                 width=params["width"],
             )
-            # TODO: cull invalid bounding boxes and labels after we have resolved the preferred way in
-            #  https://github.com/pytorch/vision/pull/6401
+            if isinstance(inpt, (features.BoundingBox, features.Label, features.SegmentationMask)):
+                inpt = inpt[params["is_valid"]]
+            if isinstance(inpt, features.BoundingBox):
+                features.BoundingBox.new_like(
+                    inpt,
+                    F.clamp_bounding_box(inpt, format=inpt.format, image_size=inpt.image_size),
+                )
 
         if params["needs_pad"]:
             inpt = F.pad(inpt, params["padding"], fill=self.fill, padding_mode=self.padding_mode)
