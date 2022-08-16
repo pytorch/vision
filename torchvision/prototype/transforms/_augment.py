@@ -6,10 +6,10 @@ from typing import Any, Dict, Tuple
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.prototype.transforms import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_image, get_image_dimensions, has_any, has_all
+from ._utils import get_image_dimensions, has_all, has_any, is_simple_tensor, query_image
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -86,14 +86,13 @@ class RandomErasing(_RandomApplyTransform):
         return dict(i=i, j=j, h=h, w=w, v=v)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (features.Image, torch.Tensor)):
+        if is_simple_tensor(inpt) or isinstance(inpt, features.Image):
             output = F.erase_image_tensor(inpt, **params)
             if isinstance(inpt, features.Image):
                 return features.Image.new_like(inpt, output)
             return output
         elif isinstance(inpt, PIL.Image.Image):
-            # TODO: We should implement a fallback to tensor, like gaussian_blur etc
-            raise RuntimeError("Not implemented")
+            return F.erase_image_pil(inpt, **params)
         else:
             return inpt
 

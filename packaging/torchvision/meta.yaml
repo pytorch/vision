@@ -49,6 +49,7 @@ build:
     - FORCE_CUDA
     - BUILD_VERSION
     - TORCH_CUDA_ARCH_LIST
+    - MACOSX_DEPLOYMENT_TARGET
 
 test:
   imports:

@@ -1,4 +1,4 @@
-from typing import Any, Optional, List, Dict
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import torch
 from torchvision.prototype.transforms import Transform
@@ -7,11 +7,11 @@ from ._transform import _RandomApplyTransform
 
 
 class Compose(Transform):
-    def __init__(self, *transforms: Transform) -> None:
+    def __init__(self, transforms: Sequence[Callable]) -> None:
         super().__init__()
+        if not isinstance(transforms, Sequence):
+            raise TypeError("Argument transforms should be a sequence of callables")
         self.transforms = transforms
-        for idx, transform in enumerate(transforms):
-            self.add_module(str(idx), transform)
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
@@ -25,8 +25,8 @@ class RandomApply(_RandomApplyTransform):
         super().__init__(p=p)
         self.transform = transform
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        return self.transform(input)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self.transform(inpt)
 
     def extra_repr(self) -> str:
         return f"p={self.p}"

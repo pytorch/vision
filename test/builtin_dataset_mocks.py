@@ -14,12 +14,12 @@ import shutil
 import unittest.mock
 import warnings
 import xml.etree.ElementTree as ET
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 
 import numpy as np
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, combinations_grid
+from datasets_utils import combinations_grid, create_image_file, create_image_folder, make_tar, make_zip
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype import datasets

@@ -1,6 +1,6 @@
 import math
 from functools import partial
-from typing import Iterable, List, Optional, Callable, Tuple, Dict, Union
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import torchvision.models.optical_flow.raft as raft
 from torch import Tensor
 from torchvision.models._api import WeightsEnum
-from torchvision.models.optical_flow._utils import make_coords_grid, grid_sample, upsample_flow
+from torchvision.models.optical_flow._utils import grid_sample, make_coords_grid, upsample_flow
 from torchvision.ops import Conv2dNormActivation
 
 all = (
@@ -33,7 +33,7 @@ class ConvexMaskPredictor(nn.Module):
         super().__init__()
         self.mask_head = nn.Sequential(
             Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3),
-            nn.Conv2d(hidden_size, upsample_factor ** 2 * 9, 1, padding=0),
+            nn.Conv2d(hidden_size, upsample_factor**2 * 9, 1, padding=0),
         )
 
         self.multiplier = multiplier
