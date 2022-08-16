@@ -1,4 +1,3 @@
-import collections.abc
 import math
 import numbers
 import warnings
@@ -180,9 +179,9 @@ class TenCrop(Transform):
             output = F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip)
             return MultiCropResult(features.Image.new_like(inpt, o) for o in output)
         elif is_simple_tensor(inpt):
-            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size))
+            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip))
         elif isinstance(inpt, PIL.Image.Image):
-            return MultiCropResult(F.ten_crop_image_pil(inpt, self.size))
+            return MultiCropResult(F.ten_crop_image_pil(inpt, self.size, vertical_flip=self.vertical_flip))
         else:
             return inpt
 
@@ -194,31 +193,19 @@ class TenCrop(Transform):
 
 
 class BatchMultiCrop(Transform):
-    def forward(self, *inputs: Any) -> Any:
-        # This is basically the functionality of `torchvision.prototype.utils._internal.apply_recursively` with one
-        # significant difference:
-        # Since we need multiple images to batch them together, we need to explicitly exclude `MultiCropResult` from
-        # the sequence case.
-        def apply_recursively(obj: Any) -> Any:
-            if isinstance(obj, MultiCropResult):
-                crops = obj
-                if isinstance(obj[0], PIL.Image.Image):
-                    crops = [pil_to_tensor(crop) for crop in crops]  # type: ignore[assignment]
+    _transformed_types = (MultiCropResult,)
 
-                batch = torch.stack(crops)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        crops = inpt
+        if isinstance(inpt[0], PIL.Image.Image):
+            crops = [pil_to_tensor(crop) for crop in crops]
 
-                if isinstance(obj[0], features.Image):
-                    batch = features.Image.new_like(obj[0], batch)
+        batch = torch.stack(crops)
 
-                return batch
-            elif isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
-                return [apply_recursively(item) for item in obj]
-            elif isinstance(obj, collections.abc.Mapping):
-                return {key: apply_recursively(item) for key, item in obj.items()}
-            else:
-                return obj
+        if isinstance(inpt[0], features.Image):
+            batch = features.Image.new_like(inpt[0], batch)
 
-        return apply_recursively(inputs if len(inputs) > 1 else inputs[0])
+        return batch
 
 
 def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> None:

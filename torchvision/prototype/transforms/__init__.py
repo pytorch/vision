@@ -34,7 +34,7 @@ from ._geometry import (
     ScaleJitter,
     TenCrop,
 )
-from ._meta import ConvertBoundingBoxFormat, ConvertImageColorSpace, ConvertImageDtype
+from ._meta import ConvertBoundingBoxFormat, ConvertColorSpace, ConvertImageDtype
 from ._misc import GaussianBlur, Identity, Lambda, Normalize, ToDtype
 from ._type_conversion import DecodeImage, LabelToOneHot, ToImagePIL, ToImageTensor
 
