@@ -1,4 +1,3 @@
-import collections.abc
 import math
 import numbers
 import warnings
@@ -9,6 +8,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor
+from torchvision.transforms.functional_tensor import _parse_pad_padding
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size
 from typing_extensions import Literal
 
@@ -179,9 +179,9 @@ class TenCrop(Transform):
             output = F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip)
             return MultiCropResult(features.Image.new_like(inpt, o) for o in output)
         elif is_simple_tensor(inpt):
-            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size))
+            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip))
         elif isinstance(inpt, PIL.Image.Image):
-            return MultiCropResult(F.ten_crop_image_pil(inpt, self.size))
+            return MultiCropResult(F.ten_crop_image_pil(inpt, self.size, vertical_flip=self.vertical_flip))
         else:
             return inpt
 
@@ -193,31 +193,19 @@ class TenCrop(Transform):
 
 
 class BatchMultiCrop(Transform):
-    def forward(self, *inputs: Any) -> Any:
-        # This is basically the functionality of `torchvision.prototype.utils._internal.apply_recursively` with one
-        # significant difference:
-        # Since we need multiple images to batch them together, we need to explicitly exclude `MultiCropResult` from
-        # the sequence case.
-        def apply_recursively(obj: Any) -> Any:
-            if isinstance(obj, MultiCropResult):
-                crops = obj
-                if isinstance(obj[0], PIL.Image.Image):
-                    crops = [pil_to_tensor(crop) for crop in crops]  # type: ignore[assignment]
+    _transformed_types = (MultiCropResult,)
 
-                batch = torch.stack(crops)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        crops = inpt
+        if isinstance(inpt[0], PIL.Image.Image):
+            crops = [pil_to_tensor(crop) for crop in crops]
 
-                if isinstance(obj[0], features.Image):
-                    batch = features.Image.new_like(obj[0], batch)
+        batch = torch.stack(crops)
 
-                return batch
-            elif isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
-                return [apply_recursively(item) for item in obj]
-            elif isinstance(obj, collections.abc.Mapping):
-                return {key: apply_recursively(item) for key, item in obj.items()}
-            else:
-                return obj
+        if isinstance(inpt[0], features.Image):
+            batch = features.Image.new_like(inpt[0], batch)
 
-        return apply_recursively(inputs if len(inputs) > 1 else inputs[0])
+        return batch
 
 
 def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> None:
@@ -294,12 +282,7 @@ class RandomZoomOut(_RandomApplyTransform):
         bottom = canvas_height - (top + orig_h)
         padding = [left, top, right, bottom]
 
-        # vfdev-5: Can we put that into pad_image_tensor ?
-        fill = self.fill
-        if not isinstance(fill, collections.abc.Sequence):
-            fill = [fill] * orig_c
-
-        return dict(padding=padding, fill=fill)
+        return dict(padding=padding, fill=self.fill)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.pad(inpt, **params)
@@ -439,22 +422,41 @@ class RandomCrop(Transform):
 
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
+        if pad_if_needed or padding is not None:
+            if padding is not None:
+                _check_padding_arg(padding)
+            _check_fill_arg(fill)
+            _check_padding_mode_arg(padding_mode)
+
         self.padding = padding
         self.pad_if_needed = pad_if_needed
         self.fill = fill
         self.padding_mode = padding_mode
 
-        self._pad_op = None
-        if self.padding is not None:
-            self._pad_op = Pad(self.padding, fill=self.fill, padding_mode=self.padding_mode)
-
-        if self.pad_if_needed:
-            self._pad_op = Pad(0, fill=self.fill, padding_mode=self.padding_mode)
-
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
         _, height, width = get_image_dimensions(image)
+
+        if self.padding is not None:
+            # update height, width with static padding data
+            padding = self.padding
+            if isinstance(padding, Sequence):
+                padding = list(padding)
+            pad_left, pad_right, pad_top, pad_bottom = _parse_pad_padding(padding)
+            height += pad_top + pad_bottom
+            width += pad_left + pad_right
+
         output_height, output_width = self.size
+        # We have to store maybe padded image size for pad_if_needed branch in _transform
+        input_height, input_width = height, width
+
+        if self.pad_if_needed:
+            # pad width if needed
+            if width < output_width:
+                width += 2 * (output_width - width)
+            # pad height if needed
+            if height < output_height:
+                height += 2 * (output_height - height)
 
         if height + 1 < output_height or width + 1 < output_width:
             raise ValueError(
@@ -462,42 +464,34 @@ class RandomCrop(Transform):
             )
 
         if width == output_width and height == output_height:
-            return dict(top=0, left=0, height=height, width=width)
+            return dict(top=0, left=0, height=height, width=width, input_width=input_width, input_height=input_height)
 
         top = torch.randint(0, height - output_height + 1, size=(1,)).item()
         left = torch.randint(0, width - output_width + 1, size=(1,)).item()
-        return dict(top=top, left=left, height=output_height, width=output_width)
+
+        return dict(
+            top=top,
+            left=left,
+            height=output_height,
+            width=output_width,
+            input_width=input_width,
+            input_height=input_height,
+        )
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.crop(inpt, **params)
-
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-
-        if self._pad_op is not None:
-            sample = self._pad_op(sample)
-
-        image = query_image(sample)
-        _, height, width = get_image_dimensions(image)
+        if self.padding is not None:
+            inpt = F.pad(inpt, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
 
         if self.pad_if_needed:
-            # This check is to explicitly ensure that self._pad_op is defined
-            if self._pad_op is None:
-                raise RuntimeError(
-                    "Internal error, self._pad_op is None. "
-                    "Please, fill an issue about that on https://github.com/pytorch/vision/issues"
-                )
+            input_width, input_height = params["input_width"], params["input_height"]
+            if input_width < self.size[1]:
+                padding = [self.size[1] - input_width, 0]
+                inpt = F.pad(inpt, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
+            if input_height < self.size[0]:
+                padding = [0, self.size[0] - input_height]
+                inpt = F.pad(inpt, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
 
-            # pad the width if needed
-            if width < self.size[1]:
-                self._pad_op.padding = [self.size[1] - width, 0]
-                sample = self._pad_op(sample)
-            # pad the height if needed
-            if height < self.size[0]:
-                self._pad_op.padding = [0, self.size[0] - height]
-                sample = self._pad_op(sample)
-
-        return super().forward(sample)
+        return F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
 
 class RandomPerspective(_RandomApplyTransform):
@@ -624,3 +618,57 @@ class ElasticTransform(Transform):
             fill=self.fill,
             interpolation=self.interpolation,
         )
+
+
+class ScaleJitter(Transform):
+    def __init__(
+        self,
+        target_size: Tuple[int, int],
+        scale_range: Tuple[float, float] = (0.1, 2.0),
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    ):
+        super().__init__()
+        self.target_size = target_size
+        self.scale_range = scale_range
+        self.interpolation = interpolation
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        _, orig_height, orig_width = get_image_dimensions(image)
+
+        r = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
+        new_width = int(self.target_size[1] * r)
+        new_height = int(self.target_size[0] * r)
+
+        return dict(size=(new_height, new_width))
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.resize(inpt, size=params["size"], interpolation=self.interpolation)
+
+
+class RandomShortestSize(Transform):
+    def __init__(
+        self,
+        min_size: Union[List[int], Tuple[int], int],
+        max_size: int,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    ):
+        super().__init__()
+        self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
+        self.max_size = max_size
+        self.interpolation = interpolation
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        _, orig_height, orig_width = get_image_dimensions(image)
+
+        min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
+        r = min(min_size / min(orig_height, orig_width), self.max_size / max(orig_height, orig_width))
+
+        new_width = int(orig_width * r)
+        new_height = int(orig_height * r)
+
+        return dict(size=(new_height, new_width))
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.resize(inpt, size=params["size"], interpolation=self.interpolation)

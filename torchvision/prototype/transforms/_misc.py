@@ -39,12 +39,7 @@ class Normalize(Transform):
         self.std = std
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, torch.Tensor):
-            # We don't need to differentiate between vanilla tensors and features.Image's here, since the result of the
-            # normalization transform is no longer a features.Image
-            return F.normalize_image_tensor(inpt, mean=self.mean, std=self.std)
-        else:
-            return inpt
+        return F.normalize(inpt, mean=self.mean, std=self.std)
 
 
 class GaussianBlur(Transform):

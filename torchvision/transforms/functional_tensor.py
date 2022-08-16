@@ -371,9 +371,12 @@ def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
 
 
 def pad(
-    img: Tensor, padding: Union[int, List[int]], fill: Union[int, float] = 0, padding_mode: str = "constant"
+    img: Tensor, padding: Union[int, List[int]], fill: Optional[Union[int, float]] = 0, padding_mode: str = "constant"
 ) -> Tensor:
     _assert_image_tensor(img)
+
+    if fill is None:
+        fill = 0
 
     if not isinstance(padding, (int, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
