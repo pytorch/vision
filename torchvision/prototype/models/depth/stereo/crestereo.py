@@ -12,43 +12,12 @@ from torchvision.models._api import WeightsEnum
 from torchvision.models.optical_flow._utils import make_coords_grid, grid_sample, upsample_flow
 from torchvision.ops import Conv2dNormActivation
 
-
-class ResidualBlock(raft.ResidualBlock):
-    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
-        super().__init__(in_channels, out_channels, norm_layer=norm_layer, stride=stride)
-
-        # the CREStereo base architecture changes the number of channels
-        # even on grids with the same spatial resolution
-        self.downsample = Conv2dNormActivation(
-            in_channels,
-            out_channels,
-            norm_layer=norm_layer,
-            kernel_size=1,
-            stride=stride,
-            bias=True,
-            activation_layer=None,
-        )
-
-
-class FeatureEncoder(raft.FeatureEncoder):
-    """Base encoder for Feature Encoder and Context Encoder"""
-
-    def __init__(
-        self,
-        *,
-        block: Callable[..., nn.Module] = ResidualBlock,
-        layers: Tuple[int, int, int, int, int] = (64, 64, 96, 128, 256),
-        strides: Tuple[int, int, int, int] = (2, 1, 2, 1),
-        norm_layer: Callable[..., nn.Module] = nn.InstanceNorm2d,
-    ):
-        super().__init__(block=block, layers=layers, strides=strides, norm_layer=norm_layer)
-        for s in strides:
-            if s not in [1, 2]:
-                raise ValueError(f"FeatureEncoder unsupported stride size {s}. Supported values are one of ``[1, 2]``.")
-
-        self.output_dim = layers[-1]
-        num_downsamples = len(list(filter(lambda s: s == 2, strides)))
-        self.downsample_factor = 2 ** num_downsamples
+all = (
+    "CREStereo",
+    "CREStereo_Weights",
+    "CREStereo_B_Weights",
+    "crestereo_b",
+)
 
 
 class ConvexMaskPredictor(nn.Module):
@@ -97,23 +66,27 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         super().__init__()
         self.attention_module = attention_module
 
-        assert np.prod(search_window_1d) == np.prod(search_window_2d), (
-            f"The 1D and 2D windows should contain the same number of elements. "
-            f"1D shape: {search_window_1d} 2D shape: {search_window_2d}"
-        )
+        if not np.prod(search_window_1d) == np.prod(search_window_2d):
+            raise ValueError(
+                f"The 1D and 2D windows should contain the same number of elements. "
+                f"1D shape: {search_window_1d} 2D shape: {search_window_2d}"
+            )
 
-        assert np.prod(search_window_1d) % 2 == 1, (
-            f"Search windows should contain an odd number of elements in them."
-            f"Window of shape {search_window_1d} has {np.prod(search_window_1d)} elements."
-        )
+        if not np.prod(search_window_1d) % 2 == 1:
+            raise ValueError(
+                f"Search windows should contain an odd number of elements in them."
+                f"Window of shape {search_window_1d} has {np.prod(search_window_1d)} elements."
+            )
 
-        assert any(
-            size == 1 for size in search_window_1d
-        ), f"The 1D search window should have at least one size equal to 1. 1D shape: {search_window_1d}"
+        if not any(size == 1 for size in search_window_1d):
+            raise ValueError(
+                f"The 1D search window should have at least one size equal to 1. 1D shape: {search_window_1d}"
+            )
 
-        assert all(
-            size != 1 for size in search_window_2d
-        ), f"The 2D search window should have all dimensions greater than 1. 2D shape: {search_window_2d}"
+        if any(size == 1 for size in search_window_2d):
+            raise ValueError(
+                f"The 2D search window should have all dimensions greater than 1. 2D shape: {search_window_2d}"
+            )
 
         self.search_window_1d = search_window_1d
         self.search_window_2d = search_window_2d
@@ -142,7 +115,7 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         extra_offset: Union[torch.Tensor, None],
         use_small_patch: bool = False,
         iter_mode: bool = False,
-    ):
+    ) -> Tensor:
         if iter_mode or extra_offset is None:
             corr = self.iterative_correlation(left_features, right_features, flow, use_small_patch)
         else:
@@ -173,10 +146,9 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         pad_y, pad_x = window_size[0] // 2 * di_y, window_size[1] // 2 * di_x
 
         right_padded = F.pad(right_feature, (pad_x, pad_x, pad_y, pad_y), mode="replicate")
-        right_padded = right_padded.detach()
         # in order to vectorize the correlation computation over all pixel candidates
         # we create multiple shifted right images which we stack on an extra dimension
-        right_padded = F.unfold(right_padded, kernel_size=(H, W), dilation=dilate)
+        right_padded = F.unfold(right_padded, kernel_size=(H, W), dilation=dilate).detach()
         # torch unfold returns a tensor of shape [B, flattened_values, n_selections]
         right_padded = right_padded.permute(0, 2, 1)
         # we consider rehsape back into [B, n_views, C, H, W]
@@ -230,7 +202,7 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         flow: Tensor,
         extra_offset: Tensor,
         use_small_patch: bool = False,
-    ):
+    ) -> Tensor:
         """Function that computes 1 pass of offsetted Group-Wise correlation
 
         If the class was provided with an attention layer, the left and right feature maps
@@ -325,7 +297,7 @@ class LinearAttention(nn.Module):
         values: Tensor,
         q_mask: Optional[Tensor] = None,
         kv_mask: Optional[Tensor] = None,
-    ):
+    ) -> Tensor:
         """
         Args:
             queries (torch.Tensor): [N, S1, H, D]
@@ -372,7 +344,7 @@ class SoftmaxAttention(nn.Module):
         values: Tensor,
         q_mask: Optional[Tensor] = None,
         kv_mask: Optional[Tensor] = None,
-    ):
+    ) -> Tensor:
         """
         Computes classical softmax full-attention between all queries and keys.
 
@@ -487,7 +459,9 @@ class LocalFeatureEncoderLayer(nn.Module):
         self.attention_norm = nn.LayerNorm(dim_model)
         self.ffn_norm = nn.LayerNorm(dim_model)
 
-    def forward(self, x: Tensor, source: Tensor, x_mask: Optional[Tensor] = None, source_mask: Optional[Tensor] = None):
+    def forward(
+        self, x: Tensor, source: Tensor, x_mask: Optional[Tensor] = None, source_mask: Optional[Tensor] = None
+    ) -> Tensor:
         """
         Args:
             x (torch.Tensor): [B, S1, D]
@@ -551,7 +525,7 @@ class LocalFeatureTransformer(nn.Module):
         right_features: Tensor,
         left_mask: Optional[Tensor] = None,
         right_mask: Optional[Tensor] = None,
-    ):
+    ) -> Tuple[Tensor, Tensor]:
         """
         Args:
             left_features (torch.Tensor): [N, S1, D]
@@ -602,15 +576,27 @@ class PyramidDownsample(nn.Module):
 
 class CREStereo(nn.Module):
     """
-    CREStereo network from: https://openaccess.thecvf.com/content/CVPR2022/papers/Li_Practical_Stereo_Matching_via_Cascaded_Recurrent_Network_With_Adaptive_Correlation_CVPR_2022_paper.pdf
-
-    Canonical implementation: https://github.com/megvii-research/CREStereo/blob/master/nets/crestereo.py
+    Implements CREStereo from the `"Practical Stereo Matching via Cascaded Recurrent Network
+    With Adaptive Correlation" <https://openaccess.thecvf.com/content/CVPR2022/papers/Li_Practical_Stereo_Matching_via_Cascaded_Recurrent_Network_With_Adaptive_Correlation_CVPR_2022_paper.pdf>`_ paper.
+    Args:
+        feature_encoder (raft.FeatureEncoder): Raft-like Feature Encoder module extract low-level features from inputs.
+        update_block (raft.UpdateBlock): Raft-like Update Block which recursively refines a flow-map.
+        flow_head (raft.FlowHead): Raft-like Flow Head which predics a flow-map from some inputs.
+        self_attn_block (LocalFeatureTransformer): A Local Feature Transformer that performs self attention on the two feature maps.
+        cross_attn_block (LocalFeatureTransformer): A Local Feature Transformer that performs cross attention between the two feature maps
+            used in the Adaptive Group Correlation module.
+        feature_downsample_rates (List[int]): The downsample rates used to build a feature pyramid from the outputs of the `feature_encoder`. Default: [2, 4]
+        correlation_groups (int): In how many groups should the features be split when computer per-pixel correlation. Defaults 4.
+        search_window_1d (Tuple[int, int]): The alternate search window size in the x and y directions for the 1D case. Defaults to (1, 9).
+        search_dilate_1d (Tuple[int, int]): The dilation used in the `search_window_1d` when selecting pixels. Simillar to `nn.Conv2d` dilate. Defaults to (1, 1).
+        search_window_2d (Tuple[int, int]): The alternate search window size in the x and y directions for the 2D case. Defaults to (3, 3).
+        search_dilate_2d (Tuple[int, int]): The dilation used in the `search_window_2d` when selecting pixels. Simillar to `nn.Conv2d` dilate. Defaults to (1, 1).
     """
 
     def __init__(
         self,
         *,
-        feature_encoder: FeatureEncoder,
+        feature_encoder: raft.FeatureEncoder,
         update_block: raft.UpdateBlock,
         flow_head: raft.FlowHead,
         self_attn_block: LocalFeatureTransformer,
@@ -693,17 +679,19 @@ class CREStereo(nn.Module):
         # simple 2D Postional Encodings
         self.positional_encodings = PositionalEncodingSine(feature_encoder.output_dim)
 
-    def freeze_bn(self):
+    def freeze_bn(self) -> None:
         for m in self.modules():
             if isinstance(m, nn.BatchNorm2d):
                 m.eval()
 
-    def unfreeze_bn(self):
+    def unfreeze_bn(self) -> None:
         for m in self.modules():
             if isinstance(m, nn.BatchNorm2d):
                 m.train()
 
-    def forward(self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor], iterations: int = 10):
+    def forward(
+        self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor], iterations: int = 10
+    ) -> List[Tensor]:
         features = torch.cat([left_image, right_image], dim=0)
         features = self.feature_encoder(features)
         left_features, right_features = features.chunk(2, dim=0)
@@ -892,6 +880,7 @@ def _crestereo(
     feature_encoder_layers: Tuple[int, int, int, int, int],
     feature_encoder_strides: Tuple[int, int, int, int],
     feature_encoder_block: Callable[..., nn.Module],
+    feature_encoder_norm_layer: Callable[..., nn.Module],
     # Average Pooling Pyramid
     feature_downsample_rates: Tuple[int, ...],
     # Adaptive Correlation Layer
@@ -919,17 +908,18 @@ def _crestereo(
     **kwargs,
 ) -> CREStereo:
 
-    feature_encoder = kwargs.pop("feature_encoder", None) or FeatureEncoder(
+    feature_encoder = kwargs.pop("feature_encoder", None) or raft.FeatureEncoder(
         block=feature_encoder_block,
         layers=feature_encoder_layers,
         strides=feature_encoder_strides,
-        norm_layer=nn.InstanceNorm2d,
+        norm_layer=feature_encoder_norm_layer,
     )
 
-    assert feature_encoder.output_dim % corr_groups == 0, (
-        f"Final ``feature_encoder_layers`` size should be divisible by ``corr_groups`` argument."
-        f"Feature encoder output size : {feature_encoder.output_dim}, Correlation groups: {corr_groups}."
-    )
+    if feature_encoder.output_dim % corr_groups != 0:
+        raise ValueError(
+            f"Final ``feature_encoder_layers`` size should be divisible by ``corr_groups`` argument."
+            f"Feature encoder output size : {feature_encoder.output_dim}, Correlation groups: {corr_groups}."
+        )
 
     motion_encoder = kwargs.pop("motion_encoder", None) or raft.MotionEncoder(
         in_channels_corr=corr_groups * int(np.prod(corr_search_window_1d)),
@@ -986,14 +976,23 @@ def _crestereo(
     return model
 
 
-def crestereo_base(*, weights: Optional[WeightsEnum] = None, progress=True, **kwargs) -> CREStereo:
+class CREStereo_Weights(WeightsEnum):
+    pass
+
+
+class CREStereo_B_Weights(CREStereo_Weights):
+    pass
+
+
+def crestereo_b(*, weights: Optional[CREStereo_Weights] = None, progress=True, **kwargs) -> CREStereo:
     return _crestereo(
         weights=weights,
         progress=progress,
         # Feature encoder
         feature_encoder_layers=(64, 64, 96, 128, 256),
         feature_encoder_strides=(2, 1, 2, 1),
-        feature_encoder_block=ResidualBlock,
+        feature_encoder_block=partial(raft.ResidualBlock, always_project=True),
+        feature_encoder_norm_layer=nn.InstanceNorm2d,
         # Average pooling pyramid
         feature_downsample_rates=(2, 4),
         # Motion encoder

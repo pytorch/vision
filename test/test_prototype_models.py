@@ -39,7 +39,7 @@ def test_raft_stereo(model_builder, model_mode, dev):
     TM._assert_expected(depth_pred, name=model_builder.__name__, atol=1e-2, rtol=1e-2)
 
 
-@pytest.mark.parametrize("model_builder", (crestereo.crestereo_base,))
+@pytest.mark.parametrize("model_builder", (crestereo.crestereo_b,))
 @pytest.mark.parametrize("model_mode", ("standard", "scripted"))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_crestereo(model_builder, model_mode, dev):
@@ -50,8 +50,8 @@ def test_crestereo(model_builder, model_mode, dev):
     if model_mode == "scripted":
         model = torch.jit.script(model)
 
-    img1 = torch.rand(1, 3, 256, 256).to(dev)
-    img2 = torch.rand(1, 3, 256, 256).to(dev)
+    img1 = torch.rand(1, 3, 64, 64).to(dev)
+    img2 = torch.rand(1, 3, 64, 64).to(dev)
     iterations = 3
 
     preds = model(img1, img2, flow_init=None, iterations=iterations)
@@ -65,15 +65,21 @@ def test_crestereo(model_builder, model_mode, dev):
     ), "Number of predictions should be the number of iterations multiplied by the number of pyramid levels"
 
     assert disparity_pred.shape == torch.Size(
-        [1, 2, 256, 256]
+        [1, 2, 64, 64]
     ), f"Predicted disparity should have the same spatial shape as the input. Inputs shape {img1.shape[2:]}, Prediction shape {disparity_pred.shape[2:]}"
 
     assert all(
-        d.shape == torch.Size([1, 2, 256, 256]) for d in preds
+        d.shape == torch.Size([1, 2, 64, 64]) for d in preds
     ), "All predicted disparities are expected to have the same shape"
 
     # test a backward pass with a dummy loss as well
     preds = torch.stack(preds, dim=0)
     targets = torch.ones_like(preds, requires_grad=False)
     loss = torch.nn.functional.mse_loss(preds, targets)
-    loss.backward()
+
+    try:
+        loss.backward()
+    except Exception as e:
+        assert False, f"Backward pass failed with an unexpected exception: {e.__class__.__name__} {e}"
+
+    TM._assert_expected(disparity_pred, name=model_builder.__name__, atol=1e-2, rtol=1e-2)
