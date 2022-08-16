@@ -14,7 +14,6 @@ __all__ = [
     "add_suggestion",
     "fromfile",
     "ReadOnlyTensorBuffer",
-    "apply_recursively",
     "query_recursively",
 ]
 
@@ -126,17 +125,6 @@ class ReadOnlyTensorBuffer:
         cursor = self.tell()
         offset, whence = (0, io.SEEK_END) if size == -1 else (size, io.SEEK_CUR)
         return self._memory[slice(cursor, self.seek(offset, whence))].tobytes()
-
-
-def apply_recursively(fn: Callable, obj: Any) -> Any:
-    # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
-    # "a" == "a"[0][0]...
-    if isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
-        return [apply_recursively(fn, item) for item in obj]
-    elif isinstance(obj, collections.abc.Mapping):
-        return {key: apply_recursively(fn, item) for key, item in obj.items()}
-    else:
-        return fn(obj)
 
 
 def query_recursively(
