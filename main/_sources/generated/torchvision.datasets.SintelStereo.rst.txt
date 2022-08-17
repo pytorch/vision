@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+SintelStereo
+============
+
+.. autoclass:: SintelStereo
+    :members:
+        __getitem__,
+        
+    :special-members:
