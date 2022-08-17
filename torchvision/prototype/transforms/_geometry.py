@@ -13,7 +13,7 @@ from torchvision.transforms.transforms import _check_sequence_input, _setup_angl
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import get_image_dimensions, has_any, is_simple_tensor, query_bboxes, query_image
+from ._utils import get_image_dimensions, has_any, is_simple_tensor, query_bounding_box, query_image
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -699,7 +699,7 @@ class FixedSizeCrop(Transform):
         left = int(offset_width * r)
 
         if needs_crop:
-            bounding_boxes = query_bboxes(sample)
+            bounding_boxes = query_bounding_box(sample)
             bounding_boxes = F.crop(bounding_boxes, top=top, left=left, height=height, width=width)
             bounding_boxes = features.BoundingBox.new_like(
                 bounding_boxes,
