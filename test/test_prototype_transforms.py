@@ -1181,7 +1181,9 @@ class TestRandomIoUCrop:
 
     def test_forward_assertion(self):
         transform = transforms.RandomIoUCrop()
-        with pytest.raises(TypeError, match="only defined for Images, BoundingBoxes and Labels or OneHotLabels"):
+        with pytest.raises(
+            TypeError, match="only defined for Images, PIL Images, BoundingBoxes and Labels or OneHotLabels"
+        ):
             transform(torch.tensor(0))
 
     def test__transform(self, mocker):
@@ -1191,7 +1193,8 @@ class TestRandomIoUCrop:
         bboxes = make_bounding_box(format="XYXY", image_size=(32, 24), extra_dims=(6,))
         label = features.Label(torch.randint(0, 10, size=(6,)))
         ohe_label = features.OneHotLabel(torch.zeros(6, 10).scatter_(1, label.unsqueeze(1), 1))
-        sample = [image, bboxes, label, ohe_label]
+        masks = make_segmentation_mask((32, 24))
+        sample = [image, bboxes, label, ohe_label, masks]
 
         fn = mocker.patch("torchvision.prototype.transforms.functional.crop")
         is_within_crop_area = torch.randint(0, 2, size=(6,))
@@ -1199,22 +1202,22 @@ class TestRandomIoUCrop:
         transform._get_params = mocker.MagicMock(return_value=params)
         output = transform(sample)
 
-        assert fn.call_count == 2
-        # asserts the last call
-        fn.assert_called_with(
-            bboxes, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
-        )
+        assert fn.call_count == 3
 
-        fn.assert_any_call(
-            image, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
-        )
+        expected_calls = [
+            mocker.call(image, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
+            mocker.call(bboxes, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
+            mocker.call(masks, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
+        ]
+
+        fn.assert_has_calls(expected_calls)
 
         # check labels
-        output_label = output[-2]
+        output_label = output[2]
         assert isinstance(output_label, features.Label)
         torch.testing.assert_close(output_label, label[is_within_crop_area])
 
-        output_ohe_label = output[-1]
+        output_ohe_label = output[3]
         assert isinstance(output_ohe_label, features.OneHotLabel)
         torch.testing.assert_close(output_ohe_label, ohe_label[is_within_crop_area])
 
