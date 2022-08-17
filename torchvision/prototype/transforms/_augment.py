@@ -7,6 +7,7 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
+from torchvision.transforms.functional import InterpolationMode
 
 from ._transform import _RandomApplyTransform
 from ._utils import get_image_dimensions, has_all, has_any, is_simple_tensor, query_image
@@ -178,3 +179,34 @@ class RandomCutmix(_BaseMixupCutmix):
             return self._mixup_onehotlabel(inpt, lam_adjusted)
         else:
             return inpt
+
+
+class SimpleCopyPaste(Transform):
+    def __init__(
+        self, blending: bool = True, resize_interpolation: InterpolationMode = F.InterpolationMode.BILINEAR
+    ) -> None:
+        super().__init__()
+        self.resize_interpolation = resize_interpolation
+        self.blending = blending
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        return super()._get_params(sample)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return super()._transform(inpt, params)
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+
+        # TODO: Ensure that inputs is batched
+
+        if not (
+            has_all(sample, features.BoundingBox, features.SegmentationMask)
+            and has_any(sample, PIL.Image.Image, features.Image)
+            and has_any(sample, features.Label, features.OneHotLabel)
+        ):
+            raise TypeError(
+                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
+                "BoundingBoxes, Segmentation Masks and Labels or OneHotLabels."
+            )
+        return super().forward(*inputs)
