@@ -516,6 +516,8 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       VLOG(4) << "Decoder is busy...";
       std::this_thread::yield();
       result = 0; // reset error, EAGAIN is not an error at all
+      // reset the packet to default settings
+      av_packet_unref(avPacket);
       continue;
     } else if (result == AVERROR_EOF) {
       flushStreams();
