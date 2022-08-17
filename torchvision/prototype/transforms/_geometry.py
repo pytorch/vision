@@ -723,8 +723,8 @@ class RandomIoUCrop(Transform):
             and has_any(sample, features.Label, features.OneHotLabel)
         ):
             raise TypeError(
-                f"{type(self).__name__}() is only defined for Images, PIL Images, "
-                "BoundingBoxes and Labels or OneHotLabels."
+                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
+                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
             )
         return super().forward(*inputs)
 
