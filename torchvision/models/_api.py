@@ -115,7 +115,7 @@ def get_weight(name: str) -> WeightsEnum:
 W = TypeVar("W", bound=WeightsEnum)
 
 
-def get_model_weights(model: Union[Callable, str]) -> W:
+def get_model_weights(name: Union[Callable, str]) -> W:
     """
     Retuns the weights enum class associated to the given model.
 
@@ -127,8 +127,7 @@ def get_model_weights(model: Union[Callable, str]) -> W:
     Returns:
         weights_enum (W): The weights enum class associated with the model.
     """
-    if isinstance(model, str):
-        model = find_model(model)
+    model = find_model(name) if isinstance(name, str) else name
     return cast(W, _get_enum_from_fn(model))
 
 
