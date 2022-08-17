@@ -15,9 +15,10 @@ from torchvision.prototype import features, transforms
 from torchvision.transforms.functional import InterpolationMode
 
 
-class WrapTarget(nn.Module):
-    def forward(self, input, target):
-        return input, features.Label(target)
+class WrapIntoFeatures(nn.Module):
+    def forward(self, sample):
+        input, target = sample
+        return features.Image(input), features.Label(target)
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
@@ -215,8 +216,9 @@ def main(args):
     if mixup_or_cutmix:
         batch_transform = transforms.Compose(
             [
-                WrapTarget(),
+                WrapIntoFeatures(),
                 transforms.LabelToOneHot(num_categories=num_classes),
+                transforms.ToDtype(torch.float, features.OneHotLabel),
                 transforms.RandomChoice(*mixup_or_cutmix),
             ]
         )

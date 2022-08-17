@@ -30,7 +30,7 @@ class ClassificationPresetTrain:
                 trans.append(transforms.AutoAugment(policy=aa_policy, interpolation=interpolation))
         trans.extend(
             [
-                transforms.PILToTensor(),
+                transforms.ToImageTensor(),
                 transforms.ConvertImageDtype(torch.float),
                 transforms.Normalize(mean=mean, std=std),
             ]
@@ -59,7 +59,7 @@ class ClassificationPresetEval:
             [
                 transforms.Resize(resize_size, interpolation=interpolation),
                 transforms.CenterCrop(crop_size),
-                transforms.PILToTensor(),
+                transforms.ToImageTensor(),
                 transforms.ConvertImageDtype(torch.float),
                 transforms.Normalize(mean=mean, std=std),
             ]
