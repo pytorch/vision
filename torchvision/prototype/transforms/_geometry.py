@@ -703,6 +703,9 @@ class RandomIoUCrop(Transform):
         if isinstance(inpt, features.Label):
             return features.Label.new_like(inpt, inpt[is_within_crop_area])
 
+        if isinstance(inpt, features.OneHotLabel):
+            return features.OneHotLabel.new_like(inpt, inpt[is_within_crop_area, :])
+
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
         if isinstance(output, features.BoundingBox):
@@ -715,11 +718,13 @@ class RandomIoUCrop(Transform):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         if not (
-            has_all(sample, features.Image, features.BoundingBox)
+            has_all(sample, features.BoundingBox)
+            and has_any(sample, PIL.Image.Image, features.Image)
             and has_any(sample, features.Label, features.OneHotLabel)
         ):
             raise TypeError(
-                f"{type(self).__name__}() is only defined for Images, BoundingBoxes and Labels or OneHotLabels."
+                f"{type(self).__name__}() is only defined for Images, PIL Images, "
+                "BoundingBoxes and Labels or OneHotLabels."
             )
         return super().forward(*inputs)
 
