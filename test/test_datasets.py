@@ -2916,5 +2916,81 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
+class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SintelStereo
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(pass_name=("final", "clean", "both"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        sintel_dir = pathlib.Path(tmpdir) / "Sintel"
+        os.makedirs(sintel_dir, exist_ok=True)
+
+        split_dir = pathlib.Path(sintel_dir) / "training"
+        os.makedirs(split_dir, exist_ok=True)
+
+        # a single setting, since there are no splits
+        num_examples = {"final": 2, "clean": 3}
+        pass_names = {
+            "final": ["final"],
+            "clean": ["clean"],
+            "both": ["final", "clean"],
+        }.get(config["pass_name"], [])
+
+        for p in pass_names:
+            for view in [f"{p}_left", f"{p}_right"]:
+                root = split_dir / view
+                os.makedirs(root, exist_ok=True)
+
+                datasets_utils.create_image_folder(
+                    root=root,
+                    name="scene1",
+                    file_name_fn=lambda i: f"{i:06d}.png",
+                    num_examples=num_examples[p],
+                    size=(3, 100, 200),
+                )
+
+        datasets_utils.create_image_folder(
+            root=split_dir / "occlusions",
+            name="scene1",
+            file_name_fn=lambda i: f"{i:06d}.png",
+            num_examples=max(num_examples.values()),
+            size=(1, 100, 200),
+        )
+
+        datasets_utils.create_image_folder(
+            root=split_dir / "outofframe",
+            name="scene1",
+            file_name_fn=lambda i: f"{i:06d}.png",
+            num_examples=max(num_examples.values()),
+            size=(1, 100, 200),
+        )
+
+        datasets_utils.create_image_folder(
+            root=split_dir / "disparities",
+            name="scene1",
+            file_name_fn=lambda i: f"{i:06d}.png",
+            num_examples=max(num_examples.values()),
+            size=(3, 100, 200),
+        )
+
+        if config["pass_name"] == "both":
+            num_examples = sum(num_examples.values())
+        else:
+            num_examples = num_examples.get(config["pass_name"], 0)
+
+        return num_examples
+
+    def test_splits(self):
+        for pass_name in ["final", "clean", "both"]:
+            with self.create_dataset(pass_name=pass_name) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    datasets_utils.shape_test_for_stereo(left, right, disparity, valid_mask)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
+            with self.create_dataset(pass_name="bad"):
+                pass
+
+
 if __name__ == "__main__":
     unittest.main()
