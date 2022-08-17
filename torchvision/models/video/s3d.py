@@ -20,17 +20,6 @@ __all__ = [
 
 
 class TemporalSeparableConv(nn.Sequential):
-    """Temporally-separated 3D convolution.
-
-    Args:
-        in_planes (int): dimension of input.
-        out_planes (int): dimension of output.
-        kernel_size (int): size of convolution kernel.
-        stride (int): stride of convolution.
-        padding (int): padding value for sides of input.
-        norm_layer (Callable[..., nn.Module): Module specifying the normalization layer to use.
-    """
-
     def __init__(
         self,
         in_planes: int,
@@ -63,19 +52,6 @@ class TemporalSeparableConv(nn.Sequential):
 
 
 class SepInceptionBlock3D(nn.Module):
-    """Separable Inception block for S3D model.
-
-    Args:
-        in_planes (int): dimension of input
-        b0_out (int): output dimension of 0th branch.
-        b1_mid (int): middle layer dimension of 1st branch.
-        b1_out (int) output dimension of 1st branch.
-        b2_mid (int): middle layer dimension of 2nd branch.
-        b2_out (int): output dimension of 2nd branch.
-        b3_out (int): output dimension of 3rd branch.
-        norm_layer (Callable[..., nn.Module]): Module specifying the normalization layer to use.
-    """
-
     def __init__(
         self,
         in_planes: int,
