@@ -737,12 +737,12 @@ class FixedSizeCrop(Transform):
                 height=params["height"],
                 width=params["width"],
             )
-            if isinstance(inpt, (features.BoundingBox, features.Label, features.SegmentationMask)):
-                inpt = inpt[params["is_valid"]]
-            if isinstance(inpt, features.BoundingBox):
-                features.BoundingBox.new_like(
+            if isinstance(inpt, (features.Label, features.SegmentationMask)):
+                inpt = inpt.new_like(inpt, inpt[params["is_valid"]])
+            elif isinstance(inpt, features.BoundingBox):
+                inpt = features.BoundingBox.new_like(
                     inpt,
-                    F.clamp_bounding_box(inpt, format=inpt.format, image_size=inpt.image_size),
+                    F.clamp_bounding_box(inpt[params["is_valid"]], format=inpt.format, image_size=inpt.image_size),
                 )
 
         if params["needs_pad"]:
