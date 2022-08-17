@@ -166,7 +166,10 @@ class S3D_Weights(WeightsEnum):
             "min_temporal_size": 14,
             "categories": _KINETICS400_CATEGORIES,
             "recipe": "https://github.com/kylemin/S3D/blob/master/README.md",
-            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
+            "_docs": (
+                "The weights reproduce closely the accuracy of the paper. The accuracies are estimated on video-level "
+                "with parameters `frame_rate=15`, `clips_per_video=5`, and `clip_len=64`."
+            ),
             "num_params": 8320048,
             "_metrics": {
                 "Kinetics-400": {
