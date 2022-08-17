@@ -702,7 +702,7 @@ class RandomIoUCrop(Transform):
         is_within_crop_area = params["is_within_crop_area"]
 
         if isinstance(inpt, (features.Label, features.OneHotLabel)):
-            return inpt.new_like(inpt, inpt[is_within_crop_area])
+            return inpt.new_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
