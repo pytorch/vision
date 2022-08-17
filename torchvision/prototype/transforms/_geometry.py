@@ -15,7 +15,7 @@ from torchvision.transforms.transforms import _check_sequence_input, _setup_angl
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import get_image_dimensions, has_all, has_any, is_simple_tensor, query_bboxes, query_image
+from ._utils import get_image_dimensions, has_all, has_any, is_simple_tensor, query_bounding_box, query_image
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -647,7 +647,7 @@ class RandomIoUCrop(Transform):
 
         image = query_image(sample)
         _, orig_h, orig_w = get_image_dimensions(image)
-        bboxes = query_bboxes(sample)
+        bboxes = query_bounding_box(sample)
 
         while True:
             # sample an option
@@ -700,11 +700,9 @@ class RandomIoUCrop(Transform):
             return inpt
 
         is_within_crop_area = params["is_within_crop_area"]
-        if isinstance(inpt, features.Label):
-            return features.Label.new_like(inpt, inpt[is_within_crop_area])
 
-        if isinstance(inpt, features.OneHotLabel):
-            return features.OneHotLabel.new_like(inpt, inpt[is_within_crop_area, :])
+        if isinstance(inpt, (features.Label, features.OneHotLabel)):
+            return inpt.new_like(inpt, inpt[is_within_crop_area])
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
@@ -712,6 +710,10 @@ class RandomIoUCrop(Transform):
             bboxes = output[is_within_crop_area]
             bboxes = F.clamp_bounding_box(bboxes, output.format, output.image_size)
             output = features.BoundingBox.new_like(output, bboxes)
+        elif isinstance(output, features.SegmentationMask) and output.shape[-3] > 1:
+            # apply is_within_crop_area if mask is one-hot encoded
+            masks = output[is_within_crop_area]
+            output = features.SegmentationMask.new_like(output, masks)
 
         return output
 

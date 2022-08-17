@@ -1155,6 +1155,8 @@ class TestRandomIoUCrop:
                 return
 
             assert len(params["is_within_crop_area"]) > 0
+            assert params["is_within_crop_area"].dtype == torch.bool
+
             orig_h = image.image_size[0]
             orig_w = image.image_size[1]
             assert int(transform.min_scale * orig_h) <= params["height"] <= int(transform.max_scale * orig_h)
@@ -1182,7 +1184,8 @@ class TestRandomIoUCrop:
     def test_forward_assertion(self):
         transform = transforms.RandomIoUCrop()
         with pytest.raises(
-            TypeError, match="only defined for Images, PIL Images, BoundingBoxes and Labels or OneHotLabels"
+            TypeError,
+            match="requires input sample to contain Images or PIL Images, BoundingBoxes and Labels or OneHotLabels",
         ):
             transform(torch.tensor(0))
 
@@ -1194,32 +1197,53 @@ class TestRandomIoUCrop:
         label = features.Label(torch.randint(0, 10, size=(6,)))
         ohe_label = features.OneHotLabel(torch.zeros(6, 10).scatter_(1, label.unsqueeze(1), 1))
         masks = make_segmentation_mask((32, 24))
-        sample = [image, bboxes, label, ohe_label, masks]
+        ohe_masks = features.SegmentationMask(torch.randint(0, 2, size=(6, 32, 24)))
+        sample = [image, bboxes, label, ohe_label, masks, ohe_masks]
 
-        fn = mocker.patch("torchvision.prototype.transforms.functional.crop")
-        is_within_crop_area = torch.randint(0, 2, size=(6,))
+        fn = mocker.patch("torchvision.prototype.transforms.functional.crop", side_effect=lambda x, **params: x)
+        is_within_crop_area = torch.tensor([0, 1, 0, 1, 0, 1], dtype=torch.bool)
+
         params = dict(top=1, left=2, height=12, width=12, is_within_crop_area=is_within_crop_area)
         transform._get_params = mocker.MagicMock(return_value=params)
         output = transform(sample)
 
-        assert fn.call_count == 3
+        assert fn.call_count == 4
 
         expected_calls = [
             mocker.call(image, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
             mocker.call(bboxes, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
             mocker.call(masks, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
+            mocker.call(
+                ohe_masks, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+            ),
         ]
 
         fn.assert_has_calls(expected_calls)
 
+        expected_within_targets = sum(is_within_crop_area)
+
+        # check number of bboxes vs number of labels:
+        output_bboxes = output[1]
+        assert isinstance(output_bboxes, features.BoundingBox)
+        assert len(output_bboxes) == expected_within_targets
+
         # check labels
         output_label = output[2]
         assert isinstance(output_label, features.Label)
+        assert len(output_label) == expected_within_targets
         torch.testing.assert_close(output_label, label[is_within_crop_area])
 
         output_ohe_label = output[3]
         assert isinstance(output_ohe_label, features.OneHotLabel)
         torch.testing.assert_close(output_ohe_label, ohe_label[is_within_crop_area])
+
+        output_masks = output[4]
+        assert isinstance(output_masks, features.SegmentationMask)
+        assert output_masks.shape[:-2] == masks.shape[:-2]
+
+        output_ohe_masks = output[5]
+        assert isinstance(output_ohe_masks, features.SegmentationMask)
+        assert len(output_ohe_masks) == expected_within_targets
 
 
 class TestScaleJitter:
