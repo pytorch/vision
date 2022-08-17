@@ -28,7 +28,7 @@ class TemporalSeparableConv(nn.Sequential):
         kernel_size (int): size of convolution kernel.
         stride (int): stride of convolution.
         padding (int): padding value for sides of input.
-        norm_layer (Optional[Callable]): Module specifying the normalization layer to use.
+        norm_layer (Callable[..., nn.Module): Module specifying the normalization layer to use.
     """
 
     def __init__(
@@ -37,12 +37,9 @@ class TemporalSeparableConv(nn.Sequential):
         out_planes: int,
         kernel_size: int,
         stride: int,
-        padding: int = 0,
-        norm_layer: Optional[Callable] = None,
+        padding: int,
+        norm_layer: Callable[..., nn.Module],
     ):
-        if norm_layer is None:
-            norm_layer = partial(nn.BatchNorm3d, eps=0.001, momentum=0.001)
-
         super().__init__(
             Conv3dNormActivation(
                 in_planes,
@@ -76,7 +73,7 @@ class SepInceptionBlock3D(nn.Module):
         b2_mid (int): middle layer dimension of 2nd branch.
         b2_out (int): output dimension of 2nd branch.
         b3_out (int): output dimension of 3rd branch.
-        norm_layer (Optional[Callable]): Module specifying the normalization layer to use.
+        norm_layer (Callable[..., nn.Module]): Module specifying the normalization layer to use.
     """
 
     def __init__(
@@ -88,20 +85,18 @@ class SepInceptionBlock3D(nn.Module):
         b2_mid: int,
         b2_out: int,
         b3_out: int,
-        norm_layer: Optional[Callable] = None,
+        norm_layer: Callable[..., nn.Module],
     ):
         super().__init__()
-        if norm_layer is None:
-            norm_layer = partial(nn.BatchNorm3d, eps=0.001, momentum=0.001)
-
+        
         self.branch0 = Conv3dNormActivation(in_planes, b0_out, kernel_size=1, stride=1, norm_layer=norm_layer)
         self.branch1 = nn.Sequential(
             Conv3dNormActivation(in_planes, b1_mid, kernel_size=1, stride=1, norm_layer=norm_layer),
-            TemporalSeparableConv(b1_mid, b1_out, kernel_size=3, stride=1, padding=1),
+            TemporalSeparableConv(b1_mid, b1_out, kernel_size=3, stride=1, padding=1, norm_layer=norm_layer),
         )
         self.branch2 = nn.Sequential(
             Conv3dNormActivation(in_planes, b2_mid, kernel_size=1, stride=1, norm_layer=norm_layer),
-            TemporalSeparableConv(b2_mid, b2_out, kernel_size=3, stride=1, padding=1),
+            TemporalSeparableConv(b2_mid, b2_out, kernel_size=3, stride=1, padding=1, norm_layer=norm_layer),
         )
         self.branch3 = nn.Sequential(
             nn.MaxPool3d(kernel_size=(3, 3, 3), stride=1, padding=1),
@@ -143,7 +138,7 @@ class S3D(nn.Module):
             norm_layer = partial(nn.BatchNorm3d, eps=0.001, momentum=0.001)
 
         self.features = nn.Sequential(
-            TemporalSeparableConv(3, 64, kernel_size=7, stride=2, padding=3),
+            TemporalSeparableConv(3, 64, 7, 2, 3, norm_layer),
             nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(1, 2, 2), padding=(0, 1, 1)),
             Conv3dNormActivation(
                 64,
@@ -152,19 +147,19 @@ class S3D(nn.Module):
                 stride=1,
                 norm_layer=norm_layer,
             ),
-            TemporalSeparableConv(64, 192, kernel_size=3, stride=1, padding=1),
+            TemporalSeparableConv(64, 192, 3, 1, 1, norm_layer),
             nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(1, 2, 2), padding=(0, 1, 1)),
-            SepInceptionBlock3D(192, 64, 96, 128, 16, 32, 32),
-            SepInceptionBlock3D(256, 128, 128, 192, 32, 96, 64),
+            SepInceptionBlock3D(192, 64, 96, 128, 16, 32, 32, norm_layer),
+            SepInceptionBlock3D(256, 128, 128, 192, 32, 96, 64, norm_layer),
             nn.MaxPool3d(kernel_size=(3, 3, 3), stride=(2, 2, 2), padding=(1, 1, 1)),
-            SepInceptionBlock3D(480, 192, 96, 208, 16, 48, 64),
-            SepInceptionBlock3D(512, 160, 112, 224, 24, 64, 64),
-            SepInceptionBlock3D(512, 128, 128, 256, 24, 64, 64),
-            SepInceptionBlock3D(512, 112, 144, 288, 32, 64, 64),
-            SepInceptionBlock3D(528, 256, 160, 320, 32, 128, 128),
+            SepInceptionBlock3D(480, 192, 96, 208, 16, 48, 64, norm_layer),
+            SepInceptionBlock3D(512, 160, 112, 224, 24, 64, 64, norm_layer),
+            SepInceptionBlock3D(512, 128, 128, 256, 24, 64, 64, norm_layer),
+            SepInceptionBlock3D(512, 112, 144, 288, 32, 64, 64, norm_layer),
+            SepInceptionBlock3D(528, 256, 160, 320, 32, 128, 128, norm_layer),
             nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2), padding=(0, 0, 0)),
-            SepInceptionBlock3D(832, 256, 160, 320, 32, 128, 128),
-            SepInceptionBlock3D(832, 384, 192, 384, 48, 128, 128),
+            SepInceptionBlock3D(832, 256, 160, 320, 32, 128, 128, norm_layer),
+            SepInceptionBlock3D(832, 384, 192, 384, 48, 128, 128, norm_layer),
         )
         self.avgpool = nn.AvgPool3d(kernel_size=(2, 7, 7), stride=1)
         self.classifier = nn.Sequential(
