@@ -163,7 +163,7 @@ class S3D_Weights(WeightsEnum):
         ),
         meta={
             "min_size": (224, 224),
-            "min_temporal_size": 64,
+            "min_temporal_size": 14,
             "categories": _KINETICS400_CATEGORIES,
             "recipe": "https://github.com/kylemin/S3D/blob/master/README.md",
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
