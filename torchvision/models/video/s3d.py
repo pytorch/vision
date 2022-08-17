@@ -88,7 +88,7 @@ class SepInceptionBlock3D(nn.Module):
         norm_layer: Callable[..., nn.Module],
     ):
         super().__init__()
-        
+
         self.branch0 = Conv3dNormActivation(in_planes, b0_out, kernel_size=1, stride=1, norm_layer=norm_layer)
         self.branch1 = nn.Sequential(
             Conv3dNormActivation(in_planes, b1_mid, kernel_size=1, stride=1, norm_layer=norm_layer),
@@ -129,7 +129,7 @@ class S3D(nn.Module):
         self,
         num_classes: int = 400,
         dropout: float = 0.2,
-        norm_layer: Optional[Callable] = None,
+        norm_layer: Optional[Callable[..., torch.nn.Module]] = None,
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
@@ -227,7 +227,7 @@ def s3d(*, weights: Optional[S3D_Weights] = None, progress: bool = True, **kwarg
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
-    model = S3D(**kwargs)
+    model = S3D(dropout=kwargs.pop("dropout", 0.0), **kwargs)
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
