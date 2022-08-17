@@ -675,7 +675,12 @@ class RandomShortestSize(Transform):
 
 
 class FixedSizeCrop(Transform):
-    def __init__(self, size: Union[int, Sequence[int]], fill=0, padding_mode="constant") -> None:
+    def __init__(
+        self,
+        size: Union[int, Sequence[int]],
+        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        padding_mode: str = "constant",
+    ) -> None:
         super().__init__()
         size = tuple(_setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
         self.crop_height = size[0]
@@ -700,7 +705,9 @@ class FixedSizeCrop(Transform):
 
         if needs_crop:
             bounding_boxes = query_bounding_box(sample)
-            bounding_boxes = F.crop(bounding_boxes, top=top, left=left, height=height, width=width)
+            bounding_boxes = cast(
+                features.BoundingBox, F.crop(bounding_boxes, top=top, left=left, height=height, width=width)
+            )
             bounding_boxes = features.BoundingBox.new_like(
                 bounding_boxes,
                 F.clamp_bounding_box(
@@ -738,7 +745,7 @@ class FixedSizeCrop(Transform):
                 width=params["width"],
             )
             if isinstance(inpt, (features.Label, features.SegmentationMask)):
-                inpt = inpt.new_like(inpt, inpt[params["is_valid"]])
+                inpt = inpt.new_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
             elif isinstance(inpt, features.BoundingBox):
                 inpt = features.BoundingBox.new_like(
                     inpt,
