@@ -1,4 +1,3 @@
-import collections.abc
 import math
 import numbers
 import warnings
@@ -182,9 +181,9 @@ class TenCrop(Transform):
             output = F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip)
             return MultiCropResult(features.Image.new_like(inpt, o) for o in output)
         elif is_simple_tensor(inpt):
-            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size))
+            return MultiCropResult(F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip))
         elif isinstance(inpt, PIL.Image.Image):
-            return MultiCropResult(F.ten_crop_image_pil(inpt, self.size))
+            return MultiCropResult(F.ten_crop_image_pil(inpt, self.size, vertical_flip=self.vertical_flip))
         else:
             return inpt
 
@@ -196,31 +195,19 @@ class TenCrop(Transform):
 
 
 class BatchMultiCrop(Transform):
-    def forward(self, *inputs: Any) -> Any:
-        # This is basically the functionality of `torchvision.prototype.utils._internal.apply_recursively` with one
-        # significant difference:
-        # Since we need multiple images to batch them together, we need to explicitly exclude `MultiCropResult` from
-        # the sequence case.
-        def apply_recursively(obj: Any) -> Any:
-            if isinstance(obj, MultiCropResult):
-                crops = obj
-                if isinstance(obj[0], PIL.Image.Image):
-                    crops = [pil_to_tensor(crop) for crop in crops]  # type: ignore[assignment]
+    _transformed_types = (MultiCropResult,)
 
-                batch = torch.stack(crops)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        crops = inpt
+        if isinstance(inpt[0], PIL.Image.Image):
+            crops = [pil_to_tensor(crop) for crop in crops]
 
-                if isinstance(obj[0], features.Image):
-                    batch = features.Image.new_like(obj[0], batch)
+        batch = torch.stack(crops)
 
-                return batch
-            elif isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
-                return [apply_recursively(item) for item in obj]
-            elif isinstance(obj, collections.abc.Mapping):
-                return {key: apply_recursively(item) for key, item in obj.items()}
-            else:
-                return obj
+        if isinstance(inpt[0], features.Image):
+            batch = features.Image.new_like(inpt[0], batch)
 
-        return apply_recursively(inputs if len(inputs) > 1 else inputs[0])
+        return batch
 
 
 def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> None:
@@ -727,8 +714,65 @@ class RandomIoUCrop(Transform):
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        if not has_all(sample, features.Image, features.BoundingBox, features.Label):
-            raise TypeError(f"{type(self).__name__}() is only defined for Images, BoundingBoxes and Labels.")
-        if has_any(sample, features.OneHotLabel):
-            raise TypeError(f"{type(self).__name__}() does not support OneHotLabels.")
+        if not (
+            has_all(sample, features.Image, features.BoundingBox)
+            and has_any(sample, features.Label, features.OneHotLabel)
+        ):
+            raise TypeError(
+                f"{type(self).__name__}() is only defined for Images, BoundingBoxes and Labels or OneHotLabels."
+            )
         return super().forward(*inputs)
+
+
+class ScaleJitter(Transform):
+    def __init__(
+        self,
+        target_size: Tuple[int, int],
+        scale_range: Tuple[float, float] = (0.1, 2.0),
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    ):
+        super().__init__()
+        self.target_size = target_size
+        self.scale_range = scale_range
+        self.interpolation = interpolation
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        _, orig_height, orig_width = get_image_dimensions(image)
+
+        r = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
+        new_width = int(self.target_size[1] * r)
+        new_height = int(self.target_size[0] * r)
+
+        return dict(size=(new_height, new_width))
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.resize(inpt, size=params["size"], interpolation=self.interpolation)
+
+
+class RandomShortestSize(Transform):
+    def __init__(
+        self,
+        min_size: Union[List[int], Tuple[int], int],
+        max_size: int,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    ):
+        super().__init__()
+        self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
+        self.max_size = max_size
+        self.interpolation = interpolation
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        _, orig_height, orig_width = get_image_dimensions(image)
+
+        min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
+        r = min(min_size / min(orig_height, orig_width), self.max_size / max(orig_height, orig_width))
+
+        new_width = int(orig_width * r)
+        new_height = int(orig_height * r)
+
+        return dict(size=(new_height, new_width))
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.resize(inpt, size=params["size"], interpolation=self.interpolation)

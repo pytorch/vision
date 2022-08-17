@@ -201,7 +201,7 @@ class TestSmoke:
     @parametrize(
         [
             (
-                transforms.ConvertImageColorSpace(color_space=new_color_space, old_color_space=old_color_space),
+                transforms.ConvertColorSpace(color_space=new_color_space, old_color_space=old_color_space),
                 itertools.chain.from_iterable(
                     [
                         fn(color_spaces=[old_color_space])
@@ -224,7 +224,7 @@ class TestSmoke:
             )
         ]
     )
-    def test_convert_image_color_space(self, transform, input):
+    def test_convertolor_space(self, transform, input):
         transform(input)
 
 
@@ -1179,6 +1179,115 @@ class TestRandomIoUCrop:
         output = transform(sample)
         torch.testing.assert_close(output, sample)
 
-    def test__transform(self):
-        # TODO:
-        pass
+    def test_forward_assertion(self):
+        transform = transforms.RandomIoUCrop()
+        with pytest.raises(TypeError, match="only defined for Images, BoundingBoxes and Labels or OneHotLabels"):
+            transform(torch.tensor(0))
+
+    def test__transform(self, mocker):
+        transform = transforms.RandomIoUCrop()
+
+        image = features.Image(torch.rand(3, 32, 24))
+        bboxes = make_bounding_box(format="XYXY", image_size=(32, 24), extra_dims=(6,))
+        label = features.Label(torch.randint(0, 10, size=(6,)))
+        sample = [image, bboxes, label]
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.crop")
+        is_within_crop_area = torch.randint(0, 2, size=(6,))
+        params = dict(top=1, left=2, height=12, width=12, is_within_crop_area=is_within_crop_area)
+        transform._get_params = mocker.MagicMock(return_value=params)
+        _ = transform(sample)
+
+        assert fn.call_count == 2
+        # asserts the last call
+        fn.assert_called_with(
+            bboxes, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+        )
+
+        fn.assert_any_call(
+            image, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+        )
+
+
+class TestScaleJitter:
+    def test__get_params(self, mocker):
+        image_size = (24, 32)
+        target_size = (16, 12)
+        scale_range = (0.5, 1.5)
+
+        transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
+
+        sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
+        params = transform._get_params(sample)
+
+        assert "size" in params
+        size = params["size"]
+
+        assert isinstance(size, tuple) and len(size) == 2
+        height, width = size
+
+        assert int(target_size[0] * scale_range[0]) <= height <= int(target_size[0] * scale_range[1])
+        assert int(target_size[1] * scale_range[0]) <= width <= int(target_size[1] * scale_range[1])
+
+    def test__transform(self, mocker):
+        interpolation_sentinel = mocker.MagicMock()
+
+        transform = transforms.ScaleJitter(target_size=(16, 12), interpolation=interpolation_sentinel)
+        transform._transformed_types = (mocker.MagicMock,)
+
+        size_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.ScaleJitter._get_params", return_value=dict(size=size_sentinel)
+        )
+
+        inpt_sentinel = mocker.MagicMock()
+
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        transform(inpt_sentinel)
+
+        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
+
+
+class TestRandomShortestSize:
+    def test__get_params(self, mocker):
+        image_size = (3, 10)
+        min_size = [5, 9]
+        max_size = 20
+
+        transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size)
+
+        sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
+        params = transform._get_params(sample)
+
+        assert "size" in params
+        size = params["size"]
+
+        assert isinstance(size, tuple) and len(size) == 2
+
+        longer = max(size)
+        assert longer <= max_size
+
+        shorter = min(size)
+        if longer == max_size:
+            assert shorter <= max_size
+        else:
+            assert shorter in min_size
+
+    def test__transform(self, mocker):
+        interpolation_sentinel = mocker.MagicMock()
+
+        transform = transforms.RandomShortestSize(min_size=[3, 5, 7], max_size=12, interpolation=interpolation_sentinel)
+        transform._transformed_types = (mocker.MagicMock,)
+
+        size_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.RandomShortestSize._get_params",
+            return_value=dict(size=size_sentinel),
+        )
+
+        inpt_sentinel = mocker.MagicMock()
+
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        transform(inpt_sentinel)
+
+        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
