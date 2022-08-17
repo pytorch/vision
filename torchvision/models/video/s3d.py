@@ -1,11 +1,12 @@
 from functools import partial
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 import torch
 from torch import nn
 from torchvision.ops.misc import Conv3dNormActivation
 
 from ...transforms._presets import VideoClassification
+from ...utils import _log_api_usage_once
 from .._api import register_model, Weights, WeightsEnum
 from .._meta import _KINETICS400_CATEGORIES
 from .._utils import _ovewrite_named_param
@@ -19,7 +20,29 @@ __all__ = [
 
 
 class TemporalSeparableConv(nn.Sequential):
-    def __init__(self, in_planes: int, out_planes: int, kernel_size: int, stride: int, padding: int = 0):
+    """Temporally-separated 3D convolution.
+
+    Args:
+        in_planes (int): dimension of input.
+        out_planes (int): dimension of output.
+        kernel_size (int): size of convolution kernel.
+        stride (int): stride of convolution.
+        padding (int): padding value for sides of input.
+        norm_layer (Optional[Callable]): Module specifying the normalization layer to use.
+    """
+
+    def __init__(
+        self,
+        in_planes: int,
+        out_planes: int,
+        kernel_size: int,
+        stride: int,
+        padding: int = 0,
+        norm_layer: Optional[Callable] = None,
+    ):
+        if norm_layer is None:
+            norm_layer = partial(nn.BatchNorm3d, eps=0.001, momentum=0.001)
+
         super().__init__(
             Conv3dNormActivation(
                 in_planes,
@@ -28,7 +51,7 @@ class TemporalSeparableConv(nn.Sequential):
                 stride=(1, stride, stride),
                 padding=(0, padding, padding),
                 bias=False,
-                norm_layer=partial(nn.BatchNorm3d, eps=1e-3, momentum=1e-3, affine=True),
+                norm_layer=norm_layer,
             ),
             Conv3dNormActivation(
                 out_planes,
@@ -37,7 +60,7 @@ class TemporalSeparableConv(nn.Sequential):
                 stride=(stride, 1, 1),
                 padding=(padding, 0, 0),
                 bias=False,
-                norm_layer=partial(nn.BatchNorm3d, eps=1e-3, momentum=1e-3, affine=True),
+                norm_layer=norm_layer,
             ),
         )
 
@@ -99,9 +122,9 @@ class S3D(nn.Module):
     """S3D main class.
 
     Args:
-        norm_layer (Optional[Callable]): Module specifying the normalization layer to use.
         num_class (int): number of classes for the classification task.
         dropout (float): dropout probability.
+        norm_layer (Optional[Callable]): Module specifying the normalization layer to use.
 
     Inputs:
         x (Tensor): batch of videos with dimensions (batch, channel, time, height, width)
@@ -109,11 +132,13 @@ class S3D(nn.Module):
 
     def __init__(
         self,
-        norm_layer: Optional[Callable] = None,
         num_classes: int = 400,
         dropout: float = 0.2,
+        norm_layer: Optional[Callable] = None,
     ) -> None:
         super().__init__()
+        _log_api_usage_once(self)
+
         if norm_layer is None:
             norm_layer = partial(nn.BatchNorm3d, eps=0.001, momentum=0.001)
 
@@ -169,8 +194,9 @@ class S3D_Weights(WeightsEnum):
             "min_size": (224, 224),
             "min_temporal_size": 64,
             "categories": _KINETICS400_CATEGORIES,
-            "_docs": "The weights are ported from Min and Corso (2019).",
-            "num_params": -1,
+            "recipe": "https://github.com/kylemin/S3D/blob/master/README.md",
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
+            "num_params": 8320048,
             "_metrics": {
                 "Kinetics-400": {
                     "acc@1": -1,
