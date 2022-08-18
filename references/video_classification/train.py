@@ -258,8 +258,7 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss()
 
-    lr = args.lr * args.world_size
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
     # convert scheduler to be per iteration, not per epoch, for warmup that lasts
@@ -359,7 +358,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "-j", "--workers", default=10, type=int, metavar="N", help="number of data loading workers (default: 10)"
     )
-    parser.add_argument("--lr", default=0.01, type=float, help="initial learning rate")
+    parser.add_argument("--lr", default=0.64, type=float, help="initial learning rate")
     parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="momentum")
     parser.add_argument(
         "--wd",
