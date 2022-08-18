@@ -1222,6 +1222,8 @@ class TestFixedSizeCrop:
 
         transform = transforms.FixedSizeCrop((-1, -1), fill=fill_sentinel, padding_mode=padding_mode_sentinel)
         transform._transformed_types = (mocker.MagicMock,)
+        mocker.patch("torchvision.prototype.transforms._geometry.has_all", return_value=True)
+        mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
 
         needs_crop, needs_pad = needs
         top_sentinel = mocker.MagicMock()
@@ -1296,6 +1298,9 @@ class TestFixedSizeCrop:
         labels = make_label(size=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
+        mocker.patch("torchvision.prototype.transforms._geometry.has_all", return_value=True)
+        mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
+
         output = transform(
             dict(
                 bounding_boxes=bounding_boxes,
@@ -1331,6 +1336,9 @@ class TestFixedSizeCrop:
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_box")
 
         transform = transforms.FixedSizeCrop((-1, -1))
+        mocker.patch("torchvision.prototype.transforms._geometry.has_all", return_value=True)
+        mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
+
         transform(bounding_box)
 
         mock.assert_called_once()

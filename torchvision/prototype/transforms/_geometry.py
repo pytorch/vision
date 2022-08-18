@@ -13,7 +13,7 @@ from torchvision.transforms.transforms import _check_sequence_input, _setup_angl
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import get_image_dimensions, has_any, is_simple_tensor, query_bounding_box, query_image
+from ._utils import get_image_dimensions, has_all, has_any, is_simple_tensor, query_bounding_box, query_image
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -744,7 +744,7 @@ class FixedSizeCrop(Transform):
                 height=params["height"],
                 width=params["width"],
             )
-            if isinstance(inpt, (features.Label, features.SegmentationMask)):
+            if isinstance(inpt, (features.Label, features.OneHotLabel, features.SegmentationMask)):
                 inpt = inpt.new_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
             elif isinstance(inpt, features.BoundingBox):
                 inpt = features.BoundingBox.new_like(
@@ -756,3 +756,17 @@ class FixedSizeCrop(Transform):
             inpt = F.pad(inpt, params["padding"], fill=self.fill, padding_mode=self.padding_mode)
 
         return inpt
+
+    def forward(self, *inputs: Any) -> Any:
+        # FIXME: revisit after https://github.com/pytorch/vision/pull/6401#discussion_r948749012 is resolved
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        if not (
+            has_all(sample, features.BoundingBox)
+            and has_any(sample, PIL.Image.Image, features.Image)
+            and has_any(sample, features.Label, features.OneHotLabel)
+        ):
+            raise TypeError(
+                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
+                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
+            )
+        return super().forward(sample)
