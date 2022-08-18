@@ -794,7 +794,7 @@ class TestRandomColorOp:
         if p > 0.0:
             fn.assert_called_once_with(inpt, **kwargs)
         else:
-            fn.call_count == 0
+            assert fn.call_count == 0
 
 
 class TestRandomPerspective:
@@ -1015,7 +1015,7 @@ class TestRandomErasing:
         if p > 0.0:
             fn.assert_called_once_with(erase_image_tensor_inpt, **params)
         else:
-            fn.call_count == 0
+            assert fn.call_count == 0
 
 
 class TestTransform:
@@ -1051,7 +1051,7 @@ class TestToImageTensor:
         transform = transforms.ToImageTensor()
         transform(inpt)
         if inpt_type in (features.BoundingBox, str, int):
-            fn.call_count == 0
+            assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt, copy=transform.copy)
 
@@ -1068,7 +1068,7 @@ class TestToImagePIL:
         transform = transforms.ToImagePIL()
         transform(inpt)
         if inpt_type in (features.BoundingBox, str, int):
-            fn.call_count == 0
+            assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt, copy=transform.copy)
 
@@ -1086,7 +1086,7 @@ class TestToPILImage:
             transform = transforms.ToPILImage()
         transform(inpt)
         if inpt_type in (PIL.Image.Image, features.BoundingBox, str, int):
-            fn.call_count == 0
+            assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt, mode=transform.mode)
 
@@ -1104,7 +1104,7 @@ class TestToTensor:
             transform = transforms.ToTensor()
         transform(inpt)
         if inpt_type in (features.Image, torch.Tensor, features.BoundingBox, str, int):
-            fn.call_count == 0
+            assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt)
 
