@@ -2,7 +2,9 @@ import functools
 from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import torch
+from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
+from torchvision.prototype.transforms._utils import query_bounding_box
 from torchvision.transforms.transforms import _setup_size
 
 
@@ -79,3 +81,28 @@ class ToDtype(Lambda):
 
     def extra_repr(self) -> str:
         return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
+
+
+class CleanupBoxes(Transform):
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        bounding_boxes = query_bounding_box(sample)
+        bounding_boxes_clamped = F.clamp_bounding_box(
+            bounding_boxes, format=bounding_boxes.format, image_size=bounding_boxes.image_size
+        )
+        bounding_boxes_xywh = F.convert_bounding_box_format(
+            bounding_boxes_clamped, old_format=bounding_boxes.format, new_format=features.BoundingBoxFormat.XYWH
+        )
+        is_valid = torch.all(bounding_boxes_xywh[..., 2:] > 0, dim=-1)
+
+        return dict(is_valid=is_valid)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, (features.Label, features.OneHotLabel, features.SegmentationMask)):
+            return inpt.new_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
+        elif isinstance(inpt, features.BoundingBox):
+            return features.BoundingBox.new_like(
+                inpt,
+                F.clamp_bounding_box(inpt[params["is_valid"]], format=inpt.format, image_size=inpt.image_size),
+            )
+        else:
+            return inpt
