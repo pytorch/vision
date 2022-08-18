@@ -44,13 +44,13 @@ def _parse_types_or_checks(
 def has_any(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
     flat_sample, _ = tree_flatten(sample)
     checks = _parse_types_or_checks(types_or_checks)
-    return any(any([check(obj) for check in checks]) for obj in flat_sample)
+    return any(any([check(obj) for obj in flat_sample]) for check in checks)
 
 
 def has_all(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
     flat_sample, _ = tree_flatten(sample)
     checks = _parse_types_or_checks(types_or_checks)
-    return any(any([check(obj) for check in checks]) for obj in flat_sample)
+    return all(any([check(obj) for obj in flat_sample]) for check in checks)
 
 
 def is_simple_tensor(inpt: Any) -> bool:
