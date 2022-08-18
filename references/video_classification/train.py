@@ -155,6 +155,8 @@ def main(args):
     train_crop_size = tuple(args.train_crop_size)
 
     if args.clip_len == 0:
+        if args.batch_size != 1:
+            raise ValueError("Dynamic clip length is supported only for batch-size 1.")
         args.clip_len = None
 
     traindir = os.path.join(args.data_path, "train")
