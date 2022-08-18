@@ -210,6 +210,9 @@ struct DecoderParameters {
 
   std::string tlsCertFile;
   std::string tlsKeyFile;
+
+  // Skip packets that fail with EPERM errors and continue decoding.
+  bool skipOperationNotPermittedPackets{false};
 };
 
 struct DecoderHeader {
