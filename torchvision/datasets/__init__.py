@@ -1,13 +1,13 @@
 from ._optical_flow import FlyingChairs, FlyingThings3D, HD1K, KittiFlow, Sintel
 from ._stereo_matching import (
     CarlaStereo,
+    ETH3DStereo,
     FallingThingsStereo,
     InStereo2k,
     Kitti2012Stereo,
     Kitti2015Stereo,
     SceneFlowStereo,
     SintelStereo,
-    ETH3DStereo,
 )
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
