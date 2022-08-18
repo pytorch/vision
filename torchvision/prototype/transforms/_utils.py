@@ -17,6 +17,15 @@ def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Im
     raise TypeError("No image was found in the sample")
 
 
+def query_bounding_box(sample: Any) -> features.BoundingBox:
+    flat_sample, _ = tree_flatten(sample)
+    for i in flat_sample:
+        if isinstance(i, features.BoundingBox):
+            return i
+
+    raise TypeError("No bounding box was found in the sample")
+
+
 def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
     if isinstance(image, features.Image):
         channels = image.num_channels
