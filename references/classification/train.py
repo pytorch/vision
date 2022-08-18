@@ -4,21 +4,18 @@ import time
 import warnings
 
 import presets
+from sampler import RASampler
+from transforms import WrapIntoFeatures
+import utils  # usort: skip
+
 import torch
 import torch.utils.data
 import torchvision
-import utils
-from sampler import RASampler
+
 from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.prototype import features, transforms
 from torchvision.transforms.functional import InterpolationMode
-
-
-class WrapIntoFeatures(nn.Module):
-    def forward(self, sample):
-        input, target = sample
-        return features.Image(input), features.Label(target)
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
