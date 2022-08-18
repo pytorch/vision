@@ -2841,6 +2841,69 @@ class CarlaStereoTestCase(datasets_utils.ImageDatasetTestCase):
                 datasets_utils.shape_test_for_stereo(left, right, disparity)
 
 
+class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FallingThingsStereo
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(variant=("single", "mixed", "both"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+
+    @staticmethod
+    def _make_dummy_depth_map(root: str, name: str, size: Tuple[int, int]):
+        file = pathlib.Path(root) / name
+        image = np.ones((size[0], size[1]), dtype=np.uint8)
+        PIL.Image.fromarray(image).save(file)
+
+    @staticmethod
+    def _make_scene_folder(root: str, scene_name: str, size: Tuple[int, int]) -> None:
+        root = pathlib.Path(root) / scene_name
+        os.makedirs(root, exist_ok=True)
+        # jpg images
+        datasets_utils.create_image_file(root, "image1.left.jpg", size=(3, size[1], size[0]))
+        datasets_utils.create_image_file(root, "image1.right.jpg", size=(3, size[1], size[0]))
+        # single channel depth maps
+        FallingThingsStereoTestCase._make_dummy_depth_map(root, "image1.left.depth.png", size=(size[0], size[1]))
+        FallingThingsStereoTestCase._make_dummy_depth_map(root, "image1.right.depth.png", size=(size[0], size[1]))
+        # camera settings json. Minimal example for _read_disparity function testing
+        settings_json = {"camera_settings": [{"intrinsic_settings": {"fx": 1}}]}
+        with open(root / "_camera_settings.json", "w") as f:
+            json.dump(settings_json, f)
+
+    def inject_fake_data(self, tmpdir, config):
+        fallingthings_dir = pathlib.Path(tmpdir) / "FallingThings"
+        os.makedirs(fallingthings_dir, exist_ok=True)
+
+        num_examples = {"single": 2, "mixed": 3, "both": 4}.get(config["variant"], 0)
+        variants = {
+            "single": ["single"],
+            "mixed": ["mixed"],
+            "both": ["single", "mixed"],
+        }.get(config["variant"], [])
+
+        for variant_name in variants:
+            variant_dir = pathlib.Path(fallingthings_dir) / variant_name
+            os.makedirs(variant_dir, exist_ok=True)
+            for i in range(num_examples):
+                self._make_scene_folder(
+                    root=variant_dir,
+                    scene_name=f"scene_{i:06d}",
+                    size=(100, 200),
+                )
+
+        if config["variant"] == "both":
+            num_examples *= 2
+        return num_examples
+
+    def test_splits(self):
+        for variant_name in ["single", "mixed"]:
+            with self.create_dataset(variant=variant_name) as (dataset, _):
+                for left, right, disparity in dataset:
+                    datasets_utils.shape_test_for_stereo(left, right, disparity)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument variant"):
+            with self.create_dataset(variant="bad"):
+                pass
+
+
 class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SceneFlowStereo
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
@@ -2863,6 +2926,11 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
         os.makedirs(scene_flow_dir, exist_ok=True)
 
         variant_dir = scene_flow_dir / config["variant"]
+        variant_dir_prefixes = {
+            "Monkaa": 0,
+            "Driving": 2,
+            "FlyingThings3D": 2,
+        }
         os.makedirs(variant_dir, exist_ok=True)
 
         num_examples = {"FlyingThings3D": 4, "Driving": 6, "Monkaa": 5}.get(config["variant"], 0)
@@ -2879,6 +2947,12 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
             disp_dir = variant_dir / "disparity"
             os.makedirs(pass_dir, exist_ok=True)
             os.makedirs(disp_dir, exist_ok=True)
+
+            for i in range(variant_dir_prefixes.get(config["variant"], 0)):
+                pass_dir = pass_dir / str(i)
+                disp_dir = disp_dir / str(i)
+                os.makedirs(pass_dir, exist_ok=True)
+                os.makedirs(disp_dir, exist_ok=True)
 
             for direction in ["left", "right"]:
                 for scene_idx in range(num_examples):
@@ -2913,6 +2987,125 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument variant"):
             with self.create_dataset(variant="bad"):
+                pass
+
+
+class InStereo2k(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.InStereo2k
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+
+    @staticmethod
+    def _make_scene_folder(root: str, name: str, size: Tuple[int, int]):
+        root = pathlib.Path(root) / name
+        os.makedirs(root, exist_ok=True)
+
+        datasets_utils.create_image_file(root=root, name="left.png", size=(3, size[0], size[1]))
+        datasets_utils.create_image_file(root=root, name="right.png", size=(3, size[0], size[1]))
+        datasets_utils.create_image_file(root=root, name="left_disp.png", size=(1, size[0], size[1]))
+        datasets_utils.create_image_file(root=root, name="right_disp.png", size=(1, size[0], size[1]))
+
+    def inject_fake_data(self, tmpdir, config):
+        in_stereo_dir = pathlib.Path(tmpdir) / "InStereo2k"
+        os.makedirs(in_stereo_dir, exist_ok=True)
+
+        split_dir = pathlib.Path(in_stereo_dir) / config["split"]
+        os.makedirs(split_dir, exist_ok=True)
+
+        num_examples = {"train": 4, "test": 5}.get(config["split"], 0)
+
+        for i in range(num_examples):
+            self._make_scene_folder(split_dir, f"scene_{i:06d}", (100, 200))
+
+        return num_examples
+
+    def test_splits(self):
+        for split_name in ["train", "test"]:
+            with self.create_dataset(split=split_name) as (dataset, _):
+                for left, right, disparity in dataset:
+                    datasets_utils.shape_test_for_stereo(left, right, disparity)
+
+    def test_bad_input(self):
+        with pytest.raises(
+            ValueError, match="Unknown value 'bad' for argument split. Valid values are {'train', 'test'}."
+        ):
+            with self.create_dataset(split="bad"):
+                pass
+
+
+class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SintelStereo
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(pass_name=("final", "clean", "both"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        sintel_dir = pathlib.Path(tmpdir) / "Sintel"
+        os.makedirs(sintel_dir, exist_ok=True)
+
+        split_dir = pathlib.Path(sintel_dir) / "training"
+        os.makedirs(split_dir, exist_ok=True)
+
+        # a single setting, since there are no splits
+        num_examples = {"final": 2, "clean": 3}
+        pass_names = {
+            "final": ["final"],
+            "clean": ["clean"],
+            "both": ["final", "clean"],
+        }.get(config["pass_name"], [])
+
+        for p in pass_names:
+            for view in [f"{p}_left", f"{p}_right"]:
+                root = split_dir / view
+                os.makedirs(root, exist_ok=True)
+
+                datasets_utils.create_image_folder(
+                    root=root,
+                    name="scene1",
+                    file_name_fn=lambda i: f"{i:06d}.png",
+                    num_examples=num_examples[p],
+                    size=(3, 100, 200),
+                )
+
+        datasets_utils.create_image_folder(
+            root=split_dir / "occlusions",
+            name="scene1",
+            file_name_fn=lambda i: f"{i:06d}.png",
+            num_examples=max(num_examples.values()),
+            size=(1, 100, 200),
+        )
+
+        datasets_utils.create_image_folder(
+            root=split_dir / "outofframe",
+            name="scene1",
+            file_name_fn=lambda i: f"{i:06d}.png",
+            num_examples=max(num_examples.values()),
+            size=(1, 100, 200),
+        )
+
+        datasets_utils.create_image_folder(
+            root=split_dir / "disparities",
+            name="scene1",
+            file_name_fn=lambda i: f"{i:06d}.png",
+            num_examples=max(num_examples.values()),
+            size=(3, 100, 200),
+        )
+
+        if config["pass_name"] == "both":
+            num_examples = sum(num_examples.values())
+        else:
+            num_examples = num_examples.get(config["pass_name"], 0)
+
+        return num_examples
+
+    def test_splits(self):
+        for pass_name in ["final", "clean", "both"]:
+            with self.create_dataset(pass_name=pass_name) as (dataset, _):
+                for left, right, disparity, valid_mask in dataset:
+                    datasets_utils.shape_test_for_stereo(left, right, disparity, valid_mask)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
+            with self.create_dataset(pass_name="bad"):
                 pass
 
 
