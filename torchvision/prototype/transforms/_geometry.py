@@ -869,11 +869,10 @@ class FixedSizeCrop(Transform):
         return inpt
 
     def forward(self, *inputs: Any) -> Any:
-        # FIXME: revisit after https://github.com/pytorch/vision/pull/6401#discussion_r948749012 is resolved
         sample = inputs if len(inputs) > 1 else inputs[0]
         if not (
             has_all(sample, features.BoundingBox)
-            and has_any(sample, PIL.Image.Image, features.Image)
+            and has_any(sample, PIL.Image.Image, features.Image, is_simple_tensor)
             and has_any(sample, features.Label, features.OneHotLabel)
         ):
             raise TypeError(
