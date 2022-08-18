@@ -207,9 +207,9 @@ def main(args):
     num_classes = len(dataset.classes)
     mixup_or_cutmix = []
     if args.mixup_alpha > 0.0:
-        mixup_or_cutmix.append(transforms.RandomMixup(alpha=args.mixup_alpha))
+        mixup_or_cutmix.append(transforms.RandomMixup(alpha=args.mixup_alpha, p=1.0))
     if args.cutmix_alpha > 0.0:
-        mixup_or_cutmix.append(transforms.RandomCutmix(alpha=args.cutmix_alpha))
+        mixup_or_cutmix.append(transforms.RandomCutmix(alpha=args.cutmix_alpha, p=1.0))
     if mixup_or_cutmix:
         batch_transform = transforms.Compose(
             [
