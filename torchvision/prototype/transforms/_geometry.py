@@ -719,6 +719,7 @@ class RandomIoUCrop(Transform):
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
+        # TODO: Allow image to be a torch.Tensor
         if not (
             has_all(sample, features.BoundingBox)
             and has_any(sample, PIL.Image.Image, features.Image)
