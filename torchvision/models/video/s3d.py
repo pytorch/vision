@@ -200,6 +200,8 @@ def s3d(*, weights: Optional[S3D_Weights] = None, progress: bool = True, **kwarg
             <https://github.com/pytorch/vision/blob/main/torchvision/models/video/s3d.py>`_
             for more details about this class.
 
+    .. autoclass:: torchvision.models.video.S3D_Weights
+        :members:
     """
     weights = S3D_Weights.verify(weights)
 
