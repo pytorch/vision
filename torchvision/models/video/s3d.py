@@ -104,7 +104,7 @@ class S3D(nn.Module):
     def __init__(
         self,
         num_classes: int = 400,
-        dropout: float = 0.2,
+        dropout: float = 0.0,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = None,
     ) -> None:
         super().__init__()
@@ -206,7 +206,7 @@ def s3d(*, weights: Optional[S3D_Weights] = None, progress: bool = True, **kwarg
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
-    model = S3D(dropout=kwargs.pop("dropout", 0.0), **kwargs)
+    model = S3D(**kwargs)
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
