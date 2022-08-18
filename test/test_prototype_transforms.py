@@ -10,6 +10,7 @@ from common_utils import assert_equal
 from test_prototype_transforms_functional import (
     make_bounding_box,
     make_bounding_boxes,
+    make_image,
     make_images,
     make_label,
     make_one_hot_labels,
@@ -1212,8 +1213,33 @@ class TestRandomShortestSize:
 
 
 class TestFixedSizeCrop:
-    def test__get_params(self):
-        pass
+    def test__get_params(self, mocker):
+        crop_size = (7, 7)
+        batch_shape = (10,)
+        image_size = (11, 5)
+
+        transform = transforms.FixedSizeCrop(size=crop_size)
+
+        sample = dict(
+            image=make_image(size=image_size, color_space=features.ColorSpace.RGB),
+            bounding_boxes=make_bounding_box(
+                format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=batch_shape
+            ),
+        )
+        params = transform._get_params(sample)
+
+        assert params["needs_crop"]
+        assert params["height"] <= crop_size[0]
+        assert params["width"] <= crop_size[1]
+
+        assert (
+            isinstance(params["is_valid"], torch.Tensor)
+            and params["is_valid"].dtype is torch.bool
+            and params["is_valid"].shape == batch_shape
+        )
+
+        assert params["needs_pad"]
+        assert any(pad > 0 for pad in params["padding"])
 
     @pytest.mark.parametrize("needs", list(itertools.product((False, True), repeat=2)))
     def test__transform(self, mocker, needs):
