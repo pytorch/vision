@@ -11,7 +11,7 @@ from .vision import VisionDataset
 class Food101(VisionDataset):
     """`The Food-101 Data Set <https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/>`_.
 
-    The Food-101 is a challenging data set of 101 food categories, with 101'000 images.
+    The Food-101 is a challenging data set of 101 food categories with 101,000 images.
     For each class, 250 manually reviewed test images are provided as well as 750 training images.
     On purpose, the training images were not cleaned, and thus still contain some amount of noise.
     This comes mostly in the form of intense colors and sometimes wrong labels. All images were
