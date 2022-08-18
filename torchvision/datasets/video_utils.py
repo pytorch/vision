@@ -215,7 +215,7 @@ class VideoClips:
         _idxs = VideoClips._resample_video_idx(int(math.floor(total_frames)), fps, frame_rate)
         video_pts = video_pts[_idxs]
         if num_frames is None:
-            num_frames = total_frames
+            num_frames = int(total_frames)
         clips = unfold(video_pts, num_frames, step)
         if not clips.numel():
             warnings.warn(
