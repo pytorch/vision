@@ -42,30 +42,20 @@ def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Im
 def has_any(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
     flat_sample, _ = tree_flatten(sample)
     for type_or_check in types_or_checks:
-        passed_check = False
         for obj in flat_sample:
             if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
-                passed_check = True
-                break
-
-        if passed_check:
-            return True
-
+                return True
     return False
 
 
 def has_all(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
     flat_sample, _ = tree_flatten(sample)
     for type_or_check in types_or_checks:
-        passed_check = False
         for obj in flat_sample:
             if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
-                passed_check = True
                 break
-
-        if not passed_check:
+        else:
             return False
-
     return True
 
 
