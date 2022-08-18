@@ -153,7 +153,7 @@ class S3D(nn.Module):
 
 class S3D_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
-        url="https://download.pytorch.org/models/S3D_Kinetics400_dev.pt",
+        url="https://download.pytorch.org/models/s3d-1bd8ae63.pth",
         transforms=partial(
             VideoClassification,
             crop_size=(224, 224),
@@ -165,16 +165,16 @@ class S3D_Weights(WeightsEnum):
             "min_size": (224, 224),
             "min_temporal_size": 14,
             "categories": _KINETICS400_CATEGORIES,
-            "recipe": "https://github.com/kylemin/S3D/blob/master/README.md",
+            "recipe": "https://github.com/pytorch/vision/pull/6412#issuecomment-1219687434",
             "_docs": (
-                "The weights reproduce closely the accuracy of the paper. The accuracies are estimated on video-level "
-                "with parameters `frame_rate=15`, `clips_per_video=5`, and `clip_len=64`."
+                "The weights are ported from a community repository. The accuracies are estimated on clip-level "
+                "with parameters `frame_rate=15`, `clips_per_video=1`, and `clip_len=128`."
             ),
             "num_params": 8320048,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": -1,
-                    "acc@5": -1,
+                    "acc@1": 67.315,
+                    "acc@5": 87.593,
                 }
             },
         },
