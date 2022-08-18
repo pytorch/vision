@@ -851,7 +851,7 @@ class ETH3DStereo(StereoMatchingDataset):
         disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
         mask_path = Path(file_path).parent / "mask0nocc.png"
         valid_mask = Image.open(mask_path)
-        valid_mask = np.asarray(valid_mask).astype(np.bool)
+        valid_mask = np.asarray(valid_mask).astype(bool)
         return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple:
