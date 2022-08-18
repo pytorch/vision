@@ -52,7 +52,7 @@ class Kinetics(VisionDataset):
                 │   │    └── ...
 
             Note: split is appended automatically using the split argument.
-        frames_per_clip (int): number of frames in a clip
+        frames_per_clip (int, optional): number of frames in a clip. If `None`, all frames will be returned.
         num_classes (int): select between Kinetics-400 (default), Kinetics-600, and Kinetics-700
         split (str): split of the dataset to consider; supports ``"train"`` (default) ``"val"`` ``"test"``
         frame_rate (float): If omitted, interpolate different frame rate for each clip.
@@ -92,7 +92,7 @@ class Kinetics(VisionDataset):
     def __init__(
         self,
         root: str,
-        frames_per_clip: int,
+        frames_per_clip: Optional[int],
         num_classes: str = "400",
         split: str = "train",
         frame_rate: Optional[int] = None,
@@ -285,7 +285,7 @@ class Kinetics400(Kinetics):
                     ├── clipx.avi
                     └── ...
 
-        frames_per_clip (int): number of frames in a clip
+        frames_per_clip (int, optional): number of frames in a clip. If `None`, all frames will be returned.
         step_between_clips (int): number of frames between each clip
         transform (callable, optional): A function/transform that  takes in a TxHxWxC video
             and returns a transformed version.
@@ -302,7 +302,7 @@ class Kinetics400(Kinetics):
     def __init__(
         self,
         root: str,
-        frames_per_clip: int,
+        frames_per_clip: Optional[int],
         num_classes: Any = None,
         split: Any = None,
         download: Any = None,

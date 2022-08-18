@@ -154,6 +154,9 @@ def main(args):
     train_resize_size = tuple(args.train_resize_size)
     train_crop_size = tuple(args.train_crop_size)
 
+    if args.clip_len == 0:
+        args.clip_len = None
+
     traindir = os.path.join(args.data_path, "train")
     valdir = os.path.join(args.data_path, "val")
 
@@ -346,7 +349,13 @@ def get_args_parser(add_help=True):
     )
     parser.add_argument("--model", default="r2plus1d_18", type=str, help="model name")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
-    parser.add_argument("--clip-len", default=16, type=int, metavar="N", help="number of frames per clip")
+    parser.add_argument(
+        "--clip-len",
+        default=16,
+        type=int,
+        metavar="N",
+        help="number of frames per clip. If 0, all video frames will be used.",
+    )
     parser.add_argument("--frame-rate", default=15, type=int, metavar="N", help="the frame rate")
     parser.add_argument(
         "--clips-per-video", default=5, type=int, metavar="N", help="maximum number of clips per video to consider"

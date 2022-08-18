@@ -87,7 +87,8 @@ class VideoClips:
 
     Args:
         video_paths (List[str]): paths to the video files
-        clip_length_in_frames (int): size of a clip in number of frames
+        clip_length_in_frames (int, optional): size of a clip in number of frames. If `None`, all frames will be
+            returned.
         frames_between_clips (int): step (in frames) between each clip
         frame_rate (int, optional): if specified, it will resample the video
             so that it has `frame_rate`, and then the clips will be defined
@@ -100,7 +101,7 @@ class VideoClips:
     def __init__(
         self,
         video_paths: List[str],
-        clip_length_in_frames: int = 16,
+        clip_length_in_frames: Optional[int] = 16,
         frames_between_clips: int = 1,
         frame_rate: Optional[int] = None,
         _precomputed_metadata: Optional[Dict[str, Any]] = None,
@@ -202,7 +203,7 @@ class VideoClips:
 
     @staticmethod
     def compute_clips_for_video(
-        video_pts: torch.Tensor, num_frames: int, step: int, fps: int, frame_rate: Optional[int] = None
+        video_pts: torch.Tensor, num_frames: Optional[int], step: int, fps: int, frame_rate: Optional[int] = None
     ) -> Tuple[torch.Tensor, Union[List[slice], torch.Tensor]]:
         if fps is None:
             # if for some reason the video doesn't have fps (because doesn't have a video stream)
@@ -213,6 +214,8 @@ class VideoClips:
         total_frames = len(video_pts) * (float(frame_rate) / fps)
         _idxs = VideoClips._resample_video_idx(int(math.floor(total_frames)), fps, frame_rate)
         video_pts = video_pts[_idxs]
+        if num_frames is None:
+            num_frames = total_frames
         clips = unfold(video_pts, num_frames, step)
         if not clips.numel():
             warnings.warn(
@@ -226,14 +229,14 @@ class VideoClips:
             idxs = unfold(_idxs, num_frames, step)
         return clips, idxs
 
-    def compute_clips(self, num_frames: int, step: int, frame_rate: Optional[int] = None) -> None:
+    def compute_clips(self, num_frames: Optional[int], step: int, frame_rate: Optional[int] = None) -> None:
         """
         Compute all consecutive sequences of clips from video_pts.
         Always returns clips of size `num_frames`, meaning that the
         last few frames in a video can potentially be dropped.
 
         Args:
-            num_frames (int): number of frames for the clip
+            num_frames (int, optional): number of frames for the clip. If `None`, all frames will be returned.
             step (int): distance between two clips
             frame_rate (int, optional): The frame rate
         """
@@ -365,7 +368,7 @@ class VideoClips:
                 resampling_idx = resampling_idx - resampling_idx[0]
             video = video[resampling_idx]
             info["video_fps"] = self.frame_rate
-        assert len(video) == self.num_frames, f"{video.shape} x {self.num_frames}"
+        assert self.num_frames is None or len(video) == self.num_frames, f"{video.shape} x {self.num_frames}"
 
         if self.output_format == "TCHW":
             # [T,H,W,C] --> [T,C,H,W]
