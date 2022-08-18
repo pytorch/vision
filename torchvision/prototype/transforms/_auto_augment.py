@@ -4,7 +4,7 @@ from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, T
 import PIL.Image
 import torch
 
-from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
+from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.autoaugment import AutoAugmentPolicy
@@ -14,6 +14,12 @@ from ._utils import get_image_dimensions, is_simple_tensor
 
 K = TypeVar("K")
 V = TypeVar("V")
+
+
+def _put_into_sample(sample: Any, id: int, item: Any) -> Any:
+    sample_flat, spec = tree_flatten(sample)
+    sample_flat[id] = item
+    return tree_unflatten(sample_flat, spec)
 
 
 class _AutoAugmentBase(Transform):
@@ -32,16 +38,16 @@ class _AutoAugmentBase(Transform):
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
 
-    def _flatten(
+    def _extract_image(
         self,
         sample: Any,
         unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask),
-    ) -> Tuple[List[Any], TreeSpec, int, Union[PIL.Image.Image, torch.Tensor, features.Image]]:
-        sample_flat, sample_spec = tree_flatten(sample)
+    ) -> Tuple[int, Union[PIL.Image.Image, torch.Tensor, features.Image]]:
+        sample_flat, _ = tree_flatten(sample)
         images = []
-        for idx_flat, inpt in enumerate(sample_flat):
+        for id, inpt in enumerate(sample_flat):
             if isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt):
-                images.append((idx_flat, inpt))
+                images.append((id, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
 
@@ -51,12 +57,7 @@ class _AutoAugmentBase(Transform):
             raise TypeError(
                 f"Auto augment transformations are only properly defined for a single image, but found {len(images)}."
             )
-        idx_flat, image = images[0]
-        return sample_flat, sample_spec, idx_flat, image
-
-    def _unflatten(self, sample_flat: List[Any], sample_spec: TreeSpec, idx_flat: int, item: Any) -> Any:
-        sample_flat[idx_flat] = item
-        return tree_unflatten(sample_flat, sample_spec)
+        return images[0]
 
     def _parse_fill(
         self, image: Union[PIL.Image.Image, torch.Tensor, features.Image], num_channels: int
@@ -279,7 +280,7 @@ class AutoAugment(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        sample_flat, sample_spec, idx_flat, image = self._flatten(sample)
+        id, image = self._extract_image(sample)
         num_channels, height, width = get_image_dimensions(image)
         fill = self._parse_fill(image, num_channels)
 
@@ -303,7 +304,7 @@ class AutoAugment(_AutoAugmentBase):
                 image, transform_id, magnitude, interpolation=self.interpolation, fill=fill
             )
 
-        return self._unflatten(sample_flat, sample_spec, idx_flat, image)
+        return _put_into_sample(sample, id, image)
 
 
 class RandAugment(_AutoAugmentBase):
@@ -352,7 +353,7 @@ class RandAugment(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        sample_flat, sample_spec, idx_flat, image = self._flatten(sample)
+        id, image = self._extract_image(sample)
         num_channels, height, width = get_image_dimensions(image)
         fill = self._parse_fill(image, num_channels)
 
@@ -371,7 +372,7 @@ class RandAugment(_AutoAugmentBase):
                 image, transform_id, magnitude, interpolation=self.interpolation, fill=fill
             )
 
-        return self._unflatten(sample_flat, sample_spec, idx_flat, image)
+        return _put_into_sample(sample, id, image)
 
 
 class TrivialAugmentWide(_AutoAugmentBase):
@@ -410,7 +411,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        sample_flat, sample_spec, idx_flat, image = self._flatten(sample)
+        id, image = self._extract_image(sample)
         num_channels, height, width = get_image_dimensions(image)
         fill = self._parse_fill(image, num_channels)
 
@@ -425,7 +426,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
             magnitude = 0.0
 
         image = self._apply_image_transform(image, transform_id, magnitude, interpolation=self.interpolation, fill=fill)
-        return self._unflatten(sample_flat, sample_spec, idx_flat, image)
+        return _put_into_sample(sample, id, image)
 
 
 class AugMix(_AutoAugmentBase):
@@ -479,7 +480,7 @@ class AugMix(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        sample_flat, sample_spec, idx_flat, orig_image = self._flatten(sample)
+        id, orig_image = self._extract_image(sample)
         num_channels, height, width = get_image_dimensions(orig_image)
         fill = self._parse_fill(orig_image, num_channels)
 
@@ -531,4 +532,4 @@ class AugMix(_AutoAugmentBase):
         elif isinstance(orig_image, PIL.Image.Image):
             mix = to_pil_image(mix)
 
-        return self._unflatten(sample_flat, sample_spec, idx_flat, mix)
+        return _put_into_sample(sample, id, mix)
