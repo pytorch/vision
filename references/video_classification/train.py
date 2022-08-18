@@ -149,13 +149,18 @@ def main(args):
 
     # Data loading code
     print("Loading data")
+    val_resize_size = tuple(args.val_resize_size)
+    val_crop_size = tuple(args.val_crop_size)
+    train_resize_size = tuple(args.train_resize_size)
+    train_crop_size = tuple(args.train_crop_size)
+
     traindir = os.path.join(args.data_path, "train")
     valdir = os.path.join(args.data_path, "val")
 
     print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir, args)
-    transform_train = presets.VideoClassificationPresetTrain(crop_size=(112, 112), resize_size=(128, 171))
+    transform_train = presets.VideoClassificationPresetTrain(crop_size=train_crop_size, resize_size=train_resize_size)
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_train from {cache_path}")
@@ -192,7 +197,7 @@ def main(args):
         weights = torchvision.models.get_weight(args.weights)
         transform_test = weights.transforms()
     else:
-        transform_test = presets.VideoClassificationPresetEval(crop_size=(112, 112), resize_size=(128, 171))
+        transform_test = presets.VideoClassificationPresetEval(crop_size=val_crop_size, resize_size=val_resize_size)
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")
@@ -253,8 +258,7 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss()
 
-    lr = args.lr * args.world_size
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
     # convert scheduler to be per iteration, not per epoch, for warmup that lasts
@@ -354,7 +358,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "-j", "--workers", default=10, type=int, metavar="N", help="number of data loading workers (default: 10)"
     )
-    parser.add_argument("--lr", default=0.01, type=float, help="initial learning rate")
+    parser.add_argument("--lr", default=0.64, type=float, help="initial learning rate")
     parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="momentum")
     parser.add_argument(
         "--wd",
@@ -399,6 +403,35 @@ def get_args_parser(add_help=True):
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
+
+    parser.add_argument(
+        "--val-resize-size",
+        default=(128, 171),
+        nargs="+",
+        type=int,
+        help="the resize size used for validation (default: (128, 171))",
+    )
+    parser.add_argument(
+        "--val-crop-size",
+        default=(112, 112),
+        nargs="+",
+        type=int,
+        help="the central crop size used for validation (default: (112, 112))",
+    )
+    parser.add_argument(
+        "--train-resize-size",
+        default=(128, 171),
+        nargs="+",
+        type=int,
+        help="the resize size used for training (default: (128, 171))",
+    )
+    parser.add_argument(
+        "--train-crop-size",
+        default=(112, 112),
+        nargs="+",
+        type=int,
+        help="the random crop size used for training (default: (112, 112))",
+    )
 
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
