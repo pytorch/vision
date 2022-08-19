@@ -83,15 +83,21 @@ class ToDtype(Lambda):
         return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
 
 
-# This transform is not exposed under `torchvision.prototype.transforms` since it should never be used without
-# `ClampBoundingBox`
-class RemoveInvalid(Transform):
+class _RemoveInvalid(Transform):
     _transformed_types = (features.BoundingBox, features.SegmentationMask, features.Label, features.OneHotLabel)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         bounding_box = query_bounding_box(sample)
-        is_valid = bounding_box.area > 0
-        return dict(is_valid=is_valid)
+
+        if self.format in {features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH}:
+            _, _, width, height = torch.unbind(bounding_box, dim=-1)
+        else:  # self.format == BoundingBoxFormat.XYXY
+            x1, y1, x2, y2 = torch.unbind(bounding_box, dim=-1)
+            width = x2 - x1
+            height = y2 - y1
+        area = width * height
+
+        return dict(is_valid=area > 0)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return inpt.new_like(inpt, inpt[params["is_valid"]])
@@ -102,6 +108,6 @@ class CleanupBoxes(Compose):
         super().__init__(
             [
                 ClampBoundingBox(),
-                RemoveInvalid(),
+                _RemoveInvalid(),
             ]
         )
