@@ -2,6 +2,10 @@ from . import functional  # usort: skip
 
 from ._transform import Transform  # usort: skip
 
+from ._container import Compose, RandomApply, RandomChoice, RandomOrder  # usort: skip
+
+from ._meta import ConvertBoundingBoxFormat, ConvertColorSpace, ConvertImageDtype, ClampBoundingBox  # usort: skip
+
 from ._augment import RandomCutmix, RandomErasing, RandomMixup
 from ._auto_augment import AugMix, AutoAugment, AutoAugmentPolicy, RandAugment, TrivialAugmentWide
 from ._color import (
@@ -14,7 +18,6 @@ from ._color import (
     RandomPosterize,
     RandomSolarize,
 )
-from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
     BatchMultiCrop,
     CenterCrop,
@@ -35,7 +38,7 @@ from ._geometry import (
     ScaleJitter,
     TenCrop,
 )
-from ._meta import ConvertBoundingBoxFormat, ConvertColorSpace, ConvertImageDtype
+
 from ._misc import CleanupBoxes, GaussianBlur, Identity, Lambda, Normalize, ToDtype
 from ._type_conversion import DecodeImage, LabelToOneHot, ToImagePIL, ToImageTensor
 

@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import functional as F, Transform
+from torchvision.prototype.transforms import ClampBoundingBox, Compose, functional as F, Transform
 from torchvision.prototype.transforms._utils import query_bounding_box
 from torchvision.transforms.transforms import _setup_size
 
@@ -83,26 +83,25 @@ class ToDtype(Lambda):
         return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
 
 
-class CleanupBoxes(Transform):
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        bounding_boxes = query_bounding_box(sample)
-        bounding_boxes_clamped = F.clamp_bounding_box(
-            bounding_boxes, format=bounding_boxes.format, image_size=bounding_boxes.image_size
-        )
-        bounding_boxes_xywh = F.convert_bounding_box_format(
-            bounding_boxes_clamped, old_format=bounding_boxes.format, new_format=features.BoundingBoxFormat.XYWH
-        )
-        is_valid = torch.all(bounding_boxes_xywh[..., 2:] > 0, dim=-1)
+# This transform is not exposed under `torchvision.prototype.transforms` since it should never be used without
+# `ClampBoundingBox`
+class RemoveInvalid(Transform):
+    _transformed_types = (features.BoundingBox, features.SegmentationMask, features.Label, features.OneHotLabel)
 
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        bounding_box = query_bounding_box(sample)
+        is_valid = bounding_box.area > 0
         return dict(is_valid=is_valid)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (features.Label, features.OneHotLabel, features.SegmentationMask)):
-            return inpt.new_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
-        elif isinstance(inpt, features.BoundingBox):
-            return features.BoundingBox.new_like(
-                inpt,
-                F.clamp_bounding_box(inpt[params["is_valid"]], format=inpt.format, image_size=inpt.image_size),
-            )
-        else:
-            return inpt
+        return inpt.new_like(inpt, inpt[params["is_valid"]])
+
+
+class CleanupBoxes(Compose):
+    def __init__(self) -> None:
+        super().__init__(
+            [
+                ClampBoundingBox(),
+                RemoveInvalid(),
+            ]
+        )

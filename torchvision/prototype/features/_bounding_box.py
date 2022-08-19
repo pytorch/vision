@@ -69,6 +69,16 @@ class BoundingBox(_Feature):
             self, _F.convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
         )
 
+    @property
+    def area(self) -> torch.Tensor:
+        if self.format in {BoundingBoxFormat.XYWH, BoundingBoxFormat.CXCYWH}:
+            _, _, width, height = torch.unbind(self, dim=-1)
+        else:  # self.format == BoundingBoxFormat.XYXY
+            x1, y1, x2, y2 = torch.unbind(self, dim=-1)
+            width = x2 - x1
+            height = y2 - y1
+        return width * height
+
     def horizontal_flip(self) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
 
