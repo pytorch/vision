@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+78aabe3 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+e8e73f5 ) &#x25BC</a>
     </div>
     
 
@@ -700,19 +700,20 @@
 <span class="sd">        root</span>
 <span class="sd">            FallingThings</span>
 <span class="sd">                single</span>
-<span class="sd">                    scene1</span>
-<span class="sd">                        _object_settings.json</span>
-<span class="sd">                        _camera_settings.json</span>
-<span class="sd">                        image1.left.depth.png</span>
-<span class="sd">                        image1.right.depth.png</span>
-<span class="sd">                        image1.left.jpg</span>
-<span class="sd">                        image1.right.jpg</span>
-<span class="sd">                        image2.left.depth.png</span>
-<span class="sd">                        image2.right.depth.png</span>
-<span class="sd">                        image2.left.jpg</span>
-<span class="sd">                        image2.right</span>
-<span class="sd">                        ...</span>
-<span class="sd">                    scene2</span>
+<span class="sd">                    dir1</span>
+<span class="sd">                        scene1</span>
+<span class="sd">                            _object_settings.json</span>
+<span class="sd">                            _camera_settings.json</span>
+<span class="sd">                            image1.left.depth.png</span>
+<span class="sd">                            image1.right.depth.png</span>
+<span class="sd">                            image1.left.jpg</span>
+<span class="sd">                            image1.right.jpg</span>
+<span class="sd">                            image2.left.depth.png</span>
+<span class="sd">                            image2.right.depth.png</span>
+<span class="sd">                            image2.left.jpg</span>
+<span class="sd">                            image2.right</span>
+<span class="sd">                            ...</span>
+<span class="sd">                        scene2</span>
 <span class="sd">                    ...</span>
 <span class="sd">                mixed</span>
 <span class="sd">                    scene1</span>
@@ -749,13 +750,18 @@
             <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">],</span>
         <span class="p">}[</span><span class="n">variant</span><span class="p">]</span>
 
+        <span class="n">split_prefix</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;single&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mixed&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">:</span>
-            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.left.jpg&quot;</span><span class="p">)</span>
-            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.right.jpg&quot;</span><span class="p">)</span>
+            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.left.jpg&quot;</span><span class="p">)</span>
+            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.right.jpg&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
 
-            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.left.depth.png&quot;</span><span class="p">)</span>
-            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.right.depth.png&quot;</span><span class="p">)</span>
+            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.left.depth.png&quot;</span><span class="p">)</span>
+            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.right.depth.png&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
@@ -1089,6 +1095,106 @@
 <span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
 <span class="sd">            If a ``valid_mask`` is generated within the ``transforms`` parameter,</span>
 <span class="sd">            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ETH3DStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.ETH3DStereo.html#torchvision.datasets.ETH3DStereo">[docs]</a><span class="k">class</span> <span class="nc">ETH3DStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;ETH3D `Low-Res Two-View &lt;https://www.eth3d.net/datasets&gt;`_ dataset.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            ETH3D</span>
+<span class="sd">                two_view_training</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        im1.png</span>
+<span class="sd">                        im0.png</span>
+<span class="sd">                        images.txt</span>
+<span class="sd">                        cameras.txt</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                        im1.png</span>
+<span class="sd">                        im0.png</span>
+<span class="sd">                        images.txt</span>
+<span class="sd">                        cameras.txt</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                    ...</span>
+<span class="sd">                two_view_training_gt</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        disp0GT.pfm</span>
+<span class="sd">                        mask0nocc.png</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                        disp0GT.pfm</span>
+<span class="sd">                        mask0nocc.png</span>
+<span class="sd">                    ...</span>
+<span class="sd">                two_view_testing</span>
+<span class="sd">                    scene1</span>
+<span class="sd">                        im1.png</span>
+<span class="sd">                        im0.png</span>
+<span class="sd">                        images.txt</span>
+<span class="sd">                        cameras.txt</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                    scene2</span>
+<span class="sd">                        im1.png</span>
+<span class="sd">                        im0.png</span>
+<span class="sd">                        images.txt</span>
+<span class="sd">                        cameras.txt</span>
+<span class="sd">                        calib.txt</span>
+<span class="sd">                    ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory of the ETH3D Dataset.</span>
+<span class="sd">        split (string, optional): The dataset split of scenes, either &quot;train&quot; (default) or &quot;test&quot;.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;ETH3D&quot;</span>
+
+        <span class="n">img_dir</span> <span class="o">=</span> <span class="s2">&quot;two_view_training&quot;</span> <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span> <span class="k">else</span> <span class="s2">&quot;two_view_test&quot;</span>
+        <span class="n">anot_dir</span> <span class="o">=</span> <span class="s2">&quot;two_view_training_gt&quot;</span>
+
+        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">img_dir</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;im0.png&quot;</span><span class="p">)</span>
+        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">img_dir</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;im1.png&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">anot_dir</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;disp0GT.pfm&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">disparity_pattern</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
+        <span class="c1"># test split has no disparity maps</span>
+        <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">_read_pfm_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">disparity_map</span><span class="p">)</span>  <span class="c1"># ensure that the disparity is positive</span>
+        <span class="n">mask_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;mask0nocc.png&quot;</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">mask_path</span><span class="p">)</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="ETH3DStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.ETH3DStereo.html#torchvision.datasets.ETH3DStereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
+<span class="sd">            generate a valid mask.</span>
+<span class="sd">            Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div></div>
 </pre></div>
