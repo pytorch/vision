@@ -115,6 +115,7 @@ Stereo Matching
     SceneFlowStereo
     SintelStereo
     InStereo2k
+    ETH3DStereo
 
 Image pairs
 ~~~~~~~~~~~
