@@ -1071,7 +1071,7 @@ class TestToImagePIL:
         if inpt_type in (features.BoundingBox, str, int):
             assert fn.call_count == 0
         else:
-            fn.assert_called_once_with(inpt, copy=transform.copy)
+            fn.assert_called_once_with(inpt, mode=transform.mode)
 
 
 class TestToPILImage:

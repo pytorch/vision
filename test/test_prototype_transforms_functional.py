@@ -4,6 +4,7 @@ import math
 import os
 
 import numpy as np
+import PIL.Image
 import pytest
 import torch.testing
 import torchvision.prototype.transforms.functional as F
@@ -1861,3 +1862,47 @@ def test_midlevel_normalize_output_type():
     output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
     assert isinstance(output, torch.Tensor)
     torch.testing.assert_close(inpt - 0.5, output)
+
+
+@pytest.mark.parametrize(
+    "inpt",
+    [
+        torch.randint(0, 256, size=(3, 32, 32)),
+        127 * np.ones((32, 32, 3), dtype="uint8"),
+        PIL.Image.new("RGB", (32, 32), 122),
+    ],
+)
+@pytest.mark.parametrize("copy", [True, False])
+def test_to_image_tensor(inpt, copy):
+    output = F.to_image_tensor(inpt, copy=copy)
+    assert isinstance(output, torch.Tensor)
+
+    assert np.asarray(inpt).sum() == output.sum().item()
+
+    if isinstance(inpt, PIL.Image.Image) and not copy:
+        # we can't check this option
+        # as PIL -> numpy is always copying
+        return
+
+    np_inpt = np.asarray(inpt)
+    np_inpt[0, 0, 0] = 11
+    if copy:
+        assert output[0, 0, 0] != 11
+    else:
+        assert output[0, 0, 0] == 11
+
+
+@pytest.mark.parametrize(
+    "inpt",
+    [
+        torch.randint(0, 256, size=(3, 32, 32), dtype=torch.uint8),
+        127 * np.ones((32, 32, 3), dtype="uint8"),
+        PIL.Image.new("RGB", (32, 32), 122),
+    ],
+)
+@pytest.mark.parametrize("mode", [None, "RGB"])
+def test_to_image_pil(inpt, mode):
+    output = F.to_image_pil(inpt, mode=mode)
+    assert isinstance(output, PIL.Image.Image)
+
+    assert np.asarray(inpt).sum() == np.asarray(output).sum()
