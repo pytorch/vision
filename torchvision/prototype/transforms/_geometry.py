@@ -15,7 +15,7 @@ from torchvision.transforms.transforms import _check_sequence_input, _setup_angl
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import get_image_dimensions, has_all, has_any, is_simple_tensor, query_bounding_box, query_image
+from ._utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_image_dimensions
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -92,8 +92,7 @@ class RandomResizedCrop(Transform):
         # vfdev-5: techically, this op can work on bboxes/segm masks only inputs without image in samples
         # What if we have multiple images/bboxes/masks of different sizes ?
         # TODO: let's support bbox or mask in samples without image
-        image = query_image(sample)
-        _, height, width = get_image_dimensions(image)
+        _, height, width = query_image_dimensions(sample)
         area = height * width
 
         log_ratio = torch.log(torch.tensor(self.ratio))
@@ -270,8 +269,7 @@ class RandomZoomOut(_RandomApplyTransform):
             raise ValueError(f"Invalid canvas side range provided {side_range}.")
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        orig_c, orig_h, orig_w = get_image_dimensions(image)
+        orig_c, orig_h, orig_w = query_image_dimensions(sample)
 
         r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
         canvas_width = int(orig_w * r)
@@ -374,8 +372,7 @@ class RandomAffine(Transform):
 
         # Get image size
         # TODO: make it work with bboxes and segm masks
-        image = query_image(sample)
-        _, height, width = get_image_dimensions(image)
+        _, height, width = query_image_dimensions(sample)
 
         angle = float(torch.empty(1).uniform_(float(self.degrees[0]), float(self.degrees[1])).item())
         if self.translate is not None:
@@ -436,8 +433,7 @@ class RandomCrop(Transform):
         self.padding_mode = padding_mode
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        _, height, width = get_image_dimensions(image)
+        _, height, width = query_image_dimensions(sample)
 
         if self.padding is not None:
             # update height, width with static padding data
@@ -517,8 +513,7 @@ class RandomPerspective(_RandomApplyTransform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         # Get image size
         # TODO: make it work with bboxes and segm masks
-        image = query_image(sample)
-        _, height, width = get_image_dimensions(image)
+        _, height, width = query_image_dimensions(sample)
 
         distortion_scale = self.distortion_scale
 
@@ -590,8 +585,7 @@ class ElasticTransform(Transform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         # Get image size
         # TODO: make it work with bboxes and segm masks
-        image = query_image(sample)
-        _, *size = get_image_dimensions(image)
+        _, *size = query_image_dimensions(sample)
 
         dx = torch.rand([1, 1] + size) * 2 - 1
         if self.sigma[0] > 0.0:
@@ -644,9 +638,7 @@ class RandomIoUCrop(Transform):
         self.trials = trials
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-
-        image = query_image(sample)
-        _, orig_h, orig_w = get_image_dimensions(image)
+        _, orig_h, orig_w = query_image_dimensions(sample)
         bboxes = query_bounding_box(sample)
 
         while True:
@@ -744,8 +736,7 @@ class ScaleJitter(Transform):
         self.interpolation = interpolation
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        _, orig_height, orig_width = get_image_dimensions(image)
+        _, orig_height, orig_width = query_image_dimensions(sample)
 
         r = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
         new_width = int(self.target_size[1] * r)
@@ -770,8 +761,7 @@ class RandomShortestSize(Transform):
         self.interpolation = interpolation
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        _, orig_height, orig_width = get_image_dimensions(image)
+        _, orig_height, orig_width = query_image_dimensions(sample)
 
         min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
         r = min(min_size / min(orig_height, orig_width), self.max_size / max(orig_height, orig_width))
@@ -800,8 +790,7 @@ class FixedSizeCrop(Transform):
         self.padding_mode = padding_mode
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        _, height, width = get_image_dimensions(image)
+        _, height, width = query_image_dimensions(sample)
         new_height = min(height, self.crop_height)
         new_width = min(width, self.crop_width)
 

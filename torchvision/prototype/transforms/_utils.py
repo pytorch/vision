@@ -3,18 +3,10 @@ from typing import Any, Callable, Tuple, Type, Union
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten
+from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
 
 from .functional._meta import get_dimensions_image_pil, get_dimensions_image_tensor
-
-
-def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
-    flat_sample, _ = tree_flatten(sample)
-    for i in flat_sample:
-        if type(i) == torch.Tensor or isinstance(i, (PIL.Image.Image, features.Image)):
-            return i
-
-    raise TypeError("No image was found in the sample")
 
 
 def query_bounding_box(sample: Any) -> features.BoundingBox:
@@ -37,6 +29,20 @@ def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Im
     else:
         raise TypeError(f"unable to get image dimensions from object of type {type(image).__name__}")
     return channels, height, width
+
+
+def query_image_dimensions(sample: Any) -> Tuple[int, int, int]:
+    flat_sample, _ = tree_flatten(sample)
+    image_dimensionss = {
+        get_image_dimensions(item)
+        for item in flat_sample
+        if isinstance(item, (features.Image, PIL.Image.Image)) or is_simple_tensor(item)
+    }
+    if not image_dimensionss:
+        raise TypeError("No image was found in the sample")
+    elif len(image_dimensionss) > 2:
+        raise TypeError(f"Found multiple image dimensions in the sample: {sequence_to_str(sorted(image_dimensionss))}")
+    return image_dimensionss.pop()
 
 
 def has_any(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
