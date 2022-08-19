@@ -1694,6 +1694,11 @@ workflows:
           python_version: '3.10'
       - binary_win_conda:
           cu_version: cu117
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_conda_py3.10_cu117
           python_version: '3.10'
       - build_docs:
