@@ -531,7 +531,10 @@ pad_image_pil = _FP.pad
 
 
 def pad_image_tensor(
-    img: torch.Tensor, padding: Union[int, List[int]], fill: Union[int, float] = 0, padding_mode: str = "constant"
+    img: torch.Tensor,
+    padding: Union[int, List[int]],
+    fill: Optional[Union[int, float]] = 0,
+    padding_mode: str = "constant",
 ) -> torch.Tensor:
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
@@ -555,7 +558,7 @@ def _pad_with_vector_fill(
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
     output = pad_image_tensor(img, padding, fill=0, padding_mode="constant")
-    left, top, right, bottom = _FT._parse_pad_padding(padding)
+    left, right, top, bottom = _FT._parse_pad_padding(padding)
     fill = torch.tensor(fill, dtype=img.dtype, device=img.device).view(-1, 1, 1)
 
     if top > 0:
@@ -614,11 +617,8 @@ def pad(
         if not isinstance(padding, int):
             padding = list(padding)
 
-        if fill is None:
-            fill = 0
-
         # TODO: PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
-        if isinstance(fill, (int, float)):
+        if isinstance(fill, (int, float)) or fill is None:
             return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
         return _pad_with_vector_fill(inpt, padding, fill=fill, padding_mode=padding_mode)
 

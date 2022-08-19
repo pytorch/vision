@@ -6,10 +6,10 @@ from typing import Any, Dict, Tuple
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import functional as F, Transform
+from torchvision.prototype.transforms import functional as F
 
 from ._transform import _RandomApplyTransform
-from ._utils import get_image_dimensions, has_all, has_any, query_image
+from ._utils import get_image_dimensions, has_any, is_simple_tensor, query_image
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -86,7 +86,7 @@ class RandomErasing(_RandomApplyTransform):
         return dict(i=i, j=j, h=h, w=w, v=v)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (features.Image, torch.Tensor)):
+        if is_simple_tensor(inpt) or isinstance(inpt, features.Image):
             output = F.erase_image_tensor(inpt, **params)
             if isinstance(inpt, features.Image):
                 return features.Image.new_like(inpt, output)
@@ -97,15 +97,17 @@ class RandomErasing(_RandomApplyTransform):
             return inpt
 
 
-class _BaseMixupCutmix(Transform):
-    def __init__(self, *, alpha: float) -> None:
-        super().__init__()
+class _BaseMixupCutmix(_RandomApplyTransform):
+    def __init__(self, *, alpha: float, p: float = 0.5) -> None:
+        super().__init__(p=p)
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
     def forward(self, *inpts: Any) -> Any:
         sample = inpts if len(inpts) > 1 else inpts[0]
-        if not has_all(sample, features.Image, features.OneHotLabel):
+        if not (
+            has_any(sample, features.Image, PIL.Image.Image, is_simple_tensor) and has_any(sample, features.OneHotLabel)
+        ):
             raise TypeError(f"{type(self).__name__}() is only defined for Image's *and* OneHotLabel's.")
         if has_any(sample, features.BoundingBox, features.SegmentationMask, features.Label):
             raise TypeError(

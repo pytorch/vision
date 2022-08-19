@@ -1,18 +1,22 @@
 import itertools
 
+import numpy as np
+
 import PIL.Image
 
 import pytest
 import torch
-from common_utils import assert_equal
+from common_utils import assert_equal, cpu_and_gpu
 from test_prototype_transforms_functional import (
     make_bounding_box,
     make_bounding_boxes,
+    make_image,
     make_images,
     make_label,
     make_one_hot_labels,
     make_segmentation_mask,
 )
+from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features, transforms
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
@@ -198,7 +202,7 @@ class TestSmoke:
     @parametrize(
         [
             (
-                transforms.ConvertImageColorSpace(color_space=new_color_space, old_color_space=old_color_space),
+                transforms.ConvertColorSpace(color_space=new_color_space, old_color_space=old_color_space),
                 itertools.chain.from_iterable(
                     [
                         fn(color_spaces=[old_color_space])
@@ -221,7 +225,7 @@ class TestSmoke:
             )
         ]
     )
-    def test_convert_image_color_space(self, transform, input):
+    def test_convertolor_space(self, transform, input):
         transform(input)
 
 
@@ -375,12 +379,11 @@ class TestRandomZoomOut:
         transform = transforms.RandomZoomOut(fill=fill, side_range=side_range)
 
         image = mocker.MagicMock(spec=features.Image)
-        c = image.num_channels = 3
         h, w = image.image_size = (24, 32)
 
         params = transform._get_params(image)
 
-        assert params["fill"] == (fill if not isinstance(fill, int) else [fill] * c)
+        assert params["fill"] == fill
         assert len(params["padding"]) == 4
         assert 0 <= params["padding"][0] <= (side_range[1] - 1) * w
         assert 0 <= params["padding"][1] <= (side_range[1] - 1) * h
@@ -622,25 +625,49 @@ class TestRandomCrop:
         with pytest.raises(ValueError, match="Padding mode should be either"):
             transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
 
-    def test__get_params(self, mocker):
+    @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
+    @pytest.mark.parametrize("size, pad_if_needed", [((10, 10), False), ((50, 25), True)])
+    def test__get_params(self, padding, pad_if_needed, size, mocker):
         image = mocker.MagicMock(spec=features.Image)
         image.num_channels = 3
         image.image_size = (24, 32)
         h, w = image.image_size
 
-        transform = transforms.RandomCrop([10, 10])
+        transform = transforms.RandomCrop(size, padding=padding, pad_if_needed=pad_if_needed)
         params = transform._get_params(image)
 
-        assert 0 <= params["top"] <= h - transform.size[0] + 1
-        assert 0 <= params["left"] <= w - transform.size[1] + 1
-        assert params["height"] == 10
-        assert params["width"] == 10
+        if padding is not None:
+            if isinstance(padding, int):
+                h += 2 * padding
+                w += 2 * padding
+            elif isinstance(padding, list) and len(padding) == 2:
+                w += 2 * padding[0]
+                h += 2 * padding[1]
+            elif isinstance(padding, list) and len(padding) == 4:
+                w += padding[0] + padding[2]
+                h += padding[1] + padding[3]
+
+        expected_input_width = w
+        expected_input_height = h
+
+        if pad_if_needed:
+            if w < size[1]:
+                w += 2 * (size[1] - w)
+            if h < size[0]:
+                h += 2 * (size[0] - h)
+
+        assert 0 <= params["top"] <= h - size[0] + 1
+        assert 0 <= params["left"] <= w - size[1] + 1
+        assert params["height"] == size[0]
+        assert params["width"] == size[1]
+        assert params["input_width"] == expected_input_width
+        assert params["input_height"] == expected_input_height
 
     @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
     @pytest.mark.parametrize("pad_if_needed", [False, True])
     @pytest.mark.parametrize("fill", [False, True])
     @pytest.mark.parametrize("padding_mode", ["constant", "edge"])
-    def test_forward(self, padding, pad_if_needed, fill, padding_mode, mocker):
+    def test__transform(self, padding, pad_if_needed, fill, padding_mode, mocker):
         output_size = [10, 12]
         transform = transforms.RandomCrop(
             output_size, padding=padding, pad_if_needed=pad_if_needed, fill=fill, padding_mode=padding_mode
@@ -670,13 +697,12 @@ class TestRandomCrop:
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
+        params = transform._get_params(inpt)
         if padding is None and not pad_if_needed:
-            params = transform._get_params(inpt)
             fn_crop.assert_called_once_with(
                 inpt, top=params["top"], left=params["left"], height=output_size[0], width=output_size[1]
             )
         elif not pad_if_needed:
-            params = transform._get_params(expected)
             fn_crop.assert_called_once_with(
                 expected, top=params["top"], left=params["left"], height=output_size[0], width=output_size[1]
             )
@@ -769,7 +795,7 @@ class TestRandomColorOp:
         if p > 0.0:
             fn.assert_called_once_with(inpt, **kwargs)
         else:
-            fn.call_count == 0
+            assert fn.call_count == 0
 
 
 class TestRandomPerspective:
@@ -990,4 +1016,474 @@ class TestRandomErasing:
         if p > 0.0:
             fn.assert_called_once_with(erase_image_tensor_inpt, **params)
         else:
-            fn.call_count == 0
+            assert fn.call_count == 0
+
+
+class TestTransform:
+    @pytest.mark.parametrize(
+        "inpt_type",
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+    )
+    def test_check_transformed_types(self, inpt_type, mocker):
+        # This test ensures that we correctly handle which types to transform and which to bypass
+        t = transforms.Transform()
+        inpt = mocker.MagicMock(spec=inpt_type)
+
+        if inpt_type in (np.ndarray, str, int):
+            output = t(inpt)
+            assert output is inpt
+        else:
+            with pytest.raises(NotImplementedError):
+                t(inpt)
+
+
+class TestToImageTensor:
+    @pytest.mark.parametrize(
+        "inpt_type",
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+    )
+    def test__transform(self, inpt_type, mocker):
+        fn = mocker.patch(
+            "torchvision.prototype.transforms.functional.to_image_tensor",
+            return_value=torch.rand(1, 3, 8, 8),
+        )
+
+        inpt = mocker.MagicMock(spec=inpt_type)
+        transform = transforms.ToImageTensor()
+        transform(inpt)
+        if inpt_type in (features.BoundingBox, str, int):
+            assert fn.call_count == 0
+        else:
+            fn.assert_called_once_with(inpt, copy=transform.copy)
+
+
+class TestToImagePIL:
+    @pytest.mark.parametrize(
+        "inpt_type",
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+    )
+    def test__transform(self, inpt_type, mocker):
+        fn = mocker.patch("torchvision.prototype.transforms.functional.to_image_pil")
+
+        inpt = mocker.MagicMock(spec=inpt_type)
+        transform = transforms.ToImagePIL()
+        transform(inpt)
+        if inpt_type in (features.BoundingBox, str, int):
+            assert fn.call_count == 0
+        else:
+            fn.assert_called_once_with(inpt, copy=transform.copy)
+
+
+class TestToPILImage:
+    @pytest.mark.parametrize(
+        "inpt_type",
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+    )
+    def test__transform(self, inpt_type, mocker):
+        fn = mocker.patch("torchvision.transforms.functional.to_pil_image")
+
+        inpt = mocker.MagicMock(spec=inpt_type)
+        with pytest.warns(UserWarning, match="deprecated and will be removed"):
+            transform = transforms.ToPILImage()
+        transform(inpt)
+        if inpt_type in (PIL.Image.Image, features.BoundingBox, str, int):
+            assert fn.call_count == 0
+        else:
+            fn.assert_called_once_with(inpt, mode=transform.mode)
+
+
+class TestToTensor:
+    @pytest.mark.parametrize(
+        "inpt_type",
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+    )
+    def test__transform(self, inpt_type, mocker):
+        fn = mocker.patch("torchvision.transforms.functional.to_tensor")
+
+        inpt = mocker.MagicMock(spec=inpt_type)
+        with pytest.warns(UserWarning, match="deprecated and will be removed"):
+            transform = transforms.ToTensor()
+        transform(inpt)
+        if inpt_type in (features.Image, torch.Tensor, features.BoundingBox, str, int):
+            assert fn.call_count == 0
+        else:
+            fn.assert_called_once_with(inpt)
+
+
+class TestCompose:
+    def test_assertions(self):
+        with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
+            transforms.Compose(123)
+
+    @pytest.mark.parametrize(
+        "trfms",
+        [
+            [transforms.Pad(2), transforms.RandomCrop(28)],
+            [lambda x: 2.0 * x],
+        ],
+    )
+    def test_ctor(self, trfms):
+        c = transforms.Compose(trfms)
+        inpt = torch.rand(1, 3, 32, 32)
+        output = c(inpt)
+        assert isinstance(output, torch.Tensor)
+
+
+class TestRandomIoUCrop:
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("options", [[0.5, 0.9], [2.0]])
+    def test__get_params(self, device, options, mocker):
+        image = mocker.MagicMock(spec=features.Image)
+        image.num_channels = 3
+        image.image_size = (24, 32)
+        bboxes = features.BoundingBox(
+            torch.tensor([[1, 1, 10, 10], [20, 20, 23, 23], [1, 20, 10, 23], [20, 1, 23, 10]]),
+            format="XYXY",
+            image_size=image.image_size,
+            device=device,
+        )
+        sample = [image, bboxes]
+
+        transform = transforms.RandomIoUCrop(sampler_options=options)
+
+        n_samples = 5
+        for _ in range(n_samples):
+
+            params = transform._get_params(sample)
+
+            if options == [2.0]:
+                assert len(params) == 0
+                return
+
+            assert len(params["is_within_crop_area"]) > 0
+            assert params["is_within_crop_area"].dtype == torch.bool
+
+            orig_h = image.image_size[0]
+            orig_w = image.image_size[1]
+            assert int(transform.min_scale * orig_h) <= params["height"] <= int(transform.max_scale * orig_h)
+            assert int(transform.min_scale * orig_w) <= params["width"] <= int(transform.max_scale * orig_w)
+
+            left, top = params["left"], params["top"]
+            new_h, new_w = params["height"], params["width"]
+            ious = box_iou(
+                bboxes,
+                torch.tensor([[left, top, left + new_w, top + new_h]], dtype=bboxes.dtype, device=bboxes.device),
+            )
+            assert ious.max() >= options[0] or ious.max() >= options[1], f"{ious} vs {options}"
+
+    def test__transform_empty_params(self, mocker):
+        transform = transforms.RandomIoUCrop(sampler_options=[2.0])
+        image = features.Image(torch.rand(1, 3, 4, 4))
+        bboxes = features.BoundingBox(torch.tensor([[1, 1, 2, 2]]), format="XYXY", image_size=(4, 4))
+        label = features.Label(torch.tensor([1]))
+        sample = [image, bboxes, label]
+        # Let's mock transform._get_params to control the output:
+        transform._get_params = mocker.MagicMock(return_value={})
+        output = transform(sample)
+        torch.testing.assert_close(output, sample)
+
+    def test_forward_assertion(self):
+        transform = transforms.RandomIoUCrop()
+        with pytest.raises(
+            TypeError,
+            match="requires input sample to contain Images or PIL Images, BoundingBoxes and Labels or OneHotLabels",
+        ):
+            transform(torch.tensor(0))
+
+    def test__transform(self, mocker):
+        transform = transforms.RandomIoUCrop()
+
+        image = features.Image(torch.rand(3, 32, 24))
+        bboxes = make_bounding_box(format="XYXY", image_size=(32, 24), extra_dims=(6,))
+        label = features.Label(torch.randint(0, 10, size=(6,)))
+        ohe_label = features.OneHotLabel(torch.zeros(6, 10).scatter_(1, label.unsqueeze(1), 1))
+        masks = make_segmentation_mask((32, 24))
+        ohe_masks = features.SegmentationMask(torch.randint(0, 2, size=(6, 32, 24)))
+        sample = [image, bboxes, label, ohe_label, masks, ohe_masks]
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.crop", side_effect=lambda x, **params: x)
+        is_within_crop_area = torch.tensor([0, 1, 0, 1, 0, 1], dtype=torch.bool)
+
+        params = dict(top=1, left=2, height=12, width=12, is_within_crop_area=is_within_crop_area)
+        transform._get_params = mocker.MagicMock(return_value=params)
+        output = transform(sample)
+
+        assert fn.call_count == 4
+
+        expected_calls = [
+            mocker.call(image, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
+            mocker.call(bboxes, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
+            mocker.call(masks, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
+            mocker.call(
+                ohe_masks, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
+            ),
+        ]
+
+        fn.assert_has_calls(expected_calls)
+
+        expected_within_targets = sum(is_within_crop_area)
+
+        # check number of bboxes vs number of labels:
+        output_bboxes = output[1]
+        assert isinstance(output_bboxes, features.BoundingBox)
+        assert len(output_bboxes) == expected_within_targets
+
+        # check labels
+        output_label = output[2]
+        assert isinstance(output_label, features.Label)
+        assert len(output_label) == expected_within_targets
+        torch.testing.assert_close(output_label, label[is_within_crop_area])
+
+        output_ohe_label = output[3]
+        assert isinstance(output_ohe_label, features.OneHotLabel)
+        torch.testing.assert_close(output_ohe_label, ohe_label[is_within_crop_area])
+
+        output_masks = output[4]
+        assert isinstance(output_masks, features.SegmentationMask)
+        assert output_masks.shape[:-2] == masks.shape[:-2]
+
+        output_ohe_masks = output[5]
+        assert isinstance(output_ohe_masks, features.SegmentationMask)
+        assert len(output_ohe_masks) == expected_within_targets
+
+
+class TestScaleJitter:
+    def test__get_params(self, mocker):
+        image_size = (24, 32)
+        target_size = (16, 12)
+        scale_range = (0.5, 1.5)
+
+        transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
+
+        sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
+        params = transform._get_params(sample)
+
+        assert "size" in params
+        size = params["size"]
+
+        assert isinstance(size, tuple) and len(size) == 2
+        height, width = size
+
+        assert int(target_size[0] * scale_range[0]) <= height <= int(target_size[0] * scale_range[1])
+        assert int(target_size[1] * scale_range[0]) <= width <= int(target_size[1] * scale_range[1])
+
+    def test__transform(self, mocker):
+        interpolation_sentinel = mocker.MagicMock()
+
+        transform = transforms.ScaleJitter(target_size=(16, 12), interpolation=interpolation_sentinel)
+        transform._transformed_types = (mocker.MagicMock,)
+
+        size_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.ScaleJitter._get_params", return_value=dict(size=size_sentinel)
+        )
+
+        inpt_sentinel = mocker.MagicMock()
+
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        transform(inpt_sentinel)
+
+        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
+
+
+class TestRandomShortestSize:
+    def test__get_params(self, mocker):
+        image_size = (3, 10)
+        min_size = [5, 9]
+        max_size = 20
+
+        transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size)
+
+        sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
+        params = transform._get_params(sample)
+
+        assert "size" in params
+        size = params["size"]
+
+        assert isinstance(size, tuple) and len(size) == 2
+
+        longer = max(size)
+        assert longer <= max_size
+
+        shorter = min(size)
+        if longer == max_size:
+            assert shorter <= max_size
+        else:
+            assert shorter in min_size
+
+    def test__transform(self, mocker):
+        interpolation_sentinel = mocker.MagicMock()
+
+        transform = transforms.RandomShortestSize(min_size=[3, 5, 7], max_size=12, interpolation=interpolation_sentinel)
+        transform._transformed_types = (mocker.MagicMock,)
+
+        size_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.RandomShortestSize._get_params",
+            return_value=dict(size=size_sentinel),
+        )
+
+        inpt_sentinel = mocker.MagicMock()
+
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        transform(inpt_sentinel)
+
+        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
+
+
+class TestFixedSizeCrop:
+    def test__get_params(self, mocker):
+        crop_size = (7, 7)
+        batch_shape = (10,)
+        image_size = (11, 5)
+
+        transform = transforms.FixedSizeCrop(size=crop_size)
+
+        sample = dict(
+            image=make_image(size=image_size, color_space=features.ColorSpace.RGB),
+            bounding_boxes=make_bounding_box(
+                format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=batch_shape
+            ),
+        )
+        params = transform._get_params(sample)
+
+        assert params["needs_crop"]
+        assert params["height"] <= crop_size[0]
+        assert params["width"] <= crop_size[1]
+
+        assert (
+            isinstance(params["is_valid"], torch.Tensor)
+            and params["is_valid"].dtype is torch.bool
+            and params["is_valid"].shape == batch_shape
+        )
+
+        assert params["needs_pad"]
+        assert any(pad > 0 for pad in params["padding"])
+
+    @pytest.mark.parametrize("needs", list(itertools.product((False, True), repeat=2)))
+    def test__transform(self, mocker, needs):
+        fill_sentinel = mocker.MagicMock()
+        padding_mode_sentinel = mocker.MagicMock()
+
+        transform = transforms.FixedSizeCrop((-1, -1), fill=fill_sentinel, padding_mode=padding_mode_sentinel)
+        transform._transformed_types = (mocker.MagicMock,)
+        mocker.patch("torchvision.prototype.transforms._geometry.has_all", return_value=True)
+        mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
+
+        needs_crop, needs_pad = needs
+        top_sentinel = mocker.MagicMock()
+        left_sentinel = mocker.MagicMock()
+        height_sentinel = mocker.MagicMock()
+        width_sentinel = mocker.MagicMock()
+        padding_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
+            return_value=dict(
+                needs_crop=needs_crop,
+                top=top_sentinel,
+                left=left_sentinel,
+                height=height_sentinel,
+                width=width_sentinel,
+                padding=padding_sentinel,
+                needs_pad=needs_pad,
+            ),
+        )
+
+        inpt_sentinel = mocker.MagicMock()
+
+        mock_crop = mocker.patch("torchvision.prototype.transforms._geometry.F.crop")
+        mock_pad = mocker.patch("torchvision.prototype.transforms._geometry.F.pad")
+        transform(inpt_sentinel)
+
+        if needs_crop:
+            mock_crop.assert_called_once_with(
+                inpt_sentinel,
+                top=top_sentinel,
+                left=left_sentinel,
+                height=height_sentinel,
+                width=width_sentinel,
+            )
+        else:
+            mock_crop.assert_not_called()
+
+        if needs_pad:
+            # If we cropped before, the input to F.pad is no longer inpt_sentinel. Thus, we can't use
+            # `MagicMock.assert_called_once_with` and have to perform the checks manually
+            mock_pad.assert_called_once()
+            args, kwargs = mock_pad.call_args
+            if not needs_crop:
+                assert args[0] is inpt_sentinel
+            assert args[1] is padding_sentinel
+            assert kwargs == dict(fill=fill_sentinel, padding_mode=padding_mode_sentinel)
+        else:
+            mock_pad.assert_not_called()
+
+    def test__transform_culling(self, mocker):
+        batch_size = 10
+        image_size = (10, 10)
+
+        is_valid = torch.randint(0, 2, (batch_size,), dtype=torch.bool)
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
+            return_value=dict(
+                needs_crop=True,
+                top=0,
+                left=0,
+                height=image_size[0],
+                width=image_size[1],
+                is_valid=is_valid,
+                needs_pad=False,
+            ),
+        )
+
+        bounding_boxes = make_bounding_box(
+            format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
+        )
+        segmentation_masks = make_segmentation_mask(size=image_size, extra_dims=(batch_size,))
+        labels = make_label(size=(batch_size,))
+
+        transform = transforms.FixedSizeCrop((-1, -1))
+        mocker.patch("torchvision.prototype.transforms._geometry.has_all", return_value=True)
+        mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
+
+        output = transform(
+            dict(
+                bounding_boxes=bounding_boxes,
+                segmentation_masks=segmentation_masks,
+                labels=labels,
+            )
+        )
+
+        assert_equal(output["bounding_boxes"], bounding_boxes[is_valid])
+        assert_equal(output["segmentation_masks"], segmentation_masks[is_valid])
+        assert_equal(output["labels"], labels[is_valid])
+
+    def test__transform_bounding_box_clamping(self, mocker):
+        batch_size = 3
+        image_size = (10, 10)
+
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
+            return_value=dict(
+                needs_crop=True,
+                top=0,
+                left=0,
+                height=image_size[0],
+                width=image_size[1],
+                is_valid=torch.full((batch_size,), fill_value=True),
+                needs_pad=False,
+            ),
+        )
+
+        bounding_box = make_bounding_box(
+            format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
+        )
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_box")
+
+        transform = transforms.FixedSizeCrop((-1, -1))
+        mocker.patch("torchvision.prototype.transforms._geometry.has_all", return_value=True)
+        mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
+
+        transform(bounding_box)
+
+        mock.assert_called_once()

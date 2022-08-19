@@ -3,28 +3,23 @@ from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, T
 
 import PIL.Image
 import torch
+
+from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.prototype.utils._internal import query_recursively
 from torchvision.transforms.autoaugment import AutoAugmentPolicy
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
-from ._utils import get_image_dimensions
+from ._utils import get_image_dimensions, is_simple_tensor
 
 K = TypeVar("K")
 V = TypeVar("V")
 
 
-def _put_into_sample(sample: Any, id: Tuple[Any, ...], item: Any) -> Any:
-    if not id:
-        return item
-
-    parent = sample
-    for key in id[:-1]:
-        parent = parent[key]
-
-    parent[id[-1]] = item
-    return sample
+def _put_into_sample(sample: Any, id: int, item: Any) -> Any:
+    sample_flat, spec = tree_flatten(sample)
+    sample_flat[id] = item
+    return tree_unflatten(sample_flat, spec)
 
 
 class _AutoAugmentBase(Transform):
@@ -47,18 +42,15 @@ class _AutoAugmentBase(Transform):
         self,
         sample: Any,
         unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask),
-    ) -> Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]:
-        def fn(
-            id: Tuple[Any, ...], inpt: Any
-        ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
-            if type(inpt) in {torch.Tensor, features.Image} or isinstance(inpt, PIL.Image.Image):
-                return id, inpt
+    ) -> Tuple[int, Union[PIL.Image.Image, torch.Tensor, features.Image]]:
+        sample_flat, _ = tree_flatten(sample)
+        images = []
+        for id, inpt in enumerate(sample_flat):
+            if isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt):
+                images.append((id, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
-            else:
-                return None
 
-        images = list(query_recursively(fn, sample))
         if not images:
             raise TypeError("Found no image in the sample.")
         if len(images) > 1:

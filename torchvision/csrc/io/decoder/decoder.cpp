@@ -516,12 +516,21 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       VLOG(4) << "Decoder is busy...";
       std::this_thread::yield();
       result = 0; // reset error, EAGAIN is not an error at all
+      // reset the packet to default settings
+      av_packet_unref(avPacket);
       continue;
     } else if (result == AVERROR_EOF) {
       flushStreams();
       VLOG(1) << "End of stream";
       result = ENODATA;
       break;
+    } else if (
+        result == AVERROR(EPERM) && params_.skipOperationNotPermittedPackets) {
+      // reset error, lets skip packets with EPERM
+      result = 0;
+      // reset the packet to default settings
+      av_packet_unref(avPacket);
+      continue;
     } else if (result < 0) {
       flushStreams();
       LOG(ERROR) << "uuid=" << params_.loggingUuid
@@ -588,7 +597,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
           << result;
 
   // loop can be terminated, either by:
-  // 1. explcitly iterrupted
+  // 1. explicitly interrupted
   // 3. unrecoverable error or ENODATA (end of stream) or ETIMEDOUT (timeout)
   // 4. decoded frames pts are out of the specified range
   // 5. success decoded frame

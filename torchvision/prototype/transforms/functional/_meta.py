@@ -1,8 +1,8 @@
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import PIL.Image
 import torch
-from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
+from torchvision.prototype.features import BoundingBoxFormat, ColorSpace, Image
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
 get_dimensions_image_tensor = _FT.get_dimensions
@@ -61,6 +61,15 @@ def convert_bounding_box_format(
     return bounding_box
 
 
+def clamp_bounding_box(
+    bounding_box: torch.Tensor, format: BoundingBoxFormat, image_size: Tuple[int, int]
+) -> torch.Tensor:
+    xyxy_boxes = convert_bounding_box_format(bounding_box, format, BoundingBoxFormat.XYXY)
+    xyxy_boxes[..., 0::2].clamp_(min=0, max=image_size[1])
+    xyxy_boxes[..., 1::2].clamp_(min=0, max=image_size[0])
+    return convert_bounding_box_format(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
+
+
 def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     return image[..., :-1, :, :], image[..., -1:, :, :]
 
@@ -91,7 +100,7 @@ def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
 _rgb_to_gray = _FT.rgb_to_grayscale
 
 
-def convert_image_color_space_tensor(
+def convert_color_space_image_tensor(
     image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
 ) -> torch.Tensor:
     if new_color_space == old_color_space:
@@ -141,7 +150,7 @@ _COLOR_SPACE_TO_PIL_MODE = {
 }
 
 
-def convert_image_color_space_pil(
+def convert_color_space_image_pil(
     image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
 ) -> PIL.Image.Image:
     old_mode = image.mode
@@ -154,3 +163,21 @@ def convert_image_color_space_pil(
         return image
 
     return image.convert(new_mode)
+
+
+def convert_color_space(
+    inpt: Any, *, color_space: ColorSpace, old_color_space: Optional[ColorSpace] = None, copy: bool = True
+) -> Any:
+    if isinstance(inpt, Image):
+        return inpt.to_color_space(color_space, copy=copy)
+    elif isinstance(inpt, PIL.Image.Image):
+        return convert_color_space_image_pil(inpt, color_space, copy=copy)
+    else:
+        if old_color_space is None:
+            raise RuntimeError(
+                "In order to convert the color space of simple tensor images, "
+                "the `old_color_space=...` parameter needs to be passed."
+            )
+        return convert_color_space_image_tensor(
+            inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
+        )
