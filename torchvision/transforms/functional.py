@@ -173,7 +173,7 @@ def to_tensor(pic) -> Tensor:
         return img
 
 
-def pil_to_tensor(pic):
+def pil_to_tensor(pic: Any) -> Tensor:
     """Convert a ``PIL Image`` to a tensor of the same type.
     This function does not support torchscript.
 
@@ -254,6 +254,7 @@ def to_pil_image(pic, mode=None):
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(to_pil_image)
+
     if not (isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
         raise TypeError(f"pic should be Tensor or ndarray. Got {type(pic)}.")
 
