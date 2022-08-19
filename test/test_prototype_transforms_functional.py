@@ -1884,8 +1884,10 @@ def test_to_image_tensor(inpt, copy):
         # as PIL -> numpy is always copying
         return
 
-    np_inpt = np.asarray(inpt)
-    np_inpt[0, 0, 0] = 11
+    if isinstance(inpt, PIL.Image.Image):
+        inpt.putpixel((0, 0), 11)
+    else:
+        inpt[0, 0, 0] = 11
     if copy:
         assert output[0, 0, 0] != 11
     else:
