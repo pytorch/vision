@@ -312,6 +312,9 @@ _model_params = {
     "mvit_v2_s": {
         "input_shape": (1, 3, 16, 224, 224),
     },
+    "s3d": {
+        "input_shape": (1, 3, 16, 224, 224),
+    },
 }
 # speeding up slow models:
 slow_models = [
