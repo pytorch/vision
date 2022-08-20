@@ -1,16 +1,15 @@
 from functools import partial
 from typing import Any, Optional, Union
 
-from torch import Tensor
-from torch import nn
-from torch.ao.quantization import QuantStub, DeQuantStub
-from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, MobileNet_V2_Weights
+from torch import nn, Tensor
+from torch.ao.quantization import DeQuantStub, QuantStub
+from torchvision.models.mobilenetv2 import InvertedResidual, MobileNet_V2_Weights, MobileNetV2
 
 from ...ops.misc import Conv2dNormActivation
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
@@ -75,15 +74,22 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
             "backend": "qnnpack",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv2",
             "unquantized": MobileNet_V2_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 71.658,
-                "acc@5": 90.150,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 71.658,
+                    "acc@5": 90.150,
+                }
             },
+            "_docs": """
+                These weights were produced by doing Quantization Aware Training (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_QNNPACK_V1
 
 
+@register_model(name="quantized_mobilenet_v2")
 @handle_legacy_interface(
     weights=(
         "pretrained",

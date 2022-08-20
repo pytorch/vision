@@ -7,9 +7,9 @@ from torch import Tensor
 from torchvision.models import shufflenetv2
 
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from ..shufflenetv2 import (
     ShuffleNet_V2_X0_5_Weights,
     ShuffleNet_V2_X1_0_Weights,
@@ -118,6 +118,10 @@ _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
     "backend": "fbgemm",
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
+    "_docs": """
+        These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+        weights listed below.
+    """,
 }
 
 
@@ -129,9 +133,11 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 1366792,
             "unquantized": ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 57.972,
-                "acc@5": 79.780,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 57.972,
+                    "acc@5": 79.780,
+                }
             },
         },
     )
@@ -146,9 +152,11 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2278604,
             "unquantized": ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 68.360,
-                "acc@5": 87.582,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 68.360,
+                    "acc@5": 87.582,
+                }
             },
         },
     )
@@ -164,9 +172,11 @@ class ShuffleNet_V2_X1_5_QuantizedWeights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 3503624,
             "unquantized": ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 72.052,
-                "acc@5": 90.700,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 72.052,
+                    "acc@5": 90.700,
+                }
             },
         },
     )
@@ -182,15 +192,18 @@ class ShuffleNet_V2_X2_0_QuantizedWeights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 7393996,
             "unquantized": ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 75.354,
-                "acc@5": 92.488,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.354,
+                    "acc@5": 92.488,
+                }
             },
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
+@register_model(name="quantized_shufflenet_v2_x0_5")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -244,6 +257,7 @@ def shufflenet_v2_x0_5(
     )
 
 
+@register_model(name="quantized_shufflenet_v2_x1_0")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -297,6 +311,7 @@ def shufflenet_v2_x1_0(
     )
 
 
+@register_model(name="quantized_shufflenet_v2_x1_5")
 def shufflenet_v2_x1_5(
     *,
     weights: Optional[Union[ShuffleNet_V2_X1_5_QuantizedWeights, ShuffleNet_V2_X1_5_Weights]] = None,
@@ -342,6 +357,7 @@ def shufflenet_v2_x1_5(
     )
 
 
+@register_model(name="quantized_shufflenet_v2_x2_0")
 def shufflenet_v2_x2_0(
     *,
     weights: Optional[Union[ShuffleNet_V2_X2_0_QuantizedWeights, ShuffleNet_V2_X2_0_Weights]] = None,

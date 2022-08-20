@@ -23,6 +23,8 @@ supported Python versions.
 +==========================+==========================+=================================+
 | ``main`` / ``nightly``   | ``main`` / ``nightly``   | ``>=3.7``, ``<=3.10``           |
 +--------------------------+--------------------------+---------------------------------+
+| ``1.12.0``               | ``0.13.0``               | ``>=3.7``, ``<=3.10``           |
++--------------------------+--------------------------+---------------------------------+
 | ``1.11.0``               | ``0.12.0``               | ``>=3.7``, ``<=3.10``           |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.10.2``               | ``0.11.3``               | ``>=3.6``, ``<=3.9``            |
@@ -87,6 +89,8 @@ From source:
     # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
 
 
+We don't officially support building from source using ``pip``, but *if* you do,
+you'll need to use the ``--no-build-isolation`` flag.
 In case building TorchVision from source fails, install the nightly version of PyTorch following
 the linked guide on the  `contributing page <https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation>`_ and retry the install.
 

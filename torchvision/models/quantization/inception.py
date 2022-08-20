@@ -7,12 +7,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from torchvision.models import inception as inception_module
-from torchvision.models.inception import InceptionOutputs, Inception_V3_Weights
+from torchvision.models.inception import Inception_V3_Weights, InceptionOutputs
 
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
@@ -183,15 +183,22 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
             "backend": "fbgemm",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": Inception_V3_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 77.176,
-                "acc@5": 93.354,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.176,
+                    "acc@5": 93.354,
+                }
             },
+            "_docs": """
+                These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
+@register_model(name="quantized_inception_v3")
 @handle_legacy_interface(
     weights=(
         "pretrained",

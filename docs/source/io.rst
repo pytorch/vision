@@ -26,6 +26,8 @@ In addition to the :mod:`read_video` function, we provide a high-performance
 lower-level API for more fine-grained control compared to the :mod:`read_video` function.
 It does all this whilst fully supporting torchscript.
 
+.. betastatus:: fine-grained video API
+
 .. autosummary::
     :toctree: generated/
     :template: class.rst

@@ -1,12 +1,12 @@
 from functools import partial
-from typing import Any, Type, Union, List, Optional
+from typing import Any, List, Optional, Type, Union
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 from torchvision.models.resnet import (
-    Bottleneck,
     BasicBlock,
+    Bottleneck,
     ResNet,
     ResNet18_Weights,
     ResNet50_Weights,
@@ -15,9 +15,9 @@ from torchvision.models.resnet import (
 )
 
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
@@ -154,6 +154,10 @@ _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
     "backend": "fbgemm",
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
+    "_docs": """
+        These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+        weights listed below.
+    """,
 }
 
 
@@ -165,9 +169,11 @@ class ResNet18_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 11689512,
             "unquantized": ResNet18_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 69.494,
-                "acc@5": 88.882,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.494,
+                    "acc@5": 88.882,
+                }
             },
         },
     )
@@ -182,9 +188,11 @@ class ResNet50_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 25557032,
             "unquantized": ResNet50_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 75.920,
-                "acc@5": 92.814,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.920,
+                    "acc@5": 92.814,
+                }
             },
         },
     )
@@ -195,9 +203,11 @@ class ResNet50_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 25557032,
             "unquantized": ResNet50_Weights.IMAGENET1K_V2,
-            "metrics": {
-                "acc@1": 80.282,
-                "acc@5": 94.976,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 80.282,
+                    "acc@5": 94.976,
+                }
             },
         },
     )
@@ -212,9 +222,11 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 88791336,
             "unquantized": ResNeXt101_32X8D_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 78.986,
-                "acc@5": 94.480,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 78.986,
+                    "acc@5": 94.480,
+                }
             },
         },
     )
@@ -225,9 +237,11 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 88791336,
             "unquantized": ResNeXt101_32X8D_Weights.IMAGENET1K_V2,
-            "metrics": {
-                "acc@1": 82.574,
-                "acc@5": 96.132,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 82.574,
+                    "acc@5": 96.132,
+                }
             },
         },
     )
@@ -243,15 +257,18 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
             "num_params": 83455272,
             "recipe": "https://github.com/pytorch/vision/pull/5935",
             "unquantized": ResNeXt101_64X4D_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 82.898,
-                "acc@5": 96.326,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 82.898,
+                    "acc@5": 96.326,
+                }
             },
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
+@register_model(name="quantized_resnet18")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -268,7 +285,7 @@ def resnet18(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNet-18 model from
-    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385.pdf>`_
+    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385>`_
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit
@@ -286,7 +303,7 @@ def resnet18(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNet18_QuantizedWeights
@@ -301,6 +318,7 @@ def resnet18(
     return _resnet(QuantizableBasicBlock, [2, 2, 2, 2], weights, progress, quantize, **kwargs)
 
 
+@register_model(name="quantized_resnet50")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -317,7 +335,7 @@ def resnet50(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNet-50 model from
-    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385.pdf>`_
+    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385>`_
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit
@@ -335,7 +353,7 @@ def resnet50(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNet50_QuantizedWeights
@@ -350,6 +368,7 @@ def resnet50(
     return _resnet(QuantizableBottleneck, [3, 4, 6, 3], weights, progress, quantize, **kwargs)
 
 
+@register_model(name="quantized_resnext101_32x8d")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -366,7 +385,7 @@ def resnext101_32x8d(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNeXt-101 32x8d model from
-    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431.pdf>`_
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit
@@ -374,7 +393,7 @@ def resnext101_32x8d(
         GPU inference is not yet supported.
 
     Args:
-        weights (:class:`~torchvision.models.quantization.ResNet101_32X8D_QuantizedWeights` or :class:`~torchvision.models.ResNet101_32X8D_Weights`, optional): The
+        weights (:class:`~torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights` or :class:`~torchvision.models.ResNeXt101_32X8D_Weights`, optional): The
             pretrained weights for the model. See
             :class:`~torchvision.models.quantization.ResNet101_32X8D_QuantizedWeights` below for
             more details, and possible values. By default, no pre-trained
@@ -384,13 +403,13 @@ def resnext101_32x8d(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.quantization.ResNet101_32X8D_QuantizedWeights
+    .. autoclass:: torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights
         :members:
 
-    .. autoclass:: torchvision.models.ResNet101_32X8D_Weights
+    .. autoclass:: torchvision.models.ResNeXt101_32X8D_Weights
         :members:
         :noindex:
     """
@@ -401,6 +420,7 @@ def resnext101_32x8d(
     return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)
 
 
+@register_model(name="quantized_resnext101_64x4d")
 def resnext101_64x4d(
     *,
     weights: Optional[Union[ResNeXt101_64X4D_QuantizedWeights, ResNeXt101_64X4D_Weights]] = None,
@@ -409,7 +429,7 @@ def resnext101_64x4d(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNeXt-101 64x4d model from
-    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431.pdf>`_
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit
@@ -417,7 +437,7 @@ def resnext101_64x4d(
         GPU inference is not yet supported.
 
     Args:
-        weights (:class:`~torchvision.models.quantization.ResNet101_64X4D_QuantizedWeights` or :class:`~torchvision.models.ResNet101_64X4D_Weights`, optional): The
+        weights (:class:`~torchvision.models.quantization.ResNeXt101_64X4D_QuantizedWeights` or :class:`~torchvision.models.ResNeXt101_64X4D_Weights`, optional): The
             pretrained weights for the model. See
             :class:`~torchvision.models.quantization.ResNet101_64X4D_QuantizedWeights` below for
             more details, and possible values. By default, no pre-trained
@@ -427,13 +447,13 @@ def resnext101_64x4d(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.quantization.ResNet101_64X4D_QuantizedWeights
+    .. autoclass:: torchvision.models.quantization.ResNeXt101_64X4D_QuantizedWeights
         :members:
 
-    .. autoclass:: torchvision.models.ResNet101_64X4D_Weights
+    .. autoclass:: torchvision.models.ResNeXt101_64X4D_Weights
         :members:
         :noindex:
     """

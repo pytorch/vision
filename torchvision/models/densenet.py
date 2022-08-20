@@ -11,9 +11,9 @@ from torch import Tensor
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -261,6 +261,7 @@ _COMMON_META = {
     "min_size": (29, 29),
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/pull/116",
+    "_docs": """These weights are ported from LuaTorch.""",
 }
 
 
@@ -271,9 +272,11 @@ class DenseNet121_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 7978856,
-            "metrics": {
-                "acc@1": 74.434,
-                "acc@5": 91.972,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 74.434,
+                    "acc@5": 91.972,
+                }
             },
         },
     )
@@ -287,9 +290,11 @@ class DenseNet161_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 28681000,
-            "metrics": {
-                "acc@1": 77.138,
-                "acc@5": 93.560,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.138,
+                    "acc@5": 93.560,
+                }
             },
         },
     )
@@ -303,9 +308,11 @@ class DenseNet169_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 14149480,
-            "metrics": {
-                "acc@1": 75.600,
-                "acc@5": 92.806,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.600,
+                    "acc@5": 92.806,
+                }
             },
         },
     )
@@ -319,15 +326,18 @@ class DenseNet201_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 20013928,
-            "metrics": {
-                "acc@1": 76.896,
-                "acc@5": 93.370,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 76.896,
+                    "acc@5": 93.370,
+                }
             },
         },
     )
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", DenseNet121_Weights.IMAGENET1K_V1))
 def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-121 model from
@@ -353,6 +363,7 @@ def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool
     return _densenet(32, (6, 12, 24, 16), 64, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", DenseNet161_Weights.IMAGENET1K_V1))
 def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-161 model from
@@ -378,6 +389,7 @@ def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool
     return _densenet(48, (6, 12, 36, 24), 96, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", DenseNet169_Weights.IMAGENET1K_V1))
 def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-169 model from
@@ -403,6 +415,7 @@ def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool
     return _densenet(32, (6, 12, 32, 32), 64, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", DenseNet201_Weights.IMAGENET1K_V1))
 def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-201 model from

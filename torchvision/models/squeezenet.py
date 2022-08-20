@@ -7,9 +7,9 @@ import torch.nn.init as init
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = ["SqueezeNet", "SqueezeNet1_0_Weights", "SqueezeNet1_1_Weights", "squeezenet1_0", "squeezenet1_1"]
@@ -117,6 +117,7 @@ def _squeezenet(
 _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/pull/49#issuecomment-277560717",
+    "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
 }
 
 
@@ -128,9 +129,11 @@ class SqueezeNet1_0_Weights(WeightsEnum):
             **_COMMON_META,
             "min_size": (21, 21),
             "num_params": 1248424,
-            "metrics": {
-                "acc@1": 58.092,
-                "acc@5": 80.420,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 58.092,
+                    "acc@5": 80.420,
+                }
             },
         },
     )
@@ -145,15 +148,18 @@ class SqueezeNet1_1_Weights(WeightsEnum):
             **_COMMON_META,
             "min_size": (17, 17),
             "num_params": 1235496,
-            "metrics": {
-                "acc@1": 58.178,
-                "acc@5": 80.624,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 58.178,
+                    "acc@5": 80.624,
+                }
             },
         },
     )
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", SqueezeNet1_0_Weights.IMAGENET1K_V1))
 def squeezenet1_0(
     *, weights: Optional[SqueezeNet1_0_Weights] = None, progress: bool = True, **kwargs: Any
@@ -182,6 +188,7 @@ def squeezenet1_0(
     return _squeezenet("1_0", weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", SqueezeNet1_1_Weights.IMAGENET1K_V1))
 def squeezenet1_1(
     *, weights: Optional[SqueezeNet1_1_Weights] = None, progress: bool = True, **kwargs: Any

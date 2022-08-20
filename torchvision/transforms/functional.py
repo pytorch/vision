@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import List, Tuple, Any, Optional
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -15,8 +15,7 @@ except ImportError:
     accimage = None
 
 from ..utils import _log_api_usage_once
-from . import functional_pil as F_pil
-from . import functional_tensor as F_t
+from . import functional_pil as F_pil, functional_tensor as F_t
 
 
 class InterpolationMode(Enum):
@@ -174,7 +173,7 @@ def to_tensor(pic) -> Tensor:
         return img
 
 
-def pil_to_tensor(pic):
+def pil_to_tensor(pic: Any) -> Tensor:
     """Convert a ``PIL Image`` to a tensor of the same type.
     This function does not support torchscript.
 
@@ -255,6 +254,7 @@ def to_pil_image(pic, mode=None):
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(to_pil_image)
+
     if not (isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
         raise TypeError(f"pic should be Tensor or ndarray. Got {type(pic)}.")
 
@@ -360,6 +360,29 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     return F_t.normalize(tensor, mean=mean, std=std, inplace=inplace)
 
 
+def _compute_output_size(image_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None) -> List[int]:
+    if len(size) == 1:  # specified size only for the smallest edge
+        h, w = image_size
+        short, long = (w, h) if w <= h else (h, w)
+        requested_new_short = size if isinstance(size, int) else size[0]
+
+        new_short, new_long = requested_new_short, int(requested_new_short * long / short)
+
+        if max_size is not None:
+            if max_size <= requested_new_short:
+                raise ValueError(
+                    f"max_size = {max_size} must be strictly greater than the requested "
+                    f"size for the smaller edge size = {size}"
+                )
+            if new_long > max_size:
+                new_short, new_long = int(max_size * new_short / new_long), max_size
+
+        new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
+    else:  # specified both h and w
+        new_w, new_h = size[1], size[0]
+    return [new_h, new_w]
+
+
 def resize(
     img: Tensor,
     size: List[int],
@@ -423,16 +446,35 @@ def resize(
     if not isinstance(interpolation, InterpolationMode):
         raise TypeError("Argument interpolation should be a InterpolationMode")
 
+    if isinstance(size, (list, tuple)):
+        if len(size) not in [1, 2]:
+            raise ValueError(
+                f"Size must be an int or a 1 or 2 element tuple/list, not a {len(size)} element tuple/list"
+            )
+        if max_size is not None and len(size) != 1:
+            raise ValueError(
+                "max_size should only be passed if size specifies the length of the smaller edge, "
+                "i.e. size should be an int or a sequence of length 1 in torchscript mode."
+            )
+
+    _, image_height, image_width = get_dimensions(img)
+    if isinstance(size, int):
+        size = [size]
+    output_size = _compute_output_size((image_height, image_width), size, max_size)
+
+    if (image_height, image_width) == output_size:
+        return img
+
     if not isinstance(img, torch.Tensor):
         if antialias is not None and not antialias:
             warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
         pil_interpolation = pil_modes_mapping[interpolation]
-        return F_pil.resize(img, size=size, interpolation=pil_interpolation, max_size=max_size)
+        return F_pil.resize(img, size=output_size, interpolation=pil_interpolation)
 
-    return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size, antialias=antialias)
+    return F_t.resize(img, size=output_size, interpolation=interpolation.value, antialias=antialias)
 
 
-def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
+def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,
@@ -555,6 +597,7 @@ def resized_crop(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    antialias: Optional[bool] = None,
 ) -> Tensor:
     """Crop the given image and resize it to desired size.
     If the image is torch Tensor, it is expected
@@ -575,13 +618,17 @@ def resized_crop(
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
+        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
+            This can help making the output for PIL images and tensors closer.
     Returns:
         PIL Image or Tensor: Cropped image.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(resized_crop)
     img = crop(img, top, left, height, width)
-    img = resize(img, size, interpolation)
+    img = resize(img, size, interpolation, antialias=antialias)
     return img
 
 
@@ -1484,3 +1531,76 @@ def equalize(img: Tensor) -> Tensor:
         return F_pil.equalize(img)
 
     return F_t.equalize(img)
+
+
+def elastic_transform(
+    img: Tensor,
+    displacement: Tensor,
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    fill: Optional[List[float]] = None,
+) -> Tensor:
+    """Transform a tensor image with elastic transformations.
+    Given alpha and sigma, it will generate displacement
+    vectors for all pixels based on random offsets. Alpha controls the strength
+    and sigma controls the smoothness of the displacements.
+    The displacements are added to an identity grid and the resulting grid is
+    used to grid_sample from the image.
+
+    Applications:
+        Randomly transforms the morphology of objects in images and produces a
+        see-through-water-like effect.
+
+    Args:
+        img (PIL Image or Tensor): Image on which elastic_transform is applied.
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
+            If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
+        displacement (Tensor): The displacement field. Expected shape is [1, H, W, 2].
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`.
+            Default is ``InterpolationMode.BILINEAR``.
+            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
+            If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            This value is only used when the padding_mode is constant.
+            Only number is supported for torch Tensor.
+            Only int or str or tuple value is supported for PIL Image.
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(elastic_transform)
+    # Backward compatibility with integer value
+    if isinstance(interpolation, int):
+        warnings.warn(
+            "Argument interpolation should be of type InterpolationMode instead of int. "
+            "Please, use InterpolationMode enum."
+        )
+        interpolation = _interpolation_modes_from_int(interpolation)
+
+    if not isinstance(displacement, torch.Tensor):
+        raise TypeError("Argument displacement should be a Tensor")
+
+    t_img = img
+    if not isinstance(img, torch.Tensor):
+        if not F_pil._is_pil_image(img):
+            raise TypeError(f"img should be PIL Image or Tensor. Got {type(img)}")
+        t_img = pil_to_tensor(img)
+
+    shape = t_img.shape
+    shape = (1,) + shape[-2:] + (2,)
+    if shape != displacement.shape:
+        raise ValueError(f"Argument displacement shape should be {shape}, but given {displacement.shape}")
+
+    # TODO: if image shape is [N1, N2, ..., C, H, W] and
+    # displacement is [1, H, W, 2] we need to reshape input image
+    # such grid_sampler takes internal code for 4D input
+
+    output = F_t.elastic_transform(
+        t_img,
+        displacement,
+        interpolation=interpolation.value,
+        fill=fill,
+    )
+
+    if not isinstance(img, torch.Tensor):
+        output = to_pil_image(output, mode=img.mode)
+    return output

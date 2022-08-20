@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import BinaryIO, Tuple, Type, TypeVar, Union, Optional, Any
+from typing import Any, BinaryIO, Optional, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch

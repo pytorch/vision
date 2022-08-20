@@ -12,3 +12,7 @@ target-version = ["py37"]
 excludes = [
     "gallery",
 ]
+
+[build-system]
+
+requires = ["setuptools", "torch", "wheel"]

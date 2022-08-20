@@ -1,26 +1,29 @@
-from typing import Any, Optional, Tuple, Union, Type, Iterator
+from typing import Any, Callable, Tuple, Type, Union
 
 import PIL.Image
 import torch
+from torch.utils._pytree import tree_flatten
 from torchvision.prototype import features
-from torchvision.prototype.utils._internal import query_recursively
 
-from .functional._meta import get_dimensions_image_tensor, get_dimensions_image_pil
+from .functional._meta import get_dimensions_image_pil, get_dimensions_image_tensor
 
 
 def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
-    def fn(
-        id: Tuple[Any, ...], input: Any
-    ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
-        if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
-            return id, input
+    flat_sample, _ = tree_flatten(sample)
+    for i in flat_sample:
+        if type(i) == torch.Tensor or isinstance(i, (PIL.Image.Image, features.Image)):
+            return i
 
-        return None
+    raise TypeError("No image was found in the sample")
 
-    try:
-        return next(query_recursively(fn, sample))[1]
-    except StopIteration:
-        raise TypeError("No image was found in the sample")
+
+def query_bounding_box(sample: Any) -> features.BoundingBox:
+    flat_sample, _ = tree_flatten(sample)
+    for i in flat_sample:
+        if isinstance(i, features.BoundingBox):
+            return i
+
+    raise TypeError("No bounding box was found in the sample")
 
 
 def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
@@ -36,17 +39,25 @@ def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Im
     return channels, height, width
 
 
-def _extract_types(sample: Any) -> Iterator[Type]:
-    return query_recursively(lambda id, input: type(input), sample)
+def has_any(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
+    flat_sample, _ = tree_flatten(sample)
+    for type_or_check in types_or_checks:
+        for obj in flat_sample:
+            if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
+                return True
+    return False
 
 
-def has_any(sample: Any, *types: Type) -> bool:
-    return any(issubclass(type, types) for type in _extract_types(sample))
+def has_all(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
+    flat_sample, _ = tree_flatten(sample)
+    for type_or_check in types_or_checks:
+        for obj in flat_sample:
+            if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
+                break
+        else:
+            return False
+    return True
 
 
-def has_all(sample: Any, *types: Type) -> bool:
-    return not bool(set(types) - set(_extract_types(sample)))
-
-
-def is_simple_tensor(input: Any) -> bool:
-    return isinstance(input, torch.Tensor) and not isinstance(input, features._Feature)
+def is_simple_tensor(inpt: Any) -> bool:
+    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, features._Feature)

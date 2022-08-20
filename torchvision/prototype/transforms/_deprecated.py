@@ -3,18 +3,23 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import PIL.Image
+import torch
+import torchvision.prototype.transforms.functional as F
 from torchvision.prototype import features
 from torchvision.prototype.features import ColorSpace
 from torchvision.prototype.transforms import Transform
 from torchvision.transforms import functional as _F
 from typing_extensions import Literal
 
-from ._meta import ConvertImageColorSpace
 from ._transform import _RandomApplyTransform
 from ._utils import is_simple_tensor
 
 
 class ToTensor(Transform):
+
+    # Updated transformed types for ToTensor
+    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+
     def __init__(self) -> None:
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
@@ -22,11 +27,11 @@ class ToTensor(Transform):
         )
         super().__init__()
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, (PIL.Image.Image, np.ndarray)):
-            return _F.to_tensor(input)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, (PIL.Image.Image, np.ndarray)):
+            return _F.to_tensor(inpt)
         else:
-            return input
+            return inpt
 
 
 class PILToTensor(Transform):
@@ -37,14 +42,18 @@ class PILToTensor(Transform):
         )
         super().__init__()
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, PIL.Image.Image):
-            return _F.pil_to_tensor(input)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, PIL.Image.Image):
+            return _F.pil_to_tensor(inpt)
         else:
-            return input
+            return inpt
 
 
 class ToPILImage(Transform):
+
+    # Updated transformed types for ToPILImage
+    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+
     def __init__(self, mode: Optional[str] = None) -> None:
         warnings.warn(
             "The transform `ToPILImage()` is deprecated and will be removed in a future release. "
@@ -53,11 +62,11 @@ class ToPILImage(Transform):
         super().__init__()
         self.mode = mode
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if is_simple_tensor(input) or isinstance(input, (features.Image, np.ndarray)):
-            return _F.to_pil_image(input, mode=self.mode)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if is_simple_tensor(inpt) or isinstance(inpt, (features.Image, np.ndarray)):
+            return _F.to_pil_image(inpt, mode=self.mode)
         else:
-            return input
+            return inpt
 
 
 class Grayscale(Transform):
@@ -81,13 +90,11 @@ class Grayscale(Transform):
 
         super().__init__()
         self.num_output_channels = num_output_channels
-        self._rgb_to_gray = ConvertImageColorSpace(old_color_space=ColorSpace.RGB, color_space=ColorSpace.GRAY)
-        self._gray_to_rgb = ConvertImageColorSpace(old_color_space=ColorSpace.GRAY, color_space=ColorSpace.RGB)
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        output = self._rgb_to_gray(input)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        output = F.convert_color_space(inpt, color_space=ColorSpace.GRAY, old_color_space=ColorSpace.RGB)
         if self.num_output_channels == 3:
-            output = self._gray_to_rgb(output)
+            output = F.convert_color_space(inpt, color_space=ColorSpace.RGB, old_color_space=ColorSpace.GRAY)
         return output
 
 
@@ -106,8 +113,7 @@ class RandomGrayscale(_RandomApplyTransform):
         )
 
         super().__init__(p=p)
-        self._rgb_to_gray = ConvertImageColorSpace(old_color_space=ColorSpace.RGB, color_space=ColorSpace.GRAY)
-        self._gray_to_rgb = ConvertImageColorSpace(old_color_space=ColorSpace.GRAY, color_space=ColorSpace.RGB)
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        return self._gray_to_rgb(self._rgb_to_gray(input))
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        output = F.convert_color_space(inpt, color_space=ColorSpace.GRAY, old_color_space=ColorSpace.RGB)
+        return F.convert_color_space(output, color_space=ColorSpace.RGB, old_color_space=ColorSpace.GRAY)

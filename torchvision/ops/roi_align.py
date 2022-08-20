@@ -7,7 +7,7 @@ from torch.nn.modules.utils import _pair
 from torchvision.extension import _assert_has_ops
 
 from ..utils import _log_api_usage_once
-from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
+from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
 
 
 def roi_align(
@@ -82,7 +82,7 @@ class RoIAlign(nn.Module):
         self.sampling_ratio = sampling_ratio
         self.aligned = aligned
 
-    def forward(self, input: Tensor, rois: Tensor) -> Tensor:
+    def forward(self, input: Tensor, rois: Union[Tensor, List[Tensor]]) -> Tensor:
         return roi_align(input, rois, self.output_size, self.spatial_scale, self.sampling_ratio, self.aligned)
 
     def __repr__(self) -> str:

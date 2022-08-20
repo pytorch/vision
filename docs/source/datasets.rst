@@ -101,6 +101,22 @@ Optical Flow
     KittiFlow
     Sintel
 
+Stereo Matching
+~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :toctree: generated/
+    :template: class_dataset.rst
+
+    CarlaStereo
+    Kitti2012Stereo
+    Kitti2015Stereo
+    FallingThingsStereo
+    SceneFlowStereo
+    SintelStereo
+    InStereo2k
+    ETH3DStereo
+
 Image pairs
 ~~~~~~~~~~~
 
