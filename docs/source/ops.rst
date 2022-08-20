@@ -37,6 +37,7 @@ Operators
     roi_pool
     sigmoid_focal_loss
     stochastic_depth
+    poly_loss
 
 .. autosummary::
     :toctree: generated/
