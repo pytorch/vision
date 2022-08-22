@@ -144,7 +144,7 @@ class FiveCrop(Transform):
         ...         images, labels = sample
         ...         batch_size = len(images)
         ...         images = features.Image.new_like(images[0], torch.stack(images))
-        ...         labels = features.Label.new_like(labels, labels.repeat(batch_size, *[1] * labels.ndim))
+        ...         labels = features.Label.new_like(labels, labels.repeat(batch_size))
         ...         return images, labels
         ...
         >>> image = features.Image(torch.rand(3, 256, 256))
@@ -162,6 +162,8 @@ class FiveCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # TODO: returning a list is technically BC breaking since FiveCrop returned a tuple before. We switched to a
+        #  list here to align it with TenCrop.
         if isinstance(inpt, features.Image):
             output = F.five_crop_image_tensor(inpt, self.size)
             return [features.Image.new_like(inpt, o) for o in output]
@@ -181,23 +183,7 @@ class FiveCrop(Transform):
 
 class TenCrop(Transform):
     """
-    Example:
-        >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[List[features.Image], features.Label]):
-        ...         images, labels = sample
-        ...         batch_size = len(images)
-        ...         images = features.Image.new_like(images[0], torch.stack(images))
-        ...         labels = features.Label.new_like(labels, labels.repeat(batch_size, *[1] * labels.ndim))
-        ...         return images, labels
-        ...
-        >>> image = features.Image(torch.rand(3, 256, 256))
-        >>> label = features.Label(0)
-        >>> transform = transforms.Compose([transforms.TenCrop(), BatchMultiCrop()])
-        >>> images, labels = transform(image, label)
-        >>> images.shape
-        torch.Size([10, 3, 224, 224])
-        >>> labels.shape
-        torch.Size([10])
+    See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
     """
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
