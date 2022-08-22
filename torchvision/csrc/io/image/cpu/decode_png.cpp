@@ -54,7 +54,7 @@ torch::Tensor decode_png(
 
   struct Reader {
     png_const_bytep ptr;
-    int count;
+    size_t count;
   } reader;
   reader.ptr = png_const_bytep(datap) + 8;
   reader.count = datap_len - 8;
