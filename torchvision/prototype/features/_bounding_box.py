@@ -41,6 +41,9 @@ class BoundingBox(_Feature):
 
         return bounding_box
 
+    def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
+        return self._make_repr(format=self.format, image_size=self.image_size)
+
     @classmethod
     def new_like(
         cls,
