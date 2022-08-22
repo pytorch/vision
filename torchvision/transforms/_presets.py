@@ -107,12 +107,12 @@ class VideoClassification(nn.Module):
 
         N, T, C, H, W = vid.shape
         vid = vid.view(-1, C, H, W)
-        if self.channel_order is not None:
-            vid = vid[:, self.channel_order]
         vid = F.resize(vid, self.resize_size, interpolation=self.interpolation)
         vid = F.center_crop(vid, self.crop_size)
         vid = F.convert_image_dtype(vid, torch.float)
         vid = F.normalize(vid, mean=self.mean, std=self.std)
+        if self.channel_order is not None:
+            vid = vid[:, self.channel_order]
         H, W = self.crop_size
         vid = vid.view(N, T, C, H, W)
         vid = vid.permute(0, 2, 1, 3, 4)  # (N, T, C, H, W) => (N, C, T, H, W)
@@ -133,15 +133,16 @@ class VideoClassification(nn.Module):
         return format_string
 
     def describe(self) -> str:
-        s = "Accepts batched ``(B, T, C, H, W)`` and single ``(T, C, H, W)`` video frame ``torch.Tensor`` objects. "
-        if self.channel_order:
-            s += f"Remaps the order within the channels dimension using ``channel_order={self.channel_order}``. "
-        s += (
+        s = (
+            "Accepts batched ``(B, T, C, H, W)`` and single ``(T, C, H, W)`` video frame ``torch.Tensor`` objects. "
             f"The frames are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
             f"followed by a central crop of ``crop_size={self.crop_size}``. Finally the values are first rescaled to "
-            f"``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and ``std={self.std}``. Finally the output "
-            "dimensions are permuted to ``(..., C, T, H, W)`` tensors."
+            f"``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and ``std={self.std}``. "
         )
+        if self.channel_order is not None:
+            s += f"Remaps the order within the channels dimension using ``channel_order={self.channel_order}``. "
+        s += "Finally the output dimensions are permuted to ``(..., C, T, H, W)`` tensors."
+        return s
 
 
 class SemanticSegmentation(nn.Module):
