@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import PIL.Image
 import torch
@@ -10,7 +10,7 @@ from torchvision.ops import masks_to_boxes
 from torchvision.prototype import features
 
 from torchvision.prototype.transforms import functional as F
-from torchvision.transforms.functional import InterpolationMode
+from torchvision.transforms.functional import InterpolationMode, pil_to_tensor
 
 from ._transform import _RandomApplyTransform
 from ._utils import get_image_dimensions, has_any, is_simple_tensor, query_image
@@ -203,21 +203,10 @@ class SimpleCopyPaste(_RandomApplyTransform):
         target: Dict[str, Any],
         paste_image: Any,
         paste_target: Dict[str, Any],
+        random_selection: torch.Tensor,
         blending: bool = True,
         resize_interpolation: F.InterpolationMode = F.InterpolationMode.BILINEAR,
     ) -> Tuple[Any, Dict[str, Any]]:
-
-        # Random paste targets selection:
-        num_masks = len(paste_target["masks"])
-
-        if num_masks < 1:
-            # Such degerante case with num_masks=0 can happen with LSJ
-            # Let's just return (image, target)
-            return image, target
-
-        # We have to please torch script by explicitly specifying dtype as torch.long
-        random_selection = torch.randint(0, num_masks, (num_masks,), device=paste_image.device)
-        random_selection = torch.unique(random_selection).to(torch.long)
 
         paste_masks = paste_target["masks"][random_selection]
         paste_boxes = paste_target["boxes"][random_selection]
@@ -232,22 +221,14 @@ class SimpleCopyPaste(_RandomApplyTransform):
         size1 = image.shape[-2:]
         size2 = paste_image.shape[-2:]
         if size1 != size2:
-            paste_image = F.resize(paste_image, size1, interpolation=resize_interpolation)
-            paste_masks = F.resize(paste_masks, size1, interpolation=F.InterpolationMode.NEAREST)
-            # resize bboxes:
-            ratios = torch.tensor((size1[1] / size2[1], size1[0] / size2[0]), device=paste_boxes.device)
-            paste_boxes = paste_boxes.view(-1, 2, 2).mul(ratios).view(paste_boxes.shape)
+            paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation)
+            paste_masks = F.resize(paste_masks, size=size1)
+            paste_boxes = F.resize(paste_boxes, size=size1)
 
         paste_alpha_mask = paste_masks.sum(dim=0) > 0
 
         if blending:
-            paste_alpha_mask = F.gaussian_blur(
-                paste_alpha_mask.unsqueeze(0),
-                kernel_size=(5, 5),
-                sigma=[
-                    2.0,
-                ],
-            )
+            paste_alpha_mask = F.gaussian_blur(paste_alpha_mask.unsqueeze(0), kernel_size=[5, 5], sigma=[2.0])
 
         # Copy-paste images:
         image = (image * (~paste_alpha_mask)) + (paste_image * paste_alpha_mask)
@@ -263,27 +244,19 @@ class SimpleCopyPaste(_RandomApplyTransform):
         out_target["masks"] = torch.cat([masks, paste_masks])
 
         # Copy-paste boxes and labels
-        boxes = masks_to_boxes(masks)
+        bbox_format = target["boxes"].format
+        xyxy_boxes = masks_to_boxes(masks)
+        # masks_to_boxes produces bboxes with x2y2 inclusive but x2y2 should be exclusive
+        # we need to add +1 to x2y2
+        xyxy_boxes[:, 2:] += 1
+        boxes = F.convert_bounding_box_format(xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False)
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
 
         labels = target["labels"][non_all_zero_masks]
         out_target["labels"] = torch.cat([labels, paste_labels])
 
-        # Update additional optional keys: area and iscrowd if exist
-        if "area" in target:
-            out_target["area"] = out_target["masks"].sum((-1, -2)).to(torch.float32)
-
-        if "iscrowd" in target and "iscrowd" in paste_target:
-            # target['iscrowd'] size can be differ from mask size (non_all_zero_masks)
-            # For example, if previous transforms geometrically modifies masks/boxes/labels but
-            # does not update "iscrowd"
-            if len(target["iscrowd"]) == len(non_all_zero_masks):
-                iscrowd = target["iscrowd"][non_all_zero_masks]
-                paste_iscrowd = paste_target["iscrowd"][random_selection]
-                out_target["iscrowd"] = torch.cat([iscrowd, paste_iscrowd])
-
         # Check for degenerated boxes and remove them
-        boxes = out_target["boxes"]
+        boxes = F.convert_bounding_box_format(out_target["boxes"], old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY)
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
         if degenerate_boxes.any():
             valid_targets = ~degenerate_boxes.any(dim=1)
@@ -292,24 +265,17 @@ class SimpleCopyPaste(_RandomApplyTransform):
             out_target["masks"] = out_target["masks"][valid_targets]
             out_target["labels"] = out_target["labels"][valid_targets]
 
-            if "area" in out_target:
-                out_target["area"] = out_target["area"][valid_targets]
-            if "iscrowd" in out_target and len(out_target["iscrowd"]) == len(valid_targets):
-                out_target["iscrowd"] = out_target["iscrowd"][valid_targets]
-
         return image, out_target
 
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-
-        flat_sample, spec = tree_flatten(sample)
-
+    def _extract_image_targets(self, flat_sample: List[Any]) -> Tuple[List[Any], List[Dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
         # with List[image], List[BoundingBox], List[SegmentationMask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
-            if isinstance(obj, PIL.Image.Image, features.Image) or is_simple_tensor(obj):
-                images.append(F.to_image_tensor(obj))
+            if isinstance(obj, features.Image) or is_simple_tensor(obj):
+                images.append(obj)
+            elif isinstance(obj, PIL.Image.Image):
+                images.append(pil_to_tensor(obj))
             elif isinstance(obj, features.BoundingBox):
                 bboxes.append(obj)
             elif isinstance(obj, features.SegmentationMask):
@@ -327,28 +293,11 @@ class SimpleCopyPaste(_RandomApplyTransform):
         for bbox, mask, label in zip(bboxes, masks, labels):
             targets.append({"boxes": bbox, "masks": mask, "labels": label})
 
-        # images = [t1, t2, ..., tN]
-        # Let's define paste_images as shifted list of input images
-        # paste_images = [t2, t3, ..., tN, t1]
-        # FYI: in TF they mix data on the dataset level
-        images_rolled = images[-1:] + images[:-1]
-        targets_rolled = targets[-1:] + targets[:-1]
+        return images, targets
 
-        output_images, output_targets = [], []
-
-        for image, target, paste_image, paste_target in zip(images, targets, images_rolled, targets_rolled):
-            output_image, output_data = self._copy_paste(
-                image,
-                target,
-                paste_image,
-                paste_target,
-                blending=self.blending,
-                resize_interpolation=self.resize_interpolation,
-            )
-            output_images.append(output_image)
-            output_targets.append(output_data)
-
-        # Insert updated images and targets into input flat_sample
+    def _insert_outputs(
+        self, flat_sample: List[Any], output_images: List[Any], output_targets: List[Dict[str, Any]]
+    ) -> None:
         c0, c1, c2, c3 = 0, 0, 0, 0
         for i, obj in enumerate(flat_sample):
             if isinstance(obj, features.Image):
@@ -369,5 +318,49 @@ class SimpleCopyPaste(_RandomApplyTransform):
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
                 flat_sample[i] = obj.new_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
                 c3 += 1
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+
+        flat_sample, spec = tree_flatten(sample)
+
+        images, targets = self._extract_image_targets(flat_sample)
+
+        # images = [t1, t2, ..., tN]
+        # Let's define paste_images as shifted list of input images
+        # paste_images = [t2, t3, ..., tN, t1]
+        # FYI: in TF they mix data on the dataset level
+        images_rolled = images[-1:] + images[:-1]
+        targets_rolled = targets[-1:] + targets[:-1]
+
+        output_images, output_targets = [], []
+
+        for image, target, paste_image, paste_target in zip(images, targets, images_rolled, targets_rolled):
+
+            # Random paste targets selection:
+            num_masks = len(paste_target["masks"])
+
+            if num_masks < 1:
+                # Such degerante case with num_masks=0 can happen with LSJ
+                # Let's just return (image, target)
+                output_image, output_target = image, target
+            else:
+                random_selection = torch.randint(0, num_masks, (num_masks,), device=paste_image.device)
+                random_selection = torch.unique(random_selection).to(torch.long)
+
+                output_image, output_target = self._copy_paste(
+                    image,
+                    target,
+                    paste_image,
+                    paste_target,
+                    random_selection=random_selection,
+                    blending=self.blending,
+                    resize_interpolation=self.resize_interpolation,
+                )
+            output_images.append(output_image)
+            output_targets.append(output_target)
+
+        # Insert updated images and targets into input flat_sample
+        self._insert_outputs(flat_sample, output_images, output_targets)
 
         return tree_unflatten(flat_sample, spec)
