@@ -1526,11 +1526,11 @@ class TestLinearTransformation:
 
     @pytest.mark.parametrize("device", [pytest.param("cuda", marks=pytest.mark.needs_cuda)])
     def test__transform_warn_device(self, device):
-        v = 121 * torch.ones(3 * 8 * 8, device=device)
+        v = torch.ones(3 * 8 * 8, device=device)
         m = torch.ones(3 * 8 * 8, 3 * 8 * 8, device=device)
         transform = transforms.LinearTransformation(m, v)
 
-        inpt = 121 * torch.ones(3 * 8 * 8, device="cpu")
+        inpt = torch.ones(3, 8, 8, device="cpu")
 
         with pytest.warns(UserWarning, match="Input device does not match"):
             output = transform(inpt)
