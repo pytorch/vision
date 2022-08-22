@@ -63,10 +63,10 @@ class LinearTransformation(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
 
-        cast_to_pil = False
+        pil_mode = None
         if isinstance(inpt, PIL.Image.Image):
-            inpt = F.to_image_tensor(inpt)
-            cast_to_pil = True
+            pil_mode = inpt.mode
+            inpt = F.to_image_tensor(inpt).contiguous()
 
         shape = inpt.shape
         n = shape[-3] * shape[-2] * shape[-1]
@@ -87,8 +87,10 @@ class LinearTransformation(Transform):
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
         output = transformed_tensor.view(shape)
 
-        if cast_to_pil:
-            output = F.to_image_pil(output)
+        if pil_mode is not None:
+            # cast output to input dtype:
+            output = output.to(inpt.dtype)
+            output = F.to_image_pil(output, mode=pil_mode)
         elif isinstance(inpt, features.Image):
             output = features.Image.new_like(inpt, output)
 
