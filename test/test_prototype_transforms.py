@@ -1332,22 +1332,38 @@ class TestRandomShortestSize:
 
 
 class TestSimpleCopyPaste:
-    def test_forward_assertions(self):
-        pass
+
+    def create_fake_image(self, mocker, image_type):
+        if image_type == PIL.Image.Image:
+            return PIL.Image.new("RGB", (32, 32), 123)
+        return mocker.MagicMock(spec=image_type)
+
+    def test__extract_image_targets_assertion(self, mocker):
+        transform = transforms.SimpleCopyPaste()
+
+        flat_sample = [
+            # images, batch size = 2
+            self.create_fake_image(mocker, features.Image),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.Label),
+            mocker.MagicMock(spec=features.BoundingBox),
+            mocker.MagicMock(spec=features.SegmentationMask),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.BoundingBox),
+            mocker.MagicMock(spec=features.SegmentationMask),
+        ]
+
+        with pytest.raises(TypeError, match="requires input sample to contain equal-sized list of Images"):
+            transform._extract_image_targets(flat_sample)
 
     @pytest.mark.parametrize("image_type", [features.Image, PIL.Image.Image, torch.Tensor])
     def test__extract_image_targets(self, image_type, mocker):
         transform = transforms.SimpleCopyPaste()
 
-        def create_fake_image(image_type):
-            if image_type == PIL.Image.Image:
-                return PIL.Image.new("RGB", (32, 32), 123)
-            return mocker.MagicMock(spec=image_type)
-
         flat_sample = [
             # images, batch size = 2
-            create_fake_image(image_type),
-            create_fake_image(image_type),
+            self.create_fake_image(mocker, image_type),
+            self.create_fake_image(mocker, image_type),
             # labels, bboxes, masks
             mocker.MagicMock(spec=features.Label),
             mocker.MagicMock(spec=features.BoundingBox),
@@ -1405,9 +1421,6 @@ class TestSimpleCopyPaste:
         assert output_target["masks"].shape == (4, 32, 32)
         torch.testing.assert_close(output_target["masks"][:2, :], target["masks"])
         torch.testing.assert_close(output_target["masks"][2:, :], paste_target["masks"])
-
-    def test_forward(self):
-        pass
 
 
 class TestFixedSizeCrop:

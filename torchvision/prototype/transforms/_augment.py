@@ -208,9 +208,9 @@ class SimpleCopyPaste(_RandomApplyTransform):
         resize_interpolation: F.InterpolationMode = F.InterpolationMode.BILINEAR,
     ) -> Tuple[Any, Dict[str, Any]]:
 
-        paste_masks = paste_target["masks"][random_selection]
-        paste_boxes = paste_target["boxes"][random_selection]
-        paste_labels = paste_target["labels"][random_selection]
+        paste_masks = paste_target["masks"].new_like(paste_target["masks"], paste_target["masks"][random_selection])
+        paste_boxes = paste_target["boxes"].new_like(paste_target["boxes"], paste_target["boxes"][random_selection])
+        paste_labels = paste_target["labels"].new_like(paste_target["labels"], paste_target["labels"][random_selection])
 
         masks = target["masks"]
 
@@ -249,14 +249,18 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # masks_to_boxes produces bboxes with x2y2 inclusive but x2y2 should be exclusive
         # we need to add +1 to x2y2
         xyxy_boxes[:, 2:] += 1
-        boxes = F.convert_bounding_box_format(xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False)
+        boxes = F.convert_bounding_box_format(
+            xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
+        )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
 
         labels = target["labels"][non_all_zero_masks]
         out_target["labels"] = torch.cat([labels, paste_labels])
 
         # Check for degenerated boxes and remove them
-        boxes = F.convert_bounding_box_format(out_target["boxes"], old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY)
+        boxes = F.convert_bounding_box_format(
+            out_target["boxes"], old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY
+        )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
         if degenerate_boxes.any():
             valid_targets = ~degenerate_boxes.any(dim=1)
