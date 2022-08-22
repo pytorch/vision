@@ -140,7 +140,7 @@ class FiveCrop(Transform):
     """
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[List[features.Image], features.Label]):
+        ...     def forward(self, sample: Tuple[Tuple[features.Image, ...], features.Label]):
         ...         images, labels = sample
         ...         batch_size = len(images)
         ...         images = features.Image.new_like(images[0], torch.stack(images))
@@ -166,11 +166,11 @@ class FiveCrop(Transform):
         #  list here to align it with TenCrop.
         if isinstance(inpt, features.Image):
             output = F.five_crop_image_tensor(inpt, self.size)
-            return [features.Image.new_like(inpt, o) for o in output]
+            return tuple(features.Image.new_like(inpt, o) for o in output)
         elif is_simple_tensor(inpt):
-            return list(F.five_crop_image_tensor(inpt, self.size))
+            return F.five_crop_image_tensor(inpt, self.size)
         elif isinstance(inpt, PIL.Image.Image):
-            return list(F.five_crop_image_pil(inpt, self.size))
+            return F.five_crop_image_pil(inpt, self.size)
         else:
             return inpt
 
