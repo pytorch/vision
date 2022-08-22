@@ -8,7 +8,7 @@ from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms import functional as _F
 
 from ._transform import _RandomApplyTransform
-from ._utils import get_image_dimensions, is_simple_tensor, query_image
+from ._utils import is_simple_tensor, query_chw
 
 T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
 
@@ -101,8 +101,7 @@ class RandomPhotometricDistort(Transform):
         self.p = p
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        num_channels, _, _ = get_image_dimensions(image)
+        num_channels, _, _ = query_chw(sample)
         return dict(
             zip(
                 ["brightness", "contrast1", "saturation", "hue", "contrast2"],
