@@ -16,10 +16,10 @@ from ._color import (
 )
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
-    BatchMultiCrop,
     CenterCrop,
     ElasticTransform,
     FiveCrop,
+    FixedSizeCrop,
     Pad,
     RandomAffine,
     RandomCrop,
@@ -36,7 +36,7 @@ from ._geometry import (
     TenCrop,
 )
 from ._meta import ConvertBoundingBoxFormat, ConvertColorSpace, ConvertImageDtype
-from ._misc import GaussianBlur, Identity, Lambda, Normalize, ToDtype
+from ._misc import GaussianBlur, Identity, Lambda, LinearTransformation, Normalize, ToDtype
 from ._type_conversion import DecodeImage, LabelToOneHot, ToImagePIL, ToImageTensor
 
 from ._deprecated import Grayscale, RandomGrayscale, ToTensor, ToPILImage, PILToTensor  # usort: skip

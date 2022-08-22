@@ -1,7 +1,10 @@
 import functools
 from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
+import PIL.Image
+
 import torch
+from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.transforms import _setup_size
 
@@ -30,6 +33,59 @@ class Lambda(Transform):
             extras.append(name)
         extras.append(f"types={[type.__name__ for type in self.types]}")
         return ", ".join(extras)
+
+
+class LinearTransformation(Transform):
+    def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
+        super().__init__()
+        if transformation_matrix.size(0) != transformation_matrix.size(1):
+            raise ValueError(
+                "transformation_matrix should be square. Got "
+                f"{tuple(transformation_matrix.size())} rectangular matrix."
+            )
+
+        if mean_vector.size(0) != transformation_matrix.size(0):
+            raise ValueError(
+                f"mean_vector should have the same length {mean_vector.size(0)}"
+                f" as any one of the dimensions of the transformation_matrix [{tuple(transformation_matrix.size())}]"
+            )
+
+        if transformation_matrix.device != mean_vector.device:
+            raise ValueError(
+                f"Input tensors should be on the same device. Got {transformation_matrix.device} and {mean_vector.device}"
+            )
+
+        self.transformation_matrix = transformation_matrix
+        self.mean_vector = mean_vector
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+
+        if isinstance(inpt, features._Feature) and not isinstance(inpt, features.Image):
+            return inpt
+        elif isinstance(inpt, PIL.Image.Image):
+            raise TypeError("Unsupported input type")
+
+        # Image instance after linear transformation is not Image anymore due to unknown data range
+        # Thus we will return Tensor for input Image
+
+        shape = inpt.shape
+        n = shape[-3] * shape[-2] * shape[-1]
+        if n != self.transformation_matrix.shape[0]:
+            raise ValueError(
+                "Input tensor and transformation matrix have incompatible shape."
+                + f"[{shape[-3]} x {shape[-2]} x {shape[-1]}] != "
+                + f"{self.transformation_matrix.shape[0]}"
+            )
+
+        if inpt.device.type != self.mean_vector.device.type:
+            raise ValueError(
+                "Input tensor should be on the same device as transformation matrix and mean vector. "
+                f"Got {inpt.device} vs {self.mean_vector.device}"
+            )
+
+        flat_tensor = inpt.view(-1, n) - self.mean_vector
+        transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
+        return transformed_tensor.view(shape)
 
 
 class Normalize(Transform):

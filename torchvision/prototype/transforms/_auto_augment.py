@@ -10,7 +10,7 @@ from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.autoaugment import AutoAugmentPolicy
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
-from ._utils import get_image_dimensions, is_simple_tensor
+from ._utils import get_chw, is_simple_tensor
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -281,7 +281,7 @@ class AutoAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         id, image = self._extract_image(sample)
-        num_channels, height, width = get_image_dimensions(image)
+        num_channels, height, width = get_chw(image)
         fill = self._parse_fill(image, num_channels)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
@@ -354,7 +354,7 @@ class RandAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         id, image = self._extract_image(sample)
-        num_channels, height, width = get_image_dimensions(image)
+        num_channels, height, width = get_chw(image)
         fill = self._parse_fill(image, num_channels)
 
         for _ in range(self.num_ops):
@@ -412,7 +412,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         id, image = self._extract_image(sample)
-        num_channels, height, width = get_image_dimensions(image)
+        num_channels, height, width = get_chw(image)
         fill = self._parse_fill(image, num_channels)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
@@ -481,7 +481,7 @@ class AugMix(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         id, orig_image = self._extract_image(sample)
-        num_channels, height, width = get_image_dimensions(orig_image)
+        num_channels, height, width = get_chw(orig_image)
         fill = self._parse_fill(orig_image, num_channels)
 
         if isinstance(orig_image, torch.Tensor):
