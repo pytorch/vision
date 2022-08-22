@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import numpy as np
 import PIL.Image
@@ -63,12 +63,12 @@ class ToImagePIL(Transform):
     # Updated transformed types for ToImagePIL
     _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
-    def __init__(self, *, copy: bool = False) -> None:
+    def __init__(self, *, mode: Optional[str] = None) -> None:
         super().__init__()
-        self.copy = copy
+        self.mode = mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
-            return F.to_image_pil(inpt, copy=self.copy)
+            return F.to_image_pil(inpt, mode=self.mode)
         else:
             return inpt
