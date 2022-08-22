@@ -160,6 +160,7 @@ class S3D_Weights(WeightsEnum):
             resize_size=(256, 256),
             mean=(0.5, 0.5, 0.5),
             std=(0.5, 0.5, 0.5),
+            channel_order=(2, 1, 0),  # RGB to BGR
         ),
         meta={
             "min_size": (224, 224),

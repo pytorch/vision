@@ -89,6 +89,7 @@ class VideoClassification(nn.Module):
         mean: Tuple[float, ...] = (0.43216, 0.394666, 0.37645),
         std: Tuple[float, ...] = (0.22803, 0.22145, 0.216989),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        channel_order: Optional[Tuple[int, int, int]] = None,
     ) -> None:
         super().__init__()
         self.crop_size = list(crop_size)
@@ -96,6 +97,7 @@ class VideoClassification(nn.Module):
         self.mean = list(mean)
         self.std = list(std)
         self.interpolation = interpolation
+        self.channel_order = channel_order
 
     def forward(self, vid: Tensor) -> Tensor:
         need_squeeze = False
@@ -105,6 +107,8 @@ class VideoClassification(nn.Module):
 
         N, T, C, H, W = vid.shape
         vid = vid.view(-1, C, H, W)
+        if self.channel_order is not None:
+            vid = vid[:, self.channel_order]
         vid = F.resize(vid, self.resize_size, interpolation=self.interpolation)
         vid = F.center_crop(vid, self.crop_size)
         vid = F.convert_image_dtype(vid, torch.float)
@@ -124,12 +128,15 @@ class VideoClassification(nn.Module):
         format_string += f"\n    mean={self.mean}"
         format_string += f"\n    std={self.std}"
         format_string += f"\n    interpolation={self.interpolation}"
+        format_string += f"\n    channel_order={self.channel_order}"
         format_string += "\n)"
         return format_string
 
     def describe(self) -> str:
-        return (
-            "Accepts batched ``(B, T, C, H, W)`` and single ``(T, C, H, W)`` video frame ``torch.Tensor`` objects. "
+        s = "Accepts batched ``(B, T, C, H, W)`` and single ``(T, C, H, W)`` video frame ``torch.Tensor`` objects. "
+        if self.channel_order:
+            s += f"Remaps the order within the channels dimension using ``channel_order={self.channel_order}``. "
+        s += (
             f"The frames are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
             f"followed by a central crop of ``crop_size={self.crop_size}``. Finally the values are first rescaled to "
             f"``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and ``std={self.std}``. Finally the output "
