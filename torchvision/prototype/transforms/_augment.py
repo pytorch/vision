@@ -9,7 +9,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F
 
 from ._transform import _RandomApplyTransform
-from ._utils import has_any, is_simple_tensor, query_image_dimensions
+from ._utils import has_any, is_simple_tensor, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -38,7 +38,7 @@ class RandomErasing(_RandomApplyTransform):
         self.value = value
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        img_c, img_h, img_w = query_image_dimensions(sample)
+        img_c, img_h, img_w = query_chw(sample)
 
         if isinstance(self.value, (int, float)):
             value = [self.value]
@@ -139,7 +139,7 @@ class RandomCutmix(_BaseMixupCutmix):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
-        _, H, W = query_image_dimensions(sample)
+        _, H, W = query_chw(sample)
 
         r_x = torch.randint(W, ())
         r_y = torch.randint(H, ())

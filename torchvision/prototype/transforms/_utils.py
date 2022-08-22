@@ -18,7 +18,7 @@ def query_bounding_box(sample: Any) -> features.BoundingBox:
     raise TypeError("No bounding box was found in the sample")
 
 
-def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
+def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
     if isinstance(image, features.Image):
         channels = image.num_channels
         height, width = image.image_size
@@ -31,10 +31,10 @@ def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Im
     return channels, height, width
 
 
-def query_image_dimensions(sample: Any) -> Tuple[int, int, int]:
+def query_chw(sample: Any) -> Tuple[int, int, int]:
     flat_sample, _ = tree_flatten(sample)
     image_dimensionss = {
-        get_image_dimensions(item)
+        get_chw(item)
         for item in flat_sample
         if isinstance(item, (features.Image, PIL.Image.Image)) or is_simple_tensor(item)
     }
