@@ -1497,6 +1497,9 @@ class TestLinearTransformation:
         with pytest.raises(ValueError, match="mean_vector should have the same length"):
             transforms.LinearTransformation(torch.rand(3, 3), torch.rand(5))
 
+        with pytest.raises(ValueError, match="Input tensors should be on the same device"):
+            transforms.LinearTransformation(torch.ones(3, 3, device="meta"), torch.rand(3, device="cpu"))
+
     @pytest.mark.parametrize(
         "inpt",
         [
@@ -1520,3 +1523,16 @@ class TestLinearTransformation:
             assert isinstance(output, torch.Tensor)
             assert output.unique() == 3 * 8 * 8
             assert output.dtype == inpt.dtype
+
+    @pytest.mark.parametrize("device", [pytest.param("cuda", marks=pytest.mark.needs_cuda)])
+    def test__transform_warn_device(self, device):
+        v = 121 * torch.ones(3 * 8 * 8, device=device)
+        m = torch.ones(3 * 8 * 8, 3 * 8 * 8, device=device)
+        transform = transforms.LinearTransformation(m, v)
+
+        inpt = 121 * torch.ones(3 * 8 * 8, device="cpu")
+
+        with pytest.warns(UserWarning, match="Input device does not match"):
+            output = transform(inpt)
+
+        assert output.device == inpt.device

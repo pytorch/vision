@@ -1,4 +1,5 @@
 import functools
+import warnings
 from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import PIL.Image
@@ -77,15 +78,20 @@ class LinearTransformation(Transform):
                 + f"{self.transformation_matrix.shape[0]}"
             )
 
-        if inpt.device.type != self.mean_vector.device.type:
-            raise ValueError(
-                "Input tensor should be on the same device as transformation matrix and mean vector. "
-                f"Got {inpt.device} vs {self.mean_vector.device}"
+        input_device = inpt.device
+        if input_device.type != self.mean_vector.device.type:
+            warnings.warn(
+                "Input device does not match transformation_matrix and mean_vector device. "
+                "Input will be automatically put to appropriate device to make computations and put back."
             )
+            inpt = inpt.to(self.mean_vector.device)
 
         flat_tensor = inpt.view(-1, n) - self.mean_vector
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
-        return transformed_tensor.view(shape)
+        output = transformed_tensor.view(shape)
+        if output.device != input_device:
+            output = output.to(input_device)
+        return output
 
 
 class Normalize(Transform):
