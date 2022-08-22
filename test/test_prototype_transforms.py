@@ -972,51 +972,28 @@ class TestRandomErasing:
         assert 0 <= i <= image.image_size[0] - h
         assert 0 <= j <= image.image_size[1] - w
 
-    @pytest.mark.parametrize("p", [0.0, 1.0])
-    @pytest.mark.parametrize(
-        "inpt_type",
-        [
-            (torch.Tensor, {"shape": (3, 24, 32)}),
-            (PIL.Image.Image, {"size": (24, 32), "mode": "RGB"}),
-        ],
-    )
-    def test__transform(self, p, inpt_type, mocker):
-        value = 1.0
-        transform = transforms.RandomErasing(p=p, value=value)
+    def test__transform(self, mocker):
+        transform = transforms.RandomErasing()
+        transform._transformed_types = (mocker.MagicMock,)
 
-        inpt = mocker.MagicMock(spec=inpt_type[0], **inpt_type[1])
-        erase_image_tensor_inpt = inpt
-        fn = mocker.patch(
-            "torchvision.prototype.transforms.functional.erase_image_tensor",
-            return_value=mocker.MagicMock(spec=torch.Tensor),
+        i_sentinel = mocker.MagicMock()
+        j_sentinel = mocker.MagicMock()
+        h_sentinel = mocker.MagicMock()
+        w_sentinel = mocker.MagicMock()
+        v_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._augment.RandomErasing._get_params",
+            return_value=dict(i=i_sentinel, j=j_sentinel, h=h_sentinel, w=w_sentinel, v=v_sentinel),
         )
-        if inpt_type[0] == PIL.Image.Image:
-            erase_image_tensor_inpt = mocker.MagicMock(spec=torch.Tensor)
 
-            # vfdev-5: I do not know how to patch pil_to_tensor if it is already imported
-            # TODO: patch pil_to_tensor and run below checks for PIL.Image.Image inputs
-            if p > 0.0:
-                return
+        inpt_sentinel = mocker.MagicMock()
 
-            mocker.patch(
-                "torchvision.transforms.functional.pil_to_tensor",
-                return_value=erase_image_tensor_inpt,
-            )
-            mocker.patch(
-                "torchvision.transforms.functional.to_pil_image",
-                return_value=mocker.MagicMock(spec=PIL.Image.Image),
-            )
+        mock = mocker.patch("torchvision.prototype.transforms._augment.F.erase")
+        transform(inpt_sentinel)
 
-        # Let's mock transform._get_params to control the output:
-        transform._get_params = mocker.MagicMock()
-        output = transform(inpt)
-        print(inpt_type)
-        assert isinstance(output, inpt_type[0])
-        params = transform._get_params(inpt)
-        if p > 0.0:
-            fn.assert_called_once_with(erase_image_tensor_inpt, **params)
-        else:
-            assert fn.call_count == 0
+        mock.assert_called_once_with(
+            inpt_sentinel, i=i_sentinel, j=j_sentinel, h=h_sentinel, w=w_sentinel, v=v_sentinel
+        )
 
 
 class TestTransform:

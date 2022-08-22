@@ -78,20 +78,15 @@ class RandomErasing(_RandomApplyTransform):
 
             i = torch.randint(0, img_h - h + 1, size=(1,)).item()
             j = torch.randint(0, img_w - w + 1, size=(1,)).item()
-
-            needs_erase = True
-            erase_params = dict(i=i, j=j, h=h, w=w, v=v)
-
             break
         else:
-            needs_erase = False
-            erase_params = None
+            i, j, h, w, v = 0, 0, img_h, img_w, None
 
-        return dict(needs_erase=needs_erase, erase_params=erase_params)
+        return dict(i=i, j=j, h=h, w=w, v=v)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if params["needs_erase"]:
-            inpt = F.erase(inpt, **params["erase_params"])
+        if params["v"] is not None:
+            inpt = F.erase(inpt, **params)
 
         return inpt
 
