@@ -1332,7 +1332,6 @@ class TestRandomShortestSize:
 
 
 class TestSimpleCopyPaste:
-
     def create_fake_image(self, mocker, image_type):
         if image_type == PIL.Image.Image:
             return PIL.Image.new("RGB", (32, 32), 123)
