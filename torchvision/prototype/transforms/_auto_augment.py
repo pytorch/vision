@@ -9,7 +9,8 @@ from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.autoaugment import AutoAugmentPolicy
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
-from ._utils import get_image_dimensions, is_simple_tensor, query_image
+from ._utils import is_simple_tensor, query_chw
+
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -47,8 +48,7 @@ class _AutoAugmentBase(Transform):
         return fill
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        num_channels, height, width = get_image_dimensions(image)
+        num_channels, height, width = query_chw(sample)
         fill = self._parse_fill(image, num_channels)
         return dict(num_channels=num_channels, height=height, width=width, fill=fill)
 
