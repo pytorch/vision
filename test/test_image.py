@@ -195,7 +195,6 @@ def test_decode_png_errors():
         decode_png(read_file(os.path.join(DAMAGED_PNG, "sigsegv.png")))
 
 
-
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(png_path, id=_get_safe_image_name(png_path)) for png_path in get_images(IMAGE_DIR, ".png")],
