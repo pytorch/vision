@@ -63,7 +63,7 @@ torch::Tensor decode_png(
       [](png_structp png_ptr, png_bytep output, png_size_t bytes) {
         auto reader = static_cast<Reader*>(png_get_io_ptr(png_ptr));
         if (reader->count < bytes) {
-          png_error(png_ptr, "Out of bound read in decode_png");
+          TORCH_CHECK(false, "Out of bound read in decode_png");
         }
         std::copy(reader->ptr, reader->ptr + bytes, output);
         reader->ptr += bytes;
