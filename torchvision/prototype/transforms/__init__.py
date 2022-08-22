@@ -16,7 +16,6 @@ from ._color import (
 )
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
-    BatchMultiCrop,
     CenterCrop,
     ElasticTransform,
     FiveCrop,
