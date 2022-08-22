@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import PIL.Image
 
@@ -36,9 +36,6 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
-
-    _transformed_types: Tuple[Type, ...] = (torch.Tensor, features.Image, PIL.Image.Image)
-
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
         super().__init__()
         if transformation_matrix.size(0) != transformation_matrix.size(1):
@@ -63,10 +60,13 @@ class LinearTransformation(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
 
-        pil_mode = None
-        if isinstance(inpt, PIL.Image.Image):
-            pil_mode = inpt.mode
-            inpt = F.to_image_tensor(inpt).contiguous()
+        if isinstance(inpt, features._Feature) and not isinstance(inpt, features.Image):
+            return inpt
+        elif isinstance(inpt, PIL.Image.Image):
+            raise TypeError("Unsupported input type")
+
+        # Image instance after linear transformation is not Image anymore due to unknown data range
+        # Thus we will return Tensor for input Image
 
         shape = inpt.shape
         n = shape[-3] * shape[-2] * shape[-1]
@@ -85,16 +85,7 @@ class LinearTransformation(Transform):
 
         flat_tensor = inpt.view(-1, n) - self.mean_vector
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
-        output = transformed_tensor.view(shape)
-
-        if pil_mode is not None:
-            # cast output to input dtype:
-            output = output.to(inpt.dtype)
-            output = F.to_image_pil(output, mode=pil_mode)
-        elif isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output)
-
-        return output
+        return transformed_tensor.view(shape)
 
 
 class Normalize(Transform):

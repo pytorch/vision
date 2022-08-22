@@ -18,7 +18,7 @@ from test_prototype_transforms_functional import (
 )
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features, transforms
-from torchvision.transforms.functional import get_image_num_channels, InterpolationMode, pil_to_tensor, to_pil_image
+from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 
 def make_vanilla_tensor_images(*args, **kwargs):
@@ -1504,21 +1504,19 @@ class TestLinearTransformation:
             122.0 * torch.ones(1, 3, 8, 8),
             features.Image(122 * torch.ones(1, 3, 8, 8)),
             PIL.Image.new("RGB", (8, 8), (122, 122, 122)),
-            PIL.Image.new("F", (8, 8), 122.0),
         ],
     )
     def test__transform(self, inpt):
 
-        c = get_image_num_channels(inpt)
-        v = 121 * torch.ones(c * 8 * 8)
-        m = torch.ones(c * 8 * 8, c * 8 * 8)
+        v = 121 * torch.ones(3 * 8 * 8)
+        m = torch.ones(3 * 8 * 8, 3 * 8 * 8)
         transform = transforms.LinearTransformation(m, v)
 
-        output = transform(inpt)
-
-        assert isinstance(output, type(inpt))
-        if isinstance(output, PIL.Image.Image):
-            assert np.unique(np.asarray(output)) == c * 8 * 8
+        if isinstance(inpt, PIL.Image.Image):
+            with pytest.raises(TypeError, match="Unsupported input type"):
+                transform(inpt)
         else:
-            assert output.unique() == c * 8 * 8
+            output = transform(inpt)
+            assert isinstance(output, torch.Tensor)
+            assert output.unique() == 3 * 8 * 8
             assert output.dtype == inpt.dtype
