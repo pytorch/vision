@@ -246,8 +246,8 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # Copy-paste boxes and labels
         bbox_format = target["boxes"].format
         xyxy_boxes = masks_to_boxes(masks)
-        # masks_to_boxes produces bboxes with x2y2 inclusive but x2y2 should be exclusive
-        # we need to add +1 to x2y2
+        # TODO: masks_to_boxes produces bboxes with x2y2 inclusive but x2y2 should be exclusive
+        # we need to add +1 to x2y2. We need to investigate that.
         xyxy_boxes[:, 2:] += 1
         boxes = F.convert_bounding_box_format(
             xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
@@ -350,7 +350,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
                 output_image, output_target = image, target
             else:
                 random_selection = torch.randint(0, num_masks, (num_masks,), device=paste_image.device)
-                random_selection = torch.unique(random_selection).to(torch.long)
+                random_selection = torch.unique(random_selection)
 
                 output_image, output_target = self._copy_paste(
                     image,
