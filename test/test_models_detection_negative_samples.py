@@ -4,7 +4,7 @@ import torchvision.models
 from common_utils import assert_equal
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
 from torchvision.models.detection.roi_heads import RoIHeads
-from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from torchvision.models.detection.rpn import AnchorGenerator, RegionProposalNetwork, RPNHead
 from torchvision.ops import MultiScaleRoIAlign
 
 
@@ -60,7 +60,7 @@ class TestModelsDetectionNegativeSamples:
 
         resolution = box_roi_pool.output_size[0]
         representation_size = 1024
-        box_head = TwoMLPHead(4 * resolution ** 2, representation_size)
+        box_head = TwoMLPHead(4 * resolution**2, representation_size)
 
         representation_size = 1024
         box_predictor = FastRCNNPredictor(representation_size, 2)
@@ -99,8 +99,8 @@ class TestModelsDetectionNegativeSamples:
         ],
     )
     def test_forward_negative_sample_frcnn(self, name):
-        model = torchvision.models.detection.__dict__[name](
-            num_classes=2, min_size=100, max_size=100, pretrained_backbone=False
+        model = torchvision.models.get_model(
+            name, weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
         )
 
         images, targets = self._make_empty_sample()
@@ -111,7 +111,7 @@ class TestModelsDetectionNegativeSamples:
 
     def test_forward_negative_sample_mrcnn(self):
         model = torchvision.models.detection.maskrcnn_resnet50_fpn(
-            num_classes=2, min_size=100, max_size=100, pretrained_backbone=False
+            weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
         )
 
         images, targets = self._make_empty_sample(add_masks=True)
@@ -123,7 +123,7 @@ class TestModelsDetectionNegativeSamples:
 
     def test_forward_negative_sample_krcnn(self):
         model = torchvision.models.detection.keypointrcnn_resnet50_fpn(
-            num_classes=2, min_size=100, max_size=100, pretrained_backbone=False
+            weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
         )
 
         images, targets = self._make_empty_sample(add_keypoints=True)
@@ -135,7 +135,7 @@ class TestModelsDetectionNegativeSamples:
 
     def test_forward_negative_sample_retinanet(self):
         model = torchvision.models.detection.retinanet_resnet50_fpn(
-            num_classes=2, min_size=100, max_size=100, pretrained_backbone=False
+            weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
         )
 
         images, targets = self._make_empty_sample()
@@ -143,8 +143,19 @@ class TestModelsDetectionNegativeSamples:
 
         assert_equal(loss_dict["bbox_regression"], torch.tensor(0.0))
 
+    def test_forward_negative_sample_fcos(self):
+        model = torchvision.models.detection.fcos_resnet50_fpn(
+            weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
+        )
+
+        images, targets = self._make_empty_sample()
+        loss_dict = model(images, targets)
+
+        assert_equal(loss_dict["bbox_regression"], torch.tensor(0.0))
+        assert_equal(loss_dict["bbox_ctrness"], torch.tensor(0.0))
+
     def test_forward_negative_sample_ssd(self):
-        model = torchvision.models.detection.ssd300_vgg16(num_classes=2, pretrained_backbone=False)
+        model = torchvision.models.detection.ssd300_vgg16(weights=None, weights_backbone=None, num_classes=2)
 
         images, targets = self._make_empty_sample()
         loss_dict = model(images, targets)

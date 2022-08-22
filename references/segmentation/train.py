@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+import warnings
 
 import presets
 import torch
@@ -9,12 +10,8 @@ import torchvision
 import utils
 from coco_utils import get_coco
 from torch import nn
-
-
-try:
-    from torchvision.prototype import models as PM
-except ImportError:
-    PM = None
+from torch.optim.lr_scheduler import PolynomialLR
+from torchvision.transforms import functional as F, InterpolationMode
 
 
 def get_dataset(dir_path, name, image_set, transform):
@@ -35,12 +32,19 @@ def get_dataset(dir_path, name, image_set, transform):
 def get_transform(train, args):
     if train:
         return presets.SegmentationPresetTrain(base_size=520, crop_size=480)
-    elif not args.weights:
-        return presets.SegmentationPresetEval(base_size=520)
+    elif args.weights and args.test_only:
+        weights = torchvision.models.get_weight(args.weights)
+        trans = weights.transforms()
+
+        def preprocessing(img, target):
+            img = trans(img)
+            size = F.get_dimensions(img)[1:]
+            target = F.resize(target, size, interpolation=InterpolationMode.NEAREST)
+            return img, F.pil_to_tensor(target)
+
+        return preprocessing
     else:
-        fn = PM.segmentation.__dict__[args.model]
-        weights = PM._api.get_weight(fn, args.weights)
-        return weights.transforms()
+        return presets.SegmentationPresetEval(base_size=520)
 
 
 def criterion(inputs, target):
@@ -59,6 +63,7 @@ def evaluate(model, data_loader, device, num_classes):
     confmat = utils.ConfusionMatrix(num_classes)
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test:"
+    num_processed_samples = 0
     with torch.inference_mode():
         for image, target in metric_logger.log_every(data_loader, 100, header):
             image, target = image.to(device), target.to(device)
@@ -66,25 +71,48 @@ def evaluate(model, data_loader, device, num_classes):
             output = output["out"]
 
             confmat.update(target.flatten(), output.argmax(1).flatten())
+            # FIXME need to take into account that the datasets
+            # could have been padded in distributed setup
+            num_processed_samples += image.shape[0]
 
         confmat.reduce_from_all_processes()
+
+    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+    if (
+        hasattr(data_loader.dataset, "__len__")
+        and len(data_loader.dataset) != num_processed_samples
+        and torch.distributed.get_rank() == 0
+    ):
+        # See FIXME above
+        warnings.warn(
+            f"It looks like the dataset has {len(data_loader.dataset)} samples, but {num_processed_samples} "
+            "samples were used for the validation, which might bias the results. "
+            "Try adjusting the batch size and / or the world size. "
+            "Setting the world size to 1 is always a safe bet."
+        )
 
     return confmat
 
 
-def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, print_freq):
+def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, print_freq, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
     header = f"Epoch: [{epoch}]"
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         image, target = image.to(device), target.to(device)
-        output = model(image)
-        loss = criterion(output, target)
+        with torch.cuda.amp.autocast(enabled=scaler is not None):
+            output = model(image)
+            loss = criterion(output, target)
 
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        if scaler is not None:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
 
         lr_scheduler.step()
 
@@ -92,8 +120,6 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
 
 def main(args):
-    if args.weights and PM is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -102,12 +128,18 @@ def main(args):
 
     device = torch.device(args.device)
 
+    if args.use_deterministic_algorithms:
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True)
+    else:
+        torch.backends.cudnn.benchmark = True
+
     dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(True, args))
     dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(False, args))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test, shuffle=False)
     else:
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
@@ -125,16 +157,13 @@ def main(args):
         dataset_test, batch_size=1, sampler=test_sampler, num_workers=args.workers, collate_fn=utils.collate_fn
     )
 
-    if not args.weights:
-        model = torchvision.models.segmentation.__dict__[args.model](
-            pretrained=args.pretrained,
-            num_classes=num_classes,
-            aux_loss=args.aux_loss,
-        )
-    else:
-        model = PM.segmentation.__dict__[args.model](
-            weights=args.weights, num_classes=num_classes, aux_loss=args.aux_loss
-        )
+    model = torchvision.models.get_model(
+        args.model,
+        weights=args.weights,
+        weights_backbone=args.weights_backbone,
+        num_classes=num_classes,
+        aux_loss=args.aux_loss,
+    )
     model.to(device)
     if args.distributed:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -153,9 +182,11 @@ def main(args):
         params_to_optimize.append({"params": params, "lr": args.lr * 10})
     optimizer = torch.optim.SGD(params_to_optimize, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
+    scaler = torch.cuda.amp.GradScaler() if args.amp else None
+
     iters_per_epoch = len(data_loader)
-    main_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-        optimizer, lambda x: (1 - x / (iters_per_epoch * (args.epochs - args.lr_warmup_epochs))) ** 0.9
+    main_lr_scheduler = PolynomialLR(
+        optimizer, total_iters=iters_per_epoch * (args.epochs - args.lr_warmup_epochs), power=0.9
     )
 
     if args.lr_warmup_epochs > 0:
@@ -186,8 +217,13 @@ def main(args):
             optimizer.load_state_dict(checkpoint["optimizer"])
             lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
             args.start_epoch = checkpoint["epoch"] + 1
+            if args.amp:
+                scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
+        # We disable the cudnn benchmarking because it can noticeably affect the accuracy
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
         confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
         print(confmat)
         return
@@ -196,7 +232,7 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, args.print_freq)
+        train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, args.print_freq, scaler)
         confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
         print(confmat)
         checkpoint = {
@@ -206,6 +242,8 @@ def main(args):
             "epoch": epoch,
             "args": args,
         }
+        if args.amp:
+            checkpoint["scaler"] = scaler.state_dict()
         utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
         utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
@@ -257,17 +295,17 @@ def get_args_parser(add_help=True):
         action="store_true",
     )
     parser.add_argument(
-        "--pretrained",
-        dest="pretrained",
-        help="Use pre-trained models from the modelzoo",
-        action="store_true",
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
-    # Prototype models only
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+    parser.add_argument("--weights-backbone", default=None, type=str, help="the backbone weights enum name to load")
+
+    # Mixed precision training parameters
+    parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
     return parser
 

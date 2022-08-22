@@ -1,12 +1,12 @@
 import csv
 import os
 from collections import namedtuple
-from typing import Any, Callable, List, Optional, Union, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import PIL
 import torch
 
-from .utils import download_file_from_google_drive, check_integrity, verify_str_arg, extract_archive
+from .utils import check_integrity, download_file_from_google_drive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 CSV = namedtuple("CSV", ["header", "index", "data"])
@@ -32,7 +32,7 @@ class CelebA(VisionDataset):
             Defaults to ``attr``. If empty, ``None`` will be returned as target.
 
         transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+            and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and

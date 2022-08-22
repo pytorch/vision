@@ -16,13 +16,16 @@ import zipfile
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
+import numpy as np
+
 import PIL
 import PIL.Image
 import pytest
 import torch
 import torchvision.datasets
 import torchvision.io
-from common_utils import get_tmp_dir, disable_console_output
+from common_utils import disable_console_output, get_tmp_dir
+from torchvision.transforms.functional import get_dimensions
 
 
 __all__ = [
@@ -61,6 +64,7 @@ class LazyImporter:
         "requests",
         "scipy.io",
         "scipy.sparse",
+        "h5py",
     )
 
     def __init__(self):
@@ -747,6 +751,33 @@ def create_image_folder(
     ]
 
 
+def shape_test_for_stereo(
+    left: PIL.Image.Image,
+    right: PIL.Image.Image,
+    disparity: Optional[np.ndarray] = None,
+    valid_mask: Optional[np.ndarray] = None,
+):
+    left_dims = get_dimensions(left)
+    right_dims = get_dimensions(right)
+    c, h, w = left_dims
+    # check that left and right are the same size
+    assert left_dims == right_dims
+    assert c == 3
+
+    # check that the disparity has the same spatial dimensions
+    # as the input
+    if disparity is not None:
+        assert disparity.ndim == 3
+        assert disparity.shape == (1, h, w)
+
+    if valid_mask is not None:
+        # check that valid mask is the same size as the disparity
+        _, dh, dw = disparity.shape
+        mh, mw = valid_mask.shape
+        assert dh == mh
+        assert dw == mw
+
+
 @requires_lazy_imports("av")
 def create_video_file(
     root: Union[pathlib.Path, str],
@@ -866,10 +897,21 @@ def _split_files_or_dirs(root, *files_or_dirs):
 
 def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
     archive = pathlib.Path(root) / name
+    if not files_or_dirs:
+        # We need to invoke `Path.with_suffix("")`, since call only applies to the last suffix if multiple suffixes are
+        # present. For example, `pathlib.Path("foo.tar.gz").with_suffix("")` results in `foo.tar`.
+        file_or_dir = archive
+        for _ in range(len(archive.suffixes)):
+            file_or_dir = file_or_dir.with_suffix("")
+        if file_or_dir.exists():
+            files_or_dirs = (file_or_dir,)
+        else:
+            raise ValueError("No file or dir provided.")
+
     files, dirs = _split_files_or_dirs(root, *files_or_dirs)
 
     with opener(archive) as fh:
-        for file in files:
+        for file in sorted(files):
             adder(fh, file, file.relative_to(root))
 
     if remove:

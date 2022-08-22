@@ -1,155 +1,226 @@
-import enum
-import functools
-from typing import Callable, Union, Tuple, Dict, Any, Optional, cast
+from __future__ import annotations
+
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchvision.prototype.utils._internal import StrEnum
+from torchvision._utils import StrEnum
+from torchvision.transforms import InterpolationMode
+from torchvision.transforms.functional import _get_inverse_affine_matrix
+from torchvision.transforms.functional_tensor import _compute_output_size
 
-from ._feature import Feature, DEFAULT
+from ._feature import _Feature
 
 
 class BoundingBoxFormat(StrEnum):
-    # this is just for test purposes
-    _SENTINEL = -1
-    XYXY = enum.auto()
-    XYWH = enum.auto()
-    CXCYWH = enum.auto()
+    XYXY = StrEnum.auto()
+    XYWH = StrEnum.auto()
+    CXCYWH = StrEnum.auto()
 
 
-def to_parts(input: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    return input.unbind(dim=-1)  # type: ignore[return-value]
-
-
-def from_parts(a: torch.Tensor, b: torch.Tensor, c: torch.Tensor, d: torch.Tensor) -> torch.Tensor:
-    return torch.stack((a, b, c, d), dim=-1)
-
-
-def format_converter_wrapper(
-    part_converter: Callable[
-        [torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
-    ]
-):
-    def wrapper(input: torch.Tensor) -> torch.Tensor:
-        return from_parts(*part_converter(*to_parts(input)))
-
-    return wrapper
-
-
-@format_converter_wrapper
-def xywh_to_xyxy(
-    x: torch.Tensor, y: torch.Tensor, w: torch.Tensor, h: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    x1 = x
-    y1 = y
-    x2 = x + w
-    y2 = y + h
-    return x1, y1, x2, y2
-
-
-@format_converter_wrapper
-def xyxy_to_xywh(
-    x1: torch.Tensor, y1: torch.Tensor, x2: torch.Tensor, y2: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    x = x1
-    y = y1
-    w = x2 - x1
-    h = y2 - y1
-    return x, y, w, h
-
-
-@format_converter_wrapper
-def cxcywh_to_xyxy(
-    cx: torch.Tensor, cy: torch.Tensor, w: torch.Tensor, h: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    x1 = cx - 0.5 * w
-    y1 = cy - 0.5 * h
-    x2 = cx + 0.5 * w
-    y2 = cy + 0.5 * h
-    return x1, y1, x2, y2
-
-
-@format_converter_wrapper
-def xyxy_to_cxcywh(
-    x1: torch.Tensor, y1: torch.Tensor, x2: torch.Tensor, y2: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
-    w = x2 - x1
-    h = y2 - y1
-    return cx, cy, w, h
-
-
-class BoundingBox(Feature):
-    formats = BoundingBoxFormat
+class BoundingBox(_Feature):
     format: BoundingBoxFormat
     image_size: Tuple[int, int]
 
-    @classmethod
-    def _parse_meta_data(
+    def __new__(
         cls,
-        format: Union[str, BoundingBoxFormat] = DEFAULT,  # type: ignore[assignment]
-        image_size: Optional[Tuple[int, int]] = DEFAULT,  # type: ignore[assignment]
-    ) -> Dict[str, Tuple[Any, Any]]:
+        data: Any,
+        *,
+        format: Union[BoundingBoxFormat, str],
+        image_size: Tuple[int, int],
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: bool = False,
+    ) -> BoundingBox:
+        bounding_box = super().__new__(cls, data, dtype=dtype, device=device, requires_grad=requires_grad)
+
         if isinstance(format, str):
-            format = BoundingBoxFormat[format]
-        format_fallback = BoundingBoxFormat.XYXY
-        return dict(
-            format=(format, format_fallback),
-            image_size=(image_size, functools.partial(cls.guess_image_size, format=format_fallback)),
+            format = BoundingBoxFormat.from_str(format.upper())
+        bounding_box.format = format
+
+        bounding_box.image_size = image_size
+
+        return bounding_box
+
+    @classmethod
+    def new_like(
+        cls,
+        other: BoundingBox,
+        data: Any,
+        *,
+        format: Optional[Union[BoundingBoxFormat, str]] = None,
+        image_size: Optional[Tuple[int, int]] = None,
+        **kwargs: Any,
+    ) -> BoundingBox:
+        return super().new_like(
+            other,
+            data,
+            format=format if format is not None else other.format,
+            image_size=image_size if image_size is not None else other.image_size,
+            **kwargs,
         )
 
-    _TO_XYXY_MAP = {
-        BoundingBoxFormat.XYWH: xywh_to_xyxy,
-        BoundingBoxFormat.CXCYWH: cxcywh_to_xyxy,
-    }
-    _FROM_XYXY_MAP = {
-        BoundingBoxFormat.XYWH: xyxy_to_xywh,
-        BoundingBoxFormat.CXCYWH: xyxy_to_cxcywh,
-    }
+    def to_format(self, format: Union[str, BoundingBoxFormat]) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
 
-    @classmethod
-    def guess_image_size(cls, data: torch.Tensor, *, format: BoundingBoxFormat) -> Tuple[int, int]:
-        if format not in (BoundingBoxFormat.XYWH, BoundingBoxFormat.CXCYWH):
-            if format != BoundingBoxFormat.XYXY:
-                data = cls._TO_XYXY_MAP[format](data)
-            data = cls._FROM_XYXY_MAP[BoundingBoxFormat.XYWH](data)
-        *_, w, h = to_parts(data)
-        if data.dtype.is_floating_point:
-            w = w.ceil()
-            h = h.ceil()
-        return int(h), int(w)
-
-    @classmethod
-    def from_parts(
-        cls,
-        a,
-        b,
-        c,
-        d,
-        *,
-        like: Optional["BoundingBox"] = None,
-        format: Union[str, BoundingBoxFormat] = DEFAULT,  # type: ignore[assignment]
-        image_size: Optional[Tuple[int, int]] = DEFAULT,  # type: ignore[assignment]
-    ) -> "BoundingBox":
-        return cls(from_parts(a, b, c, d), like=like, image_size=image_size, format=format)
-
-    def to_parts(self) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        return to_parts(self)
-
-    def convert(self, format: Union[str, BoundingBoxFormat]) -> "BoundingBox":
         if isinstance(format, str):
-            format = BoundingBoxFormat[format]
+            format = BoundingBoxFormat.from_str(format.upper())
 
-        if format == self.format:
-            return cast(BoundingBox, self.clone())
+        return BoundingBox.new_like(
+            self, _F.convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
+        )
 
-        data = self
+    def horizontal_flip(self) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
 
-        if self.format != BoundingBoxFormat.XYXY:
-            data = self._TO_XYXY_MAP[self.format](data)
+        output = _F.horizontal_flip_bounding_box(self, format=self.format, image_size=self.image_size)
+        return BoundingBox.new_like(self, output)
 
-        if format != BoundingBoxFormat.XYXY:
-            data = self._FROM_XYXY_MAP[format](data)
+    def vertical_flip(self) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
 
-        return BoundingBox(data, like=self, format=format)
+        output = _F.vertical_flip_bounding_box(self, format=self.format, image_size=self.image_size)
+        return BoundingBox.new_like(self, output)
+
+    def resize(  # type: ignore[override]
+        self,
+        size: List[int],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        max_size: Optional[int] = None,
+        antialias: bool = False,
+    ) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
+        image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
+        return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
+
+    def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.crop_bounding_box(self, self.format, top, left)
+        return BoundingBox.new_like(self, output, image_size=(height, width))
+
+    def center_crop(self, output_size: List[int]) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.center_crop_bounding_box(
+            self, format=self.format, output_size=output_size, image_size=self.image_size
+        )
+        image_size = (output_size[0], output_size[0]) if len(output_size) == 1 else (output_size[0], output_size[1])
+        return BoundingBox.new_like(self, output, image_size=image_size)
+
+    def resized_crop(
+        self,
+        top: int,
+        left: int,
+        height: int,
+        width: int,
+        size: List[int],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        antialias: bool = False,
+    ) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
+        image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
+        return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
+
+    def pad(
+        self,
+        padding: Union[int, Sequence[int]],
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        padding_mode: str = "constant",
+    ) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        if padding_mode not in ["constant"]:
+            raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
+
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        if not isinstance(padding, int):
+            padding = list(padding)
+
+        output = _F.pad_bounding_box(self, padding, format=self.format)
+
+        # Update output image size:
+        # TODO: remove the import below and make _parse_pad_padding available
+        from torchvision.transforms.functional_tensor import _parse_pad_padding
+
+        left, top, right, bottom = _parse_pad_padding(padding)
+        height, width = self.image_size
+        height += top + bottom
+        width += left + right
+
+        return BoundingBox.new_like(self, output, image_size=(height, width))
+
+    def rotate(
+        self,
+        angle: float,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        expand: bool = False,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        center: Optional[List[float]] = None,
+    ) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.rotate_bounding_box(
+            self, format=self.format, image_size=self.image_size, angle=angle, expand=expand, center=center
+        )
+        image_size = self.image_size
+        if expand:
+            # The way we recompute image_size is not optimal due to redundant computations of
+            # - rotation matrix (_get_inverse_affine_matrix)
+            # - points dot matrix (_compute_output_size)
+            # Alternatively, we could return new image size by _F.rotate_bounding_box
+            height, width = image_size
+            rotation_matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+            new_width, new_height = _compute_output_size(rotation_matrix, width, height)
+            image_size = (new_height, new_width)
+
+        return BoundingBox.new_like(self, output, dtype=output.dtype, image_size=image_size)
+
+    def affine(
+        self,
+        angle: float,
+        translate: List[float],
+        scale: float,
+        shear: List[float],
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        center: Optional[List[float]] = None,
+    ) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.affine_bounding_box(
+            self,
+            self.format,
+            self.image_size,
+            angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            center=center,
+        )
+        return BoundingBox.new_like(self, output, dtype=output.dtype)
+
+    def perspective(
+        self,
+        perspective_coeffs: List[float],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    ) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.perspective_bounding_box(self, self.format, perspective_coeffs)
+        return BoundingBox.new_like(self, output, dtype=output.dtype)
+
+    def elastic(
+        self,
+        displacement: torch.Tensor,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    ) -> BoundingBox:
+        from torchvision.prototype.transforms import functional as _F
+
+        output = _F.elastic_bounding_box(self, self.format, displacement)
+        return BoundingBox.new_like(self, output, dtype=output.dtype)

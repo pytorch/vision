@@ -1,3 +1,5 @@
+from typing import Any, List, Optional, Union
+
 import torch
 from torch import nn
 
@@ -24,19 +26,26 @@ def quantize_model(model: nn.Module, backend: str) -> None:
     model.eval()
     # Make sure that weight qconfig matches that of the serialized models
     if backend == "fbgemm":
-        model.qconfig = torch.quantization.QConfig(  # type: ignore[assignment]
-            activation=torch.quantization.default_observer,
-            weight=torch.quantization.default_per_channel_weight_observer,
+        model.qconfig = torch.ao.quantization.QConfig(  # type: ignore[assignment]
+            activation=torch.ao.quantization.default_observer,
+            weight=torch.ao.quantization.default_per_channel_weight_observer,
         )
     elif backend == "qnnpack":
-        model.qconfig = torch.quantization.QConfig(  # type: ignore[assignment]
-            activation=torch.quantization.default_observer, weight=torch.quantization.default_weight_observer
+        model.qconfig = torch.ao.quantization.QConfig(  # type: ignore[assignment]
+            activation=torch.ao.quantization.default_observer, weight=torch.ao.quantization.default_weight_observer
         )
 
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     model.fuse_model()  # type: ignore[operator]
-    torch.quantization.prepare(model, inplace=True)
+    torch.ao.quantization.prepare(model, inplace=True)
     model(_dummy_input_data)
-    torch.quantization.convert(model, inplace=True)
+    torch.ao.quantization.convert(model, inplace=True)
 
-    return
+
+def _fuse_modules(
+    model: nn.Module, modules_to_fuse: Union[List[str], List[List[str]]], is_qat: Optional[bool], **kwargs: Any
+):
+    if is_qat is None:
+        is_qat = model.training
+    method = torch.ao.quantization.fuse_modules_qat if is_qat else torch.ao.quantization.fuse_modules
+    return method(model, modules_to_fuse, **kwargs)

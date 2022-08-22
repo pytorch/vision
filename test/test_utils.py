@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import tempfile
 from io import BytesIO
@@ -9,7 +10,7 @@ import torch
 import torchvision.transforms.functional as F
 import torchvision.utils as utils
 from common_utils import assert_equal
-from PIL import Image, __version__ as PILLOW_VERSION, ImageColor
+from PIL import __version__ as PILLOW_VERSION, Image, ImageColor
 
 
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
@@ -44,8 +45,8 @@ def test_normalize_in_make_grid():
 
     # Rounding the result to one decimal for comparison
     n_digits = 1
-    rounded_grid_max = torch.round(grid_max * 10 ** n_digits) / (10 ** n_digits)
-    rounded_grid_min = torch.round(grid_min * 10 ** n_digits) / (10 ** n_digits)
+    rounded_grid_max = torch.round(grid_max * 10**n_digits) / (10**n_digits)
+    rounded_grid_min = torch.round(grid_min * 10**n_digits) / (10**n_digits)
 
     assert_equal(norm_max, rounded_grid_max, msg="Normalized max is not equal to 1")
     assert_equal(norm_min, rounded_grid_min, msg="Normalized min is not equal to 0")
@@ -76,7 +77,7 @@ def test_save_image_file_object():
         fp = BytesIO()
         utils.save_image(t, fp, format="png")
         img_bytes = Image.open(fp)
-        assert_equal(F.to_tensor(img_orig), F.to_tensor(img_bytes), msg="Image not stored in file object")
+        assert_equal(F.pil_to_tensor(img_orig), F.pil_to_tensor(img_bytes), msg="Image not stored in file object")
 
 
 @pytest.mark.skipif(sys.platform in ("win32", "cygwin"), reason="temporarily disabled on Windows")
@@ -88,7 +89,7 @@ def test_save_image_single_pixel_file_object():
         fp = BytesIO()
         utils.save_image(t, fp, format="png")
         img_bytes = Image.open(fp)
-        assert_equal(F.to_tensor(img_orig), F.to_tensor(img_bytes), msg="Image not stored in file object")
+        assert_equal(F.pil_to_tensor(img_orig), F.pil_to_tensor(img_bytes), msg="Image not stored in file object")
 
 
 def test_draw_boxes():
@@ -124,7 +125,7 @@ def test_draw_boxes_vanilla():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
     boxes_cp = boxes.clone()
-    result = utils.draw_bounding_boxes(img, boxes, fill=False, width=7)
+    result = utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors="white")
 
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_vanilla.png")
     if not os.path.exists(path):
@@ -149,7 +150,12 @@ def test_draw_invalid_boxes():
     img_tp = ((1, 1, 1), (1, 2, 3))
     img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
     img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
+    img_correct = torch.zeros((3, 10, 10), dtype=torch.uint8)
     boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+    boxes_wrong = torch.tensor([[10, 10, 4, 5], [30, 20, 10, 5]], dtype=torch.float)
+    labels_wrong = ["one", "two"]
+    colors_wrong = ["pink", "blue"]
+
     with pytest.raises(TypeError, match="Tensor expected"):
         utils.draw_bounding_boxes(img_tp, boxes)
     with pytest.raises(ValueError, match="Tensor uint8 expected"):
@@ -158,6 +164,28 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_wrong2, boxes)
     with pytest.raises(ValueError, match="Only grayscale and RGB images are supported"):
         utils.draw_bounding_boxes(img_wrong2[0][:2], boxes)
+    with pytest.raises(ValueError, match="Number of boxes"):
+        utils.draw_bounding_boxes(img_correct, boxes, labels_wrong)
+    with pytest.raises(ValueError, match="Number of colors"):
+        utils.draw_bounding_boxes(img_correct, boxes, colors=colors_wrong)
+    with pytest.raises(ValueError, match="Boxes need to be in"):
+        utils.draw_bounding_boxes(img_correct, boxes_wrong)
+
+
+def test_draw_boxes_warning():
+    img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
+
+    with pytest.warns(UserWarning, match=re.escape("Argument 'font_size' will be ignored since 'font' is not set.")):
+        utils.draw_bounding_boxes(img, boxes, font_size=11)
+
+
+def test_draw_no_boxes():
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    boxes = torch.full((0, 4), 0, dtype=torch.float)
+    with pytest.warns(UserWarning, match=re.escape("boxes doesn't contain any box. No box was drawn")):
+        res = utils.draw_bounding_boxes(img, boxes)
+        # Check that the function didnt change the image
+        assert res.eq(img).all()
 
 
 @pytest.mark.parametrize(
@@ -250,6 +278,15 @@ def test_draw_segmentation_masks_errors():
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
 
 
+def test_draw_no_segmention_mask():
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    masks = torch.full((0, 100, 100), 0, dtype=torch.bool)
+    with pytest.warns(UserWarning, match=re.escape("masks doesn't contain any mask. No mask was drawn")):
+        res = utils.draw_segmentation_masks(img, masks)
+        # Check that the function didnt change the image
+        assert res.eq(img).all()
+
+
 def test_draw_keypoints_vanilla():
     # Keypoints is declared on top as global variable
     keypoints_cp = keypoints.clone()
@@ -315,6 +352,44 @@ def test_draw_keypoints_errors():
     with pytest.raises(ValueError, match="keypoints must be of shape"):
         invalid_keypoints = torch.tensor([[10, 10, 10, 10], [5, 6, 7, 8]], dtype=torch.float)
         utils.draw_keypoints(image=img, keypoints=invalid_keypoints)
+
+
+@pytest.mark.parametrize("batch", (True, False))
+def test_flow_to_image(batch):
+    h, w = 100, 100
+    flow = torch.meshgrid(torch.arange(h), torch.arange(w), indexing="ij")
+    flow = torch.stack(flow[::-1], dim=0).float()
+    flow[0] -= h / 2
+    flow[1] -= w / 2
+
+    if batch:
+        flow = torch.stack([flow, flow])
+
+    img = utils.flow_to_image(flow)
+    assert img.shape == (2, 3, h, w) if batch else (3, h, w)
+
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "expected_flow.pt")
+    expected_img = torch.load(path, map_location="cpu")
+
+    if batch:
+        expected_img = torch.stack([expected_img, expected_img])
+
+    assert_equal(expected_img, img)
+
+
+@pytest.mark.parametrize(
+    "input_flow, match",
+    (
+        (torch.full((3, 10, 10), 0, dtype=torch.float), "Input flow should have shape"),
+        (torch.full((5, 3, 10, 10), 0, dtype=torch.float), "Input flow should have shape"),
+        (torch.full((2, 10), 0, dtype=torch.float), "Input flow should have shape"),
+        (torch.full((5, 2, 10), 0, dtype=torch.float), "Input flow should have shape"),
+        (torch.full((2, 10, 30), 0, dtype=torch.int), "Flow should be of dtype torch.float"),
+    ),
+)
+def test_flow_to_image_errors(input_flow, match):
+    with pytest.raises(ValueError, match=match):
+        utils.flow_to_image(flow=input_flow)
 
 
 if __name__ == "__main__":

@@ -1,39 +1,137 @@
-from typing import Any, Dict, Sequence
+import functools
+from typing import Any, Callable, Dict, List, Sequence, Type, Union
+
+import PIL.Image
 
 import torch
-from torchvision.prototype.features import Image, BoundingBox, Label
-from torchvision.prototype.transforms import Transform
+from torchvision.prototype import features
+from torchvision.prototype.transforms import functional as F, Transform
+from torchvision.transforms.transforms import _setup_size
 
 
 class Identity(Transform):
-    """Identity transform that supports all built-in :class:`~torchvision.prototype.features.Feature`'s."""
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return inpt
 
-    def __init__(self):
+
+class Lambda(Transform):
+    def __init__(self, fn: Callable[[Any], Any], *types: Type):
         super().__init__()
-        for feature_type in self._BUILTIN_FEATURE_TYPES:
-            self.register_feature_transform(feature_type, lambda input, **params: input)
+        self.fn = fn
+        self.types = types
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if type(inpt) in self.types:
+            return self.fn(inpt)
+        else:
+            return inpt
+
+    def extra_repr(self) -> str:
+        extras = []
+        name = getattr(self.fn, "__name__", None)
+        if name:
+            extras.append(name)
+        extras.append(f"types={[type.__name__ for type in self.types]}")
+        return ", ".join(extras)
+
+
+class LinearTransformation(Transform):
+    def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
+        super().__init__()
+        if transformation_matrix.size(0) != transformation_matrix.size(1):
+            raise ValueError(
+                "transformation_matrix should be square. Got "
+                f"{tuple(transformation_matrix.size())} rectangular matrix."
+            )
+
+        if mean_vector.size(0) != transformation_matrix.size(0):
+            raise ValueError(
+                f"mean_vector should have the same length {mean_vector.size(0)}"
+                f" as any one of the dimensions of the transformation_matrix [{tuple(transformation_matrix.size())}]"
+            )
+
+        if transformation_matrix.device != mean_vector.device:
+            raise ValueError(
+                f"Input tensors should be on the same device. Got {transformation_matrix.device} and {mean_vector.device}"
+            )
+
+        self.transformation_matrix = transformation_matrix
+        self.mean_vector = mean_vector
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+
+        if isinstance(inpt, features._Feature) and not isinstance(inpt, features.Image):
+            return inpt
+        elif isinstance(inpt, PIL.Image.Image):
+            raise TypeError("Unsupported input type")
+
+        # Image instance after linear transformation is not Image anymore due to unknown data range
+        # Thus we will return Tensor for input Image
+
+        shape = inpt.shape
+        n = shape[-3] * shape[-2] * shape[-1]
+        if n != self.transformation_matrix.shape[0]:
+            raise ValueError(
+                "Input tensor and transformation matrix have incompatible shape."
+                + f"[{shape[-3]} x {shape[-2]} x {shape[-1]}] != "
+                + f"{self.transformation_matrix.shape[0]}"
+            )
+
+        if inpt.device.type != self.mean_vector.device.type:
+            raise ValueError(
+                "Input tensor should be on the same device as transformation matrix and mean vector. "
+                f"Got {inpt.device} vs {self.mean_vector.device}"
+            )
+
+        flat_tensor = inpt.view(-1, n) - self.mean_vector
+        transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
+        return transformed_tensor.view(shape)
 
 
 class Normalize(Transform):
-    NO_OP_FEATURE_TYPES = {BoundingBox, Label}
-
-    def __init__(self, mean: Sequence[float], std: Sequence[float]):
+    def __init__(self, mean: List[float], std: List[float]):
         super().__init__()
         self.mean = mean
         self.std = std
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
-        return dict(mean=self.mean, std=self.std)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.normalize(inpt, mean=self.mean, std=self.std)
 
-    @staticmethod
-    def _channel_stats_to_tensor(stats: Sequence[float], *, like: torch.Tensor) -> torch.Tensor:
-        return torch.as_tensor(stats, device=like.device, dtype=like.dtype).view(-1, 1, 1)
 
-    @staticmethod
-    def image(input: Image, *, mean: Sequence[float], std: Sequence[float]) -> Image:
-        mean_t = Normalize._channel_stats_to_tensor(mean, like=input)
-        std_t = Normalize._channel_stats_to_tensor(std, like=input)
-        return Image((input - mean_t) / std_t, like=input)
+class GaussianBlur(Transform):
+    def __init__(
+        self, kernel_size: Union[int, Sequence[int]], sigma: Union[float, Sequence[float]] = (0.1, 2.0)
+    ) -> None:
+        super().__init__()
+        self.kernel_size = _setup_size(kernel_size, "Kernel size should be a tuple/list of two integers")
+        for ks in self.kernel_size:
+            if ks <= 0 or ks % 2 == 0:
+                raise ValueError("Kernel size value should be an odd and positive number.")
+
+        if isinstance(sigma, float):
+            if sigma <= 0:
+                raise ValueError("If sigma is a single number, it must be positive.")
+            sigma = (sigma, sigma)
+        elif isinstance(sigma, Sequence) and len(sigma) == 2:
+            if not 0.0 < sigma[0] <= sigma[1]:
+                raise ValueError("sigma values should be positive and of the form (min, max).")
+        else:
+            raise TypeError("sigma should be a single float or a list/tuple with length 2 floats.")
+
+        self.sigma = sigma
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
+        return dict(sigma=[sigma, sigma])
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.gaussian_blur(inpt, **params)
+
+
+class ToDtype(Lambda):
+    def __init__(self, dtype: torch.dtype, *types: Type) -> None:
+        self.dtype = dtype
+        super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *types)
 
     def extra_repr(self) -> str:
-        return f"mean={tuple(self.mean)}, std={tuple(self.std)}"
+        return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])

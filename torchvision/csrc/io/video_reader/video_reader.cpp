@@ -1,10 +1,13 @@
 #include "video_reader.h"
 
+#ifdef USE_PYTHON
 #include <Python.h>
+#endif
 
 #include "../decoder/memory_buffer.h"
 #include "../decoder/sync_decoder.h"
 
+#ifdef USE_PYTHON
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
 #ifdef _WIN32
@@ -13,6 +16,7 @@ PyMODINIT_FUNC PyInit_video_reader(void) {
   return NULL;
 }
 #endif
+#endif // USE_PYTHONs
 
 using namespace ffmpeg;
 
@@ -87,7 +91,7 @@ size_t fillTensor(
   }
   T* frameData = frame.numel() > 0 ? frame.data_ptr<T>() : nullptr;
   int64_t* framePtsData = framePts.data_ptr<int64_t>();
-  CHECK_EQ(framePts.size(0), (int64_t)msgs.size());
+  TORCH_CHECK_EQ(framePts.size(0), (int64_t)msgs.size());
   size_t avgElementsInFrame = frame.numel() / msgs.size();
 
   size_t offset = 0;
@@ -316,7 +320,7 @@ torch::List<torch::Tensor> readVideo(
       auto numberWrittenBytes = fillVideoTensor(
           videoMessages, videoFrame, videoFramePts, header.num, header.den);
 
-      CHECK_EQ(numberWrittenBytes, expectedWrittenBytes);
+      TORCH_CHECK_EQ(numberWrittenBytes, expectedWrittenBytes);
 
       videoTimeBase = torch::zeros({2}, torch::kInt);
       int* videoTimeBaseData = videoTimeBase.data_ptr<int>();
@@ -361,7 +365,7 @@ torch::List<torch::Tensor> readVideo(
           frameSizeTotal += audioMessage.payload->length();
         }
 
-        CHECK_EQ(frameSizeTotal % (outAudioChannels * bytesPerSample), 0);
+        TORCH_CHECK_EQ(frameSizeTotal % (outAudioChannels * bytesPerSample), 0);
         numAudioSamples = frameSizeTotal / (outAudioChannels * bytesPerSample);
 
         audioFrame =
@@ -376,7 +380,7 @@ torch::List<torch::Tensor> readVideo(
 
       auto numberWrittenBytes = fillAudioTensor(
           audioMessages, audioFrame, audioFramePts, header.num, header.den);
-      CHECK_EQ(
+      TORCH_CHECK_EQ(
           numberWrittenBytes,
           numAudioSamples * outAudioChannels * sizeof(float));
 
@@ -583,6 +587,8 @@ torch::List<torch::Tensor> read_video_from_memory(
     int64_t audioEndPts,
     int64_t audioTimeBaseNum,
     int64_t audioTimeBaseDen) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.video_reader.video_reader.read_video_from_memory");
   return readVideo(
       false,
       input_video,
@@ -627,6 +633,8 @@ torch::List<torch::Tensor> read_video_from_file(
     int64_t audioEndPts,
     int64_t audioTimeBaseNum,
     int64_t audioTimeBaseDen) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.video_reader.video_reader.read_video_from_file");
   torch::Tensor dummy_input_video = torch::ones({0});
   return readVideo(
       true,
@@ -653,10 +661,14 @@ torch::List<torch::Tensor> read_video_from_file(
 }
 
 torch::List<torch::Tensor> probe_video_from_memory(torch::Tensor input_video) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.video_reader.video_reader.probe_video_from_memory");
   return probeVideo(false, input_video, "");
 }
 
 torch::List<torch::Tensor> probe_video_from_file(std::string videoPath) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.video_reader.video_reader.probe_video_from_file");
   torch::Tensor dummy_input_video = torch::ones({0});
   return probeVideo(true, dummy_input_video, videoPath);
 }

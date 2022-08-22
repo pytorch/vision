@@ -23,6 +23,7 @@ torch::Tensor decode_png(
     const torch::Tensor& data,
     ImageReadMode mode,
     bool allow_16_bits) {
+  C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.decode_png.decode_png");
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional

@@ -1,5 +1,5 @@
 import math
-from typing import Optional, List, Iterator, Sized, Union, cast
+from typing import cast, Iterator, List, Optional, Sized, Union
 
 import torch
 import torch.distributed as dist
@@ -52,12 +52,10 @@ class DistributedSampler(Sampler):
             if not dist.is_available():
                 raise RuntimeError("Requires distributed package to be available")
             rank = dist.get_rank()
-        assert (
-            len(dataset) % group_size == 0
-        ), "dataset length must be a multiplier of group size dataset length: %d, group size: %d" % (
-            len(dataset),
-            group_size,
-        )
+        if len(dataset) % group_size != 0:
+            raise ValueError(
+                f"dataset length must be a multiplier of group size dataset length: {len(dataset)}, group size: {group_size}"
+            )
         self.dataset = dataset
         self.group_size = group_size
         self.num_replicas = num_replicas

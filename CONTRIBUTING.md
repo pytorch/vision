@@ -83,7 +83,7 @@ Instead of relying directly on `black` however, we rely on
 [ufmt](https://github.com/omnilib/ufmt), for compatibility reasons with Facebook
 internal infrastructure.
 
-To format your code, install `ufmt` with `pip install ufmt` and use e.g.:
+To format your code, install `ufmt` with `pip install ufmt==1.3.2 black==22.3.0 usort==1.0.2` and use e.g.:
 
 ```bash
 ufmt format torchvision
@@ -159,7 +159,7 @@ pip install -r requirements.txt
 
 ```bash
 cd docs
-make html
+make html-noplot
 ```
 
 Then open `docs/build/html/index.html` in your favorite browser.
@@ -173,23 +173,22 @@ clean``.
 
 #### Building the example gallery - or not
 
-When you run ``make html`` for the first time, all the examples in the gallery
-will be built. Subsequent builds should be faster, and will only build the
-examples that have been modified.
+In most cases, running `make html-noplot` is enough to build the docs for your
+specific use-case. The `noplot` part tells sphinx **not** to build the examples
+in the [gallery](https://pytorch.org/vision/stable/auto_examples/index.html),
+which saves a lot of building time.
 
-You can run ``make html-noplot`` to not build the examples at all. This is
-useful after a ``make clean`` to do some quick checks that are not related to
-the examples.
+If you need to build all the examples in the gallery, then you can use `make
+html`.
 
 You can also choose to only build a subset of the examples by using the
 ``EXAMPLES_PATTERN`` env variable, which accepts a regular expression. For
 example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
 with "transforms" in their name.
 
-### New model
+### New architecture or improved model weights
 
-More details on how to add a new model will be provided later. Please, do not send any PR with a new model without discussing 
-it in an issue as, most likely, it will not be accepted.
+Please refer to the guidelines in [Contributing to Torchvision - Models](https://github.com/pytorch/vision/blob/main/CONTRIBUTING_MODELS.md).
  
 ### New dataset
 

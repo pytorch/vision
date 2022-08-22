@@ -2,17 +2,80 @@ import math
 import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Tuple
+from itertools import product
+from typing import Callable, List, Tuple
 
 import numpy as np
 import pytest
 import torch
-from common_utils import needs_cuda, cpu_and_gpu, assert_equal
+import torch.fx
+import torch.nn.functional as F
+from common_utils import assert_equal, cpu_and_gpu, needs_cuda
 from PIL import Image
 from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import models, ops
+from torchvision.models.feature_extraction import get_graph_node_names
+
+
+class RoIOpTesterModuleWrapper(nn.Module):
+    def __init__(self, obj):
+        super().__init__()
+        self.layer = obj
+        self.n_inputs = 2
+
+    def forward(self, a, b):
+        self.layer(a, b)
+
+
+class MultiScaleRoIAlignModuleWrapper(nn.Module):
+    def __init__(self, obj):
+        super().__init__()
+        self.layer = obj
+        self.n_inputs = 3
+
+    def forward(self, a, b, c):
+        self.layer(a, b, c)
+
+
+class DeformConvModuleWrapper(nn.Module):
+    def __init__(self, obj):
+        super().__init__()
+        self.layer = obj
+        self.n_inputs = 3
+
+    def forward(self, a, b, c):
+        self.layer(a, b, c)
+
+
+class StochasticDepthWrapper(nn.Module):
+    def __init__(self, obj):
+        super().__init__()
+        self.layer = obj
+        self.n_inputs = 1
+
+    def forward(self, a):
+        self.layer(a)
+
+
+class DropBlockWrapper(nn.Module):
+    def __init__(self, obj):
+        super().__init__()
+        self.layer = obj
+        self.n_inputs = 1
+
+    def forward(self, a):
+        self.layer(a)
+
+
+class PoolWrapper(nn.Module):
+    def __init__(self, pool: nn.Module):
+        super().__init__()
+        self.pool = pool
+
+    def forward(self, imgs: Tensor, boxes: List[Tensor]) -> Tensor:
+        return self.pool(imgs, boxes)
 
 
 class RoIOpTester(ABC):
@@ -25,7 +88,7 @@ class RoIOpTester(ABC):
         rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS opeartions.
-        n_channels = 2 * (pool_size ** 2)
+        n_channels = 2 * (pool_size**2)
         x = torch.rand(2, n_channels, 10, 10, dtype=x_dtype, device=device)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
@@ -46,13 +109,22 @@ class RoIOpTester(ABC):
         tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
         torch.testing.assert_close(gt_y.to(y), y, rtol=tol, atol=tol)
 
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_is_leaf_node(self, device):
+        op_obj = self.make_obj(wrap=True).to(device=device)
+        graph_node_names = get_graph_node_names(op_obj)
+
+        assert len(graph_node_names) == 2
+        assert len(graph_node_names[0]) == len(graph_node_names[1])
+        assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
+
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("contiguous", (True, False))
     def test_backward(self, seed, device, contiguous):
         torch.random.manual_seed(seed)
         pool_size = 2
-        x = torch.rand(1, 2 * (pool_size ** 2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
+        x = torch.rand(1, 2 * (pool_size**2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
         rois = torch.tensor(
@@ -87,8 +159,20 @@ class RoIOpTester(ABC):
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
             ops.roi_pool(a, [boxes], output_size=(2, 2))
 
+    def _helper_jit_boxes_list(self, model):
+        x = torch.rand(2, 1, 10, 10)
+        roi = torch.tensor([[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]], dtype=torch.float).t()
+        rois = [roi, roi]
+        scriped = torch.jit.script(model)
+        y = scriped(x, rois)
+        assert y.shape == (10, 1, 3, 3)
+
     @abstractmethod
     def fn(*args, **kwargs):
+        pass
+
+    @abstractmethod
+    def make_obj(*args, **kwargs):
         pass
 
     @abstractmethod
@@ -103,6 +187,10 @@ class RoIOpTester(ABC):
 class TestRoiPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.RoIPool((pool_h, pool_w), spatial_scale)(x, rois)
+
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, wrap=False):
+        obj = ops.RoIPool((pool_h, pool_w), spatial_scale)
+        return RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.roi_pool)
@@ -139,10 +227,18 @@ class TestRoiPool(RoIOpTester):
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
 
+    def test_jit_boxes_list(self):
+        model = PoolWrapper(ops.RoIPool(output_size=[3, 3], spatial_scale=1.0))
+        self._helper_jit_boxes_list(model)
+
 
 class TestPSRoIPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIPool((pool_h, pool_w), 1)(x, rois)
+
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, wrap=False):
+        obj = ops.PSRoIPool((pool_h, pool_w), spatial_scale)
+        return RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.ps_roi_pool)
@@ -222,6 +318,12 @@ class TestRoIAlign(RoIOpTester):
         return ops.RoIAlign(
             (pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned
         )(x, rois)
+
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, aligned=False, wrap=False):
+        obj = ops.RoIAlign(
+            (pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned
+        )
+        return RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.roi_align)
@@ -369,10 +471,18 @@ class TestRoIAlign(RoIOpTester):
         with pytest.raises(RuntimeError, match="Only one image per batch is allowed"):
             ops.roi_align(qx, qrois, output_size=5)
 
+    def test_jit_boxes_list(self):
+        model = PoolWrapper(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
+        self._helper_jit_boxes_list(model)
+
 
 class TestPSRoIAlign(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)(x, rois)
+
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, wrap=False):
+        obj = ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)
+        return RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.ps_roi_align)
@@ -422,12 +532,18 @@ class TestPSRoIAlign(RoIOpTester):
 
 
 class TestMultiScaleRoIAlign:
+    def make_obj(self, fmap_names=None, output_size=(7, 7), sampling_ratio=2, wrap=False):
+        if fmap_names is None:
+            fmap_names = ["0"]
+        obj = ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
+        return MultiScaleRoIAlignModuleWrapper(obj) if wrap else obj
+
     def test_msroialign_repr(self):
         fmap_names = ["0"]
         output_size = (7, 7)
         sampling_ratio = 2
         # Pass mock feature map names
-        t = ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
+        t = self.make_obj(fmap_names, output_size, sampling_ratio, wrap=False)
 
         # Check integrity of object __repr__ attribute
         expected_string = (
@@ -435,6 +551,15 @@ class TestMultiScaleRoIAlign:
             f"sampling_ratio={sampling_ratio})"
         )
         assert repr(t) == expected_string
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_is_leaf_node(self, device):
+        op_obj = self.make_obj(wrap=True).to(device=device)
+        graph_node_names = get_graph_node_names(op_obj)
+
+        assert len(graph_node_names) == 2
+        assert len(graph_node_names[0]) == len(graph_node_names[1])
+        assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
 
 class TestNMS:
@@ -693,6 +818,21 @@ class TestDeformConv:
 
         return x, weight, offset, mask, bias, stride, pad, dilation
 
+    def make_obj(self, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2, wrap=False):
+        obj = ops.DeformConv2d(
+            in_channels, out_channels, kernel_size, stride=(2, 1), padding=(1, 0), dilation=(2, 1), groups=groups
+        )
+        return DeformConvModuleWrapper(obj) if wrap else obj
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_is_leaf_node(self, device):
+        op_obj = self.make_obj(wrap=True).to(device=device)
+        graph_node_names = get_graph_node_names(op_obj)
+
+        assert len(graph_node_names) == 2
+        assert len(graph_node_names[0]) == len(graph_node_names[1])
+        assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
+
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("batch_sz", (0, 33))
@@ -705,9 +845,9 @@ class TestDeformConv:
         groups = 2
         tol = 2e-3 if dtype is torch.half else 1e-5
 
-        layer = ops.DeformConv2d(
-            in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups
-        ).to(device=x.device, dtype=dtype)
+        layer = self.make_obj(in_channels, out_channels, kernel_size, groups, wrap=False).to(
+            device=x.device, dtype=dtype
+        )
         res = layer(x, offset, mask)
 
         weight = layer.weight.data
@@ -879,14 +1019,8 @@ class TestFrozenBNT:
         bn.load_state_dict(state_dict)
         torch.testing.assert_close(fbn(x), bn(x), rtol=1e-5, atol=1e-6)
 
-    def test_frozenbatchnorm2d_n_arg(self):
-        """Ensure a warning is thrown when passing `n` kwarg
-        (remove this when support of `n` is dropped)"""
-        with pytest.warns(DeprecationWarning):
-            ops.misc.FrozenBatchNorm2d(32, eps=1e-5, n=32)
 
-
-class TestBoxConversion:
+class TestBoxConversionToRoi:
     def _get_box_sequences():
         # Define here the argument type of `boxes` supported by region pooling operations
         box_tensor = torch.tensor([[0, 0, 0, 100, 100], [1, 0, 0, 100, 100]], dtype=torch.float)
@@ -912,7 +1046,7 @@ class TestBoxConversion:
             assert_equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence))
 
 
-class TestBox:
+class TestBoxConvert:
     def test_bbox_same(self):
         box_tensor = torch.tensor(
             [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float
@@ -942,7 +1076,7 @@ class TestBox:
         assert_equal(box_xyxy, box_tensor)
 
     def test_bbox_xyxy_cxcywh(self):
-        # Simple test convert boxes to xywh and back. Make sure they are same.
+        # Simple test convert boxes to cxcywh and back. Make sure they are same.
         # box_tensor is in x1 y1 x2 y2 format.
         box_tensor = torch.tensor(
             [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float
@@ -964,7 +1098,6 @@ class TestBox:
             [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float
         )
 
-        # This is wrong
         exp_cxcywh = torch.tensor(
             [[50, 50, 100, 100], [0, 0, 0, 0], [20, 25, 20, 20], [58, 65, 70, 60]], dtype=torch.float
         )
@@ -993,133 +1126,422 @@ class TestBox:
         )
 
         scripted_fn = torch.jit.script(ops.box_convert)
-        TOLERANCE = 1e-3
 
         box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
         scripted_xywh = scripted_fn(box_tensor, "xyxy", "xywh")
-        torch.testing.assert_close(scripted_xywh, box_xywh, rtol=0.0, atol=TOLERANCE)
+        torch.testing.assert_close(scripted_xywh, box_xywh)
 
         box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
         scripted_cxcywh = scripted_fn(box_tensor, "xyxy", "cxcywh")
-        torch.testing.assert_close(scripted_cxcywh, box_cxcywh, rtol=0.0, atol=TOLERANCE)
+        torch.testing.assert_close(scripted_cxcywh, box_cxcywh)
 
 
 class TestBoxArea:
-    def test_box_area(self):
-        def area_check(box, expected, tolerance=1e-4):
-            out = ops.box_area(box)
-            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
+    def area_check(self, box, expected, atol=1e-4):
+        out = ops.box_area(box)
+        torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=atol)
 
-        # Check for int boxes
-        for dtype in [torch.int8, torch.int16, torch.int32, torch.int64]:
-            box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype)
-            expected = torch.tensor([10000, 0])
-            area_check(box_tensor, expected)
+    @pytest.mark.parametrize("dtype", [torch.int8, torch.int16, torch.int32, torch.int64])
+    def test_int_boxes(self, dtype):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype)
+        expected = torch.tensor([10000, 0], dtype=torch.int32)
+        self.area_check(box_tensor, expected)
 
-        # Check for float32 and float64 boxes
-        for dtype in [torch.float32, torch.float64]:
-            box_tensor = torch.tensor(
-                [
-                    [285.3538, 185.5758, 1193.5110, 851.4551],
-                    [285.1472, 188.7374, 1192.4984, 851.0669],
-                    [279.2440, 197.9812, 1189.4746, 849.2019],
-                ],
-                dtype=dtype,
-            )
-            expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=torch.float64)
-            area_check(box_tensor, expected, tolerance=0.05)
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_float_boxes(self, dtype):
+        box_tensor = torch.tensor(FLOAT_BOXES, dtype=dtype)
+        expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=dtype)
+        self.area_check(box_tensor, expected)
 
-        # Check for float16 box
+    def test_float16_box(self):
         box_tensor = torch.tensor(
-            [[285.25, 185.625, 1194.0, 851.5], [285.25, 188.75, 1192.0, 851.0], [279.25, 198.0, 1189.0, 849.0]],
-            dtype=torch.float16,
+            [[2.825, 1.8625, 3.90, 4.85], [2.825, 4.875, 19.20, 5.10], [2.925, 1.80, 8.90, 4.90]], dtype=torch.float16
         )
-        expected = torch.tensor([605113.875, 600495.1875, 592247.25])
-        area_check(box_tensor, expected)
+
+        expected = torch.tensor([3.2170, 3.7108, 18.5071], dtype=torch.float16)
+        self.area_check(box_tensor, expected, atol=0.01)
 
     def test_box_area_jit(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
-        TOLERANCE = 1e-3
         expected = ops.box_area(box_tensor)
         scripted_fn = torch.jit.script(ops.box_area)
         scripted_area = scripted_fn(box_tensor)
-        torch.testing.assert_close(scripted_area, expected, rtol=0.0, atol=TOLERANCE)
+        torch.testing.assert_close(scripted_area, expected)
 
 
-class TestBoxIou:
-    def test_iou(self):
-        def iou_check(box, expected, tolerance=1e-4):
-            out = ops.box_iou(box, box)
-            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
+INT_BOXES = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300], [0, 0, 25, 25]]
+INT_BOXES2 = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
+FLOAT_BOXES = [
+    [285.3538, 185.5758, 1193.5110, 851.4551],
+    [285.1472, 188.7374, 1192.4984, 851.0669],
+    [279.2440, 197.9812, 1189.4746, 849.2019],
+]
 
-        # Check for int boxes
-        for dtype in [torch.int16, torch.int32, torch.int64]:
-            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=dtype)
-            expected = torch.tensor([[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]])
-            iou_check(box, expected)
 
-        # Check for float boxes
-        for dtype in [torch.float16, torch.float32, torch.float64]:
-            box_tensor = torch.tensor(
-                [
-                    [285.3538, 185.5758, 1193.5110, 851.4551],
-                    [285.1472, 188.7374, 1192.4984, 851.0669],
-                    [279.2440, 197.9812, 1189.4746, 849.2019],
-                ],
-                dtype=dtype,
-            )
-            expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
-            iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-4)
+def gen_box(size, dtype=torch.float):
+    xy1 = torch.rand((size, 2), dtype=dtype)
+    xy2 = xy1 + torch.rand((size, 2), dtype=dtype)
+    return torch.cat([xy1, xy2], axis=-1)
+
+
+class TestIouBase:
+    @staticmethod
+    def _run_test(target_fn: Callable, actual_box1, actual_box2, dtypes, atol, expected):
+        for dtype in dtypes:
+            actual_box1 = torch.tensor(actual_box1, dtype=dtype)
+            actual_box2 = torch.tensor(actual_box2, dtype=dtype)
+            expected_box = torch.tensor(expected)
+            out = target_fn(actual_box1, actual_box2)
+            torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
+
+    @staticmethod
+    def _run_jit_test(target_fn: Callable, actual_box: List):
+        box_tensor = torch.tensor(actual_box, dtype=torch.float)
+        expected = target_fn(box_tensor, box_tensor)
+        scripted_fn = torch.jit.script(target_fn)
+        scripted_out = scripted_fn(box_tensor, box_tensor)
+        torch.testing.assert_close(scripted_out, expected)
+
+    @staticmethod
+    def _cartesian_product(boxes1, boxes2, target_fn: Callable):
+        N = boxes1.size(0)
+        M = boxes2.size(0)
+        result = torch.zeros((N, M))
+        for i in range(N):
+            for j in range(M):
+                result[i, j] = target_fn(boxes1[i].unsqueeze(0), boxes2[j].unsqueeze(0))
+        return result
+
+    @staticmethod
+    def _run_cartesian_test(target_fn: Callable):
+        boxes1 = gen_box(5)
+        boxes2 = gen_box(7)
+        a = TestIouBase._cartesian_product(boxes1, boxes2, target_fn)
+        b = target_fn(boxes1, boxes2)
+        assert torch.allclose(a, b)
+
+
+class TestBoxIou(TestIouBase):
+    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
+    float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
+
+    @pytest.mark.parametrize(
+        "actual_box1, actual_box2, dtypes, atol, expected",
+        [
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+        ],
+    )
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
     def test_iou_jit(self):
-        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
-        TOLERANCE = 1e-3
-        expected = ops.box_iou(box_tensor, box_tensor)
-        scripted_fn = torch.jit.script(ops.box_iou)
-        scripted_iou = scripted_fn(box_tensor, box_tensor)
-        torch.testing.assert_close(scripted_iou, expected, rtol=0.0, atol=TOLERANCE)
+        self._run_jit_test(ops.box_iou, INT_BOXES)
+
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.box_iou)
 
 
-class TestGenBoxIou:
-    def test_gen_iou(self):
-        def gen_iou_check(box, expected, tolerance=1e-4):
-            out = ops.generalized_box_iou(box, box)
-            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
+class TestGeneralizedBoxIou(TestIouBase):
+    int_expected = [[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0], [0.0625, 0.25, -0.8819]]
+    float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
-        # Check for int boxes
-        for dtype in [torch.int16, torch.int32, torch.int64]:
-            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=dtype)
-            expected = torch.tensor([[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0]])
-            gen_iou_check(box, expected)
+    @pytest.mark.parametrize(
+        "actual_box1, actual_box2, dtypes, atol, expected",
+        [
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+        ],
+    )
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.generalized_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
-        # Check for float boxes
-        for dtype in [torch.float16, torch.float32, torch.float64]:
-            box_tensor = torch.tensor(
-                [
-                    [285.3538, 185.5758, 1193.5110, 851.4551],
-                    [285.1472, 188.7374, 1192.4984, 851.0669],
-                    [279.2440, 197.9812, 1189.4746, 849.2019],
-                ],
-                dtype=dtype,
-            )
-            expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
-            gen_iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-3)
+    def test_iou_jit(self):
+        self._run_jit_test(ops.generalized_box_iou, INT_BOXES)
 
-    def test_giou_jit(self):
-        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
-        TOLERANCE = 1e-3
-        expected = ops.generalized_box_iou(box_tensor, box_tensor)
-        scripted_fn = torch.jit.script(ops.generalized_box_iou)
-        scripted_iou = scripted_fn(box_tensor, box_tensor)
-        torch.testing.assert_close(scripted_iou, expected, rtol=0.0, atol=TOLERANCE)
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.generalized_box_iou)
+
+
+class TestDistanceBoxIoU(TestIouBase):
+    int_expected = [
+        [1.0000, 0.1875, -0.4444],
+        [0.1875, 1.0000, -0.5625],
+        [-0.4444, -0.5625, 1.0000],
+        [-0.0781, 0.1875, -0.6267],
+    ]
+    float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
+
+    @pytest.mark.parametrize(
+        "actual_box1, actual_box2, dtypes, atol, expected",
+        [
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+        ],
+    )
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.distance_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
+
+    def test_iou_jit(self):
+        self._run_jit_test(ops.distance_box_iou, INT_BOXES)
+
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.distance_box_iou)
+
+
+class TestCompleteBoxIou(TestIouBase):
+    int_expected = [
+        [1.0000, 0.1875, -0.4444],
+        [0.1875, 1.0000, -0.5625],
+        [-0.4444, -0.5625, 1.0000],
+        [-0.0781, 0.1875, -0.6267],
+    ]
+    float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
+
+    @pytest.mark.parametrize(
+        "actual_box1, actual_box2, dtypes, atol, expected",
+        [
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+        ],
+    )
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.complete_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
+
+    def test_iou_jit(self):
+        self._run_jit_test(ops.complete_box_iou, INT_BOXES)
+
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.complete_box_iou)
+
+
+def get_boxes(dtype, device):
+    box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
+    box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
+    box3 = torch.tensor([0, 1, 1, 2], dtype=dtype, device=device)
+    box4 = torch.tensor([1, 1, 2, 2], dtype=dtype, device=device)
+
+    box1s = torch.stack([box2, box2], dim=0)
+    box2s = torch.stack([box3, box4], dim=0)
+
+    return box1, box2, box3, box4, box1s, box2s
+
+
+def assert_iou_loss(iou_fn, box1, box2, expected_loss, device, reduction="none"):
+    computed_loss = iou_fn(box1, box2, reduction=reduction)
+    expected_loss = torch.tensor(expected_loss, device=device)
+    torch.testing.assert_close(computed_loss, expected_loss)
+
+
+def assert_empty_loss(iou_fn, dtype, device):
+    box1 = torch.randn([0, 4], dtype=dtype, device=device).requires_grad_()
+    box2 = torch.randn([0, 4], dtype=dtype, device=device).requires_grad_()
+    loss = iou_fn(box1, box2, reduction="mean")
+    loss.backward()
+    torch.testing.assert_close(loss, torch.tensor(0.0, device=device))
+    assert box1.grad is not None, "box1.grad should not be None after backward is called"
+    assert box2.grad is not None, "box2.grad should not be None after backward is called"
+    loss = iou_fn(box1, box2, reduction="none")
+    assert loss.numel() == 0, f"{str(iou_fn)} for two empty box should be empty"
+
+
+class TestGeneralizedBoxIouLoss:
+    # We refer to original test: https://github.com/facebookresearch/fvcore/blob/main/tests/test_giou_loss.py
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_giou_loss(self, dtype, device):
+
+        box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
+
+        # Identical boxes should have loss of 0
+        assert_iou_loss(ops.generalized_box_iou_loss, box1, box1, 0.0, device=device)
+
+        # quarter size box inside other box = IoU of 0.25
+        assert_iou_loss(ops.generalized_box_iou_loss, box1, box2, 0.75, device=device)
+
+        # Two side by side boxes, area=union
+        # IoU=0 and GIoU=0 (loss 1.0)
+        assert_iou_loss(ops.generalized_box_iou_loss, box2, box3, 1.0, device=device)
+
+        # Two diagonally adjacent boxes, area=2*union
+        # IoU=0 and GIoU=-0.5 (loss 1.5)
+        assert_iou_loss(ops.generalized_box_iou_loss, box2, box4, 1.5, device=device)
+
+        # Test batched loss and reductions
+        assert_iou_loss(ops.generalized_box_iou_loss, box1s, box2s, 2.5, device=device, reduction="sum")
+        assert_iou_loss(ops.generalized_box_iou_loss, box1s, box2s, 1.25, device=device, reduction="mean")
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_empty_inputs(self, dtype, device):
+        assert_empty_loss(ops.generalized_box_iou_loss, dtype, device)
+
+
+class TestCompleteBoxIouLoss:
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_ciou_loss(self, dtype, device):
+        box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
+
+        assert_iou_loss(ops.complete_box_iou_loss, box1, box1, 0.0, device=device)
+        assert_iou_loss(ops.complete_box_iou_loss, box1, box2, 0.8125, device=device)
+        assert_iou_loss(ops.complete_box_iou_loss, box1, box3, 1.1923, device=device)
+        assert_iou_loss(ops.complete_box_iou_loss, box1, box4, 1.2500, device=device)
+        assert_iou_loss(ops.complete_box_iou_loss, box1s, box2s, 1.2250, device=device, reduction="mean")
+        assert_iou_loss(ops.complete_box_iou_loss, box1s, box2s, 2.4500, device=device, reduction="sum")
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_empty_inputs(self, dtype, device):
+        assert_empty_loss(ops.complete_box_iou_loss, dtype, device)
+
+
+class TestDistanceBoxIouLoss:
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_distance_iou_loss(self, dtype, device):
+        box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
+
+        assert_iou_loss(ops.distance_box_iou_loss, box1, box1, 0.0, device=device)
+        assert_iou_loss(ops.distance_box_iou_loss, box1, box2, 0.8125, device=device)
+        assert_iou_loss(ops.distance_box_iou_loss, box1, box3, 1.1923, device=device)
+        assert_iou_loss(ops.distance_box_iou_loss, box1, box4, 1.2500, device=device)
+        assert_iou_loss(ops.distance_box_iou_loss, box1s, box2s, 1.2250, device=device, reduction="mean")
+        assert_iou_loss(ops.distance_box_iou_loss, box1s, box2s, 2.4500, device=device, reduction="sum")
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_empty_distance_iou_inputs(self, dtype, device):
+        assert_empty_loss(ops.distance_box_iou_loss, dtype, device)
+
+
+class TestFocalLoss:
+    def _generate_diverse_input_target_pair(self, shape=(5, 2), **kwargs):
+        def logit(p):
+            return torch.log(p / (1 - p))
+
+        def generate_tensor_with_range_type(shape, range_type, **kwargs):
+            if range_type != "random_binary":
+                low, high = {
+                    "small": (0.0, 0.2),
+                    "big": (0.8, 1.0),
+                    "zeros": (0.0, 0.0),
+                    "ones": (1.0, 1.0),
+                    "random": (0.0, 1.0),
+                }[range_type]
+                return torch.testing.make_tensor(shape, low=low, high=high, **kwargs)
+            else:
+                return torch.randint(0, 2, shape, **kwargs)
+
+        # This function will return inputs and targets with shape: (shape[0]*9, shape[1])
+        inputs = []
+        targets = []
+        for input_range_type, target_range_type in [
+            ("small", "zeros"),
+            ("small", "ones"),
+            ("small", "random_binary"),
+            ("big", "zeros"),
+            ("big", "ones"),
+            ("big", "random_binary"),
+            ("random", "zeros"),
+            ("random", "ones"),
+            ("random", "random_binary"),
+        ]:
+            inputs.append(logit(generate_tensor_with_range_type(shape, input_range_type, **kwargs)))
+            targets.append(generate_tensor_with_range_type(shape, target_range_type, **kwargs))
+
+        return torch.cat(inputs), torch.cat(targets)
+
+    @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
+    @pytest.mark.parametrize("gamma", [0, 2])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    @pytest.mark.parametrize("seed", [0, 1])
+    def test_correct_ratio(self, alpha, gamma, device, dtype, seed):
+        if device == "cpu" and dtype is torch.half:
+            pytest.skip("Currently torch.half is not fully supported on cpu")
+        # For testing the ratio with manual calculation, we require the reduction to be "none"
+        reduction = "none"
+        torch.random.manual_seed(seed)
+        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+        focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction=reduction)
+
+        assert torch.all(
+            focal_loss <= ce_loss
+        ), "focal loss must be less or equal to cross entropy loss with same input"
+
+        loss_ratio = (focal_loss / ce_loss).squeeze()
+        prob = torch.sigmoid(inputs)
+        p_t = prob * targets + (1 - prob) * (1 - targets)
+        correct_ratio = (1.0 - p_t) ** gamma
+        if alpha >= 0:
+            alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
+            correct_ratio = correct_ratio * alpha_t
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(correct_ratio, loss_ratio, atol=tol, rtol=tol)
+
+    @pytest.mark.parametrize("reduction", ["mean", "sum"])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    @pytest.mark.parametrize("seed", [2, 3])
+    def test_equal_ce_loss(self, reduction, device, dtype, seed):
+        if device == "cpu" and dtype is torch.half:
+            pytest.skip("Currently torch.half is not fully supported on cpu")
+        # focal loss should be equal ce_loss if alpha=-1 and gamma=0
+        alpha = -1
+        gamma = 0
+        torch.random.manual_seed(seed)
+        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+        inputs_fl = inputs.clone().requires_grad_()
+        targets_fl = targets.clone()
+        inputs_ce = inputs.clone().requires_grad_()
+        targets_ce = targets.clone()
+        focal_loss = ops.sigmoid_focal_loss(inputs_fl, targets_fl, gamma=gamma, alpha=alpha, reduction=reduction)
+        ce_loss = F.binary_cross_entropy_with_logits(inputs_ce, targets_ce, reduction=reduction)
+
+        torch.testing.assert_close(focal_loss, ce_loss)
+
+        focal_loss.backward()
+        ce_loss.backward()
+        torch.testing.assert_close(inputs_fl.grad, inputs_ce.grad)
+
+    @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
+    @pytest.mark.parametrize("gamma", [0, 2])
+    @pytest.mark.parametrize("reduction", ["none", "mean", "sum"])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    @pytest.mark.parametrize("seed", [4, 5])
+    def test_jit(self, alpha, gamma, reduction, device, dtype, seed):
+        if device == "cpu" and dtype is torch.half:
+            pytest.skip("Currently torch.half is not fully supported on cpu")
+        script_fn = torch.jit.script(ops.sigmoid_focal_loss)
+        torch.random.manual_seed(seed)
+        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+        focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        if device == "cpu":
+            scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        else:
+            with torch.jit.fuser("fuser2"):
+                # Use fuser2 to prevent a bug on fuser: https://github.com/pytorch/pytorch/issues/75476
+                # We may remove this condition once the bug is resolved
+                scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
 
 
 class TestMasksToBoxes:
     def test_masks_box(self):
-        def masks_box_check(masks, expected, tolerance=1e-4):
+        def masks_box_check(masks, expected, atol=1e-4):
             out = ops.masks_to_boxes(masks)
             assert out.dtype == torch.float
-            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
+            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=True, atol=atol)
 
         # Check for int type boxes.
         def _get_image():
@@ -1200,6 +1622,20 @@ class TestStochasticDepth:
         elif p == 1:
             assert out.equal(torch.zeros_like(x))
 
+    def make_obj(self, p, mode, wrap=False):
+        obj = ops.StochasticDepth(p, mode)
+        return StochasticDepthWrapper(obj) if wrap else obj
+
+    @pytest.mark.parametrize("p", (0, 1))
+    @pytest.mark.parametrize("mode", ["batch", "row"])
+    def test_is_leaf_node(self, p, mode):
+        op_obj = self.make_obj(p, mode, wrap=True)
+        graph_node_names = get_graph_node_names(op_obj)
+
+        assert len(graph_node_names) == 2
+        assert len(graph_node_names[0]) == len(graph_node_names[1])
+        assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
+
 
 class TestUtils:
     @pytest.mark.parametrize("norm_layer", [None, nn.BatchNorm2d, nn.LayerNorm])
@@ -1209,6 +1645,88 @@ class TestUtils:
 
         assert len(params[0]) == 92
         assert len(params[1]) == 82
+
+
+class TestDropBlock:
+    @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.parametrize("dim", [2, 3])
+    @pytest.mark.parametrize("p", [0, 0.5])
+    @pytest.mark.parametrize("block_size", [5, 11])
+    @pytest.mark.parametrize("inplace", [True, False])
+    def test_drop_block(self, seed, dim, p, block_size, inplace):
+        torch.manual_seed(seed)
+        batch_size = 5
+        channels = 3
+        height = 11
+        width = height
+        depth = height
+        if dim == 2:
+            x = torch.ones(size=(batch_size, channels, height, width))
+            layer = ops.DropBlock2d(p=p, block_size=block_size, inplace=inplace)
+            feature_size = height * width
+        elif dim == 3:
+            x = torch.ones(size=(batch_size, channels, depth, height, width))
+            layer = ops.DropBlock3d(p=p, block_size=block_size, inplace=inplace)
+            feature_size = depth * height * width
+        layer.__repr__()
+
+        out = layer(x)
+        if p == 0:
+            assert out.equal(x)
+        if block_size == height:
+            for b, c in product(range(batch_size), range(channels)):
+                assert out[b, c].count_nonzero() in (0, feature_size)
+
+    @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.parametrize("dim", [2, 3])
+    @pytest.mark.parametrize("p", [0.1, 0.2])
+    @pytest.mark.parametrize("block_size", [3])
+    @pytest.mark.parametrize("inplace", [False])
+    def test_drop_block_random(self, seed, dim, p, block_size, inplace):
+        torch.manual_seed(seed)
+        batch_size = 5
+        channels = 3
+        height = 11
+        width = height
+        depth = height
+        if dim == 2:
+            x = torch.ones(size=(batch_size, channels, height, width))
+            layer = ops.DropBlock2d(p=p, block_size=block_size, inplace=inplace)
+        elif dim == 3:
+            x = torch.ones(size=(batch_size, channels, depth, height, width))
+            layer = ops.DropBlock3d(p=p, block_size=block_size, inplace=inplace)
+
+        trials = 250
+        num_samples = 0
+        counts = 0
+        cell_numel = torch.tensor(x.shape).prod()
+        for _ in range(trials):
+            with torch.no_grad():
+                out = layer(x)
+            non_zero_count = out.nonzero().size(0)
+            counts += cell_numel - non_zero_count
+            num_samples += cell_numel
+
+        assert abs(p - counts / num_samples) / p < 0.15
+
+    def make_obj(self, dim, p, block_size, inplace, wrap=False):
+        if dim == 2:
+            obj = ops.DropBlock2d(p, block_size, inplace)
+        elif dim == 3:
+            obj = ops.DropBlock3d(p, block_size, inplace)
+        return DropBlockWrapper(obj) if wrap else obj
+
+    @pytest.mark.parametrize("dim", (2, 3))
+    @pytest.mark.parametrize("p", [0, 1])
+    @pytest.mark.parametrize("block_size", [5, 7])
+    @pytest.mark.parametrize("inplace", [True, False])
+    def test_is_leaf_node(self, dim, p, block_size, inplace):
+        op_obj = self.make_obj(dim, p, block_size, inplace, wrap=True)
+        graph_node_names = get_graph_node_names(op_obj)
+
+        assert len(graph_node_names) == 2
+        assert len(graph_node_names[0]) == len(graph_node_names[1])
+        assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 import math
-from typing import List, Tuple, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torchvision
@@ -91,6 +91,7 @@ class GeneralizedRCNNTransform(nn.Module):
         image_std: List[float],
         size_divisible: int = 32,
         fixed_size: Optional[Tuple[int, int]] = None,
+        **kwargs: Any,
     ):
         super().__init__()
         if not isinstance(min_size, (list, tuple)):
@@ -101,6 +102,7 @@ class GeneralizedRCNNTransform(nn.Module):
         self.image_std = image_std
         self.size_divisible = size_divisible
         self.fixed_size = fixed_size
+        self._skip_resize = kwargs.pop("_skip_resize", False)
 
     def forward(
         self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
@@ -134,7 +136,10 @@ class GeneralizedRCNNTransform(nn.Module):
         images = self.batch_images(images, size_divisible=self.size_divisible)
         image_sizes_list: List[Tuple[int, int]] = []
         for image_size in image_sizes:
-            assert len(image_size) == 2
+            torch._assert(
+                len(image_size) == 2,
+                f"Input tensors expected to have in the last two elements H and W, instead got {image_size}",
+            )
             image_sizes_list.append((image_size[0], image_size[1]))
 
         image_list = ImageList(images, image_sizes_list)
@@ -167,6 +172,8 @@ class GeneralizedRCNNTransform(nn.Module):
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         h, w = image.shape[-2:]
         if self.training:
+            if self._skip_resize:
+                return image, target
             size = float(self.torch_choice(self.min_size))
         else:
             # FIXME assume for now that testing uses the largest scale
@@ -260,7 +267,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return result
 
     def __repr__(self) -> str:
-        format_string = self.__class__.__name__ + "("
+        format_string = f"{self.__class__.__name__}("
         _indent = "\n    "
         format_string += f"{_indent}Normalize(mean={self.image_mean}, std={self.image_std})"
         format_string += f"{_indent}Resize(min_size={self.min_size}, max_size={self.max_size}, mode='bilinear')"

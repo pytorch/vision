@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional, Tuple
 import numpy as np
 from PIL import Image
 
-from .utils import download_url, verify_str_arg, download_and_extract_archive
+from .utils import download_and_extract_archive, download_url, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -92,7 +92,6 @@ class SBDataset(VisionDataset):
 
         self.images = [os.path.join(image_dir, x + ".jpg") for x in file_names]
         self.masks = [os.path.join(mask_dir, x + ".mat") for x in file_names]
-        assert len(self.images) == len(self.masks)
 
         self._get_target = self._get_segmentation_target if self.mode == "segmentation" else self._get_boundaries_target
 

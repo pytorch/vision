@@ -33,7 +33,8 @@ if __name__ == "__main__":
         [
             transforms.RandomSizedCrop(224),
             transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
+            transforms.ConvertImageDtype(torch.float),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
     )

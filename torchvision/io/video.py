@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 
+from ..utils import _log_api_usage_once
 from . import _video_opt
 
 
@@ -77,6 +78,8 @@ def write_video(
         audio_codec (str): the name of the audio codec, i.e. "mp3", "aac", etc.
         audio_options (Dict): dictionary containing options to be passed into the PyAV audio stream
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(write_video)
     _check_av_available()
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
 
@@ -150,14 +153,13 @@ def _read_from_stream(
         gc.collect()
 
     if pts_unit == "sec":
+        # TODO: we should change all of this from ground up to simply take
+        # sec and convert to MS in C++
         start_offset = int(math.floor(start_offset * (1 / stream.time_base)))
         if end_offset != float("inf"):
             end_offset = int(math.ceil(end_offset * (1 / stream.time_base)))
     else:
-        warnings.warn(
-            "The pts_unit 'pts' gives wrong results and will be removed in a "
-            + "follow-up version. Please use pts_unit 'sec'."
-        )
+        warnings.warn("The pts_unit 'pts' gives wrong results. Please use pts_unit 'sec'.")
 
     frames = {}
     should_buffer = True
@@ -173,9 +175,9 @@ def _read_from_stream(
             # can't use regex directly because of some weird characters sometimes...
             pos = extradata.find(b"DivX")
             d = extradata[pos:]
-            o = re.search(br"DivX(\d+)Build(\d+)(\w)", d)
+            o = re.search(rb"DivX(\d+)Build(\d+)(\w)", d)
             if o is None:
-                o = re.search(br"DivX(\d+)b(\d+)(\w)", d)
+                o = re.search(rb"DivX(\d+)b(\d+)(\w)", d)
             if o is not None:
                 should_buffer = o.group(3) == b"p"
     seek_offset = start_offset
@@ -237,6 +239,7 @@ def read_video(
     start_pts: Union[float, Fraction] = 0,
     end_pts: Optional[Union[float, Fraction]] = None,
     pts_unit: str = "pts",
+    output_format: str = "THWC",
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
     """
     Reads a video from a file, returning both the video frames as well as
@@ -250,12 +253,19 @@ def read_video(
             The end presentation time
         pts_unit (str, optional): unit in which start_pts and end_pts values will be interpreted,
             either 'pts' or 'sec'. Defaults to 'pts'.
+        output_format (str, optional): The format of the output video tensors. Can be either "THWC" (default) or "TCHW".
 
     Returns:
-        vframes (Tensor[T, H, W, C]): the `T` video frames
+        vframes (Tensor[T, H, W, C] or Tensor[T, C, H, W]): the `T` video frames
         aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels and `L` is the number of points
         info (Dict): metadata for the video and audio. Can contain the fields video_fps (float) and audio_fps (int)
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(read_video)
+
+    output_format = output_format.upper()
+    if output_format not in ("THWC", "TCHW"):
+        raise ValueError(f"output_format should be either 'THWC' or 'TCHW', got {output_format}.")
 
     from torchvision import get_video_backend
 
@@ -282,13 +292,6 @@ def read_video(
         with av.open(filename, metadata_errors="ignore") as container:
             if container.streams.audio:
                 audio_timebase = container.streams.audio[0].time_base
-            time_base = _video_opt.default_timebase
-            if container.streams.video:
-                time_base = container.streams.video[0].time_base
-            elif container.streams.audio:
-                time_base = container.streams.audio[0].time_base
-            # video_timebase is the default time_base
-            start_pts, end_pts, pts_unit = _video_opt._convert_to_sec(start_pts, end_pts, pts_unit, time_base)
             if container.streams.video:
                 video_frames = _read_from_stream(
                     container,
@@ -337,6 +340,10 @@ def read_video(
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)
 
+    if output_format == "TCHW":
+        # [T,H,W,C] --> [T,C,H,W]
+        vframes = vframes.permute(0, 3, 1, 2)
+
     return vframes, aframes, info
 
 
@@ -374,6 +381,8 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
         video_fps (float, optional): the frame rate for the video
 
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(read_video_timestamps)
     from torchvision import get_video_backend
 
     if get_video_backend() != "pyav":

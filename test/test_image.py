@@ -8,21 +8,21 @@ import numpy as np
 import pytest
 import torch
 import torchvision.transforms.functional as F
-from common_utils import needs_cuda, assert_equal
-from PIL import Image, __version__ as PILLOW_VERSION
+from common_utils import assert_equal, needs_cuda
+from PIL import __version__ as PILLOW_VERSION, Image
 from torchvision.io.image import (
-    decode_png,
-    decode_jpeg,
-    encode_jpeg,
-    write_jpeg,
-    decode_image,
-    read_file,
-    encode_png,
-    write_png,
-    write_file,
-    ImageReadMode,
-    read_image,
     _read_png_16,
+    decode_image,
+    decode_jpeg,
+    decode_png,
+    encode_jpeg,
+    encode_png,
+    ImageReadMode,
+    read_file,
+    read_image,
+    write_file,
+    write_jpeg,
+    write_png,
 )
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
@@ -158,7 +158,7 @@ def test_decode_png(img_path, pil_mode, mode):
 
     img_pil = normalize_dimensions(img_pil)
 
-    if "16" in img_path:
+    if img_path.endswith("16.png"):
         # 16 bits image decoding is supported, but only as a private API
         # FIXME: see https://github.com/pytorch/vision/issues/4731 for potential solutions to making it public
         with pytest.raises(RuntimeError, match="At most 8-bit PNG images are supported"):
@@ -168,7 +168,7 @@ def test_decode_png(img_path, pil_mode, mode):
         img_lpng = _read_png_16(img_path, mode=mode)
         assert img_lpng.dtype == torch.int32
         # PIL converts 16 bits pngs in uint8
-        img_lpng = torch.round(img_lpng / (2 ** 16 - 1) * 255).to(torch.uint8)
+        img_lpng = torch.round(img_lpng / (2**16 - 1) * 255).to(torch.uint8)
     else:
         data = read_file(img_path)
         img_lpng = decode_image(data, mode=mode)
@@ -421,7 +421,7 @@ def _collect_if(cond):
     return _inner
 
 
-@_collect_if(cond=IS_WINDOWS)
+@_collect_if(cond=False)
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
@@ -452,7 +452,7 @@ def test_encode_jpeg_reference(img_path):
         assert_equal(jpeg_bytes, pil_bytes)
 
 
-@_collect_if(cond=IS_WINDOWS)
+@_collect_if(cond=False)
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
@@ -478,7 +478,8 @@ def test_write_jpeg_reference(img_path, tmpdir):
     assert_equal(torch_bytes, pil_bytes)
 
 
-@pytest.mark.skipif(IS_WINDOWS, reason=("this test fails on windows because PIL uses libjpeg-turbo on windows"))
+# TODO: Remove the skip. See https://github.com/pytorch/vision/issues/5162.
+@pytest.mark.skip("this test fails because PIL uses libjpeg-turbo")
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
@@ -497,7 +498,8 @@ def test_encode_jpeg(img_path):
         assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
 
 
-@pytest.mark.skipif(IS_WINDOWS, reason=("this test fails on windows because PIL uses libjpeg-turbo on windows"))
+# TODO: Remove the skip. See https://github.com/pytorch/vision/issues/5162.
+@pytest.mark.skip("this test fails because PIL uses libjpeg-turbo")
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
