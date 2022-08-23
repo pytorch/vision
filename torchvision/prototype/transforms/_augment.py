@@ -207,9 +207,9 @@ class SimpleCopyPaste(_RandomApplyTransform):
         resize_interpolation: F.InterpolationMode = F.InterpolationMode.BILINEAR,
     ) -> Tuple[Any, Dict[str, Any]]:
 
-        paste_masks = paste_target["masks"].new_like(paste_target["masks"], paste_target["masks"][random_selection])
-        paste_boxes = paste_target["boxes"].new_like(paste_target["boxes"], paste_target["boxes"][random_selection])
-        paste_labels = paste_target["labels"].new_like(paste_target["labels"], paste_target["labels"][random_selection])
+        paste_masks = paste_target["masks"].copy_metadata_to(paste_target["masks"][random_selection])
+        paste_boxes = paste_target["boxes"].copy_metadata_to(paste_target["boxes"][random_selection])
+        paste_labels = paste_target["labels"].copy_metadata_to(paste_target["labels"][random_selection])
 
         masks = target["masks"]
 
@@ -304,7 +304,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         c0, c1, c2, c3 = 0, 0, 0, 0
         for i, obj in enumerate(flat_sample):
             if isinstance(obj, features.Image):
-                flat_sample[i] = features.Image.new_like(obj, output_images[c0])
+                flat_sample[i] = obj.copy_metadata_to(output_images[c0])
                 c0 += 1
             elif isinstance(obj, PIL.Image.Image):
                 flat_sample[i] = F.to_image_pil(output_images[c0])
@@ -313,13 +313,13 @@ class SimpleCopyPaste(_RandomApplyTransform):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
             elif isinstance(obj, features.BoundingBox):
-                flat_sample[i] = features.BoundingBox.new_like(obj, output_targets[c1]["boxes"])
+                flat_sample[i] = obj.copy_metadata_to(output_targets[c1]["boxes"])
                 c1 += 1
             elif isinstance(obj, features.SegmentationMask):
-                flat_sample[i] = features.SegmentationMask.new_like(obj, output_targets[c2]["masks"])
+                flat_sample[i] = obj.copy_metadata_to(output_targets[c2]["masks"])
                 c2 += 1
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
-                flat_sample[i] = obj.new_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
+                flat_sample[i] = obj.copy_metadata_to(output_targets[c3]["labels"])
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:
