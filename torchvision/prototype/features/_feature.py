@@ -11,6 +11,8 @@ F = TypeVar("F", bound="_Feature")
 
 
 class _Feature(torch.Tensor):
+    __F: Optional[ModuleType] = None
+
     def __new__(
         cls: Type[F],
         data: Any,
@@ -95,11 +97,11 @@ class _Feature(torch.Tensor):
 
     @property
     def _F(self) -> ModuleType:
-        if not hasattr(self, "__F"):
+        if _Feature.__F is None:
             from ..transforms import functional
 
-            self.__F = functional
-        return self.__F
+            _Feature.__F = functional
+        return _Feature.__F
 
     def horizontal_flip(self) -> _Feature:
         return self
