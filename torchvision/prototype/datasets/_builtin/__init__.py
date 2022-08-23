@@ -15,6 +15,7 @@ from .mnist import EMNIST, FashionMNIST, KMNIST, MNIST, QMNIST
 from .oxford_iiit_pet import OxfordIIITPet
 from .pcam import PCAM
 from .sbd import SBD
+from .sbu import SBU
 from .semeion import SEMEION
 from .stanford_cars import StanfordCars
 from .svhn import SVHN
