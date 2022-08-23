@@ -141,7 +141,7 @@ class ToDtype(Lambda):
         return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
 
 
-class _ClampBoundingBox(Transform):
+class _ClampBoundingBoxes(Transform):
     _transformed_types = (features.BoundingBox,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -174,7 +174,7 @@ class RemoveInvalid(Compose):
     def __init__(self) -> None:
         super().__init__(
             [
-                _ClampBoundingBox(),
+                _ClampBoundingBoxes(),
                 _RemoveEmptyBoundingBoxes(),
             ]
         )
