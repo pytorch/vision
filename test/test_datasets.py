@@ -2872,15 +2872,26 @@ class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
         os.makedirs(fallingthings_dir, exist_ok=True)
 
         num_examples = {"single": 2, "mixed": 3, "both": 4}.get(config["variant"], 0)
+
         variants = {
             "single": ["single"],
             "mixed": ["mixed"],
             "both": ["single", "mixed"],
         }.get(config["variant"], [])
 
+        variant_dir_prefixes = {
+            "single": 1,
+            "mixed": 0,
+        }
+
         for variant_name in variants:
             variant_dir = pathlib.Path(fallingthings_dir) / variant_name
             os.makedirs(variant_dir, exist_ok=True)
+
+            for i in range(variant_dir_prefixes[variant_name]):
+                variant_dir = variant_dir / f"{i:02d}"
+                os.makedirs(variant_dir, exist_ok=True)
+
             for i in range(num_examples):
                 self._make_scene_folder(
                     root=variant_dir,
@@ -3106,6 +3117,73 @@ class SintelStereoTestCase(datasets_utils.ImageDatasetTestCase):
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
             with self.create_dataset(pass_name="bad"):
+                pass
+
+
+class ETH3DStereoestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.ETH3DStereo
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    @staticmethod
+    def _create_scene_folder(num_examples: int, root_dir: str):
+        # make the root_dir if it does not exits
+        root_dir = pathlib.Path(root_dir)
+        os.makedirs(root_dir, exist_ok=True)
+
+        for i in range(num_examples):
+            scene_dir = root_dir / f"scene_{i}"
+            os.makedirs(scene_dir, exist_ok=True)
+            # populate with left right images
+            datasets_utils.create_image_file(root=scene_dir, name="im0.png", size=(100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name="im1.png", size=(100, 100))
+
+    @staticmethod
+    def _create_annotation_folder(num_examples: int, root_dir: str):
+        # make the root_dir if it does not exits
+        root_dir = pathlib.Path(root_dir)
+        os.makedirs(root_dir, exist_ok=True)
+
+        # create scene directories
+        for i in range(num_examples):
+            scene_dir = root_dir / f"scene_{i}"
+            os.makedirs(scene_dir, exist_ok=True)
+            # populate with a random png file for occlusion mask, and a pfm file for disparity
+            datasets_utils.create_image_file(root=scene_dir, name="mask0nocc.png", size=(1, 100, 100))
+
+            pfm_path = scene_dir / "disp0GT.pfm"
+            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=pfm_path)
+
+    def inject_fake_data(self, tmpdir, config):
+        eth3d_dir = pathlib.Path(tmpdir) / "ETH3D"
+
+        num_examples = 2 if config["split"] == "train" else 3
+
+        split_name = "two_view_training" if config["split"] == "train" else "two_view_test"
+        split_dir = eth3d_dir / split_name
+        self._create_scene_folder(num_examples, split_dir)
+
+        if config["split"] == "train":
+            annot_dir = eth3d_dir / "two_view_training_gt"
+            self._create_annotation_folder(num_examples, annot_dir)
+
+        return num_examples
+
+    def test_training_splits(self):
+        with self.create_dataset(split="train") as (dataset, _):
+            for left, right, disparity, valid_mask in dataset:
+                datasets_utils.shape_test_for_stereo(left, right, disparity, valid_mask)
+
+    def test_testing_splits(self):
+        with self.create_dataset(split="test") as (dataset, _):
+            assert all(d == (None, None) for d in dataset._disparities)
+            for left, right, disparity, valid_mask in dataset:
+                assert valid_mask is None
+                datasets_utils.shape_test_for_stereo(left, right, disparity)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
                 pass
 
 

@@ -64,6 +64,9 @@ class Image(_Feature):
 
         return image
 
+    def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
+        return self._make_repr(color_space=self.color_space)
+
     @classmethod
     def new_like(
         cls, other: Image, data: Any, *, color_space: Optional[Union[ColorSpace, str]] = None, **kwargs: Any

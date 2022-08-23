@@ -1,5 +1,5 @@
 import unittest.mock
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import PIL.Image
@@ -27,20 +27,25 @@ def label_to_one_hot(label: torch.Tensor, *, num_categories: int) -> torch.Tenso
 
 
 def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray], copy: bool = False) -> torch.Tensor:
+    if isinstance(image, np.ndarray):
+        image = torch.from_numpy(image)
+
     if isinstance(image, torch.Tensor):
         if copy:
             return image.clone()
         else:
             return image
 
-    return _F.to_tensor(image)
+    return _F.pil_to_tensor(image)
 
 
-def to_image_pil(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray], copy: bool = False) -> PIL.Image.Image:
+def to_image_pil(
+    image: Union[torch.Tensor, PIL.Image.Image, np.ndarray], mode: Optional[str] = None
+) -> PIL.Image.Image:
     if isinstance(image, PIL.Image.Image):
-        if copy:
-            return image.copy()
+        if mode != image.mode:
+            return image.convert(mode)
         else:
             return image
 
-    return _F.to_pil_image(to_image_tensor(image, copy=False))
+    return _F.to_pil_image(image, mode=mode)
