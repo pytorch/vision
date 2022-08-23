@@ -7,7 +7,7 @@ from ._meta import (
     convert_color_space,
 )  # usort: skip
 
-from ._augment import erase_image_pil, erase_image_tensor
+from ._augment import erase, erase_image_pil, erase_image_tensor
 from ._color import (
     adjust_brightness,
     adjust_brightness_image_pil,
