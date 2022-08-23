@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import ModuleType
 from typing import Any, Callable, cast, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import torch
@@ -93,7 +94,7 @@ class _Feature(torch.Tensor):
         return f"{super().__repr__()[:-1]}, {extra_repr})"
 
     @property
-    def _F(self):
+    def _F(self) -> ModuleType:
         if not hasattr(self, "__F"):
             from ..transforms import functional
 
