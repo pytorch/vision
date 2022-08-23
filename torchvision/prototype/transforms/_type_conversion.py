@@ -45,6 +45,8 @@ class ToImageTensor(Transform):
         self.copy = copy
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # TODO: Transforms allows to pass only (torch.Tensor, _Feature, PIL.Image.Image)
+        # so input as np.ndarray is not possible. We need to make it possible
         if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
             output = F.to_image_tensor(inpt, copy=self.copy)
             return features.Image(output)
@@ -58,6 +60,8 @@ class ToImagePIL(Transform):
         self.copy = copy
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # TODO: Transforms allows to pass only (torch.Tensor, _Feature, PIL.Image.Image)
+        # so input as np.ndarray is not possible. We need to make it possible
         if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
             return F.to_image_pil(inpt, copy=self.copy)
         else:
