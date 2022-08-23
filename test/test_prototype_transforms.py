@@ -1313,6 +1313,97 @@ class TestRandomShortestSize:
         mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
 
 
+class TestSimpleCopyPaste:
+    def create_fake_image(self, mocker, image_type):
+        if image_type == PIL.Image.Image:
+            return PIL.Image.new("RGB", (32, 32), 123)
+        return mocker.MagicMock(spec=image_type)
+
+    def test__extract_image_targets_assertion(self, mocker):
+        transform = transforms.SimpleCopyPaste()
+
+        flat_sample = [
+            # images, batch size = 2
+            self.create_fake_image(mocker, features.Image),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.Label),
+            mocker.MagicMock(spec=features.BoundingBox),
+            mocker.MagicMock(spec=features.SegmentationMask),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.BoundingBox),
+            mocker.MagicMock(spec=features.SegmentationMask),
+        ]
+
+        with pytest.raises(TypeError, match="requires input sample to contain equal-sized list of Images"):
+            transform._extract_image_targets(flat_sample)
+
+    @pytest.mark.parametrize("image_type", [features.Image, PIL.Image.Image, torch.Tensor])
+    def test__extract_image_targets(self, image_type, mocker):
+        transform = transforms.SimpleCopyPaste()
+
+        flat_sample = [
+            # images, batch size = 2
+            self.create_fake_image(mocker, image_type),
+            self.create_fake_image(mocker, image_type),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.Label),
+            mocker.MagicMock(spec=features.BoundingBox),
+            mocker.MagicMock(spec=features.SegmentationMask),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.Label),
+            mocker.MagicMock(spec=features.BoundingBox),
+            mocker.MagicMock(spec=features.SegmentationMask),
+        ]
+
+        images, targets = transform._extract_image_targets(flat_sample)
+
+        assert len(images) == len(targets) == 2
+        if image_type == PIL.Image.Image:
+            torch.testing.assert_close(images[0], pil_to_tensor(flat_sample[0]))
+            torch.testing.assert_close(images[1], pil_to_tensor(flat_sample[1]))
+        else:
+            assert images[0] == flat_sample[0]
+            assert images[1] == flat_sample[1]
+
+    def test__copy_paste(self):
+        image = 2 * torch.ones(3, 32, 32)
+        masks = torch.zeros(2, 32, 32)
+        masks[0, 3:9, 2:8] = 1
+        masks[1, 20:30, 20:30] = 1
+        target = {
+            "boxes": features.BoundingBox(
+                torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", image_size=(32, 32)
+            ),
+            "masks": features.SegmentationMask(masks),
+            "labels": features.Label(torch.tensor([1, 2])),
+        }
+
+        paste_image = 10 * torch.ones(3, 32, 32)
+        paste_masks = torch.zeros(2, 32, 32)
+        paste_masks[0, 13:19, 12:18] = 1
+        paste_masks[1, 15:19, 1:8] = 1
+        paste_target = {
+            "boxes": features.BoundingBox(
+                torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", image_size=(32, 32)
+            ),
+            "masks": features.SegmentationMask(paste_masks),
+            "labels": features.Label(torch.tensor([3, 4])),
+        }
+
+        transform = transforms.SimpleCopyPaste()
+        random_selection = torch.tensor([0, 1])
+        output_image, output_target = transform._copy_paste(image, target, paste_image, paste_target, random_selection)
+
+        assert output_image.unique().tolist() == [2, 10]
+        assert output_target["boxes"].shape == (4, 4)
+        torch.testing.assert_close(output_target["boxes"][:2, :], target["boxes"])
+        torch.testing.assert_close(output_target["boxes"][2:, :], paste_target["boxes"])
+        torch.testing.assert_close(output_target["labels"], features.Label(torch.tensor([1, 2, 3, 4])))
+        assert output_target["masks"].shape == (4, 32, 32)
+        torch.testing.assert_close(output_target["masks"][:2, :], target["masks"])
+        torch.testing.assert_close(output_target["masks"][2:, :], paste_target["masks"])
+
+
 class TestFixedSizeCrop:
     def test__get_params(self, mocker):
         crop_size = (7, 7)
