@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Sequence, Type, Union
 import PIL.Image
 
 import torch
+from torchvision.ops import box_area
 from torchvision.prototype import features
 
 from torchvision.prototype.transforms import Compose, functional as F, Transform
@@ -154,13 +155,14 @@ class _RemoveEmptyBoundingBoxes(Transform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         bounding_box = query_bounding_box(sample)
 
-        if self.format in {features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH}:
-            _, _, width, height = torch.unbind(bounding_box, dim=-1)
-        else:  # self.format == BoundingBoxFormat.XYXY
-            x1, y1, x2, y2 = torch.unbind(bounding_box, dim=-1)
-            width = x2 - x1
-            height = y2 - y1
-        area = width * height
+        # TODO: We can improve performance here by not using the `box_area` function. It requires the box to be in XYXY
+        #  format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH format,
+        #  we need to convert first just to afterwards compute the width and height again, although they were there in
+        #  the first place for these formats.
+        bounding_box = F.convert_bounding_box_format(
+            bounding_box, old_format=bounding_box.format, new_format=features.BoundingBoxFormat.XYXY
+        )
+        area = box_area(bounding_box)
 
         return dict(is_valid=area > 0)
 
