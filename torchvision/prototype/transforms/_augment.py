@@ -111,7 +111,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
             raise ValueError("Need a batch of one hot labels")
         output = inpt.clone()
         output = output.roll(1, -2).mul_(1 - lam).add_(output.mul_(lam))
-        return features.OneHotLabel.new_like(inpt, output)
+        return inpt.copy_metadata_to(output)
 
 
 class RandomMixup(_BaseMixupCutmix):
@@ -127,7 +127,7 @@ class RandomMixup(_BaseMixupCutmix):
             output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
 
             if isinstance(inpt, features.Image):
-                output = features.Image.new_like(inpt, output)
+                output = inpt.copy_metadata_to(output)
 
             return output
         elif isinstance(inpt, features.OneHotLabel):
@@ -170,7 +170,7 @@ class RandomCutmix(_BaseMixupCutmix):
             output[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
 
             if isinstance(inpt, features.Image):
-                output = features.Image.new_like(inpt, output)
+                output = inpt.copy_metadata_to(output)
 
             return output
         elif isinstance(inpt, features.OneHotLabel):

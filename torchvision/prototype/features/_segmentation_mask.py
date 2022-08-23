@@ -13,13 +13,13 @@ class SegmentationMask(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.horizontal_flip_segmentation_mask(self)
-        return SegmentationMask.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def vertical_flip(self) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.vertical_flip_segmentation_mask(self)
-        return SegmentationMask.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def resize(  # type: ignore[override]
         self,
@@ -31,19 +31,19 @@ class SegmentationMask(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.resize_segmentation_mask(self, size, max_size=max_size)
-        return SegmentationMask.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def crop(self, top: int, left: int, height: int, width: int) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.crop_segmentation_mask(self, top, left, height, width)
-        return SegmentationMask.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def center_crop(self, output_size: List[int]) -> SegmentationMask:
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.center_crop_segmentation_mask(self, output_size=output_size)
-        return SegmentationMask.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def resized_crop(
         self,
@@ -58,7 +58,7 @@ class SegmentationMask(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.resized_crop_segmentation_mask(self, top, left, height, width, size=size)
-        return SegmentationMask.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def pad(
         self,
@@ -73,7 +73,7 @@ class SegmentationMask(_Feature):
             padding = list(padding)
 
         output = _F.pad_segmentation_mask(self, padding, padding_mode=padding_mode)
-        return SegmentationMask.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def rotate(
         self,
@@ -86,7 +86,7 @@ class SegmentationMask(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.rotate_segmentation_mask(self, angle, expand=expand, center=center)
-        return SegmentationMask.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def affine(
         self,
@@ -108,7 +108,7 @@ class SegmentationMask(_Feature):
             shear=shear,
             center=center,
         )
-        return SegmentationMask.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def perspective(
         self,
@@ -119,7 +119,7 @@ class SegmentationMask(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.perspective_segmentation_mask(self, perspective_coeffs)
-        return SegmentationMask.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def elastic(
         self,
@@ -130,4 +130,4 @@ class SegmentationMask(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.elastic_segmentation_mask(self, displacement)
-        return SegmentationMask.new_like(self, output, dtype=output.dtype)
+        return self.copy_metadata_to(output, dtype=output.dtype)

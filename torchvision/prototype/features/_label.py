@@ -26,10 +26,17 @@ class Label(_Feature):
 
         return label
 
-    @classmethod
-    def new_like(cls, other: Label, data: Any, *, categories: Optional[Sequence[str]] = None, **kwargs: Any) -> Label:
-        return super().new_like(
-            other, data, categories=categories if categories is not None else other.categories, **kwargs
+    def copy_metadata_to(
+        self,
+        data: Any,
+        *,
+        categories: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> Label:
+        return super().copy_metadata_to(
+            data,
+            categories=categories if categories is not None else self.categories,
+            **kwargs,
         )
 
     @classmethod
@@ -70,10 +77,15 @@ class OneHotLabel(_Feature):
 
         return one_hot_label
 
-    @classmethod
-    def new_like(
-        cls, other: OneHotLabel, data: Any, *, categories: Optional[Sequence[str]] = None, **kwargs: Any
+    def copy_metadata_to(
+        self,
+        data: Any,
+        *,
+        categories: Optional[Sequence[str]] = None,
+        **kwargs: Any,
     ) -> OneHotLabel:
-        return super().new_like(
-            other, data, categories=categories if categories is not None else other.categories, **kwargs
+        return super().copy_metadata_to(
+            data,
+            categories=categories if categories is not None else self.categories,
+            **kwargs,
         )

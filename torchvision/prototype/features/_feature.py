@@ -27,10 +27,8 @@ class _Feature(torch.Tensor):
             ),
         )
 
-    @classmethod
-    def new_like(
-        cls: Type[F],
-        other: F,
+    def copy_metadata_to(
+        self: F,
         data: Any,
         *,
         dtype: Optional[torch.dtype] = None,
@@ -38,17 +36,17 @@ class _Feature(torch.Tensor):
         requires_grad: Optional[bool] = None,
         **kwargs: Any,
     ) -> F:
-        return cls(
+        return type(self)(
             data,
-            dtype=dtype if dtype is not None else other.dtype,
-            device=device if device is not None else other.device,
-            requires_grad=requires_grad if requires_grad is not None else other.requires_grad,
+            dtype=dtype if dtype is not None else self.dtype,
+            device=device if device is not None else self.device,
+            requires_grad=requires_grad if requires_grad is not None else self.requires_grad,
             **kwargs,
         )
 
     @classmethod
     def __torch_function__(
-        cls,
+        cls: Type[F],
         func: Callable[..., torch.Tensor],
         types: Tuple[Type[torch.Tensor], ...],
         args: Sequence[Any] = (),
@@ -80,9 +78,9 @@ class _Feature(torch.Tensor):
             output = func(*args, **kwargs)
 
         if func is torch.Tensor.clone:
-            return cls.new_like(args[0], output)
+            return cast(F, args[0]).copy_metadata_to(output)
         elif func is torch.Tensor.to:
-            return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
+            return cast(F, args[0]).copy_metadata_to(output, dtype=output.dtype, device=output.device)
         else:
             return output
 

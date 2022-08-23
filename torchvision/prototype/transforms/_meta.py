@@ -20,7 +20,7 @@ class ConvertBoundingBoxFormat(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, features.BoundingBox):
             output = F.convert_bounding_box_format(inpt, old_format=inpt.format, new_format=params["format"])
-            return features.BoundingBox.new_like(inpt, output, format=params["format"])
+            return inpt.copy_metadata_to(output, format=params["format"])
         else:
             return inpt
 
@@ -33,7 +33,7 @@ class ConvertImageDtype(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, features.Image):
             output = convert_image_dtype(inpt, dtype=self.dtype)
-            return features.Image.new_like(inpt, output, dtype=self.dtype)
+            return inpt.copy_metadata_to(output, dtype=self.dtype)
         elif is_simple_tensor(inpt):
             return convert_image_dtype(inpt, dtype=self.dtype)
         else:

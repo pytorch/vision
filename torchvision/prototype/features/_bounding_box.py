@@ -44,21 +44,18 @@ class BoundingBox(_Feature):
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(format=self.format, image_size=self.image_size)
 
-    @classmethod
-    def new_like(
-        cls,
-        other: BoundingBox,
+    def copy_metadata_to(
+        self,
         data: Any,
         *,
         format: Optional[Union[BoundingBoxFormat, str]] = None,
         image_size: Optional[Tuple[int, int]] = None,
         **kwargs: Any,
     ) -> BoundingBox:
-        return super().new_like(
-            other,
+        return super().copy_metadata_to(
             data,
-            format=format if format is not None else other.format,
-            image_size=image_size if image_size is not None else other.image_size,
+            format=format if format is not None else self.format,
+            image_size=image_size if image_size is not None else self.image_size,
             **kwargs,
         )
 
@@ -68,21 +65,21 @@ class BoundingBox(_Feature):
         if isinstance(format, str):
             format = BoundingBoxFormat.from_str(format.upper())
 
-        return BoundingBox.new_like(
-            self, _F.convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
+        return self.copy_metadata_to(
+            _F.convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
         )
 
     def horizontal_flip(self) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.horizontal_flip_bounding_box(self, format=self.format, image_size=self.image_size)
-        return BoundingBox.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def vertical_flip(self) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.vertical_flip_bounding_box(self, format=self.format, image_size=self.image_size)
-        return BoundingBox.new_like(self, output)
+        return self.copy_metadata_to(output)
 
     def resize(  # type: ignore[override]
         self,
@@ -95,13 +92,13 @@ class BoundingBox(_Feature):
 
         output = _F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
         image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
-        return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
+        return self.copy_metadata_to(output, image_size=image_size, dtype=output.dtype)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.crop_bounding_box(self, self.format, top, left)
-        return BoundingBox.new_like(self, output, image_size=(height, width))
+        return self.copy_metadata_to(output, image_size=(height, width))
 
     def center_crop(self, output_size: List[int]) -> BoundingBox:
         from torchvision.prototype.transforms import functional as _F
@@ -110,7 +107,7 @@ class BoundingBox(_Feature):
             self, format=self.format, output_size=output_size, image_size=self.image_size
         )
         image_size = (output_size[0], output_size[0]) if len(output_size) == 1 else (output_size[0], output_size[1])
-        return BoundingBox.new_like(self, output, image_size=image_size)
+        return self.copy_metadata_to(output, image_size=image_size)
 
     def resized_crop(
         self,
@@ -126,7 +123,7 @@ class BoundingBox(_Feature):
 
         output = _F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
         image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
-        return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
+        return self.copy_metadata_to(output, image_size=image_size, dtype=output.dtype)
 
     def pad(
         self,
@@ -154,7 +151,7 @@ class BoundingBox(_Feature):
         height += top + bottom
         width += left + right
 
-        return BoundingBox.new_like(self, output, image_size=(height, width))
+        return self.copy_metadata_to(output, image_size=(height, width))
 
     def rotate(
         self,
@@ -180,7 +177,7 @@ class BoundingBox(_Feature):
             new_width, new_height = _compute_output_size(rotation_matrix, width, height)
             image_size = (new_height, new_width)
 
-        return BoundingBox.new_like(self, output, dtype=output.dtype, image_size=image_size)
+        return self.copy_metadata_to(output, dtype=output.dtype, image_size=image_size)
 
     def affine(
         self,
@@ -204,7 +201,7 @@ class BoundingBox(_Feature):
             shear=shear,
             center=center,
         )
-        return BoundingBox.new_like(self, output, dtype=output.dtype)
+        return self.copy_metadata_to(output, dtype=output.dtype)
 
     def perspective(
         self,
@@ -215,7 +212,7 @@ class BoundingBox(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.perspective_bounding_box(self, self.format, perspective_coeffs)
-        return BoundingBox.new_like(self, output, dtype=output.dtype)
+        return self.copy_metadata_to(output, dtype=output.dtype)
 
     def elastic(
         self,
@@ -226,4 +223,4 @@ class BoundingBox(_Feature):
         from torchvision.prototype.transforms import functional as _F
 
         output = _F.elastic_bounding_box(self, self.format, displacement)
-        return BoundingBox.new_like(self, output, dtype=output.dtype)
+        return self.copy_metadata_to(output, dtype=output.dtype)

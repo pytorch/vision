@@ -23,7 +23,7 @@ def erase(inpt: Any, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: b
     if isinstance(inpt, torch.Tensor):
         output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
         if isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output)
+            output = inpt.copy_metadata_to(output)
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return erase_image_pil(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)

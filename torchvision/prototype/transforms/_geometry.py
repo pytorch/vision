@@ -142,8 +142,8 @@ class FiveCrop(Transform):
         ...     def forward(self, sample: Tuple[Tuple[features.Image, ...], features.Label]):
         ...         images, labels = sample
         ...         batch_size = len(images)
-        ...         images = features.Image.new_like(images[0], torch.stack(images))
-        ...         labels = features.Label.new_like(labels, labels.repeat(batch_size))
+        ...         images = images[0].copy_metadata_to(torch.stack(images))
+        ...         labels = labels.copy_metadata_to(labels.repeat(batch_size))
         ...         return images, labels
         ...
         >>> image = features.Image(torch.rand(3, 256, 256))
@@ -165,7 +165,7 @@ class FiveCrop(Transform):
         #  list here to align it with TenCrop.
         if isinstance(inpt, features.Image):
             output = F.five_crop_image_tensor(inpt, self.size)
-            return tuple(features.Image.new_like(inpt, o) for o in output)
+            return tuple(inpt.copy_metadata_to(o) for o in output)
         elif is_simple_tensor(inpt):
             return F.five_crop_image_tensor(inpt, self.size)
         elif isinstance(inpt, PIL.Image.Image):
@@ -193,7 +193,7 @@ class TenCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, features.Image):
             output = F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip)
-            return [features.Image.new_like(inpt, o) for o in output]
+            return [inpt.copy_metadata_to(o) for o in output]
         elif is_simple_tensor(inpt):
             return F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip)
         elif isinstance(inpt, PIL.Image.Image):
@@ -693,18 +693,18 @@ class RandomIoUCrop(Transform):
         is_within_crop_area = params["is_within_crop_area"]
 
         if isinstance(inpt, (features.Label, features.OneHotLabel)):
-            return inpt.new_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
+            return inpt.copy_metadata_to(inpt[is_within_crop_area])
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
         if isinstance(output, features.BoundingBox):
             bboxes = output[is_within_crop_area]
             bboxes = F.clamp_bounding_box(bboxes, output.format, output.image_size)
-            output = features.BoundingBox.new_like(output, bboxes)
+            output = output.copy_metadata_to(bboxes)
         elif isinstance(output, features.SegmentationMask) and output.shape[-3] > 1:
             # apply is_within_crop_area if mask is one-hot encoded
             masks = output[is_within_crop_area]
-            output = features.SegmentationMask.new_like(output, masks)
+            output = output.copy_metadata_to(masks)
 
         return output
 
@@ -807,8 +807,7 @@ class FixedSizeCrop(Transform):
             bounding_boxes = cast(
                 features.BoundingBox, F.crop(bounding_boxes, top=top, left=left, height=height, width=width)
             )
-            bounding_boxes = features.BoundingBox.new_like(
-                bounding_boxes,
+            bounding_boxes = bounding_boxes.copy_metadata_to(
                 F.clamp_bounding_box(
                     bounding_boxes, format=bounding_boxes.format, image_size=bounding_boxes.image_size
                 ),
@@ -844,10 +843,9 @@ class FixedSizeCrop(Transform):
                 width=params["width"],
             )
             if isinstance(inpt, (features.Label, features.OneHotLabel, features.SegmentationMask)):
-                inpt = inpt.new_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
+                inpt = inpt.copy_metadata_to(inpt[params["is_valid"]])
             elif isinstance(inpt, features.BoundingBox):
-                inpt = features.BoundingBox.new_like(
-                    inpt,
+                inpt = inpt.copy_metadata_to(
                     F.clamp_bounding_box(inpt[params["is_valid"]], format=inpt.format, image_size=inpt.image_size),
                 )
 

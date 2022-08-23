@@ -122,7 +122,7 @@ class RandomPhotometricDistort(Transform):
         output = image[..., permutation, :, :]
 
         if isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.OTHER)
+            output = inpt.copy_metadata_to(output, color_space=features.ColorSpace.OTHER)
         elif isinstance(inpt, PIL.Image.Image):
             output = _F.to_pil_image(output)
 

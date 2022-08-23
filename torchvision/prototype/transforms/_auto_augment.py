@@ -485,7 +485,7 @@ class AugMix(_AutoAugmentBase):
         mix = mix.view(orig_dims).to(dtype=image.dtype)
 
         if isinstance(inpt, features.Image):
-            mix = features.Image.new_like(inpt, mix)
+            mix = inpt.copy_metadata_to(mix)
         elif isinstance(inpt, PIL.Image.Image):
             mix = to_pil_image(mix)
 
