@@ -972,8 +972,9 @@ class TestRandomErasing:
         assert 0 <= i <= image.image_size[0] - h
         assert 0 <= j <= image.image_size[1] - w
 
-    def test__transform(self, mocker):
-        transform = transforms.RandomErasing()
+    @pytest.mark.parametrize("p", [0, 1])
+    def test__transform(self, mocker, p):
+        transform = transforms.RandomErasing(p=p)
         transform._transformed_types = (mocker.MagicMock,)
 
         i_sentinel = mocker.MagicMock()
@@ -989,11 +990,15 @@ class TestRandomErasing:
         inpt_sentinel = mocker.MagicMock()
 
         mock = mocker.patch("torchvision.prototype.transforms._augment.F.erase")
-        transform(inpt_sentinel)
+        output = transform(inpt_sentinel)
 
-        mock.assert_called_once_with(
-            inpt_sentinel, i=i_sentinel, j=j_sentinel, h=h_sentinel, w=w_sentinel, v=v_sentinel
-        )
+        if p:
+            mock.assert_called_once_with(
+                inpt_sentinel, i=i_sentinel, j=j_sentinel, h=h_sentinel, w=w_sentinel, v=v_sentinel
+            )
+        else:
+            mock.assert_not_called()
+            assert output is inpt_sentinel
 
 
 class TestTransform:
