@@ -3,6 +3,7 @@ import numbers
 import warnings
 from typing import Any, Dict, List, Tuple
 
+import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.ops import masks_to_boxes
