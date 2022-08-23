@@ -105,10 +105,8 @@ class TestSmoke:
                 transform,
                 [
                     dict(
-                        image=features.Image.new_like(image, image.unsqueeze(0), dtype=torch.float),
-                        one_hot_label=features.OneHotLabel.new_like(
-                            one_hot_label, one_hot_label.unsqueeze(0), dtype=torch.float
-                        ),
+                        image=image.copy_metadata_to(image.unsqueeze(0), dtype=torch.float),
+                        one_hot_label=one_hot_label.copy_metadata_to(one_hot_label.unsqueeze(0), dtype=torch.float),
                     )
                     for image, one_hot_label in itertools.product(make_images(), make_one_hot_labels())
                 ],
@@ -276,7 +274,7 @@ class TestRandomHorizontalFlip:
         actual = transform(input)
 
         expected_image_tensor = torch.tensor([5, 0, 10, 5]) if p == 1.0 else input
-        expected = features.BoundingBox.new_like(input, data=expected_image_tensor)
+        expected = input.copy_metadata_to(expected_image_tensor)
         assert_equal(expected, actual)
         assert actual.format == expected.format
         assert actual.image_size == expected.image_size
@@ -329,7 +327,7 @@ class TestRandomVerticalFlip:
         actual = transform(input)
 
         expected_image_tensor = torch.tensor([0, 5, 5, 10]) if p == 1.0 else input
-        expected = features.BoundingBox.new_like(input, data=expected_image_tensor)
+        expected = input.copy_metadata_to(expected_image_tensor)
         assert_equal(expected, actual)
         assert actual.format == expected.format
         assert actual.image_size == expected.image_size
