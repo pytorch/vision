@@ -33,16 +33,16 @@ def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tupl
 
 def query_chw(sample: Any) -> Tuple[int, int, int]:
     flat_sample, _ = tree_flatten(sample)
-    image_dimensionss = {
+    chws = {
         get_chw(item)
         for item in flat_sample
         if isinstance(item, (features.Image, PIL.Image.Image)) or is_simple_tensor(item)
     }
-    if not image_dimensionss:
+    if not chws:
         raise TypeError("No image was found in the sample")
-    elif len(image_dimensionss) > 2:
-        raise TypeError(f"Found multiple image dimensions in the sample: {sequence_to_str(sorted(image_dimensionss))}")
-    return image_dimensionss.pop()
+    elif len(chws) > 2:
+        raise TypeError(f"Found multiple CxHxW dimensions in the sample: {sequence_to_str(sorted(chws))}")
+    return chws.pop()
 
 
 def has_any(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
