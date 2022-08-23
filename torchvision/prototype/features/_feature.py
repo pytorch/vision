@@ -18,7 +18,7 @@ class _Feature(torch.Tensor):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> F:
-        return cast(
+        feature = cast(
             F,
             torch.Tensor._make_subclass(
                 cast(_TensorBase, cls),
@@ -26,6 +26,13 @@ class _Feature(torch.Tensor):
                 requires_grad,
             ),
         )
+
+        # To avoid circular dependency between features and transforms
+        from ..transforms import functional
+
+        feature._F = functional  # type: ignore[attr-defined]
+
+        return feature
 
     @classmethod
     def new_like(

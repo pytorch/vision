@@ -103,7 +103,7 @@ class Image(_Feature):
             return ColorSpace.OTHER
 
     def to_color_space(self, color_space: Union[str, ColorSpace], copy: bool = True) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         if isinstance(color_space, str):
             color_space = ColorSpace.from_str(color_space.upper())
@@ -127,13 +127,13 @@ class Image(_Feature):
         return Image.new_like(self, draw_bounding_boxes(self, bounding_box.to_format("xyxy").view(-1, 4), **kwargs))
 
     def horizontal_flip(self) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.horizontal_flip_image_tensor(self)
         return Image.new_like(self, output)
 
     def vertical_flip(self) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.vertical_flip_image_tensor(self)
         return Image.new_like(self, output)
@@ -145,19 +145,19 @@ class Image(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.resize_image_tensor(self, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
         return Image.new_like(self, output)
 
     def crop(self, top: int, left: int, height: int, width: int) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.crop_image_tensor(self, top, left, height, width)
         return Image.new_like(self, output)
 
     def center_crop(self, output_size: List[int]) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.center_crop_image_tensor(self, output_size=output_size)
         return Image.new_like(self, output)
@@ -172,7 +172,7 @@ class Image(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = False,
     ) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.resized_crop_image_tensor(
             self, top, left, height, width, size=list(size), interpolation=interpolation, antialias=antialias
@@ -185,7 +185,7 @@ class Image(_Feature):
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         padding_mode: str = "constant",
     ) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         # This cast does Sequence[int] -> List[int] and is required to make mypy happy
         if not isinstance(padding, int):
@@ -195,9 +195,7 @@ class Image(_Feature):
         if isinstance(fill, (int, float)) or fill is None:
             output = _F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
         else:
-            from torchvision.prototype.transforms.functional._geometry import _pad_with_vector_fill
-
-            output = _pad_with_vector_fill(self, padding, fill=fill, padding_mode=padding_mode)
+            output = _F._geometry._pad_with_vector_fill(self, padding, fill=fill, padding_mode=padding_mode)
 
         return Image.new_like(self, output)
 
@@ -209,7 +207,7 @@ class Image(_Feature):
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Image:
-        from torchvision.prototype.transforms.functional import _geometry as _F
+        _F = self._F._geometry
 
         fill = _F._convert_fill_arg(fill)
 
@@ -228,7 +226,7 @@ class Image(_Feature):
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Image:
-        from torchvision.prototype.transforms.functional import _geometry as _F
+        _F = self._F._geometry
 
         fill = _F._convert_fill_arg(fill)
 
@@ -250,7 +248,7 @@ class Image(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> Image:
-        from torchvision.prototype.transforms.functional import _geometry as _F
+        _F = self._F._geometry
 
         fill = _F._convert_fill_arg(fill)
 
@@ -263,7 +261,7 @@ class Image(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> Image:
-        from torchvision.prototype.transforms.functional import _geometry as _F
+        _F = self._F._geometry
 
         fill = _F._convert_fill_arg(fill)
 
@@ -271,73 +269,73 @@ class Image(_Feature):
         return Image.new_like(self, output)
 
     def adjust_brightness(self, brightness_factor: float) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.adjust_brightness_image_tensor(self, brightness_factor=brightness_factor)
         return Image.new_like(self, output)
 
     def adjust_saturation(self, saturation_factor: float) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.adjust_saturation_image_tensor(self, saturation_factor=saturation_factor)
         return Image.new_like(self, output)
 
     def adjust_contrast(self, contrast_factor: float) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.adjust_contrast_image_tensor(self, contrast_factor=contrast_factor)
         return Image.new_like(self, output)
 
     def adjust_sharpness(self, sharpness_factor: float) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.adjust_sharpness_image_tensor(self, sharpness_factor=sharpness_factor)
         return Image.new_like(self, output)
 
     def adjust_hue(self, hue_factor: float) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.adjust_hue_image_tensor(self, hue_factor=hue_factor)
         return Image.new_like(self, output)
 
     def adjust_gamma(self, gamma: float, gain: float = 1) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.adjust_gamma_image_tensor(self, gamma=gamma, gain=gain)
         return Image.new_like(self, output)
 
     def posterize(self, bits: int) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.posterize_image_tensor(self, bits=bits)
         return Image.new_like(self, output)
 
     def solarize(self, threshold: float) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.solarize_image_tensor(self, threshold=threshold)
         return Image.new_like(self, output)
 
     def autocontrast(self) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.autocontrast_image_tensor(self)
         return Image.new_like(self, output)
 
     def equalize(self) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.equalize_image_tensor(self)
         return Image.new_like(self, output)
 
     def invert(self) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.invert_image_tensor(self)
         return Image.new_like(self, output)
 
     def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Image:
-        from torchvision.prototype.transforms import functional as _F
+        _F = self._F
 
         output = _F.gaussian_blur_image_tensor(self, kernel_size=kernel_size, sigma=sigma)
         return Image.new_like(self, output)
