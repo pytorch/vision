@@ -86,6 +86,12 @@ class _Feature(torch.Tensor):
         else:
             return output
 
+    def _make_repr(self, **kwargs: Any) -> str:
+        # This is a poor man's implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.
+        # If that ever gets implemented, remove this in favor of the solution on the `torch.Tensor` class.
+        extra_repr = ", ".join(f"{key}={value}" for key, value in kwargs.items())
+        return f"{super().__repr__()[:-1]}, {extra_repr})"
+
     def horizontal_flip(self) -> _Feature:
         return self
 

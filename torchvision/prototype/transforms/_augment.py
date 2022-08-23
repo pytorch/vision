@@ -9,7 +9,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F
 
 from ._transform import _RandomApplyTransform
-from ._utils import get_image_dimensions, has_any, is_simple_tensor, query_image
+from ._utils import has_any, is_simple_tensor, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -38,8 +38,7 @@ class RandomErasing(_RandomApplyTransform):
         self.value = value
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        img_c, img_h, img_w = get_image_dimensions(image)
+        img_c, img_h, img_w = query_chw(sample)
 
         if isinstance(self.value, (int, float)):
             value = [self.value]
@@ -81,20 +80,15 @@ class RandomErasing(_RandomApplyTransform):
             j = torch.randint(0, img_w - w + 1, size=(1,)).item()
             break
         else:
-            i, j, h, w, v = 0, 0, img_h, img_w, image
+            i, j, h, w, v = 0, 0, img_h, img_w, None
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if is_simple_tensor(inpt) or isinstance(inpt, features.Image):
-            output = F.erase_image_tensor(inpt, **params)
-            if isinstance(inpt, features.Image):
-                return features.Image.new_like(inpt, output)
-            return output
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.erase_image_pil(inpt, **params)
-        else:
-            return inpt
+        if params["v"] is not None:
+            inpt = F.erase(inpt, **params)
+
+        return inpt
 
 
 class _BaseMixupCutmix(_RandomApplyTransform):
@@ -147,8 +141,7 @@ class RandomCutmix(_BaseMixupCutmix):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
-        image = query_image(sample)
-        _, H, W = get_image_dimensions(image)
+        _, H, W = query_chw(sample)
 
         r_x = torch.randint(W, ())
         r_y = torch.randint(H, ())
