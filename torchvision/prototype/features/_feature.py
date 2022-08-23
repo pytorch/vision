@@ -18,7 +18,7 @@ class _Feature(torch.Tensor):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> F:
-        feature = cast(
+        return cast(
             F,
             torch.Tensor._make_subclass(
                 cast(_TensorBase, cls),
@@ -26,13 +26,6 @@ class _Feature(torch.Tensor):
                 requires_grad,
             ),
         )
-
-        # To avoid circular dependency between features and transforms
-        from ..transforms import functional
-
-        feature._F = functional  # type: ignore[attr-defined]
-
-        return feature
 
     @classmethod
     def new_like(
@@ -98,6 +91,13 @@ class _Feature(torch.Tensor):
         # If that ever gets implemented, remove this in favor of the solution on the `torch.Tensor` class.
         extra_repr = ", ".join(f"{key}={value}" for key, value in kwargs.items())
         return f"{super().__repr__()[:-1]}, {extra_repr})"
+
+    @property
+    def _F(self):
+        if not hasattr(self, "__F"):
+            from ..transforms import functional
+            self.__F = functional
+        return self.__F
 
     def horizontal_flip(self) -> _Feature:
         return self
