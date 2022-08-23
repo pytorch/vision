@@ -66,11 +66,3 @@ class ConvertColorSpace(Transform):
         return F.convert_color_space(
             inpt, color_space=self.color_space, old_color_space=self.old_color_space, copy=self.copy
         )
-
-
-class ClampBoundingBox(Transform):
-    _transformed_types = (features.BoundingBox,)
-
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        output = F.clamp_bounding_box(inpt, format=inpt.format, image_size=inpt.image_size)
-        return features.BoundingBox.new_like(inpt, output)

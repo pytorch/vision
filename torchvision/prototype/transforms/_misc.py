@@ -6,7 +6,7 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 
-from torchvision.prototype.transforms import ClampBoundingBox, Compose, functional as F, Transform
+from torchvision.prototype.transforms import Compose, functional as F, Transform
 from torchvision.prototype.transforms._utils import query_bounding_box
 
 from torchvision.transforms.transforms import _setup_size
@@ -140,7 +140,15 @@ class ToDtype(Lambda):
         return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
 
 
-class _RemoveInvalid(Transform):
+class _ClampBoundingBox(Transform):
+    _transformed_types = (features.BoundingBox,)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        output = F.clamp_bounding_box(inpt, format=inpt.format, image_size=inpt.image_size)
+        return features.BoundingBox.new_like(inpt, output)
+
+
+class _RemoveEmptyBoundingBoxes(Transform):
     _transformed_types = (features.BoundingBox, features.SegmentationMask, features.Label, features.OneHotLabel)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
@@ -160,11 +168,11 @@ class _RemoveInvalid(Transform):
         return inpt.new_like(inpt, inpt[params["is_valid"]])
 
 
-class CleanupBoxes(Compose):
+class RemoveInvalid(Compose):
     def __init__(self) -> None:
         super().__init__(
             [
-                ClampBoundingBox(),
-                _RemoveInvalid(),
+                _ClampBoundingBox(),
+                _RemoveEmptyBoundingBoxes(),
             ]
         )
