@@ -96,6 +96,7 @@ class _Feature(torch.Tensor):
     def _F(self):
         if not hasattr(self, "__F"):
             from ..transforms import functional
+
             self.__F = functional
         return self.__F
 
