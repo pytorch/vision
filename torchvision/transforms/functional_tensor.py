@@ -157,7 +157,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
         l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
         l_img = l_img.unsqueeze(dim=-3)
     else:
-        l_img = img
+        l_img = img.clone()
 
     if num_output_channels == 3:
         return l_img.expand(img.shape)
