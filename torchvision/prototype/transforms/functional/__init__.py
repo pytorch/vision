@@ -113,3 +113,5 @@ from ._type_conversion import (
     to_image_pil,
     to_image_tensor,
 )
+
+from ._deprecated import rgb_to_grayscale, to_grayscale  # usort: skip
