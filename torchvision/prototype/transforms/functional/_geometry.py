@@ -870,6 +870,16 @@ def elastic(
 
 
 elastic_transform = elastic
+# datumbox: we should decide upon the naming of those that differ from the old API. Others like this include vflip,
+# hflip, pil_to_tensor, to_pil_image. Some of them might not be worth renaming to avoid changing user code; those that we do need to change them
+# we should offer aliases that throw a deprecation warning. First we need to get a list of those functionals that
+# were renamed.
+
+# datumbox: Some kernels don't have mid-level dispachers. Examples:
+# get_dimensions, five_crop, ten_crop
+# Also some others don't have their names exposed via the prototype functional at all. Here are some of them:
+# to_tensor, get_image_size, get_image_num_channels, convert_image_dtype
+# We should check which of them should be deprecated and which should be exposed normally via an alias
 
 
 def _center_crop_parse_output_size(output_size: List[int]) -> List[int]:
@@ -1043,6 +1053,7 @@ def _parse_five_crop_size(size: List[int]) -> List[int]:
 def five_crop_image_tensor(
     img: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    # datumbox: Add TODO to consider breaking BC and return a list to align with ten_crop
     crop_height, crop_width = _parse_five_crop_size(size)
     _, image_height, image_width = get_dimensions_image_tensor(img)
 
@@ -1062,6 +1073,7 @@ def five_crop_image_tensor(
 def five_crop_image_pil(
     img: PIL.Image.Image, size: List[int]
 ) -> Tuple[PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]:
+    # datumbox: same as above
     crop_height, crop_width = _parse_five_crop_size(size)
     _, image_height, image_width = get_dimensions_image_pil(img)
 
