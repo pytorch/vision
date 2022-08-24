@@ -1164,3 +1164,48 @@ class TestScaleJitter:
         transform(inpt_sentinel)
 
         mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
+
+
+class TestRandomShortestSize:
+    def test__get_params(self, mocker):
+        image_size = (3, 10)
+        min_size = [5, 9]
+        max_size = 20
+
+        transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size)
+
+        sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
+        params = transform._get_params(sample)
+
+        assert "size" in params
+        size = params["size"]
+
+        assert isinstance(size, tuple) and len(size) == 2
+
+        longer = max(size)
+        assert longer <= max_size
+
+        shorter = min(size)
+        if longer == max_size:
+            assert shorter <= max_size
+        else:
+            assert shorter in min_size
+
+    def test__transform(self, mocker):
+        interpolation_sentinel = mocker.MagicMock()
+
+        transform = transforms.RandomShortestSize(min_size=[3, 5, 7], max_size=12, interpolation=interpolation_sentinel)
+        transform._transformed_types = (mocker.MagicMock,)
+
+        size_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.RandomShortestSize._get_params",
+            return_value=dict(size=size_sentinel),
+        )
+
+        inpt_sentinel = mocker.MagicMock()
+
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        transform(inpt_sentinel)
+
+        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
