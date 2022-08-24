@@ -6,10 +6,8 @@ import PIL.Image
 import torch
 from torchvision.ops import remove_small_boxes
 from torchvision.prototype import features
-
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.prototype.transforms._utils import query_bounding_box
-
 from torchvision.transforms.transforms import _setup_size
 
 

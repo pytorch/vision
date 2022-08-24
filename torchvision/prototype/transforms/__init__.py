@@ -2,8 +2,6 @@ from . import functional  # usort: skip
 
 from ._transform import Transform  # usort: skip
 
-from ._container import Compose, RandomApply, RandomChoice, RandomOrder  # usort: skip
-
 from ._meta import ConvertBoundingBoxFormat, ConvertColorSpace, ConvertImageDtype, ClampBoundingBoxes  # usort: skip
 
 from ._augment import RandomCutmix, RandomErasing, RandomMixup, SimpleCopyPaste
@@ -18,6 +16,7 @@ from ._color import (
     RandomPosterize,
     RandomSolarize,
 )
+from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
     CenterCrop,
     ElasticTransform,
