@@ -6,7 +6,16 @@ import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype.features import _Feature
+from torchvision.prototype.transforms._utils import is_simple_tensor
 from torchvision.utils import _log_api_usage_once
+
+
+def _isinstance(obj: Any, types: Tuple[Type, ...]) -> bool:
+    has_tensor = torch.Tensor in types
+    if not has_tensor:
+        return isinstance(obj, types)
+    types_ = tuple(t for t in types if t != torch.Tensor)
+    return isinstance(obj, types_) or is_simple_tensor(obj)
 
 
 class Transform(nn.Module):
@@ -31,7 +40,8 @@ class Transform(nn.Module):
 
         flat_inputs, spec = tree_flatten(sample)
         flat_outputs = [
-            self._transform(inpt, params) if isinstance(inpt, self._transformed_types) else inpt for inpt in flat_inputs
+            self._transform(inpt, params) if _isinstance(inpt, self._transformed_types) else inpt
+            for inpt in flat_inputs
         ]
         return tree_unflatten(flat_outputs, spec)
 

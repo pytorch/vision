@@ -225,8 +225,17 @@ class TestSmoke:
             )
         ]
     )
-    def test_convertolor_space(self, transform, input):
+    def test_convert_color_space(self, transform, input):
         transform(input)
+
+    def test_convert_color_space_unsupported_types(self):
+        transform = transforms.ConvertColorSpace(
+            color_space=features.ColorSpace.RGB, old_color_space=features.ColorSpace.GRAY
+        )
+
+        for inpt in [make_bounding_box(format="XYXY"), make_segmentation_mask()]:
+            output = transform(inpt)
+            assert output is inpt
 
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
