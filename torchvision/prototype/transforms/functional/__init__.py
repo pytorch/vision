@@ -114,4 +114,4 @@ from ._type_conversion import (
     to_image_tensor,
 )
 
-from ._deprecated import rgb_to_grayscale  # usort: skip
+from ._deprecated import rgb_to_grayscale, to_grayscale  # usort: skip
