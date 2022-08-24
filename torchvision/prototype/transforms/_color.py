@@ -105,7 +105,7 @@ class RandomPhotometricDistort(Transform):
         return dict(
             zip(
                 ["brightness", "contrast1", "saturation", "hue", "contrast2"],
-                (torch.rand(6) < self.p).tolist(),
+                (torch.rand(5) < self.p).tolist(),
             ),
             contrast_before=bool(torch.rand(()) < 0.5),
             channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
