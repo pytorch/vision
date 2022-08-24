@@ -8,6 +8,22 @@ import torch
 import torch.distributed as dist
 import torch.nn.functional as F
 
+from typing import Callable
+
+
+from torchvision.datasets import (
+    InStereo2k,
+    CREStereo,
+    SintelStereo,
+    SceneFlowStereo,
+    FallingThingsStereo,
+    Middlebury2014Stereo,
+    ETH3DStereo,
+    Kitti2012Stereo,
+    Kitti2015Stereo,
+    CarlaStereo,
+)
+
 
 class SmoothedValue:
     """Track a series of values and provide access to smoothed values over a
@@ -63,9 +79,19 @@ class SmoothedValue:
 
 
 class MetricLogger:
-    def __init__(self, delimiter="\t"):
+    def __init__(self, delimiter="\t", log_dir=None, log_name=None):
         self.meters = defaultdict(SmoothedValue)
         self.delimiter = delimiter
+        
+        if log_dir is None and log_name is not None:
+            raise ValueError("both `log_dir` and `log_name` must be specified for logging to a file")
+        
+        if log_name is None and log_dir is not None:
+            raise ValueError("both `log_dir` and `log_name` must be specified for logging to a file")
+        
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+            self.log_name = os.path.join(log_dir, log_name)
 
     def update(self, **kwargs):
         for k, v in kwargs.items():
@@ -131,8 +157,7 @@ class MetricLogger:
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
                 if torch.cuda.is_available():
-                    print(
-                        log_msg.format(
+                    log_msg_prt = log_msg.format(
                             i,
                             len(iterable),
                             eta=eta_string,
@@ -141,20 +166,20 @@ class MetricLogger:
                             data=str(data_time),
                             memory=torch.cuda.max_memory_allocated() / MB,
                         )
-                    )
+                    
                 else:
-                    print(
-                        log_msg.format(
+                    log_msg_prt = log_msg.format(
                             i, len(iterable), eta=eta_string, meters=str(self), time=str(iter_time), data=str(data_time)
                         )
-                    )
+                print(log_msg_prt)
             i += 1
             end = time.time()
         total_time = time.time() - start_time
-        total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-        print(f"{header} Total time: {total_time_str}")
-
-
+        total_time_str = str(datetime.timedelta(seconds=int(total_time)))            
+        header_msg = f"{header} Total time: {total_time_str}"
+        print(header_msg)
+            
+            
 def compute_metrics(flow_pred, flow_gt, valid_flow_mask=None):
 
     epe = ((flow_pred - flow_gt) ** 2).sum(dim=1).sqrt()
@@ -176,7 +201,7 @@ def compute_metrics(flow_pred, flow_gt, valid_flow_mask=None):
     return metrics, epe.numel()
 
 
-def sequence_loss(flow_preds, flow_gt, valid_flow_mask, gamma=0.8, max_flow=400):
+def sequence_loss(flow_preds, flow_gt, valid_flow_mask, gamma=0.8, max_flow=256):
     """Loss function defined over sequence of flow predictions"""
 
     if gamma > 1:
@@ -199,6 +224,37 @@ def sequence_loss(flow_preds, flow_gt, valid_flow_mask, gamma=0.8, max_flow=400)
 
     return flow_loss
 
+def sequence_consistency_loss(flow_preds, gamma=0.8, rescale_factor: float = 0.25):
+    """Loss function defined over sequence of flow predictions"""
+
+    if gamma > 1:
+        raise ValueError(f"Gamma should be < 1, got {gamma}.")
+    
+    if rescale_factor > 1:
+        raise ValueError(f"Rescale factor should be < 1, got {rescale_factor}.")
+
+    flow_preds = torch.stack(flow_preds)  # shape = (num_flow_updates, batch_size, 2, H, W)
+    N, B, _, H, W = flow_preds.shape
+    
+    # rescale flow predictions to account for bilinear upsampling artifacts
+    if rescale_factor:
+        flow_preds = F.interpolate(
+            flow_preds.view(N * B, 2, H, W),
+            scale_factor=rescale_factor,
+            mode="bilinear",
+            align_corners=True
+        ) * rescale_factor
+        flow_preds = torch.stack(torch.chunk(flow_preds, N, dim=0), dim=0)
+
+    abs_diff = (flow_preds[1:] - flow_preds[:-1]).square()
+    abs_diff = abs_diff.mean(axis=(1, 2, 3, 4))
+
+    num_predictions = flow_preds.shape[0] - 1 # because we are comparing differences
+    weights = gamma ** torch.arange(num_predictions - 1, -1, -1).to(flow_preds.device)
+    flow_loss = (abs_diff * weights).sum()
+
+    return flow_loss
+
 
 class InputPadder:
     """Pads images such that dimensions are divisible by 8"""
@@ -209,10 +265,10 @@ class InputPadder:
     # to the input images' size, and in some datasets (Kitti) images can have
     # variable sizes.
 
-    def __init__(self, dims, mode="sintel"):
+    def __init__(self, dims, mode="sintel", multiplier=8):
         self.ht, self.wd = dims[-2:]
-        pad_ht = (((self.ht // 8) + 1) * 8 - self.ht) % 8
-        pad_wd = (((self.wd // 8) + 1) * 8 - self.wd) % 8
+        pad_ht = (((self.ht // multiplier) + 1) * multiplier - self.ht) % multiplier
+        pad_wd = (((self.wd // multiplier) + 1) * multiplier - self.wd) % multiplier
         if mode == "sintel":
             self._pad = [pad_wd // 2, pad_wd - pad_wd // 2, pad_ht // 2, pad_ht - pad_ht // 2]
         else:
@@ -289,3 +345,37 @@ def freeze_batch_norm(model):
     for m in model.modules():
         if isinstance(m, torch.nn.BatchNorm2d):
             m.eval()
+            
+            
+def get_dataset_by_name(name: str, root: str, transforms: Callable):
+    """Helper function to return a speciffic dataset configuration given it's name"""
+    if name == "crestereo":
+        return CREStereo(root=root, transforms=transforms)
+    elif name == "carla-highres":
+        return CarlaStereo(root=root, transforms=transforms)
+    elif name == "instereo":
+        return InStereo2k(root=root, transforms=transforms)
+    elif name == "sintel":
+        return SintelStereo(root=root, transforms=transforms)
+    elif name == "sceneflow-monkaa":
+        return SceneFlowStereo(root=root, transforms=transforms, split="Monkaa", pass_name="both")
+    elif name == "sceneflow-flyingthings":
+        return SceneFlowStereo(root=root, transforms=transforms, split="FlyingThings3D", pass_name="both")
+    elif name == "sceneflow-driving":
+        return SceneFlowStereo(root=root, transforms=transforms, split="Driving", pass_name="both")
+    elif name == "fallingthings":
+        return FallingThingsStereo(root=root, transforms=transforms, split="both")
+    elif name == "eth3d-train":
+        return ETH3DStereo(root=root, transforms=transforms, split="train")
+    elif name == "instereo-2k":
+        return InStereo2k(root=root, transforms=transforms, split="train")
+    elif name == "middlebury2014-train":
+        return Middlebury2014Stereo(root=root, transforms=transforms, split="train", calibration="perfect")
+    elif name == "kitti2012-train":
+        return Kitti2012Stereo(root=root, transforms=transforms, split="train")
+    elif name == "kitti2015-train":
+        return Kitti2015Stereo(root=root, transforms=transforms, split="train")
+    elif name == "eth3d-train":
+        return ETH3DStereo(root=root, transforms=transforms, split="train")
+    else:
+        raise ValueError(f"Unknown dataset {name}")

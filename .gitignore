@@ -8,7 +8,7 @@ torchvision/version.py
 */**/*.pyc
 */**/**/*.pyc
 */**/*~
-*~
+*~  
 
 docs/build
 # sphinx-gallery
@@ -42,3 +42,6 @@ xcuserdata/
 # direnv
 .direnv
 .envrc
+
+# out files
+*.out

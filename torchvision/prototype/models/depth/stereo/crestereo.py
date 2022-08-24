@@ -150,7 +150,7 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         return corr
 
     def _make_coords(self, feature_map: Tensor) -> Tensor:
-        return make_coords_grid(feature_map.shape[0], feature_map.shape[2], feature_map.shape[3]).to(feature_map.device)
+        return make_coords_grid(feature_map.shape[0], feature_map.shape[2], feature_map.shape[3], device=feature_map.device)
 
     def get_correlation(
         self,
@@ -272,9 +272,10 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
 
             # base offsets for search (i.e. where to look on the search index)
             x_grid, y_grid = torch.meshgrid(
-                torch.arange(-rx, rx + 1, di_x), torch.arange(-ry, ry + 1, di_y), indexing="xy"
+                torch.arange(-rx, rx + 1, di_x, device=left_feature.device),
+                torch.arange(-ry, ry + 1, di_y, device=left_feature.device),
+                indexing="xy"
             )
-            x_grid, y_grid = x_grid.to(flow.device), y_grid.to(flow.device)
             offsets = torch.stack((x_grid, y_grid))
             offsets = offsets.reshape(2, -1).permute(1, 0)
 
@@ -411,6 +412,18 @@ class PositionalEncodingSine(nn.Module):
         super().__init__()
         self.dim_model = dim_model
         self.scale_factor = -math.log(10_000) / (dim_model // 2)
+        
+        pe = torch.zeros((self.dim_model, *(256, 256)), dtype=torch.float32)
+        y_positions = torch.ones((256, 256)).cumsum(0).float().unsqueeze(0)
+        x_positions = torch.ones((256, 256)).cumsum(1).float().unsqueeze(0)
+        div_term = torch.exp(torch.arange(0.0, self.dim_model // 2, 2) * (-math.log(10000.0) / self.dim_model // 2))
+        div_term = div_term[:, None, None]
+        pe[0::4, :, :] = torch.sin(x_positions * div_term)
+        pe[1::4, :, :] = torch.cos(x_positions * div_term)
+        pe[2::4, :, :] = torch.sin(y_positions * div_term)
+        pe[3::4, :, :] = torch.cos(y_positions * div_term)
+        pe = pe.unsqueeze(0)
+        self.register_buffer("pe", pe)
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -435,19 +448,8 @@ class PositionalEncodingSine(nn.Module):
 
         positional_embeddings = torch.cat((positions_x, positions_y), dim=3).permute(0, 3, 1, 2)
         """
-
         b, c, h, w = x.shape
-        pe = torch.zeros((self.dim_model, *(256, 256)), dtype=torch.float32)
-        y_positions = torch.ones((256, 256)).cumsum(0).float().unsqueeze(0)
-        x_positions = torch.ones((256, 256)).cumsum(1).float().unsqueeze(0)
-        div_term = torch.exp(torch.arange(0.0, self.dim_model // 2, 2) * (-math.log(10000.0) / self.dim_model // 2))
-        div_term = div_term[:, None, None]
-        pe[0::4, :, :] = torch.sin(x_positions * div_term)
-        pe[1::4, :, :] = torch.cos(x_positions * div_term)
-        pe[2::4, :, :] = torch.sin(y_positions * div_term)
-        pe[3::4, :, :] = torch.cos(y_positions * div_term)
-        pe = pe.unsqueeze(0)
-        return x + pe[:, :, :h, :w].to(x.device)
+        return x + self.pe[:, :, :h, :w]
 
         # return x + positional_embeddings
 
@@ -618,7 +620,6 @@ class CREStereo(nn.Module):
         *,
         feature_encoder: FeatureEncoder,
         update_block: raft.UpdateBlock,
-        flow_head: raft.FlowHead,
         self_attn_block: LocalFeatureTransformer,
         cross_attn_block: LocalFeatureTransformer,
         feature_downsample_rates: Tuple[int, ...] = (2, 4),
@@ -632,7 +633,6 @@ class CREStereo(nn.Module):
 
         self.feature_encoder = feature_encoder
         self.update_block = update_block
-        self.flow_head = flow_head
         self.self_attn_block = self_attn_block
 
         # average pooling for the feature encoder outputs
@@ -760,14 +760,14 @@ class CREStereo(nn.Module):
         # we added this because of torch.script.jit
         # also, the predicition prior is always going to have the
         # spatial size of the features outputed by the feature encoder
-        flow_pred_prior: Tensor = torch.empty(
-            size=(B, 2, left_features.shape[2], left_features.shape[3]),
+        flow_pred_prior: Tensor = torch.zeros(
+            size=(B, 2, MIN_H, MIN_W),
             dtype=l_pyramid[max_res].dtype,
             device=l_pyramid[max_res].device,
         )
 
         if flow_init is not None:
-            scale = l_pyramid[max_res].shape[2] // flow_init.shape[2]
+            scale = l_pyramid[max_res].shape[2] / flow_init.shape[2]
             # based on the cascaded inference configuration this might be a downsample
             # instead of an upsample, therefor we use bilinear interpolation
             flow_estimates[max_res] = -scale * F.interpolate(
@@ -778,11 +778,6 @@ class CREStereo(nn.Module):
             )
         # when not provided with a flow prior, we construct one using the lower resolution maps
         else:
-            # initialize a zero flow with the smallest resolution
-            flow_pred_prior = torch.zeros(
-                size=(B, 2, MIN_H, MIN_W), device=left_features.device, dtype=left_features.dtype
-            )
-
             # flows from coarse resolutions are refined similarly
             # we always need to fetch the next pyramid feature map as well
             # when updating coarse resolutions, therefore we create a reversed
@@ -975,7 +970,6 @@ def _crestereo(
     model = CREStereo(
         feature_encoder=feature_encoder,
         update_block=update_block,
-        flow_head=flow_head,
         self_attn_block=self_attn_block,
         cross_attn_block=cross_attn_block,
         feature_downsample_rates=feature_downsample_rates,

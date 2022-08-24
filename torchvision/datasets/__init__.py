@@ -9,6 +9,7 @@ from ._stereo_matching import (
     SintelStereo,
     CREStereo,
     InStereo2k,
+    CarlaStereo,
 )
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA

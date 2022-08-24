@@ -7,8 +7,7 @@ resume: null
 # train dataset parameters
 dataset_root: "/fsx/users/teodorponcu/datasets"
 train_dataset: ["crestereo"]
-dataset_steps: [300_000]
-transforms: "cre-low-scale"
+dataset_steps: [600_000]
 
 # dataloader parameters
 workers: 10
@@ -19,7 +18,7 @@ dataset_shuffle: True
 schedule_shuffle: False
 
 # batch size
-batch_size: 2
+batch_size: 4
 
 # validation datasets
 valid_dataset: ["middlebury2014-train"]
@@ -39,7 +38,7 @@ flat_lr_steps: 180_000
 model: "crestereo_base"
 
 # architecture speciffic parameters
-recurrent_updates: 10
+recurrent_updates: 5
 freeze_batch_norm: True
 
 # loss speciffic parameters

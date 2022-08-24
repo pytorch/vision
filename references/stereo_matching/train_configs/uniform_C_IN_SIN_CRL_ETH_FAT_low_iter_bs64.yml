@@ -6,9 +6,10 @@ resume: null
 
 # train dataset parameters
 dataset_root: "/fsx/users/teodorponcu/datasets"
-train_dataset: ["crestereo"]
-dataset_steps: [300_000]
-transforms: "cre-low-scale"
+train_dataset: ["crestereo", "instereo", "sintel", "carla-highres", "eth3d-train", "fallingthings"]
+dataset_steps: [150_000, 150_000, 150_000, 150_000, 45_000, 150_000]
+transforms: "cre-high-scale"
+
 
 # dataloader parameters
 workers: 10
@@ -16,10 +17,10 @@ workers: 10
 dataset_shuffle: True
 # shuffles samples schedule datasets, implies that schedule
 # will not be respected any longer
-schedule_shuffle: False
+schedule_shuffle: True
 
 # batch size
-batch_size: 2
+batch_size: 8
 
 # validation datasets
 valid_dataset: ["middlebury2014-train"]
@@ -28,8 +29,8 @@ save_freq: 10_000
 
 # optimizer
 lr: 4.0e-4
-wd: 0.0e-5
-clip_grad_norm: 1.0e+1
+wd: 0.0
+clip_grad_norm: 0.0
 
 # learning rate scheduler
 warm_up_steps: 6_000
@@ -39,7 +40,7 @@ flat_lr_steps: 180_000
 model: "crestereo_base"
 
 # architecture speciffic parameters
-recurrent_updates: 10
+recurrent_updates: 5
 freeze_batch_norm: True
 
 # loss speciffic parameters
@@ -60,5 +61,6 @@ use_deterministic_algorithms: False
 # weights API
 weights: null
 
+# Tensorboard API
 tensorboard_summaries: True
 write_summary_freq: 100

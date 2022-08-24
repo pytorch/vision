@@ -8,10 +8,12 @@ resume: null
 dataset_root: "/fsx/users/teodorponcu/datasets"
 train_dataset: ["crestereo"]
 dataset_steps: [300_000]
-transforms: "cre-low-scale"
+transforms: "cre-high-scale"
 
 # dataloader parameters
-workers: 10
+workers: 2
+threads: 8
+
 # shuffle samples inside a dataset
 dataset_shuffle: True
 # shuffles samples schedule datasets, implies that schedule
@@ -27,13 +29,20 @@ valid_freq: 10_000
 save_freq: 10_000
 
 # optimizer
-lr: 4.0e-4
-wd: 0.0e-5
-clip_grad_norm: 1.0e+1
+lr: 3.0e-4
+min_lr: 3.0e-6
+lr_warmup_decay: 1.0e-2
+lr_decay_gamma: 1.0e-2
+
+wd: 0.0
+clip_grad_norm: 1.0
 
 # learning rate scheduler
-warm_up_steps: 6_000
-flat_lr_steps: 180_000
+warmup_steps: 6_000
+flat_lr_steps: 120_000
+
+lr_warmup_method: linear
+lr_decay_method: cosine
 
 # model
 model: "crestereo_base"
@@ -44,6 +53,10 @@ freeze_batch_norm: True
 
 # loss speciffic parameters
 gamma: 0.8
+consistency_alpha: 0.0
+
+# mixed precision parameters
+mixed_precison: True
 
 # objective modelling speciffic
 should_learn_y_flow: True
@@ -53,9 +66,12 @@ dist_url: "env://"
 world_size: 8
 device: "cuda"
 
+mixed_precision: False
+
 # deterministic behaviour
 seed: 42
 use_deterministic_algorithms: False
+
 
 # weights API
 weights: null

@@ -166,6 +166,63 @@ class StereoMatchingDataset(ABC, VisionDataset):
         else:
             raise TypeError(f"unsupported type: {type(v)}")
 
+class CarlaStereo(StereoMatchingDataset):
+    """
+    Carla simulator data linked in the `CREStereo github repo <https://github.com/megvii-research/CREStereo>`_.
+    The dataset is expected to have the following structure: ::
+        root
+            carla-highres
+                trainingF
+                    scene1
+                        img0.png
+                        img1.png
+                        disp0GT.pfm
+                        disp1GT.pfm
+                        calib.txt
+                    scene2
+                        img0.png
+                        img1.png
+                        disp0GT.pfm
+                        disp1GT.pfm
+                        calib.txt
+                    ...
+    Args:
+        root (string): Root directory where `carla-highres` is located.
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+    """
+
+    def __init__(self, root: str, transforms: Optional[Callable] = None):
+        super().__init__(root, transforms)
+
+        root = Path(root) / "carla-highres"
+
+        left_image_pattern = str(root / "trainingF" / "*" / "im0.png")
+        right_image_pattern = str(root / "trainingF" / "*" / "im1.png")
+        imgs = self._scan_pairs(left_image_pattern, right_image_pattern)
+        self._images = imgs
+
+        left_disparity_pattern = str(root / "trainingF" / "*" / "disp0GT.pfm")
+        right_disparity_pattern = str(root / "trainingF" / "*" / "disp1GT.pfm")
+        disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
+        self._disparities = disparities
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        disparity_map = _read_pfm_file(file_path).astype(np.float32)
+        disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
+        valid_mask = None
+        return disparity_map, valid_mask
+
+    def __getitem__(self, index: int) -> Tuple:
+        """Return example at given index.
+        Args:
+            index(int): The index of the example to retrieve
+        Returns:
+            tuple: A 3-tuple with ``(img_left, img_right, disparity)``.
+            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
+            If a ``valid_mask`` is generated within the ``transforms`` parameter,
+            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
+        """
+        return super().__getitem__(index)
 
 class CREStereo(StereoMatchingDataset):
     """Synthetic dataset used in training the `CREStereo <https://arxiv.org/pdf/2203.11483.pdf>`_ architecture.
@@ -255,7 +312,7 @@ class CREStereo(StereoMatchingDataset):
             self._disparities += disparities
 
     def _read_disparity(self, file_path: str) -> Tuple:
-        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
+        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32) / 32.0
         # unsqueeze the disparity map into (C, H, W) format
         disparity_map = disparity_map[None, :, :]
         valid_mask = None
@@ -622,7 +679,7 @@ class ETH3DStereo(StereoMatchingDataset):
         disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
         mask_path = os.path.join(os.path.split(file_path)[0], "mask0nocc.png")
         valid_mask = Image.open(mask_path)
-        valid_mask = np.asarray(valid_mask).astype(np.bool_)
+        valid_mask = np.asarray(valid_mask).astype(bool)
         return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple:
@@ -890,7 +947,7 @@ class SintelStereo(StereoMatchingDataset):
             return None, None
 
         # disparity decoding as per Sintel instructions in the README provided with the dataset
-        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
+        disparity_map = np.abs(np.asarray(Image.open(file_path), dtype=np.float32))
         r, g, b = np.split(disparity_map, 3, axis=-1)
         disparity_map = r * 4 + g / (2 ** 6) + b / (2 ** 14)
         # reshape into (C, H, W) format
@@ -903,7 +960,6 @@ class SintelStereo(StereoMatchingDataset):
         off_mask = np.asarray(Image.open(out_of_frame_mask_path)) == 0
         # combine the masks together
         valid_mask = np.logical_and(off_mask, valid_mask)
-        print(disparity_map.shape)
         return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple:
@@ -982,24 +1038,46 @@ class SceneFlowStereo(StereoMatchingDataset):
         verify_str_arg(pass_name, "pass_name", valid_values=("clean", "final", "both"))
 
         passes = {
-            "clean": ["frames_cleanpass"],
-            "final": ["frames_finalpass"],
-            "both": ["frames_cleanpass, frames_finalpass"],
-        }[pass_name]
+            "clean": ["images_cleanpass/frames_cleanpass"],
+            "final": ["images_finalpass/frames_finalpass"],
+            "both": ["images_cleanpass/frames_cleanpass", "images_finalpass/frames_finalpass"],
+        } [pass_name]
+        
+        split_suffixes = {
+            "Monkaa": {
+                "left_img": Path("*") / "left" / "*.png",
+                "right_img": Path("*") / "right" / "*.png",
+                "left_disparity": Path("*") / "left" / "*.pfm",
+                "right_disparity": Path("*") / "right" / "*.pfm",
+            },
+            "FlyingThings3D": {
+                "left_img": Path("*") / "*" / "*" / "left" / "*.png",
+                "right_img": Path("*") / "*" / "*" / "right" / "*.png",
+                "left_disparity": Path("*") / "*" / "*" / "left" / "*.pfm",
+                "right_disparity": Path("*") / "*" / "*" / "right" / "*.pfm",
+            },
+            "Driving": {
+                "left_img": Path("*") / "*" / "*" / "left" / "*.png",
+                "right_img": Path("*") / "*" / "*" / "right" / "*.png",
+                "left_disparity": Path("*") / "*" / "*" / "left" / "*.pfm",
+                "right_disparity": Path("*") / "*" / "*" / "right" / "*.pfm",
+            }
+        }
 
         root = root / split
 
         for p in passes:
-            left_img_pattern = str(root / p / "*" / "left" / "*.png")
-            right_img_pattern = str(root / p / "*" / "right" / "*.png")
+            left_img_pattern = str(root / p / split_suffixes[split]["left_img"])
+            right_img_pattern = str(root / p / split_suffixes[split]["right_img"])
             self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
 
-            left_disparity_pattern = str(root / "disparity" / "*" / "left" / "*.pfm")
-            right_disparity_pattern = str(root / "disparity" / "*" / "right" / "*.pfm")
+            left_disparity_pattern = str(root / "disparity" / "disparity" / split_suffixes[split]["left_disparity"])
+            right_disparity_pattern = str(root / "disparity" / "disparity" / split_suffixes[split]["right_disparity"])
             self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
 
     def _read_disparity(self, file_path: str) -> Tuple:
         disparity_map = _read_pfm_file(file_path)
+        disparity_map[disparity_map == np.inf] = 0
         disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
         valid_mask = None
         return disparity_map, valid_mask
@@ -1076,19 +1154,24 @@ class FallingThingsStereo(StereoMatchingDataset):
             "mixed": ["mixed"],
             "both": ["single", "mixed"],
         }[split]
+        
+        split_prefix = {
+            "single": Path("*") / "*",
+            "mixed": Path("*"),
+        }
 
         for s in splits:
-            left_img_pattern = str(root / s / "*" / "*.left.jpg")
-            right_img_pattern = str(root / s / "*" / "*.right.jpg")
+            left_img_pattern = str(root / s / split_prefix[s] / "*.left.jpg")
+            right_img_pattern = str(root / s /  split_prefix[s] / "*.right.jpg")
             self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
 
-            left_disparity_pattern = str(root / s / "*" / "*.left.depth.png")
-            right_disparity_pattern = str(root / s / "*" / "*.right.depth.png")
+            left_disparity_pattern = str(root / s / split_prefix[s] / "*.left.depth.png")
+            right_disparity_pattern = str(root / s /  split_prefix[s] / "*.right.depth.png")
             self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
 
     def _read_disparity(self, file_path: str) -> Tuple:
         # (H, W) image
-        depth = np.asarray(Image.open(file_path))
+        depth = np.abs(np.asarray(Image.open(file_path)))
         # as per https://research.nvidia.com/sites/default/files/pubs/2018-06_Falling-Things/readme_0.txt
         # in order to extract disparity from depth maps
         with open(os.path.split(file_path)[0] + "/_camera_settings.json", "r") as f:
@@ -1165,10 +1248,11 @@ class InStereo2k(StereoMatchingDataset):
         self._disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
 
     def _read_disparity(self, file_path: str) -> Tuple:
-        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
+        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32) / 100.
+        disparity_map = np.abs(disparity_map)
         # unsqueeze disparity to (C, H, W)
+        valid_mask = disparity_map != 0.0
         disparity_map = disparity_map[None, :, :]
-        valid_mask = None
         return disparity_map, valid_mask
 
     def __getitem__(self, index: int) -> Tuple:
