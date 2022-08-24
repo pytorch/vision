@@ -23,9 +23,6 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
 
 
 def rgb_to_grayscale(inpt: Any, num_output_channels: int = 1) -> Any:
-    if num_output_channels not in (1, 3):
-        raise ValueError("num_output_channels should be either 1 or 3")
-
     old_color_space = features.Image.guess_color_space(inpt) if is_simple_tensor(inpt) else None
 
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
