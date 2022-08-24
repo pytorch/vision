@@ -7,7 +7,7 @@ from ._meta import (
     convert_color_space,
 )  # usort: skip
 
-from ._augment import erase_image_pil, erase_image_tensor
+from ._augment import erase, erase_image_pil, erase_image_tensor
 from ._color import (
     adjust_brightness,
     adjust_brightness_image_pil,
@@ -106,10 +106,6 @@ from ._geometry import (
     vertical_flip_segmentation_mask,
 )
 from ._misc import gaussian_blur, gaussian_blur_image_pil, gaussian_blur_image_tensor, normalize, normalize_image_tensor
-from ._type_conversion import (
-    decode_image_with_pil,
-    decode_video_with_av,
-    label_to_one_hot,
-    to_image_pil,
-    to_image_tensor,
-)
+from ._type_conversion import decode_image_with_pil, decode_video_with_av, to_image_pil, to_image_tensor
+
+from ._deprecated import rgb_to_grayscale, to_grayscale  # usort: skip
