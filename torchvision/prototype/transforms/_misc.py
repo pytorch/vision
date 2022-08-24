@@ -4,10 +4,10 @@ from typing import Any, Callable, Dict, List, Sequence, Type, Union
 import PIL.Image
 
 import torch
-from torchvision.ops import box_area
+from torchvision.ops import remove_small_boxes
 from torchvision.prototype import features
 
-from torchvision.prototype.transforms import Compose, functional as F, Transform
+from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.prototype.transforms._utils import query_bounding_box
 
 from torchvision.transforms.transforms import _setup_size
@@ -141,40 +141,26 @@ class ToDtype(Lambda):
         return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
 
 
-class _ClampBoundingBoxes(Transform):
-    _transformed_types = (features.BoundingBox,)
-
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        output = F.clamp_bounding_box(inpt, format=inpt.format, image_size=inpt.image_size)
-        return features.BoundingBox.new_like(inpt, output)
-
-
-class _RemoveEmptyBoundingBoxes(Transform):
+class RemoveSmallBoundingBoxes(Transform):
     _transformed_types = (features.BoundingBox, features.SegmentationMask, features.Label, features.OneHotLabel)
+
+    def __init__(self, min_size: int = 1) -> None:
+        super().__init__()
+        self.min_size = min_size
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         bounding_box = query_bounding_box(sample)
 
-        # TODO: We can improve performance here by not using the `box_area` function. It requires the box to be in XYXY
-        #  format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH format,
-        #  we need to convert first just to afterwards compute the width and height again, although they were there in
-        #  the first place for these formats.
+        # TODO: We can improve performance here by not using the `remove_small_boxes` function. It requires the box to
+        #  be in XYXY format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH
+        #  format,we need to convert first just to afterwards compute the width and height again, although they were
+        #  there in the first place for these formats.
         bounding_box = F.convert_bounding_box_format(
             bounding_box, old_format=bounding_box.format, new_format=features.BoundingBoxFormat.XYXY
         )
-        area = box_area(bounding_box)
+        valid_indices = remove_small_boxes(bounding_box, min_size=self.min_size)
 
-        return dict(is_valid=area > 0)
+        return dict(valid_indices=valid_indices)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return inpt.new_like(inpt, inpt[params["is_valid"]])
-
-
-class RemoveInvalid(Compose):
-    def __init__(self) -> None:
-        super().__init__(
-            [
-                _ClampBoundingBoxes(),
-                _RemoveEmptyBoundingBoxes(),
-            ]
-        )
+        return inpt.new_like(inpt, inpt[params["valid_indices"]])

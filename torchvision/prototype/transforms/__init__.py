@@ -2,9 +2,9 @@ from . import functional  # usort: skip
 
 from ._transform import Transform  # usort: skip
 
-
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder  # usort: skip
 
+from ._meta import ConvertBoundingBoxFormat, ConvertColorSpace, ConvertImageDtype, ClampBoundingBoxes  # usort: skip
 
 from ._augment import RandomCutmix, RandomErasing, RandomMixup, SimpleCopyPaste
 from ._auto_augment import AugMix, AutoAugment, AutoAugmentPolicy, RandAugment, TrivialAugmentWide
@@ -38,11 +38,7 @@ from ._geometry import (
     ScaleJitter,
     TenCrop,
 )
-
-from ._meta import ConvertBoundingBoxFormat, ConvertColorSpace, ConvertImageDtype
-
-from ._misc import GaussianBlur, Identity, Lambda, LinearTransformation, Normalize, RemoveInvalid, ToDtype
-
+from ._misc import GaussianBlur, Identity, Lambda, LinearTransformation, Normalize, RemoveSmallBoundingBoxes, ToDtype
 from ._type_conversion import DecodeImage, LabelToOneHot, ToImagePIL, ToImageTensor
 
 from ._deprecated import Grayscale, RandomGrayscale, ToTensor, ToPILImage, PILToTensor  # usort: skip
