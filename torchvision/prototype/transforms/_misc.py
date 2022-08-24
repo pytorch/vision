@@ -142,7 +142,7 @@ class ToDtype(Lambda):
 class RemoveSmallBoundingBoxes(Transform):
     _transformed_types = (features.BoundingBox, features.SegmentationMask, features.Label, features.OneHotLabel)
 
-    def __init__(self, min_size: int = 1) -> None:
+    def __init__(self, min_size: float = 1.0) -> None:
         super().__init__()
         self.min_size = min_size
 
