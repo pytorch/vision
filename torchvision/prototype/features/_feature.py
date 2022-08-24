@@ -97,6 +97,10 @@ class _Feature(torch.Tensor):
 
     @property
     def _F(self) -> ModuleType:
+        # This implements a lazy import of the functional to get around the cyclic import. This import is deferred
+        # until the first time we need reference to the functional module and it's shared across all instances of
+        # the class. The deferred lazy import avoids the DataLoader issue described at
+        # https://github.com/pytorch/vision/pull/6219#discussion_r912721945
         if _Feature.__F is None:
             from ..transforms import functional
 
