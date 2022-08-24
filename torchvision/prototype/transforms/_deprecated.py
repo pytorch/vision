@@ -28,6 +28,9 @@ class ToTensor(Transform):
         super().__init__()
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: why check here again for types? Can't we just define
+        # `_transformed_types = (PIL.Image.Image, np.ndarray)`
+        # and then eliminate this if/else?
         if isinstance(inpt, (PIL.Image.Image, np.ndarray)):
             return _F.to_tensor(inpt)
         else:
@@ -43,6 +46,7 @@ class PILToTensor(Transform):
         super().__init__()
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: similar here?
         if isinstance(inpt, PIL.Image.Image):
             return _F.pil_to_tensor(inpt)
         else:
@@ -63,6 +67,7 @@ class ToPILImage(Transform):
         self.mode = mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: similar here?
         if is_simple_tensor(inpt) or isinstance(inpt, (features.Image, np.ndarray)):
             return _F.to_pil_image(inpt, mode=self.mode)
         else:
@@ -115,5 +120,8 @@ class RandomGrayscale(_RandomApplyTransform):
         super().__init__(p=p)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: What's the reason of converting it to RGB to then conver it to Grayscale? Is it to ensure the input
+        # is an RGB and we rely on a no-op behaviour to avoid errors? I think this logic should change to do the convertion
+        # only when needed. This will lead to both clearer code and more efficient.
         output = F.convert_color_space(inpt, color_space=ColorSpace.GRAY, old_color_space=ColorSpace.RGB)
         return F.convert_color_space(output, color_space=ColorSpace.RGB, old_color_space=ColorSpace.GRAY)

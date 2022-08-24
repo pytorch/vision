@@ -12,6 +12,9 @@ from ._utils import is_simple_tensor
 
 class DecodeImage(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: We shouldn't have if/elses here. We could just set:
+        # `_transformed_types = (features.EncodedImage,)`
+        # and eliminate them.
         if isinstance(inpt, features.EncodedImage):
             output = F.decode_image_with_pil(inpt)
             return features.Image(output)
@@ -25,6 +28,9 @@ class LabelToOneHot(Transform):
         self.num_categories = num_categories
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: We shouldn't have if/elses here. We could just set:
+        # `_transformed_types = (features.Label,)`
+        # and eliminate them.
         if isinstance(inpt, features.Label):
             num_categories = self.num_categories
             if num_categories == -1 and inpt.categories is not None:
@@ -45,12 +51,14 @@ class ToImageTensor(Transform):
 
     # Updated transformed types for ToImageTensor
     _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    # datumbox: I don't think Tensor and features._Feature should be here. This will lead to bboxes being converted to Tensors
 
     def __init__(self, *, copy: bool = False) -> None:
         super().__init__()
         self.copy = copy
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: Similarly we should rely on `_transformed_types` and avoid if/else here
         if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
             output = F.to_image_tensor(inpt, copy=self.copy)
             return features.Image(output)
@@ -62,12 +70,14 @@ class ToImagePIL(Transform):
 
     # Updated transformed types for ToImagePIL
     _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    # datumbox: same as above
 
     def __init__(self, *, mode: Optional[str] = None) -> None:
         super().__init__()
         self.mode = mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: same as above
         if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
             return F.to_image_pil(inpt, mode=self.mode)
         else:

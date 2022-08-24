@@ -92,6 +92,9 @@ class RandomResizedCrop(Transform):
         # vfdev-5: techically, this op can work on bboxes/segm masks only inputs without image in samples
         # What if we have multiple images/bboxes/masks of different sizes ?
         # TODO: let's support bbox or mask in samples without image
+        # datumbox: One issue with implementing the above proposal is that `query_chw()` is supposed to return channels
+        # that bboxes and masks don't have. It could return None, as the majority of ops don't need it. Thoughts?
+        # The same applies to all similar TODOs in this file.
         _, height, width = query_chw(sample)
         area = height * width
 
@@ -163,6 +166,8 @@ class FiveCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         # TODO: returning a list is technically BC breaking since FiveCrop returned a tuple before. We switched to a
         #  list here to align it with TenCrop.
+        # datumbox: The above TODO is no longer valid. Perhaps it should be adapted to say the opposite, aka
+        # shall we break BC and return a list to align with TenCrop?
         if isinstance(inpt, features.Image):
             output = F.five_crop_image_tensor(inpt, self.size)
             return tuple(features.Image.new_like(inpt, o) for o in output)
@@ -476,6 +481,7 @@ class RandomCrop(Transform):
         )
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: This is a prime candidate for speed optimization to avoid repeated pad calls. We should add a TODO here
         if self.padding is not None:
             inpt = F.pad(inpt, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
 
@@ -804,6 +810,8 @@ class FixedSizeCrop(Transform):
 
         if needs_crop:
             bounding_boxes = query_bounding_box(sample)
+            # datumbox: This transform should be able to work without bboxes. Hence if there are no bounding_boxes
+            # we should set `is_valid=None`.
             bounding_boxes = cast(
                 features.BoundingBox, F.crop(bounding_boxes, top=top, left=left, height=height, width=width)
             )

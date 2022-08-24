@@ -16,6 +16,7 @@ normalize_image_tensor = _FT.normalize
 
 def normalize(inpt: DType, mean: List[float], std: List[float], inplace: bool = False) -> DType:
     if isinstance(inpt, features._Feature) and not isinstance(inpt, features.Image):
+        # datumbox: we should not be doing pass throughs in the kernels. We should remove this if.
         return inpt
     elif isinstance(inpt, PIL.Image.Image):
         raise TypeError("Unsupported input type")

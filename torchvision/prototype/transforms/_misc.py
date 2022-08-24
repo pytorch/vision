@@ -18,6 +18,8 @@ class Identity(Transform):
 
 class Lambda(Transform):
     def __init__(self, fn: Callable[[Any], Any], *types: Type):
+        # datumbox: the use of types here is BC breaking. Perhaps we should ensure the default behaviour when types
+        # is not passed aligns with the old behaviour.
         super().__init__()
         self.fn = fn
         self.types = types
@@ -61,7 +63,8 @@ class LinearTransformation(Transform):
         self.mean_vector = mean_vector
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-
+        # datumbox: This feels like it's on the wrong place. Pass throughs are usually defined at `_transformed_types`
+        # and unsupported types are handled in `forward()`. Should we refactor this to align with the rest of the code?
         if isinstance(inpt, features._Feature) and not isinstance(inpt, features.Image):
             return inpt
         elif isinstance(inpt, PIL.Image.Image):
@@ -92,11 +95,15 @@ class LinearTransformation(Transform):
 
 class Normalize(Transform):
     def __init__(self, mean: List[float], std: List[float]):
+        # datumbox: The previous documentation says taht these need to be sequencies but here we have lists. Should
+        # refactor this to ensure BC?
         super().__init__()
         self.mean = mean
         self.std = std
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: This works because the `F` kernel handles the passthrough. It's not the job of the kernel to do
+        # this. We should instead declare the supported types in `_transformed_types`.
         return F.normalize(inpt, mean=self.mean, std=self.std)
 
 
@@ -131,6 +138,7 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Lambda):
+    # datumbox: if on Lambda we add a default behaviour for types, we might want to do the same here.
     def __init__(self, dtype: torch.dtype, *types: Type) -> None:
         self.dtype = dtype
         super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *types)

@@ -13,7 +13,7 @@ def query_bounding_box(sample: Any) -> features.BoundingBox:
     flat_sample, _ = tree_flatten(sample)
     for i in flat_sample:
         if isinstance(i, features.BoundingBox):
-            return i
+            return i  # datumbox: should we be throwing an exception if we found more than one, similar to `query_chw()`
 
     raise TypeError("No bounding box was found in the sample")
 
@@ -22,7 +22,7 @@ def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tupl
     if isinstance(image, features.Image):
         channels = image.num_channels
         height, width = image.image_size
-    elif isinstance(image, torch.Tensor):
+    elif isinstance(image, torch.Tensor):  # datumbox: should this have been is_simple_tensor() instead?
         channels, height, width = get_dimensions_image_tensor(image)
     elif isinstance(image, PIL.Image.Image):
         channels, height, width = get_dimensions_image_pil(image)
@@ -68,5 +68,6 @@ def has_all(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -
 # TODO: Given that this is not related to pytree / the Transform object, we should probably move it to somewhere else.
 #  One possibility is `functional._utils` so both the functionals and the transforms have proper access to it. We could
 #  also move it `features` since it literally checks for the _Feature type.
+# datumbox: let's do the move in `features` module.
 def is_simple_tensor(inpt: Any) -> bool:
     return isinstance(inpt, torch.Tensor) and not isinstance(inpt, features._Feature)

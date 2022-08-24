@@ -18,6 +18,9 @@ class ConvertBoundingBoxFormat(Transform):
         self.format = format
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: We shouldn't have if/elses here. We could just set:
+        # `_transformed_types = (features.BoundingBox,)`
+        # and eliminate them.
         if isinstance(inpt, features.BoundingBox):
             output = F.convert_bounding_box_format(inpt, old_format=inpt.format, new_format=params["format"])
             return features.BoundingBox.new_like(inpt, output, format=params["format"])
