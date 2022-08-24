@@ -438,13 +438,19 @@ class SceneFlowStereo(StereoMatchingDataset):
 
         root = root / variant
 
+        prefix_directories = {
+            "Monkaa": Path("*"),
+            "FlyingThings3D": Path("*") / "*" / "*",
+            "Driving": Path("*") / "*" / "*",
+        }
+
         for p in passes:
-            left_image_pattern = str(root / p / "*" / "left" / "*.png")
-            right_image_pattern = str(root / p / "*" / "right" / "*.png")
+            left_image_pattern = str(root / p / prefix_directories[variant] / "left" / "*.png")
+            right_image_pattern = str(root / p / prefix_directories[variant] / "right" / "*.png")
             self._images += self._scan_pairs(left_image_pattern, right_image_pattern)
 
-            left_disparity_pattern = str(root / "disparity" / "*" / "left" / "*.pfm")
-            right_disparity_pattern = str(root / "disparity" / "*" / "right" / "*.pfm")
+            left_disparity_pattern = str(root / "disparity" / prefix_directories[variant] / "left" / "*.pfm")
+            right_disparity_pattern = str(root / "disparity" / prefix_directories[variant] / "right" / "*.pfm")
             self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
 
     def _read_disparity(self, file_path: str) -> Tuple:
@@ -586,5 +592,74 @@ class SintelStereo(StereoMatchingDataset):
             tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
             The disparity is a numpy array of shape (1, H, W) and the images are PIL images whilst
             the valid_mask is a numpy array of shape (H, W).
+        """
+        return super().__getitem__(index)
+
+
+class InStereo2k(StereoMatchingDataset):
+    """`InStereo2k <https://github.com/YuhuaXu/StereoDataset>`_ dataset.
+
+    The dataset is expected to have the following structre: ::
+
+        root
+            InStereo2k
+                train
+                    scene1
+                        left.png
+                        right.png
+                        left_disp.png
+                        right_disp.png
+                        ...
+                    scene2
+                    ...
+                test
+                    scene1
+                        left.png
+                        right.png
+                        left_disp.png
+                        right_disp.png
+                        ...
+                    scene2
+                    ...
+
+    Args:
+        root (string): Root directory where InStereo2k is located.
+        split (string): Either "train" or "test".
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+    """
+
+    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
+        super().__init__(root, transforms)
+
+        root = Path(root) / "InStereo2k" / split
+
+        verify_str_arg(split, "split", valid_values=("train", "test"))
+
+        left_img_pattern = str(root / "*" / "left.png")
+        right_img_pattern = str(root / "*" / "right.png")
+        self._images = self._scan_pairs(left_img_pattern, right_img_pattern)
+
+        left_disparity_pattern = str(root / "*" / "left_disp.png")
+        right_disparity_pattern = str(root / "*" / "right_disp.png")
+        self._disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
+        # unsqueeze disparity to (C, H, W)
+        disparity_map = disparity_map[None, :, :] / 1024.0
+        valid_mask = None
+        return disparity_map, valid_mask
+
+    def __getitem__(self, index: int) -> Tuple:
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: A 3-tuple with ``(img_left, img_right, disparity)``.
+            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
+            If a ``valid_mask`` is generated within the ``transforms`` parameter,
+            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
         """
         return super().__getitem__(index)
