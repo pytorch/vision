@@ -2,18 +2,11 @@ import warnings
 from typing import Any
 
 import PIL.Image
-import torch
 
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F
 
-
-# TODO: this was copied from `torchvision.prototype.transforms._utils`. Given that this is not related to pytree / the
-#  Transform object, we should probably move it to somewhere else. One possibility is `functional._utils` so both the
-#  functionals and the transforms have access to it. We could also move it `features` since it literally checks for the
-#  _Feature type.
-def is_simple_tensor(inpt: Any) -> bool:
-    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, features._Feature)
+from .._utils import is_simple_tensor
 
 
 def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
