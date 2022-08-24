@@ -29,6 +29,7 @@ IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
 IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, "damaged_jpeg")
+DAMAGED_PNG = os.path.join(IMAGE_ROOT, "damaged_png")
 ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
 INTERLACED_PNG = os.path.join(IMAGE_ROOT, "interlaced_png")
 IS_WINDOWS = sys.platform in ("win32", "cygwin")
@@ -190,6 +191,8 @@ def test_decode_png_errors():
         decode_png(torch.empty((), dtype=torch.uint8))
     with pytest.raises(RuntimeError, match="Content is not png"):
         decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
+    with pytest.raises(RuntimeError, match="Out of bound read in decode_png"):
+        decode_png(read_file(os.path.join(DAMAGED_PNG, "sigsegv.png")))
 
 
 @pytest.mark.parametrize(
