@@ -1,0 +1,66 @@
+# checkpoint dir
+checkpoint_dir: "/fsx/users/teodorponcu/checkpoints/crestereo"
+
+# from where to resume the training
+resume: null
+
+# train dataset parameters
+dataset_root: "/fsx/users/teodorponcu/datasets"
+train_dataset: ["crestereo", "middlebury-2014", "kitti"]
+dataset_steps: [98_000, 2_000]
+transforms: "cre-high-scale"
+
+# dataloader parameters
+workers: 10
+# shuffle samples inside a dataset
+dataset_shuffle: True
+# shuffles samples schedule datasets, implies that schedule
+# will not be respected any longer
+schedule_shuffle: True
+
+# batch size
+batch_size: 2
+
+# validation datasets
+valid_dataset: ["middlebury2014-train"]
+valid_freq: 10_000
+save_freq: 10_000
+
+# optimizer
+lr: 4.0e-4
+wd: 0
+clip_grad_norm: 1.0
+# learning rate scheduler
+warm_up_steps: 6_000
+flat_lr_steps: 180_000
+
+# model
+model: "crestereo_base"
+
+# mixed precision
+mixed_precision: False
+
+# architecture speciffic parameters
+recurrent_updates: 10
+freeze_batch_norm: True
+
+# loss speciffic parameters
+gamma: 0.8
+
+# objective modelling speciffic
+should_learn_y_flow: True
+
+# distributed parameters
+dist_url: "env://"
+world_size: 8
+device: "cuda"
+
+# deterministic behaviour
+seed: 42
+use_deterministic_algorithms: False
+
+# weights API
+weights: null
+
+tensorboard_summaries: True
+write_summary_freq: 100

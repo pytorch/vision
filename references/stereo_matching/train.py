@@ -1,5 +1,6 @@
 import argparse
 import os
+import random
 import uuid
 import warnings
 from math import ceil
@@ -8,108 +9,120 @@ from typing import Callable, List, Union
 from torch import nn
 import numpy as np
 import torch
+import torch.distributed as dist
 import torchvision.models.optical_flow
 import torchvision.prototype.models.depth.stereo
 import utils
 import yaml
-from presets import StereoMatchingPresetEval, StereoMatchingPresetCRETrain
-from torch.optim.lr_scheduler import _LRScheduler
-from torchvision.datasets import (
-    InStereo2k,
-    CREStereo,
-    SintelStereo,
-    SceneFlowStereo,
-    FallingThingsStereo,
-    Middlebury2014Stereo,
-    ETH3DStereo,
-)
+from presets import HighScaleStereoMatchingPresetCRETrain, LowScaleStereoMatchingPresetCRETrain, StereoMatchingPresetEval, StereoMatchingPresetCRETrain
+from utils import get_dataset_by_name
 
+
+from visualization import *
+
+from torch.utils.tensorboard import SummaryWriter
 
 def construct_experiment_name(args: dict):
     # return a random uuid if no experiment name is given
     return str(uuid.uuid4())
 
+def make_stereo_flow(flow: torch.Tensor) -> torch.Tensor:
+    """Helper function to make stereo flow from a given model output"""
+    B, C, H, W = flow.shape
+    # we need to add zero flow
+    if C == 1:
+        zero_flow = torch.zeros_like(flow)
+        # by convention the flow is X-Y axis, so we need the Y flow last
+        flow = torch.cat([flow, zero_flow], dim=1)
+    return flow
 
-def extract_model_outputs(
+def view_flow_as_stereo_target(
     model_ouputs: Union[torch.Tensor, List[torch.Tensor]], args: argparse.Namespace
-) -> torch.Tensor:
-    """Helper function to extract the model outputs from a given architecture"""
+) -> torch.Tensor: 
+    """Helper function to construct the model outputs for a given architecture"""
+    if args.should_learn_y_flow:
+        cut_off_index = 2
+    else:
+        cut_off_index = 1
+        
+    if isinstance(model_ouputs, list) and args.should_learn_y_flow:
+        for idx in range(len(model_ouputs)):
+            model_ouputs[idx] = make_stereo_flow(model_ouputs[idx])
+    else:
+        model_ouputs = make_stereo_flow(model_ouputs)
+                            
     if "raft" in args.model:
         return model_ouputs
+    
     elif "crestereo" in args.model:
         # CRE-stereo like models, return the entire flow-map
         # we are interested only on the X-axis flow for stereo matching
         if isinstance(model_ouputs, list):
-            outs = list(map(lambda x: x[:, :1, :, :], model_ouputs))
+            outs = list(map(lambda x: x[:, :cut_off_index, :, :], model_ouputs))
             return outs
         else:
-            return model_ouputs[:, :1, :, :]
+            return model_ouputs[:, :cut_off_index, :, :]
+    
     else:
         raise ValueError(f"Unknown model {args.model}")
 
 
-def make_cre_stereo_schedule(args: argparse.Namespace) -> np.ndarray:
+def make_cre_stereo_schedule(args: argparse.Namespace, optimizer: torch.optim.Optimizer) -> np.ndarray:
     """Helper function to return a learning rate scheduler for CRE-stereo"""
-    warm_up_steps = args.warm_up_steps
-    flat_lr_steps = args.flat_lr_steps - warm_up_steps
-    decay_lr_steps = args.total_iterations - flat_lr_steps
+    warmup_steps = args.warmup_steps if args.warmup_steps else 0
+    flat_lr_steps = args.flat_lr_steps - warmup_steps if args.flat_lr_steps else 0
+    decay_lr_steps = args.total_iterations - flat_lr_steps 
 
     max_lr = args.lr
-    # make linear warm-up
-    warm_up_lr = np.linspace(0.05 * max_lr, max_lr, warm_up_steps)
-    # make flat learning rate schedule
-    flat_lr = np.linspace(max_lr, max_lr, flat_lr_steps)
-    # make linear decay
-    decay_lr = np.linspace(max_lr, 0.05 * max_lr, decay_lr_steps)
-    schedule = np.concatenate([warm_up_lr, flat_lr, decay_lr])
-    return schedule
+    min_lr = args.min_lr
+    
+    schedulers = []
+    
+    if warmup_steps > 0:
+        if args.lr_warmup_method == "linear":
+            warmup_lr_scheduler = torch.optim.lr_scheduler.LinearLR(
+                optimizer, start_factor=args.lr_warmup_decay, total_iters=warmup_steps
+            )
+        elif args.lr_warmup_method == "constant":
+            warmup_lr_scheduler = torch.optim.lr_scheduler.ConstantLR(
+                optimizer, factor=args.lr_warmup_decay, total_iters=warmup_steps
+            )
+        else:
+            raise ValueError(f"Unknown lr warmup method {args.lr_warmup_method}")
+        schedulers.append(warmup_lr_scheduler)
+        
+    if flat_lr_steps > 0:
+        flat_lr_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=max_lr, total_iters=flat_lr_steps)
+        schedulers.append(flat_lr_scheduler)
+        
+    if decay_lr_steps > 0:
+        if args.lr_decay_method == "cosine":
+            decay_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer, T_max=decay_lr_steps, eta_min=min_lr
+            )
+        elif args.lr_decay_method == "linear":
+            decay_lr_scheduler = torch.optim.lr_scheduler.LinearLR(
+                optimizer, start_factor=max_lr, end_factor=min_lr, total_iters=decay_lr_steps
+            )
+        elif args.lr_decay_method == "exponential":
+            decay_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
+                optimizer, gamma=args.lr_decay_gamma, last_epoch=-1
+            )
+        else:
+            raise ValueError(f"Unknown lr decay method {args.lr_decay_method}")
+        schedulers.append(decay_lr_scheduler)
+        
+    scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers, milestones=[warmup_steps, flat_lr_steps + warmup_steps])
+    return scheduler
 
 
-class ArrayScheduler(_LRScheduler):
-    """
-    Simple _LRScheduler wrapper that consumes a numpy array as a schedule.
-    """
-
-    def __init__(self, optimizer, schedule: np.ndarray, last_epoch: int = -1, verbose=False) -> None:
-        self.schedule = schedule.tolist()
-        self._step_count = 0
-
-        super().__init__(optimizer, last_epoch)
-
-    def step(self, epoch=None):
-        for i, param_group in enumerate(self.optimizer.param_groups):
-            param_group["lr"] = self.schedule[self._step_count]
-            self._step_count += 1
-
-    def get_lr(self):
-        return self.schedule[self._step_count]
-
-
-def get_dataset_by_name(name: str, root: str, transforms: Callable):
-    """Helper function to return a speciffic dataset configuration given it's name"""
-    if name == "crestereo":
-        return CREStereo(root=root, transforms=transforms)
-    elif name == "instereo":
-        return InStereo2k(root=root, transforms=transforms)
-    elif name == "sintel":
-        return SintelStereo(root=root, transforms=transforms)
-    elif name == "sceneflow-monkaa":
-        return SceneFlowStereo(root=root, transforms=transforms, split="Monkaa", pass_name="both")
-    elif name == "sceneflow-flyingthings":
-        return SceneFlowStereo(root=root, transforms=transforms, split="FlyingThings3D", pass_name="both")
-    elif name == "sceneflow-driving":
-        return SceneFlowStereo(root=root, transforms=transforms, split="Driving", pass_name="both")
-    elif name == "fallingthings":
-        return FallingThingsStereo(root=root, transforms=transforms, split=["both"])
-    elif name == "eth3d-train":
-        return ETH3DStereo(root=root, transforms=transforms, split="train")
-    elif name == "instereo-2k":
-        return InStereo2k(root=root, transforms=transforms, split="train")
-    elif name == "middlebury2014-train":
-        return Middlebury2014Stereo(root=root, transforms=transforms, split="train", calibration="perfect")
+def get_transforms(args: argparse.Namespace):
+    if args.transforms == "cre-low-scale":
+        return LowScaleStereoMatchingPresetCRETrain
+    elif args.transforms == "cre-high-scale":
+        return HighScaleStereoMatchingPresetCRETrain
     else:
-        raise ValueError(f"Unknown dataset {name}")
-
+        raise ValueError(f"Unknown transforms {args.transforms}")
 
 def shuffle_dataset(dataset):
     """Shuffle the dataset"""
@@ -120,8 +133,9 @@ def shuffle_dataset(dataset):
 def get_train_dataset(dataset_root: str, args: argparse.Namespace):
     datasets = []
     for dataset_name in args.train_dataset:
+        transform = get_transforms(args)
         datasets.append(
-            get_dataset_by_name(dataset_name, dataset_root, StereoMatchingPresetCRETrain(crop_size=(384, 512)))
+            get_dataset_by_name(dataset_name, dataset_root, transform)
         )
 
     if len(datasets) == 0:
@@ -149,11 +163,10 @@ def get_train_dataset(dataset_root: str, args: argparse.Namespace):
         dataset = shuffle_dataset(dataset)
 
     print(f"Training dataset: {len(dataset)} samples")
-    return dataset
-
+    return dataset    
 
 @torch.no_grad()
-def _evaluate(model, args, val_dataset, *, padder_mode, iterations=None, batch_size=None, header=None):
+def _evaluate(model, args, val_dataset, *, padder_mode, writter=None, step=None, iterations=None, batch_size=None, header=None):
     """Helper function to compute various metrics (epe, etc.) for a model on a given dataset.
 
     We process as many samples as possible with ddp, and process the rest on a single worker.
@@ -179,7 +192,6 @@ def _evaluate(model, args, val_dataset, *, padder_mode, iterations=None, batch_s
     iterations = iterations or args.recurrent_updates
 
     def inner_loop(blob):
-
         if blob[0].dim() == 3:
             # input is not batched so we add an extra dim for consistency
             blob = [x.unsqueeze(0) if x is not None else None for x in blob]
@@ -200,7 +212,7 @@ def _evaluate(model, args, val_dataset, *, padder_mode, iterations=None, batch_s
         else:
             raise ValueError(f"Unknown model {args.model}")
         # different models have different outputs, make sure we get the right ones for this task
-        disp_predictions = extract_model_outputs(disp_predictions, args)
+        disp_predictions = view_flow_as_stereo_target(disp_predictions, args)
         disp_pred = disp_predictions[-1]
         disp_pred = padder.unpad(disp_pred).cpu()
 
@@ -213,7 +225,7 @@ def _evaluate(model, args, val_dataset, *, padder_mode, iterations=None, batch_s
             logger.meters[name].update(metrics[name], n=num_pixels_tot)
         logger.meters["per_image_epe"].update(metrics["epe"], n=batch_size)
 
-    logger = utils.MetricLogger()
+    logger = utils.MetricLogger(log_dir=args.checkpoint_dir, log_name=f"{args.experiment_name}_val.log")
     for meter_name in ("epe", "1px", "3px", "5px", "per_image_epe", "f1"):
         logger.add_meter(meter_name, fmt="{global_avg:.4f}")
 
@@ -234,10 +246,14 @@ def _evaluate(model, args, val_dataset, *, padder_mode, iterations=None, batch_s
 
         logger.synchronize_between_processes()
 
+    if writter is not None:
+        for meter_name, meter_value in logger.meters.items():
+            scalar_name = f"{meter_name} {header}"
+            writter.add_scalar(scalar_name, meter_value.avg, step)
     print(header, logger)
 
 
-def evaluate(model, args):
+def evaluate(model, args, writter=None, step=None):
     val_datasets = args.valid_dataset or []
 
     if args.weights and args.test_only:
@@ -258,7 +274,7 @@ def evaluate(model, args):
     for name in val_datasets:
         if args.batch_size != 1 and (not args.distributed or args.rank == 0):
             warnings.warn(
-                f"Batch-size={args.batch_size} was passed. For technical reasons, evaluating on Middlebury can only be done with a batch-size of 1."
+                f"Batch-size={args.batch_size} was passed. For technical reasons, evaluating on {name} can only be done with a batch-size of 1."
             )
 
         val_dataset = get_dataset_by_name(root=args.dataset_root, name=name, transforms=preprocessing)
@@ -268,19 +284,35 @@ def evaluate(model, args):
             val_dataset,
             iterations=args.recurrent_updates * 2,
             padder_mode="kitti",
-            header="Kitti val",
+            header=f"{name} evaluation",
             batch_size=1,
+            writter=writter,
+            step=step,
         )
         
 
 
-def run(model, optimizer, scheduler, train_loader, logger, args):
+def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args):
+    torch.set_num_threads(args.threads)
+
     device = torch.device(args.device)
     # wrap the loader in a logger
     loader = iter(logger.log_every(train_loader))
 
-    # consume until we reach the end of the iterations
-    for step in range(args.start_step, args.total_iterations):
+    # uncomment to profile
+    """
+    with torch.profiler.profile(
+        activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+        schedule=torch.profiler.schedule(wait=1, warmup=5, active=3, repeat=2, skip_first=300),
+        on_trace_ready=torch.profiler.tensorboard_trace_handler('./crestereo_log'),
+        profile_memory=True,
+        with_stack=True,
+        record_shapes=True,
+        with_flops=True,
+    ) as prof:
+    """
+        
+    for step in range(args.start_step + 1, args.total_iterations + 1):
         data_blob = next(loader)
         optimizer.zero_grad()
 
@@ -290,29 +322,91 @@ def run(model, optimizer, scheduler, train_loader, logger, args):
         # therefore we make a simple check for compatibility purposes
         # if you are reusing or modiffying this piece of code, make sure to
         # adjust it to your architecture naming scheme
-        if "crestereo" in args.model:
-            # TODO: this needs to be abstracted somehow
-            disp_predictions = model(image_left, image_right, flow_init=None, iterations=args.recurrent_updates)
-        elif "raft" in args.model:
-            disp_predictions = model(image_left, image_right, args.recurrent_updates)
-        else:
-            raise ValueError(f"Unknown model {args.model}")
-        # different models have different outputs, make sure we get the right ones for this task
-        disp_predictions = extract_model_outputs(disp_predictions, args)
-        # sequence loss on top of the model outputs
+        with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
+            
+            if "crestereo" in args.model:
+                # TODO: this needs to be abstracted somehow
+                disp_predictions = model(image_left, image_right, flow_init=None, iterations=args.recurrent_updates)
+            elif "raft" in args.model:
+                disp_predictions = model(image_left, image_right, args.recurrent_updates)
+            else:
+                raise ValueError(f"Unknown model {args.model}")
+            # different models have different outputs, make sure we get the right ones for this task
+            disp_predictions = view_flow_as_stereo_target(disp_predictions, args)
+            # should the architecture or training loop require it, we have to adjust the disparity mask
+            # target to possibly look like an optical flow mask
+            disp_mask = view_flow_as_stereo_target(disp_mask, args)
+            # sequence loss on top of the model outputs
+        
         loss = utils.sequence_loss(disp_predictions, disp_mask, valid_disp_mask, args.gamma)
+        if args.consistency_alpha > 0:
+            loss += utils.sequence_consistency_loss(disp_predictions, args.gamma) * args.consistency_alpha
+            
         metrics, _ = utils.compute_metrics(disp_predictions[-1], disp_mask, valid_disp_mask)
 
         metrics.pop("f1")
         logger.update(loss=loss, **metrics)
 
-        loss.backward()
-
-        if args.clip_grad_norm:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.clip_grad_norm)
-
-        optimizer.step()
+        if scaler is not None:
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            if args.clip_grad_norm:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.clip_grad_norm)
+            scaler.step(optimizer)            
+            scaler.update()
+        else:
+            loss.backward()
+            if args.clip_grad_norm:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.clip_grad_norm)
+            optimizer.step()
+        
         scheduler.step()
+        
+        if not dist.is_initialized() or dist.get_rank() == 0:
+            if writer is not None and step % args.write_summary_freq == 0:
+                # log the loss and metrics to tensorboard
+                writer.add_scalar("loss", loss, step)
+                for name, value in logger.meters.items():
+                    writer.add_scalar(name, value.avg, step)
+                # log the images to tensorboard
+                
+                # first thing we want is to a vertical alignment of final_pred, input, valid_mask
+                images = image_left.detach().cpu() * 0.5 + 0.5
+                # we might have to reshape the disparities
+                targets = disp_mask.detach().cpu()
+                # convert this to float
+                masks = valid_disp_mask.float().detach().cpu()
+                preds = disp_predictions[-1].detach().cpu()
+                # if we have 2 channels, we need to keep only the first channel
+                if preds.shape[1] == 2:
+                    preds = preds[:, :1, ...]
+                if targets.shape[1] == 2:
+                    targets = targets[:, :1, ...]
+                # we then have to repeat the images on the 3 channels
+                # in order to have gray scale images for the input and the target
+                preds = preds.repeat(1, 3, 1, 1)
+                targets = targets.repeat(1, 3, 1, 1)
+                # masks are 2D so we have to unsqueeze and repeat
+                masks = masks.unsqueeze(1).repeat(1, 3, 1, 1)
+                
+                # the grid is going to self-normalize in 0-1 range                                
+                pred_grid = make_pair_grid(images, masks, targets, preds, orientation="horizontal")
+                # we multiply by 255 to get the correct range for the tensorboard
+                pred_grid = pred_grid.detach().cpu().numpy() * 255.0
+                pred_grid = np.transpose(pred_grid, (1, 2, 0)).astype(np.uint8)
+                
+                writer.add_image("predictions", pred_grid, step, dataformats="HWC")
+                
+                # second thing we want to see is how relevant the iterative refinement is
+                seq_len = len(disp_predictions) + 1
+                disp_predictions = list(map(lambda x: x[:, :1, :, :], disp_predictions + [disp_mask]))                 
+                sequence = make_disparity_sequence(disp_predictions)
+                # swap axes to have the sequence in the correct order for each batch sample
+                sequence = torch.swapaxes(sequence, 0, 1).contiguous().view(-1, 1, image_left.shape[2], image_left.shape[3])
+                sequence = make_grid(sequence, nrow=seq_len)
+                sequence = sequence.detach().cpu().numpy() * 255.0
+                sequence = np.transpose(sequence, (1, 2, 0)).astype(np.uint8)
+                writer.add_image("sequence", sequence, step, dataformats="HWC")
 
         if step % args.save_freq == 0:
             if not args.distributed or args.rank == 0:
@@ -330,7 +424,7 @@ def run(model, optimizer, scheduler, train_loader, logger, args):
                 torch.save(checkpoint, Path(args.checkpoint_dir) / f"{args.experiment_name}.pth")
 
         if step % args.valid_freq == 0:
-            evaluate(model, args)
+            evaluate(model, args, writer, step)
             model.train()
             if args.freeze_batch_norm:
                 if isinstance(model, nn.parallel.DistributedDataParallel):
@@ -338,6 +432,14 @@ def run(model, optimizer, scheduler, train_loader, logger, args):
                 else:
                     utils.freeze_batch_norm(model)
 
+            # prof.step()
+    
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
 
 def main(args):
     args.total_iterations = sum(args.dataset_steps)
@@ -345,6 +447,9 @@ def main(args):
     # intialize DDP setting
     utils.setup_ddp(args)
     args.test_only = args.train_dataset is None
+    
+    # set random seed
+    set_seed(args.seed)
 
     # set the appropiate devices
     if args.distributed and args.device == "cpu":
@@ -394,7 +499,7 @@ def main(args):
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
 
     # initialize the learning rate schedule
-    scheduler = ArrayScheduler(optimizer, schedule=make_cre_stereo_schedule(args))
+    scheduler = make_cre_stereo_schedule(args, optimizer)
 
     # load them from checkpoint if need
     if args.resume is not None:
@@ -431,8 +536,18 @@ def main(args):
     )
 
     # intialize the logger
-    logger = utils.MetricLogger()
+    if args.tensorboard_summaries:
+        tensorboard_path = Path(args.checkpoint_dir) / "tensorboard"
+        os.makedirs(tensorboard_path, exist_ok=True)
+        
+        tensorboard_run = tensorboard_path / f"{args.experiment_name}"
+        writer = SummaryWriter(tensorboard_run)
+    else:
+        writer = None
+    
+    logger = utils.MetricLogger(log_dir=args.checkpoint_dir, log_name=f"{args.experiment_name}_train.log")
 
+    scaler = torch.cuda.amp.GradScaler() if args.mixed_precision else None
     # run the training loop
     # this will perform optimization, respectively logging and saving checkpoints
     # when need be
@@ -442,7 +557,9 @@ def main(args):
         scheduler=scheduler,
         train_loader=train_loader,
         logger=logger,
-        args=args,
+        writer=writer,
+        scaler=scaler,
+        args=args,        
     )
 
 
@@ -450,16 +567,18 @@ def get_args_parser(add_help=True):
     import argparse
 
     parser = argparse.ArgumentParser(description="PyTorch Stereo Matching Training", add_help=add_help)
-    parser.add_argument("--config", type=str, default="train_configs/default.yml", help="path to the config file")
+    parser.add_argument("--run-config", type=str, default="train_configs/default.yml", help="path to the config file")
     return parser
-
 
 if __name__ == "__main__":
     args = get_args_parser().parse_args()
-    with open(args.config) as f:
+    experiment_name = args.run_config.split(os.sep)[-1].replace(".yml", "")
+    with open(args.run_config) as f:
         config = yaml.safe_load(f)
-    config_name = construct_experiment_name(config)
+    config["experiment_name"] = experiment_name
+    # print each config key and value
+    print("Experiment Configurations:")
+    for k, v in config.items():
+        print(f"{k}: {v}")
     config = argparse.Namespace(**config)
-    config.experiment_name = args.config.split(os.sep)[-1].replace(".yml", "")
-    print(config)
     main(config)
