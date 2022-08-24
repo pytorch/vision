@@ -8,21 +8,21 @@ from torch.utils._pytree import tree_map
 from ._feature import _Feature
 
 
-F = TypeVar("F", bound="_LabelBase")
+L = TypeVar("L", bound="_LabelBase")
 
 
 class _LabelBase(_Feature):
     categories: Optional[Sequence[str]]
 
     def __new__(
-        cls: Type[F],
+        cls: Type[L],
         data: Any,
         *,
         categories: Optional[Sequence[str]] = None,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
-    ) -> F:
+    ) -> L:
         label_base = super().__new__(cls, data, dtype=dtype, device=device, requires_grad=requires_grad)
 
         label_base.categories = categories
@@ -30,19 +30,19 @@ class _LabelBase(_Feature):
         return label_base
 
     @classmethod
-    def new_like(cls: Type[F], other: F, data: Any, *, categories: Optional[Sequence[str]] = None, **kwargs: Any) -> F:
+    def new_like(cls: Type[L], other: L, data: Any, *, categories: Optional[Sequence[str]] = None, **kwargs: Any) -> L:
         return super().new_like(
             other, data, categories=categories if categories is not None else other.categories, **kwargs
         )
 
     @classmethod
     def from_category(
-        cls: Type[F],
+        cls: Type[L],
         category: str,
         *,
         categories: Sequence[str],
         **kwargs: Any,
-    ) -> F:
+    ) -> L:
         return cls(categories.index(category), categories=categories, **kwargs)
 
 
