@@ -5,8 +5,7 @@ import PIL.Image
 import torch
 
 from torchvision.prototype import features
-
-from ._meta import convert_color_space, convert_color_space_image_pil
+from torchvision.transforms import functional as _F
 
 
 # TODO: this was copied from `torchvision.prototype.transforms._utils`. Given that this is not related to pytree / the
@@ -18,12 +17,6 @@ def is_simple_tensor(inpt: Any) -> bool:
 
 
 def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
-    if not isinstance(inpt, PIL.Image.Image):
-        raise TypeError("Input should be PIL Image")
-
-    if num_output_channels not in (1, 3):
-        raise ValueError("num_output_channels should be either 1 or 3")
-
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
     replacement = "convert_color_space(..., color_space=features.ColorSpace.GRAY)"
     if num_output_channels == 3:
@@ -33,15 +26,7 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
         f"Instead, please use `{replacement}`.",
     )
 
-    # We can't use `convert_color_space_image_pil` since it only supports a subset of the input color spaces that PIL
-    # supports, namely `features.ColorSpace`.
-    # TODO: Can we even deprecate in favor of `convert_color_space` in such a case? Should we tell the users to call
-    #  `image.convert("RGB")` on their own?
-    output = inpt.convert("RGB")
-
-    if num_output_channels == 3:
-        output = convert_color_space_image_pil(inpt, color_space=features.ColorSpace.RGB)
-    return output
+    return _F.to_grayscale(inpt, num_output_channels=num_output_channels)
 
 
 def rgb_to_grayscale(inpt: Any, num_output_channels: int = 1) -> Any:
@@ -65,9 +50,4 @@ def rgb_to_grayscale(inpt: Any, num_output_channels: int = 1) -> Any:
         f"Instead, please use `{replacement}`.",
     )
 
-    output = convert_color_space(inpt, color_space=features.ColorSpace.GRAY, old_color_space=old_color_space)
-    if num_output_channels == 3:
-        output = convert_color_space(
-            inpt, color_space=features.ColorSpace.RGB, old_color_space=features.ColorSpace.GRAY
-        )
-    return output
+    return _F.rgb_to_grayscale(inpt, num_output_channels=num_output_channels)
