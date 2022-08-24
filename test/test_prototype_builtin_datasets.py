@@ -44,15 +44,6 @@ def test_coverage():
 
 @pytest.mark.filterwarnings("error")
 class TestCommon:
-
-    # These transforms are a proxy for a preprocessing pipeline that we use to have an "end-to-end" test.
-    _TRANSFORMS = transforms.Compose(
-        [
-            transforms.DecodeImage(),
-            transforms.Resize((8, 8)),
-        ]
-    )
-
     @pytest.mark.parametrize("name", datasets.list_datasets())
     def test_info(self, name):
         try:
@@ -114,14 +105,12 @@ class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_traversable(self, dataset_mock, config, only_datapipe):
         dataset, _ = dataset_mock.load(config)
-        dataset = dataset.map(self._TRANSFORMS)
 
         traverse(dataset, only_datapipe=only_datapipe)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_serializable(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
-        dataset = dataset.map(self._TRANSFORMS)
 
         pickle.dumps(dataset)
 
@@ -135,7 +124,6 @@ class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_data_loader(self, dataset_mock, config, num_workers):
         dataset, _ = dataset_mock.load(config)
-        dataset = dataset.map(self._TRANSFORMS)
 
         dl = DataLoader(
             dataset,
