@@ -33,6 +33,7 @@ class RandomApply(_RandomApplyTransform):
 
 
 class RandomChoice(Transform):
+    # datumbox: Shouldn't this be `transforms: Sequence[Callable]` for BC, similar to what we did for `Compose`?
     def __init__(self, *transforms: Transform, probabilities: Optional[List[float]] = None) -> None:
         if probabilities is None:
             probabilities = [1] * len(transforms)
@@ -46,7 +47,7 @@ class RandomChoice(Transform):
 
         self.transforms = transforms
         for idx, transform in enumerate(transforms):
-            self.add_module(str(idx), transform)
+            self.add_module(str(idx), transform)  # datumbox: we probably can't use add_module here. See https://github.com/pytorch/vision/pull/6391
 
         total = sum(probabilities)
         self.probabilities = [p / total for p in probabilities]
@@ -58,6 +59,7 @@ class RandomChoice(Transform):
 
 
 class RandomOrder(Transform):
+    # datumbox: same as above here
     def __init__(self, *transforms: Transform) -> None:
         super().__init__()
         self.transforms = transforms

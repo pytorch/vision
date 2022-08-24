@@ -316,6 +316,11 @@ class RandAugment(_AutoAugmentBase):
         self.num_magnitude_bins = num_magnitude_bins
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # datumbox: This idiom doesn't work here because we do multiple random() calls within the transform.
+        # For example `_get_random_item()` or `torch.rand(())`.
+        # We should revert back to overwriting the `forward()` reverting the majority of refactoring done at
+        # https://github.com/pytorch/vision/pull/6463
+        # this applies to all AutoAugment methods here, not just RandAugment.
         if not (isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt)):
             return inpt
 

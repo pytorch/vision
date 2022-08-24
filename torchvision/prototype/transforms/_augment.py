@@ -247,6 +247,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         xyxy_boxes = masks_to_boxes(masks)
         # TODO: masks_to_boxes produces bboxes with x2y2 inclusive but x2y2 should be exclusive
         # we need to add +1 to x2y2. We need to investigate that.
+        # datumbox: I had a look on other reference implementations and I see a similar +1 to make it exclusive. I think we can keep it.
         xyxy_boxes[:, 2:] += 1
         boxes = F.convert_bounding_box_format(
             xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
