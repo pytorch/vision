@@ -45,12 +45,18 @@ def query_chw(sample: Any) -> Tuple[int, int, int]:
     return chws.pop()
 
 
+def _isinstance(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]) -> bool:
+    for type_or_check in types_or_checks:
+        if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
+            return True
+    return False
+
+
 def has_any(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
     flat_sample, _ = tree_flatten(sample)
-    for type_or_check in types_or_checks:
-        for obj in flat_sample:
-            if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
-                return True
+    for obj in flat_sample:
+        if _isinstance(obj, types_or_checks):
+            return True
     return False
 
 
