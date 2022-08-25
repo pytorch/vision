@@ -42,12 +42,8 @@ class LabelToOneHot(Transform):
 class ToImageTensor(Transform):
     _transformed_types = (is_simple_tensor, PIL.Image.Image, np.ndarray)
 
-    def __init__(self, *, copy: bool = False) -> None:
-        super().__init__()
-        self.copy = copy
-
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> features.Image:
-        output = F.to_image_tensor(inpt, copy=self.copy)
+        output = F.to_image_tensor(inpt)
         return features.Image(output)
 
 

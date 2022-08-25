@@ -21,15 +21,9 @@ def decode_video_with_av(encoded_video: torch.Tensor) -> Tuple[torch.Tensor, tor
         return read_video(ReadOnlyTensorBuffer(encoded_video))  # type: ignore[arg-type]
 
 
-def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray], copy: bool = False) -> torch.Tensor:
+def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> torch.Tensor:
     if isinstance(image, np.ndarray):
-        image = torch.from_numpy(image)
-
-    if isinstance(image, torch.Tensor):
-        if copy:
-            return image.clone()
-        else:
-            return image
+        return torch.from_numpy(image)
 
     return _F.pil_to_tensor(image)
 
