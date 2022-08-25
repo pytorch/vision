@@ -225,8 +225,17 @@ class TestSmoke:
             )
         ]
     )
-    def test_convertolor_space(self, transform, input):
+    def test_convert_color_space(self, transform, input):
         transform(input)
+
+    def test_convert_color_space_unsupported_types(self):
+        transform = transforms.ConvertColorSpace(
+            color_space=features.ColorSpace.RGB, old_color_space=features.ColorSpace.GRAY
+        )
+
+        for inpt in [make_bounding_box(format="XYXY"), make_segmentation_mask()]:
+            output = transform(inpt)
+            assert output is inpt
 
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
@@ -1092,20 +1101,18 @@ class TestToTensor:
             fn.assert_called_once_with(inpt)
 
 
-class TestCompose:
-    def test_assertions(self):
+class TestContainers:
+    @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
+    def test_assertions(self, transform_cls):
         with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
-            transforms.Compose(123)
+            transform_cls(transforms.RandomCrop(28))
 
+    @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
     @pytest.mark.parametrize(
-        "trfms",
-        [
-            [transforms.Pad(2), transforms.RandomCrop(28)],
-            [lambda x: 2.0 * x],
-        ],
+        "trfms", [[transforms.Pad(2), transforms.RandomCrop(28)], [lambda x: 2.0 * x, transforms.RandomCrop(28)]]
     )
-    def test_ctor(self, trfms):
-        c = transforms.Compose(trfms)
+    def test_ctor(self, transform_cls, trfms):
+        c = transform_cls(trfms)
         inpt = torch.rand(1, 3, 32, 32)
         output = c(inpt)
         assert isinstance(output, torch.Tensor)
