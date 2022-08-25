@@ -11,6 +11,8 @@ from ._utils import is_simple_tensor
 
 
 class ConvertBoundingBoxFormat(Transform):
+    _transformed_types = (features.BoundingBox,)
+
     def __init__(self, format: Union[str, features.BoundingBoxFormat]) -> None:
         super().__init__()
         if isinstance(format, str):
@@ -18,30 +20,23 @@ class ConvertBoundingBoxFormat(Transform):
         self.format = format
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.BoundingBox):
-            output = F.convert_bounding_box_format(inpt, old_format=inpt.format, new_format=params["format"])
-            return features.BoundingBox.new_like(inpt, output, format=params["format"])
-        else:
-            return inpt
+        output = F.convert_bounding_box_format(inpt, old_format=inpt.format, new_format=params["format"])
+        return features.BoundingBox.new_like(inpt, output, format=params["format"])
 
 
 class ConvertImageDtype(Transform):
+    _transformed_types = (is_simple_tensor, features.Image)
+
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Image):
-            output = convert_image_dtype(inpt, dtype=self.dtype)
-            return features.Image.new_like(inpt, output, dtype=self.dtype)
-        elif is_simple_tensor(inpt):
-            return convert_image_dtype(inpt, dtype=self.dtype)
-        else:
-            return inpt
+        output = convert_image_dtype(inpt, dtype=self.dtype)
+        return output if is_simple_tensor(inpt) else features.Image.new_like(inpt, output, dtype=self.dtype)
 
 
 class ConvertColorSpace(Transform):
-    # F.convert_color_space does NOT handle `_Feature`'s in general
     _transformed_types = (is_simple_tensor, features.Image, PIL.Image.Image)
 
     def __init__(
