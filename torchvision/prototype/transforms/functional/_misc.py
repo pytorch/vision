@@ -15,9 +15,7 @@ normalize_image_tensor = _FT.normalize
 
 
 def normalize(inpt: DType, mean: List[float], std: List[float], inplace: bool = False) -> DType:
-    if isinstance(inpt, features._Feature) and not isinstance(inpt, features.Image):
-        return inpt
-    elif isinstance(inpt, PIL.Image.Image):
+    if isinstance(inpt, PIL.Image.Image):
         raise TypeError("Unsupported input type")
     else:
         # Image instance after normalization is not Image anymore due to unknown data range
