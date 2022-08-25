@@ -16,7 +16,7 @@ from ._utils import is_simple_tensor, query_chw
 class ToTensor(Transform):
 
     # Updated transformed types for ToTensor
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
     def __init__(self) -> None:
         warnings.warn(
@@ -50,7 +50,7 @@ class PILToTensor(Transform):
 class ToPILImage(Transform):
 
     # Updated transformed types for ToPILImage
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
     def __init__(self, mode: Optional[str] = None) -> None:
         warnings.warn(

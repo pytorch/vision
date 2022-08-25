@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 import numpy as np
 import PIL.Image
 
-import torch
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
@@ -44,7 +43,7 @@ class LabelToOneHot(Transform):
 class ToImageTensor(Transform):
 
     # Updated transformed types for ToImageTensor
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
     def __init__(self, *, copy: bool = False) -> None:
         super().__init__()
@@ -61,7 +60,7 @@ class ToImageTensor(Transform):
 class ToImagePIL(Transform):
 
     # Updated transformed types for ToImagePIL
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
     def __init__(self, *, mode: Optional[str] = None) -> None:
         super().__init__()
