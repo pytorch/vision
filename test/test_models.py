@@ -756,7 +756,7 @@ def test_detection_model(model_fn, dev):
             # We first try to assert the entire output if possible. This is not
             # only the best way to assert results but also handles the cases
             # where we need to create a new expected result.
-            _assert_expected(output, model_name, prec=prec)
+            _assert_expected(output.cpu(), model_name, prec=prec)
         except AssertionError:
             # Unfortunately detection models are flaky due to the unstable sort
             # in NMS. If matching across all outputs fails, use the same approach
@@ -893,7 +893,7 @@ def test_quantized_classification_model(model_fn):
     out = model(x)
 
     if model_name not in quantized_flaky_models:
-        _assert_expected(out, model_name + "_quantized", prec=2e-2)
+        _assert_expected(out.cpu(), model_name + "_quantized", prec=2e-2)
         assert out.shape[-1] == 5
         _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
         _check_fx_compatible(model, x, eager_out=out)
@@ -960,7 +960,7 @@ def test_raft(model_fn, scripted):
     flow_pred = preds[-1]
     # Tolerance is fairly high, but there are 2 * H * W outputs to check
     # The .pkl were generated on the AWS cluter, on the CI it looks like the resuts are slightly different
-    _assert_expected(flow_pred, name=model_fn.__name__, atol=1e-2, rtol=1)
+    _assert_expected(flow_pred.cpu(), name=model_fn.__name__, atol=1e-2, rtol=1)
 
 
 if __name__ == "__main__":
