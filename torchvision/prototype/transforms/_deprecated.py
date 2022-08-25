@@ -10,7 +10,7 @@ from torchvision.transforms import functional as _F
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_chw
+from ._utils import is_simple_tensor, query_chw
 
 
 class ToTensor(Transform):
@@ -61,7 +61,7 @@ class ToPILImage(Transform):
         self.mode = mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if features.is_simple_tensor(inpt) or isinstance(inpt, (features.Image, np.ndarray)):
+        if is_simple_tensor(inpt) or isinstance(inpt, (features.Image, np.ndarray)):
             return _F.to_pil_image(inpt, mode=self.mode)
         else:
             return inpt

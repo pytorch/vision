@@ -7,6 +7,8 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.functional import convert_image_dtype
 
+from ._utils import is_simple_tensor
+
 
 class ConvertBoundingBoxFormat(Transform):
     def __init__(self, format: Union[str, features.BoundingBoxFormat]) -> None:
@@ -32,7 +34,7 @@ class ConvertImageDtype(Transform):
         if isinstance(inpt, features.Image):
             output = convert_image_dtype(inpt, dtype=self.dtype)
             return features.Image.new_like(inpt, output, dtype=self.dtype)
-        elif features.is_simple_tensor(inpt):
+        elif is_simple_tensor(inpt):
             return convert_image_dtype(inpt, dtype=self.dtype)
         else:
             return inpt
