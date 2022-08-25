@@ -11,16 +11,10 @@ from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.autoaugment import AutoAugmentPolicy
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
-from ._utils import get_chw, is_simple_tensor
+from ._utils import _isinstance, get_chw, is_simple_tensor
 
 K = TypeVar("K")
 V = TypeVar("V")
-
-
-def _put_into_sample(sample: Any, id: int, item: Any) -> Any:
-    sample_flat, spec = tree_flatten(sample)
-    sample_flat[id] = item
-    return tree_unflatten(sample_flat, spec)
 
 
 class _AutoAugmentBase(Transform):
@@ -50,7 +44,7 @@ class _AutoAugmentBase(Transform):
         sample_flat, _ = tree_flatten(sample)
         images = []
         for id, inpt in enumerate(sample_flat):
-            if isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt):
+            if _isinstance(inpt, (features.Image, PIL.Image.Image, is_simple_tensor)):
                 images.append((id, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
@@ -62,6 +56,11 @@ class _AutoAugmentBase(Transform):
                 f"Auto augment transformations are only properly defined for a single image, but found {len(images)}."
             )
         return images[0]
+
+    def _put_into_sample(self, sample: Any, id: int, item: Any) -> Any:
+        sample_flat, spec = tree_flatten(sample)
+        sample_flat[id] = item
+        return tree_unflatten(sample_flat, spec)
 
     def _apply_image_transform(
         self,
@@ -292,7 +291,7 @@ class AutoAugment(_AutoAugmentBase):
                 image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
-        return _put_into_sample(sample, id, image)
+        return self._put_into_sample(sample, id, image)
 
 
 class RandAugment(_AutoAugmentBase):
@@ -359,7 +358,7 @@ class RandAugment(_AutoAugmentBase):
                 image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
-        return _put_into_sample(sample, id, image)
+        return self._put_into_sample(sample, id, image)
 
 
 class TrivialAugmentWide(_AutoAugmentBase):
@@ -414,7 +413,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         image = self._apply_image_transform(
             image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
         )
-        return _put_into_sample(sample, id, image)
+        return self._put_into_sample(sample, id, image)
 
 
 class AugMix(_AutoAugmentBase):
@@ -519,4 +518,4 @@ class AugMix(_AutoAugmentBase):
         elif isinstance(orig_image, PIL.Image.Image):
             mix = to_pil_image(mix)
 
-        return _put_into_sample(sample, id, mix)
+        return self._put_into_sample(sample, id, mix)
