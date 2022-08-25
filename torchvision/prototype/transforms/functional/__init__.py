@@ -68,6 +68,7 @@ from ._geometry import (
     five_crop,
     five_crop_image_pil,
     five_crop_image_tensor,
+    hflip,
     horizontal_flip,
     horizontal_flip_bounding_box,
     horizontal_flip_image_pil,
@@ -106,6 +107,7 @@ from ._geometry import (
     vertical_flip_image_pil,
     vertical_flip_image_tensor,
     vertical_flip_segmentation_mask,
+    vflip,
 )
 from ._misc import gaussian_blur, gaussian_blur_image_pil, gaussian_blur_image_tensor, normalize, normalize_image_tensor
 from ._type_conversion import decode_image_with_pil, decode_video_with_av, to_image_pil, to_image_tensor
