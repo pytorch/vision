@@ -2,7 +2,7 @@ from . import functional  # usort: skip
 
 from ._transform import Transform  # usort: skip
 
-from ._augment import RandomCutmix, RandomErasing, RandomMixup
+from ._augment import RandomCutmix, RandomErasing, RandomMixup, SimpleCopyPaste
 from ._auto_augment import AugMix, AutoAugment, AutoAugmentPolicy, RandAugment, TrivialAugmentWide
 from ._color import (
     ColorJitter,
