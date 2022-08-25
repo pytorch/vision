@@ -8,7 +8,7 @@ from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms import functional as _F
 
 from ._transform import _RandomApplyTransform
-from ._utils import is_simple_tensor, query_chw
+from ._utils import query_chw
 
 T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
 
@@ -112,7 +112,7 @@ class RandomPhotometricDistort(Transform):
         )
 
     def _permute_channels(self, inpt: Any, *, permutation: torch.Tensor) -> Any:
-        if not (isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt)):
+        if not (isinstance(inpt, (features.Image, PIL.Image.Image)) or features.is_simple_tensor(inpt)):
             return inpt
 
         image = inpt

@@ -8,8 +8,6 @@ from torch.nn.functional import one_hot
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
-from ._utils import is_simple_tensor
-
 
 class DecodeImage(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -51,7 +49,7 @@ class ToImageTensor(Transform):
         self.copy = copy
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
+        if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or features.is_simple_tensor(inpt):
             output = F.to_image_tensor(inpt, copy=self.copy)
             return features.Image(output)
         else:
@@ -68,7 +66,7 @@ class ToImagePIL(Transform):
         self.mode = mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
+        if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or features.is_simple_tensor(inpt):
             return F.to_image_pil(inpt, mode=self.mode)
         else:
             return inpt
