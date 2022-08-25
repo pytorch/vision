@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 import numpy as np
 import PIL.Image
 import torch
-import torchvision.prototype.transforms.functional as F
 
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform
