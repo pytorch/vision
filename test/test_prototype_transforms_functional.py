@@ -1848,14 +1848,6 @@ def test_midlevel_normalize_output_type():
     assert isinstance(output, torch.Tensor)
     torch.testing.assert_close(inpt - 0.5, output)
 
-    inpt = make_segmentation_mask()
-    with pytest.raises(TypeError, match="Input tensor should be a float tensor."):
-        F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
-
-    inpt = make_bounding_box(format="XYXY")
-    with pytest.raises(TypeError, match="Tensor is not a torch image."):
-        F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
-
     inpt = make_image(color_space=features.ColorSpace.RGB)
     output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
     assert isinstance(output, torch.Tensor)
