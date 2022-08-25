@@ -11,12 +11,11 @@ from ._utils import is_simple_tensor
 
 
 class DecodeImage(Transform):
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.EncodedImage):
-            output = F.decode_image_with_pil(inpt)
-            return features.Image(output)
-        else:
-            return inpt
+    _transformed_types = (features.EncodedImage,)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> features.Image:
+        output = F.decode_image_with_pil(inpt)
+        return features.Image(output)
 
 
 class LabelToOneHot(Transform):
@@ -47,7 +46,7 @@ class ToImageTensor(Transform):
         super().__init__()
         self.copy = copy
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> features.Image:
         output = F.to_image_tensor(inpt, copy=self.copy)
         return features.Image(output)
 
@@ -59,5 +58,5 @@ class ToImagePIL(Transform):
         super().__init__()
         self.mode = mode
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> PIL.Image.Image:
         return F.to_image_pil(inpt, mode=self.mode)
