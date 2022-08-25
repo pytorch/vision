@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Callable, Dict, List, Sequence, Type, Union
+from typing import Any, Callable, Dict, Sequence, Type, Union
 
 import PIL.Image
 
