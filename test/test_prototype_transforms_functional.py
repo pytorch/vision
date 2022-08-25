@@ -1899,7 +1899,6 @@ def test_to_image_tensor(inpt, copy):
     [
         torch.randint(0, 256, size=(3, 32, 32), dtype=torch.uint8),
         127 * np.ones((32, 32, 3), dtype="uint8"),
-        PIL.Image.new("RGB", (32, 32), 122),
     ],
 )
 @pytest.mark.parametrize("mode", [None, "RGB"])

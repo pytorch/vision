@@ -1051,7 +1051,7 @@ class TestToImageTensor:
 class TestToImagePIL:
     @pytest.mark.parametrize(
         "inpt_type",
-        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
+        [torch.Tensor, features.Image, np.ndarray, features.BoundingBox, str, int],
     )
     def test__transform(self, inpt_type, mocker):
         fn = mocker.patch("torchvision.prototype.transforms.functional.to_image_pil")
@@ -1059,7 +1059,7 @@ class TestToImagePIL:
         inpt = mocker.MagicMock(spec=inpt_type)
         transform = transforms.ToImagePIL()
         transform(inpt)
-        if inpt_type in (features.BoundingBox, str, int):
+        if inpt_type in (features.BoundingBox, PIL.Image.Image, str, int):
             assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt, mode=transform.mode)
