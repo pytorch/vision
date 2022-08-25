@@ -1,27 +1,19 @@
 import enum
-from typing import Any, Dict, Tuple, Type
+from typing import Any, Callable, Dict, Tuple, Type, Union
 
 import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype.features import _Feature
-from torchvision.prototype.transforms._utils import is_simple_tensor
+from torchvision.prototype.transforms._utils import _isinstance, is_simple_tensor
 from torchvision.utils import _log_api_usage_once
-
-
-def _isinstance(obj: Any, types: Tuple[Type, ...]) -> bool:
-    has_tensor = torch.Tensor in types
-    if not has_tensor:
-        return isinstance(obj, types)
-    types_ = tuple(t for t in types if t != torch.Tensor)
-    return isinstance(obj, types_) or is_simple_tensor(obj)
 
 
 class Transform(nn.Module):
 
     # Class attribute defining transformed types. Other types are passed-through without any transformation
-    _transformed_types: Tuple[Type, ...] = (torch.Tensor, _Feature, PIL.Image.Image)
+    _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (is_simple_tensor, _Feature, PIL.Image.Image)
 
     def __init__(self) -> None:
         super().__init__()
