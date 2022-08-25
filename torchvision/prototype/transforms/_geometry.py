@@ -156,8 +156,7 @@ class FiveCrop(Transform):
         torch.Size([5])
     """
 
-    # FIXME: replace torch.Tensor with is_simply_tensor as soon as it is supported
-    _transformed_types = (features.Image, PIL.Image.Image, torch.Tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
 
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
@@ -178,8 +177,7 @@ class TenCrop(Transform):
     See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
     """
 
-    # FIXME: replace torch.Tensor with is_simply_tensor as soon as it is supported
-    _transformed_types = (features.Image, PIL.Image.Image, torch.Tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()

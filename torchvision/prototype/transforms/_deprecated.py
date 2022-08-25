@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import PIL.Image
-import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform
 from torchvision.transforms import functional as _F
@@ -68,8 +67,7 @@ class ToPILImage(Transform):
 
 
 class Grayscale(Transform):
-    # FIXME: replace torch.Tensor with is_simply_tensor as soon as it is supported
-    _transformed_types = (features.Image, PIL.Image.Image, torch.Tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
 
     def __init__(self, num_output_channels: Literal[1, 3] = 1) -> None:
         deprecation_msg = (
@@ -93,12 +91,11 @@ class Grayscale(Transform):
         self.num_output_channels = num_output_channels
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _F.rgb_to_grayscale(inpt, num_output_channels=self.num_channels)
+        return _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
 
 
 class RandomGrayscale(_RandomApplyTransform):
-    # FIXME: replace torch.Tensor with is_simply_tensor as soon as it is supported
-    _transformed_types = (features.Image, PIL.Image.Image, torch.Tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
 
     def __init__(self, p: float = 0.1) -> None:
         warnings.warn(

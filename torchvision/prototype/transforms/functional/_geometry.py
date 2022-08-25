@@ -1083,7 +1083,7 @@ def five_crop(inpt: DType, size: List[int]) -> Tuple[DType, DType, DType, DType,
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
         if isinstance(inpt, features.Image):
-            output = tuple(features.Image.new_like(inpt, item) for item in output)
+            output = tuple(features.Image.new_like(inpt, item) for item in output)  # type: ignore[assignment]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return five_crop_image_pil(inpt, size)

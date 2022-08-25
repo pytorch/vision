@@ -133,7 +133,7 @@ class GaussianBlur(Transform):
 class ToDtype(Lambda):
     def __init__(self, dtype: torch.dtype, *types: Type) -> None:
         self.dtype = dtype
-        super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *types or torch.Tensor)
+        super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *types or (torch.Tensor,))
 
     def extra_repr(self) -> str:
         return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
