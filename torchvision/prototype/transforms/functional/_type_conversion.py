@@ -34,13 +34,4 @@ def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray], cop
     return _F.pil_to_tensor(image)
 
 
-def to_image_pil(
-    image: Union[torch.Tensor, PIL.Image.Image, np.ndarray], mode: Optional[str] = None
-) -> PIL.Image.Image:
-    if isinstance(image, PIL.Image.Image):
-        if mode != image.mode:
-            return image.convert(mode)
-        else:
-            return image
-
-    return _F.to_pil_image(image, mode=mode)
+to_image_pil = _F.to_pil_image
