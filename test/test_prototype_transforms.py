@@ -1593,3 +1593,14 @@ class TestLinearTransformation:
             assert isinstance(output, torch.Tensor)
             assert output.unique() == 3 * 8 * 8
             assert output.dtype == inpt.dtype
+
+
+class TestLabelToOneHot:
+    def test__transform(self):
+        categories = ["apple", "pear", "pineapple"]
+        labels = features.Label(torch.tensor([0, 1, 2, 1]), categories=categories)
+        transform = transforms.LabelToOneHot()
+        ohe_labels = transform(labels)
+        assert isinstance(ohe_labels, features.OneHotLabel)
+        assert ohe_labels.shape == (4, 3)
+        assert ohe_labels.categories == labels.categories == categories
