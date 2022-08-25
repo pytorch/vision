@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 import numpy as np
 import PIL.Image
 
-import torch
+from torch.nn.functional import one_hot
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
@@ -20,19 +20,18 @@ class DecodeImage(Transform):
 
 
 class LabelToOneHot(Transform):
+    _transformed_types = (features.Label,)
+
     def __init__(self, num_categories: int = -1):
         super().__init__()
         self.num_categories = num_categories
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Label):
-            num_categories = self.num_categories
-            if num_categories == -1 and inpt.categories is not None:
-                num_categories = len(inpt.categories)
-            output = F.label_to_one_hot(inpt, num_categories=num_categories)
-            return features.OneHotLabel(output, categories=inpt.categories)
-        else:
-            return inpt
+    def _transform(self, inpt: features.Label, params: Dict[str, Any]) -> features.OneHotLabel:
+        num_categories = self.num_categories
+        if num_categories == -1 and inpt.categories is not None:
+            num_categories = len(inpt.categories)
+        output = one_hot(inpt, num_classes=num_categories)
+        return features.OneHotLabel(output, categories=inpt.categories)
 
     def extra_repr(self) -> str:
         if self.num_categories == -1:
@@ -44,7 +43,7 @@ class LabelToOneHot(Transform):
 class ToImageTensor(Transform):
 
     # Updated transformed types for ToImageTensor
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
     def __init__(self, *, copy: bool = False) -> None:
         super().__init__()
@@ -61,7 +60,7 @@ class ToImageTensor(Transform):
 class ToImagePIL(Transform):
 
     # Updated transformed types for ToImagePIL
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
     def __init__(self, *, mode: Optional[str] = None) -> None:
         super().__init__()
