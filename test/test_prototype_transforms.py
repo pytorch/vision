@@ -1341,7 +1341,7 @@ class TestSimpleCopyPaste:
             mocker.MagicMock(spec=features.SegmentationMask),
         ]
 
-        with pytest.raises(TypeError, match="requires input sample to contain equal-sized list of Images"):
+        with pytest.raises(TypeError, match="requires input sample to contain equal sized list of Images"):
             transform._extract_image_targets(flat_sample)
 
     @pytest.mark.parametrize("image_type", [features.Image, PIL.Image.Image, torch.Tensor])
@@ -1374,7 +1374,11 @@ class TestSimpleCopyPaste:
             assert images[1] == flat_sample[1]
 
         for target in targets:
-            for key, type_ in [("boxes", features.BoundingBox), ("masks", features.SegmentationMask), ("labels", label_type)]:
+            for key, type_ in [
+                ("boxes", features.BoundingBox),
+                ("masks", features.SegmentationMask),
+                ("labels", label_type),
+            ]:
                 assert key in target
                 assert isinstance(target[key], type_)
                 assert target[key] in flat_sample
