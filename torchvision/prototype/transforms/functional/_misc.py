@@ -14,11 +14,11 @@ DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
 normalize_image_tensor = _FT.normalize
 
 
-def normalize(inpt: DType, mean: List[float], std: List[float], inplace: bool = False) -> DType:
-    if isinstance(inpt, features._Feature) and not isinstance(inpt, features.Image):
-        return inpt
-    elif isinstance(inpt, PIL.Image.Image):
-        raise TypeError("Unsupported input type")
+def normalize(
+    inpt: Union[torch.Tensor, features.Image], mean: List[float], std: List[float], inplace: bool = False
+) -> DType:
+    if not isinstance(inpt, torch.Tensor):
+        raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
     else:
         # Image instance after normalization is not Image anymore due to unknown data range
         # Thus we return Tensor for input Image
