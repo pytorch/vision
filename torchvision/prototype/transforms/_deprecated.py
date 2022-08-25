@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import PIL.Image
+import torch
 import torchvision.prototype.transforms.functional as F
 from torchvision.prototype import features
 from torchvision.prototype.features import ColorSpace
@@ -24,8 +25,8 @@ class ToTensor(Transform):
         )
         super().__init__()
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        _F.to_tensor(inpt)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+        return _F.to_tensor(inpt)
 
 
 class PILToTensor(Transform):
@@ -38,8 +39,8 @@ class PILToTensor(Transform):
         )
         super().__init__()
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        _F.pil_to_tensor(inpt)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+        return _F.pil_to_tensor(inpt)
 
 
 class ToPILImage(Transform):
@@ -53,8 +54,8 @@ class ToPILImage(Transform):
         super().__init__()
         self.mode = mode
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        _F.to_pil_image(inpt, mode=self.mode)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> PIL.Image:
+        return _F.to_pil_image(inpt, mode=self.mode)
 
 
 class Grayscale(Transform):
