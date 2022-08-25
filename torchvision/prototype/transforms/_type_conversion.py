@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 import numpy as np
 import PIL.Image
 
-import torch
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
