@@ -34,7 +34,12 @@ class RandomApply(_RandomApplyTransform):
 
 
 class RandomChoice(Transform):
-    def __init__(self, transforms: Sequence[Callable], probabilities: Optional[List[float]] = None, p: Optional[List[float]] = None) -> None:
+    def __init__(
+        self,
+        transforms: Sequence[Callable],
+        probabilities: Optional[List[float]] = None,
+        p: Optional[List[float]] = None,
+    ) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
         if p is not None:
