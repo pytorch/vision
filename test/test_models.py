@@ -756,7 +756,7 @@ def test_detection_model(model_fn, dev):
             # We first try to assert the entire output if possible. This is not
             # only the best way to assert results but also handles the cases
             # where we need to create a new expected result.
-            _assert_expected(output.cpu(), model_name, prec=prec)
+            _assert_expected(output, model_name, prec=prec)
         except AssertionError:
             # Unfortunately detection models are flaky due to the unstable sort
             # in NMS. If matching across all outputs fails, use the same approach
