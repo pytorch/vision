@@ -3,18 +3,10 @@ from typing import Any, Callable, Tuple, Type, Union
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten
+from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
 
 from .functional._meta import get_dimensions_image_pil, get_dimensions_image_tensor
-
-
-def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
-    flat_sample, _ = tree_flatten(sample)
-    for i in flat_sample:
-        if type(i) == torch.Tensor or isinstance(i, (PIL.Image.Image, features.Image)):
-            return i
-
-    raise TypeError("No image was found in the sample")
 
 
 def query_bounding_box(sample: Any) -> features.BoundingBox:
@@ -26,7 +18,7 @@ def query_bounding_box(sample: Any) -> features.BoundingBox:
     raise TypeError("No bounding box was found in the sample")
 
 
-def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
+def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
     if isinstance(image, features.Image):
         channels = image.num_channels
         height, width = image.image_size
@@ -37,6 +29,20 @@ def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Im
     else:
         raise TypeError(f"unable to get image dimensions from object of type {type(image).__name__}")
     return channels, height, width
+
+
+def query_chw(sample: Any) -> Tuple[int, int, int]:
+    flat_sample, _ = tree_flatten(sample)
+    chws = {
+        get_chw(item)
+        for item in flat_sample
+        if isinstance(item, (features.Image, PIL.Image.Image)) or is_simple_tensor(item)
+    }
+    if not chws:
+        raise TypeError("No image was found in the sample")
+    elif len(chws) > 2:
+        raise TypeError(f"Found multiple CxHxW dimensions in the sample: {sequence_to_str(sorted(chws))}")
+    return chws.pop()
 
 
 def _isinstance(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]) -> bool:
@@ -65,5 +71,8 @@ def has_all(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -
     return True
 
 
+# TODO: Given that this is not related to pytree / the Transform object, we should probably move it to somewhere else.
+#  One possibility is `functional._utils` so both the functionals and the transforms have proper access to it. We could
+#  also move it `features` since it literally checks for the _Feature type.
 def is_simple_tensor(inpt: Any) -> bool:
     return isinstance(inpt, torch.Tensor) and not isinstance(inpt, features._Feature)

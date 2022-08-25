@@ -8,7 +8,7 @@ from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms import functional as _F
 
 from ._transform import _RandomApplyTransform
-from ._utils import get_image_dimensions, is_simple_tensor, query_image
+from ._utils import is_simple_tensor, query_chw
 
 T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
 
@@ -101,14 +101,13 @@ class RandomPhotometricDistort(Transform):
         self.p = p
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        num_channels, _, _ = get_image_dimensions(image)
+        num_channels, _, _ = query_chw(sample)
         return dict(
             zip(
                 ["brightness", "contrast1", "saturation", "hue", "contrast2"],
-                torch.rand(6) < self.p,
+                (torch.rand(5) < self.p).tolist(),
             ),
-            contrast_before=torch.rand(()) < 0.5,
+            contrast_before=bool(torch.rand(()) < 0.5),
             channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
         )
 
@@ -148,7 +147,7 @@ class RandomPhotometricDistort(Transform):
             inpt = F.adjust_contrast(
                 inpt, contrast_factor=ColorJitter._generate_value(self.contrast[0], self.contrast[1])
             )
-        if params["channel_permutation"]:
+        if params["channel_permutation"] is not None:
             inpt = self._permute_channels(inpt, permutation=params["channel_permutation"])
         return inpt
 
