@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Type, Union
+from typing import Any, Callable, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -39,14 +39,24 @@ def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Im
     return channels, height, width
 
 
-def has_any(sample: Any, *types: Type) -> bool:
+def has_any(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
     flat_sample, _ = tree_flatten(sample)
-    return any(issubclass(type(obj), types) for obj in flat_sample)
+    for type_or_check in types_or_checks:
+        for obj in flat_sample:
+            if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
+                return True
+    return False
 
 
-def has_all(sample: Any, *types: Type) -> bool:
+def has_all(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
     flat_sample, _ = tree_flatten(sample)
-    return not bool(set(types) - set([type(obj) for obj in flat_sample]))
+    for type_or_check in types_or_checks:
+        for obj in flat_sample:
+            if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
+                break
+        else:
+            return False
+    return True
 
 
 def is_simple_tensor(inpt: Any) -> bool:
