@@ -1031,7 +1031,7 @@ class TestTransform:
 class TestToImageTensor:
     @pytest.mark.parametrize(
         "inpt_type",
-        [torch.Tensor, PIL.Image.Image, np.ndarray, features.BoundingBox, str, int],
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
     )
     def test__transform(self, inpt_type, mocker):
         fn = mocker.patch(
@@ -1051,7 +1051,7 @@ class TestToImageTensor:
 class TestToImagePIL:
     @pytest.mark.parametrize(
         "inpt_type",
-        [torch.Tensor, features.Image, np.ndarray, features.BoundingBox, str, int],
+        [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
     )
     def test__transform(self, inpt_type, mocker):
         fn = mocker.patch("torchvision.prototype.transforms.functional.to_image_pil")
