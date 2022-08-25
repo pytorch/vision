@@ -1,4 +1,5 @@
 import math
+import numbers
 from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import PIL.Image
@@ -31,6 +32,9 @@ class _AutoAugmentBase(Transform):
     ) -> None:
         super().__init__()
         self.interpolation = interpolation
+
+        if not isinstance(fill, (numbers.Number, tuple, list)):
+            raise TypeError("Got inappropriate fill arg")
         self.fill = fill
 
     def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
@@ -58,21 +62,6 @@ class _AutoAugmentBase(Transform):
                 f"Auto augment transformations are only properly defined for a single image, but found {len(images)}."
             )
         return images[0]
-
-    def _parse_fill(
-        self, image: Union[PIL.Image.Image, torch.Tensor, features.Image], num_channels: int
-    ) -> Union[int, float, Sequence[int], Sequence[float]]:
-        fill = self.fill
-
-        if isinstance(image, PIL.Image.Image) or fill is None:
-            return fill
-
-        if isinstance(fill, (int, float)):
-            fill = [float(fill)] * num_channels
-        else:
-            fill = [float(f) for f in fill]
-
-        return fill
 
     def _apply_image_transform(
         self,
@@ -282,7 +271,6 @@ class AutoAugment(_AutoAugmentBase):
 
         id, image = self._extract_image(sample)
         num_channels, height, width = get_chw(image)
-        fill = self._parse_fill(image, num_channels)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
@@ -301,7 +289,7 @@ class AutoAugment(_AutoAugmentBase):
                 magnitude = 0.0
 
             image = self._apply_image_transform(
-                image, transform_id, magnitude, interpolation=self.interpolation, fill=fill
+                image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
         return _put_into_sample(sample, id, image)
@@ -355,7 +343,6 @@ class RandAugment(_AutoAugmentBase):
 
         id, image = self._extract_image(sample)
         num_channels, height, width = get_chw(image)
-        fill = self._parse_fill(image, num_channels)
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
@@ -369,7 +356,7 @@ class RandAugment(_AutoAugmentBase):
                 magnitude = 0.0
 
             image = self._apply_image_transform(
-                image, transform_id, magnitude, interpolation=self.interpolation, fill=fill
+                image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
         return _put_into_sample(sample, id, image)
@@ -413,7 +400,6 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
         id, image = self._extract_image(sample)
         num_channels, height, width = get_chw(image)
-        fill = self._parse_fill(image, num_channels)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
@@ -425,7 +411,9 @@ class TrivialAugmentWide(_AutoAugmentBase):
         else:
             magnitude = 0.0
 
-        image = self._apply_image_transform(image, transform_id, magnitude, interpolation=self.interpolation, fill=fill)
+        image = self._apply_image_transform(
+            image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+        )
         return _put_into_sample(sample, id, image)
 
 
@@ -482,7 +470,6 @@ class AugMix(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
         id, orig_image = self._extract_image(sample)
         num_channels, height, width = get_chw(orig_image)
-        fill = self._parse_fill(orig_image, num_channels)
 
         if isinstance(orig_image, torch.Tensor):
             image = orig_image
@@ -522,7 +509,7 @@ class AugMix(_AutoAugmentBase):
                     magnitude = 0.0
 
                 aug = self._apply_image_transform(
-                    aug, transform_id, magnitude, interpolation=self.interpolation, fill=fill
+                    aug, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
                 )
             mix.add_(combined_weights[:, i].view(batch_dims) * aug)
         mix = mix.view(orig_dims).to(dtype=image.dtype)
