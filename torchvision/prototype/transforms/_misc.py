@@ -20,7 +20,7 @@ class Lambda(Transform):
     def __init__(self, fn: Callable[[Any], Any], *types: Type):
         super().__init__()
         self.fn = fn
-        self.types = types
+        self.types = types or (object,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if type(inpt) in self.types:
