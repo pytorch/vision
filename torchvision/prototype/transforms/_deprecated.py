@@ -16,9 +16,7 @@ from ._utils import is_simple_tensor
 
 
 class ToTensor(Transform):
-
-    # Updated transformed types for ToTensor
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (PIL.Image.Image, np.ndarray)
 
     def __init__(self) -> None:
         warnings.warn(
@@ -28,13 +26,12 @@ class ToTensor(Transform):
         super().__init__()
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (PIL.Image.Image, np.ndarray)):
-            return _F.to_tensor(inpt)
-        else:
-            return inpt
+        _F.to_tensor(inpt)
 
 
 class PILToTensor(Transform):
+    _transformed_types = (PIL.Image.Image,)
+
     def __init__(self) -> None:
         warnings.warn(
             "The transform `PILToTensor()` is deprecated and will be removed in a future release. "
@@ -43,16 +40,11 @@ class PILToTensor(Transform):
         super().__init__()
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, PIL.Image.Image):
-            return _F.pil_to_tensor(inpt)
-        else:
-            return inpt
+        _F.pil_to_tensor(inpt)
 
 
 class ToPILImage(Transform):
-
-    # Updated transformed types for ToPILImage
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features.Image, np.ndarray)
 
     def __init__(self, mode: Optional[str] = None) -> None:
         warnings.warn(
@@ -63,10 +55,7 @@ class ToPILImage(Transform):
         self.mode = mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if is_simple_tensor(inpt) or isinstance(inpt, (features.Image, np.ndarray)):
-            return _F.to_pil_image(inpt, mode=self.mode)
-        else:
-            return inpt
+        _F.to_pil_image(inpt, mode=self.mode)
 
 
 class Grayscale(Transform):
