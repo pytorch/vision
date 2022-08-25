@@ -42,33 +42,23 @@ class LabelToOneHot(Transform):
 
 
 class ToImageTensor(Transform):
-
-    # Updated transformed types for ToImageTensor
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
     def __init__(self, *, copy: bool = False) -> None:
         super().__init__()
         self.copy = copy
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
-            output = F.to_image_tensor(inpt, copy=self.copy)
-            return features.Image(output)
-        else:
-            return inpt
+        output = F.to_image_tensor(inpt, copy=self.copy)
+        return features.Image(output)
 
 
 class ToImagePIL(Transform):
-
-    # Updated transformed types for ToImagePIL
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
     def __init__(self, *, mode: Optional[str] = None) -> None:
         super().__init__()
         self.mode = mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
-            return F.to_image_pil(inpt, mode=self.mode)
-        else:
-            return inpt
+        return F.to_image_pil(inpt, mode=self.mode)
