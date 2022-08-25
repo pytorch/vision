@@ -40,7 +40,7 @@ class LabelToOneHot(Transform):
 
 
 class ToImageTensor(Transform):
-    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features.Image, PIL.Image.Image, np.ndarray)
 
     def __init__(self, *, copy: bool = False) -> None:
         super().__init__()
@@ -52,7 +52,7 @@ class ToImageTensor(Transform):
 
 
 class ToImagePIL(Transform):
-    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features.Image, PIL.Image.Image, np.ndarray)
 
     def __init__(self, *, mode: Optional[str] = None) -> None:
         super().__init__()
