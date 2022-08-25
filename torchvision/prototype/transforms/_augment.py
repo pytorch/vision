@@ -3,7 +3,6 @@ import numbers
 import warnings
 from typing import Any, Dict, Tuple
 
-import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F
