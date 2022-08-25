@@ -1844,22 +1844,20 @@ def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
 
 def test_midlevel_normalize_output_type():
     inpt = torch.rand(1, 3, 32, 32)
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
+    output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
     assert isinstance(output, torch.Tensor)
     torch.testing.assert_close(inpt - 0.5, output)
 
     inpt = make_segmentation_mask()
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
-    assert isinstance(output, features.SegmentationMask)
-    torch.testing.assert_close(inpt, output)
+    with pytest.raises(TypeError, match="Input tensor should be a float tensor."):
+        F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
 
     inpt = make_bounding_box(format="XYXY")
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
-    assert isinstance(output, features.BoundingBox)
-    torch.testing.assert_close(inpt, output)
+    with pytest.raises(TypeError, match="Tensor is not a torch image."):
+        F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
 
     inpt = make_image(color_space=features.ColorSpace.RGB)
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
+    output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
     assert isinstance(output, torch.Tensor)
     torch.testing.assert_close(inpt - 0.5, output)
 
