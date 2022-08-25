@@ -22,7 +22,7 @@ class Lambda(Transform):
     def __init__(self, fn: Callable[[Any], Any], *types: Type):
         super().__init__()
         self.fn = fn
-        self.types = types
+        self.types = types or (object,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if type(inpt) in self.types:
@@ -137,7 +137,7 @@ class GaussianBlur(Transform):
 class ToDtype(Lambda):
     def __init__(self, dtype: torch.dtype, *types: Type) -> None:
         self.dtype = dtype
-        super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *types)
+        super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *types or (torch.Tensor,))
 
     def extra_repr(self) -> str:
         return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
