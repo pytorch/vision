@@ -1487,3 +1487,36 @@ class TestFixedSizeCrop:
         transform(bounding_box)
 
         mock.assert_called_once()
+
+
+class TestLinearTransformation:
+    def test_assertions(self):
+        with pytest.raises(ValueError, match="transformation_matrix should be square"):
+            transforms.LinearTransformation(torch.rand(2, 3), torch.rand(5))
+
+        with pytest.raises(ValueError, match="mean_vector should have the same length"):
+            transforms.LinearTransformation(torch.rand(3, 3), torch.rand(5))
+
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            122 * torch.ones(1, 3, 8, 8),
+            122.0 * torch.ones(1, 3, 8, 8),
+            features.Image(122 * torch.ones(1, 3, 8, 8)),
+            PIL.Image.new("RGB", (8, 8), (122, 122, 122)),
+        ],
+    )
+    def test__transform(self, inpt):
+
+        v = 121 * torch.ones(3 * 8 * 8)
+        m = torch.ones(3 * 8 * 8, 3 * 8 * 8)
+        transform = transforms.LinearTransformation(m, v)
+
+        if isinstance(inpt, PIL.Image.Image):
+            with pytest.raises(TypeError, match="Unsupported input type"):
+                transform(inpt)
+        else:
+            output = transform(inpt)
+            assert isinstance(output, torch.Tensor)
+            assert output.unique() == 3 * 8 * 8
+            assert output.dtype == inpt.dtype
