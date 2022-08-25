@@ -15,7 +15,7 @@ normalize_image_tensor = _FT.normalize
 
 
 def normalize(
-    inpt: Union[torch.Tensor, features._Feature], mean: List[float], std: List[float], inplace: bool = False
+    inpt: Union[torch.Tensor, features.Image], mean: List[float], std: List[float], inplace: bool = False
 ) -> DType:
     if not isinstance(inpt, torch.Tensor):
         raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
