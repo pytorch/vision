@@ -105,9 +105,9 @@ class RandomPhotometricDistort(Transform):
         return dict(
             zip(
                 ["brightness", "contrast1", "saturation", "hue", "contrast2"],
-                torch.rand(6) < self.p,
+                (torch.rand(5) < self.p).tolist(),
             ),
-            contrast_before=torch.rand(()) < 0.5,
+            contrast_before=bool(torch.rand(()) < 0.5),
             channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
         )
 
@@ -147,7 +147,7 @@ class RandomPhotometricDistort(Transform):
             inpt = F.adjust_contrast(
                 inpt, contrast_factor=ColorJitter._generate_value(self.contrast[0], self.contrast[1])
             )
-        if params["channel_permutation"]:
+        if params["channel_permutation"] is not None:
             inpt = self._permute_channels(inpt, permutation=params["channel_permutation"])
         return inpt
 
