@@ -35,4 +35,4 @@ def test_raft_stereo(model_fn, model_mode, dev):
     ), f"The output shape of depth_pred should be [1, 1, 64, 64] but instead it is {preds[0].shape}"
 
     # Test against expected file output
-    TM._assert_expected(depth_pred, name=model_fn.__name__, atol=1e-2, rtol=1e-2)
+    TM._assert_expected(depth_pred.cpu(), name=model_fn.__name__, atol=1e-2, rtol=1e-2)
