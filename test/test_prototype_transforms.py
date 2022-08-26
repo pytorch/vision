@@ -1042,10 +1042,10 @@ class TestToImageTensor:
         inpt = mocker.MagicMock(spec=inpt_type)
         transform = transforms.ToImageTensor()
         transform(inpt)
-        if inpt_type in (features.BoundingBox, str, int):
+        if inpt_type in (features.BoundingBox, features.Image, str, int):
             assert fn.call_count == 0
         else:
-            fn.assert_called_once_with(inpt, copy=transform.copy)
+            fn.assert_called_once_with(inpt)
 
 
 class TestToImagePIL:
@@ -1059,7 +1059,7 @@ class TestToImagePIL:
         inpt = mocker.MagicMock(spec=inpt_type)
         transform = transforms.ToImagePIL()
         transform(inpt)
-        if inpt_type in (features.BoundingBox, str, int):
+        if inpt_type in (features.BoundingBox, PIL.Image.Image, str, int):
             assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt, mode=transform.mode)
@@ -1116,6 +1116,15 @@ class TestContainers:
         inpt = torch.rand(1, 3, 32, 32)
         output = c(inpt)
         assert isinstance(output, torch.Tensor)
+
+
+class TestRandomChoice:
+    def test_assertions(self):
+        with pytest.warns(UserWarning, match="Argument p is deprecated and will be removed"):
+            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1, 2])
+
+        with pytest.raises(ValueError, match="The number of probabilities doesn't match the number of transforms"):
+            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], probabilities=[1])
 
 
 class TestRandomIoUCrop:
@@ -1341,11 +1350,12 @@ class TestSimpleCopyPaste:
             mocker.MagicMock(spec=features.SegmentationMask),
         ]
 
-        with pytest.raises(TypeError, match="requires input sample to contain equal-sized list of Images"):
+        with pytest.raises(TypeError, match="requires input sample to contain equal sized list of Images"):
             transform._extract_image_targets(flat_sample)
 
     @pytest.mark.parametrize("image_type", [features.Image, PIL.Image.Image, torch.Tensor])
-    def test__extract_image_targets(self, image_type, mocker):
+    @pytest.mark.parametrize("label_type", [features.Label, features.OneHotLabel])
+    def test__extract_image_targets(self, image_type, label_type, mocker):
         transform = transforms.SimpleCopyPaste()
 
         flat_sample = [
@@ -1353,11 +1363,11 @@ class TestSimpleCopyPaste:
             self.create_fake_image(mocker, image_type),
             self.create_fake_image(mocker, image_type),
             # labels, bboxes, masks
-            mocker.MagicMock(spec=features.Label),
+            mocker.MagicMock(spec=label_type),
             mocker.MagicMock(spec=features.BoundingBox),
             mocker.MagicMock(spec=features.SegmentationMask),
             # labels, bboxes, masks
-            mocker.MagicMock(spec=features.Label),
+            mocker.MagicMock(spec=label_type),
             mocker.MagicMock(spec=features.BoundingBox),
             mocker.MagicMock(spec=features.SegmentationMask),
         ]
@@ -1372,29 +1382,46 @@ class TestSimpleCopyPaste:
             assert images[0] == flat_sample[0]
             assert images[1] == flat_sample[1]
 
-    def test__copy_paste(self):
+        for target in targets:
+            for key, type_ in [
+                ("boxes", features.BoundingBox),
+                ("masks", features.SegmentationMask),
+                ("labels", label_type),
+            ]:
+                assert key in target
+                assert isinstance(target[key], type_)
+                assert target[key] in flat_sample
+
+    @pytest.mark.parametrize("label_type", [features.Label, features.OneHotLabel])
+    def test__copy_paste(self, label_type):
         image = 2 * torch.ones(3, 32, 32)
         masks = torch.zeros(2, 32, 32)
         masks[0, 3:9, 2:8] = 1
         masks[1, 20:30, 20:30] = 1
+        labels = torch.tensor([1, 2])
+        if label_type == features.OneHotLabel:
+            labels = torch.nn.functional.one_hot(labels, num_classes=5)
         target = {
             "boxes": features.BoundingBox(
                 torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", image_size=(32, 32)
             ),
             "masks": features.SegmentationMask(masks),
-            "labels": features.Label(torch.tensor([1, 2])),
+            "labels": label_type(labels),
         }
 
         paste_image = 10 * torch.ones(3, 32, 32)
         paste_masks = torch.zeros(2, 32, 32)
         paste_masks[0, 13:19, 12:18] = 1
         paste_masks[1, 15:19, 1:8] = 1
+        paste_labels = torch.tensor([3, 4])
+        if label_type == features.OneHotLabel:
+            paste_labels = torch.nn.functional.one_hot(paste_labels, num_classes=5)
         paste_target = {
             "boxes": features.BoundingBox(
                 torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", image_size=(32, 32)
             ),
             "masks": features.SegmentationMask(paste_masks),
-            "labels": features.Label(torch.tensor([3, 4])),
+            "labels": label_type(paste_labels),
         }
 
         transform = transforms.SimpleCopyPaste()
@@ -1405,7 +1432,12 @@ class TestSimpleCopyPaste:
         assert output_target["boxes"].shape == (4, 4)
         torch.testing.assert_close(output_target["boxes"][:2, :], target["boxes"])
         torch.testing.assert_close(output_target["boxes"][2:, :], paste_target["boxes"])
-        torch.testing.assert_close(output_target["labels"], features.Label(torch.tensor([1, 2, 3, 4])))
+
+        expected_labels = torch.tensor([1, 2, 3, 4])
+        if label_type == features.OneHotLabel:
+            expected_labels = torch.nn.functional.one_hot(expected_labels, num_classes=5)
+        torch.testing.assert_close(output_target["labels"], label_type(expected_labels))
+
         assert output_target["masks"].shape == (4, 32, 32)
         torch.testing.assert_close(output_target["masks"][:2, :], target["masks"])
         torch.testing.assert_close(output_target["masks"][2:, :], paste_target["masks"])
@@ -1593,7 +1625,7 @@ class TestLinearTransformation:
         transform = transforms.LinearTransformation(m, v)
 
         if isinstance(inpt, PIL.Image.Image):
-            with pytest.raises(TypeError, match="Unsupported input type"):
+            with pytest.raises(TypeError, match="LinearTransformation does not work on PIL Images"):
                 transform(inpt)
         else:
             output = transform(inpt)
