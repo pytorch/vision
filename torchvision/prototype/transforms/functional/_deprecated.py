@@ -2,6 +2,7 @@ import warnings
 from typing import Any
 
 import PIL.Image
+import torch
 
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F
@@ -41,3 +42,12 @@ def rgb_to_grayscale(inpt: Any, num_output_channels: int = 1) -> Any:
     )
 
     return _F.rgb_to_grayscale(inpt, num_output_channels=num_output_channels)
+
+
+def to_tensor(inpt: Any) -> torch.Tensor:
+    # FIXME: should we keep the "if needed" phrase or unconditionally recommend `convert_image_dtype`?
+    warnings.warn(
+        "The function `to_tensor(...)` is deprecated and will be removed in a future release. "
+        "Instead, please use `to_image_tensor(...)` and if needed use `convert_image_dtype(...)` afterwards."
+    )
+    return _F.to_tensor(inpt)
