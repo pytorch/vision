@@ -46,11 +46,6 @@ class EncodedImage(EncodedData):
 
         return self._image_size
 
-    def decode(self) -> Image:
-        # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
-        #  promote this out of the prototype state
-        return self._F.decode_image_with_pil(self)
-
 
 class EncodedVideo(EncodedData):
     pass
