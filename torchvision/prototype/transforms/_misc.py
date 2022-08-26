@@ -105,10 +105,9 @@ class Normalize(Transform):
         return F.normalize(inpt, mean=self.mean, std=self.std)
 
     def forward(self, *inpts: Any) -> Any:
-        sample = inpts if len(inpts) > 1 else inpts[0]
-        if has_any(sample, PIL.Image.Image):
+        if has_any(inpts, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
-        return super().forward(sample)
+        return super().forward(*inpts)
 
 
 class GaussianBlur(Transform):
