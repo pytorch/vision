@@ -45,9 +45,8 @@ def rgb_to_grayscale(inpt: Any, num_output_channels: int = 1) -> Any:
 
 
 def to_tensor(inpt: Any) -> torch.Tensor:
-    # FIXME: should we keep the "if needed" phrase or unconditionally recommend `convert_image_dtype`?
     warnings.warn(
         "The function `to_tensor(...)` is deprecated and will be removed in a future release. "
-        "Instead, please use `to_image_tensor(...)` and if needed use `convert_image_dtype(...)` afterwards."
+        "Instead, please use `to_image_tensor(...)` followed by `convert_image_dtype(...)`."
     )
     return _F.to_tensor(inpt)

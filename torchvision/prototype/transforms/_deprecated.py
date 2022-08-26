@@ -18,10 +18,9 @@ class ToTensor(Transform):
     _transformed_types = (PIL.Image.Image, np.ndarray)
 
     def __init__(self) -> None:
-        # FIXME: should the replacement be a `Compose` with `ConvertImageDtype`?
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
-            "Instead, please use `transforms.ToImageTensor()`."
+            "Instead, please use `transforms.Compose([transforms.ToImageTensor(), transforms.ConvertImageDtype()])`."
         )
         super().__init__()
 

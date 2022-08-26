@@ -84,6 +84,8 @@ class ColorJitter(Transform):
 
 
 class RandomPhotometricDistort(Transform):
+    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
+
     def __init__(
         self,
         contrast: Tuple[float, float] = (0.5, 1.5),
@@ -111,14 +113,10 @@ class RandomPhotometricDistort(Transform):
         )
 
     def _permute_channels(self, inpt: Any, *, permutation: torch.Tensor) -> Any:
-        if not (isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt)):
-            return inpt
-
-        image = inpt
         if isinstance(inpt, PIL.Image.Image):
-            image = F.to_image_tensor(image)
+            inpt = F.to_image_tensor(inpt)
 
-        output = image[..., permutation, :, :]
+        output = inpt[..., permutation, :, :]
 
         if isinstance(inpt, features.Image):
             output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.OTHER)
