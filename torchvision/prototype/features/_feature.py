@@ -10,6 +10,10 @@ from torchvision.transforms import InterpolationMode
 F = TypeVar("F", bound="_Feature")
 
 
+def is_simple_tensor(inpt: Any) -> bool:
+    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, _Feature)
+
+
 class _Feature(torch.Tensor):
     __F: Optional[ModuleType] = None
 

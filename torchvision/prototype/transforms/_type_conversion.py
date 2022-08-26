@@ -7,8 +7,6 @@ from torch.nn.functional import one_hot
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
-from ._utils import is_simple_tensor
-
 
 class DecodeImage(Transform):
     _transformed_types = (features.EncodedImage,)
@@ -39,14 +37,14 @@ class LabelToOneHot(Transform):
 
 
 class ToImageTensor(Transform):
-    _transformed_types = (is_simple_tensor, PIL.Image.Image, np.ndarray)
+    _transformed_types = (features.is_simple_tensor, PIL.Image.Image, np.ndarray)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> features.Image:
         return F.to_image_tensor(inpt)
 
 
 class ToImagePIL(Transform):
-    _transformed_types = (is_simple_tensor, features.Image, np.ndarray)
+    _transformed_types = (features.is_simple_tensor, features.Image, np.ndarray)
 
     def __init__(self, *, mode: Optional[str] = None) -> None:
         super().__init__()

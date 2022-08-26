@@ -23,7 +23,7 @@ def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tupl
     if isinstance(image, features.Image):
         channels = image.num_channels
         height, width = image.image_size
-    elif is_simple_tensor(image):
+    elif features.is_simple_tensor(image):
         channels, height, width = get_dimensions_image_tensor(image)
     elif isinstance(image, PIL.Image.Image):
         channels, height, width = get_dimensions_image_pil(image)
@@ -37,7 +37,7 @@ def query_chw(sample: Any) -> Tuple[int, int, int]:
     chws = {
         get_chw(item)
         for item in flat_sample
-        if isinstance(item, (features.Image, PIL.Image.Image)) or is_simple_tensor(item)
+        if isinstance(item, (features.Image, PIL.Image.Image)) or features.is_simple_tensor(item)
     }
     if not chws:
         raise TypeError("No image was found in the sample")
@@ -70,10 +70,3 @@ def has_all(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -
         else:
             return False
     return True
-
-
-# TODO: Given that this is not related to pytree / the Transform object, we should probably move it to somewhere else.
-#  One possibility is `functional._utils` so both the functionals and the transforms have proper access to it. We could
-#  also move it `features` since it literally checks for the _Feature type.
-def is_simple_tensor(inpt: Any) -> bool:
-    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, features._Feature)

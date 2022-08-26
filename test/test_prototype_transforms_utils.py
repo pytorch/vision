@@ -6,7 +6,7 @@ import torch
 from test_prototype_transforms_functional import make_bounding_box, make_image, make_segmentation_mask
 
 from torchvision.prototype import features
-from torchvision.prototype.transforms._utils import has_all, has_any, is_simple_tensor
+from torchvision.prototype.transforms._utils import has_all, has_any
 from torchvision.prototype.transforms.functional import to_image_pil
 
 
@@ -36,9 +36,9 @@ SEGMENTATION_MASK = make_segmentation_mask(size=IMAGE.image_size)
         ((IMAGE, BOUNDING_BOX, SEGMENTATION_MASK), (lambda obj: isinstance(obj, features.Image),), True),
         ((IMAGE, BOUNDING_BOX, SEGMENTATION_MASK), (lambda _: False,), False),
         ((IMAGE, BOUNDING_BOX, SEGMENTATION_MASK), (lambda _: True,), True),
-        ((IMAGE,), (features.Image, PIL.Image.Image, is_simple_tensor), True),
-        ((torch.Tensor(IMAGE),), (features.Image, PIL.Image.Image, is_simple_tensor), True),
-        ((to_image_pil(IMAGE),), (features.Image, PIL.Image.Image, is_simple_tensor), True),
+        ((IMAGE,), (features.Image, PIL.Image.Image, features.is_simple_tensor), True),
+        ((torch.Tensor(IMAGE),), (features.Image, PIL.Image.Image, features.is_simple_tensor), True),
+        ((to_image_pil(IMAGE),), (features.Image, PIL.Image.Image, features.is_simple_tensor), True),
     ],
 )
 def test_has_any(sample, types, expected):
