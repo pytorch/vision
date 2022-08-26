@@ -125,7 +125,9 @@ class RandomPhotometricDistort(Transform):
 
         return output
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(
+        self, inpt: Union[torch.Tensor, features.Image, PIL.Image.Image], params: Dict[str, Any]
+    ) -> Union[torch.Tensor, features.Image, PIL.Image.Image]:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])

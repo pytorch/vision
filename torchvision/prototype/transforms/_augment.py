@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -88,7 +88,9 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(
+        self, inpt: Union[torch.Tensor, features.Image, PIL.Image.Image], params: Dict[str, Any]
+    ) -> Union[torch.Tensor, features.Image, PIL.Image.Image]:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params)
 

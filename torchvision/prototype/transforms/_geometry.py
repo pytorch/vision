@@ -15,6 +15,9 @@ from ._transform import _RandomApplyTransform
 from ._utils import _check_sequence_input, _setup_angle, _setup_size, has_all, has_any, query_bounding_box, query_chw
 
 
+DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
+
+
 class RandomHorizontalFlip(_RandomApplyTransform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.horizontal_flip(inpt)
@@ -159,7 +162,7 @@ class FiveCrop(Transform):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: DType, params: Dict[str, Any]) -> Tuple[DType, DType, DType, DType, DType]:
         return F.five_crop(inpt, self.size)
 
     def forward(self, *inputs: Any) -> Any:
@@ -180,7 +183,7 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: DType, params: Dict[str, Any]) -> List[DType]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
     def forward(self, *inputs: Any) -> Any:
