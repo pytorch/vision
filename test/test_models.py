@@ -671,7 +671,9 @@ def test_segmentation_model(model_fn, dev):
             # predictions match.
             expected_file = _get_expected_file(model_name)
             expected = torch.load(expected_file)
-            torch.testing.assert_close(out.argmax(dim=1), expected.argmax(dim=1), rtol=prec, atol=prec)
+            torch.testing.assert_close(
+                out.argmax(dim=1), expected.argmax(dim=1), rtol=prec, atol=prec, check_device=False
+            )
             return False  # Partial validation performed
 
         return True  # Full validation performed
