@@ -1643,3 +1643,118 @@ class TestLabelToOneHot:
         assert isinstance(ohe_labels, features.OneHotLabel)
         assert ohe_labels.shape == (4, 3)
         assert ohe_labels.categories == labels.categories == categories
+
+
+class TestConsistencyClassificationPreset:
+    def _create_ref_augs(
+        self,
+        crop_size,
+        interpolation,
+        hflip_prob,
+        auto_augment_policy,
+        mean,
+        std,
+        random_erase_prob,
+        is_pil_image,
+    ):
+        from torchvision.transforms import autoaugment, transforms as ref_transforms
+
+        trfms = [ref_transforms.RandomResizedCrop(crop_size, interpolation=interpolation)]
+
+        if hflip_prob > 0:
+            trfms.append(ref_transforms.RandomHorizontalFlip(hflip_prob))
+        if auto_augment_policy is not None:
+            if auto_augment_policy == "ra":
+                trfms.append(autoaugment.RandAugment(interpolation=interpolation))
+            elif auto_augment_policy == "ta_wide":
+                trfms.append(autoaugment.TrivialAugmentWide(interpolation=interpolation))
+            elif auto_augment_policy == "augmix":
+                trfms.append(autoaugment.AugMix(interpolation=interpolation))
+            else:
+                aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
+                trfms.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))
+
+        if is_pil_image:
+            trfms.append(ref_transforms.PILToTensor())
+
+        trfms.extend(
+            [
+                ref_transforms.ConvertImageDtype(torch.float),
+                ref_transforms.Normalize(mean=mean, std=std),
+            ]
+        )
+        if random_erase_prob > 0:
+            trfms.append(ref_transforms.RandomErasing(p=random_erase_prob))
+
+        return ref_transforms.Compose(trfms)
+
+    def _create_new_augs(
+        self,
+        crop_size,
+        interpolation,
+        hflip_prob,
+        auto_augment_policy,
+        mean,
+        std,
+        random_erase_prob,
+        is_pil_image,
+    ):
+        trfms = [transforms.RandomResizedCrop(crop_size, interpolation=interpolation)]
+
+        if hflip_prob > 0:
+            trfms.append(transforms.RandomHorizontalFlip(hflip_prob))
+        if auto_augment_policy is not None:
+            if auto_augment_policy == "ra":
+                trfms.append(transforms.RandAugment(interpolation=interpolation))
+            elif auto_augment_policy == "ta_wide":
+                trfms.append(transforms.TrivialAugmentWide(interpolation=interpolation))
+            elif auto_augment_policy == "augmix":
+                trfms.append(transforms.AugMix(interpolation=interpolation))
+            else:
+                aa_policy = transforms.AutoAugmentPolicy(auto_augment_policy)
+                trfms.append(transforms.AutoAugment(policy=aa_policy, interpolation=interpolation))
+
+        if is_pil_image:
+            trfms.append(transforms.PILToTensor())
+
+        trfms.extend(
+            [
+                transforms.ConvertImageDtype(torch.float),
+                transforms.Normalize(mean=mean, std=std),
+            ]
+        )
+        if random_erase_prob > 0:
+            trfms.append(transforms.RandomErasing(p=random_erase_prob))
+
+        return transforms.Compose(trfms)
+
+    @pytest.mark.parametrize("hflip_prob", [0.0, 0.5])
+    @pytest.mark.parametrize("aa_policy", [None, "ra", "ta_wide", "augmix"])
+    @pytest.mark.parametrize("re_prob", [0.0, 0.5])
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
+            PIL.Image.new("RGB", (256, 256), 123),
+            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+        ],
+    )
+    def test_training_augs(self, hflip_prob, aa_policy, re_prob, inpt):
+
+        crop_size = 224
+        mean = (0.485, 0.456, 0.406)
+        std = (0.229, 0.224, 0.225)
+        interpolation = InterpolationMode.BILINEAR
+
+        args = (crop_size, interpolation, hflip_prob, aa_policy, mean, std, re_prob)
+
+        ref_augs = self._create_ref_augs(*args, is_pil_image=isinstance(inpt, PIL.Image.Image))
+        new_augs = self._create_new_augs(*args, is_pil_image=isinstance(inpt, PIL.Image.Image))
+
+        torch.manual_seed(12)
+        expected_output = ref_augs(inpt)
+
+        torch.manual_seed(12)
+        output = new_augs(inpt)
+
+        torch.testing.assert_close(expected_output, output)
