@@ -72,24 +72,34 @@ class _AutoAugmentBase(Transform):
         if transform_id == "Identity":
             return image
         elif transform_id == "ShearX":
+            # magnitude should be arctan(magnitude)
+            # official autoaug: (1, level, 0, 0, 1, 0)
+            # https://github.com/tensorflow/models/blob/dd02069717128186b88afa8d857ce57d17957f03/research/autoaugment/augmentation_transforms.py#L290
+            # compared to
+            # torchvision:      (1, tan(level), 0, 0, 1, 0)
+            # https://github.com/pytorch/vision/blob/0c2373d0bba3499e95776e7936e207d8a1676e65/torchvision/transforms/functional.py#L976
             return F.affine(
                 image,
                 angle=0.0,
                 translate=[0, 0],
                 scale=1.0,
-                shear=[math.degrees(magnitude), 0.0],
+                shear=[math.degrees(math.atan(magnitude)), 0.0],
                 interpolation=interpolation,
                 fill=fill,
+                center=[0, 0],
             )
         elif transform_id == "ShearY":
+            # magnitude should be arctan(magnitude)
+            # See above
             return F.affine(
                 image,
                 angle=0.0,
                 translate=[0, 0],
                 scale=1.0,
-                shear=[0.0, math.degrees(magnitude)],
+                shear=[0.0, math.degrees(math.atan(magnitude))],
                 interpolation=interpolation,
                 fill=fill,
+                center=[0, 0],
             )
         elif transform_id == "TranslateX":
             return F.affine(
@@ -97,8 +107,8 @@ class _AutoAugmentBase(Transform):
                 angle=0.0,
                 translate=[int(magnitude), 0],
                 scale=1.0,
-                shear=[0.0, 0.0],
                 interpolation=interpolation,
+                shear=[0.0, 0.0],
                 fill=fill,
             )
         elif transform_id == "TranslateY":
@@ -107,12 +117,12 @@ class _AutoAugmentBase(Transform):
                 angle=0.0,
                 translate=[0, int(magnitude)],
                 scale=1.0,
-                shear=[0.0, 0.0],
                 interpolation=interpolation,
+                shear=[0.0, 0.0],
                 fill=fill,
             )
         elif transform_id == "Rotate":
-            return F.rotate(image, angle=magnitude)
+            return F.rotate(image, angle=magnitude, interpolation=interpolation, fill=fill)
         elif transform_id == "Brightness":
             return F.adjust_brightness(image, brightness_factor=1.0 + magnitude)
         elif transform_id == "Color":
