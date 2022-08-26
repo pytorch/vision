@@ -15,9 +15,10 @@ class Compose(Transform):
         self.transforms = transforms
 
     def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
         for transform in self.transforms:
-            inputs = transform(*inputs)
-        return inputs
+            sample = transform(sample)
+        return sample
 
 
 class RandomApply(_RandomApplyTransform):
@@ -76,7 +77,8 @@ class RandomOrder(Transform):
         self.transforms = transforms
 
     def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
         for idx in torch.randperm(len(self.transforms)):
             transform = self.transforms[idx]
-            inputs = transform(*inputs)
-        return inputs
+            sample = transform(sample)
+        return sample

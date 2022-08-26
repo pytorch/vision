@@ -1071,11 +1071,10 @@ class TestToPILImage:
         [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
     )
     def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.functional.to_pil_image")
+        fn = mocker.patch("torchvision.prototype.transforms.functional.to_image_pil")
 
         inpt = mocker.MagicMock(spec=inpt_type)
-        with pytest.warns(UserWarning, match="deprecated and will be removed"):
-            transform = transforms.ToPILImage()
+        transform = transforms.ToPILImage()
         transform(inpt)
         if inpt_type in (PIL.Image.Image, features.BoundingBox, str, int):
             assert fn.call_count == 0
@@ -1109,13 +1108,18 @@ class TestContainers:
 
     @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
     @pytest.mark.parametrize(
-        "trfms", [[transforms.Pad(2), transforms.RandomCrop(28)], [lambda x: 2.0 * x, transforms.RandomCrop(28)]]
+        "trfms",
+        [
+            [transforms.Pad(2), transforms.RandomCrop(28)],
+            [lambda x: 2.0 * x, transforms.Pad(2), transforms.RandomCrop(28)],
+        ],
     )
     def test_ctor(self, transform_cls, trfms):
         c = transform_cls(trfms)
         inpt = torch.rand(1, 3, 32, 32)
         output = c(inpt)
         assert isinstance(output, torch.Tensor)
+        assert output.ndim == 4
 
 
 class TestRandomChoice:

@@ -5,7 +5,6 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.transforms import functional as _F
 
 from ._transform import _RandomApplyTransform
 from ._utils import query_chw
@@ -85,6 +84,8 @@ class ColorJitter(Transform):
 
 
 class RandomPhotometricDistort(Transform):
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+
     def __init__(
         self,
         contrast: Tuple[float, float] = (0.5, 1.5),
@@ -112,19 +113,15 @@ class RandomPhotometricDistort(Transform):
         )
 
     def _permute_channels(self, inpt: Any, *, permutation: torch.Tensor) -> Any:
-        if not (isinstance(inpt, (features.Image, PIL.Image.Image)) or features.is_simple_tensor(inpt)):
-            return inpt
-
-        image = inpt
         if isinstance(inpt, PIL.Image.Image):
-            image = _F.pil_to_tensor(image)
+            inpt = F.to_image_tensor(inpt)
 
-        output = image[..., permutation, :, :]
+        output = inpt[..., permutation, :, :]
 
         if isinstance(inpt, features.Image):
             output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.OTHER)
         elif isinstance(inpt, PIL.Image.Image):
-            output = _F.to_pil_image(output)
+            output = F.to_image_pil(output)
 
         return output
 
