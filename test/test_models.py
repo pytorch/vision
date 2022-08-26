@@ -113,7 +113,7 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
         expected = torch.load(expected_file)
         rtol = rtol or prec  # keeping prec param for legacy reason, but could be removed ideally
         atol = atol or prec
-        torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
+        torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False, check_device=False)
 
 
 def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
