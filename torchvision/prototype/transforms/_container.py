@@ -15,10 +15,9 @@ class Compose(Transform):
         self.transforms = transforms
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
         for transform in self.transforms:
-            sample = transform(sample)
-        return sample
+            inputs = transform(*inputs)
+        return inputs
 
 
 class RandomApply(_RandomApplyTransform):

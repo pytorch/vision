@@ -101,15 +101,14 @@ class _BaseMixupCutmix(_RandomApplyTransform):
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def forward(self, *inpts: Any) -> Any:
-        sample = inpts if len(inpts) > 1 else inpts[0]
-        if not (has_any(sample, features.Image, is_simple_tensor) and has_any(sample, features.OneHotLabel)):
+    def forward(self, *inputs: Any) -> Any:
+        if not (has_any(inputs, features.Image, is_simple_tensor) and has_any(inputs, features.OneHotLabel)):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images and one-hot labels.")
-        if has_any(sample, features.BoundingBox, features.SegmentationMask, features.Label):
+        if has_any(inputs, features.BoundingBox, features.SegmentationMask, features.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support bounding boxes, segmentation masks and plain labels."
             )
-        return super().forward(sample)
+        return super().forward(*inputs)
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
         if inpt.ndim < 2:
@@ -325,9 +324,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-
-        flat_sample, spec = tree_flatten(sample)
+        flat_sample, spec = tree_flatten(inputs)
 
         images, targets = self._extract_image_targets(flat_sample)
 
