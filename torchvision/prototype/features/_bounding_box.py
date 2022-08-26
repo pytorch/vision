@@ -153,7 +153,7 @@ class BoundingBox(_Feature):
             rotation_matrix = self._F._geometry._get_inverse_affine_matrix(
                 [0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0]
             )
-            new_width, new_height = self._F._geometry._compute_output_size(rotation_matrix, width, height)
+            new_width, new_height = self._F._geometry._FT._compute_output_size(rotation_matrix, width, height)
             image_size = (new_height, new_width)
 
         return BoundingBox.new_like(self, output, dtype=output.dtype, image_size=image_size)
