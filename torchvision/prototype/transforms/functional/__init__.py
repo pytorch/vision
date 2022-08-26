@@ -114,8 +114,10 @@ from ._type_conversion import (
     convert_image_dtype,
     decode_image_with_pil,
     decode_video_with_av,
+    pil_to_tensor,
     to_image_pil,
     to_image_tensor,
+    to_pil_image,
 )
 
 from ._deprecated import rgb_to_grayscale, to_grayscale  # usort: skip
