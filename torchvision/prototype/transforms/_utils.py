@@ -15,7 +15,7 @@ def query_bounding_box(sample: Any) -> features.BoundingBox:
     if not bounding_boxes:
         raise TypeError("No bounding box was found in the sample")
     elif len(bounding_boxes) > 2:
-        raise TypeError("Found multiple bounding boxes in the sample")
+        raise ValueError("Found multiple bounding boxes in the sample")
     return bounding_boxes.pop()
 
 
@@ -42,7 +42,7 @@ def query_chw(sample: Any) -> Tuple[int, int, int]:
     if not chws:
         raise TypeError("No image was found in the sample")
     elif len(chws) > 2:
-        raise TypeError(f"Found multiple CxHxW dimensions in the sample: {sequence_to_str(sorted(chws))}")
+        raise ValueError(f"Found multiple CxHxW dimensions in the sample: {sequence_to_str(sorted(chws))}")
     return chws.pop()
 
 
