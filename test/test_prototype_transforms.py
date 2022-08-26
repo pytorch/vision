@@ -1644,3 +1644,8 @@ class TestLabelToOneHot:
         assert isinstance(ohe_labels, features.OneHotLabel)
         assert ohe_labels.shape == (4, 3)
         assert ohe_labels.categories == labels.categories == categories
+
+
+class TestAPIConsistency:
+    def test_random(self):
+        pass
