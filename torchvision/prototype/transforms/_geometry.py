@@ -462,6 +462,7 @@ class RandomCrop(Transform):
         )
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # TODO: (PERF) check for speed optimization if we avoid repeated pad calls
         if self.padding is not None:
             inpt = F.pad(inpt, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
 

@@ -53,7 +53,7 @@ class ToPILImage(Transform):
         super().__init__()
         self.mode = mode
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> PIL.Image:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> PIL.Image.Image:
         return _F.to_pil_image(inpt, mode=self.mode)
 
 
