@@ -15,6 +15,7 @@ from torchvision.transforms.functional import (
     pil_to_tensor,
     to_pil_image,
 )
+from torchvision.transforms.functional_tensor import _parse_pad_padding
 
 from ._meta import convert_bounding_box_format, get_dimensions_image_pil, get_dimensions_image_tensor
 
@@ -564,7 +565,7 @@ def _pad_with_vector_fill(
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
     output = pad_image_tensor(img, padding, fill=0, padding_mode="constant")
-    left, right, top, bottom = _FT._parse_pad_padding(padding)
+    left, right, top, bottom = _parse_pad_padding(padding)
     fill = torch.tensor(fill, dtype=img.dtype, device=img.device).view(-1, 1, 1)
 
     if top > 0:
@@ -595,7 +596,7 @@ def pad_segmentation_mask(
 def pad_bounding_box(
     bounding_box: torch.Tensor, padding: Union[int, List[int]], format: features.BoundingBoxFormat
 ) -> torch.Tensor:
-    left, _, top, _ = _FT._parse_pad_padding(padding)
+    left, _, top, _ = _parse_pad_padding(padding)
 
     bounding_box = bounding_box.clone()
 
