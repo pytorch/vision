@@ -9,7 +9,6 @@ import torch
 from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
 from ._feature import _Feature
-from ._image import Image
 
 D = TypeVar("D", bound="EncodedData")
 
