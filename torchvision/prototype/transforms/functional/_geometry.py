@@ -16,8 +16,7 @@ from torchvision.transforms.functional import (
     to_pil_image,
 )
 
-from ._meta import convert_bounding_box_format
-from ._utils import get_dimensions_image_pil, get_dimensions_image_tensor
+from ._meta import convert_bounding_box_format, get_dimensions_image_pil, get_dimensions_image_tensor
 
 
 # shortcut type

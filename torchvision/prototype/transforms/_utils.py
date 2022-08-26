@@ -5,7 +5,7 @@ from torch.utils._pytree import tree_flatten
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
 
-from torchvision.prototype.transforms.functional._utils import get_chw
+from torchvision.prototype.transforms.functional._meta import get_chw
 from torchvision.transforms.functional_tensor import _parse_pad_padding  # noqa: F401
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
 
