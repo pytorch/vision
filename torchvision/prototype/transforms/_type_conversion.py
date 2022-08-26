@@ -14,8 +14,7 @@ class DecodeImage(Transform):
     _transformed_types = (features.EncodedImage,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> features.Image:
-        output = F.decode_image_with_pil(inpt)
-        return features.Image(output)
+        return F.decode_image_with_pil(inpt)
 
 
 class LabelToOneHot(Transform):

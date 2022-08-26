@@ -49,7 +49,7 @@ class EncodedImage(EncodedData):
     def decode(self) -> Image:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
         #  promote this out of the prototype state
-        return Image(self._F.decode_image_with_pil(self))
+        return self._F.decode_image_with_pil(self)
 
 
 class EncodedVideo(EncodedData):

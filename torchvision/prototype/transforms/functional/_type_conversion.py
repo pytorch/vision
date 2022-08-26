@@ -10,11 +10,11 @@ from torchvision.prototype.utils._internal import ReadOnlyTensorBuffer
 from torchvision.transforms import functional as _F
 
 
-def decode_image_with_pil(encoded_image: torch.Tensor) -> torch.Tensor:
+def decode_image_with_pil(encoded_image: torch.Tensor) -> features.Image:
     image = torch.as_tensor(np.array(PIL.Image.open(ReadOnlyTensorBuffer(encoded_image)), copy=True))
     if image.ndim == 2:
         image = image.unsqueeze(2)
-    return image.permute(2, 0, 1)
+    return features.Image(image.permute(2, 0, 1))
 
 
 def decode_video_with_av(encoded_video: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
