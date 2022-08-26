@@ -786,8 +786,12 @@ class FixedSizeCrop(Transform):
         top = int(offset_height * r)
         left = int(offset_width * r)
 
-        if needs_crop:
+        try:
             bounding_boxes = query_bounding_box(sample)
+        except ValueError:
+            bounding_boxes = None
+
+        if needs_crop and bounding_boxes is not None:
             bounding_boxes = cast(
                 features.BoundingBox, F.crop(bounding_boxes, top=top, left=left, height=height, width=width)
             )
@@ -827,6 +831,8 @@ class FixedSizeCrop(Transform):
                 height=params["height"],
                 width=params["width"],
             )
+
+        if params["is_valid"] is not None:
             if isinstance(inpt, (features.Label, features.OneHotLabel, features.SegmentationMask)):
                 inpt = inpt.new_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
             elif isinstance(inpt, features.BoundingBox):
@@ -841,13 +847,13 @@ class FixedSizeCrop(Transform):
         return inpt
 
     def forward(self, *inputs: Any) -> Any:
-        if not (
-            has_all(inputs, features.BoundingBox)
-            and has_any(inputs, PIL.Image.Image, features.Image, is_simple_tensor)
-            and has_any(inputs, features.Label, features.OneHotLabel)
-        ):
+        if not has_any(inputs, PIL.Image.Image, features.Image, is_simple_tensor):
+            raise TypeError(f"{type(self).__name__}() requires input sample to contain an tensor or PIL image.")
+
+        if has_any(inputs, features.BoundingBox) and not has_any(inputs, features.Label, features.OneHotLabel):
             raise TypeError(
-                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
-                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
+                f"If a BoundingBox is contained in the input sample, "
+                f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
             )
+
         return super().forward(*inputs)
