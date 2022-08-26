@@ -43,8 +43,7 @@ class ToImageTensor(Transform):
     _transformed_types = (is_simple_tensor, PIL.Image.Image, np.ndarray)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> features.Image:
-        output = F.to_image_tensor(inpt)
-        return features.Image(output)
+        return F.to_image_tensor(inpt)
 
 
 class ToImagePIL(Transform):
