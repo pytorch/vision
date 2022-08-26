@@ -31,3 +31,10 @@ def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> 
 
 
 to_image_pil = _F.to_pil_image
+
+# We changed the names to align them with the new naming scheme. Still, `to_pil_image` and `pil_to_tensor` are
+# prevalent and well understood. Thus, we just alias them without deprecating the old names.
+to_pil_image = to_image_pil
+pil_to_tensor = to_image_tensor
+
+convert_image_dtype = _F.convert_image_dtype

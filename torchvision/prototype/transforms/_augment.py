@@ -8,9 +8,7 @@ import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import features
-
-from torchvision.prototype.transforms import functional as F
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor
+from torchvision.prototype.transforms import functional as F, InterpolationMode
 
 from ._transform import _RandomApplyTransform
 from ._utils import has_any, query_chw
@@ -279,7 +277,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
             if isinstance(obj, features.Image) or features.is_simple_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
-                images.append(pil_to_tensor(obj))
+                images.append(F.to_image_tensor(obj))
             elif isinstance(obj, features.BoundingBox):
                 bboxes.append(obj)
             elif isinstance(obj, features.SegmentationMask):

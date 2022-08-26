@@ -89,6 +89,12 @@ def vertical_flip(inpt: DType) -> DType:
         return vertical_flip_image_tensor(inpt)
 
 
+# We changed the names to align them with the transforms, i.e. `RandomHorizontalFlip`. Still, `hflip` and `vflip` are
+# prevalent and well understood. Thus, we just alias them without deprecating the old names.
+hflip = horizontal_flip
+vflip = vertical_flip
+
+
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
