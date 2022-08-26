@@ -93,7 +93,7 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    _transformed_types = (PIL.Image.Image, features.Image, is_simple_tensor)
+    _transformed_types = (features.Image, is_simple_tensor)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float]):
         super().__init__()
@@ -102,6 +102,11 @@ class Normalize(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.normalize(inpt, mean=self.mean, std=self.std)
+
+    def forward(self, *inpts: Any) -> Any:
+        if has_any(inpts, PIL.Image.Image):
+            raise TypeError(f"{type(self).__name__}() does not support PIL images.")
+        return super().forward(*inpts)
 
 
 class GaussianBlur(Transform):
