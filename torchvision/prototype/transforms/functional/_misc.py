@@ -17,6 +17,8 @@ normalize_image_tensor = _FT.normalize
 def normalize(
     inpt: Union[torch.Tensor, features.Image], mean: List[float], std: List[float], inplace: bool = False
 ) -> torch.Tensor:
+    # Image instance after normalization is not Image anymore due to unknown data range
+    # Thus we return Tensor for input Image
     return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
 
 
