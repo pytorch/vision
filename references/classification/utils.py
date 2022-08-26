@@ -132,17 +132,19 @@ class MetricLogger:
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
                 if torch.cuda.is_available():
-                    print(
-                        log_msg.format(
-                            i,
-                            len(iterable),
-                            eta=eta_string,
-                            meters=str(self),
-                            time=str(iter_time),
-                            data=str(data_time),
-                            memory=torch.cuda.max_memory_allocated() / MB,
-                        )
-                    )
+                    pass
+                    # print("OK")
+                    # print(
+                    #     log_msg.format(
+                    #         i,
+                    #         len(iterable),
+                    #         eta=eta_string,
+                    #         meters=str(self),
+                    #         time=str(iter_time),
+                    #         data=str(data_time),
+                    #         memory=torch.cuda.max_memory_allocated() / MB,
+                    #     )
+                    # )
                 else:
                     print(
                         log_msg.format(
@@ -153,7 +155,7 @@ class MetricLogger:
             end = time.time()
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-        print(f"{header} Total time: {total_time_str}")
+        # print(f"{header} Total time: {total_time_str}")
 
 
 class ExponentialMovingAverage(torch.optim.swa_utils.AveragedModel):
@@ -261,7 +263,7 @@ def init_distributed_mode(args):
 
     torch.cuda.set_device(args.gpu)
     args.dist_backend = "nccl"
-    print(f"| distributed init (rank {args.rank}): {args.dist_url}", flush=True)
+    # print(f"| distributed init (rank {args.rank}): {args.dist_url}", flush=True)
     torch.distributed.init_process_group(
         backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank
     )

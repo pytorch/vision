@@ -14,6 +14,9 @@ from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 
+import warnings
+warnings.filterwarnings("ignore")  # avoid unrelated is_namedtuple deprecation warnings
+
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
     model.train()
@@ -112,11 +115,11 @@ def _get_cache_path(filepath):
 
 def load_data(traindir, valdir, args):
     # Data loading code
-    print("Loading data")
+    # print("Loading data")
     val_resize_size, val_crop_size, train_crop_size = args.val_resize_size, args.val_crop_size, args.train_crop_size
     interpolation = InterpolationMode(args.interpolation)
 
-    print("Loading training data")
+    # print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir)
     if args.cache_dataset and os.path.exists(cache_path):
@@ -139,9 +142,9 @@ def load_data(traindir, valdir, args):
             print(f"Saving dataset_train to {cache_path}")
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset, traindir), cache_path)
-    print("Took", time.time() - st)
+    # print("Took", time.time() - st)
 
-    print("Loading validation data")
+    # print("Loading validation data")
     cache_path = _get_cache_path(valdir)
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
@@ -149,8 +152,13 @@ def load_data(traindir, valdir, args):
         dataset_test, _ = torch.load(cache_path)
     else:
         if args.weights and args.test_only:
+            from functools import partial
             weights = torchvision.models.get_weight(args.weights)
-            preprocessing = weights.transforms()
+            preprocessing = weights.transforms(antialias=args.antialias, convert_to_tensor_first=args.convert_to_tensor_first)
+            # print(preprocessing)
+            # print(type(preprocessing))
+            # preprocessing = partial(weights.transforms, args.antialias, args.convert_to_tensor_first)
+            # exit(0)
         else:
             preprocessing = presets.ClassificationPresetEval(
                 crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
@@ -165,7 +173,7 @@ def load_data(traindir, valdir, args):
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset_test, valdir), cache_path)
 
-    print("Creating data loaders")
+    # print("Creating data loaders")
     if args.distributed:
         if hasattr(args, "ra_sampler") and args.ra_sampler:
             train_sampler = RASampler(dataset, shuffle=True, repetitions=args.ra_reps)
@@ -184,7 +192,7 @@ def main(args):
         utils.mkdir(args.output_dir)
 
     utils.init_distributed_mode(args)
-    print(args)
+    # print(args)
 
     device = torch.device(args.device)
 
@@ -220,7 +228,7 @@ def main(args):
         dataset_test, batch_size=args.batch_size, sampler=test_sampler, num_workers=args.workers, pin_memory=True
     )
 
-    print("Creating model")
+    # print("Creating model")
     model = torchvision.models.get_model(args.model, weights=args.weights, num_classes=num_classes)
     model.to(device)
 
@@ -492,6 +500,9 @@ def get_args_parser(add_help=True):
         "--ra-reps", default=3, type=int, help="number of repetitions for Repeated Augmentation (default: 3)"
     )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+    parser.add_argument("--antialias", default=None, action="store_true")
+    parser.add_argument("--convert-to-tensor-first", action="store_true")
+
 
     return parser
 

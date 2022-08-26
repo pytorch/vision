@@ -44,6 +44,8 @@ class ImageClassification(nn.Module):
         mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        antialias=None,
+        convert_to_tensor_first=False,
     ) -> None:
         super().__init__()
         self.crop_size = [crop_size]
@@ -51,9 +53,13 @@ class ImageClassification(nn.Module):
         self.mean = list(mean)
         self.std = list(std)
         self.interpolation = interpolation
+        self.antialias = antialias
+        self.convert_to_tensor_first = convert_to_tensor_first
 
     def forward(self, img: Tensor) -> Tensor:
-        img = F.resize(img, self.resize_size, interpolation=self.interpolation)
+        if self.convert_to_tensor_first:
+            img = F.pil_to_tensor(img)
+        img = F.resize(img, self.resize_size, interpolation=self.interpolation, antialias=self.antialias)
         img = F.center_crop(img, self.crop_size)
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
