@@ -24,7 +24,7 @@ else
     fi
 
     cuda_toolkit_pckg="cudatoolkit"
-    if [[ "$CU_VERSION" == cu116 ]]; then
+    if [[ "$CU_VERSION" == cu116 || "$CU_VERSION" == cu117 ]]; then
         cuda_toolkit_pckg="cuda"
     fi
 

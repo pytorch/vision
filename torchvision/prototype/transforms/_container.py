@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import torch
@@ -14,10 +15,9 @@ class Compose(Transform):
         self.transforms = transforms
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
         for transform in self.transforms:
-            sample = transform(sample)
-        return sample
+            inputs = transform(*inputs)
+        return inputs
 
 
 class RandomApply(_RandomApplyTransform):
@@ -33,7 +33,21 @@ class RandomApply(_RandomApplyTransform):
 
 
 class RandomChoice(Transform):
-    def __init__(self, *transforms: Transform, probabilities: Optional[List[float]] = None) -> None:
+    def __init__(
+        self,
+        transforms: Sequence[Callable],
+        probabilities: Optional[List[float]] = None,
+        p: Optional[List[float]] = None,
+    ) -> None:
+        if not isinstance(transforms, Sequence):
+            raise TypeError("Argument transforms should be a sequence of callables")
+        if p is not None:
+            warnings.warn(
+                "Argument p is deprecated and will be removed in a future release. "
+                "Please use probabilities argument instead."
+            )
+            probabilities = p
+
         if probabilities is None:
             probabilities = [1] * len(transforms)
         elif len(probabilities) != len(transforms):
@@ -45,11 +59,8 @@ class RandomChoice(Transform):
         super().__init__()
 
         self.transforms = transforms
-        for idx, transform in enumerate(transforms):
-            self.add_module(str(idx), transform)
-
         total = sum(probabilities)
-        self.probabilities = [p / total for p in probabilities]
+        self.probabilities = [prob / total for prob in probabilities]
 
     def forward(self, *inputs: Any) -> Any:
         idx = int(torch.multinomial(torch.tensor(self.probabilities), 1))
@@ -58,11 +69,11 @@ class RandomChoice(Transform):
 
 
 class RandomOrder(Transform):
-    def __init__(self, *transforms: Transform) -> None:
+    def __init__(self, transforms: Sequence[Callable]) -> None:
+        if not isinstance(transforms, Sequence):
+            raise TypeError("Argument transforms should be a sequence of callables")
         super().__init__()
         self.transforms = transforms
-        for idx, transform in enumerate(transforms):
-            self.add_module(str(idx), transform)
 
     def forward(self, *inputs: Any) -> Any:
         for idx in torch.randperm(len(self.transforms)):

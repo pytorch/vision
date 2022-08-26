@@ -674,6 +674,8 @@ def erase_image_tensor():
         and name
         not in {
             "to_image_tensor",
+            "get_image_num_channels",
+            "get_image_size",
         }
     ],
 )
@@ -1844,22 +1846,12 @@ def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
 
 def test_midlevel_normalize_output_type():
     inpt = torch.rand(1, 3, 32, 32)
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
+    output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
     assert isinstance(output, torch.Tensor)
     torch.testing.assert_close(inpt - 0.5, output)
 
-    inpt = make_segmentation_mask()
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
-    assert isinstance(output, features.SegmentationMask)
-    torch.testing.assert_close(inpt, output)
-
-    inpt = make_bounding_box(format="XYXY")
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
-    assert isinstance(output, features.BoundingBox)
-    torch.testing.assert_close(inpt, output)
-
     inpt = make_image(color_space=features.ColorSpace.RGB)
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
+    output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
     assert isinstance(output, torch.Tensor)
     torch.testing.assert_close(inpt - 0.5, output)
 
@@ -1867,31 +1859,23 @@ def test_midlevel_normalize_output_type():
 @pytest.mark.parametrize(
     "inpt",
     [
-        torch.randint(0, 256, size=(3, 32, 32)),
         127 * np.ones((32, 32, 3), dtype="uint8"),
         PIL.Image.new("RGB", (32, 32), 122),
     ],
 )
-@pytest.mark.parametrize("copy", [True, False])
-def test_to_image_tensor(inpt, copy):
-    output = F.to_image_tensor(inpt, copy=copy)
+def test_to_image_tensor(inpt):
+    output = F.to_image_tensor(inpt)
     assert isinstance(output, torch.Tensor)
 
     assert np.asarray(inpt).sum() == output.sum().item()
 
-    if isinstance(inpt, PIL.Image.Image) and not copy:
+    if isinstance(inpt, PIL.Image.Image):
         # we can't check this option
         # as PIL -> numpy is always copying
         return
 
-    if isinstance(inpt, PIL.Image.Image):
-        inpt.putpixel((0, 0), 11)
-    else:
-        inpt[0, 0, 0] = 11
-    if copy:
-        assert output[0, 0, 0] != 11
-    else:
-        assert output[0, 0, 0] == 11
+    inpt[0, 0, 0] = 11
+    assert output[0, 0, 0] == 11
 
 
 @pytest.mark.parametrize(
@@ -1899,7 +1883,6 @@ def test_to_image_tensor(inpt, copy):
     [
         torch.randint(0, 256, size=(3, 32, 32), dtype=torch.uint8),
         127 * np.ones((32, 32, 3), dtype="uint8"),
-        PIL.Image.new("RGB", (32, 32), 122),
     ],
 )
 @pytest.mark.parametrize("mode", [None, "RGB"])
