@@ -245,8 +245,10 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # Copy-paste boxes and labels
         bbox_format = target["boxes"].format
         xyxy_boxes = masks_to_boxes(masks)
-        # TODO: masks_to_boxes produces bboxes with x2y2 inclusive but x2y2 should be exclusive
-        # we need to add +1 to x2y2. We need to investigate that.
+        # masks_to_boxes produces bboxes with x2y2 inclusive but x2y2 should be exclusive
+        # we need to add +1 to x2y2.
+        # There is a similar +1 in other reference implementations:
+        # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
         boxes = F.convert_bounding_box_format(
             xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
