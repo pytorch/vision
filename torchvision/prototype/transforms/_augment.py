@@ -96,7 +96,7 @@ class RandomErasing(_RandomApplyTransform):
 
 
 class _BaseMixupCutmix(_RandomApplyTransform):
-    def __init__(self, *, alpha: float, p: float = 0.5) -> None:
+    def __init__(self, alpha: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))

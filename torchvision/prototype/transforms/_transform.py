@@ -56,7 +56,7 @@ class Transform(nn.Module):
 
 
 class _RandomApplyTransform(Transform):
-    def __init__(self, *, p: float = 0.5) -> None:
+    def __init__(self, p: float = 0.5) -> None:
         if not (0.0 <= p <= 1.0):
             raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
 

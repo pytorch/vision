@@ -46,7 +46,7 @@ class ToImageTensor(Transform):
 class ToImagePIL(Transform):
     _transformed_types = (features.is_simple_tensor, features.Image, np.ndarray)
 
-    def __init__(self, *, mode: Optional[str] = None) -> None:
+    def __init__(self, mode: Optional[str] = None) -> None:
         super().__init__()
         self.mode = mode
 
