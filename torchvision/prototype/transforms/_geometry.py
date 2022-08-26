@@ -156,22 +156,14 @@ class FiveCrop(Transform):
         torch.Size([5])
     """
 
+    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
+
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        # TODO: returning a list is technically BC breaking since FiveCrop returned a tuple before. We switched to a
-        #  list here to align it with TenCrop.
-        if isinstance(inpt, features.Image):
-            output = F.five_crop_image_tensor(inpt, self.size)
-            return tuple(features.Image.new_like(inpt, o) for o in output)
-        elif is_simple_tensor(inpt):
-            return F.five_crop_image_tensor(inpt, self.size)
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.five_crop_image_pil(inpt, self.size)
-        else:
-            return inpt
+        return F.five_crop(inpt, self.size)
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
@@ -185,21 +177,15 @@ class TenCrop(Transform):
     See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
     """
 
+    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
+
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Image):
-            output = F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip)
-            return [features.Image.new_like(inpt, o) for o in output]
-        elif is_simple_tensor(inpt):
-            return F.ten_crop_image_tensor(inpt, self.size, vertical_flip=self.vertical_flip)
-        elif isinstance(inpt, PIL.Image.Image):
-            return F.ten_crop_image_pil(inpt, self.size, vertical_flip=self.vertical_flip)
-        else:
-            return inpt
+        return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
