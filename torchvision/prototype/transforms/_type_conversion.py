@@ -52,3 +52,15 @@ class ToImagePIL(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> PIL.Image.Image:
         return F.to_image_pil(inpt, mode=self.mode)
+
+
+# We changed the names to align them with the new naming scheme. Still, `PILToTensor` and `ToPILImage` are
+# prevalent and well understood. Thus, we just alias them without deprecating the old names.
+
+
+class PILToTensor(ToImageTensor):
+    pass
+
+
+class ToPILImage(ToImagePIL):
+    pass
