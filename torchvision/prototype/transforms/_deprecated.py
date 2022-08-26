@@ -53,7 +53,10 @@ class Grayscale(Transform):
         self.num_output_channels = num_output_channels
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
+        output = _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
+        if isinstance(inpt, features.Image):
+            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.GRAY)
+        return output
 
 
 class RandomGrayscale(_RandomApplyTransform):
@@ -79,4 +82,7 @@ class RandomGrayscale(_RandomApplyTransform):
         return dict(num_input_channels=num_input_channels)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
+        output = _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
+        if isinstance(inpt, features.Image):
+            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.GRAY)
+        return output
