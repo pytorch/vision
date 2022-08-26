@@ -348,7 +348,7 @@ class RandAugment(_AutoAugmentBase):
 
             magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
             if magnitudes is not None:
-                magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
+                magnitude = float(magnitudes[self.magnitude])
                 if signed and torch.rand(()) <= 0.5:
                     magnitude *= -1
             else:
