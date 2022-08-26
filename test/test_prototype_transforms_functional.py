@@ -674,6 +674,8 @@ def erase_image_tensor():
         and name
         not in {
             "to_image_tensor",
+            "get_image_num_channels",
+            "get_image_size",
         }
     ],
 )

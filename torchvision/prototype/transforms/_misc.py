@@ -7,8 +7,8 @@ import torch
 from torchvision.ops import remove_small_boxes
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.prototype.transforms._utils import has_any, is_simple_tensor, query_bounding_box
-from torchvision.transforms.transforms import _setup_size
+
+from ._utils import _setup_size, has_any, query_bounding_box
 
 
 class Identity(Transform):
@@ -38,7 +38,7 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
-    _transformed_types = (is_simple_tensor, features.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image)
 
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
         super().__init__()
@@ -63,11 +63,10 @@ class LinearTransformation(Transform):
         self.mean_vector = mean_vector
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if has_any(sample, PIL.Image.Image):
+        if has_any(inputs, PIL.Image.Image):
             raise TypeError("LinearTransformation does not work on PIL Images")
 
-        return super().forward(sample)
+        return super().forward(*inputs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         # Image instance after linear transformation is not Image anymore due to unknown data range
@@ -94,7 +93,7 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    _transformed_types = (PIL.Image.Image, features.Image, is_simple_tensor)
+    _transformed_types = (features.Image, features.is_simple_tensor)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float]):
         super().__init__()
@@ -103,6 +102,11 @@ class Normalize(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.normalize(inpt, mean=self.mean, std=self.std)
+
+    def forward(self, *inpts: Any) -> Any:
+        if has_any(inpts, PIL.Image.Image):
+            raise TypeError(f"{type(self).__name__}() does not support PIL images.")
+        return super().forward(*inpts)
 
 
 class GaussianBlur(Transform):

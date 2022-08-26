@@ -1071,11 +1071,10 @@ class TestToPILImage:
         [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
     )
     def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.functional.to_pil_image")
+        fn = mocker.patch("torchvision.prototype.transforms.functional.to_image_pil")
 
         inpt = mocker.MagicMock(spec=inpt_type)
-        with pytest.warns(UserWarning, match="deprecated and will be removed"):
-            transform = transforms.ToPILImage()
+        transform = transforms.ToPILImage()
         transform(inpt)
         if inpt_type in (PIL.Image.Image, features.BoundingBox, str, int):
             assert fn.call_count == 0
@@ -1487,6 +1486,7 @@ class TestFixedSizeCrop:
         left_sentinel = mocker.MagicMock()
         height_sentinel = mocker.MagicMock()
         width_sentinel = mocker.MagicMock()
+        is_valid = mocker.MagicMock() if needs_crop else None
         padding_sentinel = mocker.MagicMock()
         mocker.patch(
             "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
@@ -1496,6 +1496,7 @@ class TestFixedSizeCrop:
                 left=left_sentinel,
                 height=height_sentinel,
                 width=width_sentinel,
+                is_valid=is_valid,
                 padding=padding_sentinel,
                 needs_pad=needs_pad,
             ),
