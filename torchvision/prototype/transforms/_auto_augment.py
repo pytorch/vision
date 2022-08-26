@@ -1,16 +1,17 @@
 import math
 import numbers
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
 
+from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.autoaugment import AutoAugmentPolicy
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
-from ._utils import is_simple_tensor, query_chw
+from ._utils import _isinstance, get_chw, is_simple_tensor
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -35,9 +36,31 @@ class _AutoAugmentBase(Transform):
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        _, height, width = query_chw(sample)
-        return dict(height=height, width=width)
+    def _extract_image(
+        self,
+        sample: Any,
+        unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask),
+    ) -> Tuple[int, Union[PIL.Image.Image, torch.Tensor, features.Image]]:
+        sample_flat, _ = tree_flatten(sample)
+        images = []
+        for id, inpt in enumerate(sample_flat):
+            if _isinstance(inpt, (features.Image, PIL.Image.Image, is_simple_tensor)):
+                images.append((id, inpt))
+            elif isinstance(inpt, unsupported_types):
+                raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
+
+        if not images:
+            raise TypeError("Found no image in the sample.")
+        if len(images) > 1:
+            raise TypeError(
+                f"Auto augment transformations are only properly defined for a single image, but found {len(images)}."
+            )
+        return images[0]
+
+    def _put_into_sample(self, sample: Any, id: int, item: Any) -> Any:
+        sample_flat, spec = tree_flatten(sample)
+        sample_flat[id] = item
+        return tree_unflatten(sample_flat, spec)
 
     def _apply_image_transform(
         self,
@@ -242,22 +265,21 @@ class AutoAugment(_AutoAugmentBase):
         else:
             raise ValueError(f"The provided policy {policy} is not recognized.")
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        params = super(AutoAugment, self)._get_params(sample)
-        params["policy"] = self._policies[int(torch.randint(len(self._policies), ()))]
-        return params
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if not (isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt)):
-            return inpt
+        id, image = self._extract_image(sample)
+        num_channels, height, width = get_chw(image)
 
-        for transform_id, probability, magnitude_idx in params["policy"]:
+        policy = self._policies[int(torch.randint(len(self._policies), ()))]
+
+        for transform_id, probability, magnitude_idx in policy:
             if not torch.rand(()) <= probability:
                 continue
 
             magnitudes_fn, signed = self._AUGMENTATION_SPACE[transform_id]
 
-            magnitudes = magnitudes_fn(10, params["height"], params["width"])
+            magnitudes = magnitudes_fn(10, height, width)
             if magnitudes is not None:
                 magnitude = float(magnitudes[magnitude_idx])
                 if signed and torch.rand(()) <= 0.5:
@@ -265,11 +287,11 @@ class AutoAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
 
-            inpt = self._apply_image_transform(
-                inpt, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+            image = self._apply_image_transform(
+                image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
-        return inpt
+        return self._put_into_sample(sample, id, image)
 
 
 class RandAugment(_AutoAugmentBase):
@@ -315,14 +337,16 @@ class RandAugment(_AutoAugmentBase):
         self.magnitude = magnitude
         self.num_magnitude_bins = num_magnitude_bins
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if not (isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt)):
-            return inpt
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+
+        id, image = self._extract_image(sample)
+        num_channels, height, width = get_chw(image)
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
-            magnitudes = magnitudes_fn(self.num_magnitude_bins, params["height"], params["width"])
+            magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
             if magnitudes is not None:
                 magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
                 if signed and torch.rand(()) <= 0.5:
@@ -330,11 +354,11 @@ class RandAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
 
-            inpt = self._apply_image_transform(
-                inpt, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+            image = self._apply_image_transform(
+                image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
-        return inpt
+        return self._put_into_sample(sample, id, image)
 
 
 class TrivialAugmentWide(_AutoAugmentBase):
@@ -370,13 +394,15 @@ class TrivialAugmentWide(_AutoAugmentBase):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if not (isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt)):
-            return inpt
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+
+        id, image = self._extract_image(sample)
+        num_channels, height, width = get_chw(image)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
-        magnitudes = magnitudes_fn(self.num_magnitude_bins, params["height"], params["width"])
+        magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
         if magnitudes is not None:
             magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
             if signed and torch.rand(()) <= 0.5:
@@ -384,9 +410,10 @@ class TrivialAugmentWide(_AutoAugmentBase):
         else:
             magnitude = 0.0
 
-        return self._apply_image_transform(
-            inpt, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+        image = self._apply_image_transform(
+            image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
         )
+        return self._put_into_sample(sample, id, image)
 
 
 class AugMix(_AutoAugmentBase):
@@ -438,13 +465,15 @@ class AugMix(_AutoAugmentBase):
         # Must be on a separate method so that we can overwrite it in tests.
         return torch._sample_dirichlet(params)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Image) or is_simple_tensor(inpt):
-            image = inpt
-        elif isinstance(inpt, PIL.Image.Image):
-            image = pil_to_tensor(inpt)
-        else:
-            return inpt
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        id, orig_image = self._extract_image(sample)
+        num_channels, height, width = get_chw(orig_image)
+
+        if isinstance(orig_image, torch.Tensor):
+            image = orig_image
+        else:  # isinstance(inpt, PIL.Image.Image):
+            image = pil_to_tensor(orig_image)
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
@@ -470,7 +499,7 @@ class AugMix(_AutoAugmentBase):
             for _ in range(depth):
                 transform_id, (magnitudes_fn, signed) = self._get_random_item(augmentation_space)
 
-                magnitudes = magnitudes_fn(self._PARAMETER_MAX, params["height"], params["width"])
+                magnitudes = magnitudes_fn(self._PARAMETER_MAX, height, width)
                 if magnitudes is not None:
                     magnitude = float(magnitudes[int(torch.randint(self.severity, ()))])
                     if signed and torch.rand(()) <= 0.5:
@@ -484,9 +513,9 @@ class AugMix(_AutoAugmentBase):
             mix.add_(combined_weights[:, i].view(batch_dims) * aug)
         mix = mix.view(orig_dims).to(dtype=image.dtype)
 
-        if isinstance(inpt, features.Image):
-            mix = features.Image.new_like(inpt, mix)
-        elif isinstance(inpt, PIL.Image.Image):
+        if isinstance(orig_image, features.Image):
+            mix = features.Image.new_like(orig_image, mix)
+        elif isinstance(orig_image, PIL.Image.Image):
             mix = to_pil_image(mix)
 
-        return mix
+        return self._put_into_sample(sample, id, mix)

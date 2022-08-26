@@ -54,7 +54,9 @@ def gaussian_blur_image_tensor(
     return _FT.gaussian_blur(img, kernel_size, sigma)
 
 
-def gaussian_blur_image_pil(img: PIL.Image, kernel_size: List[int], sigma: Optional[List[float]] = None) -> PIL.Image:
+def gaussian_blur_image_pil(
+    img: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
+) -> PIL.Image.Image:
     t_img = pil_to_tensor(img)
     output = gaussian_blur_image_tensor(t_img, kernel_size=kernel_size, sigma=sigma)
     return to_pil_image(output, mode=img.mode)
