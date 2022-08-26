@@ -14,6 +14,7 @@ class DecodeImage(Transform):
     _transformed_types = (features.EncodedImage,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> features.Image:
+        # FIXME: should we move this wrapping into the functional?
         output = F.decode_image_with_pil(inpt)
         return features.Image(output)
 
@@ -43,6 +44,7 @@ class ToImageTensor(Transform):
     _transformed_types = (is_simple_tensor, PIL.Image.Image, np.ndarray)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> features.Image:
+        # FIXME: should we move this wrapping into the functional?
         output = F.to_image_tensor(inpt)
         return features.Image(output)
 
