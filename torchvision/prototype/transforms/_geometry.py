@@ -14,7 +14,6 @@ from typing_extensions import Literal
 from ._transform import _RandomApplyTransform
 from ._utils import (
     _check_sequence_input,
-    _parse_pad_padding,
     _setup_angle,
     _setup_size,
     has_all,
@@ -433,7 +432,7 @@ class RandomCrop(Transform):
             padding = self.padding
             if isinstance(padding, Sequence):
                 padding = list(padding)
-            pad_left, pad_right, pad_top, pad_bottom = _parse_pad_padding(padding)
+            pad_left, pad_right, pad_top, pad_bottom = F._geometry._parse_pad_padding(padding)
             height += pad_top + pad_bottom
             width += pad_left + pad_right
 
