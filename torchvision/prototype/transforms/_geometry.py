@@ -165,11 +165,9 @@ class FiveCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.five_crop(inpt, self.size)
 
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
+    def _check(self, sample: Any) -> None:
         if has_any(sample, features.BoundingBox, features.SegmentationMask):
             raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
-        return super().forward(sample)
 
 
 class TenCrop(Transform):
@@ -184,14 +182,12 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
-
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
+    def _check(self, sample: Any) -> None:
         if has_any(sample, features.BoundingBox, features.SegmentationMask):
             raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
-        return super().forward(sample)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
 
 def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> None:
@@ -623,6 +619,17 @@ class RandomIoUCrop(Transform):
         self.options = sampler_options
         self.trials = trials
 
+    def _check(self, sample: Any) -> None:
+        if not (
+            has_all(sample, features.BoundingBox)
+            and has_any(sample, PIL.Image.Image, features.Image, is_simple_tensor)
+            and has_any(sample, features.Label, features.OneHotLabel)
+        ):
+            raise TypeError(
+                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
+                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
+            )
+
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         _, orig_h, orig_w = query_chw(sample)
         bboxes = query_bounding_box(sample)
@@ -695,19 +702,6 @@ class RandomIoUCrop(Transform):
 
         return output
 
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if not (
-            has_all(sample, features.BoundingBox)
-            and has_any(sample, PIL.Image.Image, features.Image, is_simple_tensor)
-            and has_any(sample, features.Label, features.OneHotLabel)
-        ):
-            raise TypeError(
-                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
-                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
-            )
-        return super().forward(sample)
-
 
 class ScaleJitter(Transform):
     def __init__(
@@ -774,6 +768,17 @@ class FixedSizeCrop(Transform):
         self.crop_width = size[1]
         self.fill = fill  # TODO: Fill is currently respected only on PIL. Apply tensor patch.
         self.padding_mode = padding_mode
+
+    def _check(self, sample: Any) -> None:
+        if not (
+            has_all(sample, features.BoundingBox)
+            and has_any(sample, PIL.Image.Image, features.Image, is_simple_tensor)
+            and has_any(sample, features.Label, features.OneHotLabel)
+        ):
+            raise TypeError(
+                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
+                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
+            )
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         _, height, width = query_chw(sample)
@@ -842,16 +847,3 @@ class FixedSizeCrop(Transform):
             inpt = F.pad(inpt, params["padding"], fill=self.fill, padding_mode=self.padding_mode)
 
         return inpt
-
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if not (
-            has_all(sample, features.BoundingBox)
-            and has_any(sample, PIL.Image.Image, features.Image, is_simple_tensor)
-            and has_any(sample, features.Label, features.OneHotLabel)
-        ):
-            raise TypeError(
-                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
-                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
-            )
-        return super().forward(sample)
