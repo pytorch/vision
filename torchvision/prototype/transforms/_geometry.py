@@ -19,7 +19,6 @@ from ._utils import (
     _setup_size,
     has_all,
     has_any,
-    is_simple_tensor,
     query_bounding_box,
     query_chw,
 )
@@ -163,7 +162,7 @@ class FiveCrop(Transform):
         torch.Size([5])
     """
 
-    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
 
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
@@ -173,10 +172,9 @@ class FiveCrop(Transform):
         return F.five_crop(inpt, self.size)
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if has_any(sample, features.BoundingBox, features.SegmentationMask):
+        if has_any(inputs, features.BoundingBox, features.SegmentationMask):
             raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
-        return super().forward(sample)
+        return super().forward(*inputs)
 
 
 class TenCrop(Transform):
@@ -184,7 +182,7 @@ class TenCrop(Transform):
     See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
     """
 
-    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
@@ -195,10 +193,9 @@ class TenCrop(Transform):
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if has_any(sample, features.BoundingBox, features.SegmentationMask):
+        if has_any(inputs, features.BoundingBox, features.SegmentationMask):
             raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
-        return super().forward(sample)
+        return super().forward(*inputs)
 
 
 def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> None:
@@ -703,17 +700,16 @@ class RandomIoUCrop(Transform):
         return output
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
         if not (
-            has_all(sample, features.BoundingBox)
-            and has_any(sample, PIL.Image.Image, features.Image, is_simple_tensor)
-            and has_any(sample, features.Label, features.OneHotLabel)
+            has_all(inputs, features.BoundingBox)
+            and has_any(inputs, PIL.Image.Image, features.Image, features.is_simple_tensor)
+            and has_any(inputs, features.Label, features.OneHotLabel)
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
                 "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
             )
-        return super().forward(sample)
+        return super().forward(*inputs)
 
 
 class ScaleJitter(Transform):
@@ -796,8 +792,12 @@ class FixedSizeCrop(Transform):
         top = int(offset_height * r)
         left = int(offset_width * r)
 
-        if needs_crop:
+        try:
             bounding_boxes = query_bounding_box(sample)
+        except ValueError:
+            bounding_boxes = None
+
+        if needs_crop and bounding_boxes is not None:
             bounding_boxes = cast(
                 features.BoundingBox, F.crop(bounding_boxes, top=top, left=left, height=height, width=width)
             )
@@ -837,6 +837,8 @@ class FixedSizeCrop(Transform):
                 height=params["height"],
                 width=params["width"],
             )
+
+        if params["is_valid"] is not None:
             if isinstance(inpt, (features.Label, features.OneHotLabel, features.SegmentationMask)):
                 inpt = inpt.new_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
             elif isinstance(inpt, features.BoundingBox):
@@ -851,14 +853,13 @@ class FixedSizeCrop(Transform):
         return inpt
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if not (
-            has_all(sample, features.BoundingBox)
-            and has_any(sample, PIL.Image.Image, features.Image, is_simple_tensor)
-            and has_any(sample, features.Label, features.OneHotLabel)
-        ):
+        if not has_any(inputs, PIL.Image.Image, features.Image, features.is_simple_tensor):
+            raise TypeError(f"{type(self).__name__}() requires input sample to contain an tensor or PIL image.")
+
+        if has_any(inputs, features.BoundingBox) and not has_any(inputs, features.Label, features.OneHotLabel):
             raise TypeError(
-                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
-                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
+                f"If a BoundingBox is contained in the input sample, "
+                f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
             )
-        return super().forward(sample)
+
+        return super().forward(*inputs)

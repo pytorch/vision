@@ -7,7 +7,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
-from ._utils import is_simple_tensor, query_chw
+from ._utils import query_chw
 
 T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
 
@@ -84,7 +84,7 @@ class ColorJitter(Transform):
 
 
 class RandomPhotometricDistort(Transform):
-    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
 
     def __init__(
         self,
