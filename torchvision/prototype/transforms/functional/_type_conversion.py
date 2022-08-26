@@ -29,3 +29,5 @@ def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> 
 
 
 to_image_pil = _F.to_pil_image
+
+convert_image_dtype = _F.convert_image_dtype

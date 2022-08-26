@@ -5,7 +5,6 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.transforms import functional as _F
 
 from ._transform import _RandomApplyTransform
 from ._utils import is_simple_tensor, query_chw
@@ -117,14 +116,14 @@ class RandomPhotometricDistort(Transform):
 
         image = inpt
         if isinstance(inpt, PIL.Image.Image):
-            image = _F.pil_to_tensor(image)
+            image = F.to_image_tensor(image)
 
         output = image[..., permutation, :, :]
 
         if isinstance(inpt, features.Image):
             output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.OTHER)
         elif isinstance(inpt, PIL.Image.Image):
-            output = _F.to_pil_image(output)
+            output = F.to_image_pil(output)
 
         return output
 

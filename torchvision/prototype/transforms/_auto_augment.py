@@ -7,9 +7,7 @@ import torch
 
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype import features
-from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.transforms.autoaugment import AutoAugmentPolicy
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
+from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 
 from ._utils import _isinstance, get_chw, is_simple_tensor
 
@@ -473,7 +471,7 @@ class AugMix(_AutoAugmentBase):
         if isinstance(orig_image, torch.Tensor):
             image = orig_image
         else:  # isinstance(inpt, PIL.Image.Image):
-            image = pil_to_tensor(orig_image)
+            image = F.to_image_tensor(orig_image)
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
@@ -516,6 +514,6 @@ class AugMix(_AutoAugmentBase):
         if isinstance(orig_image, features.Image):
             mix = features.Image.new_like(orig_image, mix)
         elif isinstance(orig_image, PIL.Image.Image):
-            mix = to_pil_image(mix)
+            mix = F.to_image_pil(mix)
 
         return self._put_into_sample(sample, id, mix)

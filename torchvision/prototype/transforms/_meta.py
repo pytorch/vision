@@ -5,7 +5,6 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.transforms.functional import convert_image_dtype
 
 from ._utils import is_simple_tensor
 
@@ -32,7 +31,7 @@ class ConvertImageDtype(Transform):
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        output = convert_image_dtype(inpt, dtype=self.dtype)
+        output = F.convert_image_dtype(inpt, dtype=self.dtype)
         return output if is_simple_tensor(inpt) else features.Image.new_like(inpt, output, dtype=self.dtype)
 
 
