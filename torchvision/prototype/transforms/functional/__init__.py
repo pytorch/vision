@@ -119,5 +119,6 @@ from ._type_conversion import (
     to_image_tensor,
     to_pil_image,
 )
+from ._utils import get_dimensions, get_image_num_channels, get_image_size
 
 from ._deprecated import rgb_to_grayscale, to_grayscale  # usort: skip

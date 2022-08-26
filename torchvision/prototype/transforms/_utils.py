@@ -8,8 +8,6 @@ from torchvision.prototype import features
 from torchvision.transforms.functional_tensor import _parse_pad_padding  # noqa: F401
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
 
-from .functional._meta import get_dimensions_image_pil, get_dimensions_image_tensor
-
 
 def query_bounding_box(sample: Any) -> features.BoundingBox:
     flat_sample, _ = tree_flatten(sample)
@@ -18,19 +16,6 @@ def query_bounding_box(sample: Any) -> features.BoundingBox:
             return i
 
     raise TypeError("No bounding box was found in the sample")
-
-
-def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
-    if isinstance(image, features.Image):
-        channels = image.num_channels
-        height, width = image.image_size
-    elif is_simple_tensor(image):
-        channels, height, width = get_dimensions_image_tensor(image)
-    elif isinstance(image, PIL.Image.Image):
-        channels, height, width = get_dimensions_image_pil(image)
-    else:
-        raise TypeError(f"unable to get image dimensions from object of type {type(image).__name__}")
-    return channels, height, width
 
 
 def query_chw(sample: Any) -> Tuple[int, int, int]:

@@ -3,10 +3,7 @@ from typing import Any, Optional, Tuple
 import PIL.Image
 import torch
 from torchvision.prototype.features import BoundingBoxFormat, ColorSpace, Image
-from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
-
-get_dimensions_image_tensor = _FT.get_dimensions
-get_dimensions_image_pil = _FP.get_dimensions
+from torchvision.transforms import functional_tensor as _FT
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:

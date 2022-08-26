@@ -8,8 +8,9 @@ import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype import features
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
+from torchvision.prototype.transforms.functional._utils import get_chw
 
-from ._utils import _isinstance, get_chw, is_simple_tensor
+from ._utils import _isinstance, is_simple_tensor
 
 K = TypeVar("K")
 V = TypeVar("V")
