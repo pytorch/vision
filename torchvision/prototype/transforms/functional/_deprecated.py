@@ -6,8 +6,6 @@ import PIL.Image
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F
 
-from .._utils import is_simple_tensor
-
 
 def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
@@ -23,7 +21,7 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
 
 
 def rgb_to_grayscale(inpt: Any, num_output_channels: int = 1) -> Any:
-    old_color_space = features.Image.guess_color_space(inpt) if is_simple_tensor(inpt) else None
+    old_color_space = features.Image.guess_color_space(inpt) if features.is_simple_tensor(inpt) else None
 
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
     replacement = (
