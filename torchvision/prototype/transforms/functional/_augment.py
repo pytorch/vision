@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Union
 
 import PIL.Image
 
@@ -19,7 +19,15 @@ def erase_image_pil(
     return to_pil_image(output, mode=img.mode)
 
 
-def erase(inpt: Any, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False) -> Any:
+def erase(
+    inpt: Union[torch.Tensor, PIL.Image.Image, features.Image],
+    i: int,
+    j: int,
+    h: int,
+    w: int,
+    v: torch.Tensor,
+    inplace: bool = False,
+) -> Union[torch.Tensor, PIL.Image.Image, features.Image]:
     if isinstance(inpt, torch.Tensor):
         output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
         if isinstance(inpt, features.Image):

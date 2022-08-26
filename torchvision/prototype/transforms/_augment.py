@@ -15,6 +15,8 @@ from ._utils import has_any, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
+    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image)
+
     def __init__(
         self,
         p: float = 0.5,
