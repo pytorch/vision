@@ -44,7 +44,7 @@ class RandomChoice(Transform):
             raise TypeError("Argument transforms should be a sequence of callables")
         if p is not None:
             warnings.warn(
-                "Argument p is deprecated and will be removed in the next release. "
+                "Argument p is deprecated and will be removed in a future release. "
                 "Please use probabilities argument instead."
             )
             probabilities = p
