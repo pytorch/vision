@@ -1108,13 +1108,18 @@ class TestContainers:
 
     @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
     @pytest.mark.parametrize(
-        "trfms", [[transforms.Pad(2), transforms.RandomCrop(28)], [lambda x: 2.0 * x, transforms.RandomCrop(28)]]
+        "trfms",
+        [
+            [transforms.Pad(2), transforms.RandomCrop(28)],
+            [lambda x: 2.0 * x, transforms.Pad(2), transforms.RandomCrop(28)],
+        ],
     )
     def test_ctor(self, transform_cls, trfms):
         c = transform_cls(trfms)
         inpt = torch.rand(1, 3, 32, 32)
         output = c(inpt)
         assert isinstance(output, torch.Tensor)
+        assert output.ndim == 4
 
 
 class TestRandomChoice:
