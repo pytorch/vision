@@ -709,11 +709,13 @@ class ScaleJitter(Transform):
         target_size: Tuple[int, int],
         scale_range: Tuple[float, float] = (0.1, 2.0),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        antialias: Optional[bool] = None,
     ):
         super().__init__()
         self.target_size = target_size
         self.scale_range = scale_range
         self.interpolation = interpolation
+        self.antialias = antialias
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         _, orig_height, orig_width = query_chw(sample)
@@ -725,7 +727,7 @@ class ScaleJitter(Transform):
         return dict(size=(new_height, new_width))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resize(inpt, size=params["size"], interpolation=self.interpolation)
+        return F.resize(inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias)
 
 
 class RandomShortestSize(Transform):
@@ -734,11 +736,13 @@ class RandomShortestSize(Transform):
         min_size: Union[List[int], Tuple[int], int],
         max_size: int,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        antialias: Optional[bool] = None,
     ):
         super().__init__()
         self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
         self.max_size = max_size
         self.interpolation = interpolation
+        self.antialias = antialias
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         _, orig_height, orig_width = query_chw(sample)
@@ -752,7 +756,7 @@ class RandomShortestSize(Transform):
         return dict(size=(new_height, new_width))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.resize(inpt, size=params["size"], interpolation=self.interpolation)
+        return F.resize(inpt, size=params["size"], interpolation=self.interpolation, antialias=self.antialias)
 
 
 class FixedSizeCrop(Transform):
