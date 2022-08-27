@@ -8,12 +8,10 @@ import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import features
-
-from torchvision.prototype.transforms import functional as F
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor
+from torchvision.prototype.transforms import functional as F, InterpolationMode
 
 from ._transform import _RandomApplyTransform
-from ._utils import has_any, is_simple_tensor, query_chw
+from ._utils import has_any, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -101,15 +99,14 @@ class _BaseMixupCutmix(_RandomApplyTransform):
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def forward(self, *inpts: Any) -> Any:
-        sample = inpts if len(inpts) > 1 else inpts[0]
-        if not (has_any(sample, features.Image, is_simple_tensor) and has_any(sample, features.OneHotLabel)):
+    def forward(self, *inputs: Any) -> Any:
+        if not (has_any(inputs, features.Image, features.is_simple_tensor) and has_any(inputs, features.OneHotLabel)):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images and one-hot labels.")
-        if has_any(sample, features.BoundingBox, features.SegmentationMask, features.Label):
+        if has_any(inputs, features.BoundingBox, features.SegmentationMask, features.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support bounding boxes, segmentation masks and plain labels."
             )
-        return super().forward(sample)
+        return super().forward(*inputs)
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
         if inpt.ndim < 2:
@@ -125,7 +122,7 @@ class RandomMixup(_BaseMixupCutmix):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
-        if isinstance(inpt, features.Image) or is_simple_tensor(inpt):
+        if isinstance(inpt, features.Image) or features.is_simple_tensor(inpt):
             if inpt.ndim < 4:
                 raise ValueError("Need a batch of images")
             output = inpt.clone()
@@ -165,7 +162,7 @@ class RandomCutmix(_BaseMixupCutmix):
         return dict(box=box, lam_adjusted=lam_adjusted)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Image) or is_simple_tensor(inpt):
+        if isinstance(inpt, features.Image) or features.is_simple_tensor(inpt):
             box = params["box"]
             if inpt.ndim < 4:
                 raise ValueError("Need a batch of images")
@@ -277,10 +274,10 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # with List[image], List[BoundingBox], List[SegmentationMask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
-            if isinstance(obj, features.Image) or is_simple_tensor(obj):
+            if isinstance(obj, features.Image) or features.is_simple_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
-                images.append(pil_to_tensor(obj))
+                images.append(F.to_image_tensor(obj))
             elif isinstance(obj, features.BoundingBox):
                 bboxes.append(obj)
             elif isinstance(obj, features.SegmentationMask):
@@ -311,7 +308,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
             elif isinstance(obj, PIL.Image.Image):
                 flat_sample[i] = F.to_image_pil(output_images[c0])
                 c0 += 1
-            elif is_simple_tensor(obj):
+            elif features.is_simple_tensor(obj):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
             elif isinstance(obj, features.BoundingBox):
@@ -325,9 +322,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-
-        flat_sample, spec = tree_flatten(sample)
+        flat_sample, spec = tree_flatten(inputs)
 
         images, targets = self._extract_image_targets(flat_sample)
 

@@ -2,11 +2,10 @@ import warnings
 from typing import Any
 
 import PIL.Image
+import torch
 
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F
-
-from .._utils import is_simple_tensor
 
 
 def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
@@ -23,7 +22,7 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
 
 
 def rgb_to_grayscale(inpt: Any, num_output_channels: int = 1) -> Any:
-    old_color_space = features.Image.guess_color_space(inpt) if is_simple_tensor(inpt) else None
+    old_color_space = features.Image.guess_color_space(inpt) if features.is_simple_tensor(inpt) else None
 
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
     replacement = (
@@ -41,3 +40,11 @@ def rgb_to_grayscale(inpt: Any, num_output_channels: int = 1) -> Any:
     )
 
     return _F.rgb_to_grayscale(inpt, num_output_channels=num_output_channels)
+
+
+def to_tensor(inpt: Any) -> torch.Tensor:
+    warnings.warn(
+        "The function `to_tensor(...)` is deprecated and will be removed in a future release. "
+        "Instead, please use `to_image_tensor(...)` followed by `convert_image_dtype(...)`."
+    )
+    return _F.to_tensor(inpt)
