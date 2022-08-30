@@ -23,7 +23,7 @@ class Lambda(Transform):
         self.types = types or (object,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if type(inpt) in self.types:
+        if isinstance(inpt, self.types):
             return self.fn(inpt)
         else:
             return inpt
@@ -136,7 +136,7 @@ class GaussianBlur(Transform):
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.gaussian_blur(inpt, **params)
+        return F.gaussian_blur(inpt, self.kernel_size, **params)
 
 
 class ToDtype(Lambda):
