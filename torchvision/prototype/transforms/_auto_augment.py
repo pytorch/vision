@@ -11,7 +11,7 @@ from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.autoaugment import AutoAugmentPolicy
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
-from ._utils import _isinstance, get_chw, is_simple_tensor
+from ._utils import _isinstance, get_chw
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -44,7 +44,7 @@ class _AutoAugmentBase(Transform):
         sample_flat, _ = tree_flatten(sample)
         images = []
         for id, inpt in enumerate(sample_flat):
-            if _isinstance(inpt, (features.Image, PIL.Image.Image, is_simple_tensor)):
+            if _isinstance(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor)):
                 images.append((id, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")

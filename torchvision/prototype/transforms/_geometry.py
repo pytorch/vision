@@ -15,7 +15,7 @@ from torchvision.transforms.transforms import _check_sequence_input, _setup_angl
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_chw
+from ._utils import has_all, has_any, query_bounding_box, query_chw
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -156,7 +156,7 @@ class FiveCrop(Transform):
         torch.Size([5])
     """
 
-    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
 
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
@@ -176,7 +176,7 @@ class TenCrop(Transform):
     See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
     """
 
-    _transformed_types = (features.Image, PIL.Image.Image, is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
@@ -696,7 +696,7 @@ class RandomIoUCrop(Transform):
     def forward(self, *inputs: Any) -> Any:
         if not (
             has_all(inputs, features.BoundingBox)
-            and has_any(inputs, PIL.Image.Image, features.Image, is_simple_tensor)
+            and has_any(inputs, PIL.Image.Image, features.Image, features.is_simple_tensor)
             and has_any(inputs, features.Label, features.OneHotLabel)
         ):
             raise TypeError(
@@ -847,7 +847,7 @@ class FixedSizeCrop(Transform):
         return inpt
 
     def forward(self, *inputs: Any) -> Any:
-        if not has_any(inputs, PIL.Image.Image, features.Image, is_simple_tensor):
+        if not has_any(inputs, PIL.Image.Image, features.Image, features.is_simple_tensor):
             raise TypeError(f"{type(self).__name__}() requires input sample to contain an tensor or PIL image.")
 
         if has_any(inputs, features.BoundingBox) and not has_any(inputs, features.Label, features.OneHotLabel):

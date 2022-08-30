@@ -7,7 +7,7 @@ import torch
 from torchvision.ops import remove_small_boxes
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.prototype.transforms._utils import has_any, is_simple_tensor, query_bounding_box
+from torchvision.prototype.transforms._utils import has_any, query_bounding_box
 from torchvision.transforms.transforms import _setup_size
 
 
@@ -38,7 +38,7 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
-    _transformed_types = (is_simple_tensor, features.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image)
 
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
         super().__init__()
@@ -93,7 +93,7 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    _transformed_types = (features.Image, is_simple_tensor)
+    _transformed_types = (features.Image, features.is_simple_tensor)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float]):
         super().__init__()
