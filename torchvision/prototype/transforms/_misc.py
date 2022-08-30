@@ -136,7 +136,7 @@ class GaussianBlur(Transform):
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.gaussian_blur(inpt, **params)
+        return F.gaussian_blur(inpt, self.kernel_size, **params)
 
 
 class ToDtype(Lambda):
