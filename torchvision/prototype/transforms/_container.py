@@ -33,7 +33,9 @@ class RandomApply(_RandomApplyTransform):
 
 
 class RandomChoice(Transform):
-    def __init__(self, *transforms: Transform, probabilities: Optional[List[float]] = None) -> None:
+    def __init__(self, transforms: Sequence[Callable], probabilities: Optional[List[float]] = None) -> None:
+        if not isinstance(transforms, Sequence):
+            raise TypeError("Argument transforms should be a sequence of callables")
         if probabilities is None:
             probabilities = [1] * len(transforms)
         elif len(probabilities) != len(transforms):
@@ -45,9 +47,6 @@ class RandomChoice(Transform):
         super().__init__()
 
         self.transforms = transforms
-        for idx, transform in enumerate(transforms):
-            self.add_module(str(idx), transform)
-
         total = sum(probabilities)
         self.probabilities = [p / total for p in probabilities]
 
@@ -58,11 +57,11 @@ class RandomChoice(Transform):
 
 
 class RandomOrder(Transform):
-    def __init__(self, *transforms: Transform) -> None:
+    def __init__(self, transforms: Sequence[Callable]) -> None:
+        if not isinstance(transforms, Sequence):
+            raise TypeError("Argument transforms should be a sequence of callables")
         super().__init__()
         self.transforms = transforms
-        for idx, transform in enumerate(transforms):
-            self.add_module(str(idx), transform)
 
     def forward(self, *inputs: Any) -> Any:
         for idx in torch.randperm(len(self.transforms)):
