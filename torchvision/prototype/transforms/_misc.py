@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Callable, Dict, List, Sequence, Type, Union
+from typing import Any, Callable, Dict, Sequence, Type, Union
 
 import PIL.Image
 
@@ -9,6 +9,8 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.prototype.transforms._utils import query_bounding_box
 from torchvision.transforms.transforms import _setup_size
+
+from ._utils import is_simple_tensor
 
 
 class Identity(Transform):
@@ -91,10 +93,12 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    def __init__(self, mean: List[float], std: List[float]):
+    _transformed_types = (PIL.Image.Image, features.Image, is_simple_tensor)
+
+    def __init__(self, mean: Sequence[float], std: Sequence[float]):
         super().__init__()
-        self.mean = mean
-        self.std = std
+        self.mean = list(mean)
+        self.std = list(std)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.normalize(inpt, mean=self.mean, std=self.std)
