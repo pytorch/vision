@@ -1698,18 +1698,18 @@ class TestAPIConsistency:
 
         le = len(t._AUGMENTATION_SPACE)
         keys = list(t._AUGMENTATION_SPACE.keys())
-        op_indices = []
+        randint_values = []
         for i in range(le):
             # Stable API, op_index random call
-            op_indices.append(i)
+            randint_values.append(i)
             # Stable API, if signed there is another random call
             if t._AUGMENTATION_SPACE[keys[i]][1]:
-                op_indices.append(0)
+                randint_values.append(0)
             # New API, _get_random_item
-            op_indices.append(i)
-        op_indices = iter(op_indices)
+            randint_values.append(i)
+        randint_values = iter(randint_values)
 
-        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(op_indices)))
+        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
         mocker.patch("torch.rand", return_value=1.0)
 
         for i in range(le):
@@ -1730,24 +1730,48 @@ class TestAPIConsistency:
             features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
-    def test_trivial_aug(self, inpt):
+    @pytest.mark.parametrize("interpolation", [InterpolationMode.NEAREST, InterpolationMode.BILINEAR])
+    def test_trivial_aug(self, inpt, interpolation, mocker):
         from torchvision.transforms import autoaugment as ref_transforms
 
-        interpolation = InterpolationMode.NEAREST
         t_ref = ref_transforms.TrivialAugmentWide(interpolation=interpolation)
         t = transforms.TrivialAugmentWide(interpolation=interpolation)
 
-        torch.manual_seed(12)
-        expected_output = t_ref(inpt)
+        le = len(t._AUGMENTATION_SPACE)
+        keys = list(t._AUGMENTATION_SPACE.keys())
+        randint_values = []
+        for i in range(le):
+            # Stable API, op_index random call
+            randint_values.append(i)
+            key = keys[i]
+            # Stable API, random magnitude
+            aug_op = t._AUGMENTATION_SPACE[key]
+            magnitudes = aug_op[0](2, 0, 0)
+            if magnitudes is not None:
+                randint_values.append(5)
+            # Stable API, if signed there is another random call
+            if aug_op[1]:
+                randint_values.append(0)
+            # New API, _get_random_item
+            randint_values.append(i)
+            # New API, random magnitude
+            if magnitudes is not None:
+                randint_values.append(5)
 
-        torch.manual_seed(12)
-        output = t(inpt)
+        randint_values = iter(randint_values)
 
-        if isinstance(inpt, PIL.Image.Image):
-            expected_output = pil_to_tensor(expected_output)
-            output = pil_to_tensor(output)
+        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
+        mocker.patch("torch.rand", return_value=1.0)
 
-        torch.testing.assert_close(expected_output, output)
+        for _ in range(le):
+            expected_output = t_ref(inpt)
+            output = t(inpt)
+
+            if isinstance(inpt, PIL.Image.Image):
+                expected_output = pil_to_tensor(expected_output)
+                output = pil_to_tensor(output)
+
+            torch.testing.assert_close(expected_output, output)
 
     @pytest.mark.parametrize(
         "inpt",
