@@ -1867,31 +1867,23 @@ def test_midlevel_normalize_output_type():
 @pytest.mark.parametrize(
     "inpt",
     [
-        torch.randint(0, 256, size=(3, 32, 32)),
         127 * np.ones((32, 32, 3), dtype="uint8"),
         PIL.Image.new("RGB", (32, 32), 122),
     ],
 )
-@pytest.mark.parametrize("copy", [True, False])
-def test_to_image_tensor(inpt, copy):
-    output = F.to_image_tensor(inpt, copy=copy)
+def test_to_image_tensor(inpt):
+    output = F.to_image_tensor(inpt)
     assert isinstance(output, torch.Tensor)
 
     assert np.asarray(inpt).sum() == output.sum().item()
 
-    if isinstance(inpt, PIL.Image.Image) and not copy:
+    if isinstance(inpt, PIL.Image.Image):
         # we can't check this option
         # as PIL -> numpy is always copying
         return
 
-    if isinstance(inpt, PIL.Image.Image):
-        inpt.putpixel((0, 0), 11)
-    else:
-        inpt[0, 0, 0] = 11
-    if copy:
-        assert output[0, 0, 0] != 11
-    else:
-        assert output[0, 0, 0] == 11
+    inpt[0, 0, 0] = 11
+    assert output[0, 0, 0] == 11
 
 
 @pytest.mark.parametrize(
@@ -1899,7 +1891,6 @@ def test_to_image_tensor(inpt, copy):
     [
         torch.randint(0, 256, size=(3, 32, 32), dtype=torch.uint8),
         127 * np.ones((32, 32, 3), dtype="uint8"),
-        PIL.Image.new("RGB", (32, 32), 122),
     ],
 )
 @pytest.mark.parametrize("mode", [None, "RGB"])

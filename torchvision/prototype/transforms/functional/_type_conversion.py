@@ -1,5 +1,5 @@
 import unittest.mock
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import PIL.Image
@@ -21,26 +21,11 @@ def decode_video_with_av(encoded_video: torch.Tensor) -> Tuple[torch.Tensor, tor
         return read_video(ReadOnlyTensorBuffer(encoded_video))  # type: ignore[arg-type]
 
 
-def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray], copy: bool = False) -> torch.Tensor:
+def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> torch.Tensor:
     if isinstance(image, np.ndarray):
-        image = torch.from_numpy(image)
-
-    if isinstance(image, torch.Tensor):
-        if copy:
-            return image.clone()
-        else:
-            return image
+        return torch.from_numpy(image)
 
     return _F.pil_to_tensor(image)
 
 
-def to_image_pil(
-    image: Union[torch.Tensor, PIL.Image.Image, np.ndarray], mode: Optional[str] = None
-) -> PIL.Image.Image:
-    if isinstance(image, PIL.Image.Image):
-        if mode != image.mode:
-            return image.convert(mode)
-        else:
-            return image
-
-    return _F.to_pil_image(image, mode=mode)
+to_image_pil = _F.to_pil_image
