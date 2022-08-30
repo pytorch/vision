@@ -137,6 +137,7 @@ CONSISTENCY_CONFIGS = [
         [
             ArgsKwargs(18),
             ArgsKwargs((18, 13)),
+            ArgsKwargs(18, vertical_flip=True),
         ],
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(20, 19)]),
     ),
@@ -215,6 +216,83 @@ CONSISTENCY_CONFIGS = [
         # images given that the transform does nothing but call it anyway.
         supports_pil=False,
     ),
+    ConsistencyConfig(
+        prototype_transforms.RandomHorizontalFlip,
+        legacy_transforms.RandomHorizontalFlip,
+        [
+            ArgsKwargs(p=0.0),
+            ArgsKwargs(p=1.0),
+        ],
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomVerticalFlip,
+        legacy_transforms.RandomVerticalFlip,
+        [
+            ArgsKwargs(p=0.0),
+            ArgsKwargs(p=1.0),
+        ],
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomEqualize,
+        legacy_transforms.RandomEqualize,
+        [
+            ArgsKwargs(p=0.0),
+            ArgsKwargs(p=1.0),
+        ],
+        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.uint8]),
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomInvert,
+        legacy_transforms.RandomInvert,
+        [
+            ArgsKwargs(p=0.0),
+            ArgsKwargs(p=1.0),
+        ],
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomPosterize,
+        legacy_transforms.RandomPosterize,
+        [
+            ArgsKwargs(p=0.0, bits=5),
+            ArgsKwargs(p=1.0, bits=1),
+            ArgsKwargs(p=1.0, bits=3),
+        ],
+        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.uint8]),
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomSolarize,
+        legacy_transforms.RandomSolarize,
+        [
+            ArgsKwargs(p=0.0, threshold=0.5),
+            ArgsKwargs(p=1.0, threshold=0.3),
+            ArgsKwargs(p=1.0, threshold=0.99),
+        ],
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomAutocontrast,
+        legacy_transforms.RandomAutocontrast,
+        [
+            ArgsKwargs(p=0.0),
+            ArgsKwargs(p=1.0),
+        ],
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomAdjustSharpness,
+        legacy_transforms.RandomAdjustSharpness,
+        [
+            ArgsKwargs(p=0.0, sharpness_factor=0.5),
+            ArgsKwargs(p=1.0, sharpness_factor=0.3),
+            ArgsKwargs(p=1.0, sharpness_factor=0.99),
+        ],
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomGrayscale,
+        legacy_transforms.RandomGrayscale,
+        [
+            ArgsKwargs(p=0.0),
+            ArgsKwargs(p=1.0),
+        ],
+    ),
 ]
 
 
@@ -235,6 +313,7 @@ def test_automatic_coverage_deterministic():
         }
     }
     # filter out random transformations
+    # FIXME: make me more explicit
     legacy = {name for name in legacy if "Random" not in name} - {
         "AugMix",
         "TrivialAugmentWide",
