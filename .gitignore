@@ -45,3 +45,9 @@ xcuserdata/
 
 # out files
 *.out
+
+# checkpoints
+*.pth
+
+# trace jsons
+*.trace.json

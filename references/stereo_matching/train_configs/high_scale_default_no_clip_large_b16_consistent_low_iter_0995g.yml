@@ -7,7 +7,7 @@ resume: null
 # train dataset parameters
 dataset_root: "/fsx/users/teodorponcu/datasets"
 train_dataset: ["crestereo"]
-dataset_steps: [300_000]
+dataset_steps: [75_000]
 transforms: "cre-high-scale"
 
 # dataloader parameters
@@ -21,7 +21,7 @@ dataset_shuffle: True
 schedule_shuffle: False
 
 # batch size
-batch_size: 2
+batch_size: 8
 
 # validation datasets
 valid_dataset: ["middlebury2014-train"]
@@ -35,11 +35,11 @@ lr_warmup_decay: 1.0e-2
 lr_decay_gamma: 1.0e-2
 
 wd: 0.0
-clip_grad_norm: 1.0
+clip_grad_norm: 0.0
 
 # learning rate scheduler
-warmup_steps: 6_000
-flat_lr_steps: 120_000
+warmup_steps: 1_500
+flat_lr_steps: 30_000
 
 lr_warmup_method: linear
 lr_decay_method: cosine
@@ -48,12 +48,12 @@ lr_decay_method: cosine
 model: "crestereo_base"
 
 # architecture speciffic parameters
-recurrent_updates: 10
+recurrent_updates: 5
 freeze_batch_norm: True
 
 # loss speciffic parameters
-gamma: 0.8
-consistency_alpha: 0.0
+gamma: 0.995
+consistency_alpha: 0.5
 
 # mixed precision parameters
 mixed_precison: True
@@ -66,7 +66,7 @@ dist_url: "env://"
 world_size: 8
 device: "cuda"
 
-mixed_precision: True
+mixed_precision: False
 
 # deterministic behaviour
 seed: 42

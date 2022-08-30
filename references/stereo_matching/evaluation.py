@@ -141,7 +141,6 @@ def evaluate(model, args, dataset, *, padder_mode, header = None):
             config_key = (n_iter, n_cascades)
             for blob in logger.log_every(loader, header=header, print_freq=None):
                 model_preds, target_preds, valid_disp_mask, run_time = inner_loop(blob)
-                
                 preds[config_key].append(model_preds.cpu())
                 masks[config_key].append(valid_disp_mask.cpu())
                 targets[config_key].append(target_preds.cpu() if target_preds is not None else None)

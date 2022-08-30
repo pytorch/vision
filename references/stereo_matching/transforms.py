@@ -356,7 +356,7 @@ class Resize(torch.nn.Module):
         disparities: Tuple[Tensor, Tensor],
         masks: Tuple[Tensor, Tensor],
     ) -> Tuple[Tuple, Tuple, Tuple]:
-        resized_images = ()
+        resized_images = () 
         resized_disparities = ()
         resized_masks = ()
         

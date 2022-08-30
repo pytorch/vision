@@ -11,8 +11,8 @@ dataset_steps: [300_000]
 transforms: "cre-high-scale"
 
 # dataloader parameters
-workers: 2
-threads: 8
+workers: 16
+threads: 16
 
 # shuffle samples inside a dataset
 dataset_shuffle: True

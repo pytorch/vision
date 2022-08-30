@@ -47,12 +47,6 @@ class StereoMatchingPresetCRETrain(torch.nn.Module):
         super().__init__()
         transforms = [
             T.ToTensor(),
-            T.RandomResizeAndCrop(
-                crop_size=crop_size,
-                min_scale=min_scale,
-                max_scale=max_scale,
-                resize_prob=1.0
-            ),
             T.AsymmetricColorJitter(
                 brightness=brightness,
                 contrast=contrast,
@@ -66,6 +60,12 @@ class StereoMatchingPresetCRETrain(torch.nn.Module):
             ),
             T.RandomSpatialShift(),
             T.ConvertImageDtype(torch.float32),
+            T.RandomResizeAndCrop(
+                crop_size=crop_size,
+                min_scale=min_scale,
+                max_scale=max_scale,
+                resize_prob=1.0
+            ),
         ]
 
         if do_flip:
@@ -84,7 +84,11 @@ class StereoMatchingPresetCRETrain(torch.nn.Module):
     def forward(self, images, disparties, mask):
         return self.transforms(images, disparties, mask)
 
-LowScaleStereoMatchingPresetCRETrain = StereoMatchingPresetCRETrain(crop_size=(384, 512))
+LowScaleStereoMatchingPresetCRETrain = StereoMatchingPresetCRETrain(crop_size=(384, 512), min_scale=-0.2, max_scale=0.5)
 HighScaleStereoMatchingPresetCRETrain = StereoMatchingPresetCRETrain(crop_size=(384, 512), min_scale=0.6, max_scale=1.0)
-MiddleBurryEvalPreset = StereoMatchingPresetEval(size=(384, 512))
+SuperHighScaleStereoMatchingPresetCRETrain = StereoMatchingPresetCRETrain(crop_size=(384, 512), min_scale=0.0, max_scale=1.0)
+MidScaleStereoMatchingPresetCRETrain = StereoMatchingPresetCRETrain(crop_size=(384, 512), min_scale=-0.4, max_scale=0.8)
+SuperWideScaleStereoMatchingPresetCRETrain = StereoMatchingPresetCRETrain(crop_size=(384, 512), min_scale=-1.0, max_scale=1.0)
+SuperLowScaleStereoMatchingPresetCRETrain = StereoMatchingPresetCRETrain(crop_size=(384, 512), min_scale=-1.0, max_scale=0.0)
+MiddleBurryEvalPreset = StereoMatchingPresetEval(size=(768, 1024))
 

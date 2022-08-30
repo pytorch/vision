@@ -11,8 +11,8 @@ dataset_steps: [300_000]
 transforms: "cre-high-scale"
 
 # dataloader parameters
-workers: 2
-threads: 8
+workers: 16
+threads: 16
 
 # shuffle samples inside a dataset
 dataset_shuffle: True
@@ -54,9 +54,6 @@ freeze_batch_norm: True
 # loss speciffic parameters
 gamma: 0.8
 consistency_alpha: 0.0
-
-# mixed precision parameters
-mixed_precison: True
 
 # objective modelling speciffic
 should_learn_y_flow: True

@@ -29,17 +29,17 @@ valid_freq: 10_000
 save_freq: 10_000
 
 # optimizer
-lr: 3.0e-4
-min_lr: 3.0e-6
+lr: 5.0e-4
+min_lr: 1.0e-8
 lr_warmup_decay: 1.0e-2
 lr_decay_gamma: 1.0e-2
 
 wd: 0.0
-clip_grad_norm: 1.0
+clip_grad_norm: 0.0
 
 # learning rate scheduler
 warmup_steps: 6_000
-flat_lr_steps: 120_000
+flat_lr_steps: 80_000
 
 lr_warmup_method: linear
 lr_decay_method: cosine
@@ -48,11 +48,11 @@ lr_decay_method: cosine
 model: "crestereo_base"
 
 # architecture speciffic parameters
-recurrent_updates: 10
+recurrent_updates: 5
 freeze_batch_norm: True
 
 # loss speciffic parameters
-gamma: 0.8
+gamma: 0.995
 consistency_alpha: 0.0
 
 # mixed precision parameters
@@ -66,7 +66,7 @@ dist_url: "env://"
 world_size: 8
 device: "cuda"
 
-mixed_precision: True
+mixed_precision: False
 
 # deterministic behaviour
 seed: 42

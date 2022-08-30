@@ -14,7 +14,7 @@ import torchvision.models.optical_flow
 import torchvision.prototype.models.depth.stereo
 import utils
 import yaml
-from presets import HighScaleStereoMatchingPresetCRETrain, LowScaleStereoMatchingPresetCRETrain, StereoMatchingPresetEval, StereoMatchingPresetCRETrain
+from presets import HighScaleStereoMatchingPresetCRETrain, LowScaleStereoMatchingPresetCRETrain, MidScaleStereoMatchingPresetCRETrain, MiddleBurryEvalPreset, StereoMatchingPresetEval, StereoMatchingPresetCRETrain, SuperHighScaleStereoMatchingPresetCRETrain, SuperLowScaleStereoMatchingPresetCRETrain, SuperWideScaleStereoMatchingPresetCRETrain
 from utils import get_dataset_by_name
 
 
@@ -78,6 +78,18 @@ def make_cre_stereo_schedule(args: argparse.Namespace, optimizer: torch.optim.Op
     
     schedulers = []
     
+    if args.lr_decay_method == "cosine-restart":
+        scheduler = utils.ConsinAnnealingWarmupRestarts(
+            optimizer=optimizer,
+            T_0=args.period_lr_steps,
+            T_mult=args.period_lr_mult,
+            T_warmup=warmup_steps,
+            eta_min=min_lr,
+            gamma=args.lr_decay_gamma,
+        )
+        
+        return scheduler
+    
     if warmup_steps > 0:
         if args.lr_warmup_method == "linear":
             warmup_lr_scheduler = torch.optim.lr_scheduler.LinearLR(
@@ -121,6 +133,14 @@ def get_transforms(args: argparse.Namespace):
         return LowScaleStereoMatchingPresetCRETrain
     elif args.transforms == "cre-high-scale":
         return HighScaleStereoMatchingPresetCRETrain
+    elif args.transforms == "cre-super-wide-scale":
+        return SuperWideScaleStereoMatchingPresetCRETrain
+    elif args.transforms == "cre-super-high-scale":
+        return SuperHighScaleStereoMatchingPresetCRETrain
+    elif args.transforms == "cre-mid-scale":
+        return MidScaleStereoMatchingPresetCRETrain
+    elif args.transforms == "cre-super-low-scale":
+        return SuperLowScaleStereoMatchingPresetCRETrain
     else:
         raise ValueError(f"Unknown transforms {args.transforms}")
 
@@ -269,7 +289,7 @@ def evaluate(model, args, writter=None, step=None):
             return image_left, image_right, disp, valid_disp_mask
 
     else:
-        preprocessing = StereoMatchingPresetEval()
+        preprocessing = MiddleBurryEvalPreset
 
     for name in val_datasets:
         if args.batch_size != 1 and (not args.distributed or args.rank == 0):
@@ -293,17 +313,17 @@ def evaluate(model, args, writter=None, step=None):
 
 
 def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args):
-    torch.set_num_threads(args.threads)
-
     device = torch.device(args.device)
     # wrap the loader in a logger
     loader = iter(logger.log_every(train_loader))
-
+    # buffered weights for the loss
+    loss_weights = None
     # uncomment to profile
+
     """
     with torch.profiler.profile(
         activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-        schedule=torch.profiler.schedule(wait=1, warmup=5, active=3, repeat=2, skip_first=300),
+        schedule=torch.profiler.schedule(wait=1, warmup=5, active=3, repeat=2, skip_first=100),
         on_trace_ready=torch.profiler.tensorboard_trace_handler('./crestereo_log'),
         profile_memory=True,
         with_stack=True,
@@ -311,7 +331,7 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
         with_flops=True,
     ) as prof:
     """
-        
+    torch.set_num_threads(16)
     for step in range(args.start_step + 1, args.total_iterations + 1):
         data_blob = next(loader)
         optimizer.zero_grad()
@@ -323,7 +343,6 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
         # if you are reusing or modiffying this piece of code, make sure to
         # adjust it to your architecture naming scheme
         with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
-            
             if "crestereo" in args.model:
                 # TODO: this needs to be abstracted somehow
                 disp_predictions = model(image_left, image_right, flow_init=None, iterations=args.recurrent_updates)
@@ -338,7 +357,7 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
             disp_mask = view_flow_as_stereo_target(disp_mask, args)
             # sequence loss on top of the model outputs
         
-        loss = utils.sequence_loss(disp_predictions, disp_mask, valid_disp_mask, args.gamma)
+        loss, loss_weights = utils.sequence_loss(disp_predictions, disp_mask, valid_disp_mask, args.gamma, weights=loss_weights)
         if args.consistency_alpha > 0:
             loss += utils.sequence_consistency_loss(disp_predictions, args.gamma) * args.consistency_alpha
             
@@ -371,7 +390,8 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
                 # log the images to tensorboard
                 
                 # first thing we want is to a vertical alignment of final_pred, input, valid_mask
-                images = image_left.detach().cpu() * 0.5 + 0.5
+                images_left = image_left.detach().cpu() * 0.5 + 0.5
+                images_right = image_right.detach().cpu() * 0.5 + 0.5
                 # we might have to reshape the disparities
                 targets = disp_mask.detach().cpu()
                 # convert this to float
@@ -390,7 +410,7 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
                 masks = masks.unsqueeze(1).repeat(1, 3, 1, 1)
                 
                 # the grid is going to self-normalize in 0-1 range                                
-                pred_grid = make_pair_grid(images, masks, targets, preds, orientation="horizontal")
+                pred_grid = make_pair_grid(images_left, images_right, masks, targets, preds, orientation="horizontal")
                 # we multiply by 255 to get the correct range for the tensorboard
                 pred_grid = pred_grid.detach().cpu().numpy() * 255.0
                 pred_grid = np.transpose(pred_grid, (1, 2, 0)).astype(np.uint8)
@@ -432,7 +452,7 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
                 else:
                     utils.freeze_batch_norm(model)
 
-            # prof.step()
+                # prof.step()
     
 def set_seed(seed):
     torch.manual_seed(seed)

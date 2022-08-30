@@ -538,6 +538,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
             return None, None
 
         disparity_map = _read_pfm_file(file_path)
+        disparity_map[disparity_map == np.inf] = 0
         disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
         valid_mask = None
         return disparity_map, valid_mask
