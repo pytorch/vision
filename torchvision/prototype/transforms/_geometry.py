@@ -44,7 +44,11 @@ class Resize(Transform):
     ) -> None:
         super().__init__()
 
-        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+        self.size = (
+            [size]
+            if isinstance(size, int)
+            else _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+        )
         self.interpolation = interpolation
         self.max_size = max_size
         self.antialias = antialias
