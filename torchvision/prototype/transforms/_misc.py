@@ -23,7 +23,7 @@ class Lambda(Transform):
         self.types = types or (object,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if type(inpt) in self.types:
+        if isinstance(inpt, self.types):
             return self.fn(inpt)
         else:
             return inpt
