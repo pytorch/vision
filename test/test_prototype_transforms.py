@@ -1692,7 +1692,6 @@ class TestAPIConsistency:
     def test_randaug(self, inpt, interpolation, mocker):
         from torchvision.transforms import autoaugment as ref_transforms
 
-        # Due to different implementations using random ops, we disable signed option
         t_ref = ref_transforms.RandAugment(interpolation=interpolation, num_ops=1)
         t = transforms.RandAugment(interpolation=interpolation, num_ops=1)
 
@@ -1781,17 +1780,42 @@ class TestAPIConsistency:
             features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
-    def test_augmix(self, inpt):
+    @pytest.mark.parametrize("interpolation", [InterpolationMode.NEAREST, InterpolationMode.BILINEAR])
+    def test_augmix(self, inpt, interpolation, mocker):
         from torchvision.transforms import autoaugment as ref_transforms
 
-        interpolation = InterpolationMode.BILINEAR
-        t_ref = ref_transforms.AugMix(interpolation=interpolation)
-        t = transforms.AugMix(interpolation=interpolation)
+        t_ref = ref_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+        t_ref._sample_dirichlet = lambda t: t.softmax(dim=-1)
+        t = transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+        t._sample_dirichlet = lambda t: t.softmax(dim=-1)
 
-        torch.manual_seed(12)
+        le = len(t._AUGMENTATION_SPACE)
+        keys = list(t._AUGMENTATION_SPACE.keys())
+        randint_values = []
+        for i in range(le):
+            # Stable API, op_index random call
+            randint_values.append(i)
+            key = keys[i]
+            # Stable API, random magnitude
+            aug_op = t._AUGMENTATION_SPACE[key]
+            magnitudes = aug_op[0](2, 0, 0)
+            if magnitudes is not None:
+                randint_values.append(5)
+            # Stable API, if signed there is another random call
+            if aug_op[1]:
+                randint_values.append(0)
+            # New API, _get_random_item
+            randint_values.append(i)
+            # New API, random magnitude
+            if magnitudes is not None:
+                randint_values.append(5)
+
+        randint_values = iter(randint_values)
+
+        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
+        mocker.patch("torch.rand", return_value=1.0)
+
         expected_output = t_ref(inpt)
-
-        torch.manual_seed(12)
         output = t(inpt)
 
         if isinstance(inpt, PIL.Image.Image):
@@ -1808,10 +1832,10 @@ class TestAPIConsistency:
             features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
-    def test_aa(self, inpt):
+    @pytest.mark.parametrize("interpolation", [InterpolationMode.NEAREST, InterpolationMode.BILINEAR])
+    def test_aa(self, inpt, interpolation):
         from torchvision.transforms import autoaugment as ref_transforms
 
-        interpolation = InterpolationMode.BILINEAR
         aa_policy = ref_transforms.AutoAugmentPolicy("imagenet")
         t_ref = ref_transforms.AutoAugment(aa_policy, interpolation=interpolation)
         t = transforms.AutoAugment(aa_policy, interpolation=interpolation)

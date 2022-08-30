@@ -484,7 +484,7 @@ class AugMix(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         id, orig_image = self._extract_image(sample)
-        num_channels, height, width = get_chw(orig_image)
+        _, height, width = get_chw(orig_image)
 
         if isinstance(orig_image, torch.Tensor):
             image = orig_image
