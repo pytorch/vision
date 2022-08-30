@@ -6,6 +6,8 @@ FCOS
 The RetinaNet model is based on the `FCOS: Fully Convolutional One-Stage Object Detection
 <https://arxiv.org/abs/1904.01355>`__ paper.
 
+.. betastatus:: detection module
+
 Model builders
 --------------
 

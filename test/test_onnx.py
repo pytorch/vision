@@ -4,13 +4,12 @@ from typing import List, Tuple
 
 import pytest
 import torch
-from common_utils import set_rng_seed, assert_equal
-from torchvision import models
-from torchvision import ops
+from common_utils import assert_equal, set_rng_seed
+from torchvision import models, ops
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
 from torchvision.models.detection.image_list import ImageList
 from torchvision.models.detection.roi_heads import RoIHeads
-from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from torchvision.models.detection.rpn import AnchorGenerator, RegionProposalNetwork, RPNHead
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.ops._register_onnx_ops import _onnx_opset_version
 
@@ -265,7 +264,7 @@ class TestONNXExporter:
 
         resolution = box_roi_pool.output_size[0]
         representation_size = 1024
-        box_head = TwoMLPHead(out_channels * resolution ** 2, representation_size)
+        box_head = TwoMLPHead(out_channels * resolution**2, representation_size)
 
         representation_size = 1024
         box_predictor = FastRCNNPredictor(representation_size, num_classes)

@@ -1,6 +1,8 @@
+import collections
 import math
 import pathlib
 import warnings
+from itertools import repeat
 from types import FunctionType
 from typing import Any, BinaryIO, List, Optional, Tuple, Union
 
@@ -208,8 +210,16 @@ def draw_bounding_boxes(
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
+    elif (boxes[:, 0] > boxes[:, 2]).any() or (boxes[:, 1] > boxes[:, 3]).any():
+        raise ValueError(
+            "Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to convert them"
+        )
 
     num_boxes = boxes.shape[0]
+
+    if num_boxes == 0:
+        warnings.warn("boxes doesn't contain any box. No box was drawn")
+        return image
 
     if labels is None:
         labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
@@ -310,6 +320,10 @@ def draw_segmentation_masks(
     num_masks = masks.size()[0]
     if colors is not None and num_masks > len(colors):
         raise ValueError(f"There are more masks ({num_masks}) than colors ({len(colors)})")
+
+    if num_masks == 0:
+        warnings.warn("masks doesn't contain any mask. No mask was drawn")
+        return image
 
     if colors is None:
         colors = _generate_color_palette(num_masks)
@@ -435,7 +449,7 @@ def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
     if flow.ndim != 4 or flow.shape[1] != 2:
         raise ValueError(f"Input flow should have shape (2, H, W) or (N, 2, H, W), got {orig_shape}.")
 
-    max_norm = torch.sum(flow ** 2, dim=1).sqrt().max()
+    max_norm = torch.sum(flow**2, dim=1).sqrt().max()
     epsilon = torch.finfo((flow).dtype).eps
     normalized_flow = flow / (max_norm + epsilon)
     img = _normalized_flow_to_image(normalized_flow)
@@ -462,7 +476,7 @@ def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
     flow_image = torch.zeros((N, 3, H, W), dtype=torch.uint8, device=device)
     colorwheel = _make_colorwheel().to(device)  # shape [55x3]
     num_cols = colorwheel.shape[0]
-    norm = torch.sum(normalized_flow ** 2, dim=1).sqrt()
+    norm = torch.sum(normalized_flow**2, dim=1).sqrt()
     a = torch.atan2(-normalized_flow[:, 1, :, :], -normalized_flow[:, 0, :, :]) / torch.pi
     fk = (a + 1) / 2 * (num_cols - 1)
     k0 = torch.floor(fk).to(torch.long)
@@ -528,7 +542,7 @@ def _make_colorwheel() -> torch.Tensor:
 
 
 def _generate_color_palette(num_objects: int):
-    palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
+    palette = torch.tensor([2**25 - 1, 2**15 - 1, 2**21 - 1])
     return [tuple((i * palette) % 255) for i in range(num_objects)]
 
 
@@ -550,9 +564,25 @@ def _log_api_usage_once(obj: Any) -> None:
     Args:
         obj (class instance or method): an object to extract info from.
     """
-    if not obj.__module__.startswith("torchvision"):
-        return
+    module = obj.__module__
+    if not module.startswith("torchvision"):
+        module = f"torchvision.internal.{module}"
     name = obj.__class__.__name__
     if isinstance(obj, FunctionType):
         name = obj.__name__
-    torch._C._log_api_usage_once(f"{obj.__module__}.{name}")
+    torch._C._log_api_usage_once(f"{module}.{name}")
+
+
+def _make_ntuple(x: Any, n: int) -> Tuple[Any, ...]:
+    """
+    Make n-tuple from input x. If x is an iterable, then we just convert it to tuple.
+    Otherwise we will make a tuple of length n, all with value of x.
+    reference: https://github.com/pytorch/pytorch/blob/master/torch/nn/modules/utils.py#L8
+
+    Args:
+        x (Any): input value
+        n (int): length of the resulting tuple
+    """
+    if isinstance(x, collections.abc.Iterable):
+        return tuple(x)
+    return tuple(repeat(x, n))

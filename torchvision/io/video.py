@@ -239,6 +239,7 @@ def read_video(
     start_pts: Union[float, Fraction] = 0,
     end_pts: Optional[Union[float, Fraction]] = None,
     pts_unit: str = "pts",
+    output_format: str = "THWC",
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
     """
     Reads a video from a file, returning both the video frames as well as
@@ -252,14 +253,19 @@ def read_video(
             The end presentation time
         pts_unit (str, optional): unit in which start_pts and end_pts values will be interpreted,
             either 'pts' or 'sec'. Defaults to 'pts'.
+        output_format (str, optional): The format of the output video tensors. Can be either "THWC" (default) or "TCHW".
 
     Returns:
-        vframes (Tensor[T, H, W, C]): the `T` video frames
+        vframes (Tensor[T, H, W, C] or Tensor[T, C, H, W]): the `T` video frames
         aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels and `L` is the number of points
         info (Dict): metadata for the video and audio. Can contain the fields video_fps (float) and audio_fps (int)
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_video)
+
+    output_format = output_format.upper()
+    if output_format not in ("THWC", "TCHW"):
+        raise ValueError(f"output_format should be either 'THWC' or 'TCHW', got {output_format}.")
 
     from torchvision import get_video_backend
 
@@ -333,6 +339,10 @@ def read_video(
         aframes = _align_audio_frames(aframes, audio_frames, start_pts, end_pts)
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)
+
+    if output_format == "TCHW":
+        # [T,H,W,C] --> [T,C,H,W]
+        vframes = vframes.permute(0, 3, 1, 2)
 
     return vframes, aframes, info
 

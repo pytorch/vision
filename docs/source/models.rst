@@ -120,6 +120,46 @@ behavior, such as batch normalization. To switch between these modes, use
     # Set model to eval mode
     model.eval()
 
+Model Registration Mechanism
+----------------------------
+
+.. betastatus:: registration mechanism
+
+As of v0.14, TorchVision offers a new model registration mechanism which allows retreaving models
+and weights by their names. Here are a few examples on how to use them:
+
+.. code:: python
+
+    # List available models
+    all_models = list_models()
+    classification_models = list_models(module=torchvision.models)
+
+    # Initialize models
+    m1 = get_model("mobilenet_v3_large", weights=None)
+    m2 = get_model("quantized_mobilenet_v3_large", weights="DEFAULT")
+
+    # Fetch weights
+    weights = get_weight("MobileNet_V3_Large_QuantizedWeights.DEFAULT")
+    assert weights == MobileNet_V3_Large_QuantizedWeights.DEFAULT
+
+    weights_enum = get_model_weights("quantized_mobilenet_v3_large")
+    assert weights_enum == MobileNet_V3_Large_QuantizedWeights
+
+    weights_enum2 = get_model_weights(torchvision.models.quantization.mobilenet_v3_large)
+    assert weights_enum == weights_enum2
+
+Here are the available public methods of the model registration mechanism:
+
+.. currentmodule:: torchvision.models
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    get_model
+    get_model_weights
+    get_weight
+    list_models
+
 Using models from Hub
 ---------------------
 
@@ -135,6 +175,15 @@ Most pre-trained models can be accessed directly via PyTorch Hub without having 
     # Option 2: passing weights param as enum
     weights = torch.hub.load("pytorch/vision", "get_weight", weights="ResNet50_Weights.IMAGENET1K_V2")
     model = torch.hub.load("pytorch/vision", "resnet50", weights=weights)
+
+You can also retrieve all the available weights of a specific model via PyTorch Hub by doing:
+
+.. code:: python
+
+    import torch
+
+    weight_enum = torch.hub.load("pytorch/vision", "get_model_weights", name="resnet50")
+    print([weight for weight in weight_enum])
 
 The only exception to the above are the detection models included on
 :mod:`torchvision.models.detection`. These models require TorchVision
@@ -272,6 +321,8 @@ Semantic Segmentation
 
 .. currentmodule:: torchvision.models.segmentation
 
+.. betastatus:: segmentation module
+
 The following semantic segmentation models are available, with or without
 pre-trained weights:
 
@@ -333,6 +384,8 @@ The pre-trained models for detection, instance segmentation and
 keypoint detection are initialized with the classification models
 in torchvision. The models expect a list of ``Tensor[C, H, W]``.
 Check the constructor of the models for more information.
+
+.. betastatus:: detection module
 
 Object Detection
 ----------------
@@ -453,13 +506,17 @@ Video Classification
 
 .. currentmodule:: torchvision.models.video
 
+.. betastatus:: video module
+
 The following video classification models are available, with or without
 pre-trained weights:
 
 .. toctree::
    :maxdepth: 1
 
+   models/video_mvit
    models/video_resnet
+   models/video_s3d
 
 |
 
@@ -471,7 +528,7 @@ Here is an example of how to use the pre-trained video classification models:
     from torchvision.io.video import read_video
     from torchvision.models.video import r3d_18, R3D_18_Weights
 
-    vid, _, _ = read_video("test/assets/videos/v_SoccerJuggling_g23_c01.avi")
+    vid, _, _ = read_video("test/assets/videos/v_SoccerJuggling_g23_c01.avi", output_format="TCHW")
     vid = vid[:32]  # optionally shorten duration
 
     # Step 1: Initialize model with the best available weights

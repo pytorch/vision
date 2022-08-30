@@ -7,12 +7,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from torchvision.models import inception as inception_module
-from torchvision.models.inception import InceptionOutputs, Inception_V3_Weights
+from torchvision.models.inception import Inception_V3_Weights, InceptionOutputs
 
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
@@ -198,6 +198,7 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
+@register_model(name="quantized_inception_v3")
 @handle_legacy_interface(
     weights=(
         "pretrained",

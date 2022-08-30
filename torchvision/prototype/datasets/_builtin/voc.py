@@ -1,29 +1,22 @@
 import enum
 import functools
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, cast, Union
+from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
 from xml.etree import ElementTree
 
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Filter,
-    Demultiplexer,
-    IterKeyZipper,
-    LineReader,
-)
+from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
 from torchvision.datasets import VOCDetection
-from torchvision.prototype.datasets.utils import OnlineResource, HttpResource, Dataset
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    path_accessor,
     getitem,
-    INFINITE_BUFFER_SIZE,
-    path_comparator,
     hint_sharding,
     hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    path_accessor,
+    path_comparator,
     read_categories_file,
 )
-from torchvision.prototype.features import BoundingBox, Label, EncodedImage
+from torchvision.prototype.features import BoundingBox, EncodedImage, Label
 
 from .._api import register_dataset, register_info
 
