@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import PIL.Image
-import torch
 import torchvision.prototype.transforms.functional as F
 from torchvision.prototype import features
 from torchvision.prototype.features import ColorSpace
@@ -18,7 +17,7 @@ from ._utils import is_simple_tensor
 class ToTensor(Transform):
 
     # Updated transformed types for ToTensor
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
     def __init__(self) -> None:
         warnings.warn(
@@ -52,7 +51,7 @@ class PILToTensor(Transform):
 class ToPILImage(Transform):
 
     # Updated transformed types for ToPILImage
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, features._Feature, PIL.Image.Image, np.ndarray)
 
     def __init__(self, mode: Optional[str] = None) -> None:
         warnings.warn(

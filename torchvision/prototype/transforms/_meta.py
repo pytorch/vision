@@ -42,7 +42,7 @@ class ConvertImageDtype(Transform):
 
 class ConvertColorSpace(Transform):
     # F.convert_color_space does NOT handle `_Feature`'s in general
-    _transformed_types = (torch.Tensor, features.Image, PIL.Image.Image)
+    _transformed_types = (is_simple_tensor, features.Image, PIL.Image.Image)
 
     def __init__(
         self,
