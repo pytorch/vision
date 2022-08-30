@@ -11,11 +11,12 @@ from .functional._meta import get_dimensions_image_pil, get_dimensions_image_ten
 
 def query_bounding_box(sample: Any) -> features.BoundingBox:
     flat_sample, _ = tree_flatten(sample)
-    for i in flat_sample:
-        if isinstance(i, features.BoundingBox):
-            return i
-
-    raise TypeError("No bounding box was found in the sample")
+    bounding_boxes = {item for item in flat_sample if isinstance(item, features.BoundingBox)}
+    if not bounding_boxes:
+        raise TypeError("No bounding box was found in the sample")
+    elif len(bounding_boxes) > 2:
+        raise ValueError("Found multiple bounding boxes in the sample")
+    return bounding_boxes.pop()
 
 
 def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
@@ -41,7 +42,7 @@ def query_chw(sample: Any) -> Tuple[int, int, int]:
     if not chws:
         raise TypeError("No image was found in the sample")
     elif len(chws) > 2:
-        raise TypeError(f"Found multiple CxHxW dimensions in the sample: {sequence_to_str(sorted(chws))}")
+        raise ValueError(f"Found multiple CxHxW dimensions in the sample: {sequence_to_str(sorted(chws))}")
     return chws.pop()
 
 
