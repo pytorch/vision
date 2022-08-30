@@ -122,7 +122,7 @@ class BoundingBox(_Feature):
         if not isinstance(padding, int):
             padding = list(padding)
 
-        output = self._F.pad_bounding_box(self, padding, format=self.format)
+        output = self._F.pad_bounding_box(self, padding, format=self.format, padding_mode=padding_mode)
 
         # Update output image size:
         left, top, right, bottom = self._F._geometry._parse_pad_padding(padding)
