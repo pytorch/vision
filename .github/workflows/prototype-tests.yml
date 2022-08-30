@@ -14,11 +14,8 @@ jobs:
           - "3.10"
         os:
           - ubuntu-latest
-        include:
-          - python-version: "3.7"
-            os: windows-latest
-          - python-version: "3.7"
-            os: macos-latest
+          - windows-latest
+          - macos-latest
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
