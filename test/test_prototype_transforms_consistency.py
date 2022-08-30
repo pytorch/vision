@@ -220,24 +220,24 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.RandomHorizontalFlip,
         legacy_transforms.RandomHorizontalFlip,
         [
-            ArgsKwargs(p=0.0),
-            ArgsKwargs(p=1.0),
+            ArgsKwargs(p=0),
+            ArgsKwargs(p=1),
         ],
     ),
     ConsistencyConfig(
         prototype_transforms.RandomVerticalFlip,
         legacy_transforms.RandomVerticalFlip,
         [
-            ArgsKwargs(p=0.0),
-            ArgsKwargs(p=1.0),
+            ArgsKwargs(p=0),
+            ArgsKwargs(p=1),
         ],
     ),
     ConsistencyConfig(
         prototype_transforms.RandomEqualize,
         legacy_transforms.RandomEqualize,
         [
-            ArgsKwargs(p=0.0),
-            ArgsKwargs(p=1.0),
+            ArgsKwargs(p=0),
+            ArgsKwargs(p=1),
         ],
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.uint8]),
     ),
@@ -245,17 +245,17 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.RandomInvert,
         legacy_transforms.RandomInvert,
         [
-            ArgsKwargs(p=0.0),
-            ArgsKwargs(p=1.0),
+            ArgsKwargs(p=0),
+            ArgsKwargs(p=1),
         ],
     ),
     ConsistencyConfig(
         prototype_transforms.RandomPosterize,
         legacy_transforms.RandomPosterize,
         [
-            ArgsKwargs(p=0.0, bits=5),
-            ArgsKwargs(p=1.0, bits=1),
-            ArgsKwargs(p=1.0, bits=3),
+            ArgsKwargs(p=0, bits=5),
+            ArgsKwargs(p=1, bits=1),
+            ArgsKwargs(p=1, bits=3),
         ],
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.uint8]),
     ),
@@ -263,35 +263,62 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.RandomSolarize,
         legacy_transforms.RandomSolarize,
         [
-            ArgsKwargs(p=0.0, threshold=0.5),
-            ArgsKwargs(p=1.0, threshold=0.3),
-            ArgsKwargs(p=1.0, threshold=0.99),
+            ArgsKwargs(p=0, threshold=0.5),
+            ArgsKwargs(p=1, threshold=0.3),
+            ArgsKwargs(p=1, threshold=0.99),
         ],
     ),
     ConsistencyConfig(
         prototype_transforms.RandomAutocontrast,
         legacy_transforms.RandomAutocontrast,
         [
-            ArgsKwargs(p=0.0),
-            ArgsKwargs(p=1.0),
+            ArgsKwargs(p=0),
+            ArgsKwargs(p=1),
         ],
     ),
     ConsistencyConfig(
         prototype_transforms.RandomAdjustSharpness,
         legacy_transforms.RandomAdjustSharpness,
         [
-            ArgsKwargs(p=0.0, sharpness_factor=0.5),
-            ArgsKwargs(p=1.0, sharpness_factor=0.3),
-            ArgsKwargs(p=1.0, sharpness_factor=0.99),
+            ArgsKwargs(p=0, sharpness_factor=0.5),
+            ArgsKwargs(p=1, sharpness_factor=0.3),
+            ArgsKwargs(p=1, sharpness_factor=0.99),
         ],
     ),
     ConsistencyConfig(
         prototype_transforms.RandomGrayscale,
         legacy_transforms.RandomGrayscale,
         [
-            ArgsKwargs(p=0.0),
-            ArgsKwargs(p=1.0),
+            ArgsKwargs(p=0),
+            ArgsKwargs(p=1),
         ],
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomResizedCrop,
+        legacy_transforms.RandomResizedCrop,
+        [
+            ArgsKwargs(16),
+            ArgsKwargs(17, scale=(0.3, 0.7)),
+            ArgsKwargs(25, ratio=(0.5, 1.5)),
+            ArgsKwargs((31, 28), interpolation=prototype_transforms.InterpolationMode.NEAREST),
+            ArgsKwargs((33, 26), interpolation=prototype_transforms.InterpolationMode.BICUBIC),
+            ArgsKwargs((29, 32), antialias=False),
+            ArgsKwargs((28, 31), antialias=True),
+        ],
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomErasing,
+        legacy_transforms.RandomErasing,
+        [
+            ArgsKwargs(p=0),
+            ArgsKwargs(p=1),
+            ArgsKwargs(p=1, scale=(0.3, 0.7)),
+            ArgsKwargs(p=1, ratio=(0.5, 1.5)),
+            ArgsKwargs(p=1, value=1),
+            ArgsKwargs(p=1, value=(1, 2, 3)),
+            ArgsKwargs(p=1, value="random"),
+        ],
+        supports_pil=False,
     ),
 ]
 
@@ -305,23 +332,29 @@ def test_automatic_coverage_deterministic():
         and not issubclass(obj, enum.Enum)
         and name
         not in {
-            "Compose",
             # This framework is based on the assumption that the input image can always be a tensor and optionally a
-            # PIL image. The transforms below require a non-tensor input and thus have to be tested manually.
+            # PIL image, but the transforms below require a non-tensor input.
             "PILToTensor",
             "ToTensor",
+            # Transform containers cannot be tested without other tranforms
+            "Compose",
+            "RandomApply",
+            "RandomChoice",
+            "RandomOrder",
+            # If the random parameter generation in the legacy and prototype transform is the same, setting the seed
+            # should be sufficient. In that case, the transforms below should be tested automatically.
+            "AugMix",
+            "AutoAugment",
+            "ColorJitter",
+            "ElasticTransform",
+            "GaussianBlur",
+            "RandAugment",
+            "RandomAffine",
+            "RandomCrop",
+            "RandomPerspective",
+            "RandomRotation",
+            "TrivialAugmentWide",
         }
-    }
-    # filter out random transformations
-    # FIXME: make me more explicit
-    legacy = {name for name in legacy if "Random" not in name} - {
-        "AugMix",
-        "TrivialAugmentWide",
-        "GaussianBlur",
-        "RandAugment",
-        "AutoAugment",
-        "ColorJitter",
-        "ElasticTransform",
     }
 
     prototype = {config.legacy_cls.__name__ for config in CONSISTENCY_CONFIGS}
@@ -364,6 +397,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
         image_repr = f"[{tuple(image.shape)}, {str(image.dtype).rsplit('.')[-1]}]"
 
         try:
+            torch.manual_seed(0)
             output_legacy_tensor = legacy(image_tensor)
         except Exception as exc:
             raise pytest.UsageError(
@@ -373,6 +407,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
             ) from exc
 
         try:
+            torch.manual_seed(0)
             output_prototype_tensor = prototype(image_tensor)
         except Exception as exc:
             raise AssertionError(
@@ -388,6 +423,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
         )
 
         try:
+            torch.manual_seed(0)
             output_prototype_image = prototype(image)
         except Exception as exc:
             raise AssertionError(
@@ -404,6 +440,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
 
         if image_pil is not None:
             try:
+                torch.manual_seed(0)
                 output_legacy_pil = legacy(image_pil)
             except Exception as exc:
                 raise pytest.UsageError(
@@ -413,6 +450,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
                 ) from exc
 
             try:
+                torch.manual_seed(0)
                 output_prototype_pil = prototype(image_pil)
             except Exception as exc:
                 raise AssertionError(
