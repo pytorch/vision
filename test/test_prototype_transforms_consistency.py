@@ -1,14 +1,28 @@
+import functools
 import itertools
 
 import PIL.Image
 import pytest
 
 import torch
-
 from test_prototype_transforms_functional import make_images
+from torch.testing._comparison import assert_equal as _assert_equal, TensorLikePair
 from torchvision import transforms as legacy_transforms
 from torchvision.prototype import features, transforms as prototype_transforms
 from torchvision.prototype.transforms.functional import to_image_pil, to_image_tensor
+
+
+class ImagePair(TensorLikePair):
+    def _process_inputs(self, actual, expected, *, id, allow_subclasses):
+        return super()._process_inputs(
+            *[to_image_tensor(input) if isinstance(input, PIL.Image.Image) else input for input in [actual, expected]],
+            id=id,
+            allow_subclasses=allow_subclasses,
+        )
+
+
+assert_equal = functools.partial(_assert_equal, pair_types=[ImagePair], rtol=0, atol=0)
+
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])
 
@@ -208,11 +222,9 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
                 f"`is_simple_tensor` path in `_transform`."
             ) from exc
 
-        torch.testing.assert_close(
+        assert_equal(
             output_prototype_tensor,
             output_legacy_tensor,
-            atol=0,
-            rtol=0,
             msg=lambda msg: f"Tensor image consistency check failed with: \n\n{msg}",
         )
 
@@ -225,11 +237,9 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
                 f"`features.Image` path in `_transform`."
             ) from exc
 
-        torch.testing.assert_close(
+        assert_equal(
             output_prototype_image,
             output_prototype_tensor,
-            atol=0,
-            rtol=0,
             msg=lambda msg: f"Output for feature and tensor images is not equal: \n\n{msg}",
         )
 
@@ -252,11 +262,8 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
                     f"`PIL.Image.Image` path in `_transform`."
                 ) from exc
 
-            if all(isinstance(image, PIL.Image.Image) for image in [output_prototype_pil, output_legacy_pil]):
-                torch.testing.assert_close(
-                    to_image_tensor(output_prototype_pil),
-                    to_image_tensor(output_legacy_pil),
-                    atol=0,
-                    rtol=0,
-                    msg=lambda msg: f"PIL image consistency check failed with: \n\n{msg}",
-                )
+            assert_equal(
+                output_prototype_pil,
+                output_legacy_pil,
+                msg=lambda msg: f"PIL image consistency check failed with: \n\n{msg}",
+            )
