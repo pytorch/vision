@@ -594,8 +594,15 @@ def pad_segmentation_mask(
 
 
 def pad_bounding_box(
-    bounding_box: torch.Tensor, padding: Union[int, List[int]], format: features.BoundingBoxFormat
+    bounding_box: torch.Tensor,
+    padding: Union[int, List[int]],
+    format: features.BoundingBoxFormat,
+    padding_mode: str = "constant",
 ) -> torch.Tensor:
+    if padding_mode not in ["constant"]:
+        # TODO: add support of other padding modes
+        raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
+
     left, _, top, _ = _parse_pad_padding(padding)
 
     bounding_box = bounding_box.clone()
