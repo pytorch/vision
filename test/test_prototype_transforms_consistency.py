@@ -2,6 +2,8 @@ import enum
 import functools
 import itertools
 
+import numpy as np
+
 import PIL.Image
 import pytest
 
@@ -72,7 +74,7 @@ class ConsistencyConfig:
                 args_kwargs,
                 self.make_images_kwargs,
                 self.supports_pil,
-                id=f"{self.prototype_cls.__name__}({args_kwargs})",
+                id=f"{self.legacy_cls.__name__}({args_kwargs})",
             )
             for args_kwargs in self.transform_args_kwargs
         ]
@@ -176,10 +178,47 @@ CONSISTENCY_CONFIGS = [
             DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=[features.ColorSpace.RGB, features.ColorSpace.GRAY]
         ),
     ),
+    ConsistencyConfig(
+        prototype_transforms.ConvertImageDtype,
+        legacy_transforms.ConvertImageDtype,
+        [
+            ArgsKwargs(torch.float16),
+            ArgsKwargs(torch.bfloat16),
+            ArgsKwargs(torch.float32),
+            ArgsKwargs(torch.float64),
+            ArgsKwargs(torch.uint8),
+        ],
+        supports_pil=False,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.ToPILImage,
+        legacy_transforms.ToPILImage,
+        [ArgsKwargs()],
+        make_images_kwargs=dict(
+            color_spaces=[
+                features.ColorSpace.GRAY,
+                features.ColorSpace.GRAY_ALPHA,
+                features.ColorSpace.RGB,
+                features.ColorSpace.RGB_ALPHA,
+            ],
+            extra_dims=[()],
+        ),
+        supports_pil=False,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.Lambda,
+        legacy_transforms.Lambda,
+        [
+            ArgsKwargs(lambda image: image / 2),
+        ],
+        # Technically, this also supports PIL, but it is overkill to write a function here that supports tensor and PIL
+        # images given that the transform does nothing but call it anyway.
+        supports_pil=False,
+    ),
 ]
 
 
-def test_coverage_deterministic():
+def test_automatic_coverage_deterministic():
     legacy = {
         name
         for name, obj in legacy_transforms.__dict__.items()
@@ -189,7 +228,10 @@ def test_coverage_deterministic():
         and name
         not in {
             "Compose",
-            "Lambda",
+            # This framework is based on the assumption that the input image can always be a tensor and optionally a
+            # PIL image. The transforms below require a non-tensor input and thus have to be tested manually.
+            "PILToTensor",
+            "ToTensor",
         }
     }
     # filter out random transformations
@@ -203,7 +245,7 @@ def test_coverage_deterministic():
         "ElasticTransform",
     }
 
-    prototype = {config.prototype_cls.__name__ for config in CONSISTENCY_CONFIGS}
+    prototype = {config.legacy_cls.__name__ for config in CONSISTENCY_CONFIGS}
 
     missing = legacy - prototype
     if missing:
@@ -240,11 +282,13 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
         image_tensor = torch.Tensor(image)
         image_pil = to_image_pil(image) if image.ndim == 3 and supports_pil else None
 
+        image_repr = f"[{tuple(image.shape)}, {str(image.dtype).rsplit('.')[-1]}]"
+
         try:
             output_legacy_tensor = legacy(image_tensor)
         except Exception as exc:
             raise pytest.UsageError(
-                f"Transforming a tensor image with shape {tuple(image.shape)} failed in the legacy transform with the "
+                f"Transforming a tensor image {image_repr} failed in the legacy transform with the "
                 f"error above. This means that you need to specify the parameters passed to `make_images` through the "
                 "`make_images_kwargs` of the `ConsistencyConfig`."
             ) from exc
@@ -253,7 +297,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
             output_prototype_tensor = prototype(image_tensor)
         except Exception as exc:
             raise AssertionError(
-                f"Transforming a tensor image with shape {tuple(image.shape)} failed in the prototype transform with "
+                f"Transforming a tensor image with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
                 f"`is_simple_tensor` path in `_transform`."
             ) from exc
@@ -268,7 +312,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
             output_prototype_image = prototype(image)
         except Exception as exc:
             raise AssertionError(
-                f"Transforming a feature image with shape {tuple(image.shape)} failed in the prototype transform with "
+                f"Transforming a feature image with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
                 f"`features.Image` path in `_transform`."
             ) from exc
@@ -284,7 +328,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
                 output_legacy_pil = legacy(image_pil)
             except Exception as exc:
                 raise pytest.UsageError(
-                    f"Transforming a PIL image with shape {tuple(image.shape)} failed in the legacy transform with the "
+                    f"Transforming a PIL image with shape {image_repr} failed in the legacy transform with the "
                     f"error above. If this transform does not support PIL images, set `supports_pil=False` on the "
                     "`ConsistencyConfig`. "
                 ) from exc
@@ -293,7 +337,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
                 output_prototype_pil = prototype(image_pil)
             except Exception as exc:
                 raise AssertionError(
-                    f"Transforming a PIL image with shape {tuple(image.shape)} failed in the prototype transform with "
+                    f"Transforming a PIL image with shape {image_repr} failed in the prototype transform with "
                     f"the error above. This means there is a consistency bug either in `_get_params` or in the "
                     f"`PIL.Image.Image` path in `_transform`."
                 ) from exc
@@ -303,3 +347,25 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
                 output_legacy_pil,
                 msg=lambda msg: f"PIL image consistency check failed with: \n\n{msg}",
             )
+
+
+class TestToTensorTransforms:
+    def test_pil_to_tensor(self):
+        for image in make_images(extra_dims=[()]):
+            image_pil = to_image_pil(image)
+
+            prototype_transform = prototype_transforms.PILToTensor()
+            legacy_transform = legacy_transforms.PILToTensor()
+
+            assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
+
+    def test_to_tensor(self):
+        for image in make_images(extra_dims=[()]):
+            image_pil = to_image_pil(image)
+            image_numpy = np.array(image_pil)
+
+            prototype_transform = prototype_transforms.ToTensor()
+            legacy_transform = legacy_transforms.ToTensor()
+
+            assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
+            assert_equal(prototype_transform(image_numpy), legacy_transform(image_numpy))
