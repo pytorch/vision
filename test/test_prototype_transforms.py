@@ -1071,11 +1071,10 @@ class TestToPILImage:
         [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
     )
     def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.functional.to_pil_image")
+        fn = mocker.patch("torchvision.prototype.transforms.functional.to_image_pil")
 
         inpt = mocker.MagicMock(spec=inpt_type)
-        with pytest.warns(UserWarning, match="deprecated and will be removed"):
-            transform = transforms.ToPILImage()
+        transform = transforms.ToPILImage()
         transform(inpt)
         if inpt_type in (PIL.Image.Image, features.BoundingBox, str, int):
             assert fn.call_count == 0

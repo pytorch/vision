@@ -7,15 +7,21 @@ import PIL.Image
 import torch
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features
-from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.transforms.functional import InterpolationMode
-from torchvision.transforms.functional_tensor import _parse_pad_padding
-from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size
+from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
 
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import has_all, has_any, query_bounding_box, query_chw
+from ._utils import (
+    _check_sequence_input,
+    _parse_pad_padding,
+    _setup_angle,
+    _setup_size,
+    has_all,
+    has_any,
+    query_bounding_box,
+    query_chw,
+)
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):

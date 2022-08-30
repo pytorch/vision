@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import numpy as np
 import PIL.Image
@@ -20,41 +20,12 @@ class ToTensor(Transform):
     def __init__(self) -> None:
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
-            "Instead, please use `transforms.ToImageTensor()`."
+            "Instead, please use `transforms.Compose([transforms.ToImageTensor(), transforms.ConvertImageDtype()])`."
         )
         super().__init__()
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         return _F.to_tensor(inpt)
-
-
-class PILToTensor(Transform):
-    _transformed_types = (PIL.Image.Image,)
-
-    def __init__(self) -> None:
-        warnings.warn(
-            "The transform `PILToTensor()` is deprecated and will be removed in a future release. "
-            "Instead, please use `transforms.ToImageTensor()`."
-        )
-        super().__init__()
-
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
-        return _F.pil_to_tensor(inpt)
-
-
-class ToPILImage(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Image, np.ndarray)
-
-    def __init__(self, mode: Optional[str] = None) -> None:
-        warnings.warn(
-            "The transform `ToPILImage()` is deprecated and will be removed in a future release. "
-            "Instead, please use `transforms.ToImagePIL()`."
-        )
-        super().__init__()
-        self.mode = mode
-
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> PIL.Image.Image:
-        return _F.to_pil_image(inpt, mode=self.mode)
 
 
 class Grayscale(Transform):
