@@ -3,19 +3,19 @@ from typing import Any, List, Optional, Union
 
 import torch
 from torch import nn, Tensor
-from torch.ao.quantization import QuantStub, DeQuantStub
+from torch.ao.quantization import DeQuantStub, QuantStub
 
 from ...ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from ..mobilenetv3 import (
+    _mobilenet_v3_conf,
     InvertedResidual,
     InvertedResidualConfig,
-    MobileNetV3,
-    _mobilenet_v3_conf,
     MobileNet_V3_Large_Weights,
+    MobileNetV3,
 )
 from .utils import _fuse_modules, _replace_relu
 
@@ -184,6 +184,7 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
     DEFAULT = IMAGENET1K_QNNPACK_V1
 
 
+@register_model(name="quantized_mobilenet_v3_large")
 @handle_legacy_interface(
     weights=(
         "pretrained",

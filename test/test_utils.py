@@ -10,7 +10,7 @@ import torch
 import torchvision.transforms.functional as F
 import torchvision.utils as utils
 from common_utils import assert_equal
-from PIL import Image, __version__ as PILLOW_VERSION, ImageColor
+from PIL import __version__ as PILLOW_VERSION, Image, ImageColor
 
 
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
@@ -45,8 +45,8 @@ def test_normalize_in_make_grid():
 
     # Rounding the result to one decimal for comparison
     n_digits = 1
-    rounded_grid_max = torch.round(grid_max * 10 ** n_digits) / (10 ** n_digits)
-    rounded_grid_min = torch.round(grid_min * 10 ** n_digits) / (10 ** n_digits)
+    rounded_grid_max = torch.round(grid_max * 10**n_digits) / (10**n_digits)
+    rounded_grid_min = torch.round(grid_min * 10**n_digits) / (10**n_digits)
 
     assert_equal(norm_max, rounded_grid_max, msg="Normalized max is not equal to 1")
     assert_equal(norm_min, rounded_grid_min, msg="Normalized min is not equal to 0")
@@ -152,6 +152,7 @@ def test_draw_invalid_boxes():
     img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
     img_correct = torch.zeros((3, 10, 10), dtype=torch.uint8)
     boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+    boxes_wrong = torch.tensor([[10, 10, 4, 5], [30, 20, 10, 5]], dtype=torch.float)
     labels_wrong = ["one", "two"]
     colors_wrong = ["pink", "blue"]
 
@@ -167,6 +168,8 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_correct, boxes, labels_wrong)
     with pytest.raises(ValueError, match="Number of colors"):
         utils.draw_bounding_boxes(img_correct, boxes, colors=colors_wrong)
+    with pytest.raises(ValueError, match="Boxes need to be in"):
+        utils.draw_bounding_boxes(img_correct, boxes_wrong)
 
 
 def test_draw_boxes_warning():

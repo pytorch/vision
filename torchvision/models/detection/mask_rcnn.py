@@ -6,13 +6,13 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
 from ...transforms._presets import ObjectDetection
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from ._utils import overwrite_eps
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
-from .faster_rcnn import FasterRCNN, FastRCNNConvFCHead, RPNHead, _default_anchorgen
+from .faster_rcnn import _default_anchorgen, FasterRCNN, FastRCNNConvFCHead, RPNHead
 
 
 __all__ = [
@@ -396,6 +396,7 @@ class MaskRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
     DEFAULT = COCO_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", MaskRCNN_ResNet50_FPN_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
@@ -411,6 +412,8 @@ def maskrcnn_resnet50_fpn(
 ) -> MaskRCNN:
     """Mask R-CNN model with a ResNet-50-FPN backbone from the `Mask R-CNN
     <https://arxiv.org/abs/1703.06870>`_ paper.
+
+    .. betastatus:: detection module
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
@@ -501,6 +504,7 @@ def maskrcnn_resnet50_fpn(
     return model
 
 
+@register_model()
 def maskrcnn_resnet50_fpn_v2(
     *,
     weights: Optional[MaskRCNN_ResNet50_FPN_V2_Weights] = None,
@@ -512,6 +516,8 @@ def maskrcnn_resnet50_fpn_v2(
 ) -> MaskRCNN:
     """Improved Mask R-CNN model with a ResNet-50-FPN backbone from the `Benchmarking Detection Transfer
     Learning with Vision Transformers <https://arxiv.org/abs/2111.11429>`_ paper.
+
+    .. betastatus:: detection module
 
     :func:`~torchvision.models.detection.maskrcnn_resnet50_fpn` for more details.
 

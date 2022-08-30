@@ -75,7 +75,7 @@ class ConfusionMatrix:
         with torch.inference_mode():
             k = (a >= 0) & (a < n)
             inds = n * a[k].to(torch.int64) + b[k]
-            self.mat += torch.bincount(inds, minlength=n ** 2).reshape(n, n)
+            self.mat += torch.bincount(inds, minlength=n**2).reshape(n, n)
 
     def reset(self):
         self.mat.zero_()

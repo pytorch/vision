@@ -4,10 +4,10 @@ from typing import Any, Optional
 from torch import nn
 
 from ...transforms._presets import SemanticSegmentation
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _VOC_CATEGORIES
-from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet, ResNet50_Weights, ResNet101_Weights, resnet50, resnet101
+from .._utils import _ovewrite_value_param, handle_legacy_interface, IntermediateLayerGetter
+from ..resnet import ResNet, resnet101, ResNet101_Weights, resnet50, ResNet50_Weights
 from ._utils import _SimpleSegmentationModel
 
 
@@ -110,6 +110,7 @@ def _fcn_resnet(
     return FCN(backbone, classifier, aux_classifier)
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
@@ -125,6 +126,8 @@ def fcn_resnet50(
 ) -> FCN:
     """Fully-Convolutional Network model with a ResNet-50 backbone from the `Fully Convolutional
     Networks for Semantic Segmentation <https://arxiv.org/abs/1411.4038>`_ paper.
+
+    .. betastatus:: segmentation module
 
     Args:
         weights (:class:`~torchvision.models.segmentation.FCN_ResNet50_Weights`, optional): The
@@ -166,6 +169,7 @@ def fcn_resnet50(
     return model
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1),
     weights_backbone=("pretrained_backbone", ResNet101_Weights.IMAGENET1K_V1),
@@ -181,6 +185,8 @@ def fcn_resnet101(
 ) -> FCN:
     """Fully-Convolutional Network model with a ResNet-101 backbone from the `Fully Convolutional
     Networks for Semantic Segmentation <https://arxiv.org/abs/1411.4038>`_ paper.
+
+    .. betastatus:: segmentation module
 
     Args:
         weights (:class:`~torchvision.models.segmentation.FCN_ResNet101_Weights`, optional): The
