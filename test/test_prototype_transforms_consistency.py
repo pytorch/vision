@@ -183,8 +183,8 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
             output_legacy_tensor = legacy(image_tensor)
         except Exception as exc:
             raise pytest.UsageError(
-                f"Transforming a tensor image with shape {tuple(image.shape)} failed with the error above. "
-                "This means that you need to specify the parameters passed to `make_images` through the "
+                f"Transforming a tensor image with shape {tuple(image.shape)} failed in the legacy transform with the "
+                f"error above. This means that you need to specify the parameters passed to `make_images` through the "
                 "`make_images_kwargs` of the `ConsistencyConfig`."
             ) from exc
 
@@ -192,9 +192,9 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
             output_prototype_tensor = prototype(image_tensor)
         except Exception as exc:
             raise AssertionError(
-                f"Transforming a tensor image with shape {tuple(image.shape)} failed with the error above. "
-                f"This means there is a consistency bug either in `_get_params` "
-                f"or in the `is_simple_tensor` path in `_transform`."
+                f"Transforming a tensor image with shape {tuple(image.shape)} failed in the prototype transform with "
+                f"the error above. This means there is a consistency bug either in `_get_params` or in the "
+                f"`is_simple_tensor` path in `_transform`."
             ) from exc
 
         torch.testing.assert_close(
@@ -209,9 +209,9 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
             output_prototype_image = prototype(image)
         except Exception as exc:
             raise AssertionError(
-                f"Transforming a feature image with shape {tuple(image.shape)} failed with the error above. "
-                f"This means there is a consistency bug either in `_get_params` "
-                f"or in the `features.Image` path in `_transform`."
+                f"Transforming a feature image with shape {tuple(image.shape)} failed in the prototype transform with "
+                f"the error above. This means there is a consistency bug either in `_get_params` or in the "
+                f"`features.Image` path in `_transform`."
             ) from exc
 
         torch.testing.assert_close(
@@ -227,8 +227,8 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
                 output_legacy_pil = legacy(image_pil)
             except Exception as exc:
                 raise pytest.UsageError(
-                    f"Transforming a PIL image with shape {tuple(image.shape)} failed with the error above. "
-                    "If this transform does not support PIL images, set `supports_pil=False` on the "
+                    f"Transforming a PIL image with shape {tuple(image.shape)} failed in the legacy transform with the "
+                    f"error above. If this transform does not support PIL images, set `supports_pil=False` on the "
                     "`ConsistencyConfig`. "
                 ) from exc
 
@@ -236,9 +236,9 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
                 output_prototype_pil = prototype(image_pil)
             except Exception as exc:
                 raise AssertionError(
-                    f"Transforming a PIL image with shape {tuple(image.shape)} failed with the error above. "
-                    f"This means there is a consistency bug either in `_get_params` "
-                    f"or in the `PIL.Image.Image` path in `_transform`."
+                    f"Transforming a PIL image with shape {tuple(image.shape)} failed in the prototype transform with "
+                    f"the error above. This means there is a consistency bug either in `_get_params` or in the "
+                    f"`PIL.Image.Image` path in `_transform`."
                 ) from exc
 
             if all(isinstance(image, PIL.Image.Image) for image in [output_prototype_pil, output_legacy_pil]):
