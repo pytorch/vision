@@ -378,8 +378,12 @@ def affine_segmentation_mask(
 
 
 def _convert_fill_arg(fill: Optional[Union[int, float, Sequence[int], Sequence[float]]]) -> Optional[List[float]]:
+    # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
+    # So, we can't reassign fill to 0
+    # if fill is None:
+    #     fill = 0
     if fill is None:
-        fill = 0
+        return fill
 
     # This cast does Sequence -> List[float] to please mypy and torch.jit.script
     if not isinstance(fill, (int, float)):
