@@ -63,11 +63,10 @@ class LinearTransformation(Transform):
         self.mean_vector = mean_vector
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if has_any(sample, PIL.Image.Image):
+        if has_any(inputs, PIL.Image.Image):
             raise TypeError("LinearTransformation does not work on PIL Images")
 
-        return super().forward(sample)
+        return super().forward(*inputs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         # Image instance after linear transformation is not Image anymore due to unknown data range
