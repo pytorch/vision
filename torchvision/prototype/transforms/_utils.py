@@ -22,7 +22,7 @@ def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tupl
     if isinstance(image, features.Image):
         channels = image.num_channels
         height, width = image.image_size
-    elif isinstance(image, torch.Tensor):
+    elif is_simple_tensor(image):
         channels, height, width = get_dimensions_image_tensor(image)
     elif isinstance(image, PIL.Image.Image):
         channels, height, width = get_dimensions_image_pil(image)
