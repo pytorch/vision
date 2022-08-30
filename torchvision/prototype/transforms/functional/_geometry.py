@@ -1078,6 +1078,17 @@ def five_crop_image_pil(
     return tl, tr, bl, br, center
 
 
+def five_crop(inpt: DType, size: List[int]) -> Tuple[DType, DType, DType, DType, DType]:
+    # TODO: consider breaking BC here to return List[DType] to align this op with `ten_crop`
+    if isinstance(inpt, torch.Tensor):
+        output = five_crop_image_tensor(inpt, size)
+        if isinstance(inpt, features.Image):
+            output = tuple(features.Image.new_like(inpt, item) for item in output)  # type: ignore[assignment]
+        return output
+    else:  # isinstance(inpt, PIL.Image.Image):
+        return five_crop_image_pil(inpt, size)
+
+
 def ten_crop_image_tensor(img: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
     tl, tr, bl, br, center = five_crop_image_tensor(img, size)
 
@@ -1102,3 +1113,13 @@ def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: boo
     tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_pil(img, size)
 
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
+
+
+def ten_crop(inpt: DType, size: List[int], *, vertical_flip: bool = False) -> List[DType]:
+    if isinstance(inpt, torch.Tensor):
+        output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
+        if isinstance(inpt, features.Image):
+            output = [features.Image.new_like(inpt, item) for item in output]
+        return output
+    else:  # isinstance(inpt, PIL.Image.Image):
+        return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)
