@@ -288,7 +288,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
             raise TypeError(
-                f"{type(self).__name__}() requires input sample to contain equal-sized list of Images, "
+                f"{type(self).__name__}() requires input sample to contain equal sized list of Images, "
                 "BoundingBoxes, Segmentation Masks and Labels or OneHotLabels."
             )
 
