@@ -12,15 +12,7 @@ from torchvision.prototype.transforms import functional as F, InterpolationMode,
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import (
-    _check_sequence_input,
-    _setup_angle,
-    _setup_size,
-    has_all,
-    has_any,
-    query_bounding_box,
-    query_chw,
-)
+from ._utils import _check_sequence_input, _setup_angle, _setup_size, has_all, has_any, query_bounding_box, query_chw
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
