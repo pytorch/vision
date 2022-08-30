@@ -1,3 +1,4 @@
+import enum
 import functools
 import itertools
 
@@ -8,6 +9,7 @@ import torch
 from test_prototype_transforms_functional import make_images
 from torch.testing._comparison import assert_equal as _assert_equal, TensorLikePair
 from torchvision import transforms as legacy_transforms
+from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
 from torchvision.prototype.transforms.functional import to_image_pil, to_image_tensor
 
@@ -175,6 +177,40 @@ CONSISTENCY_CONFIGS = [
         ),
     ),
 ]
+
+
+def test_coverage_deterministic():
+    legacy = {
+        name
+        for name, obj in legacy_transforms.__dict__.items()
+        if not name.startswith("_")
+        and isinstance(obj, type)
+        and not issubclass(obj, enum.Enum)
+        and name
+        not in {
+            "Compose",
+            "Lambda",
+        }
+    }
+    # filter out random transformations
+    legacy = {name for name in legacy if "Random" not in name} - {
+        "AugMix",
+        "TrivialAugmentWide",
+        "GaussianBlur",
+        "RandAugment",
+        "AutoAugment",
+        "ColorJitter",
+        "ElasticTransform",
+    }
+
+    prototype = {config.prototype_cls.__name__ for config in CONSISTENCY_CONFIGS}
+
+    missing = legacy - prototype
+    if missing:
+        raise AssertionError(
+            f"The prototype transformations {sequence_to_str(sorted(missing), separate_last='and ')} "
+            f"are not checked for consistency although a legacy counterpart exists."
+        )
 
 
 @pytest.mark.parametrize(
