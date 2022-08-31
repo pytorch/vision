@@ -20,7 +20,7 @@ class Compose(Transform):
 
 
 class RandomApply(Compose):
-    def __init__(self, transforms: Sequence[Callable], *, p: float = 0.5) -> None:
+    def __init__(self, transforms: Sequence[Callable], p: float = 0.5) -> None:
         super().__init__(transforms)
 
         if not (0.0 <= p <= 1.0):
