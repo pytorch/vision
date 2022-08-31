@@ -555,10 +555,10 @@ class TestRandomAffine:
         if translate is not None:
             w_max = int(round(translate[0] * w))
             h_max = int(round(translate[1] * h))
-            assert -w_max <= params["translations"][0] <= w_max
-            assert -h_max <= params["translations"][1] <= h_max
+            assert -w_max <= params["translate"][0] <= w_max
+            assert -h_max <= params["translate"][1] <= h_max
         else:
-            assert params["translations"] == (0, 0)
+            assert params["translate"] == (0, 0)
 
         if scale is not None:
             assert scale[0] <= params["scale"] <= scale[1]
@@ -759,7 +759,8 @@ class TestGaussianBlur:
         if isinstance(kernel_size, (tuple, list)):
             assert transform.kernel_size == kernel_size
         else:
-            assert transform.kernel_size == (kernel_size, kernel_size)
+            kernel_size = (kernel_size, kernel_size)
+            assert transform.kernel_size == kernel_size
 
         if isinstance(sigma, (tuple, list)):
             assert transform.sigma == sigma
@@ -779,7 +780,7 @@ class TestGaussianBlur:
         torch.manual_seed(12)
         params = transform._get_params(inpt)
 
-        fn.assert_called_once_with(inpt, **params)
+        fn.assert_called_once_with(inpt, kernel_size, **params)
 
 
 class TestRandomColorOp:
