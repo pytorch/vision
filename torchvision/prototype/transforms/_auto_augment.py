@@ -116,8 +116,8 @@ class _AutoAugmentBase(Transform):
                 angle=0.0,
                 translate=[int(magnitude), 0],
                 scale=1.0,
-                shear=[0.0, 0.0],
                 interpolation=interpolation,
+                shear=[0.0, 0.0],
                 fill=fill_,
             )
         elif transform_id == "TranslateY":
@@ -126,8 +126,8 @@ class _AutoAugmentBase(Transform):
                 angle=0.0,
                 translate=[0, int(magnitude)],
                 scale=1.0,
-                shear=[0.0, 0.0],
                 interpolation=interpolation,
+                shear=[0.0, 0.0],
                 fill=fill_,
             )
         elif transform_id == "Rotate":
