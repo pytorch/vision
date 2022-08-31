@@ -1,10 +1,8 @@
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 import torch
 from torchvision.prototype.transforms import Transform
-
-from ._transform import _RandomApplyTransform
 
 
 class Compose(Transform):
@@ -21,16 +19,21 @@ class Compose(Transform):
         return sample
 
 
-class RandomApply(_RandomApplyTransform):
-    def __init__(self, transform: Transform, *, p: float = 0.5) -> None:
-        super().__init__(p=p)
-        self.transform = transform
+class RandomApply(Compose):
+    def __init__(self, transforms: Sequence[Callable], *, p: float = 0.5) -> None:
+        super().__init__(transforms)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self.transform(inpt)
+        if not (0.0 <= p <= 1.0):
+            raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
+        self.p = p
 
-    def extra_repr(self) -> str:
-        return f"p={self.p}"
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+
+        if torch.rand(1) >= self.p:
+            return sample
+
+        return super().forward(sample)
 
 
 class RandomChoice(Transform):
