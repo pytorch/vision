@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+31874dd ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+4f034b5 ) &#x25BC</a>
     </div>
     
 
@@ -689,7 +689,9 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_compute_output_size</span><span class="p">(</span><span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span> <span class="nf">_compute_resized_output_size</span><span class="p">(</span>
+    <span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># specified size only for the smallest edge</span>
         <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">image_size</span>
         <span class="n">short</span><span class="p">,</span> <span class="n">long</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span> <span class="k">if</span> <span class="n">w</span> <span class="o">&lt;=</span> <span class="n">h</span> <span class="k">else</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
@@ -789,7 +791,7 @@
     <span class="n">_</span><span class="p">,</span> <span class="n">image_height</span><span class="p">,</span> <span class="n">image_width</span> <span class="o">=</span> <span class="n">get_dimensions</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="n">size</span> <span class="o">=</span> <span class="p">[</span><span class="n">size</span><span class="p">]</span>
-    <span class="n">output_size</span> <span class="o">=</span> <span class="n">_compute_output_size</span><span class="p">((</span><span class="n">image_height</span><span class="p">,</span> <span class="n">image_width</span><span class="p">),</span> <span class="n">size</span><span class="p">,</span> <span class="n">max_size</span><span class="p">)</span>
+    <span class="n">output_size</span> <span class="o">=</span> <span class="n">_compute_resized_output_size</span><span class="p">((</span><span class="n">image_height</span><span class="p">,</span> <span class="n">image_width</span><span class="p">),</span> <span class="n">size</span><span class="p">,</span> <span class="n">max_size</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">image_height</span><span class="p">,</span> <span class="n">image_width</span><span class="p">)</span> <span class="o">==</span> <span class="n">output_size</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">img</span>
