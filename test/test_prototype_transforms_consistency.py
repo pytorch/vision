@@ -89,6 +89,7 @@ CONSISTENCY_CONFIGS = [
         ],
         supports_pil=False,
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.float]),
+        removed_params=["inplace"],
     ),
     ConsistencyConfig(
         prototype_transforms.Resize,
@@ -315,6 +316,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=1, value="random"),
         ],
         supports_pil=False,
+        removed_params=["inplace"],
     ),
     ConsistencyConfig(
         prototype_transforms.ColorJitter,
@@ -375,6 +377,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(degrees=30.0, fill=(2, 3, 4)),
             ArgsKwargs(degrees=30.0, center=(0, 0)),
         ],
+        removed_params=["fillcolor", "resample"],
     ),
     ConsistencyConfig(
         prototype_transforms.RandomCrop,
@@ -419,6 +422,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(degrees=30.0, fill=1),
             ArgsKwargs(degrees=30.0, fill=(1, 2, 3)),
         ],
+        removed_params=["resample"],
     ),
 ]
 
@@ -477,11 +481,8 @@ def test_signature_consistency(config):
             f"the `ConsistencyConfig`."
         )
 
-    extra_without_default = {
-        param
-        for param in prototype_params.keys() - legacy_params.keys()
-        if param.default is not inspect.Parameter.empty
-    }
+    extra = prototype_params.keys() - legacy_params.keys()
+    extra_without_default = {param for param in extra if prototype_params[param].default is not inspect.Parameter.empty}
     if extra_without_default:
         raise AssertionError(
             f"The prototype transform requires the parameters {sequence_to_str(sorted(missing), separate_last='and ')}, "
