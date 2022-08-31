@@ -161,10 +161,6 @@ class ImageNet(Dataset):
             image=EncodedImage.from_file(buffer),
         )
 
-    def _to_str(self, obj: Any):
-        # FIXME: remove this wrapper as soon as https://github.com/pytorch/pytorch/pull/84279 is landed
-        return str(obj)
-
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
         if self._split in {"train", "test"}:
             dp = resource_dps[0]
@@ -187,7 +183,7 @@ class ImageNet(Dataset):
             meta_dp = CategoryAndWordNetIDExtractor(meta_dp)
             wnid_dp = Mapper(meta_dp, getitem(1))
             wnid_dp = Enumerator(wnid_dp, 1)
-            wnid_dp = Mapper(wnid_dp, self._to_str, input_col=0)
+            wnid_dp = Mapper(wnid_dp, str, input_col=0)
             wnid_map = IterToMapConverter(wnid_dp)
 
             label_dp = LineReader(label_dp, decode=True, return_path=False)
