@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import numpy as np
 import PIL.Image
@@ -14,6 +14,9 @@ from ._transform import _RandomApplyTransform
 from ._utils import query_chw
 
 
+DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
+
+
 class ToTensor(Transform):
     _transformed_types = (PIL.Image.Image, np.ndarray)
 
@@ -24,7 +27,7 @@ class ToTensor(Transform):
         )
         super().__init__()
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(self, inpt: Union[PIL.Image.Image, np.ndarray], params: Dict[str, Any]) -> torch.Tensor:
         return _F.to_tensor(inpt)
 
 
@@ -52,8 +55,11 @@ class Grayscale(Transform):
         super().__init__()
         self.num_output_channels = num_output_channels
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
+    def _transform(self, inpt: DType, params: Dict[str, Any]) -> DType:
+        output = _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
+        if isinstance(inpt, features.Image):
+            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.GRAY)
+        return output
 
 
 class RandomGrayscale(_RandomApplyTransform):
@@ -78,5 +84,8 @@ class RandomGrayscale(_RandomApplyTransform):
         num_input_channels, _, _ = query_chw(sample)
         return dict(num_input_channels=num_input_channels)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
+    def _transform(self, inpt: DType, params: Dict[str, Any]) -> DType:
+        output = _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
+        if isinstance(inpt, features.Image):
+            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.GRAY)
+        return output

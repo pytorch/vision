@@ -4,9 +4,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import torch
 from torchvision._utils import StrEnum
-from torchvision.transforms import InterpolationMode
-from torchvision.transforms.functional import _get_inverse_affine_matrix
-from torchvision.transforms.functional_tensor import _compute_output_size
+from torchvision.transforms import InterpolationMode  # TODO: this needs to be moved out of transforms
 
 from ._feature import _Feature
 
@@ -120,20 +118,14 @@ class BoundingBox(_Feature):
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         padding_mode: str = "constant",
     ) -> BoundingBox:
-        if padding_mode not in ["constant"]:
-            raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
-
         # This cast does Sequence[int] -> List[int] and is required to make mypy happy
         if not isinstance(padding, int):
             padding = list(padding)
 
-        output = self._F.pad_bounding_box(self, padding, format=self.format)
+        output = self._F.pad_bounding_box(self, padding, format=self.format, padding_mode=padding_mode)
 
         # Update output image size:
-        # TODO: remove the import below and make _parse_pad_padding available
-        from torchvision.transforms.functional_tensor import _parse_pad_padding
-
-        left, top, right, bottom = _parse_pad_padding(padding)
+        left, top, right, bottom = self._F._geometry._parse_pad_padding(padding)
         height, width = self.image_size
         height += top + bottom
         width += left + right
@@ -155,11 +147,13 @@ class BoundingBox(_Feature):
         if expand:
             # The way we recompute image_size is not optimal due to redundant computations of
             # - rotation matrix (_get_inverse_affine_matrix)
-            # - points dot matrix (_compute_output_size)
+            # - points dot matrix (_compute_affine_output_size)
             # Alternatively, we could return new image size by self._F.rotate_bounding_box
             height, width = image_size
-            rotation_matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0])
-            new_width, new_height = _compute_output_size(rotation_matrix, width, height)
+            rotation_matrix = self._F._geometry._get_inverse_affine_matrix(
+                [0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0]
+            )
+            new_width, new_height = self._F._geometry._FT._compute_affine_output_size(rotation_matrix, width, height)
             image_size = (new_height, new_width)
 
         return BoundingBox.new_like(self, output, dtype=output.dtype, image_size=image_size)

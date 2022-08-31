@@ -1272,8 +1272,11 @@ class TestScaleJitter:
 
     def test__transform(self, mocker):
         interpolation_sentinel = mocker.MagicMock()
+        antialias_sentinel = mocker.MagicMock()
 
-        transform = transforms.ScaleJitter(target_size=(16, 12), interpolation=interpolation_sentinel)
+        transform = transforms.ScaleJitter(
+            target_size=(16, 12), interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
         transform._transformed_types = (mocker.MagicMock,)
 
         size_sentinel = mocker.MagicMock()
@@ -1286,7 +1289,9 @@ class TestScaleJitter:
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
         transform(inpt_sentinel)
 
-        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
+        mock.assert_called_once_with(
+            inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
 
 
 class TestRandomShortestSize:
@@ -1316,8 +1321,11 @@ class TestRandomShortestSize:
 
     def test__transform(self, mocker):
         interpolation_sentinel = mocker.MagicMock()
+        antialias_sentinel = mocker.MagicMock()
 
-        transform = transforms.RandomShortestSize(min_size=[3, 5, 7], max_size=12, interpolation=interpolation_sentinel)
+        transform = transforms.RandomShortestSize(
+            min_size=[3, 5, 7], max_size=12, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
         transform._transformed_types = (mocker.MagicMock,)
 
         size_sentinel = mocker.MagicMock()
@@ -1331,7 +1339,9 @@ class TestRandomShortestSize:
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
         transform(inpt_sentinel)
 
-        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
+        mock.assert_called_once_with(
+            inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
 
 
 class TestSimpleCopyPaste:
@@ -1404,6 +1414,9 @@ class TestSimpleCopyPaste:
         masks[0, 3:9, 2:8] = 1
         masks[1, 20:30, 20:30] = 1
         labels = torch.tensor([1, 2])
+        blending = True
+        resize_interpolation = InterpolationMode.BILINEAR
+        antialias = None
         if label_type == features.OneHotLabel:
             labels = torch.nn.functional.one_hot(labels, num_classes=5)
         target = {
@@ -1431,7 +1444,9 @@ class TestSimpleCopyPaste:
 
         transform = transforms.SimpleCopyPaste()
         random_selection = torch.tensor([0, 1])
-        output_image, output_target = transform._copy_paste(image, target, paste_image, paste_target, random_selection)
+        output_image, output_target = transform._copy_paste(
+            image, target, paste_image, paste_target, random_selection, blending, resize_interpolation, antialias
+        )
 
         assert output_image.unique().tolist() == [2, 10]
         assert output_target["boxes"].shape == (4, 4)
