@@ -1,7 +1,8 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import PIL.Image
+import torch
 
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
@@ -11,7 +12,7 @@ from torchvision.prototype.transforms import functional as F, Transform
 class DecodeImage(Transform):
     _transformed_types = (features.EncodedImage,)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> features.Image:
+    def _transform(self, inpt: torch.Tensor, params: Dict[str, Any]) -> features.Image:
         return F.decode_image_with_pil(inpt)
 
 
@@ -39,18 +40,22 @@ class LabelToOneHot(Transform):
 class ToImageTensor(Transform):
     _transformed_types = (features.is_simple_tensor, PIL.Image.Image, np.ndarray)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> features.Image:
+    def _transform(
+        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
+    ) -> features.Image:
         return F.to_image_tensor(inpt)
 
 
 class ToImagePIL(Transform):
     _transformed_types = (features.is_simple_tensor, features.Image, np.ndarray)
 
-    def __init__(self, *, mode: Optional[str] = None) -> None:
+    def __init__(self, mode: Optional[str] = None) -> None:
         super().__init__()
         self.mode = mode
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> PIL.Image.Image:
+    def _transform(
+        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
+    ) -> PIL.Image.Image:
         return F.to_image_pil(inpt, mode=self.mode)
 
 

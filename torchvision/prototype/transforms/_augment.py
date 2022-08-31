@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -15,6 +15,8 @@ from ._utils import has_any, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
+    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image)
+
     def __init__(
         self,
         p: float = 0.5,
@@ -86,7 +88,9 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(
+        self, inpt: Union[torch.Tensor, features.Image, PIL.Image.Image], params: Dict[str, Any]
+    ) -> Union[torch.Tensor, features.Image, PIL.Image.Image]:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params)
 
@@ -94,7 +98,7 @@ class RandomErasing(_RandomApplyTransform):
 
 
 class _BaseMixupCutmix(_RandomApplyTransform):
-    def __init__(self, *, alpha: float, p: float = 0.5) -> None:
+    def __init__(self, alpha: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
@@ -188,10 +192,12 @@ class SimpleCopyPaste(_RandomApplyTransform):
         p: float = 0.5,
         blending: bool = True,
         resize_interpolation: InterpolationMode = F.InterpolationMode.BILINEAR,
+        antialias: Optional[bool] = None,
     ) -> None:
         super().__init__(p=p)
         self.resize_interpolation = resize_interpolation
         self.blending = blending
+        self.antialias = antialias
 
     def _copy_paste(
         self,
@@ -200,8 +206,9 @@ class SimpleCopyPaste(_RandomApplyTransform):
         paste_image: Any,
         paste_target: Dict[str, Any],
         random_selection: torch.Tensor,
-        blending: bool = True,
-        resize_interpolation: F.InterpolationMode = F.InterpolationMode.BILINEAR,
+        blending: bool,
+        resize_interpolation: F.InterpolationMode,
+        antialias: Optional[bool],
     ) -> Tuple[Any, Dict[str, Any]]:
 
         paste_masks = paste_target["masks"].new_like(paste_target["masks"], paste_target["masks"][random_selection])
@@ -217,7 +224,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         size1 = image.shape[-2:]
         size2 = paste_image.shape[-2:]
         if size1 != size2:
-            paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation)
+            paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation, antialias=antialias)
             paste_masks = F.resize(paste_masks, size=size1)
             paste_boxes = F.resize(paste_boxes, size=size1)
 
@@ -356,6 +363,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
                     random_selection=random_selection,
                     blending=self.blending,
                     resize_interpolation=self.resize_interpolation,
+                    antialias=self.antialias,
                 )
             output_images.append(output_image)
             output_targets.append(output_target)

@@ -22,7 +22,7 @@ class Compose(Transform):
 
 
 class RandomApply(_RandomApplyTransform):
-    def __init__(self, transform: Transform, *, p: float = 0.5) -> None:
+    def __init__(self, transform: Transform, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.transform = transform
 
