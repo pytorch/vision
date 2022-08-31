@@ -38,7 +38,11 @@ class Resize(Transform):
     ) -> None:
         super().__init__()
 
-        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+        self.size = (
+            [size]
+            if isinstance(size, int)
+            else _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+        )
         self.interpolation = interpolation
         self.max_size = max_size
         self.antialias = antialias
@@ -363,9 +367,9 @@ class RandomAffine(Transform):
             max_dy = float(self.translate[1] * height)
             tx = int(round(torch.empty(1).uniform_(-max_dx, max_dx).item()))
             ty = int(round(torch.empty(1).uniform_(-max_dy, max_dy).item()))
-            translations = (tx, ty)
+            translate = (tx, ty)
         else:
-            translations = (0, 0)
+            translate = (0, 0)
 
         if self.scale is not None:
             scale = float(torch.empty(1).uniform_(self.scale[0], self.scale[1]).item())
@@ -379,7 +383,7 @@ class RandomAffine(Transform):
                 shear_y = float(torch.empty(1).uniform_(self.shear[2], self.shear[3]).item())
 
         shear = (shear_x, shear_y)
-        return dict(angle=angle, translations=translations, scale=scale, shear=shear)
+        return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.affine(
@@ -479,7 +483,7 @@ class RandomCrop(Transform):
 class RandomPerspective(_RandomApplyTransform):
     def __init__(
         self,
-        distortion_scale: float,
+        distortion_scale: float = 0.5,
         fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         p: float = 0.5,

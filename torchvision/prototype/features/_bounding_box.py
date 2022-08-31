@@ -147,13 +147,13 @@ class BoundingBox(_Feature):
         if expand:
             # The way we recompute image_size is not optimal due to redundant computations of
             # - rotation matrix (_get_inverse_affine_matrix)
-            # - points dot matrix (_compute_output_size)
+            # - points dot matrix (_compute_affine_output_size)
             # Alternatively, we could return new image size by self._F.rotate_bounding_box
             height, width = image_size
             rotation_matrix = self._F._geometry._get_inverse_affine_matrix(
                 [0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0]
             )
-            new_width, new_height = self._F._geometry._FT._compute_output_size(rotation_matrix, width, height)
+            new_width, new_height = self._F._geometry._FT._compute_affine_output_size(rotation_matrix, width, height)
             image_size = (new_height, new_width)
 
         return BoundingBox.new_like(self, output, dtype=output.dtype, image_size=image_size)

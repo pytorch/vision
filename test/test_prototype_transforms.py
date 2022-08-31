@@ -555,10 +555,10 @@ class TestRandomAffine:
         if translate is not None:
             w_max = int(round(translate[0] * w))
             h_max = int(round(translate[1] * h))
-            assert -w_max <= params["translations"][0] <= w_max
-            assert -h_max <= params["translations"][1] <= h_max
+            assert -w_max <= params["translate"][0] <= w_max
+            assert -h_max <= params["translate"][1] <= h_max
         else:
-            assert params["translations"] == (0, 0)
+            assert params["translate"] == (0, 0)
 
         if scale is not None:
             assert scale[0] <= params["scale"] <= scale[1]
@@ -759,7 +759,8 @@ class TestGaussianBlur:
         if isinstance(kernel_size, (tuple, list)):
             assert transform.kernel_size == kernel_size
         else:
-            assert transform.kernel_size == (kernel_size, kernel_size)
+            kernel_size = (kernel_size, kernel_size)
+            assert transform.kernel_size == kernel_size
 
         if isinstance(sigma, (tuple, list)):
             assert transform.sigma == sigma
@@ -779,7 +780,7 @@ class TestGaussianBlur:
         torch.manual_seed(12)
         params = transform._get_params(inpt)
 
-        fn.assert_called_once_with(inpt, **params)
+        fn.assert_called_once_with(inpt, kernel_size, **params)
 
 
 class TestRandomColorOp:
@@ -1664,3 +1665,205 @@ class TestLabelToOneHot:
         assert isinstance(ohe_labels, features.OneHotLabel)
         assert ohe_labels.shape == (4, 3)
         assert ohe_labels.categories == labels.categories == categories
+
+
+class TestAPIConsistency:
+    @pytest.mark.parametrize("antialias", [True, False])
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
+            PIL.Image.new("RGB", (256, 256), 123),
+            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+        ],
+    )
+    def test_random_resized_crop(self, antialias, inpt):
+        from torchvision.transforms import transforms as ref_transforms
+
+        size = 224
+        t_ref = ref_transforms.RandomResizedCrop(size, antialias=antialias)
+        t = transforms.RandomResizedCrop(size, antialias=antialias)
+
+        torch.manual_seed(12)
+        expected_output = t_ref(inpt)
+
+        torch.manual_seed(12)
+        output = t(inpt)
+
+        if isinstance(inpt, PIL.Image.Image):
+            expected_output = pil_to_tensor(expected_output)
+            output = pil_to_tensor(output)
+
+        torch.testing.assert_close(expected_output, output)
+
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
+            PIL.Image.new("RGB", (256, 256), 123),
+            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+        ],
+    )
+    @pytest.mark.parametrize("interpolation", [InterpolationMode.NEAREST, InterpolationMode.BILINEAR])
+    def test_randaug(self, inpt, interpolation, mocker):
+        from torchvision.transforms import autoaugment as ref_transforms
+
+        t_ref = ref_transforms.RandAugment(interpolation=interpolation, num_ops=1)
+        t = transforms.RandAugment(interpolation=interpolation, num_ops=1)
+
+        le = len(t._AUGMENTATION_SPACE)
+        keys = list(t._AUGMENTATION_SPACE.keys())
+        randint_values = []
+        for i in range(le):
+            # Stable API, op_index random call
+            randint_values.append(i)
+            # Stable API, if signed there is another random call
+            if t._AUGMENTATION_SPACE[keys[i]][1]:
+                randint_values.append(0)
+            # New API, _get_random_item
+            randint_values.append(i)
+        randint_values = iter(randint_values)
+
+        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
+        mocker.patch("torch.rand", return_value=1.0)
+
+        for i in range(le):
+            expected_output = t_ref(inpt)
+            output = t(inpt)
+
+            if isinstance(inpt, PIL.Image.Image):
+                expected_output = pil_to_tensor(expected_output)
+                output = pil_to_tensor(output)
+
+            torch.testing.assert_close(expected_output, output)
+
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
+            PIL.Image.new("RGB", (256, 256), 123),
+            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+        ],
+    )
+    @pytest.mark.parametrize("interpolation", [InterpolationMode.NEAREST, InterpolationMode.BILINEAR])
+    def test_trivial_aug(self, inpt, interpolation, mocker):
+        from torchvision.transforms import autoaugment as ref_transforms
+
+        t_ref = ref_transforms.TrivialAugmentWide(interpolation=interpolation)
+        t = transforms.TrivialAugmentWide(interpolation=interpolation)
+
+        le = len(t._AUGMENTATION_SPACE)
+        keys = list(t._AUGMENTATION_SPACE.keys())
+        randint_values = []
+        for i in range(le):
+            # Stable API, op_index random call
+            randint_values.append(i)
+            key = keys[i]
+            # Stable API, random magnitude
+            aug_op = t._AUGMENTATION_SPACE[key]
+            magnitudes = aug_op[0](2, 0, 0)
+            if magnitudes is not None:
+                randint_values.append(5)
+            # Stable API, if signed there is another random call
+            if aug_op[1]:
+                randint_values.append(0)
+            # New API, _get_random_item
+            randint_values.append(i)
+            # New API, random magnitude
+            if magnitudes is not None:
+                randint_values.append(5)
+
+        randint_values = iter(randint_values)
+
+        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
+        mocker.patch("torch.rand", return_value=1.0)
+
+        for _ in range(le):
+            expected_output = t_ref(inpt)
+            output = t(inpt)
+
+            if isinstance(inpt, PIL.Image.Image):
+                expected_output = pil_to_tensor(expected_output)
+                output = pil_to_tensor(output)
+
+            torch.testing.assert_close(expected_output, output)
+
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
+            PIL.Image.new("RGB", (256, 256), 123),
+            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+        ],
+    )
+    @pytest.mark.parametrize("interpolation", [InterpolationMode.NEAREST, InterpolationMode.BILINEAR])
+    def test_augmix(self, inpt, interpolation, mocker):
+        from torchvision.transforms import autoaugment as ref_transforms
+
+        t_ref = ref_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+        t_ref._sample_dirichlet = lambda t: t.softmax(dim=-1)
+        t = transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+        t._sample_dirichlet = lambda t: t.softmax(dim=-1)
+
+        le = len(t._AUGMENTATION_SPACE)
+        keys = list(t._AUGMENTATION_SPACE.keys())
+        randint_values = []
+        for i in range(le):
+            # Stable API, op_index random call
+            randint_values.append(i)
+            key = keys[i]
+            # Stable API, random magnitude
+            aug_op = t._AUGMENTATION_SPACE[key]
+            magnitudes = aug_op[0](2, 0, 0)
+            if magnitudes is not None:
+                randint_values.append(5)
+            # Stable API, if signed there is another random call
+            if aug_op[1]:
+                randint_values.append(0)
+            # New API, _get_random_item
+            randint_values.append(i)
+            # New API, random magnitude
+            if magnitudes is not None:
+                randint_values.append(5)
+
+        randint_values = iter(randint_values)
+
+        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
+        mocker.patch("torch.rand", return_value=1.0)
+
+        expected_output = t_ref(inpt)
+        output = t(inpt)
+
+        if isinstance(inpt, PIL.Image.Image):
+            expected_output = pil_to_tensor(expected_output)
+            output = pil_to_tensor(output)
+
+        torch.testing.assert_close(expected_output, output)
+
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
+            PIL.Image.new("RGB", (256, 256), 123),
+            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+        ],
+    )
+    @pytest.mark.parametrize("interpolation", [InterpolationMode.NEAREST, InterpolationMode.BILINEAR])
+    def test_aa(self, inpt, interpolation):
+        from torchvision.transforms import autoaugment as ref_transforms
+
+        aa_policy = ref_transforms.AutoAugmentPolicy("imagenet")
+        t_ref = ref_transforms.AutoAugment(aa_policy, interpolation=interpolation)
+        t = transforms.AutoAugment(aa_policy, interpolation=interpolation)
+
+        torch.manual_seed(12)
+        expected_output = t_ref(inpt)
+
+        torch.manual_seed(12)
+        output = t(inpt)
+
+        if isinstance(inpt, PIL.Image.Image):
+            expected_output = pil_to_tensor(expected_output)
+            output = pil_to_tensor(output)
+
+        torch.testing.assert_close(expected_output, output)
