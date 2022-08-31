@@ -1,11 +1,9 @@
 import enum
 import functools
-
 import inspect
 import itertools
 
 import numpy as np
-
 import PIL.Image
 import pytest
 
@@ -427,8 +425,8 @@ CONSISTENCY_CONFIGS = [
 ]
 
 
-def test_automatic_coverage_deterministic():
-    legacy = {
+def test_automatic_coverage():
+    available = {
         name
         for name, obj in legacy_transforms.__dict__.items()
         if not name.startswith("_")
@@ -454,9 +452,9 @@ def test_automatic_coverage_deterministic():
         }
     }
 
-    prototype = {config.legacy_cls.__name__ for config in CONSISTENCY_CONFIGS}
+    checked = {config.legacy_cls.__name__ for config in CONSISTENCY_CONFIGS}
 
-    missing = legacy - prototype
+    missing = available - checked
     if missing:
         raise AssertionError(
             f"The prototype transformations {sequence_to_str(sorted(missing), separate_last='and ')} "
