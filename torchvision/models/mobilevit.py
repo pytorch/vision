@@ -12,56 +12,78 @@ from functools import partial
 
 __all__ = ["MobileViT", "MobileViT_Weights", "MobileViT_V2_Weights"]
 
-# TODO: Is this correct? Maybe not? Need to check the training script...
 _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
 }
 
-# TODO: Update this...
-# Paper links: v1 https://arxiv.org/abs/2110.02178
+# For V1, we have 3 sets of weights xx_small (1.3M parameters), x_small (2.3M parameters), and small (5.6M parameters)
+# For V2, we have one set of weights.
+# Paper link: v1 https://arxiv.org/abs/2110.02178.
+# Paper link: v2 https://arxiv.org/pdf/2206.02680.pdf. 
 # v2 (what the difference with the V1 paper?)
-# TODO: Need a mobile ViT block...
-# TODO: Adding weights... Start with V1.
-# Things to be done: write the V1, mobileViTblock, weights, documentation...
+# Things to be done: write the V1, MobileViTblock, MobileViTV2block, weights (for V1 and V2), documentation...
+# TODO: What about multi-scale sampler?
 
 class MobileViT_Weights(WeightsEnum):
-    # TODO: Update these...
     IMAGENET1K_V1 = Weights(
+        # TODO: Update the URL once the model has been trained...
         url="https://download.pytorch.org/models/mobilevit.pth",
-        transforms=partial(ImageClassification, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=256),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
             "_metrics": {
+                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
                 "ImageNet-1K": {
-                    "acc@1": 71.878,
-                    "acc@5": 90.286,
+                    "acc@1": 78.4,
+                    "acc@5": 94.1,
                 }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
-    # TODO: Will be updated later...
-    IMAGENET1K_V2 = Weights(
-        url="https://download.pytorch.org/models/mobilevit.pth",
-        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+    DEFAULT = IMAGENET1K_V1
+
+class MobileViT_XS_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        # TODO: Update the URL once the model has been trained...
+        url="https://download.pytorch.org/models/mobilevit_xs.pth",
+        transforms=partial(ImageClassification, crop_size=256),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
             "_metrics": {
+                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
                 "ImageNet-1K": {
-                    "acc@1": 72.154,
-                    "acc@5": 90.822,
+                    "acc@1": 74.8,
+                    "acc@5": 92.3,
                 }
             },
-            "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's
-                `new training recipe
-                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
-            """,
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
-    DEFAULT = IMAGENET1K_V2
+    DEFAULT = IMAGENET1K_V1
+
+
+class MobileViT_XXS_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        # TODO: Update the URL once the model has been trained...
+        url="https://download.pytorch.org/models/mobilevit_xxs.pth",
+        transforms=partial(ImageClassification, crop_size=256),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
+            "_metrics": {
+                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
+                "ImageNet-1K": {
+                    "acc@1": 69.0,
+                    "acc@5": 88.9,
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class MobileViT_V2_Weights(WeightsEnum):
@@ -73,6 +95,8 @@ class MobileViTBlock(nn.Module):
     def forward(self, x: Tensor):
         return x
 
+
+# Separable self-attention
 class MobileViTV2Block(MobileViTBlock):
     def forward(self, x: Tensor):
         return x
@@ -81,13 +105,17 @@ class MobileViT(nn.Module):
     """
     Implements MobileViT from the `"MobileViT: Light-Weight, General-Purpose, and Mobile-Friendly Vision Transfomer" <https://arxiv.org/abs/2110.02178>`_ paper.
     Args:
-        TODO: Arguments to be updated...
+        TODO: Arguments to be updated... in progress
+        num_classes (int): Number of classes for classification head. Default: 1000.
+        layers_conf (dict): The layers configuration.
     """
 
     def __init__(
         self,
-        num_classes: int,
-        # TODO: Should this be optional?
+        # Trained on ImageNet1K by default.
+        num_classes: int = 1000,
+        layers_conf: dict = None,
+        # TODO: Should this be optional? Yes probably...
         block: Optional[Callable[..., nn.Module]] = None,
     ):
         super().__init__()
@@ -97,9 +125,14 @@ class MobileViT(nn.Module):
 
         if block is None:
             block = MobileViTBlock
+        # Build the model one layer at a time.
+        layers: List[nn.Module] = []
+        self.features = nn.Sequential(*layers)
+
 
     # TODO: This is the core thing to implement...
     def forward(self, x):
+        x = self.features(x)
         return x
 
 
@@ -122,16 +155,43 @@ def _mobile_vit(
 
     return model
 
+@register_model()
+def mobile_vit_s(*, weights: Optional[MobileViT_Weights] = None, progress: bool = True, **kwargs: Any):
+    """
+    Constructs a mobile_vit_s architecture from
+    `"MobileViT: Light-Weight, General-Purpose, and Mobile-Friendly Vision Transfomer" <https://arxiv.org/abs/2110.02178>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.MobileViT_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_V2_B_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_transformer.MobileVit``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilevit.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.MobileViT_Weights
+        :members:
+    """
+    weights = MobileViT_Weights.verify(weights)
+    return _mobile_vit(weights=weights)
+
 
 @register_model()
-def mobile_vit_s():
-    pass
-
-
-@register_model()
-def mobile_vit_s():
-    pass
+def mobile_vit_xs():
+    weights = MobileViT_XS_Weights.verify(weights)
+    return _mobile_vit(weights=weights)
 
 @register_model()
-def mobile_vit_s():
-    pass
+def mobile_vit_xxs():
+    weights = MobileViT_XXS_Weights.verify(weights)
+    return _mobile_vit(weights=weights)
+
+@register_model()
+def mobile_vit_v2()
+    weights = MobileViT_V2_Weights.verify(weights)
+    return _mobile_vit(weights=weights)
