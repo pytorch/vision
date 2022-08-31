@@ -343,7 +343,6 @@ class RandAugment(_AutoAugmentBase):
 
     def __init__(
         self,
-        *,
         num_ops: int = 2,
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
@@ -402,7 +401,6 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
     def __init__(
         self,
-        *,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
