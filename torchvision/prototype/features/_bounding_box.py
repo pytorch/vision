@@ -125,7 +125,7 @@ class BoundingBox(_Feature):
         output = self._F.pad_bounding_box(self, padding, format=self.format, padding_mode=padding_mode)
 
         # Update output image size:
-        left, top, right, bottom = self._F._geometry._parse_pad_padding(padding)
+        left, right, top, bottom = self._F._geometry._parse_pad_padding(padding)
         height, width = self.image_size
         height += top + bottom
         width += left + right
