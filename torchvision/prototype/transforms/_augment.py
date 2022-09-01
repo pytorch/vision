@@ -23,6 +23,7 @@ class RandomErasing(_RandomApplyTransform):
         scale: Tuple[float, float] = (0.02, 0.33),
         ratio: Tuple[float, float] = (0.3, 3.3),
         value: float = 0,
+        inplace: bool = False,
     ):
         super().__init__(p=p)
         if not isinstance(value, (numbers.Number, str, tuple, list)):
@@ -40,6 +41,7 @@ class RandomErasing(_RandomApplyTransform):
         self.scale = scale
         self.ratio = ratio
         self.value = value
+        self.inplace = inplace
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(sample)
@@ -92,7 +94,7 @@ class RandomErasing(_RandomApplyTransform):
         self, inpt: Union[torch.Tensor, features.Image, PIL.Image.Image], params: Dict[str, Any]
     ) -> Union[torch.Tensor, features.Image, PIL.Image.Image]:
         if params["v"] is not None:
-            inpt = F.erase(inpt, **params)
+            inpt = F.erase(inpt, **params, inplace=self.inplace)
 
         return inpt
 

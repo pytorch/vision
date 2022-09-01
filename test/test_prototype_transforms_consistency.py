@@ -88,7 +88,6 @@ CONSISTENCY_CONFIGS = [
         ],
         supports_pil=False,
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.float]),
-        removed_params=["inplace"],
     ),
     ConsistencyConfig(
         prototype_transforms.Resize,
@@ -315,7 +314,6 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=1, value="random"),
         ],
         supports_pil=False,
-        removed_params=["inplace"],
     ),
     ConsistencyConfig(
         prototype_transforms.ColorJitter,
