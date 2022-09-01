@@ -95,13 +95,14 @@ class LinearTransformation(Transform):
 class Normalize(Transform):
     _transformed_types = (features.Image, features.is_simple_tensor)
 
-    def __init__(self, mean: Sequence[float], std: Sequence[float]):
+    def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()
         self.mean = list(mean)
         self.std = list(std)
+        self.inplace = inplace
 
     def _transform(self, inpt: Union[torch.Tensor, features._Feature], params: Dict[str, Any]) -> torch.Tensor:
-        return F.normalize(inpt, mean=self.mean, std=self.std)
+        return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
     def forward(self, *inpts: Any) -> Any:
         if has_any(inpts, PIL.Image.Image):
