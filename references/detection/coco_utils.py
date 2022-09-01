@@ -98,7 +98,7 @@ class WrapIntoFeatures:
             masks=features.SegmentationMask(target["masks"]),
             image_id=int(target["image_id"]),
             area=target["area"].tolist(),
-            iscrowd=target["iscrowd"].to(torch.bool).tolist(),
+            iscrowd=target["iscrowd"].bool().tolist(),
         )
 
         return image, wrapped_target

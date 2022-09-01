@@ -216,7 +216,7 @@ def main(args):
                 WrapIntoFeatures(),
                 transforms.LabelToOneHot(num_categories=num_classes),
                 transforms.ToDtype(torch.float, features.OneHotLabel),
-                transforms.RandomChoice(*mixup_or_cutmix),
+                transforms.RandomChoice(mixup_or_cutmix),
             ]
         )
         collate_fn = lambda batch: batch_transform(default_collate(batch))  # noqa: E731
