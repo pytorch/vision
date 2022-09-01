@@ -1,9 +1,9 @@
 import enum
 import functools
+import inspect
 import itertools
 
 import numpy as np
-
 import PIL.Image
 import pytest
 
@@ -58,26 +58,21 @@ class ArgsKwargs:
 
 class ConsistencyConfig:
     def __init__(
-        self, prototype_cls, legacy_cls, transform_args_kwargs=None, make_images_kwargs=None, supports_pil=True
+        self,
+        prototype_cls,
+        legacy_cls,
+        # If no args_kwargs is passed, only the signature will be checked
+        args_kwargs=(),
+        make_images_kwargs=None,
+        supports_pil=True,
+        removed_params=(),
     ):
         self.prototype_cls = prototype_cls
         self.legacy_cls = legacy_cls
-        self.transform_args_kwargs = transform_args_kwargs or [((), dict())]
+        self.args_kwargs = args_kwargs
         self.make_images_kwargs = make_images_kwargs or DEFAULT_MAKE_IMAGES_KWARGS
         self.supports_pil = supports_pil
-
-    def parametrization(self):
-        return [
-            pytest.param(
-                self.prototype_cls,
-                self.legacy_cls,
-                args_kwargs,
-                self.make_images_kwargs,
-                self.supports_pil,
-                id=f"{self.legacy_cls.__name__}({args_kwargs})",
-            )
-            for args_kwargs in self.transform_args_kwargs
-        ]
+        self.removed_params = removed_params
 
 
 # These are here since both the prototype and legacy transform need to be constructed with the same random parameters
@@ -93,6 +88,7 @@ CONSISTENCY_CONFIGS = [
         ],
         supports_pil=False,
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.float]),
+        removed_params=["inplace"],
     ),
     ConsistencyConfig(
         prototype_transforms.Resize,
@@ -319,6 +315,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=1, value="random"),
         ],
         supports_pil=False,
+        removed_params=["inplace"],
     ),
     ConsistencyConfig(
         prototype_transforms.ColorJitter,
@@ -379,6 +376,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(degrees=30.0, fill=(2, 3, 4)),
             ArgsKwargs(degrees=30.0, center=(0, 0)),
         ],
+        removed_params=["fillcolor", "resample"],
     ),
     ConsistencyConfig(
         prototype_transforms.RandomCrop,
@@ -423,40 +421,61 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(degrees=30.0, fill=1),
             ArgsKwargs(degrees=30.0, fill=(1, 2, 3)),
         ],
+        removed_params=["resample"],
+    ),
+    ConsistencyConfig(
+        prototype_transforms.PILToTensor,
+        legacy_transforms.PILToTensor,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.ToTensor,
+        legacy_transforms.ToTensor,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.Compose,
+        legacy_transforms.Compose,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomApply,
+        legacy_transforms.RandomApply,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomChoice,
+        legacy_transforms.RandomChoice,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandomOrder,
+        legacy_transforms.RandomOrder,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.AugMix,
+        legacy_transforms.AugMix,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.AutoAugment,
+        legacy_transforms.AutoAugment,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.RandAugment,
+        legacy_transforms.RandAugment,
+    ),
+    ConsistencyConfig(
+        prototype_transforms.TrivialAugmentWide,
+        legacy_transforms.TrivialAugmentWide,
     ),
 ]
 
 
-def test_automatic_coverage_deterministic():
-    legacy = {
+def test_automatic_coverage():
+    available = {
         name
         for name, obj in legacy_transforms.__dict__.items()
-        if not name.startswith("_")
-        and isinstance(obj, type)
-        and not issubclass(obj, enum.Enum)
-        and name
-        not in {
-            # This framework is based on the assumption that the input image can always be a tensor and optionally a
-            # PIL image, but the transforms below require a non-tensor input.
-            "PILToTensor",
-            "ToTensor",
-            # Transform containers cannot be tested without other tranforms
-            "Compose",
-            "RandomApply",
-            "RandomChoice",
-            "RandomOrder",
-            # If the random parameter generation in the legacy and prototype transform is the same, setting the seed
-            # should be sufficient. In that case, the transforms below should be tested automatically.
-            "AugMix",
-            "AutoAugment",
-            "RandAugment",
-            "TrivialAugmentWide",
-        }
+        if not name.startswith("_") and isinstance(obj, type) and not issubclass(obj, enum.Enum)
     }
 
-    prototype = {config.legacy_cls.__name__ for config in CONSISTENCY_CONFIGS}
+    checked = {config.legacy_cls.__name__ for config in CONSISTENCY_CONFIGS}
 
-    missing = legacy - prototype
+    missing = available - checked
     if missing:
         raise AssertionError(
             f"The prototype transformations {sequence_to_str(sorted(missing), separate_last='and ')} "
@@ -464,38 +483,54 @@ def test_automatic_coverage_deterministic():
         )
 
 
-@pytest.mark.parametrize(
-    ("prototype_transform_cls", "legacy_transform_cls", "args_kwargs", "make_images_kwargs", "supports_pil"),
-    itertools.chain.from_iterable(config.parametrization() for config in CONSISTENCY_CONFIGS),
-)
-def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs, make_images_kwargs, supports_pil):
-    args, kwargs = args_kwargs
+@pytest.mark.parametrize("config", CONSISTENCY_CONFIGS, ids=lambda config: config.legacy_cls.__name__)
+def test_signature_consistency(config):
+    legacy_params = dict(inspect.signature(config.legacy_cls).parameters)
+    prototype_params = dict(inspect.signature(config.prototype_cls).parameters)
 
-    try:
-        legacy = legacy_transform_cls(*args, **kwargs)
-    except Exception as exc:
-        raise pytest.UsageError(
-            f"Initializing the legacy transform failed with the error above. "
-            f"Please correct the `ArgsKwargs({args_kwargs})` in the `ConsistencyConfig`."
-        ) from exc
+    for param in config.removed_params:
+        legacy_params.pop(param, None)
 
-    try:
-        prototype = prototype_transform_cls(*args, **kwargs)
-    except Exception as exc:
+    missing = legacy_params.keys() - prototype_params.keys()
+    if missing:
         raise AssertionError(
-            "Initializing the prototype transform failed with the error above. "
-            "This means there is a consistency bug in the constructor."
-        ) from exc
+            f"The prototype transform does not support the parameters "
+            f"{sequence_to_str(sorted(missing), separate_last='and ')}, but the legacy transform does. "
+            f"If that is intentional, e.g. pending deprecation, please add the parameters to the `removed_params` on "
+            f"the `ConsistencyConfig`."
+        )
 
-    for image in make_images(**make_images_kwargs):
-        image_tensor = torch.Tensor(image)
-        image_pil = to_image_pil(image) if image.ndim == 3 and supports_pil else None
+    extra = prototype_params.keys() - legacy_params.keys()
+    extra_without_default = {
+        param
+        for param in extra
+        if prototype_params[param].default is inspect.Parameter.empty
+        and prototype_params[param].kind not in {inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD}
+    }
+    if extra_without_default:
+        raise AssertionError(
+            f"The prototype transform requires the parameters "
+            f"{sequence_to_str(sorted(extra_without_default), separate_last='and ')}, but the legacy transform does "
+            f"not. Please add a default value."
+        )
 
+    legacy_kinds = {name: param.kind for name, param in legacy_params.items()}
+    prototype_kinds = {name: prototype_params[name].kind for name in legacy_kinds.keys()}
+    assert prototype_kinds == legacy_kinds
+
+
+def check_call_consistency(prototype_transform, legacy_transform, images=None, supports_pil=True):
+    if images is None:
+        images = make_images(**DEFAULT_MAKE_IMAGES_KWARGS)
+
+    for image in images:
         image_repr = f"[{tuple(image.shape)}, {str(image.dtype).rsplit('.')[-1]}]"
+
+        image_tensor = torch.Tensor(image)
 
         try:
             torch.manual_seed(0)
-            output_legacy_tensor = legacy(image_tensor)
+            output_legacy_tensor = legacy_transform(image_tensor)
         except Exception as exc:
             raise pytest.UsageError(
                 f"Transforming a tensor image {image_repr} failed in the legacy transform with the "
@@ -505,7 +540,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
 
         try:
             torch.manual_seed(0)
-            output_prototype_tensor = prototype(image_tensor)
+            output_prototype_tensor = prototype_transform(image_tensor)
         except Exception as exc:
             raise AssertionError(
                 f"Transforming a tensor image with shape {image_repr} failed in the prototype transform with "
@@ -521,7 +556,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
 
         try:
             torch.manual_seed(0)
-            output_prototype_image = prototype(image)
+            output_prototype_image = prototype_transform(image)
         except Exception as exc:
             raise AssertionError(
                 f"Transforming a feature image with shape {image_repr} failed in the prototype transform with "
@@ -535,10 +570,12 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
             msg=lambda msg: f"Output for feature and tensor images is not equal: \n\n{msg}",
         )
 
-        if image_pil is not None:
+        if image.ndim == 3 and supports_pil:
+            image_pil = to_image_pil(image)
+
             try:
                 torch.manual_seed(0)
-                output_legacy_pil = legacy(image_pil)
+                output_legacy_pil = legacy_transform(image_pil)
             except Exception as exc:
                 raise pytest.UsageError(
                     f"Transforming a PIL image with shape {image_repr} failed in the legacy transform with the "
@@ -548,7 +585,7 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
 
             try:
                 torch.manual_seed(0)
-                output_prototype_pil = prototype(image_pil)
+                output_prototype_pil = prototype_transform(image_pil)
             except Exception as exc:
                 raise AssertionError(
                     f"Transforming a PIL image with shape {image_repr} failed in the prototype transform with "
@@ -563,23 +600,285 @@ def test_consistency(prototype_transform_cls, legacy_transform_cls, args_kwargs,
             )
 
 
+@pytest.mark.parametrize(
+    ("config", "args_kwargs"),
+    [
+        pytest.param(config, args_kwargs, id=f"{config.legacy_cls.__name__}({args_kwargs})")
+        for config in CONSISTENCY_CONFIGS
+        for args_kwargs in config.args_kwargs
+    ],
+)
+def test_call_consistency(config, args_kwargs):
+    args, kwargs = args_kwargs
+
+    try:
+        legacy_transform = config.legacy_cls(*args, **kwargs)
+    except Exception as exc:
+        raise pytest.UsageError(
+            f"Initializing the legacy transform failed with the error above. "
+            f"Please correct the `ArgsKwargs({args_kwargs})` in the `ConsistencyConfig`."
+        ) from exc
+
+    try:
+        prototype_transform = config.prototype_cls(*args, **kwargs)
+    except Exception as exc:
+        raise AssertionError(
+            "Initializing the prototype transform failed with the error above. "
+            "This means there is a consistency bug in the constructor."
+        ) from exc
+
+    check_call_consistency(
+        prototype_transform,
+        legacy_transform,
+        images=make_images(**config.make_images_kwargs),
+        supports_pil=config.supports_pil,
+    )
+
+
+class TestContainerTransforms:
+    """
+    Since we are testing containers here, we also need some transforms to wrap. Thus, testing a container transform for
+    consistency automatically tests the wrapped transforms consistency.
+
+    Instead of complicated mocking or creating custom transforms just for these tests, here we use deterministic ones
+    that were already tested for consistency above.
+    """
+
+    def test_compose(self):
+        prototype_transform = prototype_transforms.Compose(
+            [
+                prototype_transforms.Resize(256),
+                prototype_transforms.CenterCrop(224),
+            ]
+        )
+        legacy_transform = legacy_transforms.Compose(
+            [
+                legacy_transforms.Resize(256),
+                legacy_transforms.CenterCrop(224),
+            ]
+        )
+
+        check_call_consistency(prototype_transform, legacy_transform)
+
+    @pytest.mark.parametrize("p", [0, 0.1, 0.5, 0.9, 1])
+    def test_random_apply(self, p):
+        prototype_transform = prototype_transforms.RandomApply(
+            [
+                prototype_transforms.Resize(256),
+                legacy_transforms.CenterCrop(224),
+            ],
+            p=p,
+        )
+        legacy_transform = legacy_transforms.RandomApply(
+            [
+                legacy_transforms.Resize(256),
+                legacy_transforms.CenterCrop(224),
+            ],
+            p=p,
+        )
+
+        check_call_consistency(prototype_transform, legacy_transform)
+
+    # We can't test other values for `p` since the random parameter generation is different
+    @pytest.mark.parametrize("p", [(0, 1), (1, 0)])
+    def test_random_choice(self, p):
+        prototype_transform = prototype_transforms.RandomChoice(
+            [
+                prototype_transforms.Resize(256),
+                legacy_transforms.CenterCrop(224),
+            ],
+            p=p,
+        )
+        legacy_transform = legacy_transforms.RandomChoice(
+            [
+                legacy_transforms.Resize(256),
+                legacy_transforms.CenterCrop(224),
+            ],
+            p=p,
+        )
+
+        check_call_consistency(prototype_transform, legacy_transform)
+
+
 class TestToTensorTransforms:
     def test_pil_to_tensor(self):
+        prototype_transform = prototype_transforms.PILToTensor()
+        legacy_transform = legacy_transforms.PILToTensor()
+
         for image in make_images(extra_dims=[()]):
             image_pil = to_image_pil(image)
-
-            prototype_transform = prototype_transforms.PILToTensor()
-            legacy_transform = legacy_transforms.PILToTensor()
 
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
 
     def test_to_tensor(self):
+        prototype_transform = prototype_transforms.ToTensor()
+        legacy_transform = legacy_transforms.ToTensor()
+
         for image in make_images(extra_dims=[()]):
             image_pil = to_image_pil(image)
             image_numpy = np.array(image_pil)
 
-            prototype_transform = prototype_transforms.ToTensor()
-            legacy_transform = legacy_transforms.ToTensor()
-
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
             assert_equal(prototype_transform(image_numpy), legacy_transform(image_numpy))
+
+
+class TestAATransforms:
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
+            PIL.Image.new("RGB", (256, 256), 123),
+            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "interpolation",
+        [prototype_transforms.InterpolationMode.NEAREST, prototype_transforms.InterpolationMode.BILINEAR],
+    )
+    def test_randaug(self, inpt, interpolation, mocker):
+        t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1)
+        t = prototype_transforms.RandAugment(interpolation=interpolation, num_ops=1)
+
+        le = len(t._AUGMENTATION_SPACE)
+        keys = list(t._AUGMENTATION_SPACE.keys())
+        randint_values = []
+        for i in range(le):
+            # Stable API, op_index random call
+            randint_values.append(i)
+            # Stable API, if signed there is another random call
+            if t._AUGMENTATION_SPACE[keys[i]][1]:
+                randint_values.append(0)
+            # New API, _get_random_item
+            randint_values.append(i)
+        randint_values = iter(randint_values)
+
+        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
+        mocker.patch("torch.rand", return_value=1.0)
+
+        for i in range(le):
+            expected_output = t_ref(inpt)
+            output = t(inpt)
+
+            assert_equal(expected_output, output)
+
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
+            PIL.Image.new("RGB", (256, 256), 123),
+            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "interpolation",
+        [prototype_transforms.InterpolationMode.NEAREST, prototype_transforms.InterpolationMode.BILINEAR],
+    )
+    def test_trivial_aug(self, inpt, interpolation, mocker):
+        t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation)
+        t = prototype_transforms.TrivialAugmentWide(interpolation=interpolation)
+
+        le = len(t._AUGMENTATION_SPACE)
+        keys = list(t._AUGMENTATION_SPACE.keys())
+        randint_values = []
+        for i in range(le):
+            # Stable API, op_index random call
+            randint_values.append(i)
+            key = keys[i]
+            # Stable API, random magnitude
+            aug_op = t._AUGMENTATION_SPACE[key]
+            magnitudes = aug_op[0](2, 0, 0)
+            if magnitudes is not None:
+                randint_values.append(5)
+            # Stable API, if signed there is another random call
+            if aug_op[1]:
+                randint_values.append(0)
+            # New API, _get_random_item
+            randint_values.append(i)
+            # New API, random magnitude
+            if magnitudes is not None:
+                randint_values.append(5)
+
+        randint_values = iter(randint_values)
+
+        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
+        mocker.patch("torch.rand", return_value=1.0)
+
+        for _ in range(le):
+            expected_output = t_ref(inpt)
+            output = t(inpt)
+
+            assert_equal(expected_output, output)
+
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
+            PIL.Image.new("RGB", (256, 256), 123),
+            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "interpolation",
+        [prototype_transforms.InterpolationMode.NEAREST, prototype_transforms.InterpolationMode.BILINEAR],
+    )
+    def test_augmix(self, inpt, interpolation, mocker):
+        t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+        t_ref._sample_dirichlet = lambda t: t.softmax(dim=-1)
+        t = prototype_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+        t._sample_dirichlet = lambda t: t.softmax(dim=-1)
+
+        le = len(t._AUGMENTATION_SPACE)
+        keys = list(t._AUGMENTATION_SPACE.keys())
+        randint_values = []
+        for i in range(le):
+            # Stable API, op_index random call
+            randint_values.append(i)
+            key = keys[i]
+            # Stable API, random magnitude
+            aug_op = t._AUGMENTATION_SPACE[key]
+            magnitudes = aug_op[0](2, 0, 0)
+            if magnitudes is not None:
+                randint_values.append(5)
+            # Stable API, if signed there is another random call
+            if aug_op[1]:
+                randint_values.append(0)
+            # New API, _get_random_item
+            randint_values.append(i)
+            # New API, random magnitude
+            if magnitudes is not None:
+                randint_values.append(5)
+
+        randint_values = iter(randint_values)
+
+        mocker.patch("torch.randint", side_effect=lambda *arg, **kwargs: torch.tensor(next(randint_values)))
+        mocker.patch("torch.rand", return_value=1.0)
+
+        expected_output = t_ref(inpt)
+        output = t(inpt)
+
+        assert_equal(expected_output, output)
+
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
+            PIL.Image.new("RGB", (256, 256), 123),
+            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "interpolation",
+        [prototype_transforms.InterpolationMode.NEAREST, prototype_transforms.InterpolationMode.BILINEAR],
+    )
+    def test_aa(self, inpt, interpolation):
+        aa_policy = legacy_transforms.AutoAugmentPolicy("imagenet")
+        t_ref = legacy_transforms.AutoAugment(aa_policy, interpolation=interpolation)
+        t = prototype_transforms.AutoAugment(aa_policy, interpolation=interpolation)
+
+        torch.manual_seed(12)
+        expected_output = t_ref(inpt)
+
+        torch.manual_seed(12)
+        output = t(inpt)
+
+        assert_equal(expected_output, output)

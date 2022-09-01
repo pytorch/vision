@@ -58,12 +58,12 @@ class Resize(Transform):
 
 
 class CenterCrop(Transform):
-    def __init__(self, output_size: List[int]):
+    def __init__(self, size: List[int]):
         super().__init__()
-        self.output_size = output_size
+        self.size = size
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.center_crop(inpt, output_size=self.output_size)
+        return F.center_crop(inpt, output_size=self.size)
 
 
 class RandomResizedCrop(Transform):
