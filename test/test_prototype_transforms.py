@@ -1004,7 +1004,13 @@ class TestRandomErasing:
 
         if p:
             mock.assert_called_once_with(
-                inpt_sentinel, i=i_sentinel, j=j_sentinel, h=h_sentinel, w=w_sentinel, v=v_sentinel
+                inpt_sentinel,
+                i=i_sentinel,
+                j=j_sentinel,
+                h=h_sentinel,
+                w=w_sentinel,
+                v=v_sentinel,
+                inplace=transform.inplace,
             )
         else:
             mock.assert_not_called()

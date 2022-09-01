@@ -801,7 +801,7 @@ class FixedSizeCrop(Transform):
 
         if needs_crop and bounding_boxes is not None:
             bounding_boxes = cast(
-                features.BoundingBox, F.crop(bounding_boxes, top=top, left=left, height=height, width=width)
+                features.BoundingBox, F.crop(bounding_boxes, top=top, left=left, height=new_height, width=new_width)
             )
             bounding_boxes = features.BoundingBox.new_like(
                 bounding_boxes,
