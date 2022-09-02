@@ -1,75 +1,39 @@
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Union
 
 import numpy as np
 import PIL.Image
 import torch
+
 from torchvision.prototype import features
-from torchvision.prototype.features import ColorSpace
 from torchvision.prototype.transforms import Transform
 from torchvision.transforms import functional as _F
 from typing_extensions import Literal
 
-from ._meta import ConvertImageColorSpace
 from ._transform import _RandomApplyTransform
-from ._utils import is_simple_tensor
+from ._utils import query_chw
+
+
+DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
 
 
 class ToTensor(Transform):
-
-    # Updated transformed types for ToTensor
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
+    _transformed_types = (PIL.Image.Image, np.ndarray)
 
     def __init__(self) -> None:
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
-            "Instead, please use `transforms.ToImageTensor()`."
+            "Instead, please use `transforms.Compose([transforms.ToImageTensor(), transforms.ConvertImageDtype()])`."
         )
         super().__init__()
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (PIL.Image.Image, np.ndarray)):
-            return _F.to_tensor(inpt)
-        else:
-            return inpt
-
-
-class PILToTensor(Transform):
-    def __init__(self) -> None:
-        warnings.warn(
-            "The transform `PILToTensor()` is deprecated and will be removed in a future release. "
-            "Instead, please use `transforms.ToImageTensor()`."
-        )
-        super().__init__()
-
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, PIL.Image.Image):
-            return _F.pil_to_tensor(inpt)
-        else:
-            return inpt
-
-
-class ToPILImage(Transform):
-
-    # Updated transformed types for ToPILImage
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
-
-    def __init__(self, mode: Optional[str] = None) -> None:
-        warnings.warn(
-            "The transform `ToPILImage()` is deprecated and will be removed in a future release. "
-            "Instead, please use `transforms.ToImagePIL()`."
-        )
-        super().__init__()
-        self.mode = mode
-
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if is_simple_tensor(inpt) or isinstance(inpt, (features.Image, np.ndarray)):
-            return _F.to_pil_image(inpt, mode=self.mode)
-        else:
-            return inpt
+    def _transform(self, inpt: Union[PIL.Image.Image, np.ndarray], params: Dict[str, Any]) -> torch.Tensor:
+        return _F.to_tensor(inpt)
 
 
 class Grayscale(Transform):
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+
     def __init__(self, num_output_channels: Literal[1, 3] = 1) -> None:
         deprecation_msg = (
             f"The transform `Grayscale(num_output_channels={num_output_channels})` "
@@ -90,17 +54,17 @@ class Grayscale(Transform):
 
         super().__init__()
         self.num_output_channels = num_output_channels
-        self._rgb_to_gray = ConvertImageColorSpace(old_color_space=ColorSpace.RGB, color_space=ColorSpace.GRAY)
-        self._gray_to_rgb = ConvertImageColorSpace(old_color_space=ColorSpace.GRAY, color_space=ColorSpace.RGB)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        output = self._rgb_to_gray(inpt)
-        if self.num_output_channels == 3:
-            output = self._gray_to_rgb(output)
+    def _transform(self, inpt: DType, params: Dict[str, Any]) -> DType:
+        output = _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
+        if isinstance(inpt, features.Image):
+            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.GRAY)
         return output
 
 
 class RandomGrayscale(_RandomApplyTransform):
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+
     def __init__(self, p: float = 0.1) -> None:
         warnings.warn(
             "The transform `RandomGrayscale(p=...)` is deprecated and will be removed in a future release. "
@@ -115,8 +79,13 @@ class RandomGrayscale(_RandomApplyTransform):
         )
 
         super().__init__(p=p)
-        self._rgb_to_gray = ConvertImageColorSpace(old_color_space=ColorSpace.RGB, color_space=ColorSpace.GRAY)
-        self._gray_to_rgb = ConvertImageColorSpace(old_color_space=ColorSpace.GRAY, color_space=ColorSpace.RGB)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._gray_to_rgb(self._rgb_to_gray(inpt))
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        num_input_channels, _, _ = query_chw(sample)
+        return dict(num_input_channels=num_input_channels)
+
+    def _transform(self, inpt: DType, params: Dict[str, Any]) -> DType:
+        output = _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
+        if isinstance(inpt, features.Image):
+            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.GRAY)
+        return output

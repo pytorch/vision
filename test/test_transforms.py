@@ -2287,5 +2287,17 @@ def test_elastic_transformation():
     t.__repr__()
 
 
+def test_random_grayscale_with_grayscale_input():
+    transform = transforms.RandomGrayscale(p=1.0)
+
+    image_tensor = torch.randint(0, 256, (1, 16, 16), dtype=torch.uint8)
+    output_tensor = transform(image_tensor)
+    torch.testing.assert_close(output_tensor, image_tensor)
+
+    image_pil = F.to_pil_image(image_tensor)
+    output_pil = transform(image_pil)
+    torch.testing.assert_close(F.pil_to_tensor(output_pil), image_tensor)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

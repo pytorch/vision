@@ -1,38 +1,34 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import PIL.Image
-
 import torch
+
+from torch.nn.functional import one_hot
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
-from ._utils import is_simple_tensor
-
 
 class DecodeImage(Transform):
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.EncodedImage):
-            output = F.decode_image_with_pil(inpt)
-            return features.Image(output)
-        else:
-            return inpt
+    _transformed_types = (features.EncodedImage,)
+
+    def _transform(self, inpt: torch.Tensor, params: Dict[str, Any]) -> features.Image:
+        return F.decode_image_with_pil(inpt)
 
 
 class LabelToOneHot(Transform):
+    _transformed_types = (features.Label,)
+
     def __init__(self, num_categories: int = -1):
         super().__init__()
         self.num_categories = num_categories
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Label):
-            num_categories = self.num_categories
-            if num_categories == -1 and inpt.categories is not None:
-                num_categories = len(inpt.categories)
-            output = F.label_to_one_hot(inpt, num_categories=num_categories)
-            return features.OneHotLabel(output, categories=inpt.categories)
-        else:
-            return inpt
+    def _transform(self, inpt: features.Label, params: Dict[str, Any]) -> features.OneHotLabel:
+        num_categories = self.num_categories
+        if num_categories == -1 and inpt.categories is not None:
+            num_categories = len(inpt.categories)
+        output = one_hot(inpt, num_classes=num_categories)
+        return features.OneHotLabel(output, categories=inpt.categories)
 
     def extra_repr(self) -> str:
         if self.num_categories == -1:
@@ -42,33 +38,28 @@ class LabelToOneHot(Transform):
 
 
 class ToImageTensor(Transform):
+    _transformed_types = (features.is_simple_tensor, PIL.Image.Image, np.ndarray)
 
-    # Updated transformed types for ToImageTensor
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
-
-    def __init__(self, *, copy: bool = False) -> None:
-        super().__init__()
-        self.copy = copy
-
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
-            output = F.to_image_tensor(inpt, copy=self.copy)
-            return features.Image(output)
-        else:
-            return inpt
+    def _transform(
+        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
+    ) -> features.Image:
+        return F.to_image_tensor(inpt)
 
 
 class ToImagePIL(Transform):
+    _transformed_types = (features.is_simple_tensor, features.Image, np.ndarray)
 
-    # Updated transformed types for ToImagePIL
-    _transformed_types = (torch.Tensor, features._Feature, PIL.Image.Image, np.ndarray)
-
-    def __init__(self, *, copy: bool = False) -> None:
+    def __init__(self, mode: Optional[str] = None) -> None:
         super().__init__()
-        self.copy = copy
+        self.mode = mode
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(inpt):
-            return F.to_image_pil(inpt, copy=self.copy)
-        else:
-            return inpt
+    def _transform(
+        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
+    ) -> PIL.Image.Image:
+        return F.to_image_pil(inpt, mode=self.mode)
+
+
+# We changed the names to align them with the new naming scheme. Still, `PILToTensor` and `ToPILImage` are
+# prevalent and well understood. Thus, we just alias them without deprecating the old names.
+PILToTensor = ToImageTensor
+ToPILImage = ToImagePIL
