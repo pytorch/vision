@@ -591,3 +591,7 @@ class SimpleCopyPaste(torch.nn.Module):
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}(blending={self.blending}, resize_interpolation={self.resize_interpolation})"
         return s
+
+
+class Mosaic:
+    pass
