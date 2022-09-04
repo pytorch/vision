@@ -1,3 +1,5 @@
+# TODO: Add _log_api_usage_once() in all mid-level kernels. If they remain not jit-scriptable we can use decorators
+
 from torchvision.transforms import InterpolationMode  # usort: skip
 from ._meta import (
     clamp_bounding_box,
@@ -5,6 +7,9 @@ from ._meta import (
     convert_color_space_image_tensor,
     convert_color_space_image_pil,
     convert_color_space,
+    get_dimensions,
+    get_image_num_channels,
+    get_image_size,
 )  # usort: skip
 
 from ._augment import erase, erase_image_pil, erase_image_tensor
@@ -68,6 +73,7 @@ from ._geometry import (
     five_crop,
     five_crop_image_pil,
     five_crop_image_tensor,
+    hflip,
     horizontal_flip,
     horizontal_flip_bounding_box,
     horizontal_flip_image_pil,
@@ -106,8 +112,17 @@ from ._geometry import (
     vertical_flip_image_pil,
     vertical_flip_image_tensor,
     vertical_flip_segmentation_mask,
+    vflip,
 )
 from ._misc import gaussian_blur, gaussian_blur_image_pil, gaussian_blur_image_tensor, normalize, normalize_image_tensor
-from ._type_conversion import decode_image_with_pil, decode_video_with_av, to_image_pil, to_image_tensor
+from ._type_conversion import (
+    convert_image_dtype,
+    decode_image_with_pil,
+    decode_video_with_av,
+    pil_to_tensor,
+    to_image_pil,
+    to_image_tensor,
+    to_pil_image,
+)
 
 from ._deprecated import rgb_to_grayscale, to_grayscale  # usort: skip

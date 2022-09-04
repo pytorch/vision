@@ -5,10 +5,9 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.transforms import functional as _F
 
 from ._transform import _RandomApplyTransform
-from ._utils import is_simple_tensor, query_chw
+from ._utils import query_chw
 
 T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
 
@@ -85,6 +84,8 @@ class ColorJitter(Transform):
 
 
 class RandomPhotometricDistort(Transform):
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+
     def __init__(
         self,
         contrast: Tuple[float, float] = (0.5, 1.5),
@@ -111,24 +112,22 @@ class RandomPhotometricDistort(Transform):
             channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
         )
 
-    def _permute_channels(self, inpt: Any, *, permutation: torch.Tensor) -> Any:
-        if not (isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt)):
-            return inpt
-
-        image = inpt
+    def _permute_channels(self, inpt: Any, permutation: torch.Tensor) -> Any:
         if isinstance(inpt, PIL.Image.Image):
-            image = _F.pil_to_tensor(image)
+            inpt = F.to_image_tensor(inpt)
 
-        output = image[..., permutation, :, :]
+        output = inpt[..., permutation, :, :]
 
         if isinstance(inpt, features.Image):
             output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.OTHER)
         elif isinstance(inpt, PIL.Image.Image):
-            output = _F.to_pil_image(output)
+            output = F.to_image_pil(output)
 
         return output
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(
+        self, inpt: Union[torch.Tensor, features.Image, PIL.Image.Image], params: Dict[str, Any]
+    ) -> Union[torch.Tensor, features.Image, PIL.Image.Image]:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])

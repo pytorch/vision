@@ -7,10 +7,8 @@ import torch
 from torchvision.ops import remove_small_boxes
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.prototype.transforms._utils import query_bounding_box
-from torchvision.transforms.transforms import _setup_size
 
-from ._utils import is_simple_tensor
+from ._utils import _setup_size, has_any, query_bounding_box
 
 
 class Identity(Transform):
@@ -19,20 +17,20 @@ class Identity(Transform):
 
 
 class Lambda(Transform):
-    def __init__(self, fn: Callable[[Any], Any], *types: Type):
+    def __init__(self, lambd: Callable[[Any], Any], *types: Type):
         super().__init__()
-        self.fn = fn
+        self.lambd = lambd
         self.types = types or (object,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if type(inpt) in self.types:
-            return self.fn(inpt)
+        if isinstance(inpt, self.types):
+            return self.lambd(inpt)
         else:
             return inpt
 
     def extra_repr(self) -> str:
         extras = []
-        name = getattr(self.fn, "__name__", None)
+        name = getattr(self.lambd, "__name__", None)
         if name:
             extras.append(name)
         extras.append(f"types={[type.__name__ for type in self.types]}")
@@ -40,6 +38,8 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
+    _transformed_types = (features.is_simple_tensor, features.Image)
+
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
         super().__init__()
         if transformation_matrix.size(0) != transformation_matrix.size(1):
@@ -62,13 +62,13 @@ class LinearTransformation(Transform):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def forward(self, *inputs: Any) -> Any:
+        if has_any(inputs, PIL.Image.Image):
+            raise TypeError("LinearTransformation does not work on PIL Images")
 
-        if isinstance(inpt, features._Feature) and not isinstance(inpt, features.Image):
-            return inpt
-        elif isinstance(inpt, PIL.Image.Image):
-            raise TypeError("Unsupported input type")
+        return super().forward(*inputs)
 
+    def _transform(self, inpt: Union[torch.Tensor, features._Feature], params: Dict[str, Any]) -> torch.Tensor:
         # Image instance after linear transformation is not Image anymore due to unknown data range
         # Thus we will return Tensor for input Image
 
@@ -93,15 +93,21 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    _transformed_types = (PIL.Image.Image, features.Image, is_simple_tensor)
+    _transformed_types = (features.Image, features.is_simple_tensor)
 
-    def __init__(self, mean: Sequence[float], std: Sequence[float]):
+    def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()
         self.mean = list(mean)
         self.std = list(std)
+        self.inplace = inplace
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.normalize(inpt, mean=self.mean, std=self.std)
+    def _transform(self, inpt: Union[torch.Tensor, features._Feature], params: Dict[str, Any]) -> torch.Tensor:
+        return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
+
+    def forward(self, *inpts: Any) -> Any:
+        if has_any(inpts, PIL.Image.Image):
+            raise TypeError(f"{type(self).__name__}() does not support PIL images.")
+        return super().forward(*inpts)
 
 
 class GaussianBlur(Transform):
@@ -131,7 +137,7 @@ class GaussianBlur(Transform):
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.gaussian_blur(inpt, **params)
+        return F.gaussian_blur(inpt, self.kernel_size, **params)
 
 
 class ToDtype(Lambda):

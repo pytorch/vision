@@ -555,10 +555,10 @@ class TestRandomAffine:
         if translate is not None:
             w_max = int(round(translate[0] * w))
             h_max = int(round(translate[1] * h))
-            assert -w_max <= params["translations"][0] <= w_max
-            assert -h_max <= params["translations"][1] <= h_max
+            assert -w_max <= params["translate"][0] <= w_max
+            assert -h_max <= params["translate"][1] <= h_max
         else:
-            assert params["translations"] == (0, 0)
+            assert params["translate"] == (0, 0)
 
         if scale is not None:
             assert scale[0] <= params["scale"] <= scale[1]
@@ -759,7 +759,8 @@ class TestGaussianBlur:
         if isinstance(kernel_size, (tuple, list)):
             assert transform.kernel_size == kernel_size
         else:
-            assert transform.kernel_size == (kernel_size, kernel_size)
+            kernel_size = (kernel_size, kernel_size)
+            assert transform.kernel_size == kernel_size
 
         if isinstance(sigma, (tuple, list)):
             assert transform.sigma == sigma
@@ -779,7 +780,7 @@ class TestGaussianBlur:
         torch.manual_seed(12)
         params = transform._get_params(inpt)
 
-        fn.assert_called_once_with(inpt, **params)
+        fn.assert_called_once_with(inpt, kernel_size, **params)
 
 
 class TestRandomColorOp:
@@ -1003,7 +1004,13 @@ class TestRandomErasing:
 
         if p:
             mock.assert_called_once_with(
-                inpt_sentinel, i=i_sentinel, j=j_sentinel, h=h_sentinel, w=w_sentinel, v=v_sentinel
+                inpt_sentinel,
+                i=i_sentinel,
+                j=j_sentinel,
+                h=h_sentinel,
+                w=w_sentinel,
+                v=v_sentinel,
+                inplace=transform.inplace,
             )
         else:
             mock.assert_not_called()
@@ -1071,11 +1078,10 @@ class TestToPILImage:
         [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
     )
     def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.functional.to_pil_image")
+        fn = mocker.patch("torchvision.prototype.transforms.functional.to_image_pil")
 
         inpt = mocker.MagicMock(spec=inpt_type)
-        with pytest.warns(UserWarning, match="deprecated and will be removed"):
-            transform = transforms.ToPILImage()
+        transform = transforms.ToPILImage()
         transform(inpt)
         if inpt_type in (PIL.Image.Image, features.BoundingBox, str, int):
             assert fn.call_count == 0
@@ -1109,13 +1115,27 @@ class TestContainers:
 
     @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
     @pytest.mark.parametrize(
-        "trfms", [[transforms.Pad(2), transforms.RandomCrop(28)], [lambda x: 2.0 * x, transforms.RandomCrop(28)]]
+        "trfms",
+        [
+            [transforms.Pad(2), transforms.RandomCrop(28)],
+            [lambda x: 2.0 * x, transforms.Pad(2), transforms.RandomCrop(28)],
+        ],
     )
     def test_ctor(self, transform_cls, trfms):
         c = transform_cls(trfms)
         inpt = torch.rand(1, 3, 32, 32)
         output = c(inpt)
         assert isinstance(output, torch.Tensor)
+        assert output.ndim == 4
+
+
+class TestRandomChoice:
+    def test_assertions(self):
+        with pytest.warns(UserWarning, match="Argument p is deprecated and will be removed"):
+            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1, 2])
+
+        with pytest.raises(ValueError, match="The number of probabilities doesn't match the number of transforms"):
+            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], probabilities=[1])
 
 
 class TestRandomIoUCrop:
@@ -1258,8 +1278,11 @@ class TestScaleJitter:
 
     def test__transform(self, mocker):
         interpolation_sentinel = mocker.MagicMock()
+        antialias_sentinel = mocker.MagicMock()
 
-        transform = transforms.ScaleJitter(target_size=(16, 12), interpolation=interpolation_sentinel)
+        transform = transforms.ScaleJitter(
+            target_size=(16, 12), interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
         transform._transformed_types = (mocker.MagicMock,)
 
         size_sentinel = mocker.MagicMock()
@@ -1272,7 +1295,9 @@ class TestScaleJitter:
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
         transform(inpt_sentinel)
 
-        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
+        mock.assert_called_once_with(
+            inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
 
 
 class TestRandomShortestSize:
@@ -1302,8 +1327,11 @@ class TestRandomShortestSize:
 
     def test__transform(self, mocker):
         interpolation_sentinel = mocker.MagicMock()
+        antialias_sentinel = mocker.MagicMock()
 
-        transform = transforms.RandomShortestSize(min_size=[3, 5, 7], max_size=12, interpolation=interpolation_sentinel)
+        transform = transforms.RandomShortestSize(
+            min_size=[3, 5, 7], max_size=12, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
         transform._transformed_types = (mocker.MagicMock,)
 
         size_sentinel = mocker.MagicMock()
@@ -1317,7 +1345,9 @@ class TestRandomShortestSize:
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
         transform(inpt_sentinel)
 
-        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
+        mock.assert_called_once_with(
+            inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
 
 
 class TestSimpleCopyPaste:
@@ -1390,6 +1420,9 @@ class TestSimpleCopyPaste:
         masks[0, 3:9, 2:8] = 1
         masks[1, 20:30, 20:30] = 1
         labels = torch.tensor([1, 2])
+        blending = True
+        resize_interpolation = InterpolationMode.BILINEAR
+        antialias = None
         if label_type == features.OneHotLabel:
             labels = torch.nn.functional.one_hot(labels, num_classes=5)
         target = {
@@ -1417,7 +1450,9 @@ class TestSimpleCopyPaste:
 
         transform = transforms.SimpleCopyPaste()
         random_selection = torch.tensor([0, 1])
-        output_image, output_target = transform._copy_paste(image, target, paste_image, paste_target, random_selection)
+        output_image, output_target = transform._copy_paste(
+            image, target, paste_image, paste_target, random_selection, blending, resize_interpolation, antialias
+        )
 
         assert output_image.unique().tolist() == [2, 10]
         assert output_target["boxes"].shape == (4, 4)
@@ -1478,6 +1513,7 @@ class TestFixedSizeCrop:
         left_sentinel = mocker.MagicMock()
         height_sentinel = mocker.MagicMock()
         width_sentinel = mocker.MagicMock()
+        is_valid = mocker.MagicMock() if needs_crop else None
         padding_sentinel = mocker.MagicMock()
         mocker.patch(
             "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
@@ -1487,6 +1523,7 @@ class TestFixedSizeCrop:
                 left=left_sentinel,
                 height=height_sentinel,
                 width=width_sentinel,
+                is_valid=is_valid,
                 padding=padding_sentinel,
                 needs_pad=needs_pad,
             ),
@@ -1616,7 +1653,7 @@ class TestLinearTransformation:
         transform = transforms.LinearTransformation(m, v)
 
         if isinstance(inpt, PIL.Image.Image):
-            with pytest.raises(TypeError, match="Unsupported input type"):
+            with pytest.raises(TypeError, match="LinearTransformation does not work on PIL Images"):
                 transform(inpt)
         else:
             output = transform(inpt)

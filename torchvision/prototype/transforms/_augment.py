@@ -1,28 +1,29 @@
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import features
-
-from torchvision.prototype.transforms import functional as F
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor
+from torchvision.prototype.transforms import functional as F, InterpolationMode
 
 from ._transform import _RandomApplyTransform
-from ._utils import has_any, is_simple_tensor, query_chw
+from ._utils import has_any, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
+    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image)
+
     def __init__(
         self,
         p: float = 0.5,
         scale: Tuple[float, float] = (0.02, 0.33),
         ratio: Tuple[float, float] = (0.3, 3.3),
         value: float = 0,
+        inplace: bool = False,
     ):
         super().__init__(p=p)
         if not isinstance(value, (numbers.Number, str, tuple, list)):
@@ -40,6 +41,7 @@ class RandomErasing(_RandomApplyTransform):
         self.scale = scale
         self.ratio = ratio
         self.value = value
+        self.inplace = inplace
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(sample)
@@ -88,28 +90,29 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(
+        self, inpt: Union[torch.Tensor, features.Image, PIL.Image.Image], params: Dict[str, Any]
+    ) -> Union[torch.Tensor, features.Image, PIL.Image.Image]:
         if params["v"] is not None:
-            inpt = F.erase(inpt, **params)
+            inpt = F.erase(inpt, **params, inplace=self.inplace)
 
         return inpt
 
 
 class _BaseMixupCutmix(_RandomApplyTransform):
-    def __init__(self, *, alpha: float, p: float = 0.5) -> None:
+    def __init__(self, alpha: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def forward(self, *inpts: Any) -> Any:
-        sample = inpts if len(inpts) > 1 else inpts[0]
-        if not (has_any(sample, features.Image, is_simple_tensor) and has_any(sample, features.OneHotLabel)):
+    def forward(self, *inputs: Any) -> Any:
+        if not (has_any(inputs, features.Image, features.is_simple_tensor) and has_any(inputs, features.OneHotLabel)):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images and one-hot labels.")
-        if has_any(sample, features.BoundingBox, features.SegmentationMask, features.Label):
+        if has_any(inputs, features.BoundingBox, features.SegmentationMask, features.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support bounding boxes, segmentation masks and plain labels."
             )
-        return super().forward(sample)
+        return super().forward(*inputs)
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
         if inpt.ndim < 2:
@@ -125,7 +128,7 @@ class RandomMixup(_BaseMixupCutmix):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
-        if isinstance(inpt, features.Image) or is_simple_tensor(inpt):
+        if isinstance(inpt, features.Image) or features.is_simple_tensor(inpt):
             if inpt.ndim < 4:
                 raise ValueError("Need a batch of images")
             output = inpt.clone()
@@ -165,7 +168,7 @@ class RandomCutmix(_BaseMixupCutmix):
         return dict(box=box, lam_adjusted=lam_adjusted)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Image) or is_simple_tensor(inpt):
+        if isinstance(inpt, features.Image) or features.is_simple_tensor(inpt):
             box = params["box"]
             if inpt.ndim < 4:
                 raise ValueError("Need a batch of images")
@@ -191,10 +194,12 @@ class SimpleCopyPaste(_RandomApplyTransform):
         p: float = 0.5,
         blending: bool = True,
         resize_interpolation: InterpolationMode = F.InterpolationMode.BILINEAR,
+        antialias: Optional[bool] = None,
     ) -> None:
         super().__init__(p=p)
         self.resize_interpolation = resize_interpolation
         self.blending = blending
+        self.antialias = antialias
 
     def _copy_paste(
         self,
@@ -203,8 +208,9 @@ class SimpleCopyPaste(_RandomApplyTransform):
         paste_image: Any,
         paste_target: Dict[str, Any],
         random_selection: torch.Tensor,
-        blending: bool = True,
-        resize_interpolation: F.InterpolationMode = F.InterpolationMode.BILINEAR,
+        blending: bool,
+        resize_interpolation: F.InterpolationMode,
+        antialias: Optional[bool],
     ) -> Tuple[Any, Dict[str, Any]]:
 
         paste_masks = paste_target["masks"].new_like(paste_target["masks"], paste_target["masks"][random_selection])
@@ -220,7 +226,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         size1 = image.shape[-2:]
         size2 = paste_image.shape[-2:]
         if size1 != size2:
-            paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation)
+            paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation, antialias=antialias)
             paste_masks = F.resize(paste_masks, size=size1)
             paste_boxes = F.resize(paste_boxes, size=size1)
 
@@ -245,8 +251,10 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # Copy-paste boxes and labels
         bbox_format = target["boxes"].format
         xyxy_boxes = masks_to_boxes(masks)
-        # TODO: masks_to_boxes produces bboxes with x2y2 inclusive but x2y2 should be exclusive
-        # we need to add +1 to x2y2. We need to investigate that.
+        # masks_to_boxes produces bboxes with x2y2 inclusive but x2y2 should be exclusive
+        # we need to add +1 to x2y2.
+        # There is a similar +1 in other reference implementations:
+        # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
         boxes = F.convert_bounding_box_format(
             xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
@@ -275,10 +283,10 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # with List[image], List[BoundingBox], List[SegmentationMask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
-            if isinstance(obj, features.Image) or is_simple_tensor(obj):
+            if isinstance(obj, features.Image) or features.is_simple_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
-                images.append(pil_to_tensor(obj))
+                images.append(F.to_image_tensor(obj))
             elif isinstance(obj, features.BoundingBox):
                 bboxes.append(obj)
             elif isinstance(obj, features.SegmentationMask):
@@ -309,7 +317,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
             elif isinstance(obj, PIL.Image.Image):
                 flat_sample[i] = F.to_image_pil(output_images[c0])
                 c0 += 1
-            elif is_simple_tensor(obj):
+            elif features.is_simple_tensor(obj):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
             elif isinstance(obj, features.BoundingBox):
@@ -323,9 +331,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-
-        flat_sample, spec = tree_flatten(sample)
+        flat_sample, spec = tree_flatten(inputs)
 
         images, targets = self._extract_image_targets(flat_sample)
 
@@ -359,6 +365,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
                     random_selection=random_selection,
                     blending=self.blending,
                     resize_interpolation=self.resize_interpolation,
+                    antialias=self.antialias,
                 )
             output_images.append(output_image)
             output_targets.append(output_target)

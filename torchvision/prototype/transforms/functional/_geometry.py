@@ -7,7 +7,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 from torchvision.transforms.functional import (
-    _compute_output_size,
+    _compute_resized_output_size,
     _get_inverse_affine_matrix,
     _get_perspective_coeffs,
     InterpolationMode,
@@ -15,6 +15,7 @@ from torchvision.transforms.functional import (
     pil_to_tensor,
     to_pil_image,
 )
+from torchvision.transforms.functional_tensor import _parse_pad_padding
 
 from ._meta import convert_bounding_box_format, get_dimensions_image_pil, get_dimensions_image_tensor
 
@@ -89,6 +90,12 @@ def vertical_flip(inpt: DType) -> DType:
         return vertical_flip_image_tensor(inpt)
 
 
+# We changed the names to align them with the transforms, i.e. `RandomHorizontalFlip`. Still, `hflip` and `vflip` are
+# prevalent and well understood. Thus, we just alias them without deprecating the old names.
+hflip = horizontal_flip
+vflip = vertical_flip
+
+
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
@@ -97,7 +104,7 @@ def resize_image_tensor(
     antialias: bool = False,
 ) -> torch.Tensor:
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
-    new_height, new_width = _compute_output_size((old_height, old_width), size=size, max_size=max_size)
+    new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
     batch_shape = image.shape[:-3]
     return _FT.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
@@ -117,7 +124,7 @@ def resize_image_pil(
         size = [size, size]
     # Explicitly cast size to list otherwise mypy issue: incompatible type "Sequence[int]"; expected "List[int]"
     size: List[int] = list(size)
-    size = _compute_output_size(img.size[::-1], size=size, max_size=max_size)
+    size = _compute_resized_output_size(img.size[::-1], size=size, max_size=max_size)
     return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation])
 
 
@@ -131,7 +138,7 @@ def resize_bounding_box(
     bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int], max_size: Optional[int] = None
 ) -> torch.Tensor:
     old_height, old_width = image_size
-    new_height, new_width = _compute_output_size(image_size, size=size, max_size=max_size)
+    new_height, new_width = _compute_resized_output_size(image_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
     return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
 
@@ -372,8 +379,12 @@ def affine_segmentation_mask(
 
 
 def _convert_fill_arg(fill: Optional[Union[int, float, Sequence[int], Sequence[float]]]) -> Optional[List[float]]:
+    # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
+    # So, we can't reassign fill to 0
+    # if fill is None:
+    #     fill = 0
     if fill is None:
-        fill = 0
+        return fill
 
     # This cast does Sequence -> List[float] to please mypy and torch.jit.script
     if not isinstance(fill, (int, float)):
@@ -558,7 +569,7 @@ def _pad_with_vector_fill(
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
     output = pad_image_tensor(img, padding, fill=0, padding_mode="constant")
-    left, right, top, bottom = _FT._parse_pad_padding(padding)
+    left, right, top, bottom = _parse_pad_padding(padding)
     fill = torch.tensor(fill, dtype=img.dtype, device=img.device).view(-1, 1, 1)
 
     if top > 0:
@@ -587,9 +598,16 @@ def pad_segmentation_mask(
 
 
 def pad_bounding_box(
-    bounding_box: torch.Tensor, padding: Union[int, List[int]], format: features.BoundingBoxFormat
+    bounding_box: torch.Tensor,
+    padding: Union[int, List[int]],
+    format: features.BoundingBoxFormat,
+    padding_mode: str = "constant",
 ) -> torch.Tensor:
-    left, _, top, _ = _FT._parse_pad_padding(padding)
+    if padding_mode not in ["constant"]:
+        # TODO: add support of other padding modes
+        raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
+
+    left, _, top, _ = _parse_pad_padding(padding)
 
     bounding_box = bounding_box.clone()
 
@@ -1115,7 +1133,7 @@ def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: boo
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
 
-def ten_crop(inpt: DType, size: List[int], *, vertical_flip: bool = False) -> List[DType]:
+def ten_crop(inpt: DType, size: List[int], vertical_flip: bool = False) -> List[DType]:
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
         if isinstance(inpt, features.Image):

@@ -9,7 +9,6 @@ import torch
 from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
 from ._feature import _Feature
-from ._image import Image
 
 D = TypeVar("D", bound="EncodedData")
 
@@ -45,11 +44,6 @@ class EncodedImage(EncodedData):
                 self._image_size = image.height, image.width
 
         return self._image_size
-
-    def decode(self) -> Image:
-        # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
-        #  promote this out of the prototype state
-        return Image(self._F.decode_image_with_pil(self))
 
 
 class EncodedVideo(EncodedData):
