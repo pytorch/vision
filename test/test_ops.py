@@ -118,6 +118,25 @@ class RoIOpTester(ABC):
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_torch_fx_trace(self, device, x_dtype=torch.float, rois_dtype=torch.float):
+        op_obj = self.make_obj().to(device=device)
+        graph_module = torch.fx.symbolic_trace(op_obj)
+        pool_size = 5
+        n_channels = 2 * (pool_size**2)
+        x = torch.rand(2, n_channels, 5, 5, dtype=x_dtype, device=device)
+        rois = torch.tensor(
+            [[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]],  # format is (xyxy)
+            dtype=rois_dtype,
+            device=device,
+        )
+        output_gt = op_obj(x, rois)
+        assert output_gt.dtype == x.dtype
+        output_fx = graph_module(x, rois)
+        assert output_fx.dtype == x.dtype
+        tol = 1e-5
+        torch.testing.assert_close(output_gt, output_fx, rtol=tol, atol=tol)
+
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("contiguous", (True, False))
