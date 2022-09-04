@@ -135,7 +135,7 @@ class RoIOpTester(ABC):
         output_fx = graph_module(x, rois)
         assert output_fx.dtype == x.dtype
         tol = 1e-5
-        torch.testing.assert_close(output_gt.to(output_fx), output_fx, rtol=tol, atol=tol)
+        torch.testing.assert_close(output_gt, output_fx, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_gpu())
