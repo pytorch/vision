@@ -104,7 +104,7 @@ class S3D(nn.Module):
     def __init__(
         self,
         num_classes: int = 400,
-        dropout: float = 0.0,
+        dropout: float = 0.2,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = None,
     ) -> None:
         super().__init__()
@@ -153,28 +153,26 @@ class S3D(nn.Module):
 
 class S3D_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
-        url="https://download.pytorch.org/models/s3d-1bd8ae63.pth",
+        url="https://download.pytorch.org/models/s3d-d76dad2f.pth",
         transforms=partial(
             VideoClassification,
             crop_size=(224, 224),
             resize_size=(256, 256),
-            mean=(0.5, 0.5, 0.5),
-            std=(0.5, 0.5, 0.5),
         ),
         meta={
             "min_size": (224, 224),
             "min_temporal_size": 14,
             "categories": _KINETICS400_CATEGORIES,
-            "recipe": "https://github.com/pytorch/vision/pull/6412#issuecomment-1219687434",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification#s3d",
             "_docs": (
-                "The weights are ported from a community repository. The accuracies are estimated on clip-level "
+                "The weights aim to approximate the accuracy of the paper. The accuracies are estimated on clip-level "
                 "with parameters `frame_rate=15`, `clips_per_video=1`, and `clip_len=128`."
             ),
             "num_params": 8320048,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": 67.315,
-                    "acc@5": 87.593,
+                    "acc@1": 68.345,
+                    "acc@5": 88.050,
                 }
             },
         },

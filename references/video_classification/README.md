@@ -97,6 +97,21 @@ Video resnet models:
 --val-crop-size 112 112
 ```
 
+### S3D
+
+The S3D model was trained similarly to the above but with the following changes on the default configuration:
+```
+--batch-size=12 --lr 0.2 --clip-len 64 --clips-per-video 5 --sync-bn \
+--train-resize-size 256 256 --train-crop-size 224 224 --val-resize-size 256 256 --val-crop-size 224 224
+```
+
+We used 64 GPUs to train the architecture. 
+
+To estimate the validation statistics of the model, we run the reference script with the following configuration:
+```
+--batch-size=16 --test-only --clip-len 128 --clips-per-video 1 
+```
+
 ### Additional video modelling resources
 
 - [Video Model Zoo](https://github.com/facebookresearch/VMZ)
