@@ -7,7 +7,6 @@ import platform
 import sys
 import warnings
 from collections import OrderedDict
-from itertools import product
 from tempfile import TemporaryDirectory
 from typing import Any
 
@@ -346,11 +345,9 @@ for m in slow_models:
 
 
 # skip big models to reduce memory usage on CI test. We can exclude combinations of (platform-system, device).
-_all_platforms = ("Darwin", "Linux", "Windows")
-_all_devices = ("cpu", "cuda")
 skipped_big_models = {
-    "vit_h_14": set(product(("Windows",), _all_devices)),
-    "regnet_y_128gf": set(product(("Windows",), _all_devices)),
+    "vit_h_14": {("Windows", "cpu"), ("Windows", "cuda")},
+    "regnet_y_128gf": {("Windows", "cpu"), ("Windows", "cuda")},
     "mvit_v1_b": {("Windows", "cuda")},
     "mvit_v2_s": {("Windows", "cuda")},
 }
