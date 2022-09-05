@@ -81,6 +81,7 @@ Video resnet models:
 ```
 # number of frames per clip
 --clip_len 16 \ 
+--frame-rate 15 \
 # allow for temporal jittering
 --clips_per_video 5 \
 --batch-size 24 \
