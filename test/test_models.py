@@ -349,8 +349,8 @@ for m in slow_models:
 _all_platforms = ("Darwin", "Linux", "Windows")
 _all_devices = ("cpu", "cuda")
 skipped_big_models = {
-    "vit_h_14": set(product(_all_platforms, _all_devices)),
-    "regnet_y_128gf": set(product(_all_platforms, _all_devices)),
+    "vit_h_14": set(product(("Windows",), _all_devices)),
+    "regnet_y_128gf": set(product(("Windows",), _all_devices)),
     "mvit_v1_b": {("Windows", "cuda")},
     "mvit_v2_s": {("Windows", "cuda")},
 }
