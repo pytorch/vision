@@ -171,7 +171,7 @@ class S3D_Weights(WeightsEnum):
             "num_params": 8320048,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": 68.345,
+                    "acc@1": 68.368,
                     "acc@5": 88.050,
                 }
             },
