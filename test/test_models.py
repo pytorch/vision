@@ -3,9 +3,11 @@ import functools
 import operator
 import os
 import pkgutil
+import platform
 import sys
 import warnings
 from collections import OrderedDict
+from itertools import product
 from tempfile import TemporaryDirectory
 from typing import Any
 
@@ -343,11 +345,26 @@ for m in slow_models:
     _model_params[m] = {"input_shape": (1, 3, 64, 64)}
 
 
-# skip big models to reduce memory usage on CI test
+# skip big models to reduce memory usage on CI test. We can exclude combinations of (platform-system, device).
+_all_platforms = ("Darwin", "Linux", "Windows")
+_all_devices = ("cpu", "cuda")
 skipped_big_models = {
-    "vit_h_14",
-    "regnet_y_128gf",
+    "vit_h_14": set(product(_all_platforms, _all_devices)),
+    "regnet_y_128gf": set(product(_all_platforms, _all_devices)),
+    "mvit_v1_b": {("Windows", "cuda")},
+    "mvit_v2_s": {("Windows", "cuda")},
 }
+
+
+def is_skippable(model_name, device):
+    if model_name not in skipped_big_models:
+        return False
+
+    platform_system = platform.system()
+    device_name = str(device).split(":")[0]
+
+    return (platform_system, device_name) in skipped_big_models[model_name]
+
 
 # The following contains configuration and expected values to be used tests that are model specific
 _model_tests_values = {
@@ -612,7 +629,7 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
-    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+    if SKIP_BIG_MODEL and is_skippable(model_name, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
@@ -841,7 +858,7 @@ def test_video_model(model_fn, dev):
         "num_classes": 50,
     }
     model_name = model_fn.__name__
-    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+    if SKIP_BIG_MODEL and is_skippable(model_name, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
