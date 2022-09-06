@@ -1263,18 +1263,24 @@ class TestScaleJitter:
         scale_range = (0.5, 1.5)
 
         transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
-
         sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
-        params = transform._get_params(sample)
 
-        assert "size" in params
-        size = params["size"]
+        n_samples = 5
+        for _ in range(n_samples):
 
-        assert isinstance(size, tuple) and len(size) == 2
-        height, width = size
+            params = transform._get_params(sample)
 
-        assert int(target_size[0] * scale_range[0]) <= height <= int(target_size[0] * scale_range[1])
-        assert int(target_size[1] * scale_range[0]) <= width <= int(target_size[1] * scale_range[1])
+            assert "size" in params
+            size = params["size"]
+
+            assert isinstance(size, tuple) and len(size) == 2
+            height, width = size
+
+            r_min = min(target_size[1] / image_size[0], target_size[0] / image_size[1]) * scale_range[0]
+            r_max = min(target_size[1] / image_size[0], target_size[0] / image_size[1]) * scale_range[1]
+
+            assert int(image_size[0] * r_min) <= height <= int(image_size[0] * r_max)
+            assert int(image_size[1] * r_min) <= width <= int(image_size[1] * r_max)
 
     def test__transform(self, mocker):
         interpolation_sentinel = mocker.MagicMock()
