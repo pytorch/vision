@@ -86,8 +86,6 @@ class TestSmoke:
         transforms.RandomHorizontalFlip(),
         transforms.Pad(5),
         transforms.RandomZoomOut(),
-        transforms.RandomRotation(degrees=(-45, 45)),
-        transforms.RandomAffine(degrees=(-45, 45)),
         transforms.RandomCrop([16, 16], padding=1, pad_if_needed=True),
         # TODO: Something wrong with input data setup. Let's fix that
         # transforms.RandomEqualize(),
@@ -95,6 +93,8 @@ class TestSmoke:
         # transforms.RandomPosterize(bits=4),
         # transforms.RandomSolarize(threshold=0.5),
         # transforms.RandomAdjustSharpness(sharpness_factor=0.5),
+        # transforms.RandomRotation(degrees=(-45, 45)),
+        # transforms.RandomAffine(degrees=(-45, 45)),
     )
     def test_common(self, transform, input):
         transform(input)
@@ -1206,9 +1206,9 @@ class TestRandomIoUCrop:
         bboxes = make_bounding_box(format="XYXY", image_size=(32, 24), extra_dims=(6,))
         label = features.Label(torch.randint(0, 10, size=(6,)))
         ohe_label = features.OneHotLabel(torch.zeros(6, 10).scatter_(1, label.unsqueeze(1), 1))
-        masks = make_segmentation_mask((32, 24))
-        ohe_masks = features.SegmentationMask(torch.randint(0, 2, size=(6, 32, 24)))
-        sample = [image, bboxes, label, ohe_label, masks, ohe_masks]
+        masks = make_segmentation_mask((32, 24), num_objects=6)
+
+        sample = [image, bboxes, label, ohe_label, masks]
 
         fn = mocker.patch("torchvision.prototype.transforms.functional.crop", side_effect=lambda x, **params: x)
         is_within_crop_area = torch.tensor([0, 1, 0, 1, 0, 1], dtype=torch.bool)
@@ -1217,15 +1217,12 @@ class TestRandomIoUCrop:
         transform._get_params = mocker.MagicMock(return_value=params)
         output = transform(sample)
 
-        assert fn.call_count == 4
+        assert fn.call_count == 3
 
         expected_calls = [
             mocker.call(image, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
             mocker.call(bboxes, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
             mocker.call(masks, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
-            mocker.call(
-                ohe_masks, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
-            ),
         ]
 
         fn.assert_has_calls(expected_calls)
@@ -1249,11 +1246,7 @@ class TestRandomIoUCrop:
 
         output_masks = output[4]
         assert isinstance(output_masks, features.SegmentationMask)
-        assert output_masks.shape[:-2] == masks.shape[:-2]
-
-        output_ohe_masks = output[5]
-        assert isinstance(output_ohe_masks, features.SegmentationMask)
-        assert len(output_ohe_masks) == expected_within_targets
+        assert len(output_masks) == expected_within_targets
 
 
 class TestScaleJitter:
