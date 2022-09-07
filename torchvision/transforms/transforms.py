@@ -1855,7 +1855,7 @@ class GaussianNoise(torch.nn.Module):
 
     """
 
-    def __init__(self, mean, sigma = (0.1, 2.0)):
+    def __init__(self, mean, sigma=(0.1, 0.5)):
         super().__init__()
         _log_api_usage_once(self)
 
@@ -1888,31 +1888,7 @@ class GaussianNoise(torch.nn.Module):
             PIL Image or Tensor: Image added with gaussian noise.
         """
         sigma = self.get_params(self.sigma[0], self.sigma[1])
-        if not isinstance(image, torch.Tensor):
-            if not F._is_pil_image(image):
-                raise TypeError(f"image should be PIL Image or Tensor. Got {type(image)}")
-
-            t_image = F.pil_to_tensor(image)
-        else:
-            t_image = image
-
-        if not t_image.ndim >= 2:
-            raise TypeError("Tensor is not a torch image.")
-
-        dtype = t_image.dtype
-
-        if not t_image.is_floating_point():
-            t_image = t_image.to(torch.float32)
-
-        gaussian_noise = sigma * torch.randn_like(t_image) + self.mean
-        output = t_image + gaussian_noise
-
-        if output.dtype != dtype:
-            output = output.to(dtype)
-
-        if not isinstance(image, torch.Tensor):
-            output = F.to_pil_image(output)
-
+        output = F.gaussian_noise(image, self.mean, sigma)
         return output
 
     def __repr__(self) -> str:
