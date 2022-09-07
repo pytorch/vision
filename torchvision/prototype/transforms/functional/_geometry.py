@@ -550,11 +550,17 @@ def pad_image_tensor(
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
 
-    padded_image = _FT.pad(
-        img=img.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
-    )
+    left, right, top, bottom = _FT._parse_pad_padding(padding)
+    new_height = height + top + bottom
+    new_width = width + left + right
 
-    new_height, new_width = padded_image.shape[-2:]
+    if img.numel() > 0:
+        padded_image = _FT.pad(
+            img=img.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
+        )
+    else:
+        padded_image = img.clone()
+
     return padded_image.view(extra_dims + (num_channels, new_height, new_width))
 
 
@@ -586,15 +592,7 @@ def _pad_with_vector_fill(
 def pad_segmentation_mask(
     segmentation_mask: torch.Tensor, padding: Union[int, List[int]], padding_mode: str = "constant"
 ) -> torch.Tensor:
-    num_masks, height, width = segmentation_mask.shape[-3:]
-    extra_dims = segmentation_mask.shape[:-3]
-
-    padded_mask = pad_image_tensor(
-        img=segmentation_mask.view(-1, num_masks, height, width), padding=padding, fill=0, padding_mode=padding_mode
-    )
-
-    new_height, new_width = padded_mask.shape[-2:]
-    return padded_mask.view(extra_dims + (num_masks, new_height, new_width))
+    return pad_image_tensor(img=segmentation_mask, padding=padding, fill=0, padding_mode=padding_mode)
 
 
 def pad_bounding_box(
