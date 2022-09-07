@@ -1317,10 +1317,10 @@ def test_gaussian_blur_asserts():
 def test_gaussian_noise():
     np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
     img = F.to_pil_image(np_img, "RGB")
-    out = transforms.GaussianNoise(2.0, (0.1, 2.0))(img)
+    transforms.GaussianNoise(2.0, (0.1, 2.0))(img)
 
     with pytest.raises(TypeError, match="Tensor is not a torch image"):
-        out = transforms.GaussianNoise(2.0, (0.1, 2.0))(torch.ones((4)))
+        transforms.GaussianNoise(2.0, (0.1, 2.0))(torch.ones(4))
 
     with pytest.raises(ValueError, match="Mean should be a positive number"):
         transforms.GaussianNoise(-1)
