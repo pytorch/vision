@@ -54,7 +54,7 @@ def make_images(
         features.ColorSpace.RGB_ALPHA,
     ),
     dtypes=(torch.float32, torch.uint8),
-    extra_dims=((), (0,), (4,), (2, 3)),
+    extra_dims=((), (0,), (4,), (2, 3), (5, 0), (0, 5)),
 ):
     for size, color_space, dtype in itertools.product(sizes, color_spaces, dtypes):
         yield make_image(size, color_space=color_space, dtype=dtype)
@@ -115,7 +115,7 @@ def make_bounding_boxes(
     formats=(features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH),
     image_sizes=((32, 32),),
     dtypes=(torch.int64, torch.float32),
-    extra_dims=((0,), (), (4,), (2, 3)),
+    extra_dims=((0,), (), (4,), (2, 3), (5, 0), (0, 5)),
 ):
     for format, image_size, dtype in itertools.product(formats, image_sizes, dtypes):
         yield make_bounding_box(format=format, image_size=image_size, dtype=dtype)
@@ -136,7 +136,7 @@ def make_one_hot_label(*args, **kwargs):
 def make_one_hot_labels(
     *,
     num_categories=(1, 2, 10),
-    extra_dims=((), (0,), (4,), (2, 3)),
+    extra_dims=((), (0,), (4,), (2, 3), (5, 0), (0, 5)),
 ):
     for num_categories_ in num_categories:
         yield make_one_hot_label(categories=[f"category{idx}" for idx in range(num_categories_)])
@@ -155,7 +155,7 @@ def make_segmentation_mask(size=None, *, num_categories=80, extra_dims=(), dtype
 def make_segmentation_masks(
     sizes=((16, 16), (7, 33), (31, 9)),
     dtypes=(torch.long,),
-    extra_dims=((), (0,), (4,), (2, 3)),
+    extra_dims=((), (0,), (4,), (2, 3), (5, 0), (0, 5)),
 ):
     for size, dtype, extra_dims_ in itertools.product(sizes, dtypes, extra_dims):
         yield make_segmentation_mask(size=size, dtype=dtype, extra_dims=extra_dims_)
@@ -1431,7 +1431,7 @@ def test_correctness_pad_bounding_box(device, padding):
 
         output_boxes = F.pad_bounding_box(bboxes, padding, format=bboxes_format)
 
-        if bboxes.ndim < 2 or bboxes.numel() == 0:
+        if bboxes.ndim < 2 or bboxes.shape[0] == 0:
             bboxes = [bboxes]
 
         expected_bboxes = []
