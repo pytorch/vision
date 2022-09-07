@@ -145,10 +145,13 @@ def make_one_hot_labels(
         yield make_one_hot_label(extra_dims_)
 
 
-def make_segmentation_mask(size=None, *, num_categories=80, extra_dims=(), dtype=torch.long):
+def make_segmentation_mask(size=None, *, num_categories=10, extra_dims=(), dtype=torch.long):
     size = size or torch.randint(16, 33, (2,)).tolist()
     shape = (*extra_dims, 1, *size)
-    data = make_tensor(shape, low=0, high=num_categories, dtype=dtype)
+    if num_categories:
+        data = make_tensor(shape, low=0, high=num_categories, dtype=dtype)
+    else:
+        data = torch.empty(shape, dtype=dtype)
     return features.SegmentationMask(data)
 
 
@@ -156,9 +159,13 @@ def make_segmentation_masks(
     sizes=((16, 16), (7, 33), (31, 9)),
     dtypes=(torch.long,),
     extra_dims=((), (0,), (4,), (2, 3), (5, 0), (0, 5)),
+    num_categories=(1, 0, 10),
 ):
     for size, dtype, extra_dims_ in itertools.product(sizes, dtypes, extra_dims):
         yield make_segmentation_mask(size=size, dtype=dtype, extra_dims=extra_dims_)
+
+    for dtype, extra_dims_, num_categories_ in itertools.product(dtypes, extra_dims, num_categories):
+        yield make_segmentation_mask(num_categories=num_categories_, dtype=dtype, extra_dims=extra_dims_)
 
 
 class SampleInput:
