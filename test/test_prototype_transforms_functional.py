@@ -145,27 +145,25 @@ def make_one_hot_labels(
         yield make_one_hot_label(extra_dims_)
 
 
-def make_segmentation_mask(size=None, *, num_categories=10, extra_dims=(), dtype=torch.long):
-    size = size or torch.randint(16, 33, (2,)).tolist()
-    shape = (*extra_dims, 1, *size)
-    if num_categories:
-        data = make_tensor(shape, low=0, high=num_categories, dtype=dtype)
-    else:
-        data = torch.empty(shape, dtype=dtype)
+def make_segmentation_mask(size=None, *, num_objects=None, extra_dims=(), dtype=torch.uint8):
+    size = size if size is not None else torch.randint(16, 33, (2,)).tolist()
+    num_objects = num_objects if num_objects is not None else int(torch.randint(1, 11, ()))
+    shape = (*extra_dims, num_objects, *size)
+    data = make_tensor(shape, low=0, high=2, dtype=dtype)
     return features.SegmentationMask(data)
 
 
 def make_segmentation_masks(
     sizes=((16, 16), (7, 33), (31, 9)),
-    dtypes=(torch.long,),
+    dtypes=(torch.uint8,),
     extra_dims=((), (0,), (4,), (2, 3), (5, 0), (0, 5)),
-    num_categories=(1, 0, 10),
+    num_objects=(1, 0, 10),
 ):
     for size, dtype, extra_dims_ in itertools.product(sizes, dtypes, extra_dims):
         yield make_segmentation_mask(size=size, dtype=dtype, extra_dims=extra_dims_)
 
-    for dtype, extra_dims_, num_categories_ in itertools.product(dtypes, extra_dims, num_categories):
-        yield make_segmentation_mask(num_categories=num_categories_, dtype=dtype, extra_dims=extra_dims_)
+    for dtype, extra_dims_, num_objects_ in itertools.product(dtypes, extra_dims, num_objects):
+        yield make_segmentation_mask(num_objects=num_objects_, dtype=dtype, extra_dims=extra_dims_)
 
 
 class SampleInput:
@@ -747,6 +745,19 @@ def test_functional_mid_level(func):
     ],
 )
 def test_eager_vs_scripted(functional_info, sample_input):
+    if not functional_info.name == "resize_segmentation_mask":
+        return
+
+    if sample_input.args[0].numel() > 0:
+        return
+
+    if sample_input.args[0].shape[-2:] == sample_input.kwargs["size"]:
+        return
+
+    if sample_input.args[0].shape[-3] > 0:
+        return
+
+    # why isn't this failing for degenerate
     eager = functional_info(sample_input)
     scripted = jit.script(functional_info.functional)(*sample_input.args, **sample_input.kwargs)
 
