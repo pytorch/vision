@@ -105,13 +105,19 @@ def resize_image_tensor(
 ) -> torch.Tensor:
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
-    batch_shape = image.shape[:-3]
-    return _FT.resize(
-        image.reshape((-1, num_channels, old_height, old_width)),
-        size=[new_height, new_width],
-        interpolation=interpolation.value,
-        antialias=antialias,
-    ).reshape(batch_shape + (num_channels, new_height, new_width))
+    extra_dims = image.shape[:-3]
+
+    if image.numel() > 0:
+        resized_image = _FT.resize(
+            image.view(-1, num_channels, old_height, old_width),
+            size=[new_height, new_width],
+            interpolation=interpolation.value,
+            antialias=antialias,
+        )
+    else:
+        resized_image = image.clone()
+
+    return resized_image.view(extra_dims + (num_channels, new_height, new_width))
 
 
 def resize_image_pil(

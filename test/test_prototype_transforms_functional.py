@@ -918,7 +918,8 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
 
 
 incorrect_expected_segmentation_mask_setup = pytest.mark.xfail(
-    reason="This test fails because the expected result computation is wrong. Fix ASAP."
+    reason="This test fails because the expected result computation is wrong. Fix ASAP.",
+    strict=False,
 )
 
 
