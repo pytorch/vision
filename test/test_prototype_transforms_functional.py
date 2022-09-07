@@ -329,7 +329,7 @@ def affine_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def affine_segmentation_mask():
     for mask, angle, translate, scale, shear in itertools.product(
-        make_segmentation_masks(extra_dims=((), (4,))),
+        make_segmentation_masks(extra_dims=((), (4,)), num_objects=[10]),
         [-87, 15, 90],  # angle
         [5, -5],  # translate
         [0.77, 1.27],  # scale
@@ -382,7 +382,7 @@ def rotate_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def rotate_segmentation_mask():
     for mask, angle, expand, center in itertools.product(
-        make_segmentation_masks(extra_dims=((), (4,))),
+        make_segmentation_masks(extra_dims=((), (4,)), num_objects=[10]),
         [-87, 15, 90],  # angle
         [True, False],  # expand
         [None, [12, 23]],  # center
@@ -745,19 +745,6 @@ def test_functional_mid_level(func):
     ],
 )
 def test_eager_vs_scripted(functional_info, sample_input):
-    if not functional_info.name == "resize_segmentation_mask":
-        return
-
-    if sample_input.args[0].numel() > 0:
-        return
-
-    if sample_input.args[0].shape[-2:] == sample_input.kwargs["size"]:
-        return
-
-    if sample_input.args[0].shape[-3] > 0:
-        return
-
-    # why isn't this failing for degenerate
     eager = functional_info(sample_input)
     scripted = jit.script(functional_info.functional)(*sample_input.args, **sample_input.kwargs)
 
