@@ -14,11 +14,11 @@ DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
 normalize_image_tensor = _FT.normalize
 
 
-def normalize(inpt: DType, mean: List[float], std: List[float], inplace: bool = False) -> DType:
-    if isinstance(inpt, features._Feature) and not isinstance(inpt, features.Image):
-        return inpt
-    elif isinstance(inpt, PIL.Image.Image):
-        raise TypeError("Unsupported input type")
+def normalize(
+    inpt: Union[torch.Tensor, features.Image], mean: List[float], std: List[float], inplace: bool = False
+) -> torch.Tensor:
+    if not isinstance(inpt, torch.Tensor):
+        raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
     else:
         # Image instance after normalization is not Image anymore due to unknown data range
         # Thus we return Tensor for input Image
@@ -54,7 +54,9 @@ def gaussian_blur_image_tensor(
     return _FT.gaussian_blur(img, kernel_size, sigma)
 
 
-def gaussian_blur_image_pil(img: PIL.Image, kernel_size: List[int], sigma: Optional[List[float]] = None) -> PIL.Image:
+def gaussian_blur_image_pil(
+    img: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
+) -> PIL.Image.Image:
     t_img = pil_to_tensor(img)
     output = gaussian_blur_image_tensor(t_img, kernel_size=kernel_size, sigma=sigma)
     return to_pil_image(output, mode=img.mode)

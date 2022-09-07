@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import ModuleType
 from typing import Any, Callable, cast, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import torch
@@ -9,7 +10,13 @@ from torchvision.transforms import InterpolationMode
 F = TypeVar("F", bound="_Feature")
 
 
+def is_simple_tensor(inpt: Any) -> bool:
+    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, _Feature)
+
+
 class _Feature(torch.Tensor):
+    __F: Optional[ModuleType] = None
+
     def __new__(
         cls: Type[F],
         data: Any,
@@ -85,6 +92,24 @@ class _Feature(torch.Tensor):
             return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
         else:
             return output
+
+    def _make_repr(self, **kwargs: Any) -> str:
+        # This is a poor man's implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.
+        # If that ever gets implemented, remove this in favor of the solution on the `torch.Tensor` class.
+        extra_repr = ", ".join(f"{key}={value}" for key, value in kwargs.items())
+        return f"{super().__repr__()[:-1]}, {extra_repr})"
+
+    @property
+    def _F(self) -> ModuleType:
+        # This implements a lazy import of the functional to get around the cyclic import. This import is deferred
+        # until the first time we need reference to the functional module and it's shared across all instances of
+        # the class. This approach avoids the DataLoader issue described at
+        # https://github.com/pytorch/vision/pull/6476#discussion_r953588621
+        if _Feature.__F is None:
+            from ..transforms import functional
+
+            _Feature.__F = functional
+        return _Feature.__F
 
     def horizontal_flip(self) -> _Feature:
         return self
