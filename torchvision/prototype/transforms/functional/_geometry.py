@@ -115,6 +115,7 @@ def resize_image_tensor(
             antialias=antialias,
         )
     else:
+        # TODO: the cloning is probably unnecessary. Review this together with the other perf candidates
         resized_image = image.clone()
 
     return resized_image.view(extra_dims + (num_channels, new_height, new_width))
@@ -565,6 +566,7 @@ def pad_image_tensor(
             img=img.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
         )
     else:
+        # TODO: the cloning is probably unnecessary. Review this together with the other perf candidates
         padded_image = img.clone()
 
     return padded_image.view(extra_dims + (num_channels, new_height, new_width))
