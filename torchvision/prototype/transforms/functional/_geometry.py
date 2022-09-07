@@ -550,14 +550,17 @@ def pad_image_tensor(
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
 
-    padded_image = _FT.pad(
-        img=img.view(-1 if img.numel() > 0 else 0, num_channels, height, width),
-        padding=padding,
-        fill=fill,
-        padding_mode=padding_mode,
-    )
+    left, right, top, bottom = _FT._parse_pad_padding(padding)
+    new_height = height + top + bottom
+    new_width = width + left + right
 
-    new_height, new_width = padded_image.shape[-2:]
+    if img.numel() > 0:
+        padded_image = _FT.pad(
+            img=img.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
+        )
+    else:
+        padded_image = img.clone()
+
     return padded_image.view(extra_dims + (num_channels, new_height, new_width))
 
 
