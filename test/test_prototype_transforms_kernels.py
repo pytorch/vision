@@ -284,7 +284,7 @@ def reference_affine_bounding_box(bounding_box, *, format, image_size, angle, tr
 
 def reference_inputs_affine_bounding_box():
     for bounding_box, angle, translate, scale, shear, center in itertools.product(
-        make_bounding_boxes(extra_dims=[(4,)], image_sizes=[(32, 38)], dtypes=[torch.float32]),
+        make_bounding_boxes(extra_dims=[(4,)], image_size=(32, 38), dtypes=[torch.float32]),
         range(-90, 90, 56),
         range(-10, 10, 8),
         [0.77, 1.0, 1.27],
@@ -313,6 +313,7 @@ FUNCTIONAL_INFOS.extend(
             atol=1e-5,
             rtol=0,
             agg_method="mean",
+            check_dtype=False,
         ),
         FunctionalInfo(
             F.affine_bounding_box,

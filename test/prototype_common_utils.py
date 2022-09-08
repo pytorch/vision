@@ -73,7 +73,7 @@ class PILImagePair(TensorLikePair):
         if self.agg_method is None:
             super()._compare_values(actual, expected)
         else:
-            err = self.agg_method(abs_diff)
+            err = self.agg_method(abs_diff.to(torch.float64))
             if err > self.atol:
                 self._make_error_meta(AssertionError, "aggregated mismatch")
 
