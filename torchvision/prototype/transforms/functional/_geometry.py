@@ -226,6 +226,9 @@ def affine_image_tensor(
     fill: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    if img.numel() == 0:
+        return img
+
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
     img = img.view(-1, num_channels, height, width)
@@ -447,6 +450,9 @@ def rotate_image_tensor(
     fill: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    if img.numel() == 0:
+        return img
+
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
     img = img.view(-1, num_channels, height, width)
@@ -555,16 +561,16 @@ def pad_image_tensor(
     extra_dims = img.shape[:-3]
 
     if img.numel() > 0:
-        image = _FT.pad(
+        img = _FT.pad(
             img=img.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
         )
-        new_height, new_width = image.shape[-2:]
+        new_height, new_width = img.shape[-2:]
     else:
         left, right, top, bottom = _FT._parse_pad_padding(padding)
         new_height = height + top + bottom
         new_width = width + left + right
 
-    return image.view(extra_dims + (num_channels, new_height, new_width))
+    return img.view(extra_dims + (num_channels, new_height, new_width))
 
 
 # TODO: This should be removed once pytorch pad supports non-scalar padding values
