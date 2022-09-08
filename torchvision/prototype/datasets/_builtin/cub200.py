@@ -1,34 +1,30 @@
 import csv
 import functools
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Callable, Union
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Filter,
-    IterKeyZipper,
-    Demultiplexer,
-    LineReader,
-    CSVParser,
     CSVDictParser,
+    CSVParser,
+    Demultiplexer,
+    Filter,
+    IterDataPipe,
+    IterKeyZipper,
+    LineReader,
+    Mapper,
 )
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    HttpResource,
-    OnlineResource,
-)
+from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
-    read_mat,
+    getitem,
     hint_sharding,
     hint_shuffling,
-    getitem,
+    INFINITE_BUFFER_SIZE,
+    path_accessor,
     path_comparator,
     read_categories_file,
-    path_accessor,
+    read_mat,
 )
-from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
+from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
 
 from .._api import register_dataset, register_info
 
@@ -71,30 +67,35 @@ class CUB200(Dataset):
 
     def _resources(self) -> List[OnlineResource]:
         if self._year == "2011":
-            archive = HttpResource(
-                "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz",
+            archive = GDriveResource(
+                "1hbzc_P1FuxMkcabkgn9ZKinBwW683j45",
+                file_name="CUB_200_2011.tgz",
                 sha256="0c685df5597a8b24909f6a7c9db6d11e008733779a671760afef78feb49bf081",
                 preprocess="decompress",
             )
-            segmentations = HttpResource(
-                "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/segmentations.tgz",
+            segmentations = GDriveResource(
+                "1EamOKGLoTuZdtcVYbHMWNpkn3iAVj8TP",
+                file_name="segmentations.tgz",
                 sha256="dc77f6cffea0cbe2e41d4201115c8f29a6320ecb04fffd2444f51b8066e4b84f",
                 preprocess="decompress",
             )
             return [archive, segmentations]
         else:  # self._year == "2010"
-            split = HttpResource(
-                "http://www.vision.caltech.edu/visipedia-data/CUB-200/lists.tgz",
+            split = GDriveResource(
+                "1vZuZPqha0JjmwkdaS_XtYryE3Jf5Q1AC",
+                file_name="lists.tgz",
                 sha256="aeacbd5e3539ae84ea726e8a266a9a119c18f055cd80f3836d5eb4500b005428",
                 preprocess="decompress",
             )
-            images = HttpResource(
-                "http://www.vision.caltech.edu/visipedia-data/CUB-200/images.tgz",
+            images = GDriveResource(
+                "1GDr1OkoXdhaXWGA8S3MAq3a522Tak-nx",
+                file_name="images.tgz",
                 sha256="2a6d2246bbb9778ca03aa94e2e683ccb4f8821a36b7f235c0822e659d60a803e",
                 preprocess="decompress",
             )
-            anns = HttpResource(
-                "http://www.vision.caltech.edu/visipedia-data/CUB-200/annotations.tgz",
+            anns = GDriveResource(
+                "16NsbTpMs5L6hT4hUJAmpW2u7wH326WTR",
+                file_name="annotations.tgz",
                 sha256="c17b7841c21a66aa44ba8fe92369cc95dfc998946081828b1d7b8a4b716805c1",
                 preprocess="decompress",
             )

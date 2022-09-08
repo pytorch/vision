@@ -3,11 +3,11 @@ from typing import Any, Optional
 
 from torch import nn
 
-from ...transforms._presets import SemanticSegmentation, InterpolationMode
-from .._api import WeightsEnum, Weights
+from ...transforms._presets import SemanticSegmentation
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _VOC_CATEGORIES
-from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet, ResNet50_Weights, ResNet101_Weights, resnet50, resnet101
+from .._utils import _ovewrite_value_param, handle_legacy_interface, IntermediateLayerGetter
+from ..resnet import ResNet, resnet101, ResNet101_Weights, resnet50, ResNet50_Weights
 from ._utils import _SimpleSegmentationModel
 
 
@@ -48,11 +48,12 @@ class FCNHead(nn.Sequential):
 
 
 _COMMON_META = {
-    "task": "image_semantic_segmentation",
-    "architecture": "FCN",
-    "publication_year": 2014,
     "categories": _VOC_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
+    "min_size": (1, 1),
+    "_docs": """
+        These weights were trained on a subset of COCO, using only the 20 categories that are present in the Pascal VOC
+        dataset.
+    """,
 }
 
 
@@ -64,8 +65,12 @@ class FCN_ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 35322218,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
-            "mIoU": 60.5,
-            "acc": 91.4,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 60.5,
+                    "pixel_acc": 91.4,
+                }
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -79,8 +84,12 @@ class FCN_ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 54314346,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
-            "mIoU": 63.7,
-            "acc": 91.9,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 63.7,
+                    "pixel_acc": 91.9,
+                }
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -101,6 +110,7 @@ def _fcn_resnet(
     return FCN(backbone, classifier, aux_classifier)
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
@@ -114,15 +124,32 @@ def fcn_resnet50(
     weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> FCN:
-    """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
+    """Fully-Convolutional Network model with a ResNet-50 backbone from the `Fully Convolutional
+    Networks for Semantic Segmentation <https://arxiv.org/abs/1411.4038>`_ paper.
+
+    .. betastatus:: segmentation module
 
     Args:
-        weights (FCN_ResNet50_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int, optional): number of output classes of the model (including the background)
-        aux_loss (bool, optional): If True, it uses an auxiliary loss
-        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+        weights (:class:`~torchvision.models.segmentation.FCN_ResNet50_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.FCN_ResNet50_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background).
+        aux_loss (bool, optional): If True, it uses an auxiliary loss.
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The pretrained
+            weights for the backbone.
+        **kwargs: parameters passed to the ``torchvision.models.segmentation.fcn.FCN``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/segmentation/fcn.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.segmentation.FCN_ResNet50_Weights
+        :members:
     """
+
     weights = FCN_ResNet50_Weights.verify(weights)
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
 
@@ -142,6 +169,7 @@ def fcn_resnet50(
     return model
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1),
     weights_backbone=("pretrained_backbone", ResNet101_Weights.IMAGENET1K_V1),
@@ -155,15 +183,32 @@ def fcn_resnet101(
     weights_backbone: Optional[ResNet101_Weights] = ResNet101_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> FCN:
-    """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
+    """Fully-Convolutional Network model with a ResNet-101 backbone from the `Fully Convolutional
+    Networks for Semantic Segmentation <https://arxiv.org/abs/1411.4038>`_ paper.
+
+    .. betastatus:: segmentation module
 
     Args:
-        weights (FCN_ResNet101_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int, optional): number of output classes of the model (including the background)
-        aux_loss (bool, optional): If True, it uses an auxiliary loss
-        weights_backbone (ResNet101_Weights, optional): The pretrained weights for the backbone
+        weights (:class:`~torchvision.models.segmentation.FCN_ResNet101_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.FCN_ResNet101_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background).
+        aux_loss (bool, optional): If True, it uses an auxiliary loss.
+        weights_backbone (:class:`~torchvision.models.ResNet101_Weights`, optional): The pretrained
+            weights for the backbone.
+        **kwargs: parameters passed to the ``torchvision.models.segmentation.fcn.FCN``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/segmentation/fcn.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.segmentation.FCN_ResNet101_Weights
+        :members:
     """
+
     weights = FCN_ResNet101_Weights.verify(weights)
     weights_backbone = ResNet101_Weights.verify(weights_backbone)
 
@@ -181,3 +226,15 @@ def fcn_resnet101(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "fcn_resnet50_coco": FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1.url,
+        "fcn_resnet101_coco": FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1.url,
+    }
+)

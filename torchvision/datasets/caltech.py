@@ -1,6 +1,6 @@
 import os
 import os.path
-from typing import Any, Callable, List, Optional, Union, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -9,7 +9,7 @@ from .vision import VisionDataset
 
 
 class Caltech101(VisionDataset):
-    """`Caltech 101 <http://www.vision.caltech.edu/Image_Datasets/Caltech101/>`_ Dataset.
+    """`Caltech 101 <https://data.caltech.edu/records/20086>`_ Dataset.
 
     .. warning::
 
@@ -129,13 +129,15 @@ class Caltech101(VisionDataset):
             return
 
         download_and_extract_archive(
-            "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
+            "https://drive.google.com/file/d/137RyRjvTBkBiIfeYBNZBtViDHQ6_Ewsp",
             self.root,
+            filename="101_ObjectCategories.tar.gz",
             md5="b224c7392d521a49829488ab0f1120d9",
         )
         download_and_extract_archive(
-            "http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",
+            "https://drive.google.com/file/d/175kQy3UsZ0wUEHZjqkUDdNVssr7bgh_m",
             self.root,
+            filename="Annotations.tar",
             md5="6f83eeb1f24d99cab4eb377263132c91",
         )
 
@@ -144,7 +146,7 @@ class Caltech101(VisionDataset):
 
 
 class Caltech256(VisionDataset):
-    """`Caltech 256 <http://www.vision.caltech.edu/Image_Datasets/Caltech256/>`_ Dataset.
+    """`Caltech 256 <https://data.caltech.edu/records/20087>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where directory
@@ -228,7 +230,7 @@ class Caltech256(VisionDataset):
             return
 
         download_and_extract_archive(
-            "http://www.vision.caltech.edu/Image_Datasets/Caltech256/256_ObjectCategories.tar",
+            "https://drive.google.com/file/d/1r6o0pSROcV1_VwT4oSjA2FBUSCWGuxLK",
             self.root,
             filename="256_ObjectCategories.tar",
             md5="67b4f42ca05d46448c6bb8ecd2220f6d",

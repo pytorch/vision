@@ -233,6 +233,7 @@ binary_common: &binary_common
     PYTORCH_VERSION: << parameters.pytorch_version >>
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
+    MACOSX_DEPLOYMENT_TARGET: 10.9
 
 torchvision_ios_params: &torchvision_ios_params
   parameters:
@@ -322,9 +323,6 @@ jobs:
     docker:
       - image: cimg/python:3.7
     steps:
-      - apt_install:
-          args: libturbojpeg-dev
-          descr: Install additional system libraries
       - checkout
       - install_torchvision:
           editable: true
@@ -356,20 +354,6 @@ jobs:
           descr: Install ONNX
       - run_tests_selective:
           file_or_dir: test/test_onnx.py
-
-  unittest_prototype:
-    docker:
-      - image: cimg/python:3.7
-    resource_class: xlarge
-    steps:
-      - checkout
-      - install_torchvision
-      - install_prototype_dependencies
-      - pip_install:
-          args: scipy pycocotools h5py
-          descr: Install optional dependencies
-      - run_tests_selective:
-          file_or_dir: test/test_prototype_*.py
 
   unittest_extended:
     docker:
@@ -435,10 +419,6 @@ jobs:
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
-            # cudatoolkit >= 11 isn't available for windows in the nvidia channel
-            if [[ "${CU_VERSION}" =~ cu11.* ]]; then
-              export CONDA_CHANNEL_FLAGS="-c conda-forge"
-            fi
             packaging/build_conda.sh
             rm /C/tools/miniconda3/conda-bld/win-64/vs${VC_YEAR}*.tar.bz2
       - store_artifacts:
@@ -475,7 +455,7 @@ jobs:
   binary_macos_wheel:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -498,7 +478,7 @@ jobs:
   binary_ios_build:
     <<: *torchvision_ios_params
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     steps:
     - attach_workspace:
         at: ~/workspace
@@ -518,7 +498,7 @@ jobs:
   binary_ios_upload:
     <<: *torchvision_ios_params
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     steps:
     - attach_workspace:
         at: ~/workspace
@@ -571,7 +551,7 @@ jobs:
   binary_macos_conda:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -673,7 +653,7 @@ jobs:
 
   smoke_test_docker_image_build:
     machine:
-      image: ubuntu-1604:201903-01
+      image: ubuntu-2004:202104-01
     resource_class: large
     environment:
       image_name: torchvision/smoke_test
@@ -708,7 +688,6 @@ jobs:
             conda env remove -n python${PYTHON_VERSION} || true
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            conda install "Pillow>=5.3.0,!=8.3.*"
             conda install -v -y -c pytorch-nightly pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
@@ -784,7 +763,7 @@ jobs:
   unittest_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.2:202012-01
+      image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.medium
     environment:
       image_name: "pytorch/manylinux-cuda102"
@@ -919,7 +898,7 @@ jobs:
   unittest_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     resource_class: large
     steps:
       - checkout
@@ -975,7 +954,7 @@ jobs:
   cmake_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.2:202012-01
+      image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.small
     environment:
       PYTHON_VERSION: << parameters.python_version >>
@@ -995,7 +974,7 @@ jobs:
   cmake_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "14.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -1120,7 +1099,6 @@ workflows:
     jobs:
       - unittest_torchhub
       - unittest_onnx
-      - unittest_prototype
       - unittest_extended
       {{ unittest_workflows() }}
 

@@ -1,10 +1,9 @@
-from typing import List, Optional, Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
-from torchvision.ops import Conv2dNormActivation
-from torchvision.ops import boxes as box_ops
+from torchvision.ops import boxes as box_ops, Conv2dNormActivation
 
 from . import _utils as det_utils
 
@@ -56,7 +55,8 @@ class RPNHead(nn.Module):
             for type in ["weight", "bias"]:
                 old_key = f"{prefix}conv.{type}"
                 new_key = f"{prefix}conv.0.0.{type}"
-                state_dict[new_key] = state_dict.pop(old_key)
+                if old_key in state_dict:
+                    state_dict[new_key] = state_dict.pop(old_key)
 
         super()._load_from_state_dict(
             state_dict,
@@ -321,15 +321,12 @@ class RegionProposalNetwork(torch.nn.Module):
         labels = torch.cat(labels, dim=0)
         regression_targets = torch.cat(regression_targets, dim=0)
 
-        box_loss = (
-            F.smooth_l1_loss(
-                pred_bbox_deltas[sampled_pos_inds],
-                regression_targets[sampled_pos_inds],
-                beta=1 / 9,
-                reduction="sum",
-            )
-            / (sampled_inds.numel())
-        )
+        box_loss = F.smooth_l1_loss(
+            pred_bbox_deltas[sampled_pos_inds],
+            regression_targets[sampled_pos_inds],
+            beta=1 / 9,
+            reduction="sum",
+        ) / (sampled_inds.numel())
 
         objectness_loss = F.binary_cross_entropy_with_logits(objectness[sampled_inds], labels[sampled_inds])
 

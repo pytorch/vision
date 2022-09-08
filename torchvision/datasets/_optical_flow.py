@@ -1,6 +1,5 @@
 import itertools
 import os
-import re
 from abc import ABC, abstractmethod
 from glob import glob
 from pathlib import Path
@@ -10,7 +9,7 @@ import torch
 from PIL import Image
 
 from ..io.image import _read_png_16
-from .utils import verify_str_arg
+from .utils import _read_pfm, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -467,36 +466,8 @@ def _read_16bits_png_with_flow_and_valid_mask(file_name):
 
     flow_and_valid = _read_png_16(file_name).to(torch.float32)
     flow, valid_flow_mask = flow_and_valid[:2, :, :], flow_and_valid[2, :, :]
-    flow = (flow - 2 ** 15) / 64  # This conversion is explained somewhere on the kitti archive
+    flow = (flow - 2**15) / 64  # This conversion is explained somewhere on the kitti archive
     valid_flow_mask = valid_flow_mask.bool()
 
     # For consistency with other datasets, we convert to numpy
     return flow.numpy(), valid_flow_mask.numpy()
-
-
-def _read_pfm(file_name):
-    """Read flow in .pfm format"""
-
-    with open(file_name, "rb") as f:
-        header = f.readline().rstrip()
-        if header != b"PF":
-            raise ValueError("Invalid PFM file")
-
-        dim_match = re.match(rb"^(\d+)\s(\d+)\s$", f.readline())
-        if not dim_match:
-            raise Exception("Malformed PFM header.")
-        w, h = (int(dim) for dim in dim_match.groups())
-
-        scale = float(f.readline().rstrip())
-        if scale < 0:  # little-endian
-            endian = "<"
-            scale = -scale
-        else:
-            endian = ">"  # big-endian
-
-        data = np.fromfile(f, dtype=endian + "f")
-
-    data = data.reshape(h, w, 3).transpose(2, 0, 1)
-    data = np.flip(data, axis=1)  # flip on h dimension
-    data = data[:2, :, :]
-    return data.astype(np.float32)

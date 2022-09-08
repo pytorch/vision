@@ -150,6 +150,17 @@ affine_imgs = [affine_transfomer(orig_img) for _ in range(4)]
 plot(affine_imgs)
 
 ####################################
+# ElasticTransform
+# ~~~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.ElasticTransform` transform
+# (see also :func:`~torchvision.transforms.functional.elastic_transform`)
+# Randomly transforms the morphology of objects in images and produces a
+# see-through-water-like effect.
+elastic_transformer = T.ElasticTransform(alpha=250.0)
+transformed_imgs = [elastic_transformer(orig_img) for _ in range(2)]
+plot(transformed_imgs)
+
+####################################
 # RandomCrop
 # ~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomCrop` transform

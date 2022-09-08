@@ -1,12 +1,12 @@
 import csv
 import os
 from collections import namedtuple
-from typing import Any, Callable, List, Optional, Union, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import PIL
 import torch
 
-from .utils import download_file_from_google_drive, check_integrity, verify_str_arg, extract_archive
+from .utils import check_integrity, download_file_from_google_drive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 CSV = namedtuple("CSV", ["header", "index", "data"])
