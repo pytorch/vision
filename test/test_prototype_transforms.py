@@ -225,8 +225,17 @@ class TestSmoke:
             )
         ]
     )
-    def test_convertolor_space(self, transform, input):
+    def test_convert_color_space(self, transform, input):
         transform(input)
+
+    def test_convert_color_space_unsupported_types(self):
+        transform = transforms.ConvertColorSpace(
+            color_space=features.ColorSpace.RGB, old_color_space=features.ColorSpace.GRAY
+        )
+
+        for inpt in [make_bounding_box(format="XYXY"), make_segmentation_mask()]:
+            output = transform(inpt)
+            assert output is inpt
 
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
@@ -546,10 +555,10 @@ class TestRandomAffine:
         if translate is not None:
             w_max = int(round(translate[0] * w))
             h_max = int(round(translate[1] * h))
-            assert -w_max <= params["translations"][0] <= w_max
-            assert -h_max <= params["translations"][1] <= h_max
+            assert -w_max <= params["translate"][0] <= w_max
+            assert -h_max <= params["translate"][1] <= h_max
         else:
-            assert params["translations"] == (0, 0)
+            assert params["translate"] == (0, 0)
 
         if scale is not None:
             assert scale[0] <= params["scale"] <= scale[1]
@@ -750,7 +759,8 @@ class TestGaussianBlur:
         if isinstance(kernel_size, (tuple, list)):
             assert transform.kernel_size == kernel_size
         else:
-            assert transform.kernel_size == (kernel_size, kernel_size)
+            kernel_size = (kernel_size, kernel_size)
+            assert transform.kernel_size == kernel_size
 
         if isinstance(sigma, (tuple, list)):
             assert transform.sigma == sigma
@@ -770,7 +780,7 @@ class TestGaussianBlur:
         torch.manual_seed(12)
         params = transform._get_params(inpt)
 
-        fn.assert_called_once_with(inpt, **params)
+        fn.assert_called_once_with(inpt, kernel_size, **params)
 
 
 class TestRandomColorOp:
@@ -972,51 +982,39 @@ class TestRandomErasing:
         assert 0 <= i <= image.image_size[0] - h
         assert 0 <= j <= image.image_size[1] - w
 
-    @pytest.mark.parametrize("p", [0.0, 1.0])
-    @pytest.mark.parametrize(
-        "inpt_type",
-        [
-            (torch.Tensor, {"shape": (3, 24, 32)}),
-            (PIL.Image.Image, {"size": (24, 32), "mode": "RGB"}),
-        ],
-    )
-    def test__transform(self, p, inpt_type, mocker):
-        value = 1.0
-        transform = transforms.RandomErasing(p=p, value=value)
+    @pytest.mark.parametrize("p", [0, 1])
+    def test__transform(self, mocker, p):
+        transform = transforms.RandomErasing(p=p)
+        transform._transformed_types = (mocker.MagicMock,)
 
-        inpt = mocker.MagicMock(spec=inpt_type[0], **inpt_type[1])
-        erase_image_tensor_inpt = inpt
-        fn = mocker.patch(
-            "torchvision.prototype.transforms.functional.erase_image_tensor",
-            return_value=mocker.MagicMock(spec=torch.Tensor),
+        i_sentinel = mocker.MagicMock()
+        j_sentinel = mocker.MagicMock()
+        h_sentinel = mocker.MagicMock()
+        w_sentinel = mocker.MagicMock()
+        v_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._augment.RandomErasing._get_params",
+            return_value=dict(i=i_sentinel, j=j_sentinel, h=h_sentinel, w=w_sentinel, v=v_sentinel),
         )
-        if inpt_type[0] == PIL.Image.Image:
-            erase_image_tensor_inpt = mocker.MagicMock(spec=torch.Tensor)
 
-            # vfdev-5: I do not know how to patch pil_to_tensor if it is already imported
-            # TODO: patch pil_to_tensor and run below checks for PIL.Image.Image inputs
-            if p > 0.0:
-                return
+        inpt_sentinel = mocker.MagicMock()
 
-            mocker.patch(
-                "torchvision.transforms.functional.pil_to_tensor",
-                return_value=erase_image_tensor_inpt,
+        mock = mocker.patch("torchvision.prototype.transforms._augment.F.erase")
+        output = transform(inpt_sentinel)
+
+        if p:
+            mock.assert_called_once_with(
+                inpt_sentinel,
+                i=i_sentinel,
+                j=j_sentinel,
+                h=h_sentinel,
+                w=w_sentinel,
+                v=v_sentinel,
+                inplace=transform.inplace,
             )
-            mocker.patch(
-                "torchvision.transforms.functional.to_pil_image",
-                return_value=mocker.MagicMock(spec=PIL.Image.Image),
-            )
-
-        # Let's mock transform._get_params to control the output:
-        transform._get_params = mocker.MagicMock()
-        output = transform(inpt)
-        print(inpt_type)
-        assert isinstance(output, inpt_type[0])
-        params = transform._get_params(inpt)
-        if p > 0.0:
-            fn.assert_called_once_with(erase_image_tensor_inpt, **params)
         else:
-            assert fn.call_count == 0
+            mock.assert_not_called()
+            assert output is inpt_sentinel
 
 
 class TestTransform:
@@ -1051,10 +1049,10 @@ class TestToImageTensor:
         inpt = mocker.MagicMock(spec=inpt_type)
         transform = transforms.ToImageTensor()
         transform(inpt)
-        if inpt_type in (features.BoundingBox, str, int):
+        if inpt_type in (features.BoundingBox, features.Image, str, int):
             assert fn.call_count == 0
         else:
-            fn.assert_called_once_with(inpt, copy=transform.copy)
+            fn.assert_called_once_with(inpt)
 
 
 class TestToImagePIL:
@@ -1068,7 +1066,7 @@ class TestToImagePIL:
         inpt = mocker.MagicMock(spec=inpt_type)
         transform = transforms.ToImagePIL()
         transform(inpt)
-        if inpt_type in (features.BoundingBox, str, int):
+        if inpt_type in (features.BoundingBox, PIL.Image.Image, str, int):
             assert fn.call_count == 0
         else:
             fn.assert_called_once_with(inpt, mode=transform.mode)
@@ -1080,11 +1078,10 @@ class TestToPILImage:
         [torch.Tensor, PIL.Image.Image, features.Image, np.ndarray, features.BoundingBox, str, int],
     )
     def test__transform(self, inpt_type, mocker):
-        fn = mocker.patch("torchvision.transforms.functional.to_pil_image")
+        fn = mocker.patch("torchvision.prototype.transforms.functional.to_image_pil")
 
         inpt = mocker.MagicMock(spec=inpt_type)
-        with pytest.warns(UserWarning, match="deprecated and will be removed"):
-            transform = transforms.ToPILImage()
+        transform = transforms.ToPILImage()
         transform(inpt)
         if inpt_type in (PIL.Image.Image, features.BoundingBox, str, int):
             assert fn.call_count == 0
@@ -1110,23 +1107,35 @@ class TestToTensor:
             fn.assert_called_once_with(inpt)
 
 
-class TestCompose:
-    def test_assertions(self):
+class TestContainers:
+    @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
+    def test_assertions(self, transform_cls):
         with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
-            transforms.Compose(123)
+            transform_cls(transforms.RandomCrop(28))
 
+    @pytest.mark.parametrize("transform_cls", [transforms.Compose, transforms.RandomChoice, transforms.RandomOrder])
     @pytest.mark.parametrize(
         "trfms",
         [
             [transforms.Pad(2), transforms.RandomCrop(28)],
-            [lambda x: 2.0 * x],
+            [lambda x: 2.0 * x, transforms.Pad(2), transforms.RandomCrop(28)],
         ],
     )
-    def test_ctor(self, trfms):
-        c = transforms.Compose(trfms)
+    def test_ctor(self, transform_cls, trfms):
+        c = transform_cls(trfms)
         inpt = torch.rand(1, 3, 32, 32)
         output = c(inpt)
         assert isinstance(output, torch.Tensor)
+        assert output.ndim == 4
+
+
+class TestRandomChoice:
+    def test_assertions(self):
+        with pytest.warns(UserWarning, match="Argument p is deprecated and will be removed"):
+            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1, 2])
+
+        with pytest.raises(ValueError, match="The number of probabilities doesn't match the number of transforms"):
+            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], probabilities=[1])
 
 
 class TestRandomIoUCrop:
@@ -1197,9 +1206,9 @@ class TestRandomIoUCrop:
         bboxes = make_bounding_box(format="XYXY", image_size=(32, 24), extra_dims=(6,))
         label = features.Label(torch.randint(0, 10, size=(6,)))
         ohe_label = features.OneHotLabel(torch.zeros(6, 10).scatter_(1, label.unsqueeze(1), 1))
-        masks = make_segmentation_mask((32, 24))
-        ohe_masks = features.SegmentationMask(torch.randint(0, 2, size=(6, 32, 24)))
-        sample = [image, bboxes, label, ohe_label, masks, ohe_masks]
+        masks = make_segmentation_mask((32, 24), num_objects=6)
+
+        sample = [image, bboxes, label, ohe_label, masks]
 
         fn = mocker.patch("torchvision.prototype.transforms.functional.crop", side_effect=lambda x, **params: x)
         is_within_crop_area = torch.tensor([0, 1, 0, 1, 0, 1], dtype=torch.bool)
@@ -1208,15 +1217,12 @@ class TestRandomIoUCrop:
         transform._get_params = mocker.MagicMock(return_value=params)
         output = transform(sample)
 
-        assert fn.call_count == 4
+        assert fn.call_count == 3
 
         expected_calls = [
             mocker.call(image, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
             mocker.call(bboxes, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
             mocker.call(masks, top=params["top"], left=params["left"], height=params["height"], width=params["width"]),
-            mocker.call(
-                ohe_masks, top=params["top"], left=params["left"], height=params["height"], width=params["width"]
-            ),
         ]
 
         fn.assert_has_calls(expected_calls)
@@ -1240,11 +1246,7 @@ class TestRandomIoUCrop:
 
         output_masks = output[4]
         assert isinstance(output_masks, features.SegmentationMask)
-        assert output_masks.shape[:-2] == masks.shape[:-2]
-
-        output_ohe_masks = output[5]
-        assert isinstance(output_ohe_masks, features.SegmentationMask)
-        assert len(output_ohe_masks) == expected_within_targets
+        assert len(output_masks) == expected_within_targets
 
 
 class TestScaleJitter:
@@ -1254,23 +1256,32 @@ class TestScaleJitter:
         scale_range = (0.5, 1.5)
 
         transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
-
         sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
-        params = transform._get_params(sample)
 
-        assert "size" in params
-        size = params["size"]
+        n_samples = 5
+        for _ in range(n_samples):
 
-        assert isinstance(size, tuple) and len(size) == 2
-        height, width = size
+            params = transform._get_params(sample)
 
-        assert int(target_size[0] * scale_range[0]) <= height <= int(target_size[0] * scale_range[1])
-        assert int(target_size[1] * scale_range[0]) <= width <= int(target_size[1] * scale_range[1])
+            assert "size" in params
+            size = params["size"]
+
+            assert isinstance(size, tuple) and len(size) == 2
+            height, width = size
+
+            r_min = min(target_size[1] / image_size[0], target_size[0] / image_size[1]) * scale_range[0]
+            r_max = min(target_size[1] / image_size[0], target_size[0] / image_size[1]) * scale_range[1]
+
+            assert int(image_size[0] * r_min) <= height <= int(image_size[0] * r_max)
+            assert int(image_size[1] * r_min) <= width <= int(image_size[1] * r_max)
 
     def test__transform(self, mocker):
         interpolation_sentinel = mocker.MagicMock()
+        antialias_sentinel = mocker.MagicMock()
 
-        transform = transforms.ScaleJitter(target_size=(16, 12), interpolation=interpolation_sentinel)
+        transform = transforms.ScaleJitter(
+            target_size=(16, 12), interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
         transform._transformed_types = (mocker.MagicMock,)
 
         size_sentinel = mocker.MagicMock()
@@ -1283,7 +1294,9 @@ class TestScaleJitter:
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
         transform(inpt_sentinel)
 
-        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
+        mock.assert_called_once_with(
+            inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
 
 
 class TestRandomShortestSize:
@@ -1313,8 +1326,11 @@ class TestRandomShortestSize:
 
     def test__transform(self, mocker):
         interpolation_sentinel = mocker.MagicMock()
+        antialias_sentinel = mocker.MagicMock()
 
-        transform = transforms.RandomShortestSize(min_size=[3, 5, 7], max_size=12, interpolation=interpolation_sentinel)
+        transform = transforms.RandomShortestSize(
+            min_size=[3, 5, 7], max_size=12, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
         transform._transformed_types = (mocker.MagicMock,)
 
         size_sentinel = mocker.MagicMock()
@@ -1328,7 +1344,128 @@ class TestRandomShortestSize:
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
         transform(inpt_sentinel)
 
-        mock.assert_called_once_with(inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel)
+        mock.assert_called_once_with(
+            inpt_sentinel, size=size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
+
+
+class TestSimpleCopyPaste:
+    def create_fake_image(self, mocker, image_type):
+        if image_type == PIL.Image.Image:
+            return PIL.Image.new("RGB", (32, 32), 123)
+        return mocker.MagicMock(spec=image_type)
+
+    def test__extract_image_targets_assertion(self, mocker):
+        transform = transforms.SimpleCopyPaste()
+
+        flat_sample = [
+            # images, batch size = 2
+            self.create_fake_image(mocker, features.Image),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.Label),
+            mocker.MagicMock(spec=features.BoundingBox),
+            mocker.MagicMock(spec=features.SegmentationMask),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.BoundingBox),
+            mocker.MagicMock(spec=features.SegmentationMask),
+        ]
+
+        with pytest.raises(TypeError, match="requires input sample to contain equal sized list of Images"):
+            transform._extract_image_targets(flat_sample)
+
+    @pytest.mark.parametrize("image_type", [features.Image, PIL.Image.Image, torch.Tensor])
+    @pytest.mark.parametrize("label_type", [features.Label, features.OneHotLabel])
+    def test__extract_image_targets(self, image_type, label_type, mocker):
+        transform = transforms.SimpleCopyPaste()
+
+        flat_sample = [
+            # images, batch size = 2
+            self.create_fake_image(mocker, image_type),
+            self.create_fake_image(mocker, image_type),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=label_type),
+            mocker.MagicMock(spec=features.BoundingBox),
+            mocker.MagicMock(spec=features.SegmentationMask),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=label_type),
+            mocker.MagicMock(spec=features.BoundingBox),
+            mocker.MagicMock(spec=features.SegmentationMask),
+        ]
+
+        images, targets = transform._extract_image_targets(flat_sample)
+
+        assert len(images) == len(targets) == 2
+        if image_type == PIL.Image.Image:
+            torch.testing.assert_close(images[0], pil_to_tensor(flat_sample[0]))
+            torch.testing.assert_close(images[1], pil_to_tensor(flat_sample[1]))
+        else:
+            assert images[0] == flat_sample[0]
+            assert images[1] == flat_sample[1]
+
+        for target in targets:
+            for key, type_ in [
+                ("boxes", features.BoundingBox),
+                ("masks", features.SegmentationMask),
+                ("labels", label_type),
+            ]:
+                assert key in target
+                assert isinstance(target[key], type_)
+                assert target[key] in flat_sample
+
+    @pytest.mark.parametrize("label_type", [features.Label, features.OneHotLabel])
+    def test__copy_paste(self, label_type):
+        image = 2 * torch.ones(3, 32, 32)
+        masks = torch.zeros(2, 32, 32)
+        masks[0, 3:9, 2:8] = 1
+        masks[1, 20:30, 20:30] = 1
+        labels = torch.tensor([1, 2])
+        blending = True
+        resize_interpolation = InterpolationMode.BILINEAR
+        antialias = None
+        if label_type == features.OneHotLabel:
+            labels = torch.nn.functional.one_hot(labels, num_classes=5)
+        target = {
+            "boxes": features.BoundingBox(
+                torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", image_size=(32, 32)
+            ),
+            "masks": features.SegmentationMask(masks),
+            "labels": label_type(labels),
+        }
+
+        paste_image = 10 * torch.ones(3, 32, 32)
+        paste_masks = torch.zeros(2, 32, 32)
+        paste_masks[0, 13:19, 12:18] = 1
+        paste_masks[1, 15:19, 1:8] = 1
+        paste_labels = torch.tensor([3, 4])
+        if label_type == features.OneHotLabel:
+            paste_labels = torch.nn.functional.one_hot(paste_labels, num_classes=5)
+        paste_target = {
+            "boxes": features.BoundingBox(
+                torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", image_size=(32, 32)
+            ),
+            "masks": features.SegmentationMask(paste_masks),
+            "labels": label_type(paste_labels),
+        }
+
+        transform = transforms.SimpleCopyPaste()
+        random_selection = torch.tensor([0, 1])
+        output_image, output_target = transform._copy_paste(
+            image, target, paste_image, paste_target, random_selection, blending, resize_interpolation, antialias
+        )
+
+        assert output_image.unique().tolist() == [2, 10]
+        assert output_target["boxes"].shape == (4, 4)
+        torch.testing.assert_close(output_target["boxes"][:2, :], target["boxes"])
+        torch.testing.assert_close(output_target["boxes"][2:, :], paste_target["boxes"])
+
+        expected_labels = torch.tensor([1, 2, 3, 4])
+        if label_type == features.OneHotLabel:
+            expected_labels = torch.nn.functional.one_hot(expected_labels, num_classes=5)
+        torch.testing.assert_close(output_target["labels"], label_type(expected_labels))
+
+        assert output_target["masks"].shape == (4, 32, 32)
+        torch.testing.assert_close(output_target["masks"][:2, :], target["masks"])
+        torch.testing.assert_close(output_target["masks"][2:, :], paste_target["masks"])
 
 
 class TestFixedSizeCrop:
@@ -1375,6 +1512,7 @@ class TestFixedSizeCrop:
         left_sentinel = mocker.MagicMock()
         height_sentinel = mocker.MagicMock()
         width_sentinel = mocker.MagicMock()
+        is_valid = mocker.MagicMock() if needs_crop else None
         padding_sentinel = mocker.MagicMock()
         mocker.patch(
             "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
@@ -1384,6 +1522,7 @@ class TestFixedSizeCrop:
                 left=left_sentinel,
                 height=height_sentinel,
                 width=width_sentinel,
+                is_valid=is_valid,
                 padding=padding_sentinel,
                 needs_pad=needs_pad,
             ),
@@ -1487,3 +1626,47 @@ class TestFixedSizeCrop:
         transform(bounding_box)
 
         mock.assert_called_once()
+
+
+class TestLinearTransformation:
+    def test_assertions(self):
+        with pytest.raises(ValueError, match="transformation_matrix should be square"):
+            transforms.LinearTransformation(torch.rand(2, 3), torch.rand(5))
+
+        with pytest.raises(ValueError, match="mean_vector should have the same length"):
+            transforms.LinearTransformation(torch.rand(3, 3), torch.rand(5))
+
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            122 * torch.ones(1, 3, 8, 8),
+            122.0 * torch.ones(1, 3, 8, 8),
+            features.Image(122 * torch.ones(1, 3, 8, 8)),
+            PIL.Image.new("RGB", (8, 8), (122, 122, 122)),
+        ],
+    )
+    def test__transform(self, inpt):
+
+        v = 121 * torch.ones(3 * 8 * 8)
+        m = torch.ones(3 * 8 * 8, 3 * 8 * 8)
+        transform = transforms.LinearTransformation(m, v)
+
+        if isinstance(inpt, PIL.Image.Image):
+            with pytest.raises(TypeError, match="LinearTransformation does not work on PIL Images"):
+                transform(inpt)
+        else:
+            output = transform(inpt)
+            assert isinstance(output, torch.Tensor)
+            assert output.unique() == 3 * 8 * 8
+            assert output.dtype == inpt.dtype
+
+
+class TestLabelToOneHot:
+    def test__transform(self):
+        categories = ["apple", "pear", "pineapple"]
+        labels = features.Label(torch.tensor([0, 1, 2, 1]), categories=categories)
+        transform = transforms.LabelToOneHot()
+        ohe_labels = transform(labels)
+        assert isinstance(ohe_labels, features.OneHotLabel)
+        assert ohe_labels.shape == (4, 3)
+        assert ohe_labels.categories == labels.categories == categories

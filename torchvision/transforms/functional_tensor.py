@@ -145,16 +145,19 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
 def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     if img.ndim < 3:
         raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {img.ndim}")
-    _assert_channels(img, [3])
+    _assert_channels(img, [1, 3])
 
     if num_output_channels not in (1, 3):
         raise ValueError("num_output_channels should be either 1 or 3")
 
-    r, g, b = img.unbind(dim=-3)
-    # This implementation closely follows the TF one:
-    # https://github.com/tensorflow/tensorflow/blob/v2.3.0/tensorflow/python/ops/image_ops_impl.py#L2105-L2138
-    l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
-    l_img = l_img.unsqueeze(dim=-3)
+    if img.shape[-3] == 3:
+        r, g, b = img.unbind(dim=-3)
+        # This implementation closely follows the TF one:
+        # https://github.com/tensorflow/tensorflow/blob/v2.3.0/tensorflow/python/ops/image_ops_impl.py#L2105-L2138
+        l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
+        l_img = l_img.unsqueeze(dim=-3)
+    else:
+        l_img = img.clone()
 
     if num_output_channels == 3:
         return l_img.expand(img.shape)
@@ -546,8 +549,8 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[L
 
     # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
     if fill is not None:
-        dummy = torch.ones((img.shape[0], 1, img.shape[2], img.shape[3]), dtype=img.dtype, device=img.device)
-        img = torch.cat((img, dummy), dim=1)
+        mask = torch.ones((img.shape[0], 1, img.shape[2], img.shape[3]), dtype=img.dtype, device=img.device)
+        img = torch.cat((img, mask), dim=1)
 
     img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
@@ -607,7 +610,7 @@ def affine(
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
-def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
+def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
 
     # Inspired of PIL implementation:
     # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
@@ -649,7 +652,7 @@ def rotate(
 ) -> Tensor:
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
     w, h = img.shape[-1], img.shape[-2]
-    ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
+    ow, oh = _compute_affine_output_size(matrix, w, h) if expand else (w, h)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     # grid will be generated on the same device as theta and img

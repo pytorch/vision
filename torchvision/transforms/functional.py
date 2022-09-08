@@ -360,7 +360,9 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     return F_t.normalize(tensor, mean=mean, std=std, inplace=inplace)
 
 
-def _compute_output_size(image_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None) -> List[int]:
+def _compute_resized_output_size(
+    image_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
+) -> List[int]:
     if len(size) == 1:  # specified size only for the smallest edge
         h, w = image_size
         short, long = (w, h) if w <= h else (h, w)
@@ -460,7 +462,7 @@ def resize(
     _, image_height, image_width = get_dimensions(img)
     if isinstance(size, int):
         size = [size]
-    output_size = _compute_output_size((image_height, image_width), size, max_size)
+    output_size = _compute_resized_output_size((image_height, image_width), size, max_size)
 
     if (image_height, image_width) == output_size:
         return img
