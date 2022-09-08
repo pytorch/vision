@@ -141,7 +141,7 @@ def resize_segmentation_mask():
 @register_kernel_info_from_sample_inputs_fn
 def affine_image_tensor():
     for image, angle, translate, scale, shear in itertools.product(
-        make_images(extra_dims=((), (4,))),
+        make_images(),
         [-87, 15, 90],  # angle
         [5, -5],  # translate
         [0.77, 1.27],  # scale
@@ -180,7 +180,7 @@ def affine_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def affine_segmentation_mask():
     for mask, angle, translate, scale, shear in itertools.product(
-        make_segmentation_masks(extra_dims=((), (4,)), num_objects=[10]),
+        make_segmentation_masks(),
         [-87, 15, 90],  # angle
         [5, -5],  # translate
         [0.77, 1.27],  # scale
@@ -198,7 +198,7 @@ def affine_segmentation_mask():
 @register_kernel_info_from_sample_inputs_fn
 def rotate_image_tensor():
     for image, angle, expand, center, fill in itertools.product(
-        make_images(extra_dims=((), (4,))),
+        make_images(),
         [-87, 15, 90],  # angle
         [True, False],  # expand
         [None, [12, 23]],  # center
@@ -233,7 +233,7 @@ def rotate_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def rotate_segmentation_mask():
     for mask, angle, expand, center in itertools.product(
-        make_segmentation_masks(extra_dims=((), (4,)), num_objects=[10]),
+        make_segmentation_masks(),
         [-87, 15, 90],  # angle
         [True, False],  # expand
         [None, [12, 23]],  # center
