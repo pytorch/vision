@@ -108,17 +108,14 @@ def resize_image_tensor(
     extra_dims = image.shape[:-3]
 
     if image.numel() > 0:
-        resized_image = _FT.resize(
+        image = _FT.resize(
             image.view(-1, num_channels, old_height, old_width),
             size=[new_height, new_width],
             interpolation=interpolation.value,
             antialias=antialias,
         )
-    else:
-        # TODO: the cloning is probably unnecessary. Review this together with the other perf candidates
-        resized_image = image.clone()
 
-    return resized_image.view(extra_dims + (num_channels, new_height, new_width))
+    return image.view(extra_dims + (num_channels, new_height, new_width))
 
 
 def resize_image_pil(
@@ -558,19 +555,16 @@ def pad_image_tensor(
     extra_dims = img.shape[:-3]
 
     if img.numel() > 0:
-        padded_image = _FT.pad(
+        image = _FT.pad(
             img=img.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
         )
-        new_height, new_width = padded_image.shape[-2:]
+        new_height, new_width = image.shape[-2:]
     else:
         left, right, top, bottom = _FT._parse_pad_padding(padding)
         new_height = height + top + bottom
         new_width = width + left + right
 
-        # TODO: the cloning is probably unnecessary. Review this together with the other perf candidates
-        padded_image = img.clone()
-
-    return padded_image.view(extra_dims + (num_channels, new_height, new_width))
+    return image.view(extra_dims + (num_channels, new_height, new_width))
 
 
 # TODO: This should be removed once pytorch pad supports non-scalar padding values
