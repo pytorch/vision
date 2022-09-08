@@ -544,8 +544,11 @@ class Middlebury2014Stereo(StereoMatchingDataset):
         """
         ambient_file_paths: List[Union[str, Path]]  # make mypy happy
 
-        if os.path.basename(file_path) == "im1.png" and self.use_ambient_views:
-            base_path = Path(file_path).parent
+        if not isinstance(file_path, Path):
+            file_path = Path(file_path)
+
+        if file_path.name == "im1.png" and self.use_ambient_views:
+            base_path = file_path.parent
             # initialize sampleable container
             ambient_file_paths = list(base_path / view_name for view_name in ["im1E.png", "im1L.png"])
             # double check that we're not going to try to read from an invalid file path
@@ -580,7 +583,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
                     scene_url = f"{base_url}/{scene_name}.zip"
                     print(f"Downloading {scene_url}")
                     # download the scene only if it doesn't exist
-                    if not os.path.exists(split_root / scene_name):
+                    if not (split_root / scene_name).exists():
                         download_and_extract_archive(
                             url=scene_url,
                             filename=f"{scene_name}.zip",

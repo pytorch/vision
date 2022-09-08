@@ -3241,8 +3241,8 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
             datasets_utils.create_image_file(root=scene_dir, name="im1E.png", size=(3, 100, 100))
             datasets_utils.create_image_file(root=scene_dir, name="im1L.png", size=(3, 100, 100))
             # these are going to end up being gray scale images
-            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=os.path.join(scene_dir, "disp0.pfm"))
-            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=os.path.join(scene_dir, "disp1.pfm"))
+            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=scene_dir / "disp0.pfm")
+            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=scene_dir / "disp1.pfm")
 
     def inject_fake_data(self, tmpdir, config):
         split_scene_map = {
