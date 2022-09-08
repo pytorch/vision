@@ -557,15 +557,16 @@ def pad_image_tensor(
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
 
-    left, right, top, bottom = _FT._parse_pad_padding(padding)
-    new_height = height + top + bottom
-    new_width = width + left + right
-
     if img.numel() > 0:
         padded_image = _FT.pad(
             img=img.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
         )
+        new_height, new_width = padded_image.shape[-2:]
     else:
+        left, right, top, bottom = _FT._parse_pad_padding(padding)
+        new_height = height + top + bottom
+        new_width = width + left + right
+
         # TODO: the cloning is probably unnecessary. Review this together with the other perf candidates
         padded_image = img.clone()
 
