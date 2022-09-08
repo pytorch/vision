@@ -450,28 +450,34 @@ def rotate_image_tensor(
     fill: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    if img.numel() == 0:
-        return img
-
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
-    img = img.view(-1, num_channels, height, width)
 
     center_f = [0.0, 0.0]
     if center is not None:
         if expand:
             warnings.warn("The provided center argument has no effect on the result if expand is True")
         else:
-            _, height, width = get_dimensions_image_tensor(img)
             # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
             center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
-    output = _FT.rotate(img, matrix, interpolation=interpolation.value, expand=expand, fill=fill)
-    new_height, new_width = output.shape[-2:]
-    return output.view(extra_dims + (num_channels, new_height, new_width))
+
+    if img.numel() > 0:
+        img = _FT.rotate(
+            img.view(-1, num_channels, height, width),
+            matrix,
+            interpolation=interpolation.value,
+            expand=expand,
+            fill=fill,
+        )
+        new_height, new_width = img.shape[-2:]
+    else:
+        new_width, new_height = _FT._compute_affine_output_size(matrix, width, height) if expand else (width, height)
+
+    return img.view(extra_dims + (num_channels, new_height, new_width))
 
 
 def rotate_image_pil(
