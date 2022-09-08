@@ -31,7 +31,7 @@ jobs:
           PY_VERS: ${{ matrix.py_vers }}
         run: |
           . ~/miniconda3/etc/profile.d/conda.sh
-          # Needed for JPEG library detection as setup.py detects conda presence by running `shlex.which('conda')`
+          # Needed for JPEG library detection as setup.py detects conda presence by running `shutil.which('conda')`
           export PATH=~/miniconda3/bin:$PATH
           set -ex
           conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy

@@ -69,6 +69,15 @@ class DropBlockWrapper(nn.Module):
         self.layer(a)
 
 
+class PoolWrapper(nn.Module):
+    def __init__(self, pool: nn.Module):
+        super().__init__()
+        self.pool = pool
+
+    def forward(self, imgs: Tensor, boxes: List[Tensor]) -> Tensor:
+        return self.pool(imgs, boxes)
+
+
 class RoIOpTester(ABC):
     dtype = torch.float64
 
@@ -108,6 +117,25 @@ class RoIOpTester(ABC):
         assert len(graph_node_names) == 2
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_torch_fx_trace(self, device, x_dtype=torch.float, rois_dtype=torch.float):
+        op_obj = self.make_obj().to(device=device)
+        graph_module = torch.fx.symbolic_trace(op_obj)
+        pool_size = 5
+        n_channels = 2 * (pool_size**2)
+        x = torch.rand(2, n_channels, 5, 5, dtype=x_dtype, device=device)
+        rois = torch.tensor(
+            [[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]],  # format is (xyxy)
+            dtype=rois_dtype,
+            device=device,
+        )
+        output_gt = op_obj(x, rois)
+        assert output_gt.dtype == x.dtype
+        output_fx = graph_module(x, rois)
+        assert output_fx.dtype == x.dtype
+        tol = 1e-5
+        torch.testing.assert_close(output_gt, output_fx, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -149,6 +177,14 @@ class RoIOpTester(ABC):
             a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
             ops.roi_pool(a, [boxes], output_size=(2, 2))
+
+    def _helper_jit_boxes_list(self, model):
+        x = torch.rand(2, 1, 10, 10)
+        roi = torch.tensor([[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]], dtype=torch.float).t()
+        rois = [roi, roi]
+        scriped = torch.jit.script(model)
+        y = scriped(x, rois)
+        assert y.shape == (10, 1, 3, 3)
 
     @abstractmethod
     def fn(*args, **kwargs):
@@ -209,6 +245,10 @@ class TestRoiPool(RoIOpTester):
 
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
+
+    def test_jit_boxes_list(self):
+        model = PoolWrapper(ops.RoIPool(output_size=[3, 3], spatial_scale=1.0))
+        self._helper_jit_boxes_list(model)
 
 
 class TestPSRoIPool(RoIOpTester):
@@ -449,6 +489,10 @@ class TestRoIAlign(RoIOpTester):
         qrois = torch.quantize_per_tensor(rois, scale=1, zero_point=0, dtype=torch.qint8)
         with pytest.raises(RuntimeError, match="Only one image per batch is allowed"):
             ops.roi_align(qx, qrois, output_size=5)
+
+    def test_jit_boxes_list(self):
+        model = PoolWrapper(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
+        self._helper_jit_boxes_list(model)
 
 
 class TestPSRoIAlign(RoIOpTester):
