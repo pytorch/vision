@@ -8,9 +8,9 @@ from torch import nn, Tensor
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation as SElayer
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param, _make_divisible
+from ._utils import _make_divisible, _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -317,10 +317,13 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
-            "metrics": {
-                "acc@1": 74.042,
-                "acc@5": 91.340,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 74.042,
+                    "acc@5": 91.340,
+                }
             },
+            "_docs": """These weights were trained from scratch by using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -330,10 +333,17 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
-            "metrics": {
-                "acc@1": 75.274,
-                "acc@5": 92.566,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.274,
+                    "acc@5": 92.566,
+                }
             },
+            "_docs": """
+                These weights improve marginally upon the results of the original paper by using a modified version of
+                TorchVision's `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -347,15 +357,21 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2542856,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
-            "metrics": {
-                "acc@1": 67.668,
-                "acc@5": 87.402,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 67.668,
+                    "acc@5": 87.402,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a simple training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", MobileNet_V3_Large_Weights.IMAGENET1K_V1))
 def mobilenet_v3_large(
     *, weights: Optional[MobileNet_V3_Large_Weights] = None, progress: bool = True, **kwargs: Any
@@ -386,6 +402,7 @@ def mobilenet_v3_large(
     return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", MobileNet_V3_Small_Weights.IMAGENET1K_V1))
 def mobilenet_v3_small(
     *, weights: Optional[MobileNet_V3_Small_Weights] = None, progress: bool = True, **kwargs: Any
@@ -414,3 +431,15 @@ def mobilenet_v3_small(
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small", **kwargs)
     return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "mobilenet_v3_large": MobileNet_V3_Large_Weights.IMAGENET1K_V1.url,
+        "mobilenet_v3_small": MobileNet_V3_Small_Weights.IMAGENET1K_V1.url,
+    }
+)

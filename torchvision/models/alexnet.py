@@ -6,9 +6,9 @@ import torch.nn as nn
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = ["AlexNet", "AlexNet_Weights", "alexnet"]
@@ -61,21 +61,31 @@ class AlexNet_Weights(WeightsEnum):
             "min_size": (63, 63),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
-            "metrics": {
-                "acc@1": 56.522,
-                "acc@5": 79.066,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 56.522,
+                    "acc@5": 79.066,
+                }
             },
+            "_docs": """
+                These weights reproduce closely the results of the paper using a simplified training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", AlexNet_Weights.IMAGENET1K_V1))
 def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
-    """AlexNet model architecture from the `ImageNet Classification with Deep Convolutional Neural Networks
-    <https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html>`__ paper.
+    """AlexNet model architecture from `One weird trick for parallelizing convolutional neural networks <https://arxiv.org/abs/1404.5997>`__.
 
-    The required minimum input size of the model is 63x63.
+    .. note::
+        AlexNet was originally introduced in the `ImageNet Classification with
+        Deep Convolutional Neural Networks
+        <https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html>`__
+        paper. Our implementation is based instead on the "One weird trick"
+        paper above.
 
     Args:
         weights (:class:`~torchvision.models.AlexNet_Weights`, optional): The
@@ -105,3 +115,14 @@ def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True,
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "alexnet": AlexNet_Weights.IMAGENET1K_V1.url,
+    }
+)

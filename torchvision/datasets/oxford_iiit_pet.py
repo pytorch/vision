@@ -1,8 +1,7 @@
 import os
 import os.path
 import pathlib
-from typing import Any, Callable, Optional, Union, Tuple
-from typing import Sequence
+from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
 from PIL import Image
 

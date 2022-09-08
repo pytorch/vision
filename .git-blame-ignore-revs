@@ -5,3 +5,5 @@
 5f0edb97b46e5bff71dc19dedef05c5396eeaea2
 # update python syntax >=3.6 (#4585)
 d367a01a18a3ae6bee13d8be3b63fd6a581ea46f
+# Upgrade usort to 1.0.2 and black to 22.3.0 (#5106) 
+6ca9c76adb6daf2695d603ad623a9cf1c4f4806f

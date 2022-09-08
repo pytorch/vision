@@ -1,7 +1,7 @@
 import warnings
 from collections import namedtuple
 from functools import partial
-from typing import Optional, Tuple, List, Callable, Any
+from typing import Any, Callable, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -10,9 +10,9 @@ from torch import Tensor
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNet_Weights", "googlenet"]
@@ -284,20 +284,23 @@ class GoogLeNet_Weights(WeightsEnum):
             "min_size": (15, 15),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#googlenet",
-            "metrics": {
-                "acc@1": 69.778,
-                "acc@5": 89.530,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.778,
+                    "acc@5": 89.530,
+                }
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", GoogLeNet_Weights.IMAGENET1K_V1))
 def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
-    r"""GoogLeNet (Inception v1) model architecture from
+    """GoogLeNet (Inception v1) model architecture from
     `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`_.
-    The required minimum input size of the model is 15x15.
 
     Args:
         weights (:class:`~torchvision.models.GoogLeNet_Weights`, optional): The
@@ -338,3 +341,15 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
             )
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        # GoogLeNet ported from TensorFlow
+        "googlenet": GoogLeNet_Weights.IMAGENET1K_V1.url,
+    }
+)

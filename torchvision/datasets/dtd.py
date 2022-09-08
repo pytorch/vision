@@ -1,10 +1,10 @@
 import os
 import pathlib
-from typing import Optional, Callable
+from typing import Callable, Optional
 
 import PIL.Image
 
-from .utils import verify_str_arg, download_and_extract_archive
+from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 

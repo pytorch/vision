@@ -6,6 +6,8 @@ RetinaNet
 The RetinaNet model is based on the `Focal Loss for Dense Object Detection
 <https://arxiv.org/abs/1708.02002>`__ paper.
 
+.. betastatus:: detection module
+
 Model builders
 --------------
 

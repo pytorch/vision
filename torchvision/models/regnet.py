@@ -9,9 +9,9 @@ from torch import nn, Tensor
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param, _make_divisible
+from ._utils import _make_divisible, _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -422,10 +422,13 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 4344144,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
-            "metrics": {
-                "acc@1": 74.046,
-                "acc@5": 91.716,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 74.046,
+                    "acc@5": 91.716,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -435,10 +438,17 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 4344144,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 75.804,
-                "acc@5": 92.742,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.804,
+                    "acc@5": 92.742,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -452,10 +462,13 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 6432512,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
-            "metrics": {
-                "acc@1": 76.420,
-                "acc@5": 93.136,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 76.420,
+                    "acc@5": 93.136,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -465,10 +478,17 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 6432512,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 78.828,
-                "acc@5": 94.502,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 78.828,
+                    "acc@5": 94.502,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -482,10 +502,13 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 11202430,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
-            "metrics": {
-                "acc@1": 77.950,
-                "acc@5": 93.966,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.950,
+                    "acc@5": 93.966,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -495,10 +518,17 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 11202430,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 80.876,
-                "acc@5": 95.444,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 80.876,
+                    "acc@5": 95.444,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -512,10 +542,13 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 19436338,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
-            "metrics": {
-                "acc@1": 78.948,
-                "acc@5": 94.576,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 78.948,
+                    "acc@5": 94.576,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -525,10 +558,17 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 19436338,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 81.982,
-                "acc@5": 95.972,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 81.982,
+                    "acc@5": 95.972,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -542,10 +582,13 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 39381472,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
-            "metrics": {
-                "acc@1": 80.032,
-                "acc@5": 95.048,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 80.032,
+                    "acc@5": 95.048,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -555,10 +598,17 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 39381472,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 82.828,
-                "acc@5": 96.330,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 82.828,
+                    "acc@5": 96.330,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -572,10 +622,13 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 83590140,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
-            "metrics": {
-                "acc@1": 80.424,
-                "acc@5": 95.240,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 80.424,
+                    "acc@5": 95.240,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -585,10 +638,17 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 83590140,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 82.886,
-                "acc@5": 96.328,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 82.886,
+                    "acc@5": 96.328,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     IMAGENET1K_SWAG_E2E_V1 = Weights(
@@ -599,10 +659,16 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 83590140,
-            "metrics": {
-                "acc@1": 86.012,
-                "acc@5": 98.054,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 86.012,
+                    "acc@5": 98.054,
+                }
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -614,10 +680,16 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 83590140,
-            "metrics": {
-                "acc@1": 83.976,
-                "acc@5": 97.244,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.976,
+                    "acc@5": 97.244,
+                }
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -631,10 +703,13 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 145046770,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
-            "metrics": {
-                "acc@1": 80.878,
-                "acc@5": 95.340,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 80.878,
+                    "acc@5": 95.340,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -644,10 +719,17 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 145046770,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 83.368,
-                "acc@5": 96.498,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.368,
+                    "acc@5": 96.498,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     IMAGENET1K_SWAG_E2E_V1 = Weights(
@@ -658,10 +740,16 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 145046770,
-            "metrics": {
-                "acc@1": 86.838,
-                "acc@5": 98.362,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 86.838,
+                    "acc@5": 98.362,
+                }
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -673,10 +761,16 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 145046770,
-            "metrics": {
-                "acc@1": 84.622,
-                "acc@5": 97.480,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 84.622,
+                    "acc@5": 97.480,
+                }
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -691,10 +785,16 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 644812894,
-            "metrics": {
-                "acc@1": 88.228,
-                "acc@5": 98.682,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 88.228,
+                    "acc@5": 98.682,
+                }
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -706,10 +806,16 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 644812894,
-            "metrics": {
-                "acc@1": 86.068,
-                "acc@5": 97.844,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 86.068,
+                    "acc@5": 97.844,
+                }
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_SWAG_E2E_V1
@@ -723,10 +829,13 @@ class RegNet_X_400MF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5495976,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
-            "metrics": {
-                "acc@1": 72.834,
-                "acc@5": 90.950,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 72.834,
+                    "acc@5": 90.950,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -736,10 +845,17 @@ class RegNet_X_400MF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5495976,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
-            "metrics": {
-                "acc@1": 74.864,
-                "acc@5": 92.322,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 74.864,
+                    "acc@5": 92.322,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -753,10 +869,13 @@ class RegNet_X_800MF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 7259656,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
-            "metrics": {
-                "acc@1": 75.212,
-                "acc@5": 92.348,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.212,
+                    "acc@5": 92.348,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -766,10 +885,17 @@ class RegNet_X_800MF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 7259656,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
-            "metrics": {
-                "acc@1": 77.522,
-                "acc@5": 93.826,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.522,
+                    "acc@5": 93.826,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -783,10 +909,13 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 9190136,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
-            "metrics": {
-                "acc@1": 77.040,
-                "acc@5": 93.440,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.040,
+                    "acc@5": 93.440,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -796,10 +925,17 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 9190136,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
-            "metrics": {
-                "acc@1": 79.668,
-                "acc@5": 94.922,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 79.668,
+                    "acc@5": 94.922,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -813,10 +949,13 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 15296552,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
-            "metrics": {
-                "acc@1": 78.364,
-                "acc@5": 93.992,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 78.364,
+                    "acc@5": 93.992,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -826,10 +965,17 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 15296552,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 81.196,
-                "acc@5": 95.430,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 81.196,
+                    "acc@5": 95.430,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -843,10 +989,13 @@ class RegNet_X_8GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 39572648,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
-            "metrics": {
-                "acc@1": 79.344,
-                "acc@5": 94.686,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 79.344,
+                    "acc@5": 94.686,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -856,10 +1005,17 @@ class RegNet_X_8GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 39572648,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 81.682,
-                "acc@5": 95.678,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 81.682,
+                    "acc@5": 95.678,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -873,10 +1029,13 @@ class RegNet_X_16GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 54278536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
-            "metrics": {
-                "acc@1": 80.058,
-                "acc@5": 94.944,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 80.058,
+                    "acc@5": 94.944,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -886,10 +1045,17 @@ class RegNet_X_16GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 54278536,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 82.716,
-                "acc@5": 96.196,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 82.716,
+                    "acc@5": 96.196,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -903,10 +1069,13 @@ class RegNet_X_32GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 107811560,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
-            "metrics": {
-                "acc@1": 80.622,
-                "acc@5": 95.248,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 80.622,
+                    "acc@5": 95.248,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -916,15 +1085,23 @@ class RegNet_X_32GF_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 107811560,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 83.014,
-                "acc@5": 96.288,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.014,
+                    "acc@5": 96.288,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_Y_400MF_Weights.IMAGENET1K_V1))
 def regnet_y_400mf(*, weights: Optional[RegNet_Y_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -950,6 +1127,7 @@ def regnet_y_400mf(*, weights: Optional[RegNet_Y_400MF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_Y_800MF_Weights.IMAGENET1K_V1))
 def regnet_y_800mf(*, weights: Optional[RegNet_Y_800MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -975,6 +1153,7 @@ def regnet_y_800mf(*, weights: Optional[RegNet_Y_800MF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_Y_1_6GF_Weights.IMAGENET1K_V1))
 def regnet_y_1_6gf(*, weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1002,6 +1181,7 @@ def regnet_y_1_6gf(*, weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_Y_3_2GF_Weights.IMAGENET1K_V1))
 def regnet_y_3_2gf(*, weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1029,6 +1209,7 @@ def regnet_y_3_2gf(*, weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_Y_8GF_Weights.IMAGENET1K_V1))
 def regnet_y_8gf(*, weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1056,6 +1237,7 @@ def regnet_y_8gf(*, weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bo
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_Y_16GF_Weights.IMAGENET1K_V1))
 def regnet_y_16gf(*, weights: Optional[RegNet_Y_16GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1083,6 +1265,7 @@ def regnet_y_16gf(*, weights: Optional[RegNet_Y_16GF_Weights] = None, progress: 
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_Y_32GF_Weights.IMAGENET1K_V1))
 def regnet_y_32gf(*, weights: Optional[RegNet_Y_32GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1110,6 +1293,7 @@ def regnet_y_32gf(*, weights: Optional[RegNet_Y_32GF_Weights] = None, progress: 
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", None))
 def regnet_y_128gf(*, weights: Optional[RegNet_Y_128GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1137,6 +1321,7 @@ def regnet_y_128gf(*, weights: Optional[RegNet_Y_128GF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_X_400MF_Weights.IMAGENET1K_V1))
 def regnet_x_400mf(*, weights: Optional[RegNet_X_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1162,6 +1347,7 @@ def regnet_x_400mf(*, weights: Optional[RegNet_X_400MF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_X_800MF_Weights.IMAGENET1K_V1))
 def regnet_x_800mf(*, weights: Optional[RegNet_X_800MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1187,6 +1373,7 @@ def regnet_x_800mf(*, weights: Optional[RegNet_X_800MF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_X_1_6GF_Weights.IMAGENET1K_V1))
 def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1205,10 +1392,6 @@ def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress
 
     .. autoclass:: torchvision.models.RegNet_X_1_6GF_Weights
         :members:
-
-    Args:
-        weights (RegNet_X_1_6GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = RegNet_X_1_6GF_Weights.verify(weights)
 
@@ -1216,6 +1399,7 @@ def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_X_3_2GF_Weights.IMAGENET1K_V1))
 def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1234,10 +1418,6 @@ def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress
 
     .. autoclass:: torchvision.models.RegNet_X_3_2GF_Weights
         :members:
-
-    Args:
-        weights (RegNet_X_3_2GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = RegNet_X_3_2GF_Weights.verify(weights)
 
@@ -1245,6 +1425,7 @@ def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_X_8GF_Weights.IMAGENET1K_V1))
 def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1263,10 +1444,6 @@ def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bo
 
     .. autoclass:: torchvision.models.RegNet_X_8GF_Weights
         :members:
-
-    Args:
-        weights (RegNet_X_8GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = RegNet_X_8GF_Weights.verify(weights)
 
@@ -1274,6 +1451,7 @@ def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bo
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_X_16GF_Weights.IMAGENET1K_V1))
 def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1292,10 +1470,6 @@ def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: 
 
     .. autoclass:: torchvision.models.RegNet_X_16GF_Weights
         :members:
-
-    Args:
-        weights (RegNet_X_16GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = RegNet_X_16GF_Weights.verify(weights)
 
@@ -1303,6 +1477,7 @@ def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: 
     return _regnet(params, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", RegNet_X_32GF_Weights.IMAGENET1K_V1))
 def regnet_x_32gf(*, weights: Optional[RegNet_X_32GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
@@ -1321,12 +1496,32 @@ def regnet_x_32gf(*, weights: Optional[RegNet_X_32GF_Weights] = None, progress: 
 
     .. autoclass:: torchvision.models.RegNet_X_32GF_Weights
         :members:
-
-    Args:
-        weights (RegNet_X_32GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = RegNet_X_32GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(depth=23, w_0=320, w_a=69.86, w_m=2.0, group_width=168, **kwargs)
     return _regnet(params, weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "regnet_y_400mf": RegNet_Y_400MF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_800mf": RegNet_Y_800MF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_1_6gf": RegNet_Y_1_6GF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_3_2gf": RegNet_Y_3_2GF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_8gf": RegNet_Y_8GF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_16gf": RegNet_Y_16GF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_32gf": RegNet_Y_32GF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_400mf": RegNet_X_400MF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_800mf": RegNet_X_800MF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_1_6gf": RegNet_X_1_6GF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_3_2gf": RegNet_X_3_2GF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_8gf": RegNet_X_8GF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_16gf": RegNet_X_16GF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_32gf": RegNet_X_32GF_Weights.IMAGENET1K_V1.url,
+    }
+)

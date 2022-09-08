@@ -1,16 +1,18 @@
-SSD300
-======
+SSD
+===
 
 .. currentmodule:: torchvision.models.detection
 
-The SSD300 model is based on the `SSD: Single Shot MultiBox Detector 
+The SSD model is based on the `SSD: Single Shot MultiBox Detector
 <https://arxiv.org/abs/1512.02325>`__ paper.
+
+.. betastatus:: detection module
 
 
 Model builders
 --------------
 
-The following model builders can be used to instanciate a SSD300 model, with or
+The following model builders can be used to instanciate a SSD model, with or
 without pre-trained weights. All the model builders internally rely on the
 ``torchvision.models.detection.SSD`` base class. Please refer to the `source
 code

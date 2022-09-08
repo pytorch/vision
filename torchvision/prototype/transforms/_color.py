@@ -1,15 +1,13 @@
 import collections.abc
-import functools
-from typing import Any, Dict, Union, Tuple, Optional, Sequence, Callable, TypeVar
+from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, functional as F
-from torchvision.transforms import functional as _F
+from torchvision.prototype.transforms import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
-from ._utils import is_simple_tensor, get_image_dimensions, query_image
+from ._utils import query_chw
 
 T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
 
@@ -53,103 +51,41 @@ class ColorJitter(Transform):
 
         return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
 
-    def _image_transform(
-        self,
-        input: T,
-        *,
-        kernel_tensor: Callable[..., torch.Tensor],
-        kernel_pil: Callable[..., PIL.Image.Image],
-        **kwargs: Any,
-    ) -> T:
-        if isinstance(input, features.Image):
-            output = kernel_tensor(input, **kwargs)
-            return features.Image.new_like(input, output)
-        elif is_simple_tensor(input):
-            return kernel_tensor(input, **kwargs)
-        elif isinstance(input, PIL.Image.Image):
-            return kernel_pil(input, **kwargs)  # type: ignore[no-any-return]
-        else:
-            raise RuntimeError
+    @staticmethod
+    def _generate_value(left: float, right: float) -> float:
+        return float(torch.distributions.Uniform(left, right).sample())
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image_transforms = []
-        if self.brightness is not None:
-            image_transforms.append(
-                functools.partial(
-                    self._image_transform,
-                    kernel_tensor=F.adjust_brightness_image_tensor,
-                    kernel_pil=F.adjust_brightness_image_pil,
-                    brightness_factor=float(
-                        torch.distributions.Uniform(self.brightness[0], self.brightness[1]).sample()
-                    ),
-                )
-            )
-        if self.contrast is not None:
-            image_transforms.append(
-                functools.partial(
-                    self._image_transform,
-                    kernel_tensor=F.adjust_contrast_image_tensor,
-                    kernel_pil=F.adjust_contrast_image_pil,
-                    contrast_factor=float(torch.distributions.Uniform(self.contrast[0], self.contrast[1]).sample()),
-                )
-            )
-        if self.saturation is not None:
-            image_transforms.append(
-                functools.partial(
-                    self._image_transform,
-                    kernel_tensor=F.adjust_saturation_image_tensor,
-                    kernel_pil=F.adjust_saturation_image_pil,
-                    saturation_factor=float(
-                        torch.distributions.Uniform(self.saturation[0], self.saturation[1]).sample()
-                    ),
-                )
-            )
-        if self.hue is not None:
-            image_transforms.append(
-                functools.partial(
-                    self._image_transform,
-                    kernel_tensor=F.adjust_hue_image_tensor,
-                    kernel_pil=F.adjust_hue_image_pil,
-                    hue_factor=float(torch.distributions.Uniform(self.hue[0], self.hue[1]).sample()),
-                )
-            )
+        fn_idx = torch.randperm(4)
 
-        return dict(image_transforms=[image_transforms[idx] for idx in torch.randperm(len(image_transforms))])
+        b = None if self.brightness is None else self._generate_value(self.brightness[0], self.brightness[1])
+        c = None if self.contrast is None else self._generate_value(self.contrast[0], self.contrast[1])
+        s = None if self.saturation is None else self._generate_value(self.saturation[0], self.saturation[1])
+        h = None if self.hue is None else self._generate_value(self.hue[0], self.hue[1])
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if not (isinstance(input, (features.Image, PIL.Image.Image)) or is_simple_tensor(input)):
-            return input
+        return dict(fn_idx=fn_idx, brightness_factor=b, contrast_factor=c, saturation_factor=s, hue_factor=h)
 
-        for transform in params["image_transforms"]:
-            input = transform(input)
-        return input
-
-
-class _RandomChannelShuffle(Transform):
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        num_channels, _, _ = get_image_dimensions(image)
-        return dict(permutation=torch.randperm(num_channels))
-
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if not (isinstance(input, (features.Image, PIL.Image.Image)) or is_simple_tensor(input)):
-            return input
-
-        image = input
-        if isinstance(input, PIL.Image.Image):
-            image = _F.pil_to_tensor(image)
-
-        output = image[..., params["permutation"], :, :]
-
-        if isinstance(input, features.Image):
-            output = features.Image.new_like(input, output, color_space=features.ColorSpace.OTHER)
-        elif isinstance(input, PIL.Image.Image):
-            output = _F.to_pil_image(output)
-
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        output = inpt
+        brightness_factor = params["brightness_factor"]
+        contrast_factor = params["contrast_factor"]
+        saturation_factor = params["saturation_factor"]
+        hue_factor = params["hue_factor"]
+        for fn_id in params["fn_idx"]:
+            if fn_id == 0 and brightness_factor is not None:
+                output = F.adjust_brightness(output, brightness_factor=brightness_factor)
+            elif fn_id == 1 and contrast_factor is not None:
+                output = F.adjust_contrast(output, contrast_factor=contrast_factor)
+            elif fn_id == 2 and saturation_factor is not None:
+                output = F.adjust_saturation(output, saturation_factor=saturation_factor)
+            elif fn_id == 3 and hue_factor is not None:
+                output = F.adjust_hue(output, hue_factor=hue_factor)
         return output
 
 
 class RandomPhotometricDistort(Transform):
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+
     def __init__(
         self,
         contrast: Tuple[float, float] = (0.5, 1.5),
@@ -159,49 +95,99 @@ class RandomPhotometricDistort(Transform):
         p: float = 0.5,
     ):
         super().__init__()
-        self._brightness = ColorJitter(brightness=brightness)
-        self._contrast = ColorJitter(contrast=contrast)
-        self._hue = ColorJitter(hue=hue)
-        self._saturation = ColorJitter(saturation=saturation)
-        self._channel_shuffle = _RandomChannelShuffle()
+        self.brightness = brightness
+        self.contrast = contrast
+        self.hue = hue
+        self.saturation = saturation
         self.p = p
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
+        num_channels, _, _ = query_chw(sample)
         return dict(
             zip(
-                ["brightness", "contrast1", "saturation", "hue", "contrast2", "channel_shuffle"],
-                torch.rand(6) < self.p,
+                ["brightness", "contrast1", "saturation", "hue", "contrast2"],
+                (torch.rand(5) < self.p).tolist(),
             ),
-            contrast_before=torch.rand(()) < 0.5,
+            contrast_before=bool(torch.rand(()) < 0.5),
+            channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
         )
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+    def _permute_channels(self, inpt: Any, permutation: torch.Tensor) -> Any:
+        if isinstance(inpt, PIL.Image.Image):
+            inpt = F.to_image_tensor(inpt)
+
+        output = inpt[..., permutation, :, :]
+
+        if isinstance(inpt, features.Image):
+            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.OTHER)
+        elif isinstance(inpt, PIL.Image.Image):
+            output = F.to_image_pil(output)
+
+        return output
+
+    def _transform(
+        self, inpt: Union[torch.Tensor, features.Image, PIL.Image.Image], params: Dict[str, Any]
+    ) -> Union[torch.Tensor, features.Image, PIL.Image.Image]:
         if params["brightness"]:
-            input = self._brightness(input)
+            inpt = F.adjust_brightness(
+                inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])
+            )
         if params["contrast1"] and params["contrast_before"]:
-            input = self._contrast(input)
+            inpt = F.adjust_contrast(
+                inpt, contrast_factor=ColorJitter._generate_value(self.contrast[0], self.contrast[1])
+            )
         if params["saturation"]:
-            input = self._saturation(input)
-        if params["saturation"]:
-            input = self._saturation(input)
+            inpt = F.adjust_saturation(
+                inpt, saturation_factor=ColorJitter._generate_value(self.saturation[0], self.saturation[1])
+            )
+        if params["hue"]:
+            inpt = F.adjust_hue(inpt, hue_factor=ColorJitter._generate_value(self.hue[0], self.hue[1]))
         if params["contrast2"] and not params["contrast_before"]:
-            input = self._contrast(input)
-        if params["channel_shuffle"]:
-            input = self._channel_shuffle(input)
-        return input
+            inpt = F.adjust_contrast(
+                inpt, contrast_factor=ColorJitter._generate_value(self.contrast[0], self.contrast[1])
+            )
+        if params["channel_permutation"] is not None:
+            inpt = self._permute_channels(inpt, permutation=params["channel_permutation"])
+        return inpt
 
 
 class RandomEqualize(_RandomApplyTransform):
-    def __init__(self, p: float = 0.5):
-        super().__init__(p=p)
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.equalize(inpt)
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, features.Image):
-            output = F.equalize_image_tensor(input)
-            return features.Image.new_like(input, output)
-        elif is_simple_tensor(input):
-            return F.equalize_image_tensor(input)
-        elif isinstance(input, PIL.Image.Image):
-            return F.equalize_image_pil(input)
-        else:
-            return input
+
+class RandomInvert(_RandomApplyTransform):
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.invert(inpt)
+
+
+class RandomPosterize(_RandomApplyTransform):
+    def __init__(self, bits: int, p: float = 0.5) -> None:
+        super().__init__(p=p)
+        self.bits = bits
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.posterize(inpt, bits=self.bits)
+
+
+class RandomSolarize(_RandomApplyTransform):
+    def __init__(self, threshold: float, p: float = 0.5) -> None:
+        super().__init__(p=p)
+        self.threshold = threshold
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.solarize(inpt, threshold=self.threshold)
+
+
+class RandomAutocontrast(_RandomApplyTransform):
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.autocontrast(inpt)
+
+
+class RandomAdjustSharpness(_RandomApplyTransform):
+    def __init__(self, sharpness_factor: float, p: float = 0.5) -> None:
+        super().__init__(p=p)
+        self.sharpness_factor = sharpness_factor
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.adjust_sharpness(inpt, sharpness_factor=self.sharpness_factor)

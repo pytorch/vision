@@ -2,23 +2,21 @@ import math
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Tuple, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 from torch import nn, Tensor
 
-from ...ops import sigmoid_focal_loss
-from ...ops import boxes as box_ops
-from ...ops import misc as misc_nn_ops
+from ...ops import boxes as box_ops, misc as misc_nn_ops, sigmoid_focal_loss
 from ...ops.feature_pyramid_network import LastLevelP6P7
 from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from . import _utils as det_utils
-from ._utils import overwrite_eps, _box_loss
+from ._utils import _box_loss, overwrite_eps
 from .anchor_utils import AnchorGenerator
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
@@ -687,9 +685,12 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 34014999,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",
-            "metrics": {
-                "box_map": 36.4,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 36.4,
+                }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -703,14 +704,18 @@ class RetinaNet_ResNet50_FPN_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 38198935,
             "recipe": "https://github.com/pytorch/vision/pull/5756",
-            "metrics": {
-                "box_map": 41.5,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 41.5,
+                }
             },
+            "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )
     DEFAULT = COCO_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", RetinaNet_ResNet50_FPN_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
@@ -726,6 +731,8 @@ def retinanet_resnet50_fpn(
 ) -> RetinaNet:
     """
     Constructs a RetinaNet model with a ResNet-50-FPN backbone.
+
+    .. betastatus:: detection module
 
     Reference: `Focal Loss for Dense Object Detection <https://arxiv.org/abs/1708.02002>`_.
 
@@ -811,6 +818,7 @@ def retinanet_resnet50_fpn(
     return model
 
 
+@register_model()
 def retinanet_resnet50_fpn_v2(
     *,
     weights: Optional[RetinaNet_ResNet50_FPN_V2_Weights] = None,
@@ -822,6 +830,8 @@ def retinanet_resnet50_fpn_v2(
 ) -> RetinaNet:
     """
     Constructs an improved RetinaNet model with a ResNet-50-FPN backbone.
+
+    .. betastatus:: detection module
 
     Reference: `Bridging the Gap Between Anchor-based and Anchor-free Detection via Adaptive Training Sample Selection
     <https://arxiv.org/abs/1912.02424>`_.
@@ -879,3 +889,14 @@ def retinanet_resnet50_fpn_v2(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "retinanet_resnet50_fpn_coco": RetinaNet_ResNet50_FPN_Weights.COCO_V1.url,
+    }
+)

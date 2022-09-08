@@ -2,26 +2,26 @@ import abc
 import hashlib
 import itertools
 import pathlib
-from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
+from typing import Any, Callable, IO, NoReturn, Optional, Sequence, Set, Tuple, Union
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
-    IterableWrapper,
     FileLister,
     FileOpener,
+    IterableWrapper,
     IterDataPipe,
-    ZipArchiveLoader,
-    TarArchiveLoader,
     RarArchiveLoader,
+    TarArchiveLoader,
+    ZipArchiveLoader,
 )
 from torchvision.datasets.utils import (
-    download_url,
-    _detect_file_type,
-    extract_archive,
     _decompress,
-    download_file_from_google_drive,
-    _get_redirect_url,
+    _detect_file_type,
     _get_google_drive_file_id,
+    _get_redirect_url,
+    download_file_from_google_drive,
+    download_url,
+    extract_archive,
 )
 from typing_extensions import Literal
 
@@ -32,7 +32,7 @@ class OnlineResource(abc.ABC):
         *,
         file_name: str,
         sha256: Optional[str] = None,
-        preprocess: Optional[Union[Literal["decompress", "extract"], Callable[[pathlib.Path], pathlib.Path]]] = None,
+        preprocess: Optional[Union[Literal["decompress", "extract"], Callable[[pathlib.Path], None]]] = None,
     ) -> None:
         self.file_name = file_name
         self.sha256 = sha256
@@ -50,14 +50,12 @@ class OnlineResource(abc.ABC):
         self._preprocess = preprocess
 
     @staticmethod
-    def _extract(file: pathlib.Path) -> pathlib.Path:
-        return pathlib.Path(
-            extract_archive(str(file), to_path=str(file).replace("".join(file.suffixes), ""), remove_finished=False)
-        )
+    def _extract(file: pathlib.Path) -> None:
+        extract_archive(str(file), to_path=str(file).replace("".join(file.suffixes), ""), remove_finished=False)
 
     @staticmethod
-    def _decompress(file: pathlib.Path) -> pathlib.Path:
-        return pathlib.Path(_decompress(str(file), remove_finished=True))
+    def _decompress(file: pathlib.Path) -> None:
+        _decompress(str(file), remove_finished=True)
 
     def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
@@ -91,32 +89,38 @@ class OnlineResource(abc.ABC):
     ) -> IterDataPipe[Tuple[str, IO]]:
         root = pathlib.Path(root)
         path = root / self.file_name
+
         # Instead of the raw file, there might also be files with fewer suffixes after decompression or directories
-        # with no suffixes at all.
+        # with no suffixes at all. `pathlib.Path().stem` will only give us the name with the last suffix removed, which
+        # is not sufficient for files with multiple suffixes, e.g. foo.tar.gz.
         stem = path.name.replace("".join(path.suffixes), "")
 
-        # In a first step, we check for a folder with the same stem as the raw file. If it exists, we use it since
-        # extracted files give the best I/O performance. Note that OnlineResource._extract() makes sure that an archive
-        # is always extracted in a folder with the corresponding file name.
-        folder_candidate = path.parent / stem
-        if folder_candidate.exists() and folder_candidate.is_dir():
-            return self._loader(folder_candidate)
+        def find_candidates() -> Set[pathlib.Path]:
+            # Although it looks like we could glob for f"{stem}*" to find the file candidates as well as the folder
+            # candidate simultaneously, that would also pick up other files that share the same prefix. For example, the
+            # test split of the stanford-cars dataset uses the files
+            # - cars_test.tgz
+            # - cars_test_annos_withlabels.mat
+            # Globbing for `"cars_test*"` picks up both.
+            candidates = {file for file in path.parent.glob(f"{stem}.*")}
+            folder_candidate = path.parent / stem
+            if folder_candidate.exists():
+                candidates.add(folder_candidate)
 
-        # If there is no folder, we look for all files that share the same stem as the raw file, but might have a
-        # different suffix.
-        file_candidates = {file for file in path.parent.glob(stem + ".*")}
-        # If we don't find anything, we download the raw file.
-        if not file_candidates:
-            file_candidates = {self.download(root, skip_integrity_check=skip_integrity_check)}
-        # If the only thing we find is the raw file, we use it and optionally perform some preprocessing steps.
-        if file_candidates == {path}:
+            return candidates
+
+        candidates = find_candidates()
+
+        if not candidates:
+            self.download(root, skip_integrity_check=skip_integrity_check)
             if self._preprocess is not None:
-                path = self._preprocess(path)
-        # Otherwise, we use the path with the fewest suffixes. This gives us the decompressed > raw priority that we
-        # want for the best I/O performance.
-        else:
-            path = min(file_candidates, key=lambda path: len(path.suffixes))
-        return self._loader(path)
+                self._preprocess(path)
+            candidates = find_candidates()
+
+        # We use the path with the fewest suffixes. This gives us the
+        # extracted > decompressed > raw
+        # priority that we want for the best I/O performance.
+        return self._loader(min(candidates, key=lambda candidate: len(candidate.suffixes)))
 
     @abc.abstractmethod
     def _download(self, root: pathlib.Path) -> None:

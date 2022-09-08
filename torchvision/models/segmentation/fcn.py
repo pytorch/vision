@@ -4,10 +4,10 @@ from typing import Any, Optional
 from torch import nn
 
 from ...transforms._presets import SemanticSegmentation
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _VOC_CATEGORIES
-from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet, ResNet50_Weights, ResNet101_Weights, resnet50, resnet101
+from .._utils import _ovewrite_value_param, handle_legacy_interface, IntermediateLayerGetter
+from ..resnet import ResNet, resnet101, ResNet101_Weights, resnet50, ResNet50_Weights
 from ._utils import _SimpleSegmentationModel
 
 
@@ -50,6 +50,10 @@ class FCNHead(nn.Sequential):
 _COMMON_META = {
     "categories": _VOC_CATEGORIES,
     "min_size": (1, 1),
+    "_docs": """
+        These weights were trained on a subset of COCO, using only the 20 categories that are present in the Pascal VOC
+        dataset.
+    """,
 }
 
 
@@ -61,9 +65,11 @@ class FCN_ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 35322218,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
-            "metrics": {
-                "miou": 60.5,
-                "pixel_acc": 91.4,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 60.5,
+                    "pixel_acc": 91.4,
+                }
             },
         },
     )
@@ -78,9 +84,11 @@ class FCN_ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 54314346,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
-            "metrics": {
-                "miou": 63.7,
-                "pixel_acc": 91.9,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 63.7,
+                    "pixel_acc": 91.9,
+                }
             },
         },
     )
@@ -102,6 +110,7 @@ def _fcn_resnet(
     return FCN(backbone, classifier, aux_classifier)
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
@@ -117,6 +126,8 @@ def fcn_resnet50(
 ) -> FCN:
     """Fully-Convolutional Network model with a ResNet-50 backbone from the `Fully Convolutional
     Networks for Semantic Segmentation <https://arxiv.org/abs/1411.4038>`_ paper.
+
+    .. betastatus:: segmentation module
 
     Args:
         weights (:class:`~torchvision.models.segmentation.FCN_ResNet50_Weights`, optional): The
@@ -158,6 +169,7 @@ def fcn_resnet50(
     return model
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1),
     weights_backbone=("pretrained_backbone", ResNet101_Weights.IMAGENET1K_V1),
@@ -173,6 +185,8 @@ def fcn_resnet101(
 ) -> FCN:
     """Fully-Convolutional Network model with a ResNet-101 backbone from the `Fully Convolutional
     Networks for Semantic Segmentation <https://arxiv.org/abs/1411.4038>`_ paper.
+
+    .. betastatus:: segmentation module
 
     Args:
         weights (:class:`~torchvision.models.segmentation.FCN_ResNet101_Weights`, optional): The
@@ -212,3 +226,15 @@ def fcn_resnet101(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "fcn_resnet50_coco": FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1.url,
+        "fcn_resnet101_coco": FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1.url,
+    }
+)

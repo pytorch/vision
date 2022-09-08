@@ -6,11 +6,11 @@ from torch import nn
 from torch.nn import functional as F
 
 from ...transforms._presets import SemanticSegmentation
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _VOC_CATEGORIES
-from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
-from ..mobilenetv3 import MobileNetV3, MobileNet_V3_Large_Weights, mobilenet_v3_large
-from ..resnet import ResNet, resnet50, resnet101, ResNet50_Weights, ResNet101_Weights
+from .._utils import _ovewrite_value_param, handle_legacy_interface, IntermediateLayerGetter
+from ..mobilenetv3 import mobilenet_v3_large, MobileNet_V3_Large_Weights, MobileNetV3
+from ..resnet import ResNet, resnet101, ResNet101_Weights, resnet50, ResNet50_Weights
 from ._utils import _SimpleSegmentationModel
 from .fcn import FCNHead
 
@@ -131,6 +131,10 @@ def _deeplabv3_resnet(
 _COMMON_META = {
     "categories": _VOC_CATEGORIES,
     "min_size": (1, 1),
+    "_docs": """
+        These weights were trained on a subset of COCO, using only the 20 categories that are present in the Pascal VOC
+        dataset.
+    """,
 }
 
 
@@ -142,9 +146,11 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 42004074,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet50",
-            "metrics": {
-                "miou": 66.4,
-                "pixel_acc": 92.4,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 66.4,
+                    "pixel_acc": 92.4,
+                }
             },
         },
     )
@@ -159,9 +165,11 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 60996202,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet101",
-            "metrics": {
-                "miou": 67.4,
-                "pixel_acc": 92.4,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 67.4,
+                    "pixel_acc": 92.4,
+                }
             },
         },
     )
@@ -176,9 +184,11 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 11029328,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_mobilenet_v3_large",
-            "metrics": {
-                "miou": 60.3,
-                "pixel_acc": 91.2,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 60.3,
+                    "pixel_acc": 91.2,
+                }
             },
         },
     )
@@ -208,6 +218,7 @@ def _deeplabv3_mobilenetv3(
     return DeepLabV3(backbone, classifier, aux_classifier)
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
@@ -222,6 +233,8 @@ def deeplabv3_resnet50(
     **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
+
+    .. betastatus:: segmentation module
 
     Reference: `Rethinking Atrous Convolution for Semantic Image Segmentation <https://arxiv.org/abs/1706.05587>`__.
 
@@ -261,6 +274,7 @@ def deeplabv3_resnet50(
     return model
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1),
     weights_backbone=("pretrained_backbone", ResNet101_Weights.IMAGENET1K_V1),
@@ -275,6 +289,8 @@ def deeplabv3_resnet101(
     **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
+
+    .. betastatus:: segmentation module
 
     Reference: `Rethinking Atrous Convolution for Semantic Image Segmentation <https://arxiv.org/abs/1706.05587>`__.
 
@@ -314,6 +330,7 @@ def deeplabv3_resnet101(
     return model
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", DeepLabV3_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1),
     weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
@@ -365,3 +382,16 @@ def deeplabv3_mobilenet_v3_large(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "deeplabv3_resnet50_coco": DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1.url,
+        "deeplabv3_resnet101_coco": DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1.url,
+        "deeplabv3_mobilenet_v3_large_coco": DeepLabV3_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1.url,
+    }
+)

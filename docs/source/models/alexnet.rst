@@ -3,10 +3,12 @@ AlexNet
 
 .. currentmodule:: torchvision.models
 
-The AlexNet model is based on the
+The AlexNet model was originally introduced in the
 `ImageNet Classification with Deep Convolutional Neural Networks
-<https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html>`__.
-paper.
+<https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html>`__
+paper. The implemented architecture is slightly different from the original one,
+and is based on `One weird trick for parallelizing convolutional neural networks
+<https://arxiv.org/abs/1404.5997>`__.
 
 
 Model builders

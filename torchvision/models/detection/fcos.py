@@ -2,21 +2,19 @@ import math
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Tuple, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 from torch import nn, Tensor
 
-from ...ops import sigmoid_focal_loss, generalized_box_iou_loss
-from ...ops import boxes as box_ops
-from ...ops import misc as misc_nn_ops
+from ...ops import boxes as box_ops, generalized_box_iou_loss, misc as misc_nn_ops, sigmoid_focal_loss
 from ...ops.feature_pyramid_network import LastLevelP6P7
 from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from . import _utils as det_utils
 from .anchor_utils import AnchorGenerator
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
@@ -76,7 +74,13 @@ class FCOSHead(nn.Module):
             all_gt_classes_targets.append(gt_classes_targets)
             all_gt_boxes_targets.append(gt_boxes_targets)
 
-        all_gt_classes_targets = torch.stack(all_gt_classes_targets)
+        # List[Tensor] to Tensor conversion of  `all_gt_boxes_target`, `all_gt_classes_targets` and `anchors`
+        all_gt_boxes_targets, all_gt_classes_targets, anchors = (
+            torch.stack(all_gt_boxes_targets),
+            torch.stack(all_gt_classes_targets),
+            torch.stack(anchors),
+        )
+
         # compute foregroud
         foregroud_mask = all_gt_classes_targets >= 0
         num_foreground = foregroud_mask.sum().item()
@@ -86,25 +90,20 @@ class FCOSHead(nn.Module):
         gt_classes_targets[foregroud_mask, all_gt_classes_targets[foregroud_mask]] = 1.0
         loss_cls = sigmoid_focal_loss(cls_logits, gt_classes_targets, reduction="sum")
 
-        # regression loss: GIoU loss
-        # TODO: vectorize this instead of using a for loop
-        pred_boxes = [
-            self.box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
-            for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
-        ]
         # amp issue: pred_boxes need to convert float
+        pred_boxes = self.box_coder.decode(bbox_regression, anchors)
+
+        # regression loss: GIoU loss
         loss_bbox_reg = generalized_box_iou_loss(
-            torch.stack(pred_boxes)[foregroud_mask].float(),
-            torch.stack(all_gt_boxes_targets)[foregroud_mask],
+            pred_boxes[foregroud_mask],
+            all_gt_boxes_targets[foregroud_mask],
             reduction="sum",
         )
 
         # ctrness loss
-        bbox_reg_targets = [
-            self.box_coder.encode_single(anchors_per_image, boxes_targets_per_image)
-            for anchors_per_image, boxes_targets_per_image in zip(anchors, all_gt_boxes_targets)
-        ]
-        bbox_reg_targets = torch.stack(bbox_reg_targets, dim=0)
+
+        bbox_reg_targets = self.box_coder.encode(anchors, all_gt_boxes_targets)
+
         if len(bbox_reg_targets) == 0:
             gt_ctrness_targets = bbox_reg_targets.new_zeros(bbox_reg_targets.size()[:-1])
         else:
@@ -201,7 +200,10 @@ class FCOSClassificationHead(nn.Module):
 
 class FCOSRegressionHead(nn.Module):
     """
-    A regression head for use in FCOS.
+    A regression head for use in FCOS, which combines regression branch and center-ness branch.
+    This can obtain better performance.
+
+    Reference: `FCOS: A simple and strong anchor-free object detector <https://arxiv.org/abs/2006.09214>`_.
 
     Args:
         in_channels (int): number of channels of the input feature
@@ -522,7 +524,7 @@ class FCOS(nn.Module):
                 anchor_idxs = torch.div(topk_idxs, num_classes, rounding_mode="floor")
                 labels_per_level = topk_idxs % num_classes
 
-                boxes_per_level = self.box_coder.decode_single(
+                boxes_per_level = self.box_coder.decode(
                     box_regression_per_level[anchor_idxs], anchors_per_level[anchor_idxs]
                 )
                 boxes_per_level = box_ops.clip_boxes_to_image(boxes_per_level, image_shape)
@@ -655,14 +657,18 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
             "categories": _COCO_CATEGORIES,
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn",
-            "metrics": {
-                "box_map": 39.2,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 39.2,
+                }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FCOS_ResNet50_FPN_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
@@ -679,7 +685,10 @@ def fcos_resnet50_fpn(
     """
     Constructs a FCOS model with a ResNet-50-FPN backbone.
 
+    .. betastatus:: detection module
+
     Reference: `FCOS: Fully Convolutional One-Stage Object Detection <https://arxiv.org/abs/1904.01355>`_.
+               `FCOS: A simple and strong anchor-free object detector <https://arxiv.org/abs/2006.09214>`_.
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
@@ -758,3 +767,14 @@ def fcos_resnet50_fpn(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "fcos_resnet50_fpn_coco": FCOS_ResNet50_FPN_Weights.COCO_V1.url,
+    }
+)

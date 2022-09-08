@@ -37,3 +37,9 @@ conda activate "${env_dir}"
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
 conda env update --file "${this_dir}/environment.yml" --prune
+
+# 4. Downgrade setuptools on Python 3.7.
+#    See https://github.com/pytorch/vision/pull/5868
+if [[ "${PYTHON_VERSION}" == '3.7' ]]; then
+  pip install --upgrade setuptools==58.0.4
+fi

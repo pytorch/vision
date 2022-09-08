@@ -1,4 +1,5 @@
 import bz2
+import contextlib
 import gzip
 import hashlib
 import itertools
@@ -14,17 +15,15 @@ import urllib.error
 import urllib.request
 import warnings
 import zipfile
-from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple, Iterator
+from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar
 from urllib.parse import urlparse
 
+import numpy as np
 import requests
 import torch
 from torch.utils.model_zoo import tqdm
 
-from .._internally_replaced_utils import (
-    _download_file_from_remote_location,
-    _is_remote_location_available,
-)
+from .._internally_replaced_utils import _download_file_from_remote_location, _is_remote_location_available
 
 USER_AGENT = "pytorch/vision"
 
@@ -66,7 +65,10 @@ def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
     # Setting the `usedforsecurity` flag does not change anything about the functionality, but indicates that we are
     # not using the MD5 checksum for cryptography. This enables its usage in restricted environments like FIPS. Without
     # it torchvision.datasets is unusable in these environments since we perform a MD5 check everywhere.
-    md5 = hashlib.md5(**dict(usedforsecurity=False) if sys.version_info >= (3, 9) else dict())
+    if sys.version_info >= (3, 9):
+        md5 = hashlib.md5(usedforsecurity=False)
+    else:
+        md5 = hashlib.md5()
     with open(fpath, "rb") as f:
         for chunk in iter(lambda: f.read(chunk_size), b""):
             md5.update(chunk)
@@ -262,6 +264,26 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
 
         _save_response_content(content, fpath)
 
+    # In case we deal with an unhandled GDrive API response, the file should be smaller than 10kB and contain only text
+    if os.stat(fpath).st_size < 10 * 1024:
+        with contextlib.suppress(UnicodeDecodeError), open(fpath) as fh:
+            text = fh.read()
+            # Regular expression to detect HTML. Copied from https://stackoverflow.com/a/70585604
+            if re.search(r"</?\s*[a-z-][^>]*\s*>|(&(?:[\w\d]+|#\d+|#x[a-f\d]+);)", text):
+                warnings.warn(
+                    f"We detected some HTML elements in the downloaded file. "
+                    f"This most likely means that the download triggered an unhandled API response by GDrive. "
+                    f"Please report this to torchvision at https://github.com/pytorch/vision/issues including "
+                    f"the response:\n\n{text}"
+                )
+
+    if md5 and not check_md5(fpath, md5):
+        raise RuntimeError(
+            f"The MD5 checksum of the download file {fpath} does not match the one on record."
+            f"Please delete the file and try again. "
+            f"If the issue persists, please report this to torchvision at https://github.com/pytorch/vision/issues."
+        )
+
 
 def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> None:
     with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
@@ -439,7 +461,7 @@ T = TypeVar("T", str, bytes)
 def verify_str_arg(
     value: T,
     arg: Optional[str] = None,
-    valid_values: Iterable[T] = None,
+    valid_values: Optional[Iterable[T]] = None,
     custom_msg: Optional[str] = None,
 ) -> T:
     if not isinstance(value, torch._six.string_classes):
@@ -462,3 +484,39 @@ def verify_str_arg(
         raise ValueError(msg)
 
     return value
+
+
+def _read_pfm(file_name: str, slice_channels: int = 2) -> np.ndarray:
+    """Read file in .pfm format. Might contain either 1 or 3 channels of data.
+
+    Args:
+        file_name (str): Path to the file.
+        slice_channels (int): Number of channels to slice out of the file.
+            Useful for reading different data formats stored in .pfm files: Optical Flows, Stereo Disparity Maps, etc.
+    """
+
+    with open(file_name, "rb") as f:
+        header = f.readline().rstrip()
+        if header not in [b"PF", b"Pf"]:
+            raise ValueError("Invalid PFM file")
+
+        dim_match = re.match(rb"^(\d+)\s(\d+)\s$", f.readline())
+        if not dim_match:
+            raise Exception("Malformed PFM header.")
+        w, h = (int(dim) for dim in dim_match.groups())
+
+        scale = float(f.readline().rstrip())
+        if scale < 0:  # little-endian
+            endian = "<"
+            scale = -scale
+        else:
+            endian = ">"  # big-endian
+
+        data = np.fromfile(f, dtype=endian + "f")
+
+    pfm_channels = 3 if header == b"PF" else 1
+
+    data = data.reshape(h, w, pfm_channels).transpose(2, 0, 1)
+    data = np.flip(data, axis=1)  # flip on h dimension
+    data = data[:slice_channels, :, :]
+    return data.astype(np.float32)

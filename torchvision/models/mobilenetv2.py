@@ -1,17 +1,16 @@
 import warnings
 from functools import partial
-from typing import Callable, Any, Optional, List
+from typing import Any, Callable, List, Optional
 
 import torch
-from torch import Tensor
-from torch import nn
+from torch import nn, Tensor
 
 from ..ops.misc import Conv2dNormActivation
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param, _make_divisible
+from ._utils import _make_divisible, _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = ["MobileNetV2", "MobileNet_V2_Weights", "mobilenet_v2"]
@@ -208,10 +207,13 @@ class MobileNet_V2_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2",
-            "metrics": {
-                "acc@1": 71.878,
-                "acc@5": 90.286,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 71.878,
+                    "acc@5": 90.286,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -220,15 +222,23 @@ class MobileNet_V2_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
-            "metrics": {
-                "acc@1": 72.154,
-                "acc@5": 90.822,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 72.154,
+                    "acc@5": 90.822,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", MobileNet_V2_Weights.IMAGENET1K_V1))
 def mobilenet_v2(
     *, weights: Optional[MobileNet_V2_Weights] = None, progress: bool = True, **kwargs: Any
@@ -263,3 +273,14 @@ def mobilenet_v2(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "mobilenet_v2": MobileNet_V2_Weights.IMAGENET1K_V1.url,
+    }
+)
