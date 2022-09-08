@@ -1,13 +1,12 @@
 import itertools
 
 import numpy as np
-
 import PIL.Image
-
 import pytest
+
 import torch
 from common_utils import assert_equal, cpu_and_gpu
-from test_prototype_transforms_functional import (
+from prototype_common_utils import (
     make_bounding_box,
     make_bounding_boxes,
     make_image,
@@ -1579,7 +1578,7 @@ class TestFixedSizeCrop:
             format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
         )
         segmentation_masks = make_segmentation_mask(size=image_size, extra_dims=(batch_size,))
-        labels = make_label(size=(batch_size,))
+        labels = make_label(extra_dims=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
         mocker.patch("torchvision.prototype.transforms._geometry.has_all", return_value=True)

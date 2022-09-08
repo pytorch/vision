@@ -7,207 +7,9 @@ import pytest
 import torch.testing
 import torchvision.prototype.transforms.functional as F
 from common_utils import cpu_and_gpu, needs_cuda
-from prototype_common_utils import assert_close
-from torch.nn.functional import one_hot
+from prototype_common_utils import ArgsKwargs, assert_close, make_bounding_boxes, make_images
 from torchvision.prototype import features
-from torchvision.prototype.transforms._utils import is_simple_tensor
-from torchvision.prototype.transforms.functional._meta import _COLOR_SPACE_TO_PIL_MODE
-from torchvision.prototype.transforms.functional._meta import convert_bounding_box_format
-from torchvision.transforms.functional_tensor import _max_value as get_max_value
-
-
-DEFAULT_LANDSCAPE_IMAGE_SIZE = DEFAULT_IMAGE_SIZE = (7, 33)
-DEFAULT_PORTRAIT_IMAGE_SIZE = (31, 9)
-DEFAULT_SQUARE_IMAGE_SIZE = (16, 16)
-
-
-def make_image(
-    size=DEFAULT_IMAGE_SIZE,
-    *,
-    extra_dims=(),
-    color_space=features.ColorSpace.RGB,
-    device="cpu",
-    dtype=torch.float32,
-    constant_alpha=True,
-):
-    try:
-        num_channels = {
-            features.ColorSpace.GRAY: 1,
-            features.ColorSpace.GRAY_ALPHA: 2,
-            features.ColorSpace.RGB: 3,
-            features.ColorSpace.RGB_ALPHA: 4,
-        }[color_space]
-    except KeyError as error:
-        raise pytest.UsageError() from error
-
-    shape = (*extra_dims, num_channels, *size)
-    max_value = get_max_value(dtype)
-    data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
-    if color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
-        data[..., -1, :, :] = max_value
-    return features.Image(data, color_space=color_space)
-
-
-def make_images(
-    *,
-    sizes=(DEFAULT_LANDSCAPE_IMAGE_SIZE, DEFAULT_PORTRAIT_IMAGE_SIZE, DEFAULT_SQUARE_IMAGE_SIZE),
-    extra_dims=((), (4,), (2, 3)),
-    color_spaces=(
-        features.ColorSpace.GRAY,
-        features.ColorSpace.GRAY_ALPHA,
-        features.ColorSpace.RGB,
-        features.ColorSpace.RGB_ALPHA,
-    ),
-    device="cpu",
-    dtypes=(torch.float32, torch.uint8),
-):
-    for size, color_space, dtype in itertools.product(sizes, color_spaces, dtypes):
-        yield make_image(size, color_space=color_space, device=device, dtype=dtype)
-
-    for color_space, dtype, extra_dims_ in itertools.product(color_spaces, dtypes, extra_dims):
-        yield make_image(color_space=color_space, extra_dims=extra_dims_, device=device, dtype=dtype)
-
-
-def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
-    low, high = torch.broadcast_tensors(
-        *[torch.as_tensor(arg) for arg in ((0, arg1) if arg2 is None else (arg1, arg2))]
-    )
-    return torch.stack(
-        [
-            torch.randint(low_scalar, high_scalar, (), **kwargs)
-            for low_scalar, high_scalar in zip(low.flatten().tolist(), high.flatten().tolist())
-        ]
-    ).reshape(low.shape)
-
-
-def make_bounding_box(
-    *,
-    extra_dims=(),
-    format,
-    image_size=(32, 32),
-    device="cpu",
-    dtype=torch.int64,
-):
-    if isinstance(format, str):
-        format = features.BoundingBoxFormat[format]
-
-    height, width = image_size
-
-    if format == features.BoundingBoxFormat.XYXY:
-        x1 = torch.randint(0, width // 2, extra_dims)
-        y1 = torch.randint(0, height // 2, extra_dims)
-        x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
-        y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
-        parts = (x1, y1, x2, y2)
-    elif format == features.BoundingBoxFormat.XYWH:
-        x = torch.randint(0, width // 2, extra_dims)
-        y = torch.randint(0, height // 2, extra_dims)
-        w = randint_with_tensor_bounds(1, width - x)
-        h = randint_with_tensor_bounds(1, height - y)
-        parts = (x, y, w, h)
-    elif format == features.BoundingBoxFormat.CXCYWH:
-        cx = torch.randint(1, width - 1, ())
-        cy = torch.randint(1, height - 1, ())
-        w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
-        h = randint_with_tensor_bounds(1, torch.minimum(cy, width - cy) + 1)
-        parts = (cx, cy, w, h)
-    else:
-        raise pytest.UsageError()
-
-    return features.BoundingBox(torch.stack(parts, dim=-1).to(dtype).to(device), format=format, image_size=image_size)
-
-
-def make_bounding_boxes(
-    *,
-    extra_dims=((4,), (2, 3)),
-    formats=(features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH),
-    image_sizes=((32, 32),),
-    device="cpu",
-    dtypes=(torch.int64, torch.float32),
-):
-    for format, image_size, dtype in itertools.product(formats, image_sizes, dtypes):
-        yield make_bounding_box(format=format, image_size=image_size, device=device, dtype=dtype)
-
-    for format, extra_dims_, dtype in itertools.product(formats, extra_dims, dtypes):
-        yield make_bounding_box(format=format, extra_dims=extra_dims_, device=device, dtype=dtype)
-
-
-def make_label(size=(), *, device="cpu", dtype=torch.int64, categories=("category0", "category1")):
-    return features.Label(
-        torch.randint(0, len(categories) if categories else 10, size), categories=categories, device=device, dtype=dtype
-    )
-
-
-def make_one_hot_label(*args, **kwargs):
-    label = make_label(*args, **kwargs)
-    return features.OneHotLabel(one_hot(label, num_classes=len(label.categories)), categories=label.categories)
-
-
-def make_one_hot_labels(
-    *,
-    extra_dims=((4,), (2, 3)),
-    num_categories=(1, 2, 10),
-    device="cpu",
-    dtypes=(torch.int64,),
-):
-    for num_categories_, dtype in itertools.product(num_categories, dtypes):
-        yield make_one_hot_label(
-            device=device, dtype=dtype, categories=[f"category{idx}" for idx in range(num_categories_)]
-        )
-
-    for extra_dims_, dtype in itertools.product(extra_dims, dtypes):
-        yield make_one_hot_label(extra_dims=extra_dims_, device=device, dtype=dtype)
-
-
-def make_segmentation_mask(
-    size=DEFAULT_IMAGE_SIZE,
-    *,
-    extra_dims=(),
-    device="cpu",
-    dtype=torch.int64,
-    num_categories=80,
-):
-    shape = (*extra_dims, 1, *size)
-    data = torch.testing.make_tensor(shape, low=0, high=num_categories, device=device, dtype=dtype)
-    return features.SegmentationMask(data)
-
-
-def make_segmentation_masks(
-    *,
-    sizes=(DEFAULT_LANDSCAPE_IMAGE_SIZE, DEFAULT_PORTRAIT_IMAGE_SIZE, DEFAULT_SQUARE_IMAGE_SIZE),
-    extra_dims=((), (4,), (2, 3)),
-    device="cpu",
-    dtypes=(torch.long,),
-):
-    for size, dtype, extra_dims_ in itertools.product(sizes, dtypes, extra_dims):
-        yield make_segmentation_mask(size, device=device, dtype=dtype, extra_dims=extra_dims_)
-
-
-class SampleInput:
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-
-    def __iter__(self):
-        yield self.args
-        yield self.kwargs
-
-    def __str__(self):
-        def format(value):
-            if isinstance(value, torch.Tensor) and (value.ndim > 2 or value.numel() > 5):
-                shape = "x".join(str(dim) for dim in value.shape)
-                return f"tensor({shape}, dtype={value.dtype}, device={value.device})"
-            elif isinstance(value, str):
-                return repr(value)
-            else:
-                return str(value)
-
-        return ", ".join(
-            itertools.chain(
-                [format(arg) for arg in self.args],
-                [f"{param}={format(kwarg)}" for param, kwarg in self.kwargs.items()],
-            )
-        )
+from torchvision.prototype.transforms.functional._meta import _COLOR_SPACE_TO_PIL_MODE, convert_bounding_box_format
 
 
 class FunctionalInfo:
@@ -266,18 +68,18 @@ FUNCTIONAL_INFOS = []
 
 
 def sample_inputs_horizontal_flip_image_tensor(device):
-    for image in make_images(sizes=[DEFAULT_IMAGE_SIZE], device=device, dtypes=[torch.float32]):
-        yield SampleInput(image)
+    for image in make_images(device=device, dtypes=[torch.float32]):
+        yield ArgsKwargs(image)
 
 
 def reference_inputs_horizontal_flip_image_tensor():
     for image in make_images(extra_dims=[()]):
-        yield SampleInput(image)
+        yield ArgsKwargs(image)
 
 
 def sample_inputs_horizontal_flip_bounding_box(device):
     for bounding_box in make_bounding_boxes(device=device):
-        yield SampleInput(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
+        yield ArgsKwargs(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
 
 
 FUNCTIONAL_INFOS.extend(
@@ -301,7 +103,7 @@ FUNCTIONAL_INFOS.extend(
 
 def sample_inputs_resize_image_tensor(device):
     for image, interpolation in itertools.product(
-        make_images(sizes=[DEFAULT_IMAGE_SIZE], device=device, dtypes=[torch.float32]),
+        make_images(device=device, dtypes=[torch.float32]),
         [
             F.InterpolationMode.NEAREST,
             F.InterpolationMode.BILINEAR,
@@ -313,7 +115,7 @@ def sample_inputs_resize_image_tensor(device):
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield SampleInput(image, size=size, interpolation=interpolation)
+            yield ArgsKwargs(image, size=size, interpolation=interpolation)
 
 
 def reference_inputs_resize_image_tensor():
@@ -330,7 +132,7 @@ def reference_inputs_resize_image_tensor():
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield SampleInput(image, size=size, interpolation=interpolation)
+            yield ArgsKwargs(image, size=size, interpolation=interpolation)
 
 
 def sample_inputs_resize_bounding_box(device):
@@ -340,7 +142,7 @@ def sample_inputs_resize_bounding_box(device):
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield SampleInput(bounding_box, size=size, image_size=bounding_box.image_size)
+            yield ArgsKwargs(bounding_box, size=size, image_size=bounding_box.image_size)
 
 
 FUNCTIONAL_INFOS.extend(
@@ -365,8 +167,6 @@ FUNCTIONAL_INFOS.extend(
 def sample_inputs_affine_image_tensor(device):
     for image, interpolation_mode, center in itertools.product(
         make_images(
-            sizes=[DEFAULT_IMAGE_SIZE],
-            extra_dims=[(), (4,)],  # FIXME: the kernel should support multiple batch dimensions!
             device=device,
             dtypes=[torch.float32],
         ),
@@ -377,7 +177,7 @@ def sample_inputs_affine_image_tensor(device):
         [None, (0, 0)],
     ):
         for fill in [None, [0.5] * image.shape[-3]]:
-            yield SampleInput(
+            yield ArgsKwargs(
                 image,
                 angle=-87,
                 translate=(5, -5),
@@ -397,7 +197,7 @@ def reference_inputs_affine_image_tensor():
         [0.77, 1.27],  # scale
         [0, 12],  # shear
     ):
-        yield SampleInput(
+        yield ArgsKwargs(
             image,
             angle=angle,
             translate=(translate, translate),
@@ -491,7 +291,7 @@ def reference_inputs_affine_bounding_box():
         range(-15, 15, 8),
         [None, (12, 14)],
     ):
-        yield SampleInput(
+        yield ArgsKwargs(
             bounding_box,
             format=bounding_box.format,
             image_size=bounding_box.image_size,
@@ -550,7 +350,7 @@ class TestCommon:
             with subtests.test(f"{idx}, ({sample_input})"):
                 (batched_input, *other_args), kwargs = sample_input
 
-                feature_type = features.Image if is_simple_tensor(batched_input) else type(batched_input)
+                feature_type = features.Image if features.is_simple_tensor(batched_input) else type(batched_input)
                 # This dictionary contains the number of rightmost dimensions that contain the actual data.
                 # Everything to the left is considered a batch dimension.
                 data_ndim = {
