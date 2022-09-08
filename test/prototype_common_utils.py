@@ -18,18 +18,10 @@ from torch.testing._comparison import (
     UnsupportedInputs,
 )
 from torchvision.prototype import features
+from torchvision.prototype.transforms.functional import convert_image_dtype, to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 __all__ = ["assert_close"]
-
-
-# class ImagePair(TensorLikePair):
-#     def _process_inputs(self, actual, expected, *, id, allow_subclasses):
-#         return super()._process_inputs(
-#             *[to_image_tensor(input) if isinstance(input, PIL.Image.Image) else input for input in [actual, expected]],
-#             id=id,
-#             allow_subclasses=allow_subclasses,
-#         )
 
 
 class PILImagePair(TensorLikePair):
@@ -38,6 +30,8 @@ class PILImagePair(TensorLikePair):
         actual,
         expected,
         *,
+        # This parameter is ignored to enable checking PIL images to tensor images no on the CPU
+        check_device=None,
         agg_method=None,
         allowed_percentage_diff=None,
         **other_parameters,
@@ -45,29 +39,28 @@ class PILImagePair(TensorLikePair):
         if not any(isinstance(input, PIL.Image.Image) for input in (actual, expected)):
             raise UnsupportedInputs()
 
-        actual, expected = [
-            features.Image(input) if isinstance(input, PIL.Image.Image) else input for input in (actual, expected)
-        ]
-
-        super().__init__(actual, expected, **other_parameters)
+        super().__init__(actual, expected, check_device=False, **other_parameters)
         self.agg_method = getattr(torch, agg_method) if isinstance(agg_method, str) else agg_method
         self.allowed_percentage_diff = allowed_percentage_diff
 
-        # TODO: comment
-        self.check_dtype = False
-        self.check_device = False
+    def _process_inputs(self, actual, expected, *, id, allow_subclasses):
+        actual, expected = [
+            to_image_tensor(input) if not isinstance(input, torch.Tensor) else input for input in [actual, expected]
+        ]
+        return super()._process_inputs(actual, expected, id=id, allow_subclasses=allow_subclasses)
 
     def _equalize_attributes(self, actual, expected):
-        actual, expected = [input.to(torch.float64).div_(get_max_value(input.dtype)) for input in [actual, expected]]
+        if actual.dtype != expected.dtype:
+            dtype = torch.promote_types(actual.dtype, expected.dtype)
+            actual = convert_image_dtype(actual, dtype)
+            expected = convert_image_dtype(expected, dtype)
+
         return super()._equalize_attributes(actual, expected)
 
     def compare(self) -> None:
         actual, expected = self.actual, self.expected
 
         self._compare_attributes(actual, expected)
-        if all(isinstance(input, features.Image) for input in (actual, expected)):
-            if actual.color_space != expected.color_space:
-                self._make_error_meta(AssertionError, "color space mismatch")
 
         actual, expected = self._equalize_attributes(actual, expected)
         abs_diff = torch.abs(actual - expected)
@@ -293,7 +286,10 @@ def make_label(*, extra_dims=(), categories=None, device="cpu", dtype=torch.int6
     elif isinstance(categories, collections.abc.Sequence) and all(isinstance(category, str) for category in categories):
         num_categories = len(categories)
     else:
-        raise pytest.UsageError("FIXME")
+        raise pytest.UsageError(
+            f"`categories` can either be `None` (default), an integer, or a sequence of strings, "
+            f"but got '{categories}' instead"
+        )
 
     # The idiom `make_tensor(..., dtype=torch.int64).to(dtype)` is intentional to only get integer values, regardless of
     # the requested dtype, e.g. 0 or 0.0 rather than 0 or 0.123
