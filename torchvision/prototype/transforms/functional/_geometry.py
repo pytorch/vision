@@ -108,17 +108,14 @@ def resize_image_tensor(
     extra_dims = image.shape[:-3]
 
     if image.numel() > 0:
-        resized_image = _FT.resize(
+        image = _FT.resize(
             image.view(-1, num_channels, old_height, old_width),
             size=[new_height, new_width],
             interpolation=interpolation.value,
             antialias=antialias,
         )
-    else:
-        # TODO: the cloning is probably unnecessary. Review this together with the other perf candidates
-        resized_image = image.clone()
 
-    return resized_image.view(extra_dims + (num_channels, new_height, new_width))
+    return image.view(extra_dims + (num_channels, new_height, new_width))
 
 
 def resize_image_pil(
@@ -229,6 +226,9 @@ def affine_image_tensor(
     fill: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    if img.numel() == 0:
+        return img
+
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
     img = img.view(-1, num_channels, height, width)
@@ -452,23 +452,32 @@ def rotate_image_tensor(
 ) -> torch.Tensor:
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
-    img = img.view(-1, num_channels, height, width)
 
     center_f = [0.0, 0.0]
     if center is not None:
         if expand:
             warnings.warn("The provided center argument has no effect on the result if expand is True")
         else:
-            _, height, width = get_dimensions_image_tensor(img)
             # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
             center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
-    output = _FT.rotate(img, matrix, interpolation=interpolation.value, expand=expand, fill=fill)
-    new_height, new_width = output.shape[-2:]
-    return output.view(extra_dims + (num_channels, new_height, new_width))
+
+    if img.numel() > 0:
+        img = _FT.rotate(
+            img.view(-1, num_channels, height, width),
+            matrix,
+            interpolation=interpolation.value,
+            expand=expand,
+            fill=fill,
+        )
+        new_height, new_width = img.shape[-2:]
+    else:
+        new_width, new_height = _FT._compute_affine_output_size(matrix, width, height) if expand else (width, height)
+
+    return img.view(extra_dims + (num_channels, new_height, new_width))
 
 
 def rotate_image_pil(
@@ -557,19 +566,17 @@ def pad_image_tensor(
     num_channels, height, width = img.shape[-3:]
     extra_dims = img.shape[:-3]
 
-    left, right, top, bottom = _FT._parse_pad_padding(padding)
-    new_height = height + top + bottom
-    new_width = width + left + right
-
     if img.numel() > 0:
-        padded_image = _FT.pad(
+        img = _FT.pad(
             img=img.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
         )
+        new_height, new_width = img.shape[-2:]
     else:
-        # TODO: the cloning is probably unnecessary. Review this together with the other perf candidates
-        padded_image = img.clone()
+        left, right, top, bottom = _FT._parse_pad_padding(padding)
+        new_height = height + top + bottom
+        new_width = width + left + right
 
-    return padded_image.view(extra_dims + (num_channels, new_height, new_width))
+    return img.view(extra_dims + (num_channels, new_height, new_width))
 
 
 # TODO: This should be removed once pytorch pad supports non-scalar padding values
