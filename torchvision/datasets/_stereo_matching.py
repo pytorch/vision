@@ -52,7 +52,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
         self._images = []  # type: ignore
         self._disparities = []  # type: ignore
 
-    def _read_img(self, file_path: str) -> Image.Image:
+    def _read_img(self, file_path: Union[str, Path]) -> Image.Image:
         img = Image.open(file_path)
         if img.mode != "RGB":
             img = img.convert("RGB")
@@ -536,7 +536,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
 
         self.use_ambient_views = use_ambient_views
 
-    def _read_img(self, file_path: str) -> Image.Image:
+    def _read_img(self, file_path: Union[str, Path]) -> Image.Image:
         """
         Function that reads either the original right image or an augmented view when ``use_ambient_views`` is True.
         When ``use_ambient_views`` is True, the dataset will return at random one of ``[im1.png, im1E.png, im1L.png]``
