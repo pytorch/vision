@@ -139,7 +139,8 @@ def _ssim_loss_fn(
     denominator = (mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2)
     ssim = numerator / (denominator + eps)
 
-    return ssim.mean(dim=(1, 2, 3))
+    # doing 1 - ssim because we want to maximize the ssim
+    return 1 - ssim.mean(dim=(1, 2, 3))
 
 
 class SSIM(nn.Module):
