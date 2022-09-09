@@ -68,7 +68,7 @@ class LinearTransformation(Transform):
 
         return super().forward(*inputs)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(self, inpt: Union[torch.Tensor, features._Feature], params: Dict[str, Any]) -> torch.Tensor:
         # Image instance after linear transformation is not Image anymore due to unknown data range
         # Thus we will return Tensor for input Image
 
@@ -100,7 +100,7 @@ class Normalize(Transform):
         self.mean = list(mean)
         self.std = list(std)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Union[torch.Tensor, features._Feature], params: Dict[str, Any]) -> torch.Tensor:
         return F.normalize(inpt, mean=self.mean, std=self.std)
 
     def forward(self, *inpts: Any) -> Any:

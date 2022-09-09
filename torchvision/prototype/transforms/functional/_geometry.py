@@ -1133,7 +1133,7 @@ def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: boo
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
 
-def ten_crop(inpt: DType, size: List[int], *, vertical_flip: bool = False) -> List[DType]:
+def ten_crop(inpt: DType, size: List[int], vertical_flip: bool = False) -> List[DType]:
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
         if isinstance(inpt, features.Image):
