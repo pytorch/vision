@@ -1,4 +1,6 @@
 {% set build_variant = environ.get('CONDA_BUILD_VARIANT', 'cpu') %}
+{% set cuda_version = int(environ.get('CU_VERSION', 'cpu').replace('cpu', 'cu-1')[2:]) %}
+
 package:
   name: torchvision
   version: "{{ environ.get('BUILD_VERSION') }}"
@@ -38,8 +40,10 @@ requirements:
     - cpuonly
   {% elif not osx %}
   run_constrained:
-     - cpuonly <0
-  {% endif %}
+    - cpuonly <0
+    { % elif cuda_version >= 116 % }
+      - cudatoolkit <0
+    { % endif % }
 
 build:
   string: py{{py}}_{{ environ['CU_VERSION'] }}
