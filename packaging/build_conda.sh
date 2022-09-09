@@ -16,6 +16,4 @@ export CUDATOOLKIT_CHANNEL="nvidia"
 conda install conda-libmamba-solver
 export CONDA_EXPERIMENTAL_SOLVER="libmamba"
 
-echo $CU_VERSION
-
-# conda build -c $CUDATOOLKIT_CHANNEL $CONDA_CHANNEL_FLAGS -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
+conda build -c $CUDATOOLKIT_CHANNEL $CONDA_CHANNEL_FLAGS -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
