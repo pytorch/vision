@@ -1,5 +1,5 @@
 {% set build_variant = environ.get('CONDA_BUILD_VARIANT', 'cpu') %}
-{% set cuda_version = int(environ.get('CU_VERSION', 'cpu').replace('cpu', 'cu-1')[2:]) %}
+{% set cuda_version = environ.get('CU_VERSION', 'cpu').replace('cpu', 'cu-1')[2:] | int %}
 
 package:
   name: torchvision
