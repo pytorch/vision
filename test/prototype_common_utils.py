@@ -196,4 +196,4 @@ def make_segmentation_masks(
         yield make_segmentation_mask(size=size, dtype=dtype, extra_dims=extra_dims_)
 
     for dtype, extra_dims_, num_objects_ in itertools.product(dtypes, extra_dims, num_objects):
-        yield make_segmentation_mask(num_objects=num_objects_, dtype=dtype, extra_dims=extra_dims_)
+        yield make_segmentation_mask(size=sizes[0], num_objects=num_objects_, dtype=dtype, extra_dims=extra_dims_)
