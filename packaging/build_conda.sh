@@ -12,6 +12,8 @@ setup_conda_cudatoolkit_constraint
 setup_visual_studio_constraint
 setup_junit_results_folder
 export CUDATOOLKIT_CHANNEL="nvidia"
+
+conda install conda-libmamba-solver
 export CONDA_EXPERIMENTAL_SOLVER="libmamba"
 
 conda build -c $CUDATOOLKIT_CHANNEL $CONDA_CHANNEL_FLAGS -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
