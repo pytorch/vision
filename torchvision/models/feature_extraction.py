@@ -420,7 +420,7 @@ def create_feature_extractor(
         >>>     def forward(self, x):
         >>>         # This would raise a TypeError if traced through
         >>>         int(x.shape[0])
-        >>>         return torch.nn.functional.relu(x + 4)
+        >>>         return torch.nn.kernel.relu(x + 4)
         >>>
         >>> class MyModule(torch.nn.Module):
         >>>     def __init__(self):

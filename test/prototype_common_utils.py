@@ -1,6 +1,7 @@
 """This module is separated from common_utils.py to prevent the former to be dependent on torchvision.prototype"""
 
 import collections.abc
+import enum
 import functools
 import itertools
 
@@ -124,25 +125,31 @@ assert_equal = functools.partial(assert_close, rtol=0, atol=0)
 
 class ArgsKwargs:
     def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
+        self._args = args
+        self._kwargs = kwargs
 
     def __iter__(self):
-        yield self.args
-        yield self.kwargs
+        yield self._args
+        yield self._kwargs
 
-    def __str__(self):
-        def short_repr(obj, max=20):
-            repr_ = repr(obj)
-            if len(repr_) <= max:
-                return repr_
+    def load(self, device="cpu"):
+        args = tuple(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self._args)
+        kwargs = {
+            keyword: arg.load(device) if isinstance(arg, TensorLoader) else arg for keyword, arg in self._kwargs.items()
+        }
+        return args, kwargs
 
-            return f"{repr_[:max//2]}...{repr_[-(max//2-3):]}"
+    def __repr__(self):
+        def better_repr(obj):
+            if isinstance(obj, enum.Enum):
+                return str(obj)
+            else:
+                return repr(obj)
 
         return ", ".join(
             itertools.chain(
-                [short_repr(arg) for arg in self.args],
-                [f"{param}={short_repr(kwarg)}" for param, kwarg in self.kwargs.items()],
+                [better_repr(arg) for arg in self._args],
+                [f"{param}={better_repr(kwarg)}" for param, kwarg in self._kwargs.items()],
             )
         )
 
@@ -155,12 +162,71 @@ DEFAULT_IMAGE_SIZES = (DEFAULT_LANDSCAPE_IMAGE_SIZE, DEFAULT_PORTRAIT_IMAGE_SIZE
 DEFAULT_EXTRA_DIMS = ((), (0,), (4,), (2, 3), (5, 0), (0, 5))
 
 
-def make_image(
+def from_loader(loader_fn):
+    def wrapper(*args, **kwargs):
+        loader = loader_fn(*args, **kwargs)
+        return loader.load(kwargs.get("device", "cpu"))
+
+    return wrapper
+
+
+def from_loaders(loaders_fn):
+    def wrapper(*args, **kwargs):
+        loaders = loaders_fn(*args, **kwargs)
+        for loader in loaders:
+            yield loader.load(kwargs.get("device", "cpu"))
+
+    return wrapper
+
+
+class TensorLoader:
+    def __init__(self, fn, *, shape, dtype):
+        self.fn = fn
+        self.shape = shape
+        self.dtype = dtype
+
+    def unwrap(self):
+        return TensorLoader(
+            lambda shape, dtype, device: torch.Tensor(self.fn(shape, dtype, device)), shape=self.shape, dtype=self.dtype
+        )
+
+    def load(self, device):
+        return self.fn(self.shape, self.dtype, device)
+
+    _TYPE_NAME = "torch.Tensor"
+
+    def _extra_repr(self):
+        return []
+
+    def __repr__(self):
+        extra = ", ".join(
+            [
+                str(tuple(self.shape)),
+                str(self.dtype).replace("torch.", ""),
+                *[str(extra) for extra in self._extra_repr()],
+            ]
+        )
+        return f"{self._TYPE_NAME}[{extra}]"
+
+
+class ImageLoader(TensorLoader):
+    def __init__(self, *args, color_space, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.image_size = self.shape[-2:]
+        self.num_channels = self.shape[-3]
+        self.color_space = color_space
+
+    _TYPE_NAME = "features.Image"
+
+    def _extra_repr(self):
+        return [self.color_space]
+
+
+def make_image_loader(
     size=None,
     *,
     color_space=features.ColorSpace.RGB,
     extra_dims=(),
-    device="cpu",
     dtype=torch.float32,
     constant_alpha=True,
 ):
@@ -176,16 +242,20 @@ def make_image(
     except KeyError as error:
         raise pytest.UsageError(f"Can't determine the number of channels for color space {color_space}") from error
 
-    max_value = get_max_value(dtype)
-    data = torch.testing.make_tensor(
-        *extra_dims, num_channels, *size, low=0, high=max_value, dtype=dtype, device=device
-    )
-    if color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
-        data[..., -1, :, :] = max_value
-    return features.Image(data, color_space=color_space)
+    def fn(shape, dtype, device):
+        max_value = get_max_value(dtype)
+        data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
+        if color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
+            data[..., -1, :, :] = max_value
+        return features.Image(data, color_space=color_space)
+
+    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype, color_space=color_space)
 
 
-def make_images(
+make_image = from_loader(make_image_loader)
+
+
+def make_image_loaders(
     *,
     sizes=DEFAULT_IMAGE_SIZES,
     color_spaces=(
@@ -195,22 +265,35 @@ def make_images(
         features.ColorSpace.RGB_ALPHA,
     ),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    device="cpu",
     dtypes=(torch.float32, torch.uint8),
     constant_alpha=True,
 ):
     for size, color_space, dtype in itertools.product(sizes, color_spaces, dtypes):
-        yield make_image(size, color_space=color_space, device=device, dtype=dtype, constant_alpha=constant_alpha)
+        yield make_image_loader(size, color_space=color_space, dtype=dtype, constant_alpha=constant_alpha)
 
     for color_space, dtype, extra_dims_ in itertools.product(color_spaces, dtypes, extra_dims):
-        yield make_image(
+        yield make_image_loader(
             size=sizes[0],
             color_space=color_space,
             extra_dims=extra_dims_,
-            device=device,
             dtype=dtype,
             constant_alpha=constant_alpha,
         )
+
+
+make_images = from_loaders(make_image_loaders)
+
+
+class BoundingBoxLoader(TensorLoader):
+    def __init__(self, *args, format, image_size, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.format = format
+        self.image_size = image_size
+
+    _TYPE_NAME = "features.BoundingBox"
+
+    def _extra_repr(self):
+        return [self.format, f"image_size={self.image_size}"]
 
 
 def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
@@ -225,56 +308,68 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
     ).reshape(low.shape)
 
 
-def make_bounding_box(
-    *, extra_dims=(), format, image_size=DEFAULT_LANDSCAPE_IMAGE_SIZE, device="cpu", dtype=torch.float32
-):
+def make_bounding_box_loader(*, extra_dims=(), format, image_size=DEFAULT_LANDSCAPE_IMAGE_SIZE, dtype=torch.float32):
     if isinstance(format, str):
         format = features.BoundingBoxFormat[format]
-
-    if any(dim == 0 for dim in extra_dims):
-        return features.BoundingBox(torch.empty(*extra_dims, 4), format=format, image_size=image_size)
-
-    height, width = image_size
-
-    if format == features.BoundingBoxFormat.XYXY:
-        x1 = torch.randint(0, width // 2, extra_dims)
-        y1 = torch.randint(0, height // 2, extra_dims)
-        x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
-        y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
-        parts = (x1, y1, x2, y2)
-    elif format == features.BoundingBoxFormat.XYWH:
-        x = torch.randint(0, width // 2, extra_dims)
-        y = torch.randint(0, height // 2, extra_dims)
-        w = randint_with_tensor_bounds(1, width - x)
-        h = randint_with_tensor_bounds(1, height - y)
-        parts = (x, y, w, h)
-    elif format == features.BoundingBoxFormat.CXCYWH:
-        cx = torch.randint(1, width - 1, ())
-        cy = torch.randint(1, height - 1, ())
-        w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
-        h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
-        parts = (cx, cy, w, h)
-    else:
+    if format not in {
+        features.BoundingBoxFormat.XYXY,
+        features.BoundingBoxFormat.XYWH,
+        features.BoundingBoxFormat.CXCYWH,
+    }:
         raise pytest.UsageError(f"Can't make bounding box in format {format}")
 
-    return features.BoundingBox(
-        torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, image_size=image_size
-    )
+    def fn(shape, dtype, device):
+        *extra_dims, num_coordinates = shape
+        if num_coordinates != 4:
+            raise pytest.UsageError()
+
+        if any(dim == 0 for dim in extra_dims):
+            return features.BoundingBox(torch.empty(*extra_dims, 4), format=format, image_size=image_size)
+
+        height, width = image_size
+
+        if format == features.BoundingBoxFormat.XYXY:
+            x1 = torch.randint(0, width // 2, extra_dims)
+            y1 = torch.randint(0, height // 2, extra_dims)
+            x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
+            y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
+            parts = (x1, y1, x2, y2)
+        elif format == features.BoundingBoxFormat.XYWH:
+            x = torch.randint(0, width // 2, extra_dims)
+            y = torch.randint(0, height // 2, extra_dims)
+            w = randint_with_tensor_bounds(1, width - x)
+            h = randint_with_tensor_bounds(1, height - y)
+            parts = (x, y, w, h)
+        else:  # format == features.BoundingBoxFormat.CXCYWH:
+            cx = torch.randint(1, width - 1, ())
+            cy = torch.randint(1, height - 1, ())
+            w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
+            h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
+            parts = (cx, cy, w, h)
+
+        return features.BoundingBox(torch.stack(parts, dim=-1).to(dtype=dtype), format=format, image_size=image_size)
+
+    return BoundingBoxLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, image_size=image_size)
 
 
-def make_bounding_boxes(
+make_bounding_box = from_loader(make_bounding_box_loader)
+
+
+def make_bounding_box_loaders(
     *,
     extra_dims=DEFAULT_EXTRA_DIMS,
     formats=(features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH),
     image_size=(32, 32),
-    device="cpu",
     dtypes=(torch.float32, torch.int64),
 ):
     for extra_dims_, format in itertools.product(extra_dims, formats):
-        yield make_bounding_box(extra_dims=extra_dims_, format=format, image_size=image_size, device=device)
+        yield make_bounding_box_loader(extra_dims=extra_dims_, format=format, image_size=image_size)
 
     for format, dtype in itertools.product(formats, dtypes):
-        yield make_bounding_box(format=format, image_size=image_size, device=device, dtype=dtype)
+        yield make_bounding_box_loader(format=format, image_size=image_size, dtype=dtype)
+
+
+make_bounding_boxes = from_loaders(make_bounding_box_loaders)
 
 
 def make_label(*, extra_dims=(), categories=None, device="cpu", dtype=torch.int64):
