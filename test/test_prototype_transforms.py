@@ -7,7 +7,7 @@ import PIL.Image
 import pytest
 import torch
 from common_utils import assert_equal, cpu_and_gpu
-from test_prototype_transforms_functional import (
+from prototype_common_utils import (
     make_bounding_box,
     make_bounding_boxes,
     make_image,
@@ -86,6 +86,8 @@ class TestSmoke:
         transforms.RandomHorizontalFlip(),
         transforms.Pad(5),
         transforms.RandomZoomOut(),
+        transforms.RandomRotation(degrees=(-45, 45)),
+        transforms.RandomAffine(degrees=(-45, 45)),
         transforms.RandomCrop([16, 16], padding=1, pad_if_needed=True),
         # TODO: Something wrong with input data setup. Let's fix that
         # transforms.RandomEqualize(),
@@ -93,8 +95,6 @@ class TestSmoke:
         # transforms.RandomPosterize(bits=4),
         # transforms.RandomSolarize(threshold=0.5),
         # transforms.RandomAdjustSharpness(sharpness_factor=0.5),
-        # transforms.RandomRotation(degrees=(-45, 45)),
-        # transforms.RandomAffine(degrees=(-45, 45)),
     )
     def test_common(self, transform, input):
         transform(input)

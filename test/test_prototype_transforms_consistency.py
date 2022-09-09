@@ -1,59 +1,19 @@
 import enum
-import functools
 import inspect
-import itertools
 
 import numpy as np
 import PIL.Image
 import pytest
 
 import torch
-from test_prototype_transforms_functional import make_images
-from torch.testing._comparison import assert_equal as _assert_equal, TensorLikePair
+from prototype_common_utils import ArgsKwargs, assert_equal, make_images
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
-from torchvision.prototype.transforms.functional import to_image_pil, to_image_tensor
-
-
-class ImagePair(TensorLikePair):
-    def _process_inputs(self, actual, expected, *, id, allow_subclasses):
-        return super()._process_inputs(
-            *[to_image_tensor(input) if isinstance(input, PIL.Image.Image) else input for input in [actual, expected]],
-            id=id,
-            allow_subclasses=allow_subclasses,
-        )
-
-
-assert_equal = functools.partial(_assert_equal, pair_types=[ImagePair], rtol=0, atol=0)
+from torchvision.prototype.transforms.functional import to_image_pil
 
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])
-
-
-class ArgsKwargs:
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-
-    def __iter__(self):
-        yield self.args
-        yield self.kwargs
-
-    def __str__(self):
-        def short_repr(obj, max=20):
-            repr_ = repr(obj)
-            if len(repr_) <= max:
-                return repr_
-
-            return f"{repr_[:max//2]}...{repr_[-(max//2-3):]}"
-
-        return ", ".join(
-            itertools.chain(
-                [short_repr(arg) for arg in self.args],
-                [f"{param}={short_repr(kwarg)}" for param, kwarg in self.kwargs.items()],
-            )
-        )
 
 
 class ConsistencyConfig:
