@@ -31,8 +31,8 @@ def _sequence_loss_fn(
 ):
     """Loss function defined over sequence of flow predictions"""
     torch._assert(
-        gamma > 1,
-        "sequence_loss: `gamma` must be greater than 1, but got {}".format(gamma),
+        gamma < 1,
+        "sequence_loss: `gamma` must be lower than 1, but got {}".format(gamma),
     )
 
     if exclude_large:
@@ -68,7 +68,7 @@ class SequenceLoss(nn.Module):
         super().__init__()
         self.max_flow = max_flow
         self.excluding_large = exclude_large_flows
-        self.gamma = self.register_buffer("gamma", torch.tensor([gamma]))
+        self.register_buffer("gamma", torch.tensor([gamma]))
         # cache the scale factor for the loss
         self.weights = None
 
@@ -138,6 +138,7 @@ def _ssim_loss_fn(
     numerator = (2 * mu1_mu2 + C1) * (2 * sigma12 + C2)
     denominator = (mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2)
     ssim = numerator / (denominator + eps)
+
     return ssim.mean(dim=(1, 2, 3))
 
 
@@ -244,7 +245,7 @@ class SmoothnessLoss(nn.Module):
             grad = grad.reshape(original_shape)
         return grad
 
-    def _y_grad(x: torch.Tensor) -> torch.Tensor:
+    def _y_gradient(self, x: torch.Tensor) -> torch.Tensor:
         if x.ndim > 4:
             original_shape = x.shape
             is_reshaped = True
@@ -258,7 +259,7 @@ class SmoothnessLoss(nn.Module):
             grad = grad.reshape(original_shape)
         return grad
 
-    def forward(self, images: Tensor, depths: Tensor, weights: Optional[Tensor] = None) -> Tensor:
+    def forward(self, images: Tensor, depths: Tensor) -> Tensor:
         """
         Args:
             images: tensor of shape (D1, D2, ..., DN, C, H, W)
@@ -268,12 +269,12 @@ class SmoothnessLoss(nn.Module):
             smoothness loss of shape (D1, D2, ..., DN)
         """
         img_gx = self._x_gradient(images)
-        img_gy = self._y_grad(images)
+        img_gy = self._y_gradient(images)
 
         depth_gx = self._x_gradient(depths)
-        depth_gy = self._y_grad(depths)
+        depth_gy = self._y_gradient(depths)
 
-        return _smothness_loss_fn(img_gx, img_gy, depth_gx, depth_gy, weights)
+        return _smothness_loss_fn(img_gx, img_gy, depth_gx, depth_gy)
 
 
 def _flow_sequence_consistency_loss_fn(
@@ -349,50 +350,120 @@ class FlowSequenceConsistencyLoss(nn.Module):
         )
 
 
-def phototmetric_loss(
-    source, other, flow_preds, valid_flow_mask, gamma=0.8, weights=None, max_flow=256, ssim_weight=0.1, ssim_loss=None
-):
-    B, C, H, W = source.shape
-    flow_preds = torch.stack(flow_preds)
-    flow_norm = torch.sum(flow_preds**2, dim=2).sqrt()
-    valid_flow_mask = valid_flow_mask & (flow_norm < max_flow)
-    valid_flow_mask = valid_flow_mask[:, None, :, :]
-
-    N = flow_preds.shape[0]
-    source = source.unsqueeze(0).repeat(N, 1, 1, 1, 1)
-    other = other.unsqueeze(0).repeat(N, 1, 1, 1, 1)
-
-    grid = make_coords_grid(B, H, W, device=source.device).unsqueeze(0)
-    resampled_grids = flow_preds + grid
-    resampled_grids = resampled_grids.permute(0, 1, 3, 4, 2)
-    resampled_grids = resampled_grids.reshape(-1, H, W, 2)
-
-    resampled_source = grid_sample(
-        source.reshape(N * B, C, H, W),
-        resampled_grids,
+def _psnr_loss_fn(source: torch.Tensor, target: torch.Tensor, max_val: float) -> torch.Tensor:
+    torch._assert(
+        source.shape == target.shape,
+        "psnr_loss: source and target must have the same shape, but got {} and {}".format(source.shape, target.shape),
     )
 
-    if ssim_loss is not None:
-        ssim_score = ssim_loss(resampled_source.reshape(-1, C, H, W), other.reshape(-1, C, H, W))
-        ssim_score = ssim_score.reshape(N, B, 1).mean(dim=(1, 2))
-    else:
-        ssim_score = torch.tensor([0.0], device=source.device)
+    return 10 * torch.log10(max_val**2 / ((source - target).abs().pow(2).mean(axis=(-3, -2, -1))))
 
-    resampled_source = resampled_source.reshape(N, B, C, H, W)
-    # ignore loss for out of bounds pixels
-    resampled_mask = (resampled_source.sum(dim=2, keepdim=True) > 0).detach()
-    valid_flow_mask = valid_flow_mask.permute(0, 2, 1, 3, 4)
-    valid_flow_mask = torch.logical_or(valid_flow_mask, resampled_mask)
-    abs_diff = (resampled_source - source).abs()
-    abs_diff = (abs_diff * valid_flow_mask).mean(axis=(1, 2, 3, 4))
 
-    num_predictions = flow_preds.shape[0]
-    if weights is None or len(weights) != num_predictions:
-        weights = torch.tensor([gamma], device=flow_preds.device, dtype=flow_preds.dtype) ** torch.arange(
-            num_predictions - 1, -1, -1, device=flow_preds.device, dtype=flow_preds.dtype
+class PSNRLoss(nn.Module):
+    def __init__(self, max_val: float = 256) -> None:
+        """
+        Args:
+            max_val: maximum value of the input tensor. This refers to the maximum domain value of the input tensor.
+
+        """
+        super().__init__()
+        self.max_val = max_val
+
+    def forward(self, source: Tensor, target: Tensor) -> Tensor:
+        """
+        Args:
+            source: tensor of shape (D1, D2, ..., DN, C, H, W)
+            target: tensor of shape (D1, D2, ..., DN, C, H, W)
+
+        Returns:
+            psnr loss of shape (D1, D2, ..., DN)
+        """
+        return _psnr_loss_fn(source, target, self.max_val)
+
+
+class FlowPhotoMetricLoss(nn.Module):
+    def __init__(
+        self,
+        ssim_weight: float = 0.85,
+        ssim_window_size: int = 11,
+        ssim_max_val: float = 1.0,
+        ssim_sigma: float = 1.5,
+        ssim_eps: float = 1e-12,
+        ssim_use_padding: bool = True,
+        max_displacement_ratio: float = 0.15,
+    ) -> None:
+        super().__init__()
+
+        self._ssim_loss = SSIM(
+            kernel_size=ssim_window_size,
+            max_val=ssim_max_val,
+            sigma=ssim_sigma,
+            eps=ssim_eps,
+            use_padding=ssim_use_padding,
         )
 
-    # loss is combination of L1 and SSIM
-    # use a minus for SSIM, since we want to maximize it
-    loss = (abs_diff * weights).sum() * (1 - ssim_weight) + (1 - ssim_score).sum() * ssim_weight
-    return loss, weights
+        self._L1_weight = 1 - ssim_weight
+        self._SSIM_weight = ssim_weight
+        self._max_displacement_ratio = max_displacement_ratio
+
+    def forward(
+        self,
+        source: Tensor,
+        other: Tensor,
+        flow_pred: Tensor,
+        valid_mask: Optional[Tensor] = None,
+    ):
+        """
+        Args:
+            source: tensor of shape (B, C, H, W)
+            other: tensor of shape (B, C, H, W)
+            flow_pred: tensor of shape (B, 2, H, W)
+            valid_mask: tensor of shape (B, H, W) or None
+
+        Returns:
+            photometric loss of shape
+
+        """
+        torch._assert(
+            source.ndim == 4,
+            "FlowPhotoMetricLoss: source must have 4 dimensions, but got {}".format(source.ndim),
+        )
+
+        torch._assert(
+            other.ndim == source.ndim,
+            "FlowPhotoMetricLoss: source and other must have the same number of dimensions, but got {} and {}".format(
+                source.ndim, other.ndim
+            ),
+        )
+
+        torch._assert(
+            flow_pred.ndim == 4,
+            "FlowPhotoMetricLoss: flow_pred must have 4 dimensions, but got {}".format(flow_pred.ndim),
+        )
+
+        B, C, H, W = source.shape
+        max_H = int(H * self._max_displacement_ratio)
+        max_W = int(W * self._max_displacement_ratio)
+
+        # mask out all pixels that have larger flow than the max flow allowed
+        max_flow_mask = torch.logical_and(
+            flow_pred[:, 0, :, :] < max_W,
+            flow_pred[:, 1, :, :] < max_H,
+        )
+
+        if valid_mask is not None:
+            valid_mask = torch.logical_and(valid_mask, max_flow_mask).unsqueeze(1)
+        else:
+            valid_mask = max_flow_mask.unsqueeze(1)
+
+        grid = make_coords_grid(B, H, W, device=source.device)
+        resampled_grids = grid - flow_pred
+        resampled_grids = resampled_grids.permute(0, 2, 3, 1)
+        resampled_source = grid_sample(other, resampled_grids, mode="bilinear")
+
+        # compute SSIM loss
+        ssim_loss = self._ssim_loss(resampled_source * valid_mask, source * valid_mask)
+        l1_loss = (resampled_source * valid_mask - source * valid_mask).abs().mean(axis=(-3, -2, -1))
+        loss = self._L1_weight * l1_loss + self._SSIM_weight * ssim_loss
+
+        return loss.mean()
