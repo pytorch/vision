@@ -216,8 +216,8 @@ def main(args):
     if "rcnn" in args.model:
         if args.rpn_score_thresh is not None:
             kwargs["rpn_score_thresh"] = args.rpn_score_thresh
-    model = torchvision.models.detection.__dict__[args.model](
-        weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs
+    model = torchvision.models.get_model(
+        args.model, weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs
     )
     model.to(device)
     if args.distributed and args.sync_bn:

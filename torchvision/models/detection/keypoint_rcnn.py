@@ -6,7 +6,7 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
 from ...transforms._presets import ObjectDetection
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
 from .._utils import _ovewrite_value_param, handle_legacy_interface
 from ..resnet import resnet50, ResNet50_Weights
@@ -353,6 +353,7 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
     DEFAULT = COCO_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=(
         "pretrained",

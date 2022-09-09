@@ -9,7 +9,7 @@ from torch import nn, Tensor
 from ...ops import boxes as box_ops
 from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
 from .._utils import _ovewrite_value_param, handle_legacy_interface
 from ..vgg import VGG, vgg16, VGG16_Weights
@@ -568,6 +568,7 @@ def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
     return SSDFeatureExtractorVGG(backbone, highres)
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", SSD300_VGG16_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", VGG16_Weights.IMAGENET1K_FEATURES),

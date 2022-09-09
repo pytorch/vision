@@ -10,7 +10,7 @@ from torch import Tensor
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import Weights, WeightsEnum
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param, handle_legacy_interface
 
@@ -296,6 +296,7 @@ class GoogLeNet_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", GoogLeNet_Weights.IMAGENET1K_V1))
 def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     """GoogLeNet (Inception v1) model architecture from

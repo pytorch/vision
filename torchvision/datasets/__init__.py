@@ -1,4 +1,15 @@
 from ._optical_flow import FlyingChairs, FlyingThings3D, HD1K, KittiFlow, Sintel
+from ._stereo_matching import (
+    CarlaStereo,
+    CREStereo,
+    ETH3DStereo,
+    FallingThingsStereo,
+    InStereo2k,
+    Kitti2012Stereo,
+    Kitti2015Stereo,
+    SceneFlowStereo,
+    SintelStereo,
+)
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
 from .cifar import CIFAR10, CIFAR100
@@ -105,4 +116,13 @@ __all__ = (
     "FGVCAircraft",
     "EuroSAT",
     "RenderedSST2",
+    "Kitti2012Stereo",
+    "Kitti2015Stereo",
+    "CarlaStereo",
+    "CREStereo",
+    "FallingThingsStereo",
+    "SceneFlowStereo",
+    "SintelStereo",
+    "InStereo2k",
+    "ETH3DStereo",
 )

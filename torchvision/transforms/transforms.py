@@ -628,7 +628,7 @@ class RandomCrop(torch.nn.Module):
         _, h, w = F.get_dimensions(img)
         th, tw = output_size
 
-        if h + 1 < th or w + 1 < tw:
+        if h < th or w < tw:
             raise ValueError(f"Required crop size {(th, tw)} is larger than input image size {(h, w)}")
 
         if w == tw and h == th:
@@ -1855,7 +1855,7 @@ def _check_sequence_input(x, name, req_sizes):
     if not isinstance(x, Sequence):
         raise TypeError(f"{name} should be a sequence of length {msg}.")
     if len(x) not in req_sizes:
-        raise ValueError(f"{name} should be sequence of length {msg}.")
+        raise ValueError(f"{name} should be a sequence of length {msg}.")
 
 
 def _setup_angle(x, name, req_sizes=(2,)):

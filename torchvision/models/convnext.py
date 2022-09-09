@@ -9,7 +9,7 @@ from ..ops.misc import Conv2dNormActivation, Permute
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import Weights, WeightsEnum
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param, handle_legacy_interface
 
@@ -278,6 +278,7 @@ class ConvNeXt_Large_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ConvNeXt_Tiny_Weights.IMAGENET1K_V1))
 def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: bool = True, **kwargs: Any) -> ConvNeXt:
     """ConvNeXt Tiny model architecture from the
@@ -308,6 +309,7 @@ def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: 
     return _convnext(block_setting, stochastic_depth_prob, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ConvNeXt_Small_Weights.IMAGENET1K_V1))
 def convnext_small(
     *, weights: Optional[ConvNeXt_Small_Weights] = None, progress: bool = True, **kwargs: Any
@@ -340,6 +342,7 @@ def convnext_small(
     return _convnext(block_setting, stochastic_depth_prob, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ConvNeXt_Base_Weights.IMAGENET1K_V1))
 def convnext_base(*, weights: Optional[ConvNeXt_Base_Weights] = None, progress: bool = True, **kwargs: Any) -> ConvNeXt:
     """ConvNeXt Base model architecture from the
@@ -370,6 +373,7 @@ def convnext_base(*, weights: Optional[ConvNeXt_Base_Weights] = None, progress: 
     return _convnext(block_setting, stochastic_depth_prob, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ConvNeXt_Large_Weights.IMAGENET1K_V1))
 def convnext_large(
     *, weights: Optional[ConvNeXt_Large_Weights] = None, progress: bool = True, **kwargs: Any
