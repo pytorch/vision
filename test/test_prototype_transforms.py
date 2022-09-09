@@ -7,7 +7,7 @@ import PIL.Image
 import pytest
 import torch
 from common_utils import assert_equal, cpu_and_gpu
-from test_prototype_transforms_functional import (
+from prototype_common_utils import (
     make_bounding_box,
     make_bounding_boxes,
     make_image,
