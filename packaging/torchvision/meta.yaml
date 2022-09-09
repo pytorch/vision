@@ -41,10 +41,10 @@ requirements:
   {% elif not osx %}
   run_constrained:
     - cpuonly <0
-    { % if cuda_version >= 116 % }
+    {% if cuda_version >= 116 %}
     - cudatoolkit <0
-    { % endif % }
-  { % endif % }
+    {% endif %}
+  {% endif %}
 
 build:
   string: py{{py}}_{{ environ['CU_VERSION'] }}
