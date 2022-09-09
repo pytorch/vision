@@ -515,7 +515,9 @@ class RandomResizeAndCrop(torch.nn.Module):
         return ((img_left, img_right), (dsp_left, dsp_right), cropped_masks)
 
 
-def _resize_sparse_flow(flow: Tensor, valid_flow_mask: Tensor, scale_x: float = 1.0, scale_y: float = 0.0):
+def _resize_sparse_flow(
+    flow: Tensor, valid_flow_mask: Tensor, scale_x: float = 1.0, scale_y: float = 0.0
+) -> Tuple[Tensor, Tensor]:
     # This resizes both the flow and the valid_flow_mask mask (which is assumed to be reasonably sparse)
     # There are as-many non-zero values in the original flow as in the resized flow (up to OOB)
     # So for example if scale_x = scale_y = 2, the sparsity of the output flow is multiplied by 4
