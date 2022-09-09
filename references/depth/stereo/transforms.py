@@ -17,6 +17,30 @@ def rand_float_range(size: Sequence[int], low: float, high: float) -> Tensor:
     return (low - high) * torch.rand(size) + high
 
 
+class InterpolationStrategy:
+
+    _valid_modes: List[str] = ["mixed", "bicubic", "bilinear"]
+
+    def __init__(self, mode: str = "mixed") -> None:
+        if mode == "mixed":
+            self.strategies = [F.InterpolationMode.BILINEAR, F.InterpolationMode.BICUBIC]
+        elif mode == "bicubic":
+            self.strategies = [F.InterpolationMode.BICUBIC]
+        elif mode == "bilinear":
+            self.strategies = [F.InterpolationMode.BILINEAR]
+
+    def __call__(self) -> F.InterpolationMode:
+        return random.choice(self.strategies)
+
+    @classmethod
+    def is_valid(mode: str) -> bool:
+        return mode in InterpolationStrategy._valid_modes
+
+    @property
+    def valid_modes() -> List[str]:
+        return InterpolationStrategy._valid_modes
+
+
 class ValidateModelInput(torch.nn.Module):
     # Pass-through transform that checks the shape and dtypes to make sure the model gets what it expects
     def forward(self, images, disparities, masks):
@@ -303,11 +327,20 @@ class RandomOcclusion(torch.nn.Module):
 
 class RandomSpatialShift(torch.nn.Module):
     # This transform applies a vertical shift and a slight angle rotation and the same time
-    def __init__(self, p: float = 0.5, max_angle: float = 0.1, max_px_shift: int = 2) -> None:
+    def __init__(
+        self, p: float = 0.5, max_angle: float = 0.1, max_px_shift: int = 2, interpolation_type: str = "bilinear"
+    ) -> None:
         super().__init__()
         self.p = p
         self.max_angle = max_angle
         self.max_px_shift = max_px_shift
+
+        if not InterpolationStrategy.is_valid(interpolation_type):
+            raise ValueError(
+                f"Invalid interpolation type: {interpolation_type}. Allowed values: {InterpolationStrategy.valid_modes()}"
+            )
+
+        self._interpolation_mode_strategy = InterpolationStrategy(interpolation_type)
 
     def forward(
         self,
@@ -318,6 +351,8 @@ class RandomSpatialShift(torch.nn.Module):
         # the transform is applied only on the right image
         # in order to mimic slight calibration issues
         img_left, img_right = images
+
+        INTERP_MODE = self._interpolation_mode_strategy()
 
         if torch.rand(1) < self.p:
             # [0, 1] -> [-a, a]
@@ -334,7 +369,7 @@ class RandomSpatialShift(torch.nn.Module):
                 center=[x, y],
                 scale=1.0,
                 shear=0.0,
-                interpolation=F.InterpolationMode.BILINEAR,
+                interpolation=INTERP_MODE,
             )
 
         return ((img_left, img_right), disparities, masks)
@@ -367,9 +402,16 @@ class RandomHorizontalFlip(torch.nn.Module):
 
 
 class Resize(torch.nn.Module):
-    def __init__(self, resize_size: Tuple[int, int]) -> None:
+    def __init__(self, resize_size: Tuple[int, int], interpolation_type: str = "bilinear") -> None:
         super().__init__()
-        self.reisze_size = resize_size
+        self.resize_size = resize_size
+
+        if not InterpolationStrategy.is_valid(interpolation_type):
+            raise ValueError(
+                f"Invalid interpolation type: {interpolation_type}. Allowed values: {InterpolationStrategy.valid_modes()}"
+            )
+
+        self._interpolation_mode_strategy = InterpolationStrategy(interpolation_type)
 
     def forward(
         self,
@@ -381,14 +423,16 @@ class Resize(torch.nn.Module):
         resized_disparities = ()
         resized_masks = ()
 
+        INTERP_MODE = self._interpolation_mode_strategy()
+
         for img in images:
-            resized_images += (F.resize(img, self.reisze_size),)
+            resized_images += (F.resize(img, self.resize_size, interpolation=INTERP_MODE),)
 
         for dsp in disparities:
             if dsp is not None:
                 # rescale disparity to match the new image size
-                scale_x = self.reisze_size[1] / dsp.shape[-1]
-                resized_disparities += (F.resize(dsp, self.reisze_size) * scale_x,)
+                scale_x = self.resize_size[1] / dsp.shape[-1]
+                resized_disparities += (F.resize(dsp, self.resize_size, interpolation=INTERP_MODE) * scale_x,)
             else:
                 resized_disparities += (None,)
 
@@ -398,7 +442,7 @@ class Resize(torch.nn.Module):
                     # we squeeze and unsqueeze because the API requires > 3D tensors
                     F.resize(
                         mask.unsqueeze(0),
-                        self.size,
+                        self.resize_size,
                         interpolation=F.InterpolationMode.NEAREST,
                     ).squeeze(0),
                 )
@@ -426,6 +470,7 @@ class RandomResizeAndCrop(torch.nn.Module):
         scale_range: Tuple[float, float] = (-0.2, 0.5),
         resize_prob=0.8,
         scaling_type="exponential",
+        interpolation_type="bilinear",
     ) -> None:
         super().__init__()
         self.crop_size = crop_size
@@ -433,6 +478,13 @@ class RandomResizeAndCrop(torch.nn.Module):
         self.max_scale = scale_range[1]
         self.resize_prob = resize_prob
         self.scaling_type = scaling_type
+
+        if not InterpolationStrategy.is_valid(interpolation_type):
+            raise ValueError(
+                f"Invalid interpolation type: {interpolation_type}. Allowed values: {InterpolationStrategy.valid_modes()}"
+            )
+
+        self._interpolation_mode_strategy = InterpolationStrategy(interpolation_type)
 
     def forward(
         self,
@@ -444,6 +496,7 @@ class RandomResizeAndCrop(torch.nn.Module):
         img_left, img_right = images
         dsp_left, dsp_right = disparities
         mask_left, mask_right = masks
+        INTERP_MODE = self._interpolation_mode_strategy()
 
         # randomly sample scale
         h, w = img_left.shape[-2:]
@@ -466,15 +519,15 @@ class RandomResizeAndCrop(torch.nn.Module):
 
         if torch.rand(1).item() < self.resize_prob:
             # rescale the images
-            img_left = F.resize(img_left, size=(new_h, new_w))
-            img_right = F.resize(img_right, size=(new_h, new_w))
+            img_left = F.resize(img_left, size=(new_h, new_w), interpolation=INTERP_MODE)
+            img_right = F.resize(img_right, size=(new_h, new_w), interpolation=INTERP_MODE)
 
             resized_masks, resized_disparities = (), ()
 
             for disparity, mask in zip(disparities, masks):
                 if disparity is not None:
                     if mask is None:
-                        resized_disparity = F.resize(disparity, size=(new_h, new_w))
+                        resized_disparity = F.resize(disparity, size=(new_h, new_w), interpolation=INTERP_MODE)
                         # rescale the disparity
                         resized_disparity = (
                             resized_disparity * torch.tensor([scale_x], device=resized_disparity.device)[:, None, None]

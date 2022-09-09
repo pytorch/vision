@@ -5,7 +5,9 @@ import transforms as T
 
 
 class StereoMatchingEvalPreset(torch.nn.Module):
-    def __init__(self, mean: float = 0.5, std: float = 0.5, resize_size=None) -> None:
+    def __init__(
+        self, mean: float = 0.5, std: float = 0.5, resize_size=None, interpolation_type: str = "bilinear"
+    ) -> None:
         super().__init__()
 
         transforms = [
@@ -17,7 +19,7 @@ class StereoMatchingEvalPreset(torch.nn.Module):
         ]
 
         if resize_size is not None:
-            transforms.append(T.Resize(resize_size))
+            transforms.append(T.Resize(resize_size, interpolation_type=interpolation_type))
 
         self.transforms = T.Compose(transforms)
 
@@ -34,6 +36,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         resize_prob: float = 1.0,
         scaling_type: str = "exponential",
         scale_range: Tuple[float, float] = (-0.2, 0.5),
+        scale_interpolation_type: str = "bilinear",
         # normalization params:
         mean: float = 0.5,
         std: float = 0.5,
@@ -41,6 +44,11 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         gpu_transforms=False,
         # masking
         max_disparity: int = 256,
+        # SpatialShift params
+        spatial_shift_prob: float = 0.5,
+        spatial_shift_max_angle: float = 0.5,
+        spatial_shift_max_displacement: float = 0.5,
+        spatial_shift_interpolation_type: str = "bilinear",
         # AssymetricColorJitter
         gamma_range: Tuple[float, float] = (0.8, 1.2),
         brightness: Union[int, Tuple[int, int]] = (0.8, 1.2),
@@ -73,13 +81,19 @@ class StereoMatchingTrainPreset(torch.nn.Module):
                     brightness=brightness, contrast=contrast, saturation=saturation, hue=hue, p=asymmetric_jitter_prob
                 ),
                 T.AsymetricGammaAdjust(p=asymmetric_jitter_prob, gamma_range=gamma_range),
-                T.RandomSpatialShift(),
+                T.RandomSpatialShift(
+                    p=spatial_shift_prob,
+                    max_angle=spatial_shift_max_angle,
+                    max_displacement=spatial_shift_max_displacement,
+                    interpolation_type=spatial_shift_interpolation_type,
+                ),
                 T.ConvertImageDtype(torch.float32),
                 T.RandomResizeAndCrop(
                     crop_size=crop_size,
                     scale_range=scale_range,
                     resize_prob=resize_prob,
                     scaling_type=scaling_type,
+                    interpolation_type=scale_interpolation_type,
                 ),
                 T.RandomHorizontalFlip(horizontal_flip_prob),
                 # occlusion after flip, otherwise we're occluding the reference image
