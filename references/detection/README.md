@@ -68,7 +68,7 @@ torchrun --nproc_per_node=8 train.py\
 torchrun --nproc_per_node=8 train.py\
     --dataset coco --model ssdlite320_mobilenet_v3_large --epochs 660\
     --aspect-ratio-group-factor 3 --lr-scheduler cosineannealinglr --lr 0.15 --batch-size 24\
-    --weight-decay 0.00004 --data-augmentation ssdlite --weights-backbone MobileNet_V3_Large_Weights.IMAGENET1K_V1
+    --weight-decay 0.00004 --data-augmentation ssdlite
 ```
 
 
