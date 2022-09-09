@@ -7,6 +7,7 @@ import pytest
 import torch.testing
 import torchvision.prototype.transforms.functional as F
 from common_utils import cpu_and_gpu, needs_cuda
+from datasets_utils import combinations_grid
 from prototype_common_utils import ArgsKwargs, assert_close, make_bounding_box_loaders, make_image_loaders
 from torchvision.prototype import features
 
@@ -100,7 +101,7 @@ def sample_inputs_resize_image_tensor():
 
 
 def reference_inputs_resize_image_tensor():
-    for image, interpolation in itertools.product(
+    for image_loader, interpolation in itertools.product(
         make_image_loaders(extra_dims=[()]),
         [
             F.InterpolationMode.NEAREST,
@@ -108,12 +109,12 @@ def reference_inputs_resize_image_tensor():
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        height, width = image.shape[-2:]
+        height, width = image_loader.image_size
         for size in [
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield ArgsKwargs(image, size=size, interpolation=interpolation)
+            yield ArgsKwargs(image_loader.unwrap(), size=size, interpolation=interpolation)
 
 
 def sample_inputs_resize_bounding_box():
@@ -145,6 +146,14 @@ KERNEL_INFOS.extend(
 )
 
 
+_AFFINE_KWARGS = combinations_grid(
+    angle=[-87, 15, 90],
+    translate=[(5, 5), (-5, -5)],
+    scale=[0.77, 1.27],
+    shear=[(12, 12), (0, 0)],
+)
+
+
 def sample_inputs_affine_image_tensor():
     for image_loader, interpolation_mode, center in itertools.product(
         make_image_loaders(dtypes=[torch.float32]),
@@ -157,38 +166,30 @@ def sample_inputs_affine_image_tensor():
         for fill in [None, [0.5] * image_loader.num_channels]:
             yield ArgsKwargs(
                 image_loader.unwrap(),
-                angle=-87,
-                translate=(5, -5),
-                scale=0.77,
-                shear=(0, 12),
                 interpolation=interpolation_mode,
                 center=center,
                 fill=fill,
+                **_AFFINE_KWARGS[0],
             )
 
 
 def reference_inputs_affine_image_tensor():
-    for image, angle, translate, scale, shear in itertools.product(
-        make_image_loaders(extra_dims=[()]),
-        [-87, 15, 90],  # angle
-        [5, -5],  # translate
-        [0.77, 1.27],  # scale
-        [0, 12],  # shear
-    ):
+    for image, affine_kwargs in itertools.product(make_image_loaders(extra_dims=[()]), _AFFINE_KWARGS):
         yield ArgsKwargs(
             image.unwrap(),
-            angle=angle,
-            translate=(translate, translate),
-            scale=scale,
-            shear=(shear, shear),
             interpolation=F.InterpolationMode.NEAREST,
+            **affine_kwargs,
         )
 
 
 def sample_inputs_affine_bounding_box():
-    # FIXME
-    return
-    yield
+    for bounding_box_loader in make_bounding_box_loaders():
+        yield ArgsKwargs(
+            bounding_box_loader.unwrap(),
+            format=bounding_box_loader.format,
+            image_size=bounding_box_loader.image_size,
+            **_AFFINE_KWARGS[0],
+        )
 
 
 def _compute_affine_matrix(angle, translate, scale, shear, center):
@@ -242,10 +243,7 @@ def reference_affine_bounding_box(bounding_box, *, format, image_size, angle, tr
             dtype=bbox.dtype,
         )
         return F.convert_bounding_box_format(
-            out_bbox,
-            old_format=features.BoundingBoxFormat.XYXY,
-            new_format=format,
-            copy=False,
+            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
         )
 
     if bounding_box.ndim < 2:
@@ -301,27 +299,17 @@ KERNEL_INFOS.extend(
     ]
 )
 
-sample_inputs = pytest.mark.parametrize(
-    ("info", "args_kwargs"),
-    [
-        pytest.param(info, args_kwargs, id=f"{info}({args_kwargs})")
-        for info in KERNEL_INFOS
-        for args_kwargs in info.sample_inputs_fn()
-    ],
-)
-
-reference_inputs = pytest.mark.parametrize(
-    ("info", "args_kwargs"),
-    [
-        pytest.param(info, args_kwargs, id=f"{info}({args_kwargs})")
-        for info in KERNEL_INFOS
-        for args_kwargs in info.reference_inputs_fn()
-        if info.reference is not None
-    ],
-)
-
 
 class TestCommon:
+    sample_inputs = pytest.mark.parametrize(
+        ("info", "args_kwargs"),
+        [
+            pytest.param(info, args_kwargs, id=f"{info}({args_kwargs})")
+            for info in KERNEL_INFOS
+            for args_kwargs in info.sample_inputs_fn()
+        ],
+    )
+
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_scripted_vs_eager(self, info, args_kwargs, device):
@@ -388,7 +376,15 @@ class TestCommon:
         assert_close(output_cuda, output_cpu, check_device=False)
 
     # FIXME: enforce this only runs on CPU machines
-    @reference_inputs
+    @pytest.mark.parametrize(
+        ("info", "args_kwargs"),
+        [
+            pytest.param(info, args_kwargs, id=f"{info}({args_kwargs})")
+            for info in KERNEL_INFOS
+            for args_kwargs in info.reference_inputs_fn()
+            if info.reference is not None
+        ],
+    )
     def test_against_reference(self, info, args_kwargs):
         args, kwargs = args_kwargs.load("cpu")
 
