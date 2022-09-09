@@ -5,19 +5,19 @@ import transforms as T
 
 
 class StereoMatchingEvalPreset(torch.nn.Module):
-    def __init__(self, size=None) -> None:
+    def __init__(self, mean: float = 0.5, std: float = 0.5, resize_size=None) -> None:
         super().__init__()
 
         transforms = [
             T.ToTensor(),
             T.MakeValidDisparityMask(512),  # we keep this transform for API consistency
             T.ConvertImageDtype(torch.float32),
-            T.Normalize(mean=0.5, std=0.5),
+            T.Normalize(mean=mean, std=std),
             T.ValidateModelInput(),
         ]
 
-        if size is not None:
-            transforms = transforms + [T.Resize(size)]
+        if resize_size is not None:
+            transforms.append(T.Resize(resize_size))
 
         self.transforms = T.Compose(transforms)
 
@@ -31,10 +31,12 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         *,
         # RandomResizeAndCrop params
         crop_size: Tuple[int, int],
-        min_scale: float = -0.2,
-        max_scale: float = 0.5,
         resize_prob: float = 1.0,
         scaling_type: str = "exponential",
+        scale_range: Tuple[float, float] = (-0.2, 0.5),
+        # normalization params:
+        mean: float = 0.5,
+        std: float = 0.5,
         # processing device
         gpu_transforms=False,
         # masking
@@ -47,15 +49,13 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         hue: Union[int, Tuple[int, int]] = 0.0,
         asymmetric_jitter_prob: float = 1.0,
         # RandomHorizontalFlip
-        do_flip=True,
+        horizontal_flip_prob=0.5,
         # RandomOcclusion
         occlusion_prob: float = 0.0,
-        occlusion_min_px: int = 50,
-        occlusion_max_px: int = 100,
+        occlusion_px_range: Tuple[int, int] = (50, 100),
         # RandomErase
         erase_prob: float = 0.0,
-        erase_min_px: int = 50,
-        erase_max_px: int = 100,
+        erase_px_range: Tuple[int, int] = (50, 100),
         erase_num_repeats: int = 1,
     ) -> None:
 
@@ -67,33 +67,29 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         if gpu_transforms:
             transforms.append(T.ToGPU())
 
-        transforms = [
-            T.AsymmetricColorJitter(
-                brightness=brightness, contrast=contrast, saturation=saturation, hue=hue, p=asymmetric_jitter_prob
-            ),
-            T.AsymetricGammaAdjust(p=asymmetric_jitter_prob, gamma_range=gamma_range),
-            T.RandomSpatialShift(),
-            T.ConvertImageDtype(torch.float32),
-            T.RandomResizeAndCrop(
-                crop_size=crop_size,
-                min_scale=min_scale,
-                max_scale=max_scale,
-                resize_prob=resize_prob,
-                scaling_type=scaling_type,
-            ),
-        ]
-
-        if do_flip:
-            transforms += [T.RandomHorizontalFlip()]
-
-        transforms += [
-            # occlusion after flip, otherwise we're occluding the reference image
-            T.RandomOcclusion(p=occlusion_prob, min_px=occlusion_min_px, max_px=occlusion_max_px),
-            T.RandomErase(p=erase_prob, min_px=erase_min_px, max_px=erase_max_px, num_repeats=erase_num_repeats),
-            T.Normalize(mean=0.5, std=0.5),
-            T.MakeValidDisparityMask(max_disparity),
-            T.ValidateModelInput(),
-        ]
+        transforms.extend(
+            [
+                T.AsymmetricColorJitter(
+                    brightness=brightness, contrast=contrast, saturation=saturation, hue=hue, p=asymmetric_jitter_prob
+                ),
+                T.AsymetricGammaAdjust(p=asymmetric_jitter_prob, gamma_range=gamma_range),
+                T.RandomSpatialShift(),
+                T.ConvertImageDtype(torch.float32),
+                T.RandomResizeAndCrop(
+                    crop_size=crop_size,
+                    scale_range=scale_range,
+                    resize_prob=resize_prob,
+                    scaling_type=scaling_type,
+                ),
+                T.RandomHorizontalFlip(horizontal_flip_prob),
+                # occlusion after flip, otherwise we're occluding the reference image
+                T.RandomOcclusion(p=occlusion_prob, occlusion_px_range=occlusion_px_range),
+                T.RandomErase(p=erase_prob, erase_px_range=erase_px_range, num_repeats=erase_num_repeats),
+                T.Normalize(mean=mean, std=std),
+                T.MakeValidDisparityMask(max_disparity),
+                T.ValidateModelInput(),
+            ]
+        )
 
         self.transforms = T.Compose(transforms)
 

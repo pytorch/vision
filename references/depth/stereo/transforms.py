@@ -35,9 +35,9 @@ class ValidateModelInput(torch.nn.Module):
 
 
 class MakeValidDisparityMask(torch.nn.Module):
-    def __init__(self, threshold: int = 256) -> None:
+    def __init__(self, max_disparity: int = 256) -> None:
         super().__init__()
-        self.threshold = threshold
+        self.max_disparity = max_disparity
 
     def forward(
         self,
@@ -49,7 +49,7 @@ class MakeValidDisparityMask(torch.nn.Module):
         for idx, disparity in enumerate(disparities):
             mask = masks[idx]
             if mask is None and disparity is not None:
-                mask = torch.logical_and(disparity < self.threshold, disparity > 0)
+                mask = torch.logical_and(disparity < self.max_disparity, disparity > 0)
                 mask = mask.squeeze(0)
             valid_masks += (mask,)
         return images, disparities, valid_masks
@@ -196,16 +196,18 @@ class RandomErase(torch.nn.Module):
     # Produces multiple symetric random erasures
     # these can be viewed as occlusuions present in both camera views.
     # Similarly to Optical Flow occlusion prediction tasks, we mask these pixels in the disparity map
-    def __init__(self, p=0.5, min_px_erase: int = 50, max_px_erase: int = 100, value=0, inplace=False, max_erase=2):
+    def __init__(
+        self, p: float = 0.5, erase_px_range: Tuple[int, int] = (50, 100), value=0, inplace=False, max_erase=2
+    ):
         super().__init__()
-        self.min_px_erase = min_px_erase
-        self.max_px_erase = max_px_erase
+        self.min_px_erase = erase_px_range[0]
+        self.max_px_erase = erase_px_range[1]
         if self.max_px_erase < 0:
-            raise ValueError("max_px_erase should be greater than 0")
+            raise ValueError("erase_px_range[1] should be equal or greater than 0")
         if self.min_px_erase < 0:
-            raise ValueError("min_px_erase should be greater than 0")
+            raise ValueError("erase_px_range[0] should be equal or greater than 0")
         if self.min_px_erase > self.max_px_erase:
-            raise ValueError("min_px_erase should be lower than max_px_erase")
+            raise ValueError("erase_prx_range[0] should be equal or lower than erase_px_range[1]")
 
         self.p = p
         self.value = value
@@ -219,7 +221,7 @@ class RandomErase(torch.nn.Module):
         masks: T_STEREO_TENSOR,
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
 
-        if torch.rand(1) > self.p:
+        if torch.rand(1) < self.p:
             return images, disparities, masks
 
         image_left, image_right = images
@@ -253,20 +255,18 @@ class RandomOcclusion(torch.nn.Module):
     # This adds an occlusion in the right image
     # the occluded patch works as a patch erase where the erase value is the mean
     # of the pixels from the selected zone
-    def __init__(
-        self, p=0.5, min_px_occlusion: int = 50, max_px_occlusion: int = 100, inplace=False, occlusion_style="cre"
-    ):
+    def __init__(self, p=0.5, occlusion_px_range: Tuple[int, int] = (50, 100), inplace=False):
         super().__init__()
 
-        self.min_px_occlusion = min_px_occlusion
-        self.max_px_occlusion = max_px_occlusion
+        self.min_px_occlusion = occlusion_px_range[0]
+        self.max_px_occlusion = occlusion_px_range[1]
 
         if self.max_px_occlusion < 0:
-            raise ValueError("max_px_occlusion should be greater or equal than 0")
+            raise ValueError("occlusion_px_range[1] should be greater or equal than 0")
         if self.min_px_occlusion < 0:
-            raise ValueError("min_px_occlusion should be greater or equal than 0")
+            raise ValueError("occlusion_px_range[0] should be greater or equal than 0")
         if self.min_px_occlusion > self.max_px_occlusion:
-            raise ValueError("min_px_occlusion should be lower than max_px_occlusion")
+            raise ValueError("occlusion_px_range[0] should be lower than occlusion_px_range[1]")
 
         self.p = p
         self.inplace = inplace
@@ -280,7 +280,7 @@ class RandomOcclusion(torch.nn.Module):
 
         left_image, right_image = images
 
-        if torch.rand(1) > self.p:
+        if torch.rand(1) < self.p:
             return images, disparities, masks
 
         x, y, h, w, v = self._get_params(right_image)
@@ -295,20 +295,10 @@ class RandomOcclusion(torch.nn.Module):
             random.randint(self.min_px_occlusion, self.max_px_occlusion),
         )
 
-        # avoid occlusion starting in the corners of the right image
-        crop_x, crop_y = (random.randint(crop_w, img_w - crop_w), random.randint(crop_h, img_h - crop_h))
+        crop_x, crop_y = (random.randint(0, img_w - 1), random.randint(0, img_h - 1))
+        occlusion_value = img[..., crop_y : crop_y + crop_h, crop_x : crop_x + crop_w].mean(dim=(-2, -1), keepdim=True)
 
-        occlusion_value = img[..., crop_y - crop_h : crop_y + crop_h, crop_x - crop_w : crop_x + crop_w].mean(
-            dim=(-2, -1), keepdim=True
-        )
-
-        return (
-            crop_x - crop_w,
-            crop_y - crop_h,
-            crop_h * 2,
-            crop_w * 2,
-            occlusion_value,
-        )
+        return (crop_x, crop_y, crop_h, crop_w, occlusion_value)
 
 
 class RandomSpatialShift(torch.nn.Module):
@@ -329,7 +319,7 @@ class RandomSpatialShift(torch.nn.Module):
         # in order to mimic slight calibration issues
         img_left, img_right = images
 
-        if torch.rand(1) > self.p:
+        if torch.rand(1) < self.p:
             # [0, 1] -> [-a, a]
             shift = rand_float_range((1,), low=-self.max_px_shift, high=self.max_px_shift).item()
             angle = rand_float_range((1,), low=-self.max_angle, high=self.max_angle).item()
@@ -366,7 +356,7 @@ class RandomHorizontalFlip(torch.nn.Module):
         dsp_left, dsp_right = disparities
         mask_left, mask_right = masks
 
-        if dsp_right is not None and torch.rand(1) > self.p:
+        if dsp_right is not None and torch.rand(1) < self.p:
             img_left, img_right = F.hflip(img_left), F.hflip(img_right)
             dsp_left, dsp_right = F.hflip(dsp_left), F.hflip(dsp_right)
             if mask_left is not None and mask_right is not None:
@@ -377,9 +367,9 @@ class RandomHorizontalFlip(torch.nn.Module):
 
 
 class Resize(torch.nn.Module):
-    def __init__(self, size: Tuple[int, int]) -> None:
+    def __init__(self, resize_size: Tuple[int, int]) -> None:
         super().__init__()
-        self.size = size
+        self.reisze_size = resize_size
 
     def forward(
         self,
@@ -392,13 +382,13 @@ class Resize(torch.nn.Module):
         resized_masks = ()
 
         for img in images:
-            resized_images += (F.resize(img, self.size),)
+            resized_images += (F.resize(img, self.reisze_size),)
 
         for dsp in disparities:
             if dsp is not None:
                 # rescale disparity to match the new image size
-                scale_x = self.size[1] / dsp.shape[-1]
-                resized_disparities += (F.resize(dsp, self.size) * scale_x,)
+                scale_x = self.reisze_size[1] / dsp.shape[-1]
+                resized_disparities += (F.resize(dsp, self.reisze_size) * scale_x,)
             else:
                 resized_disparities += (None,)
 
@@ -409,6 +399,7 @@ class Resize(torch.nn.Module):
                     F.resize(
                         mask.unsqueeze(0),
                         self.size,
+                        interpolation=F.InterpolationMode.NEAREST,
                     ).squeeze(0),
                 )
             else:
@@ -432,15 +423,14 @@ class RandomResizeAndCrop(torch.nn.Module):
     def __init__(
         self,
         crop_size,
-        min_scale=-0.2,
-        max_scale=0.5,
+        scale_range: Tuple[float, float] = (-0.2, 0.5),
         resize_prob=0.8,
         scaling_type="exponential",
     ) -> None:
         super().__init__()
         self.crop_size = crop_size
-        self.min_scale = min_scale
-        self.max_scale = max_scale
+        self.min_scale = scale_range[0]
+        self.max_scale = scale_range[1]
         self.resize_prob = resize_prob
         self.scaling_type = scaling_type
 
@@ -557,7 +547,7 @@ def _resize_sparse_flow(flow: Tensor, valid_flow_mask: Tensor, scale_x: float = 
     flow_new[:, ii_valid_new, jj_valid_new] = valid_flow_new
     valid_new[ii_valid_new, jj_valid_new] = 1
 
-    return flow_new, valid_new
+    return flow_new, valid_new.bool()
 
 
 class Compose(torch.nn.Module):
