@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+CREStereo
+=========
+
+.. autoclass:: CREStereo
+    :members:
+        __getitem__,
+        
+    :special-members:

@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+eff5a8e ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+b16f376 ) &#x25BC</a>
     </div>
     
 
@@ -688,6 +688,94 @@
 <span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
 <span class="sd">            generate a valid mask.</span>
 <span class="sd">            Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="CREStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CREStereo.html#torchvision.datasets.CREStereo">[docs]</a><span class="k">class</span> <span class="nc">CREStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Synthetic dataset used in training the `CREStereo &lt;https://arxiv.org/pdf/2203.11483.pdf&gt;`_ architecture.</span>
+<span class="sd">    Dataset details on the official paper `repo &lt;https://github.com/megvii-research/CREStereo&gt;`_.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            CREStereo</span>
+<span class="sd">                tree</span>
+<span class="sd">                    img1_left.jpg</span>
+<span class="sd">                    img1_right.jpg</span>
+<span class="sd">                    img1_left.disp.jpg</span>
+<span class="sd">                    img1_right.disp.jpg</span>
+<span class="sd">                    img2_left.jpg</span>
+<span class="sd">                    img2_right.jpg</span>
+<span class="sd">                    img2_left.disp.jpg</span>
+<span class="sd">                    img2_right.disp.jpg</span>
+<span class="sd">                    ...</span>
+<span class="sd">                shapenet</span>
+<span class="sd">                    img1_left.jpg</span>
+<span class="sd">                    img1_right.jpg</span>
+<span class="sd">                    img1_left.disp.jpg</span>
+<span class="sd">                    img1_right.disp.jpg</span>
+<span class="sd">                    ...</span>
+<span class="sd">                reflective</span>
+<span class="sd">                    img1_left.jpg</span>
+<span class="sd">                    img1_right.jpg</span>
+<span class="sd">                    img1_left.disp.jpg</span>
+<span class="sd">                    img1_right.disp.jpg</span>
+<span class="sd">                    ...</span>
+<span class="sd">                hole</span>
+<span class="sd">                    img1_left.jpg</span>
+<span class="sd">                    img1_right.jpg</span>
+<span class="sd">                    img1_left.disp.jpg</span>
+<span class="sd">                    img1_right.disp.jpg</span>
+<span class="sd">                    ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (str): Root directory of the dataset.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;CREStereo&quot;</span>
+
+        <span class="n">dirs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;shapenet&quot;</span><span class="p">,</span> <span class="s2">&quot;reflective&quot;</span><span class="p">,</span> <span class="s2">&quot;tree&quot;</span><span class="p">,</span> <span class="s2">&quot;hole&quot;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+            <span class="n">left_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_left.jpg&quot;</span><span class="p">)</span>
+            <span class="n">right_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_right.jpg&quot;</span><span class="p">)</span>
+            <span class="n">imgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_image_pattern</span><span class="p">,</span> <span class="n">right_image_pattern</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="n">imgs</span>
+
+            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_left.disp.png&quot;</span><span class="p">)</span>
+            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_right.disp.png&quot;</span><span class="p">)</span>
+            <span class="n">disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="n">disparities</span>
+
+    <span class="k">def</span> <span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="c1"># unsqueeze the disparity map into (C, H, W) format</span>
+        <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">disparity_map</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">/</span> <span class="mf">256.0</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
+
+<div class="viewcode-block" id="CREStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CREStereo.html#torchvision.datasets.CREStereo.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.</span>
+<span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
+<span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
+<span class="sd">            generate a valid mask.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div></div>
 
