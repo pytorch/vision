@@ -628,7 +628,7 @@ class RandomCrop(torch.nn.Module):
         _, h, w = F.get_dimensions(img)
         th, tw = output_size
 
-        if h + 1 < th or w + 1 < tw:
+        if h < th or w < tw:
             raise ValueError(f"Required crop size {(th, tw)} is larger than input image size {(h, w)}")
 
         if w == tw and h == th:

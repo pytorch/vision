@@ -111,6 +111,7 @@ Stereo Matching
     CarlaStereo
     Kitti2012Stereo
     Kitti2015Stereo
+    CREStereo
     FallingThingsStereo
     SceneFlowStereo
     SintelStereo
