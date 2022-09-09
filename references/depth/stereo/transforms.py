@@ -270,7 +270,7 @@ class RandomErase(torch.nn.Module):
             random.randint(self.min_px_erase, img_h - self.max_px_erase),
             random.randint(self.min_px_erase, img_w - self.max_px_erase),
         )
-        crop_x, crop_y = (random.randint(0, img_w - 1), random.randint(0, img_h - 1))
+        crop_x, crop_y = (random.randint(0, img_w - crop_w), random.randint(0, img_h - crop_h))
 
         return crop_x, crop_y, crop_h, crop_w, self.value
 
@@ -319,7 +319,7 @@ class RandomOcclusion(torch.nn.Module):
             random.randint(self.min_px_occlusion, self.max_px_occlusion),
         )
 
-        crop_x, crop_y = (random.randint(0, img_w - 1), random.randint(0, img_h - 1))
+        crop_x, crop_y = (random.randint(0, img_w - crop_w), random.randint(0, img_h - crop_h))
         occlusion_value = img[..., crop_y : crop_y + crop_h, crop_x : crop_x + crop_w].mean(dim=(-2, -1), keepdim=True)
 
         return (crop_x, crop_y, crop_h, crop_w, occlusion_value)
