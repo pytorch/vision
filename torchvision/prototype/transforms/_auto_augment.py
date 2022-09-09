@@ -69,27 +69,46 @@ class _AutoAugmentBase(Transform):
         interpolation: InterpolationMode,
         fill: Union[int, float, Sequence[int], Sequence[float]],
     ) -> Any:
+
+        # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
+        # So, we have to put fill as None if fill == 0
+        fill_: Optional[Union[int, float, Sequence[int], Sequence[float]]]
+        if isinstance(fill, int) and fill == 0:
+            fill_ = None
+        else:
+            fill_ = fill
+
         if transform_id == "Identity":
             return image
         elif transform_id == "ShearX":
+            # magnitude should be arctan(magnitude)
+            # official autoaug: (1, level, 0, 0, 1, 0)
+            # https://github.com/tensorflow/models/blob/dd02069717128186b88afa8d857ce57d17957f03/research/autoaugment/augmentation_transforms.py#L290
+            # compared to
+            # torchvision:      (1, tan(level), 0, 0, 1, 0)
+            # https://github.com/pytorch/vision/blob/0c2373d0bba3499e95776e7936e207d8a1676e65/torchvision/transforms/functional.py#L976
             return F.affine(
                 image,
                 angle=0.0,
                 translate=[0, 0],
                 scale=1.0,
-                shear=[math.degrees(magnitude), 0.0],
+                shear=[math.degrees(math.atan(magnitude)), 0.0],
                 interpolation=interpolation,
-                fill=fill,
+                fill=fill_,
+                center=[0, 0],
             )
         elif transform_id == "ShearY":
+            # magnitude should be arctan(magnitude)
+            # See above
             return F.affine(
                 image,
                 angle=0.0,
                 translate=[0, 0],
                 scale=1.0,
-                shear=[0.0, math.degrees(magnitude)],
+                shear=[0.0, math.degrees(math.atan(magnitude))],
                 interpolation=interpolation,
-                fill=fill,
+                fill=fill_,
+                center=[0, 0],
             )
         elif transform_id == "TranslateX":
             return F.affine(
@@ -99,7 +118,7 @@ class _AutoAugmentBase(Transform):
                 scale=1.0,
                 shear=[0.0, 0.0],
                 interpolation=interpolation,
-                fill=fill,
+                fill=fill_,
             )
         elif transform_id == "TranslateY":
             return F.affine(
@@ -109,10 +128,10 @@ class _AutoAugmentBase(Transform):
                 scale=1.0,
                 shear=[0.0, 0.0],
                 interpolation=interpolation,
-                fill=fill,
+                fill=fill_,
             )
         elif transform_id == "Rotate":
-            return F.rotate(image, angle=magnitude)
+            return F.rotate(image, angle=magnitude, interpolation=interpolation, fill=fill_)
         elif transform_id == "Brightness":
             return F.adjust_brightness(image, brightness_factor=1.0 + magnitude)
         elif transform_id == "Color":
@@ -340,19 +359,17 @@ class RandAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         id, image = self._extract_image(sample)
-        num_channels, height, width = get_chw(image)
+        _, height, width = get_chw(image)
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
-
             magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
             if magnitudes is not None:
-                magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
+                magnitude = float(magnitudes[self.magnitude])
                 if signed and torch.rand(()) <= 0.5:
                     magnitude *= -1
             else:
                 magnitude = 0.0
-
             image = self._apply_image_transform(
                 image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
@@ -397,7 +414,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         id, image = self._extract_image(sample)
-        num_channels, height, width = get_chw(image)
+        _, height, width = get_chw(image)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
@@ -467,7 +484,7 @@ class AugMix(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         id, orig_image = self._extract_image(sample)
-        num_channels, height, width = get_chw(orig_image)
+        _, height, width = get_chw(orig_image)
 
         if isinstance(orig_image, torch.Tensor):
             image = orig_image
