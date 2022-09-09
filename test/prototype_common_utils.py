@@ -31,8 +31,6 @@ class PILImagePair(TensorLikePair):
         actual,
         expected,
         *,
-        # This parameter is ignored to enable checking PIL images to tensor images no on the CPU
-        check_device=None,
         agg_method=None,
         allowed_percentage_diff=None,
         **other_parameters,
@@ -40,7 +38,10 @@ class PILImagePair(TensorLikePair):
         if not any(isinstance(input, PIL.Image.Image) for input in (actual, expected)):
             raise UnsupportedInputs()
 
-        super().__init__(actual, expected, check_device=False, **other_parameters)
+        # This parameter is ignored to enable checking PIL images to tensor images no on the CPU
+        other_parameters["check_device"] = False
+
+        super().__init__(actual, expected, **other_parameters)
         self.agg_method = getattr(torch, agg_method) if isinstance(agg_method, str) else agg_method
         self.allowed_percentage_diff = allowed_percentage_diff
 
@@ -125,17 +126,17 @@ assert_equal = functools.partial(assert_close, rtol=0, atol=0)
 
 class ArgsKwargs:
     def __init__(self, *args, **kwargs):
-        self._args = args
-        self._kwargs = kwargs
+        self.args = args
+        self.kwargs = kwargs
 
     def __iter__(self):
-        yield self._args
-        yield self._kwargs
+        yield self.args
+        yield self.kwargs
 
     def load(self, device="cpu"):
-        args = tuple(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self._args)
+        args = tuple(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self.args)
         kwargs = {
-            keyword: arg.load(device) if isinstance(arg, TensorLoader) else arg for keyword, arg in self._kwargs.items()
+            keyword: arg.load(device) if isinstance(arg, TensorLoader) else arg for keyword, arg in self.kwargs.items()
         }
         return args, kwargs
 
@@ -148,8 +149,8 @@ class ArgsKwargs:
 
         return ", ".join(
             itertools.chain(
-                [better_repr(arg) for arg in self._args],
-                [f"{param}={better_repr(kwarg)}" for param, kwarg in self._kwargs.items()],
+                [better_repr(arg) for arg in self.args],
+                [f"{param}={better_repr(kwarg)}" for param, kwarg in self.kwargs.items()],
             )
         )
 

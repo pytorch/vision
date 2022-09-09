@@ -1670,7 +1670,7 @@ def test_random_crop():
     assert result.size(1) == height + 1
     assert result.size(2) == width + 1
 
-    t = transforms.RandomCrop(48)
+    t = transforms.RandomCrop(33)
     img = torch.ones(3, 32, 32)
     with pytest.raises(ValueError, match=r"Required crop size .+ is larger than input image size .+"):
         t(img)

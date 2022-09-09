@@ -2841,6 +2841,37 @@ class CarlaStereoTestCase(datasets_utils.ImageDatasetTestCase):
                 datasets_utils.shape_test_for_stereo(left, right, disparity)
 
 
+class CREStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.CREStereo
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, np.ndarray, type(None))
+
+    def inject_fake_data(self, tmpdir, config):
+        crestereo_dir = pathlib.Path(tmpdir) / "CREStereo"
+        os.makedirs(crestereo_dir, exist_ok=True)
+
+        examples = {"tree": 2, "shapenet": 3, "reflective": 6, "hole": 5}
+
+        for category_name in ["shapenet", "reflective", "tree", "hole"]:
+            split_dir = crestereo_dir / category_name
+            os.makedirs(split_dir, exist_ok=True)
+            num_examples = examples[category_name]
+
+            for idx in range(num_examples):
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.jpg", size=(100, 100))
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.jpg", size=(100, 100))
+                # these are going to end up being gray scale images
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.disp.png", size=(1, 100, 100))
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.disp.png", size=(1, 100, 100))
+
+        return sum(examples.values())
+
+    def test_splits(self):
+        with self.create_dataset() as (dataset, _):
+            for left, right, disparity, mask in dataset:
+                assert mask is None
+                datasets_utils.shape_test_for_stereo(left, right, disparity)
+
+
 class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.FallingThingsStereo
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(variant=("single", "mixed", "both"))
