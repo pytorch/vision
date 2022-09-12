@@ -3,7 +3,6 @@ import os
 import pytest
 import test_models as TM
 import torch
-import torchvision.models
 from torchvision import models
 from torchvision.models._api import get_model_weights, Weights, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface
