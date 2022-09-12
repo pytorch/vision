@@ -30,6 +30,21 @@ def test_get_model(name, model_class):
 
 
 @pytest.mark.parametrize(
+    "name, model_fn",
+    [
+        ("resnet50", models.resnet50),
+        ("retinanet_resnet50_fpn_v2", models.detection.retinanet_resnet50_fpn_v2),
+        ("raft_large", models.optical_flow.raft_large),
+        ("quantized_resnet50", models.quantization.resnet50),
+        ("lraspp_mobilenet_v3_large", models.segmentation.lraspp_mobilenet_v3_large),
+        ("mvit_v1_b", models.video.mvit_v1_b),
+    ],
+)
+def test_get_model_builder(name, model_fn):
+    assert models.get_model_builder(name) == model_fn
+
+
+@pytest.mark.parametrize(
     "name, weight",
     [
         ("resnet50", models.ResNet50_Weights),
