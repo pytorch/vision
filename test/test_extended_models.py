@@ -345,6 +345,7 @@ class TestHandleLegacyInterface:
         + TM.list_model_fns(models.video)
         + TM.list_model_fns(models.optical_flow),
     )
+    @run_if_test_with_extended
     def test_pretrained_deprecation(self, model_fn):
         with pytest.warns(UserWarning, match="deprecated"):
             model_fn(pretrained=True)
