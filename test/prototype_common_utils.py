@@ -186,11 +186,6 @@ class TensorLoader:
         self.shape = shape
         self.dtype = dtype
 
-    def unwrap(self):
-        return TensorLoader(
-            lambda shape, dtype, device: torch.Tensor(self.fn(shape, dtype, device)), shape=self.shape, dtype=self.dtype
-        )
-
     def load(self, device):
         return self.fn(self.shape, self.dtype, device)
 

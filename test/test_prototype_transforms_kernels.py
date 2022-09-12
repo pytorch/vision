@@ -51,18 +51,18 @@ KERNEL_INFOS = []
 
 def sample_inputs_horizontal_flip_image_tensor():
     for image_loader in make_image_loaders(dtypes=[torch.float32]):
-        yield ArgsKwargs(image_loader.unwrap())
+        yield ArgsKwargs(image_loader)
 
 
 def reference_inputs_horizontal_flip_image_tensor():
     for image_loader in make_image_loaders(extra_dims=[()]):
-        yield ArgsKwargs(image_loader.unwrap())
+        yield ArgsKwargs(image_loader)
 
 
 def sample_inputs_horizontal_flip_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         yield ArgsKwargs(
-            bounding_box_loader.unwrap(), format=bounding_box_loader.format, image_size=bounding_box_loader.image_size
+            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.image_size
         )
 
 
@@ -99,7 +99,7 @@ def sample_inputs_resize_image_tensor():
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield ArgsKwargs(image_loader.unwrap(), size=size, interpolation=interpolation)
+            yield ArgsKwargs(image_loader, size=size, interpolation=interpolation)
 
 
 def reference_inputs_resize_image_tensor():
@@ -116,7 +116,7 @@ def reference_inputs_resize_image_tensor():
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield ArgsKwargs(image_loader.unwrap(), size=size, interpolation=interpolation)
+            yield ArgsKwargs(image_loader, size=size, interpolation=interpolation)
 
 
 def sample_inputs_resize_bounding_box():
@@ -126,7 +126,7 @@ def sample_inputs_resize_bounding_box():
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield ArgsKwargs(bounding_box_loader.unwrap(), size=size, image_size=bounding_box_loader.image_size)
+            yield ArgsKwargs(bounding_box_loader, size=size, image_size=bounding_box_loader.image_size)
 
 
 KERNEL_INFOS.extend(
@@ -167,7 +167,7 @@ def sample_inputs_affine_image_tensor():
     ):
         for fill in [None, [0.5] * image_loader.num_channels]:
             yield ArgsKwargs(
-                image_loader.unwrap(),
+                image_loader,
                 interpolation=interpolation_mode,
                 center=center,
                 fill=fill,
@@ -178,7 +178,7 @@ def sample_inputs_affine_image_tensor():
 def reference_inputs_affine_image_tensor():
     for image, affine_kwargs in itertools.product(make_image_loaders(extra_dims=[()]), _AFFINE_KWARGS):
         yield ArgsKwargs(
-            image.unwrap(),
+            image,
             interpolation=F.InterpolationMode.NEAREST,
             **affine_kwargs,
         )
@@ -187,7 +187,7 @@ def reference_inputs_affine_image_tensor():
 def sample_inputs_affine_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         yield ArgsKwargs(
-            bounding_box_loader.unwrap(),
+            bounding_box_loader,
             format=bounding_box_loader.format,
             image_size=bounding_box_loader.image_size,
             **_AFFINE_KWARGS[0],
@@ -270,7 +270,7 @@ def reference_inputs_affine_bounding_box():
         [None, (12, 14)],
     ):
         yield ArgsKwargs(
-            bounding_box_loader.unwrap(),
+            bounding_box_loader,
             format=bounding_box_loader.format,
             image_size=bounding_box_loader.image_size,
             angle=angle,
