@@ -3,7 +3,7 @@ import pytest
 
 import torch
 
-from test_prototype_transforms_functional import make_bounding_box, make_image, make_segmentation_mask
+from prototype_common_utils import make_bounding_box, make_image, make_segmentation_mask
 
 from torchvision.prototype import features
 from torchvision.prototype.transforms._utils import has_all, has_any
