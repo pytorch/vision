@@ -22,7 +22,20 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms.functional import convert_image_dtype, to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
-__all__ = ["assert_close"]
+__all__ = [
+    "assert_close",
+    "assert_equal",
+    "ArgsKwargs",
+    "make_image_loaders",
+    "make_image",
+    "make_images",
+    "make_bounding_box_loaders",
+    "make_bounding_box",
+    "make_bounding_boxes",
+    "make_segmentation_mask_loaders",
+    "make_segmentation_mask",
+    "make_segmentation_masks",
+]
 
 
 class PILImagePair(TensorLikePair):
@@ -216,6 +229,10 @@ class ImageLoader(TensorLoader):
 
     def _extra_repr(self):
         return [self.color_space]
+
+
+class SegmentationMaskLoader(TensorLoader):
+    _TYPE_NAME = "features.SegmentationMask"
 
 
 def make_image_loader(
@@ -415,22 +432,31 @@ def make_one_hot_labels(
         yield make_one_hot_label(categories=categories_, device=device, dtype=dtype)
 
 
-def make_segmentation_mask(size=None, *, num_objects=None, extra_dims=(), device="cpu", dtype=torch.uint8):
+def make_segmentation_mask_loader(size=None, *, num_objects=None, extra_dims=(), dtype=torch.uint8):
     size = size if size is not None else torch.randint(16, 33, (2,)).tolist()
     num_objects = num_objects if num_objects is not None else int(torch.randint(1, 11, ()))
-    data = torch.testing.make_tensor(*extra_dims, num_objects, *size, low=0, high=2, dtype=dtype, device=device)
-    return features.SegmentationMask(data)
+
+    def fn(shape, dtype, device):
+        data = torch.testing.make_tensor(shape, low=0, high=2, dtype=dtype, device=device)
+        return features.SegmentationMask(data)
+
+    return SegmentationMaskLoader(fn, shape=(*extra_dims, num_objects, *size), dtype=dtype)
 
 
-def make_segmentation_masks(
+make_segmentation_mask = from_loader(make_segmentation_mask_loader)
+
+
+def make_segmentation_mask_loaders(
     sizes=DEFAULT_IMAGE_SIZES,
     num_objects=(1, 0, None),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    device="cpu",
     dtypes=(torch.uint8, torch.bool),
 ):
     for size, num_objects_, extra_dims_ in itertools.product(sizes, num_objects, extra_dims):
-        yield make_segmentation_mask(size=size, num_objects=num_objects_, extra_dims=extra_dims_, device=device)
+        yield make_segmentation_mask_loader(size=size, num_objects=num_objects_, extra_dims=extra_dims_)
 
     for num_objects_, dtype in itertools.product(num_objects, dtypes):
-        yield make_segmentation_mask(num_objects=num_objects_, device=device, dtype=dtype)
+        yield make_segmentation_mask_loader(num_objects=num_objects_, dtype=dtype)
+
+
+make_segmentation_masks = from_loaders(make_segmentation_mask_loaders)

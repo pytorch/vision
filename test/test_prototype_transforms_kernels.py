@@ -8,7 +8,13 @@ import torch.testing
 import torchvision.prototype.transforms.functional as F
 from common_utils import cpu_and_gpu, needs_cuda
 from datasets_utils import combinations_grid
-from prototype_common_utils import ArgsKwargs, assert_close, make_bounding_box_loaders, make_image_loaders
+from prototype_common_utils import (
+    ArgsKwargs,
+    assert_close,
+    make_bounding_box_loaders,
+    make_image_loaders,
+    make_segmentation_mask_loaders,
+)
 
 from torch.utils._pytree import tree_map
 from torchvision.prototype import features
@@ -77,6 +83,11 @@ def sample_inputs_horizontal_flip_bounding_box():
         )
 
 
+def sample_inputs_horizontal_flip_segmentation_mask():
+    for image_loader in make_segmentation_mask_loaders(dtypes=[torch.uint8]):
+        yield ArgsKwargs(image_loader)
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -91,6 +102,10 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.horizontal_flip_bounding_box,
             sample_inputs_fn=sample_inputs_horizontal_flip_bounding_box,
+        ),
+        KernelInfo(
+            F.horizontal_flip_segmentation_mask,
+            sample_inputs_fn=sample_inputs_horizontal_flip_segmentation_mask,
         ),
     ]
 )
