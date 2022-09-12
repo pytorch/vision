@@ -43,6 +43,8 @@ class RandomErasing(_RandomApplyTransform):
         self.value = value
         self.inplace = inplace
 
+        self._log_ratio = torch.log(torch.tensor(self.ratio))
+
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(sample)
 
@@ -62,7 +64,7 @@ class RandomErasing(_RandomApplyTransform):
 
         area = img_h * img_w
 
-        log_ratio = torch.log(torch.tensor(self.ratio))
+        log_ratio = self._log_ratio
         for _ in range(10):
             erase_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
             aspect_ratio = torch.exp(
