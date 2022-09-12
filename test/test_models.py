@@ -17,7 +17,7 @@ import torch.nn as nn
 from _utils_internal import get_relative_path
 from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
 from torchvision import models
-from torchvision.models._api import find_model, list_models
+from torchvision.models import get_model_builder, list_models
 
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
@@ -25,7 +25,7 @@ SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 
 
 def list_model_fns(module):
-    return [find_model(name) for name in list_models(module)]
+    return [get_model_builder(name) for name in list_models(module)]
 
 
 @pytest.fixture
