@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import torchvision.models.optical_flow.raft as raft
 from torch import Tensor
 from torchvision.models._api import register_model, WeightsEnum
+from torchvision.models._utils import handle_legacy_interface
 from torchvision.models.optical_flow._utils import grid_sample, make_coords_grid, upsample_flow
 from torchvision.models.optical_flow.raft import FlowHead, MotionEncoder, ResidualBlock
 from torchvision.ops import Conv2dNormActivation
