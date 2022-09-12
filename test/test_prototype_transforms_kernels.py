@@ -20,15 +20,23 @@ class KernelInfo:
         kernel,
         *,
         sample_inputs_fn,
-        reference=None,
+        reference_fn=None,
         reference_inputs_fn=None,
         **closeness_kwargs,
     ):
         self.kernel = kernel
-        # smoke test that should hit all valid code paths
+        # This function takes no inputs and should return an iterable of `ArgsKwargs`'. Most common tests use these
+        # inputs to check the kernel. As such it should cover all valid code paths.
         self.sample_inputs_fn = sample_inputs_fn
-        self.reference = reference
+        # This function should mirror the kernel. It should have the same signature as the kernel and as such also take
+        # tensors as inputs. Any conversion into another object type, e.g. PIL images or numpy arrays, should happen
+        # inside the function. It should return a tensor or to be more precise an object that can be compared to a
+        # tensor by `assert_close`.
+        self.reference_fn = reference_fn
+        # This function takes no inputs and should return an iterable of `ArgsKwargs`'. It is used only for the
+        # reference tests and thus can be comprehensive with regard to the parameter values to be tested.
         self.reference_inputs_fn = reference_inputs_fn or sample_inputs_fn
+        # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
         self.closeness_kwargs = closeness_kwargs
 
     def __str__(self):
@@ -39,8 +47,11 @@ def pil_reference_wrapper(pil_kernel):
     @functools.wraps(pil_kernel)
     def wrapper(image_tensor, *other_args, **kwargs):
         if image_tensor.ndim > 3:
-            raise pytest.UsageError("ADDME")
+            raise pytest.UsageError(
+                f"Can only test single tensor images against PIL, but input has shape {image_tensor.shape}"
+            )
 
+        # We don't need to convert back to tensor here, since `assert_close` does that automatically.
         return pil_kernel(F.to_image_pil(image_tensor), *other_args, **kwargs)
 
     return wrapper
@@ -71,7 +82,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.horizontal_flip_image_tensor,
             sample_inputs_fn=sample_inputs_horizontal_flip_image_tensor,
-            reference=pil_reference_wrapper(F.horizontal_flip_image_pil),
+            reference_fn=pil_reference_wrapper(F.horizontal_flip_image_pil),
             reference_inputs_fn=reference_inputs_horizontal_flip_image_tensor,
             atol=1e-5,
             rtol=0,
@@ -134,7 +145,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.resize_image_tensor,
             sample_inputs_fn=sample_inputs_resize_image_tensor,
-            reference=pil_reference_wrapper(F.resize_image_pil),
+            reference_fn=pil_reference_wrapper(F.resize_image_pil),
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             atol=1e-5,
             rtol=0,
@@ -286,7 +297,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.affine_image_tensor,
             sample_inputs_fn=sample_inputs_affine_image_tensor,
-            reference=pil_reference_wrapper(F.affine_image_pil),
+            reference_fn=pil_reference_wrapper(F.affine_image_pil),
             reference_inputs_fn=reference_inputs_affine_image_tensor,
             atol=1e-5,
             rtol=0,
@@ -295,7 +306,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.affine_bounding_box,
             sample_inputs_fn=sample_inputs_affine_bounding_box,
-            reference=reference_affine_bounding_box,
+            reference_fn=reference_affine_bounding_box,
             reference_inputs_fn=reference_inputs_affine_bounding_box,
         ),
     ]
@@ -383,8 +394,8 @@ class TestCommon:
 
         assert output is not input or output._version == input_version
 
-    @needs_cuda
     @sample_inputs
+    @needs_cuda
     def test_cuda_vs_cpu(self, info, args_kwargs):
         (input_cpu, *other_args), kwargs = args_kwargs.load("cpu")
         input_cuda = input_cpu.to("cuda")
@@ -394,20 +405,19 @@ class TestCommon:
 
         assert_close(output_cuda, output_cpu, check_device=False)
 
-    # FIXME: enforce this only runs on CPU machines
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
             pytest.param(info, args_kwargs, id=f"{info}({args_kwargs})")
             for info in KERNEL_INFOS
             for args_kwargs in info.reference_inputs_fn()
-            if info.reference is not None
+            if info.reference_fn is not None
         ],
     )
     def test_against_reference(self, info, args_kwargs):
         args, kwargs = args_kwargs.load("cpu")
 
         actual = info.kernel(*args, **kwargs)
-        expected = info.reference(*args, **kwargs)
+        expected = info.reference_fn(*args, **kwargs)
 
         assert_close(actual, expected, **info.closeness_kwargs, check_dtype=False)
