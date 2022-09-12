@@ -14,9 +14,8 @@ from torchvision.ops import Conv2dNormActivation
 
 all = (
     "CREStereo",
-    "CREStereo_Weights",
     "CREStereo_B_Weights",
-    "crestereo_b",
+    "crestereo_base",
 )
 
 
@@ -33,6 +32,8 @@ class ConvexMaskPredictor(nn.Module):
         super().__init__()
         self.mask_head = nn.Sequential(
             Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3),
+            # https://arxiv.org/pdf/2003.12039.pdf (Annex section B) for the
+            # following convolution output size
             nn.Conv2d(hidden_size, upsample_factor**2 * 9, 1, padding=0),
         )
 
@@ -761,16 +762,6 @@ class CREStereo(nn.Module):
         # simple 2D Postional Encodings
         self.positional_encodings = PositionalEncodingSine(feature_encoder.output_dim)
 
-    def freeze_bn(self) -> None:
-        for m in self.modules():
-            if isinstance(m, nn.BatchNorm2d):
-                m.eval()
-
-    def unfreeze_bn(self) -> None:
-        for m in self.modules():
-            if isinstance(m, nn.BatchNorm2d):
-                m.train()
-
     def _get_window_type(self, iteration: int) -> str:
         return "1d" if iteration % 2 == 0 else "2d"
 
@@ -838,6 +829,9 @@ class CREStereo(nn.Module):
             # in CREStereo implementation they multiply with -scale instead of scale
             # this can be either a downsample or an upsample based on the cascaded inference
             # configuration
+
+            # we use a -scale because the flow used inside the network is a negative flow
+            # from the right to the left, so we flip the flow direction
             flow_estimates[max_res] = -scale * F.interpolate(
                 input=flow_init,
                 size=l_pyramid[max_res].shape[2:],
@@ -874,7 +868,6 @@ class CREStereo(nn.Module):
                     # we consider this a prior, therefor we do not want to back-propagate through it
                     flow_estimates[resolution] = flow_estimates[resolution].detach()
 
-                    # corr_fn = self.get_module_from_module_dict(self.correlation_functions, resolution)
                     correlations = correlation_layer(
                         l_pyramid[resolution],  # left
                         r_pyramid[resolution],  # right
@@ -903,6 +896,10 @@ class CREStereo(nn.Module):
                     # i.e. if a 1 / 16 flow is upsampled by 4 (base downsampling) we get a 1 / 4 flow.
                     # therefore we have to further upscale it by the difference between
                     # the current level 1 / 16 and the base level 1 / 4.
+                    #
+                    # we use a -scale because the flow used inside the network is a negative flow
+                    # from the right to the left, so we flip the flow direction in order to get the
+                    # left to right flow
                     flow_pred = -upsample_flow(flow_pred_prior, None, factor=scale_to_base)
                     predictions.append(flow_pred)
 
@@ -1063,15 +1060,11 @@ def _crestereo(
     return model
 
 
-class CREStereo_Weights(WeightsEnum):
+class CREStereo_B_Weights(WeightsEnum):
     pass
 
 
-class CREStereo_B_Weights(CREStereo_Weights):
-    pass
-
-
-def crestereo_base(*, weights: Optional[CREStereo_Weights] = None, progress=True, **kwargs) -> CREStereo:
+def crestereo_base(*, weights: Optional[CREStereo_B_Weights] = None, progress=True, **kwargs) -> CREStereo:
     return _crestereo(
         weights=weights,
         progress=progress,
