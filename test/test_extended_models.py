@@ -3,6 +3,7 @@ import os
 import pytest
 import test_models as TM
 import torch
+import torchvision.models
 from torchvision import models
 from torchvision.models._api import get_model_weights, Weights, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface
@@ -338,13 +339,13 @@ class TestHandleLegacyInterface:
 
     @pytest.mark.parametrize(
         "model_fn",
-        TM.list_model_fns(models)
+        [fn for fn in TM.list_model_fns(models) if fn.__name__ not in {"vit_h_14", "regnet_y_128gf"}]
         + TM.list_model_fns(models.detection)
         + TM.list_model_fns(models.quantization)
         + TM.list_model_fns(models.segmentation)
         + TM.list_model_fns(models.video)
         + TM.list_model_fns(models.optical_flow),
     )
-    def test_all_models(self, model_fn):
+    def test_pretrained_deprecation(self, model_fn):
         with pytest.warns(UserWarning, match="deprecated"):
             model_fn(pretrained=True)
