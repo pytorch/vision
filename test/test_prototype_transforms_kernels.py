@@ -9,6 +9,8 @@ import torchvision.prototype.transforms.functional as F
 from common_utils import cpu_and_gpu, needs_cuda
 from datasets_utils import combinations_grid
 from prototype_common_utils import ArgsKwargs, assert_close, make_bounding_box_loaders, make_image_loaders
+
+from torch.utils._pytree import tree_map
 from torchvision.prototype import features
 
 
@@ -329,28 +331,42 @@ class TestCommon:
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_batched_vs_single(self, info, args_kwargs, device):
+        def unbind_batch_dims(batched_tensor, *, data_dims):
+            if batched_tensor.ndim == data_dims:
+                return batched_tensor
+
+            return [unbind_batch_dims(t, data_dims=data_dims) for t in batched_tensor.unbind(0)]
+
+        def stack_batch_dims(unbound_tensor):
+            if isinstance(unbound_tensor[0], torch.Tensor):
+                return torch.stack(unbound_tensor)
+
+            return torch.stack([stack_batch_dims(t) for t in unbound_tensor])
+
         (batched_input, *other_args), kwargs = args_kwargs.load(device)
 
         feature_type = features.Image if features.is_simple_tensor(batched_input) else type(batched_input)
         # This dictionary contains the number of rightmost dimensions that contain the actual data.
         # Everything to the left is considered a batch dimension.
-        data_ndim = {
+        data_dims = {
             features.Image: 3,
             features.BoundingBox: 1,
             features.SegmentationMask: 3,
         }.get(feature_type)
-        if data_ndim is None:
+        if data_dims is None:
             raise pytest.UsageError(
                 f"The number of data dimensions cannot be determined for input of type {feature_type.__name__}."
             ) from None
-        elif batched_input.ndim <= data_ndim:
+        elif batched_input.ndim <= data_dims:
             pytest.skip("Input is not batched.")
-        elif batched_input.ndim > data_ndim + 1:
-            # FIXME: We also need to test samples with more than one batch dimension
-            pytest.skip("Test currently only supports a single batch dimension")
+        elif not all(batched_input.shape[:-data_dims]):
+            pytest.skip("Input has a degenerate batch shape.")
 
-        actual = info.kernel(batched_input, *other_args, **kwargs).unbind()
-        expected = [info.kernel(single_input, *other_args, **kwargs) for single_input in batched_input.unbind()]
+        actual = info.kernel(batched_input, *other_args, **kwargs)
+
+        single_inputs = unbind_batch_dims(batched_input, data_dims=data_dims)
+        single_outputs = tree_map(lambda single_input: info.kernel(single_input, *other_args, **kwargs), single_inputs)
+        expected = stack_batch_dims(single_outputs)
 
         assert_close(actual, expected, **info.closeness_kwargs)
 
@@ -358,8 +374,11 @@ class TestCommon:
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_no_inplace(self, info, args_kwargs, device):
         (input, *other_args), kwargs = args_kwargs.load(device)
-        input_version = input._version
 
+        if input.numel() == 0:
+            pytest.skip("The input has a degenerate shape.")
+
+        input_version = input._version
         output = info.kernel(input, *other_args, **kwargs)
 
         assert output is not input or output._version == input_version
