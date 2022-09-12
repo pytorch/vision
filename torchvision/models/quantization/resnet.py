@@ -421,6 +421,14 @@ def resnext101_32x8d(
 
 
 @register_model(name="quantized_resnext101_64x4d")
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ResNeXt101_64X4D_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ResNeXt101_64X4D_Weights.IMAGENET1K_V1,
+    )
+)
 def resnext101_64x4d(
     *,
     weights: Optional[Union[ResNeXt101_64X4D_QuantizedWeights, ResNeXt101_64X4D_Weights]] = None,
