@@ -1,5 +1,4 @@
 import enum
-import functools
 import pathlib
 import re
 from typing import Any, BinaryIO, cast, Dict, List, Match, Optional, Tuple, Union
@@ -126,8 +125,8 @@ class ImageNet(Dataset):
             if num_children == 0
         ]
 
-    def _imagenet_label_to_wnid(self, imagenet_label: str, *, wnids: Tuple[str, ...]) -> str:
-        return wnids[int(imagenet_label) - 1]
+    def _imagenet_label_id_fn(self, imagenet_label: str) -> int:
+        return int(imagenet_label) - 1
 
     _VAL_TEST_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_(val|test)_(?P<id>\d{8})[.]JPEG")
 
@@ -173,11 +172,11 @@ class ImageNet(Dataset):
             )
 
             meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
-            _, wnids = zip(*next(iter(meta_dp)))
+            wnid_dp = meta_dp.flatmap().map(getitem(1)).enumerate().to_map_datapipe()
 
             label_dp = LineReader(label_dp, decode=True, return_path=False)
             # We cannot use self._wnids here, since we use a different order than the dataset
-            label_dp = Mapper(label_dp, functools.partial(self._imagenet_label_to_wnid, wnids=wnids))
+            label_dp = label_dp.zip_with_map(wnid_dp, key_fn=self._imagenet_label_id_fn).map(getitem(1))
             label_dp: IterDataPipe[Tuple[int, str]] = Enumerator(label_dp, 1)
             label_dp = hint_shuffling(label_dp)
             label_dp = hint_sharding(label_dp)
