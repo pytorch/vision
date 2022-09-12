@@ -38,7 +38,7 @@ def test_raft_stereo(model_fn, model_mode, dev):
     TM._assert_expected(depth_pred, name=model_fn.__name__, atol=1e-2, rtol=1e-2)
 
 
-@pytest.mark.parametrize("model_fn", (models.depth.stereo.crestereo_b,))
+@pytest.mark.parametrize("model_fn", (models.depth.stereo.crestereo_base,))
 @pytest.mark.parametrize("model_mode", ("standard", "scripted"))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_crestereo(model_fn, model_mode, dev):

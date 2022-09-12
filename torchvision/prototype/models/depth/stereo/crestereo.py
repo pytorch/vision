@@ -43,130 +43,116 @@ class ConvexMaskPredictor(nn.Module):
         return x
 
 
-class AdaptiveGroupCorrelationLayer(nn.Module):
+def get_correlation(
+    left_feature: Tensor,
+    right_feature: Tensor,
+    window_size: Tuple[int, int] = (3, 3),
+    dilate: Tuple[int, int] = (1, 1),
+) -> Tensor:
+    """Function that computes a correlation product between the left and right features.
+
+    The correlation is computed in a sliding window fashion, namely the the left features are fixed
+    and for each ``(i, j)`` location we compute the correlation with a sliding window anchored in
+    ``(i, j)`` from the right feature map. The sliding window selects pixels obtained in the range of the sliding
+    window; i.e ``(i - window_size // 2, i + window_size // 2)`` respectively ``(j - window_size // 2, j + window_size // 2)``.
     """
-    Container for computing various correlation types between a left and right feature map.
-    This module does not contain any optimisable parameters, it's solely a collection of ops.
-    We wrap in a nn.Module for torch.jit.script compatibility
 
-    Adaptive Group Correlation operations from: https://openaccess.thecvf.com/content/CVPR2022/papers/Li_Practical_Stereo_Matching_via_Cascaded_Recurrent_Network_With_Adaptive_Correlation_CVPR_2022_paper.pdf
+    B, C, H, W = left_feature.shape
 
-    Canonical reference implementation: https://github.com/megvii-research/CREStereo/blob/master/nets/corr.py
-    """
+    di_y, di_x = dilate[0], dilate[1]
+    pad_y, pad_x = window_size[0] // 2 * di_y, window_size[1] // 2 * di_x
 
+    right_padded = F.pad(right_feature, (pad_x, pad_x, pad_y, pad_y), mode="replicate")
+    # in order to vectorize the correlation computation over all pixel candidates
+    # we create multiple shifted right images which we stack on an extra dimension
+    right_padded = F.unfold(right_padded, kernel_size=(H, W), dilation=dilate).detach()
+    # torch unfold returns a tensor of shape [B, flattened_values, n_selections]
+    right_padded = right_padded.permute(0, 2, 1)
+    # we consider rehsape back into [B, n_views, C, H, W]
+    right_padded = right_padded.reshape(B, (window_size[0] * window_size[1]), C, H, W)
+    # we expand the left features for broadcasting
+    left_feature = left_feature.unsqueeze(1)
+    # this will compute an element product of between [B, 1, C, H, W] * [B, n_views, C, H, W]
+    # to obtain correlations over the pixel canditates we perform a mean on the C dimension
+    correlation = torch.mean(left_feature * right_padded, dim=2, keepdim=False)
+    # the final correlation tensor shape will be [B, n_views, H, W]
+    # where on the i-th position of the n_views dimension we will have
+    # the correlation value between the left pixel
+    # and the i-th candidate on the right feature map
+    return correlation
+
+
+def _check_window_specs(
+    search_window_1d: Tuple[int, int] = (1, 9),
+    search_dilate_1d: Tuple[int, int] = (1, 1),
+    search_window_2d: Tuple[int, int] = (3, 3),
+    search_dilate_2d: Tuple[int, int] = (1, 1),
+) -> None:
+
+    if not np.prod(search_window_1d) == np.prod(search_window_2d):
+        raise ValueError(
+            f"The 1D and 2D windows should contain the same number of elements. "
+            f"1D shape: {search_window_1d} 2D shape: {search_window_2d}"
+        )
+    if not np.prod(search_window_1d) % 2 == 1:
+        raise ValueError(
+            f"Search windows should contain an odd number of elements in them."
+            f"Window of shape {search_window_1d} has {np.prod(search_window_1d)} elements."
+        )
+    if not any(size == 1 for size in search_window_1d):
+        raise ValueError(f"The 1D search window should have at least one size equal to 1. 1D shape: {search_window_1d}")
+    if any(size == 1 for size in search_window_2d):
+        raise ValueError(
+            f"The 2D search window should have all dimensions greater than 1. 2D shape: {search_window_2d}"
+        )
+    if any(dilate < 1 for dilate in search_dilate_1d):
+        raise ValueError(
+            f"The 1D search dilation should have all elements equal or greater than 1. 1D shape: {search_dilate_1d}"
+        )
+    if any(dilate < 1 for dilate in search_dilate_2d):
+        raise ValueError(
+            f"The 2D search dilation should have all elements equal greater than 1. 2D shape: {search_dilate_2d}"
+        )
+
+
+class IterativeCorrelationLayer(nn.Module):
     def __init__(
         self,
-        attention_module: Optional[nn.Module] = None,
         groups: int = 4,
         search_window_1d: Tuple[int, int] = (1, 9),
         search_dilate_1d: Tuple[int, int] = (1, 1),
         search_window_2d: Tuple[int, int] = (3, 3),
         search_dilate_2d: Tuple[int, int] = (1, 1),
     ) -> None:
+
         super().__init__()
-        self.attention_module = attention_module
-
-        if not np.prod(search_window_1d) == np.prod(search_window_2d):
-            raise ValueError(
-                f"The 1D and 2D windows should contain the same number of elements. "
-                f"1D shape: {search_window_1d} 2D shape: {search_window_2d}"
-            )
-
-        if not np.prod(search_window_1d) % 2 == 1:
-            raise ValueError(
-                f"Search windows should contain an odd number of elements in them."
-                f"Window of shape {search_window_1d} has {np.prod(search_window_1d)} elements."
-            )
-
-        if not any(size == 1 for size in search_window_1d):
-            raise ValueError(
-                f"The 1D search window should have at least one size equal to 1. 1D shape: {search_window_1d}"
-            )
-
-        if any(size == 1 for size in search_window_2d):
-            raise ValueError(
-                f"The 2D search window should have all dimensions greater than 1. 2D shape: {search_window_2d}"
-            )
-
+        _check_window_specs(
+            search_window_1d=search_window_1d,
+            search_dilate_1d=search_dilate_1d,
+            search_window_2d=search_window_2d,
+            search_dilate_2d=search_dilate_2d,
+        )
         self.search_window_1d = search_window_1d
-        self.search_window_2d = search_window_2d
-
         self.search_dilate_1d = search_dilate_1d
+        self.search_window_2d = search_window_2d
         self.search_dilate_2d = search_dilate_2d
-
         self.groups = groups
 
         # two selection tables for dealing withh the small_patch argument in the forward function
         self.patch_sizes = {
-            True: [self.search_window_2d for _ in range(self.groups)],
-            False: [self.search_window_1d for _ in range(self.groups)],
+            "2d": [self.search_window_2d for _ in range(self.groups)],
+            "1d": [self.search_window_1d for _ in range(self.groups)],
         }
 
         self.dilate_sizes = {
-            True: [self.search_dilate_2d for _ in range(self.groups)],
-            False: [self.search_dilate_1d for _ in range(self.groups)],
+            "2d": [self.search_dilate_2d for _ in range(self.groups)],
+            "1d": [self.search_dilate_1d for _ in range(self.groups)],
         }
-
-    def forward(
-        self,
-        left_features: Tensor,
-        right_features: Tensor,
-        flow: torch.Tensor,
-        extra_offset: Union[torch.Tensor, None],
-        use_small_patch: bool = False,
-        iter_mode: bool = False,
-    ) -> Tensor:
-        if iter_mode or extra_offset is None:
-            corr = self.iterative_correlation(left_features, right_features, flow, use_small_patch)
-        else:
-            corr = self.attention_offset_correlation(left_features, right_features, flow, extra_offset, use_small_patch)  # type: ignore
-        return corr
 
     def _make_coords(self, feature_map: Tensor) -> Tensor:
         return make_coords_grid(feature_map.shape[0], feature_map.shape[2], feature_map.shape[3]).to(feature_map.device)
 
-    def get_correlation(
-        self,
-        left_feature: Tensor,
-        right_feature: Tensor,
-        window_size: Tuple[int, int] = (3, 3),
-        dilate: Tuple[int, int] = (1, 1),
-    ) -> Tensor:
-        """Function that computes a correlation product between the left and right features.
-
-        The correlation is computed in a sliding window fashion, namely the the left features are fixed
-        and for each ``(i, j)`` location we compute the correlation with a sliding window anchored in
-        ``(i, j)`` from the right feature map. The sliding window selects pixels obtained in the range of the sliding
-        window; i.e ``(i - window_size // 2, i + window_size // 2)`` respectively ``(j - window_size // 2, j + window_size // 2)``.
-        """
-
-        B, C, H, W = left_feature.shape
-
-        di_y, di_x = dilate[0], dilate[1]
-        pad_y, pad_x = window_size[0] // 2 * di_y, window_size[1] // 2 * di_x
-
-        right_padded = F.pad(right_feature, (pad_x, pad_x, pad_y, pad_y), mode="replicate")
-        # in order to vectorize the correlation computation over all pixel candidates
-        # we create multiple shifted right images which we stack on an extra dimension
-        right_padded = F.unfold(right_padded, kernel_size=(H, W), dilation=dilate).detach()
-        # torch unfold returns a tensor of shape [B, flattened_values, n_selections]
-        right_padded = right_padded.permute(0, 2, 1)
-        # we consider rehsape back into [B, n_views, C, H, W]
-        right_padded = right_padded.reshape(B, (window_size[0] * window_size[1]), C, H, W)
-        # we expand the left features for broadcasting
-        left_feature = left_feature.unsqueeze(1)
-        # this will compute an element product of between [B, 1, C, H, W] * [B, n_views, C, H, W]
-        # to obtain correlations over the pixel canditates we perform a mean on the C dimension
-        correlation = torch.mean(left_feature * right_padded, dim=2, keepdim=False)
-        # the final correlation tensor shape will be [B, n_views, H, W]
-        # where on the i-th position of the n_views dimension we will have
-        # the correlation value between the left pixel
-        # and the i-th candidate on the right feature map
-        return correlation
-
-    def iterative_correlation(
-        self, left_feature: Tensor, right_feature: Tensor, flow: Tensor, use_small_patch: bool = False
-    ) -> Tensor:
+    def forward(self, left_feature: Tensor, right_feature: Tensor, flow: Tensor, window_type: str = "1d") -> Tensor:
         """Function that computes 1 pass of non-offsetted Group-Wise correlation"""
         coords = self._make_coords(left_feature)
 
@@ -178,8 +164,8 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
 
         # use_small_patch is a flag by which we decide on how many axes
         # we perform candidate search. See section 3.1 ``Deformable search window`` & Figure 4 in the paper.
-        patch_size_list = self.patch_sizes[use_small_patch]
-        dilate_size_list = self.dilate_sizes[use_small_patch]
+        patch_size_list = self.patch_sizes[window_type]
+        dilate_size_list = self.dilate_sizes[window_type]
 
         # chunking the left and right feature to perform group-wise correlation
         # mechanism simillar to GroupNorm. See section 3.1 ``Group-wise correlation``.
@@ -190,18 +176,57 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         # this boils down to rather than performing the correlation product
         # over the entire C dimensions, we use subsets of C to get multiple correlation sets
         for i in range(len(patch_size_list)):
-            correlation = self.get_correlation(left_groups[i], right_groups[i], patch_size_list[i], dilate_size_list[i])
+            correlation = get_correlation(left_groups[i], right_groups[i], patch_size_list[i], dilate_size_list[i])
             correlations.append(correlation)
         final_correlations = torch.cat(correlations, dim=1)
         return final_correlations
 
-    def attention_offset_correlation(
+
+class AttentionOffsetCorrelationLayer(nn.Module):
+    def __init__(
+        self,
+        groups: int = 4,
+        attention_module: Optional[nn.Module] = None,
+        search_window_1d: Tuple[int, int] = (1, 9),
+        search_dilate_1d: Tuple[int, int] = (1, 1),
+        search_window_2d: Tuple[int, int] = (3, 3),
+        search_dilate_2d: Tuple[int, int] = (1, 1),
+    ) -> None:
+        super().__init__()
+        _check_window_specs(
+            search_window_1d=search_window_1d,
+            search_dilate_1d=search_dilate_1d,
+            search_window_2d=search_window_2d,
+            search_dilate_2d=search_dilate_2d,
+        )
+        self.search_window_1d = search_window_1d
+        self.search_dilate_1d = search_dilate_1d
+        self.search_window_2d = search_window_2d
+        self.search_dilate_2d = search_dilate_2d
+        self.groups = groups
+
+        self.patch_sizes = {
+            "2d": [self.search_window_2d for _ in range(self.groups)],
+            "1d": [self.search_window_1d for _ in range(self.groups)],
+        }
+
+        self.dilate_sizes = {
+            "2d": [self.search_dilate_2d for _ in range(self.groups)],
+            "1d": [self.search_dilate_1d for _ in range(self.groups)],
+        }
+
+        self.attention_module = attention_module
+
+    def _make_coords(self, feature_map: Tensor) -> Tensor:
+        return make_coords_grid(feature_map.shape[0], feature_map.shape[2], feature_map.shape[3]).to(feature_map.device)
+
+    def forward(
         self,
         left_feature: Tensor,
         right_feature: Tensor,
         flow: Tensor,
         extra_offset: Tensor,
-        use_small_patch: bool = False,
+        window_type: str = "1d",
     ) -> Tensor:
         """Function that computes 1 pass of offsetted Group-Wise correlation
 
@@ -227,9 +252,8 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         # thus, for each candidate we should have an X-axis and Y-axis offset value
         extra_offset = extra_offset.reshape(B, num_search_candidates, 2, H, W).permute(0, 1, 3, 4, 2)
 
-        # see line 133 for details
-        patch_size_list = self.patch_sizes[use_small_patch]
-        dilate_size_list = self.dilate_sizes[use_small_patch]
+        patch_size_list = self.patch_sizes[window_type]
+        dilate_size_list = self.dilate_sizes[window_type]
 
         group_channels = C // self.groups
         correlations = []
@@ -271,6 +295,45 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
 
         final_correlation = torch.cat(correlations, dim=1)
         return final_correlation
+
+
+class AdaptiveGroupCorrelationLayer(nn.Module):
+    """
+    Container for computing various correlation types between a left and right feature map.
+    This module does not contain any optimisable parameters, it's solely a collection of ops.
+    We wrap in a nn.Module for torch.jit.script compatibility
+
+    Adaptive Group Correlation operations from: https://openaccess.thecvf.com/content/CVPR2022/papers/Li_Practical_Stereo_Matching_via_Cascaded_Recurrent_Network_With_Adaptive_Correlation_CVPR_2022_paper.pdf
+
+    Canonical reference implementation: https://github.com/megvii-research/CREStereo/blob/master/nets/corr.py
+    """
+
+    def __init__(
+        self,
+        iterative_correlation_layer: IterativeCorrelationLayer,
+        attention_offset_correlation_layer: AttentionOffsetCorrelationLayer,
+    ) -> None:
+        super().__init__()
+
+        self.iterative_correlation_layer = iterative_correlation_layer
+        self.attention_offset_correlation_layer = attention_offset_correlation_layer
+
+    def forward(
+        self,
+        left_features: Tensor,
+        right_features: Tensor,
+        flow: torch.Tensor,
+        extra_offset: Union[torch.Tensor, None],
+        window_type: str = "1d",
+        iter_mode: bool = False,
+    ) -> Tensor:
+        if iter_mode or extra_offset is None:
+            corr = self.iterative_correlation_layer(left_features, right_features, flow, window_type)
+        else:
+            corr = self.attention_offset_correlation_layer(
+                left_features, right_features, flow, extra_offset, window_type
+            )  # type: ignore
+        return corr
 
 
 def elu_feature_map(x: Tensor) -> Tensor:
@@ -377,20 +440,36 @@ class PositionalEncodingSine(nn.Module):
     Sinusoidal positonal encodings
 
     Using the scaling term from https://github.com/megvii-research/CREStereo/blob/master/nets/attention/position_encoding.py
-
-    Unlike cannonical implementations: https://github.com/facebookresearch/detr/blob/8a144f83a287f4d3fece4acdf073f387c5af387d/models/position_encoding.py#L28-L48
-    This implementation of positional encodings interleaves the X-axis and Y-axis signals on the channel dimension
-    instead of concatennating them. This result in attention heads that attend to
+    Reference implementation from https://github.com/facebookresearch/detr/blob/8a144f83a287f4d3fece4acdf073f387c5af387d/models/position_encoding.py#L28-L48
     """
 
-    def __init__(self, dim_model: int) -> None:
+    def __init__(self, dim_model: int, max_size: int = 256) -> None:
         super().__init__()
         self.dim_model = dim_model
-        self.scale_factor = -math.log(10_000) / (dim_model // 2)
+        self.max_size = max_size
+        # pre-registered for memory efficiency during forward pass
+        pe = self._make_pe_of_size(self.max_size)
+        self.register_buffer("pe", pe)
+
+    def _make_pe_of_size(self, size: int) -> Tensor:
+        pe = torch.zeros((self.dim_model, *(size, size)), dtype=torch.float32)
+        y_positions = torch.ones((size, size)).cumsum(0).float().unsqueeze(0)
+        x_positions = torch.ones((size, size)).cumsum(1).float().unsqueeze(0)
+        div_term = torch.exp(torch.arange(0.0, self.dim_model // 2, 2) * (-math.log(10000.0) / self.dim_model // 2))
+        div_term = div_term[:, None, None]
+        pe[0::4, :, :] = torch.sin(x_positions * div_term)
+        pe[1::4, :, :] = torch.cos(x_positions * div_term)
+        pe[2::4, :, :] = torch.sin(y_positions * div_term)
+        pe[3::4, :, :] = torch.cos(y_positions * div_term)
+        pe = pe.unsqueeze(0)
+        return pe
 
     def forward(self, x: Tensor) -> Tensor:
         """
         Args:
+            x: [B, C, H, W]
+
+        Returns:
             x: [B, C, H, W]
         """
         torch._assert(
@@ -398,24 +477,10 @@ class PositionalEncodingSine(nn.Module):
             f"PositionalEncodingSine requires a 4-D dimensional input. Provided tensor is of shape {x.shape}",
         )
 
+        self.pe: Tensor
+
         B, C, H, W = x.shape
-
-        coords = torch.ones(size=(H, W), dtype=x.dtype, device=x.device)
-        positions_y = coords.cumsum(0).unsqueeze(0)
-        positions_x = coords.cumsum(1).unsqueeze(0)
-
-        div_term = torch.exp(
-            torch.arange(0, self.dim_model // 2, step=2, dtype=x.dtype, device=x.device) * self.scale_factor
-        )
-        div_term = div_term[:, None, None]
-
-        positional_embeddings = torch.zeros((self.dim_model, H, W), device=x.device, dtype=x.dtype)
-        positional_embeddings[0::4, :, :] = torch.sin(positions_x * div_term)
-        positional_embeddings[1::4, :, :] = torch.cos(positions_x * div_term)
-        positional_embeddings[2::4, :, :] = torch.sin(positions_y * div_term)
-        positional_embeddings[3::4, :, :] = torch.cos(positions_y * div_term)
-
-        return x + positional_embeddings
+        return x + self.pe[:, :, :H, :W]
 
 
 class LocalFeatureEncoderLayer(nn.Module):
@@ -429,13 +494,15 @@ class LocalFeatureEncoderLayer(nn.Module):
         *,
         dim_model: int,
         num_heads: int,
-        attention_type: str = "linear",
+        attention_module: Callable[..., nn.Module] = LinearAttention,
     ) -> None:
         super().__init__()
 
-        if attention_type not in ["linear", "softmax"]:
+        attention_module = attention_module()
+
+        if not isinstance(attention_module, (LinearAttention, SoftmaxAttention)):
             raise ValueError(
-                f"Unsuported attention type {attention_type}. LocalFeatureEncoderLayer supports one of ``[linear, softmax]``"
+                f"attention_module must be an instance of LinearAttention or SoftmaxAttention. Got {type(attention_module)}"
             )
 
         self.dim_head = dim_model // num_heads
@@ -445,7 +512,7 @@ class LocalFeatureEncoderLayer(nn.Module):
         self.query_proj = nn.Linear(dim_model, dim_model, bias=False)
         self.key_proj = nn.Linear(dim_model, dim_model, bias=False)
         self.value_proj = nn.Linear(dim_model, dim_model, bias=False)
-        self.attention_op = LinearAttention() if attention_type == "linear" else SoftmaxAttention()
+        self.attention_op = attention_module
         self.merge = nn.Linear(dim_model, dim_model, bias=False)
 
         # feed forward network
@@ -501,10 +568,11 @@ class LocalFeatureTransformer(nn.Module):
         dim_model: int,
         num_heads: int,
         attention_directions: List[str],
-        attention_type: str = "linear",
+        attention_module: Callable[..., nn.Module] = LinearAttention,
     ) -> None:
         super(LocalFeatureTransformer, self).__init__()
 
+        self.attention_module = attention_module
         self.attention_directions = attention_directions
         for direction in attention_directions:
             if direction not in ["self", "cross"]:
@@ -514,7 +582,7 @@ class LocalFeatureTransformer(nn.Module):
 
         self.layers = nn.ModuleList(
             [
-                LocalFeatureEncoderLayer(dim_model=dim_model, num_heads=num_heads, attention_type=attention_type)
+                LocalFeatureEncoderLayer(dim_model=dim_model, num_heads=num_heads, attention_module=attention_module)
                 for _ in attention_directions
             ]
         )
@@ -544,7 +612,6 @@ class LocalFeatureTransformer(nn.Module):
 
         for idx, layer in enumerate(self.layers):
             attention_direction = self.attention_directions[idx]
-            # for layer, attention_direction in zip(self.layers, self.attention_directions):
 
             if attention_direction == "self":
                 left_features = layer(left_features, left_features, left_mask, left_mask)
@@ -646,15 +713,6 @@ class CREStereo(nn.Module):
             activation_layer=None,
         )
 
-        correlation_layer = partial(
-            AdaptiveGroupCorrelationLayer,
-            groups=correlation_groups,
-            search_window_1d=search_window_1d,
-            search_dilate_1d=search_dilate_1d,
-            search_window_2d=search_window_2d,
-            search_dilate_2d=search_dilate_2d,
-        )
-
         # populate the dicts in top to bottom order
         # useful for iterating through torch.jit.script module given the network forward pass
         #
@@ -662,6 +720,23 @@ class CREStereo(nn.Module):
         # not being to able access to runtime generated keys in ModuleDicts.
         # This way, we can keep a generic way of processing all pyramid levels but except
         # the final one
+        iterative_correlation_layer = partial(
+            IterativeCorrelationLayer,
+            groups=correlation_groups,
+            search_window_1d=search_window_1d,
+            search_dilate_1d=search_dilate_1d,
+            search_window_2d=search_window_2d,
+            search_dilate_2d=search_dilate_2d,
+        )
+
+        attention_offset_correlation_layer = partial(
+            AttentionOffsetCorrelationLayer,
+            groups=correlation_groups,
+            search_window_1d=search_window_1d,
+            search_dilate_1d=search_dilate_1d,
+            search_window_2d=search_window_2d,
+            search_dilate_2d=search_dilate_2d,
+        )
 
         for idx, resolution in enumerate(reversed(self.resolutions[1:])):
             # the largest resolution does use offset convolutions for sampling grid coords
@@ -669,12 +744,19 @@ class CREStereo(nn.Module):
             if offset_conv:
                 self.offset_convs[resolution] = offset_conv
                 # only the lowest resolution uses the cross attention module when computing correlation scores
-                self.correlation_layers[resolution] = (
-                    correlation_layer(attention_module=cross_attn_block) if idx == 0 else correlation_layer()
+                attention_module = cross_attn_block if idx == 0 else None
+                self.correlation_layers[resolution] = AdaptiveGroupCorrelationLayer(
+                    iterative_correlation_layer=iterative_correlation_layer(),
+                    attention_offset_correlation_layer=attention_offset_correlation_layer(
+                        attention_module=attention_module
+                    ),
                 )
 
         # correlation layer for the largest resolution
-        self.max_res_correlation_layer = correlation_layer()
+        self.max_res_correlation_layer = AdaptiveGroupCorrelationLayer(
+            iterative_correlation_layer=iterative_correlation_layer(),
+            attention_offset_correlation_layer=attention_offset_correlation_layer(),
+        )
 
         # simple 2D Postional Encodings
         self.positional_encodings = PositionalEncodingSine(feature_encoder.output_dim)
@@ -688,6 +770,9 @@ class CREStereo(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.BatchNorm2d):
                 m.train()
+
+    def _get_window_type(self, iteration: int) -> str:
+        return "1d" if iteration % 2 == 0 else "2d"
 
     def forward(
         self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor], iterations: int = 10
@@ -749,7 +834,7 @@ class CREStereo(nn.Module):
         )
 
         if flow_init is not None:
-            scale = l_pyramid[max_res].shape[2] // flow_init.shape[2]
+            scale = l_pyramid[max_res].shape[2] / flow_init.shape[2]
             # in CREStereo implementation they multiply with -scale instead of scale
             # this can be either a downsample or an upsample based on the cascaded inference
             # configuration
@@ -785,7 +870,7 @@ class CREStereo(nn.Module):
                 scale_to_base = l_pyramid[fine_grained_resolution].shape[2] // l_pyramid[resolution].shape[2]
                 for it in range(iterations // 2):
                     # set wether or not we want to search on (X, Y) axes for correlation or just on X axis
-                    use_small_search_patch = (it % 2) == 1
+                    window_type = self._get_window_type(it)
                     # we consider this a prior, therefor we do not want to back-propagate through it
                     flow_estimates[resolution] = flow_estimates[resolution].detach()
 
@@ -795,7 +880,7 @@ class CREStereo(nn.Module):
                         r_pyramid[resolution],  # right
                         flow_estimates[resolution],
                         offsets[resolution],
-                        use_small_search_patch,
+                        window_type,
                     )
 
                     # update the recurrent network state and the flow deltas
@@ -844,7 +929,7 @@ class CREStereo(nn.Module):
         # a prior estimate when moving into the final refinement stage
 
         for it in range(iterations):
-            use_small_search_patch = (it % 2) == 1
+            search_window_type = self._get_window_type(it)
 
             flow_estimates[max_res] = flow_estimates[max_res].detach()
             # we run the fine-grained resolution correlations in iterative mode
@@ -855,7 +940,7 @@ class CREStereo(nn.Module):
                 r_pyramid[max_res],
                 flow_estimates[max_res],
                 extra_offset=None,
-                use_small_patch=use_small_search_patch,
+                window_type=search_window_type,
                 iter_mode=True,
             )
 
@@ -903,8 +988,8 @@ def _crestereo(
     num_attention_heads: int,
     num_self_attention_layers: int,
     num_cross_attention_layers: int,
-    self_attention_type: str,
-    cross_attention_type: str,
+    self_attention_module: Callable[..., nn.Module],
+    cross_attention_module: Callable[..., nn.Module],
     **kwargs,
 ) -> CREStereo:
 
@@ -942,18 +1027,20 @@ def _crestereo(
 
     update_block = raft.UpdateBlock(motion_encoder=motion_encoder, recurrent_block=recurrent_block, flow_head=flow_head)
 
+    self_attention_module = kwargs.pop("self_attention_module", None) or LinearAttention
     self_attn_block = LocalFeatureTransformer(
         dim_model=feature_encoder.output_dim,
         num_heads=num_attention_heads,
         attention_directions=["self"] * num_self_attention_layers,
-        attention_type=self_attention_type,
+        attention_module=self_attention_module,
     )
 
+    cross_attention_module = kwargs.pop("cross_attention_module", None) or LinearAttention
     cross_attn_block = LocalFeatureTransformer(
         dim_model=feature_encoder.output_dim,
         num_heads=num_attention_heads,
         attention_directions=["cross"] * num_cross_attention_layers,
-        attention_type=cross_attention_type,
+        attention_module=cross_attention_module,
     )
 
     model = CREStereo(
@@ -984,7 +1071,7 @@ class CREStereo_B_Weights(CREStereo_Weights):
     pass
 
 
-def crestereo_b(*, weights: Optional[CREStereo_Weights] = None, progress=True, **kwargs) -> CREStereo:
+def crestereo_base(*, weights: Optional[CREStereo_Weights] = None, progress=True, **kwargs) -> CREStereo:
     return _crestereo(
         weights=weights,
         progress=progress,
@@ -1009,8 +1096,8 @@ def crestereo_b(*, weights: Optional[CREStereo_Weights] = None, progress=True, *
         num_attention_heads=8,
         num_self_attention_layers=1,
         num_cross_attention_layers=1,
-        self_attention_type="linear",
-        cross_attention_type="linear",
+        self_attention_module=LinearAttention,
+        cross_attention_module=LinearAttention,
         # Adaptive Correlation layer
         corr_groups=4,
         corr_search_window_2d=(3, 3),
