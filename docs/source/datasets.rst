@@ -117,6 +117,7 @@ Stereo Matching
     SintelStereo
     InStereo2k
     ETH3DStereo
+    Middlebury2014Stereo
 
 Image pairs
 ~~~~~~~~~~~
