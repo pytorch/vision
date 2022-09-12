@@ -335,3 +335,16 @@ class TestHandleLegacyInterface:
 
         with pytest.raises(ValueError, match="weights"):
             builder(pretrained=True, flag=False)
+
+    @pytest.mark.parametrize(
+        "model_fn",
+        TM.list_model_fns(models)
+        + TM.list_model_fns(models.detection)
+        + TM.list_model_fns(models.quantization)
+        + TM.list_model_fns(models.segmentation)
+        + TM.list_model_fns(models.video)
+        + TM.list_model_fns(models.optical_flow),
+    )
+    def test_all_models(self, model_fn):
+        with pytest.warns(UserWarning, match="deprecated"):
+            model_fn(pretrained=True)

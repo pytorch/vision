@@ -1294,7 +1294,7 @@ def regnet_y_32gf(*, weights: Optional[RegNet_Y_32GF_Weights] = None, progress: 
 
 
 @register_model()
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_128GF_Weights.DEFAULT))
 def regnet_y_128gf(*, weights: Optional[RegNet_Y_128GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetY_128GF architecture from

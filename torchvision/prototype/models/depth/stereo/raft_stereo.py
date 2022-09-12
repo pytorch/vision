@@ -618,6 +618,7 @@ class Raft_Stereo_Base_Weights(WeightsEnum):
 
 
 @register_model()
+@handle_legacy_interface(weights=("pretrained", None))
 def raft_stereo_realtime(
     *, weights: Optional[Raft_Stereo_Realtime_Weights] = None, progress=True, **kwargs
 ) -> RaftStereo:
@@ -678,6 +679,7 @@ def raft_stereo_realtime(
 
 
 @register_model()
+@handle_legacy_interface(weights=("pretrained", None))
 def raft_stereo_base(*, weights: Optional[Raft_Stereo_Base_Weights] = None, progress=True, **kwargs) -> RaftStereo:
     """RAFT-Stereo model from
     `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
