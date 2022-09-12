@@ -5,7 +5,6 @@ import os
 import numpy as np
 import PIL.Image
 import pytest
-import torch
 import torch.testing
 import torchvision.prototype.transforms.functional as F
 from common_utils import cpu_and_gpu

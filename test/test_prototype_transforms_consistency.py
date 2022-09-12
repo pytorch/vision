@@ -6,8 +6,7 @@ import PIL.Image
 import pytest
 
 import torch
-from prototype_common_utils import ArgsKwargs, assert_equal
-from test_prototype_transforms_functional import make_images
+from prototype_common_utils import ArgsKwargs, assert_equal, make_images
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
