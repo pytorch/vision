@@ -869,7 +869,7 @@ class FixedSizeCrop(Transform):
 
 
 class RandomResize(Transform):
-    def __init__(self, min_size: int, max_size: Optional[int] = None):
+    def __init__(self, min_size: int, max_size: Optional[int] = None) -> None:
         super().__init__()
         self.min_size = min_size
         self.max_size = max_size if max_size is not None else min_size
