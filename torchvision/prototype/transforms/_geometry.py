@@ -884,7 +884,7 @@ class RandomResize(Transform):
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         size = int(torch.randint(self.min_size, self.max_size, ()))
-        return dict(size=size)
+        return dict(size=[size])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.resize(inpt, params["size"], interpolation=self.interpolation, antialias=self.antialias)
