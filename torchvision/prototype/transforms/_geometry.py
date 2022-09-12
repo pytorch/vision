@@ -869,17 +869,14 @@ class FixedSizeCrop(Transform):
 
 
 class RandomResize(Transform):
-    def __init__(self, min_size: int, max_size: Optional[int] = None) -> None:
+    def __init__(self, min_size: int, max_size: int) -> None:
         super().__init__()
         self.min_size = min_size
-        self.max_size = max_size if max_size is not None else min_size
+        self.max_size = max_size
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        needs_resize = self.max_size > self.min_size
-        size = int(torch.randint(self.min_size, self.max_size, ())) if needs_resize else None
+        size = int(torch.randint(self.min_size, self.max_size, ()))
         return dict(size=size)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if params["size"] is not None:
-            inpt = F.resize(inpt, params["size"])
-        return inpt
+        return F.resize(inpt, params["size"])
