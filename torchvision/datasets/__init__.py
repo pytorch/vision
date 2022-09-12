@@ -1,11 +1,13 @@
 from ._optical_flow import FlyingChairs, FlyingThings3D, HD1K, KittiFlow, Sintel
 from ._stereo_matching import (
     CarlaStereo,
+    CREStereo,
     ETH3DStereo,
     FallingThingsStereo,
     InStereo2k,
     Kitti2012Stereo,
     Kitti2015Stereo,
+    Middlebury2014Stereo,
     SceneFlowStereo,
     SintelStereo,
 )
@@ -118,6 +120,8 @@ __all__ = (
     "Kitti2012Stereo",
     "Kitti2015Stereo",
     "CarlaStereo",
+    "Middlebury2014Stereo",
+    "CREStereo",
     "FallingThingsStereo",
     "SceneFlowStereo",
     "SintelStereo",

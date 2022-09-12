@@ -443,7 +443,7 @@ class RandomCrop(Transform):
             if height < output_height:
                 height += 2 * (output_height - height)
 
-        if height + 1 < output_height or width + 1 < output_width:
+        if height < output_height or width < output_width:
             raise ValueError(
                 f"Required crop size {(output_height, output_width)} is larger then input image size {(height, width)}"
             )
