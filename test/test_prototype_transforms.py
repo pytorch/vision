@@ -1,9 +1,10 @@
 import itertools
 
 import numpy as np
-import PIL.Image
-import pytest
 
+import PIL.Image
+
+import pytest
 import torch
 from common_utils import assert_equal, cpu_and_gpu
 from prototype_common_utils import (
