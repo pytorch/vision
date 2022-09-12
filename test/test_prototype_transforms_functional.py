@@ -163,7 +163,7 @@ def make_segmentation_masks(
         yield make_segmentation_mask(size=size, dtype=dtype, extra_dims=extra_dims_)
 
     for dtype, extra_dims_, num_objects_ in itertools.product(dtypes, extra_dims, num_objects):
-        yield make_segmentation_mask(num_objects=num_objects_, dtype=dtype, extra_dims=extra_dims_)
+        yield make_segmentation_mask(size=sizes[0], num_objects=num_objects_, dtype=dtype, extra_dims=extra_dims_)
 
 
 class SampleInput:
@@ -904,13 +904,6 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
 
 
-incorrect_expected_segmentation_mask_setup = pytest.mark.xfail(
-    reason="This test fails because the expected result computation is wrong. Fix ASAP.",
-    strict=False,
-)
-
-
-@incorrect_expected_segmentation_mask_setup
 @pytest.mark.parametrize("angle", [-54, 56])
 @pytest.mark.parametrize("translate", [-7, 8])
 @pytest.mark.parametrize("scale", [0.89, 1.12])
@@ -918,7 +911,7 @@ incorrect_expected_segmentation_mask_setup = pytest.mark.xfail(
 @pytest.mark.parametrize("center", [None, (12, 14)])
 def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, center):
     def _compute_expected_mask(mask, angle_, translate_, scale_, shear_, center_):
-        assert mask.ndim == 3 and mask.shape[0] == 1
+        assert mask.ndim == 3
         affine_matrix = _compute_affine_matrix(angle_, translate_, scale_, shear_, center_)
         inv_affine_matrix = np.linalg.inv(affine_matrix)
         inv_affine_matrix = inv_affine_matrix[:2, :]
@@ -927,10 +920,11 @@ def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, ce
         for out_y in range(expected_mask.shape[1]):
             for out_x in range(expected_mask.shape[2]):
                 output_pt = np.array([out_x + 0.5, out_y + 0.5, 1.0])
-                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype(np.int32)
+                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype("int")
                 in_x, in_y = input_pt[:2]
                 if 0 <= in_x < mask.shape[2] and 0 <= in_y < mask.shape[1]:
-                    expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
+                    for i in range(expected_mask.shape[0]):
+                        expected_mask[i, out_y, out_x] = mask[i, in_y, in_x]
         return expected_mask.to(mask.device)
 
     for mask in make_segmentation_masks(extra_dims=((), (4,))):
@@ -1128,13 +1122,12 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
 
 
-@incorrect_expected_segmentation_mask_setup
-@pytest.mark.parametrize("angle", range(-90, 90, 37))
+@pytest.mark.parametrize("angle", range(-89, 90, 37))
 @pytest.mark.parametrize("expand, center", [(True, None), (False, None), (False, (12, 14))])
 def test_correctness_rotate_segmentation_mask(angle, expand, center):
     def _compute_expected_mask(mask, angle_, expand_, center_):
-        assert mask.ndim == 3 and mask.shape[0] == 1
-        image_size = mask.shape[-2:]
+        assert mask.ndim == 3
+        c, *image_size = mask.shape
         affine_matrix = _compute_affine_matrix(angle_, [0.0, 0.0], 1.0, [0.0, 0.0], center_)
         inv_affine_matrix = np.linalg.inv(affine_matrix)
 
@@ -1155,22 +1148,23 @@ def test_correctness_rotate_segmentation_mask(angle, expand, center):
             max_vals = np.max(new_points, axis=0)[:2]
             cmax = np.ceil(np.trunc(max_vals * 1e4) * 1e-4)
             cmin = np.floor(np.trunc((min_vals + 1e-8) * 1e4) * 1e-4)
-            new_width, new_height = (cmax - cmin).astype("int32").tolist()
+            new_width, new_height = (cmax - cmin).astype("int").tolist()
             tr = np.array([-(new_width - width) / 2.0, -(new_height - height) / 2.0, 1.0]) @ inv_affine_matrix.T
 
             inv_affine_matrix[:2, 2] = tr[:2]
             image_size = [new_height, new_width]
 
         inv_affine_matrix = inv_affine_matrix[:2, :]
-        expected_mask = torch.zeros(1, *image_size, dtype=mask.dtype)
+        expected_mask = torch.zeros(c, *image_size, dtype=mask.dtype)
 
         for out_y in range(expected_mask.shape[1]):
             for out_x in range(expected_mask.shape[2]):
                 output_pt = np.array([out_x + 0.5, out_y + 0.5, 1.0])
-                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype(np.int32)
+                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype("int")
                 in_x, in_y = input_pt[:2]
                 if 0 <= in_x < mask.shape[2] and 0 <= in_y < mask.shape[1]:
-                    expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
+                    for i in range(expected_mask.shape[0]):
+                        expected_mask[i, out_y, out_x] = mask[i, in_y, in_x]
         return expected_mask.to(mask.device)
 
     for mask in make_segmentation_masks(extra_dims=((), (4,))):
@@ -1617,7 +1611,6 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         torch.testing.assert_close(output_bboxes, expected_bboxes, rtol=1e-5, atol=1e-5)
 
 
-@incorrect_expected_segmentation_mask_setup
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "startpoints, endpoints",
@@ -1629,19 +1622,9 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
 )
 def test_correctness_perspective_segmentation_mask(device, startpoints, endpoints):
     def _compute_expected_mask(mask, pcoeffs_):
-        assert mask.ndim == 3 and mask.shape[0] == 1
-        m1 = np.array(
-            [
-                [pcoeffs_[0], pcoeffs_[1], pcoeffs_[2]],
-                [pcoeffs_[3], pcoeffs_[4], pcoeffs_[5]],
-            ]
-        )
-        m2 = np.array(
-            [
-                [pcoeffs_[6], pcoeffs_[7], 1.0],
-                [pcoeffs_[6], pcoeffs_[7], 1.0],
-            ]
-        )
+        assert mask.ndim == 3
+        m1 = np.array([[pcoeffs_[0], pcoeffs_[1], pcoeffs_[2]], [pcoeffs_[3], pcoeffs_[4], pcoeffs_[5]]])
+        m2 = np.array([[pcoeffs_[6], pcoeffs_[7], 1.0], [pcoeffs_[6], pcoeffs_[7], 1.0]])
 
         expected_mask = torch.zeros_like(mask.cpu())
         for out_y in range(expected_mask.shape[1]):
@@ -1654,7 +1637,8 @@ def test_correctness_perspective_segmentation_mask(device, startpoints, endpoint
 
                 in_x, in_y = input_pt[:2]
                 if 0 <= in_x < mask.shape[2] and 0 <= in_y < mask.shape[1]:
-                    expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
+                    for i in range(expected_mask.shape[0]):
+                        expected_mask[i, out_y, out_x] = mask[i, in_y, in_x]
         return expected_mask.to(mask.device)
 
     pcoeffs = _get_perspective_coeffs(startpoints, endpoints)
@@ -1819,7 +1803,6 @@ def test_correctness_gaussian_blur_image_tensor(device, image_size, dt, ksize, s
     torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
 
 
-@incorrect_expected_segmentation_mask_setup
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "fn, make_samples", [(F.elastic_image_tensor, make_images), (F.elastic_segmentation_mask, make_segmentation_masks)]
@@ -1829,10 +1812,11 @@ def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
     for sample in make_samples(sizes=((64, 76),), extra_dims=((), (4,))):
         c, h, w = sample.shape[-3:]
         # Setup a dummy image with 4 points
-        sample[..., in_box[1], in_box[0]] = torch.tensor([12, 34, 96, 112])[:c]
-        sample[..., in_box[3] - 1, in_box[0]] = torch.tensor([12, 34, 96, 112])[:c]
-        sample[..., in_box[3] - 1, in_box[2] - 1] = torch.tensor([12, 34, 96, 112])[:c]
-        sample[..., in_box[1], in_box[2] - 1] = torch.tensor([12, 34, 96, 112])[:c]
+        print(sample.shape)
+        sample[..., in_box[1], in_box[0]] = torch.arange(10, 10 + c)
+        sample[..., in_box[3] - 1, in_box[0]] = torch.arange(20, 20 + c)
+        sample[..., in_box[3] - 1, in_box[2] - 1] = torch.arange(30, 30 + c)
+        sample[..., in_box[1], in_box[2] - 1] = torch.arange(40, 40 + c)
         sample = sample.to(device)
 
         if fn == F.elastic_image_tensor:
