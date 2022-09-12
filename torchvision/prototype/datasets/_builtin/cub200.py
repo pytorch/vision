@@ -39,6 +39,10 @@ def _info() -> Dict[str, Any]:
     return dict(categories=read_categories_file(NAME))
 
 
+def image_filename_fn(rel_posix_path: str) -> str:
+    return rel_posix_path.rsplit("/", maxsplit=1)[1]
+
+
 @register_dataset(NAME)
 class CUB200(Dataset):
     """
@@ -185,17 +189,15 @@ class CUB200(Dataset):
             )
 
             image_files_dp = CSVParser(image_files_dp, dialect="cub200")
-            image_files_map = dict(
-                (image_id, rel_posix_path.rsplit("/", maxsplit=1)[1]) for image_id, rel_posix_path in image_files_dp
-            )
+            image_files_map = image_files_dp.map(image_filename_fn, input_col=1).to_map_datapipe()
 
             split_dp = CSVParser(split_dp, dialect="cub200")
             split_dp = Filter(split_dp, self._2011_filter_split)
             split_dp = Mapper(split_dp, getitem(0))
-            split_dp = Mapper(split_dp, image_files_map.get)
+            split_dp = Mapper(split_dp, image_files_map.__getitem__)
 
             bounding_boxes_dp = CSVParser(bounding_boxes_dp, dialect="cub200")
-            bounding_boxes_dp = Mapper(bounding_boxes_dp, image_files_map.get, input_col=0)
+            bounding_boxes_dp = Mapper(bounding_boxes_dp, image_files_map.__getitem__, input_col=0)
 
             anns_dp = IterKeyZipper(
                 bounding_boxes_dp,
