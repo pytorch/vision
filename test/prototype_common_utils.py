@@ -1,7 +1,6 @@
 """This module is separated from common_utils.py to prevent the former to be dependent on torchvision.prototype"""
 
 import collections.abc
-import enum
 import functools
 import itertools
 
@@ -153,20 +152,6 @@ class ArgsKwargs:
         }
         return args, kwargs
 
-    def __repr__(self):
-        def better_repr(obj):
-            if isinstance(obj, enum.Enum):
-                return str(obj)
-            else:
-                return repr(obj)
-
-        return ", ".join(
-            itertools.chain(
-                [better_repr(arg) for arg in self.args],
-                [f"{param}={better_repr(kwarg)}" for param, kwarg in self.kwargs.items()],
-            )
-        )
-
 
 DEFAULT_SQUARE_IMAGE_SIZE = (16, 16)
 DEFAULT_LANDSCAPE_IMAGE_SIZE = (7, 33)
@@ -202,21 +187,6 @@ class TensorLoader:
     def load(self, device):
         return self.fn(self.shape, self.dtype, device)
 
-    _TYPE_NAME = "torch.Tensor"
-
-    def _extra_repr(self):
-        return []
-
-    def __repr__(self):
-        extra = ", ".join(
-            [
-                str(tuple(self.shape)),
-                str(self.dtype).replace("torch.", ""),
-                *[str(extra) for extra in self._extra_repr()],
-            ]
-        )
-        return f"{self._TYPE_NAME}[{extra}]"
-
 
 class ImageLoader(TensorLoader):
     def __init__(self, *args, color_space, **kwargs):
@@ -225,14 +195,9 @@ class ImageLoader(TensorLoader):
         self.num_channels = self.shape[-3]
         self.color_space = color_space
 
-    _TYPE_NAME = "features.Image"
-
-    def _extra_repr(self):
-        return [self.color_space]
-
 
 class SegmentationMaskLoader(TensorLoader):
-    _TYPE_NAME = "features.SegmentationMask"
+    pass
 
 
 def make_image_loader(

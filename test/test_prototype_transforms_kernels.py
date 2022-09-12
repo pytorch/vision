@@ -45,9 +45,6 @@ class KernelInfo:
         # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
         self.closeness_kwargs = closeness_kwargs
 
-    def __str__(self):
-        return self.kernel.__name__
-
 
 def pil_reference_wrapper(pil_kernel):
     @functools.wraps(pil_kernel)
@@ -332,7 +329,7 @@ class TestCommon:
     sample_inputs = pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
-            pytest.param(info, args_kwargs, id=f"{info}({args_kwargs})")
+            pytest.param(info, args_kwargs, id=f"{info.kernel.__name__}")
             for info in KERNEL_INFOS
             for args_kwargs in info.sample_inputs_fn()
         ],
@@ -423,7 +420,7 @@ class TestCommon:
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
-            pytest.param(info, args_kwargs, id=f"{info}({args_kwargs})")
+            pytest.param(info, args_kwargs, id=f"{info.kernel.__name__}")
             for info in KERNEL_INFOS
             for args_kwargs in info.reference_inputs_fn()
             if info.reference_fn is not None
