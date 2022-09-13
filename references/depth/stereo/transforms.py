@@ -267,8 +267,8 @@ class RandomErase(torch.nn.Module):
     def _get_params(self, img: torch.Tensor) -> Tuple[int, int, int, int, float]:
         img_h, img_w = img.shape[-2:]
         crop_h, crop_w = (
-            random.randint(self.min_px_erase, img_h - self.max_px_erase),
-            random.randint(self.min_px_erase, img_w - self.max_px_erase),
+            random.randint(self.min_px_erase, self.max_px_erase),
+            random.randint(self.min_px_erase, self.max_px_erase),
         )
         crop_x, crop_y = (random.randint(0, img_w - crop_w), random.randint(0, img_h - crop_h))
 
