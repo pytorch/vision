@@ -762,7 +762,7 @@ class CREStereo(nn.Module):
         return "1d" if iteration % 2 == 0 else "2d"
 
     def forward(
-        self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor], iterations: int = 10
+        self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor], num_iters: int = 10
     ) -> List[Tensor]:
         features = torch.cat([left_image, right_image], dim=0)
         features = self.feature_encoder(features)
@@ -858,7 +858,7 @@ class CREStereo(nn.Module):
             for idx, (resolution, correlation_layer) in enumerate(self.correlation_layers.items()):
                 # compute the scale difference between the first pyramid scale and the current pyramid scale
                 scale_to_base = l_pyramid[fine_grained_resolution].shape[2] // l_pyramid[resolution].shape[2]
-                for it in range(iterations // 2):
+                for it in range(num_iters // 2):
                     # set wether or not we want to search on (X, Y) axes for correlation or just on X axis
                     window_type = self._get_window_type(it)
                     # we consider this a prior, therefor we do not want to back-propagate through it
@@ -921,7 +921,7 @@ class CREStereo(nn.Module):
         # further more, if provided with an inital flow, there is no need to generate
         # a prior estimate when moving into the final refinement stage
 
-        for it in range(iterations):
+        for it in range(num_iters):
             search_window_type = self._get_window_type(it)
 
             flow_estimates[max_res] = flow_estimates[max_res].detach()
