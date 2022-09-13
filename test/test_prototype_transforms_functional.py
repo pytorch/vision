@@ -1638,7 +1638,6 @@ def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
     for sample in make_samples(sizes=((64, 76),), extra_dims=((), (4,))):
         c, h, w = sample.shape[-3:]
         # Setup a dummy image with 4 points
-        print(sample.shape)
         sample[..., in_box[1], in_box[0]] = torch.arange(10, 10 + c)
         sample[..., in_box[3] - 1, in_box[0]] = torch.arange(20, 20 + c)
         sample[..., in_box[3] - 1, in_box[2] - 1] = torch.arange(30, 30 + c)
