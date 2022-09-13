@@ -367,15 +367,21 @@ def affine_bounding_box(
 
 
 def affine_segmentation_mask(
-    mask: torch.Tensor,
+    segmentation_mask: torch.Tensor,
     angle: float,
     translate: List[float],
     scale: float,
     shear: List[float],
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    return affine_image_tensor(
-        mask,
+    if segmentation_mask.ndim < 3:
+        segmentation_mask = segmentation_mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = affine_image_tensor(
+        segmentation_mask,
         angle=angle,
         translate=translate,
         scale=scale,
@@ -383,6 +389,11 @@ def affine_segmentation_mask(
         interpolation=InterpolationMode.NEAREST,
         center=center,
     )
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def _convert_fill_arg(fill: Optional[Union[int, float, Sequence[int], Sequence[float]]]) -> Optional[List[float]]:
@@ -522,18 +533,29 @@ def rotate_bounding_box(
 
 
 def rotate_segmentation_mask(
-    img: torch.Tensor,
+    segmentation_mask: torch.Tensor,
     angle: float,
     expand: bool = False,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    return rotate_image_tensor(
-        img,
+    if segmentation_mask.ndim < 3:
+        segmentation_mask = segmentation_mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = rotate_image_tensor(
+        segmentation_mask,
         angle=angle,
         expand=expand,
         interpolation=InterpolationMode.NEAREST,
         center=center,
     )
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def rotate(
@@ -607,7 +629,18 @@ def _pad_with_vector_fill(
 def pad_segmentation_mask(
     segmentation_mask: torch.Tensor, padding: Union[int, List[int]], padding_mode: str = "constant"
 ) -> torch.Tensor:
-    return pad_image_tensor(img=segmentation_mask, padding=padding, fill=0, padding_mode=padding_mode)
+    if segmentation_mask.ndim < 3:
+        segmentation_mask = segmentation_mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = pad_image_tensor(img=segmentation_mask, padding=padding, fill=0, padding_mode=padding_mode)
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def pad_bounding_box(
@@ -793,10 +826,21 @@ def perspective_bounding_box(
     ).view(original_shape)
 
 
-def perspective_segmentation_mask(mask: torch.Tensor, perspective_coeffs: List[float]) -> torch.Tensor:
-    return perspective_image_tensor(
-        mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST
+def perspective_segmentation_mask(segmentation_mask: torch.Tensor, perspective_coeffs: List[float]) -> torch.Tensor:
+    if segmentation_mask.ndim < 3:
+        segmentation_mask = segmentation_mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = perspective_image_tensor(
+        segmentation_mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST
     )
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def perspective(
@@ -880,8 +924,19 @@ def elastic_bounding_box(
     ).view(original_shape)
 
 
-def elastic_segmentation_mask(mask: torch.Tensor, displacement: torch.Tensor) -> torch.Tensor:
-    return elastic_image_tensor(mask, displacement=displacement, interpolation=InterpolationMode.NEAREST)
+def elastic_segmentation_mask(segmentation_mask: torch.Tensor, displacement: torch.Tensor) -> torch.Tensor:
+    if segmentation_mask.ndim < 3:
+        segmentation_mask = segmentation_mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = elastic_image_tensor(segmentation_mask, displacement=displacement, interpolation=InterpolationMode.NEAREST)
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def elastic(
@@ -973,7 +1028,18 @@ def center_crop_bounding_box(
 
 
 def center_crop_segmentation_mask(segmentation_mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
-    return center_crop_image_tensor(img=segmentation_mask, output_size=output_size)
+    if segmentation_mask.ndim < 3:
+        segmentation_mask = segmentation_mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = center_crop_image_tensor(img=segmentation_mask, output_size=output_size)
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def center_crop(inpt: DType, output_size: List[int]) -> DType:

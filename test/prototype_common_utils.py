@@ -178,7 +178,8 @@ def make_one_hot_labels(
         yield make_one_hot_label(extra_dims_)
 
 
-def make_segmentation_mask(size=None, *, num_objects=None, extra_dims=(), dtype=torch.uint8):
+def make_detection_mask(size=None, *, num_objects=None, extra_dims=(), dtype=torch.uint8):
+    # This produces "detection" masks, i.e. `(*, N, H, W)`, where `N` denotes the number of objects
     size = size if size is not None else torch.randint(16, 33, (2,)).tolist()
     num_objects = num_objects if num_objects is not None else int(torch.randint(1, 11, ()))
     shape = (*extra_dims, num_objects, *size)
@@ -186,14 +187,49 @@ def make_segmentation_mask(size=None, *, num_objects=None, extra_dims=(), dtype=
     return features.SegmentationMask(data)
 
 
-def make_segmentation_masks(
+def make_detection_masks(
+    *,
     sizes=((16, 16), (7, 33), (31, 9)),
     dtypes=(torch.uint8,),
     extra_dims=((), (0,), (4,), (2, 3), (5, 0), (0, 5)),
-    num_objects=(1, 0, 10),
+    num_objects=(1, 0, None),
+):
+    for size, dtype, extra_dims_ in itertools.product(sizes, dtypes, extra_dims):
+        yield make_detection_mask(size=size, dtype=dtype, extra_dims=extra_dims_)
+
+    for dtype, extra_dims_, num_objects_ in itertools.product(dtypes, extra_dims, num_objects):
+        yield make_detection_mask(size=sizes[0], num_objects=num_objects_, dtype=dtype, extra_dims=extra_dims_)
+
+
+def make_segmentation_mask(size=None, *, num_categories=None, extra_dims=(), dtype=torch.uint8):
+    # This produces "segmentation" masks, i.e. `(*, H, W)`, where the category is encoded in the values
+    size = size if size is not None else torch.randint(16, 33, (2,)).tolist()
+    num_categories = num_categories if num_categories is not None else int(torch.randint(1, 11, ()))
+    shape = (*extra_dims, *size)
+    data = make_tensor(shape, low=0, high=num_categories, dtype=dtype)
+    return features.SegmentationMask(data)
+
+
+def make_segmentation_masks(
+    *,
+    sizes=((16, 16), (7, 33), (31, 9)),
+    dtypes=(torch.uint8,),
+    extra_dims=((), (0,), (4,), (2, 3), (5, 0), (0, 5)),
+    num_categories=(1, 2, None),
 ):
     for size, dtype, extra_dims_ in itertools.product(sizes, dtypes, extra_dims):
         yield make_segmentation_mask(size=size, dtype=dtype, extra_dims=extra_dims_)
 
-    for dtype, extra_dims_, num_objects_ in itertools.product(dtypes, extra_dims, num_objects):
-        yield make_segmentation_mask(size=sizes[0], num_objects=num_objects_, dtype=dtype, extra_dims=extra_dims_)
+    for dtype, extra_dims_, num_categories_ in itertools.product(dtypes, extra_dims, num_categories):
+        yield make_segmentation_mask(size=sizes[0], num_categories=num_categories_, dtype=dtype, extra_dims=extra_dims_)
+
+
+def make_detection_and_segmentation_masks(
+    sizes=((16, 16), (7, 33), (31, 9)),
+    dtypes=(torch.uint8,),
+    extra_dims=((), (0,), (4,), (2, 3), (5, 0), (0, 5)),
+    num_objects=(1, 0, None),
+    num_categories=(1, 2, None),
+):
+    yield from make_detection_masks(sizes=sizes, dtypes=dtypes, extra_dims=extra_dims, num_objects=num_objects)
+    yield from make_segmentation_masks(sizes=sizes, dtypes=dtypes, extra_dims=extra_dims, num_categories=num_categories)
