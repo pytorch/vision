@@ -135,7 +135,20 @@ def resize_image_pil(
 def resize_segmentation_mask(
     segmentation_mask: torch.Tensor, size: List[int], max_size: Optional[int] = None
 ) -> torch.Tensor:
-    return resize_image_tensor(segmentation_mask, size=size, interpolation=InterpolationMode.NEAREST, max_size=max_size)
+    if segmentation_mask.ndim < 3:
+        segmentation_mask = segmentation_mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = resize_image_tensor(
+        segmentation_mask, size=size, interpolation=InterpolationMode.NEAREST, max_size=max_size
+    )
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def resize_bounding_box(
