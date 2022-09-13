@@ -12,7 +12,7 @@ from ...transforms._presets import VideoClassification
 from ...utils import _log_api_usage_once
 from .._api import register_model, Weights, WeightsEnum
 from .._meta import _KINETICS400_CATEGORIES
-from .._utils import _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -661,6 +661,7 @@ class MViT_V2_S_Weights(WeightsEnum):
 
 
 @register_model()
+@handle_legacy_interface(weights=("pretrained", MViT_V1_B_Weights.KINETICS400_V1))
 def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
     """
     Constructs a base MViTV1 architecture from
@@ -756,6 +757,7 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
 
 
 @register_model()
+@handle_legacy_interface(weights=("pretrained", MViT_V2_S_Weights.KINETICS400_V1))
 def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
     """
     Constructs a small MViTV2 architecture from
