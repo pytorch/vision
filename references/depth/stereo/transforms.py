@@ -252,15 +252,15 @@ class RandomErase(torch.nn.Module):
         mask_left, mask_right = masks
         for _ in range(torch.randint(self.max_erase, size=(self.max_erase,)).item()):
             x, y, h, w, v = self._get_params(image_left)
-            image_right = F.erase(image_right, x, y, h, w, v, self.inplace)
-            image_left = F.erase(image_left, x, y, h, w, v, self.inplace)
+            image_right = F.erase(image_right, y, x, h, w, v, self.inplace)
+            image_left = F.erase(image_left, y, x, h, w, v, self.inplace)
             # similarly to optical flow occlusion prediction, we consider
             # any erasure pixels that are in both images to be occluded therefore
             # we mark them as invalid
             if mask_left is not None:
-                mask_left = F.erase(mask_left, x, y, h, w, False, self.inplace)
+                mask_left = F.erase(mask_left, y, x, h, w, False, self.inplace)
             if mask_right is not None:
-                mask_right = F.erase(mask_right, x, y, h, w, False, self.inplace)
+                mask_right = F.erase(mask_right, y, x, h, w, False, self.inplace)
 
         return (image_left, image_right), disparities, (mask_left, mask_right)
 
@@ -308,7 +308,7 @@ class RandomOcclusion(torch.nn.Module):
             return images, disparities, masks
 
         x, y, h, w, v = self._get_params(right_image)
-        right_image = F.erase(right_image, x, y, h, w, v, self.inplace)
+        right_image = F.erase(right_image, y, x, h, w, v, self.inplace)
 
         return ((left_image, right_image), disparities, masks)
 
