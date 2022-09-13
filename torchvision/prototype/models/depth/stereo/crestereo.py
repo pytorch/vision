@@ -133,21 +133,18 @@ class IterativeCorrelationLayer(nn.Module):
             search_window_2d=search_window_2d,
             search_dilate_2d=search_dilate_2d,
         )
-        self.search_window_1d = search_window_1d
-        self.search_dilate_1d = search_dilate_1d
-        self.search_window_2d = search_window_2d
-        self.search_dilate_2d = search_dilate_2d
+        self.search_pixels = np.prod(search_window_1d)
         self.groups = groups
 
         # two selection tables for dealing withh the small_patch argument in the forward function
         self.patch_sizes = {
-            "2d": [self.search_window_2d for _ in range(self.groups)],
-            "1d": [self.search_window_1d for _ in range(self.groups)],
+            "2d": [search_window_2d for _ in range(self.groups)],
+            "1d": [search_window_1d for _ in range(self.groups)],
         }
 
         self.dilate_sizes = {
-            "2d": [self.search_dilate_2d for _ in range(self.groups)],
-            "1d": [self.search_dilate_1d for _ in range(self.groups)],
+            "2d": [search_dilate_2d for _ in range(self.groups)],
+            "1d": [search_dilate_1d for _ in range(self.groups)],
         }
 
     def _make_coords(self, feature_map: Tensor) -> Tensor:
@@ -200,20 +197,18 @@ class AttentionOffsetCorrelationLayer(nn.Module):
             search_window_2d=search_window_2d,
             search_dilate_2d=search_dilate_2d,
         )
-        self.search_window_1d = search_window_1d
-        self.search_dilate_1d = search_dilate_1d
-        self.search_window_2d = search_window_2d
-        self.search_dilate_2d = search_dilate_2d
+        self.search_pixels = np.prod(search_window_1d)
         self.groups = groups
 
+        # two selection tables for dealing withh the small_patch argument in the forward function
         self.patch_sizes = {
-            "2d": [self.search_window_2d for _ in range(self.groups)],
-            "1d": [self.search_window_1d for _ in range(self.groups)],
+            "2d": [search_window_2d for _ in range(self.groups)],
+            "1d": [search_window_1d for _ in range(self.groups)],
         }
 
         self.dilate_sizes = {
-            "2d": [self.search_dilate_2d for _ in range(self.groups)],
-            "1d": [self.search_dilate_1d for _ in range(self.groups)],
+            "2d": [search_dilate_2d for _ in range(self.groups)],
+            "1d": [search_dilate_1d for _ in range(self.groups)],
         }
 
         self.attention_module = attention_module
@@ -248,7 +243,7 @@ class AttentionOffsetCorrelationLayer(nn.Module):
         left_groups = torch.chunk(left_feature, self.groups, dim=1)
         right_groups = torch.chunk(right_feature, self.groups, dim=1)
 
-        num_search_candidates = self.search_window_2d[1] * self.search_window_2d[0]
+        num_search_candidates = self.search_pixels
         # for each pixel (i, j) we have a number of search candidates
         # thus, for each candidate we should have an X-axis and Y-axis offset value
         extra_offset = extra_offset.reshape(B, num_search_candidates, 2, H, W).permute(0, 1, 3, 4, 2)
@@ -677,6 +672,7 @@ class CREStereo(nn.Module):
         search_dilate_2d: Tuple[int, int] = (1, 1),
     ) -> None:
         super().__init__()
+        self.output_channels = 2
 
         self.feature_encoder = feature_encoder
         self.update_block = update_block
