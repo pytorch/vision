@@ -411,6 +411,7 @@ class RaftStereo(nn.Module):
         args:
             left_image (Tensor): The input left image with layout B, C, H, W
             right_image (Tensor): The input right image with layout B, C, H, W
+            flow_init (Optional[Tensor]): Initial estimate for the disparity. Default: None
             num_iters (int): Number of update block iteration on the largest resolution. Default: 12
         """
         batch_size, _, h, w = left_image.shape
