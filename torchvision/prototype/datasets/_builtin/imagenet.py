@@ -183,10 +183,10 @@ class ImageNet(Dataset):
             meta_dp = CategoryAndWordNetIDExtractor(meta_dp)
             wnid_dp = Mapper(meta_dp, getitem(1))
             wnid_dp = Enumerator(wnid_dp, 1)
-            wnid_dp = Mapper(wnid_dp, str, input_col=0)
             wnid_map = IterToMapConverter(wnid_dp)
 
             label_dp = LineReader(label_dp, decode=True, return_path=False)
+            label_dp = Mapper(label_dp, int)
             label_dp = Mapper(label_dp, wnid_map.__getitem__)
             label_dp: IterDataPipe[Tuple[int, str]] = Enumerator(label_dp, 1)
             label_dp = hint_shuffling(label_dp)
