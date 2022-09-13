@@ -8,7 +8,14 @@ import pytest
 import torch.testing
 import torchvision.prototype.transforms.functional as F
 from common_utils import cpu_and_gpu
-from prototype_common_utils import ArgsKwargs, make_bounding_boxes, make_detection_masks, make_image, make_images
+from prototype_common_utils import (
+    ArgsKwargs,
+    make_bounding_boxes,
+    make_detection_and_segmentation_masks,
+    make_detection_masks,
+    make_image,
+    make_images,
+)
 from torch import jit
 from torchvision.prototype import features
 from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
@@ -55,7 +62,7 @@ def horizontal_flip_bounding_box():
 
 @register_kernel_info_from_sample_inputs_fn
 def horizontal_flip_segmentation_mask():
-    for mask in make_detection_masks():
+    for mask in make_detection_and_segmentation_masks():
         yield ArgsKwargs(mask)
 
 
@@ -73,7 +80,7 @@ def vertical_flip_bounding_box():
 
 @register_kernel_info_from_sample_inputs_fn
 def vertical_flip_segmentation_mask():
-    for mask in make_detection_masks():
+    for mask in make_detection_and_segmentation_masks():
         yield ArgsKwargs(mask)
 
 
@@ -118,7 +125,7 @@ def resize_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def resize_segmentation_mask():
     for mask, max_size in itertools.product(
-        make_detection_masks(),
+        make_detection_and_segmentation_masks(),
         [None, 34],  # max_size
     ):
         height, width = mask.shape[-2:]
@@ -173,7 +180,7 @@ def affine_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def affine_segmentation_mask():
     for mask, angle, translate, scale, shear in itertools.product(
-        make_detection_masks(),
+        make_detection_and_segmentation_masks(),
         [-87, 15, 90],  # angle
         [5, -5],  # translate
         [0.77, 1.27],  # scale
@@ -226,7 +233,7 @@ def rotate_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def rotate_segmentation_mask():
     for mask, angle, expand, center in itertools.product(
-        make_detection_masks(),
+        make_detection_and_segmentation_masks(),
         [-87, 15, 90],  # angle
         [True, False],  # expand
         [None, [12, 23]],  # center
@@ -269,7 +276,7 @@ def crop_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def crop_segmentation_mask():
     for mask, top, left, height, width in itertools.product(
-        make_detection_masks(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20]
+        make_detection_and_segmentation_masks(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20]
     ):
         yield ArgsKwargs(
             mask,
@@ -307,7 +314,7 @@ def resized_crop_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def resized_crop_segmentation_mask():
     for mask, top, left, height, width, size in itertools.product(
-        make_detection_masks(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20], [(32, 32), (16, 18)]
+        make_detection_and_segmentation_masks(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20], [(32, 32), (16, 18)]
     ):
         yield ArgsKwargs(mask, top=top, left=left, height=height, width=width, size=size)
 
@@ -326,7 +333,7 @@ def pad_image_tensor():
 @register_kernel_info_from_sample_inputs_fn
 def pad_segmentation_mask():
     for mask, padding, padding_mode in itertools.product(
-        make_detection_masks(),
+        make_detection_and_segmentation_masks(),
         [[1], [1, 1], [1, 1, 2, 2]],  # padding
         ["constant", "symmetric", "edge", "reflect"],  # padding mode,
     ):
@@ -374,7 +381,7 @@ def perspective_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def perspective_segmentation_mask():
     for mask, perspective_coeffs in itertools.product(
-        make_detection_masks(extra_dims=((), (4,))),
+        make_detection_and_segmentation_masks(extra_dims=((), (4,))),
         [
             [1.2405, 0.1772, -6.9113, 0.0463, 1.251, -5.235, 0.00013, 0.0018],
             [0.7366, -0.11724, 1.45775, -0.15012, 0.73406, 2.6019, -0.0072, -0.0063],
@@ -411,7 +418,7 @@ def elastic_bounding_box():
 
 @register_kernel_info_from_sample_inputs_fn
 def elastic_segmentation_mask():
-    for mask in make_detection_masks(extra_dims=((), (4,))):
+    for mask in make_detection_and_segmentation_masks(extra_dims=((), (4,))):
         h, w = mask.shape[-2:]
         displacement = torch.rand(1, h, w, 2)
         yield ArgsKwargs(
@@ -440,7 +447,7 @@ def center_crop_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def center_crop_segmentation_mask():
     for mask, output_size in itertools.product(
-        make_detection_masks(sizes=((16, 16), (7, 33), (31, 9))),
+        make_detection_and_segmentation_masks(sizes=((16, 16), (7, 33), (31, 9))),
         [[4, 3], [42, 70], [4]],  # crop sizes < image sizes, crop_sizes > image sizes, single crop size
     ):
         yield ArgsKwargs(mask, output_size)
@@ -771,6 +778,7 @@ def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, ce
                         expected_mask[i, out_y, out_x] = mask[i, in_y, in_x]
         return expected_mask.to(mask.device)
 
+    # FIXME: `_compute_expected_mask` currently only works for "detection" masks. Extend it for "segmentation" masks.
     for mask in make_detection_masks(extra_dims=((), (4,))):
         output_mask = F.affine_segmentation_mask(
             mask,
@@ -1011,6 +1019,7 @@ def test_correctness_rotate_segmentation_mask(angle, expand, center):
                         expected_mask[i, out_y, out_x] = mask[i, in_y, in_x]
         return expected_mask.to(mask.device)
 
+    # FIXME: `_compute_expected_mask` currently only works for "detection" masks. Extend it for "segmentation" masks.
     for mask in make_detection_masks(extra_dims=((), (4,))):
         output_mask = F.rotate_segmentation_mask(
             mask,
@@ -1138,7 +1147,7 @@ def test_correctness_crop_segmentation_mask(device, top, left, height, width):
 
         return expected
 
-    for mask in make_detection_masks():
+    for mask in make_detection_and_segmentation_masks():
         if mask.device != torch.device(device):
             mask = mask.to(device)
         output_mask = F.crop_segmentation_mask(mask, top, left, height, width)
@@ -1358,7 +1367,7 @@ def test_correctness_pad_segmentation_mask(padding, padding_mode):
 
         return output
 
-    for mask in make_detection_masks():
+    for mask in make_detection_and_segmentation_masks():
         out_mask = F.pad_segmentation_mask(mask, padding, padding_mode=padding_mode)
 
         expected_mask = _compute_expected_mask(mask, padding, padding_mode)
@@ -1487,6 +1496,7 @@ def test_correctness_perspective_segmentation_mask(device, startpoints, endpoint
 
     pcoeffs = _get_perspective_coeffs(startpoints, endpoints)
 
+    # FIXME: `_compute_expected_mask` currently only works for "detection" masks. Extend it for "segmentation" masks.
     for mask in make_detection_masks(extra_dims=((), (4,))):
         mask = mask.to(device)
 
@@ -1649,14 +1659,18 @@ def test_correctness_gaussian_blur_image_tensor(device, image_size, dt, ksize, s
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
-    "fn, make_samples", [(F.elastic_image_tensor, make_images), (F.elastic_segmentation_mask, make_detection_masks)]
+    "fn, make_samples",
+    [
+        (F.elastic_image_tensor, make_images),
+        # FIXME: This test currently only works for "detection" masks. Extend it for "segmentation" masks.
+        (F.elastic_segmentation_mask, make_detection_masks),
+    ],
 )
 def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
     in_box = [10, 15, 25, 35]
     for sample in make_samples(sizes=((64, 76),), extra_dims=((), (4,))):
         c, h, w = sample.shape[-3:]
         # Setup a dummy image with 4 points
-        print(sample.shape)
         sample[..., in_box[1], in_box[0]] = torch.arange(10, 10 + c)
         sample[..., in_box[3] - 1, in_box[0]] = torch.arange(20, 20 + c)
         sample[..., in_box[3] - 1, in_box[2] - 1] = torch.arange(30, 30 + c)
