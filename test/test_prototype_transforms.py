@@ -10,11 +10,13 @@ from common_utils import assert_equal, cpu_and_gpu
 from prototype_common_utils import (
     make_bounding_box,
     make_bounding_boxes,
+    make_detection_and_segmentation_masks,
     make_detection_mask,
     make_image,
     make_images,
     make_label,
     make_one_hot_labels,
+    make_segmentation_mask,
 )
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features, transforms
@@ -62,6 +64,7 @@ def parametrize_from_transforms(*transforms):
             make_one_hot_labels,
             make_vanilla_tensor_images,
             make_pil_images,
+            make_detection_and_segmentation_masks,
         ]:
             inputs = list(creation_fn())
             try:
@@ -131,7 +134,12 @@ class TestSmoke:
         # Check if we raise an error if sample contains bbox or mask or label
         err_msg = "does not support bounding boxes, segmentation masks and plain labels"
         input_copy = dict(input)
-        for unsup_data in [make_label(), make_bounding_box(format="XYXY"), make_detection_mask()]:
+        for unsup_data in [
+            make_label(),
+            make_bounding_box(format="XYXY"),
+            make_detection_mask(),
+            make_segmentation_mask(),
+        ]:
             input_copy["unsupported"] = unsup_data
             with pytest.raises(TypeError, match=err_msg):
                 transform(input_copy)
@@ -233,7 +241,7 @@ class TestSmoke:
             color_space=features.ColorSpace.RGB, old_color_space=features.ColorSpace.GRAY
         )
 
-        for inpt in [make_bounding_box(format="XYXY"), make_detection_mask()]:
+        for inpt in [make_bounding_box(format="XYXY"), make_detection_and_segmentation_masks()]:
             output = transform(inpt)
             assert output is inpt
 
