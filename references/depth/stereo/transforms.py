@@ -250,7 +250,7 @@ class RandomErase(torch.nn.Module):
 
         image_left, image_right = images
         mask_left, mask_right = masks
-        for _ in range(torch.randint(self.max_erase, size=(self.max_erase,)).item()):
+        for _ in range(torch.randint(self.max_erase, size=(1,)).item()):
             x, y, h, w, v = self._get_params(image_left)
             image_right = F.erase(image_right, y, x, h, w, v, self.inplace)
             image_left = F.erase(image_left, y, x, h, w, v, self.inplace)
