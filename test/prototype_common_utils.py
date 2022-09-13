@@ -2,12 +2,12 @@
 
 import collections.abc
 import functools
-import itertools
 
 import PIL.Image
 import pytest
 import torch
 import torch.testing
+from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
 from torch.testing._comparison import (
     assert_equal as _assert_equal,
@@ -31,6 +31,8 @@ __all__ = [
     "make_bounding_box_loaders",
     "make_bounding_box",
     "make_bounding_boxes",
+    "make_label",
+    "make_one_hot_labels",
     "make_segmentation_mask_loaders",
     "make_segmentation_mask",
     "make_segmentation_masks",
@@ -156,7 +158,12 @@ class ArgsKwargs:
 DEFAULT_SQUARE_IMAGE_SIZE = (16, 16)
 DEFAULT_LANDSCAPE_IMAGE_SIZE = (7, 33)
 DEFAULT_PORTRAIT_IMAGE_SIZE = (31, 9)
-DEFAULT_IMAGE_SIZES = (DEFAULT_LANDSCAPE_IMAGE_SIZE, DEFAULT_PORTRAIT_IMAGE_SIZE, DEFAULT_SQUARE_IMAGE_SIZE)
+DEFAULT_IMAGE_SIZES = (DEFAULT_LANDSCAPE_IMAGE_SIZE, DEFAULT_PORTRAIT_IMAGE_SIZE, DEFAULT_SQUARE_IMAGE_SIZE, None)
+
+
+def random_image_size():
+    return tuple(torch.randint(16, 33, (2,)).tolist())
+
 
 DEFAULT_EXTRA_DIMS = ((), (0,), (4,), (2, 3), (5, 0), (0, 5))
 
@@ -196,10 +203,6 @@ class ImageLoader(TensorLoader):
         self.color_space = color_space
 
 
-class SegmentationMaskLoader(TensorLoader):
-    pass
-
-
 def make_image_loader(
     size=None,
     *,
@@ -208,7 +211,8 @@ def make_image_loader(
     dtype=torch.float32,
     constant_alpha=True,
 ):
-    size = size or torch.randint(16, 33, (2,)).tolist()
+    if size is None:
+        size = random_image_size()
 
     try:
         num_channels = {
@@ -246,17 +250,8 @@ def make_image_loaders(
     dtypes=(torch.float32, torch.uint8),
     constant_alpha=True,
 ):
-    for size, color_space, dtype in itertools.product(sizes, color_spaces, dtypes):
-        yield make_image_loader(size, color_space=color_space, dtype=dtype, constant_alpha=constant_alpha)
-
-    for color_space, dtype, extra_dims_ in itertools.product(color_spaces, dtypes, extra_dims):
-        yield make_image_loader(
-            size=sizes[0],
-            color_space=color_space,
-            extra_dims=extra_dims_,
-            dtype=dtype,
-            constant_alpha=constant_alpha,
-        )
+    for params in combinations_grid(size=sizes, color_space=color_spaces, extra_dims=extra_dims, dtype=dtypes):
+        yield make_image_loader(**params, constant_alpha=constant_alpha)
 
 
 make_images = from_loaders(make_image_loaders)
@@ -286,7 +281,7 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
     ).reshape(low.shape)
 
 
-def make_bounding_box_loader(*, extra_dims=(), format, image_size=DEFAULT_LANDSCAPE_IMAGE_SIZE, dtype=torch.float32):
+def make_bounding_box_loader(*, extra_dims=(), format, image_size=None, dtype=torch.float32):
     if isinstance(format, str):
         format = features.BoundingBoxFormat[format]
     if format not in {
@@ -296,13 +291,18 @@ def make_bounding_box_loader(*, extra_dims=(), format, image_size=DEFAULT_LANDSC
     }:
         raise pytest.UsageError(f"Can't make bounding box in format {format}")
 
+    if image_size is None:
+        image_size = random_image_size()
+
     def fn(shape, dtype, device):
         *extra_dims, num_coordinates = shape
         if num_coordinates != 4:
             raise pytest.UsageError()
 
         if any(dim == 0 for dim in extra_dims):
-            return features.BoundingBox(torch.empty(*extra_dims, 4), format=format, image_size=image_size)
+            return features.BoundingBox(
+                torch.empty(*extra_dims, 4, dtype=dtype, device=device), format=format, image_size=image_size
+            )
 
         height, width = image_size
 
@@ -325,7 +325,9 @@ def make_bounding_box_loader(*, extra_dims=(), format, image_size=DEFAULT_LANDSC
             h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
             parts = (cx, cy, w, h)
 
-        return features.BoundingBox(torch.stack(parts, dim=-1).to(dtype=dtype), format=format, image_size=image_size)
+        return features.BoundingBox(
+            torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, image_size=image_size
+        )
 
     return BoundingBoxLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, image_size=image_size)
 
@@ -336,65 +338,92 @@ make_bounding_box = from_loader(make_bounding_box_loader)
 def make_bounding_box_loaders(
     *,
     extra_dims=DEFAULT_EXTRA_DIMS,
-    formats=(features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH),
-    image_size=(32, 32),
+    formats=tuple(features.BoundingBoxFormat),
+    image_size=None,
     dtypes=(torch.float32, torch.int64),
 ):
-    for extra_dims_, format in itertools.product(extra_dims, formats):
-        yield make_bounding_box_loader(extra_dims=extra_dims_, format=format, image_size=image_size)
-
-    for format, dtype in itertools.product(formats, dtypes):
-        yield make_bounding_box_loader(format=format, image_size=image_size, dtype=dtype)
+    for params in combinations_grid(extra_dims=extra_dims, format=formats, dtype=dtypes):
+        yield make_bounding_box_loader(**params, image_size=image_size)
 
 
 make_bounding_boxes = from_loaders(make_bounding_box_loaders)
 
 
-def make_label(*, extra_dims=(), categories=None, device="cpu", dtype=torch.int64):
+class LabelLoader(TensorLoader):
+    def __init__(self, *args, categories, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.categories = categories
+
+
+def _parse_categories(categories):
     if categories is None:
-        categories = int(torch.randint(1, 11, ()))
-    if isinstance(categories, int):
+        num_categories = int(torch.randint(1, 11, ()))
+    elif isinstance(categories, int):
         num_categories = categories
         categories = [f"category{idx}" for idx in range(num_categories)]
     elif isinstance(categories, collections.abc.Sequence) and all(isinstance(category, str) for category in categories):
+        categories = list(categories)
         num_categories = len(categories)
     else:
         raise pytest.UsageError(
             f"`categories` can either be `None` (default), an integer, or a sequence of strings, "
-            f"but got '{categories}' instead"
+            f"but got '{categories}' instead."
         )
-
-    # The idiom `make_tensor(..., dtype=torch.int64).to(dtype)` is intentional to only get integer values, regardless of
-    # the requested dtype, e.g. 0 or 0.0 rather than 0 or 0.123
-    data = torch.testing.make_tensor(extra_dims, low=0, high=num_categories, dtype=torch.int64, device=device).to(dtype)
-    return features.Label(data, categories=categories)
+    return categories, num_categories
 
 
-def make_one_hot_label(*, categories=None, extra_dims=(), device="cpu", dtype=torch.int64):
-    if categories == 0:
-        data = torch.empty(*extra_dims, 0, dtype=dtype, device=device)
-        categories = None
-    else:
-        # The idiom `make_label(..., dtype=torch.int64); ...; one_hot(...).to(dtype)` is intentional since `one_hot`
-        # only supports int64
-        label = make_label(extra_dims=extra_dims, categories=categories, device=device, dtype=torch.int64)
-        categories = label.categories
-        data = one_hot(label, num_classes=len(label.categories)).to(dtype)
-    return features.OneHotLabel(data, categories=categories)
+def make_label_loader(*, extra_dims=(), categories=None, dtype=torch.int64):
+    categories, num_categories = _parse_categories(categories)
+
+    def fn(shape, dtype, device):
+        # The idiom `make_tensor(..., dtype=torch.int64).to(dtype)` is intentional to only get integer values,
+        # regardless of the requested dtype, e.g. 0 or 0.0 rather than 0 or 0.123
+        data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=torch.int64, device=device).to(dtype)
+        return features.Label(data, categories=categories)
+
+    return LabelLoader(fn, shape=extra_dims, dtype=dtype, categories=categories)
 
 
-def make_one_hot_labels(
+make_label = from_loader(make_label_loader)
+
+
+class OneHotLabelLoader(TensorLoader):
+    def __init__(self, *args, categories, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.categories = categories
+
+
+def make_one_hot_label_loader(*, categories=None, extra_dims=(), dtype=torch.int64):
+    categories, num_categories = _parse_categories(categories)
+
+    def fn(shape, dtype, device):
+        if num_categories == 0:
+            data = torch.empty(shape, dtype=dtype, device=device)
+        else:
+            # The idiom `make_label_loader(..., dtype=torch.int64); ...; one_hot(...).to(dtype)` is intentional
+            # since `one_hot` only supports int64
+            label = make_label_loader(extra_dims=extra_dims, categories=num_categories, dtype=torch.int64).load(device)
+            data = one_hot(label, num_classes=num_categories).to(dtype)
+        return features.OneHotLabel(data, categories=categories)
+
+    return OneHotLabelLoader(fn, shape=(*extra_dims, num_categories), dtype=dtype, categories=categories)
+
+
+def make_one_hot_label_loaders(
     *,
     categories=(1, 0, None),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    device="cpu",
     dtypes=(torch.int64, torch.float32),
 ):
-    for categories_, extra_dims_ in itertools.product(categories, extra_dims):
-        yield make_one_hot_label(categories=categories_, extra_dims=extra_dims_, device=device)
+    for params in combinations_grid(categories=categories, extra_dims=extra_dims, dtype=dtypes):
+        yield make_one_hot_label_loader(**params)
 
-    for categories_, dtype in itertools.product(categories, dtypes):
-        yield make_one_hot_label(categories=categories_, device=device, dtype=dtype)
+
+make_one_hot_labels = from_loaders(make_one_hot_label_loaders)
+
+
+class SegmentationMaskLoader(TensorLoader):
+    pass
 
 
 def make_segmentation_mask_loader(size=None, *, num_objects=None, extra_dims=(), dtype=torch.uint8):
@@ -417,11 +446,8 @@ def make_segmentation_mask_loaders(
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8, torch.bool),
 ):
-    for size, num_objects_, extra_dims_ in itertools.product(sizes, num_objects, extra_dims):
-        yield make_segmentation_mask_loader(size=size, num_objects=num_objects_, extra_dims=extra_dims_)
-
-    for num_objects_, dtype in itertools.product(num_objects, dtypes):
-        yield make_segmentation_mask_loader(num_objects=num_objects_, dtype=dtype)
+    for params in combinations_grid(size=sizes, num_objects=num_objects, extra_dims=extra_dims, dtype=dtypes):
+        yield make_segmentation_mask_loader(**params)
 
 
 make_segmentation_masks = from_loaders(make_segmentation_mask_loaders)
