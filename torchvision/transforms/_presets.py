@@ -16,6 +16,7 @@ __all__ = [
     "VideoClassification",
     "SemanticSegmentation",
     "OpticalFlow",
+    "StereoMatching",
 ]
 
 
@@ -205,4 +206,51 @@ class OpticalFlow(nn.Module):
         return (
             "Accepts ``PIL.Image``, batched ``(B, C, H, W)`` and single ``(C, H, W)`` image ``torch.Tensor`` objects. "
             "The images are rescaled to ``[-1.0, 1.0]``."
+        )
+
+
+class StereoMatching(torch.nn.Module):
+    def __init__(
+        self,
+        *,
+        resize_size: Optional[int],
+        mean: Tuple[float, ...] = (0.5, 0.5, 0.5),
+        std: Tuple[float, ...] = (0.5, 0.5, 0.5),
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    ) -> None:
+        super().__init__()
+        self.resize_size = [resize_size] if resize_size is not None else None
+        self.mean = list(mean)
+        self.std = list(std)
+        self.interpolation = interpolation
+
+    def forward(self, left_image: Tensor, right_image: Tensor) -> Tuple[Tensor, Tensor]:
+        def _process_image(img) -> Tensor:
+            if isinstance(self.resize_size, list):
+                img = F.resize(img, self.resize_size, interpolation=self.interpolation)
+            if not isinstance(img, Tensor):
+                img = F.pil_to_tensor(img)
+            img = F.convert_image_dtype(img, torch.float)
+            img = F.normalize(img, mean=self.mean, std=self.std)
+            return img
+
+        left_image = _process_image(left_image)
+        right_image = _process_image(right_image)
+        return left_image, right_image
+
+    def __repr__(self) -> str:
+        format_string = self.__class__.__name__ + "("
+        format_string += f"\n    resize_size={self.resize_size}"
+        format_string += f"\n    mean={self.mean}"
+        format_string += f"\n    std={self.std}"
+        format_string += f"\n    interpolation={self.interpolation}"
+        format_string += "\n)"
+        return format_string
+
+    def describe(self) -> str:
+        return (
+            "Accepts ``PIL.Image``, batched ``(B, C, H, W)`` and single ``(C, H, W)`` image ``torch.Tensor`` objects. "
+            f"The images are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``. "
+            f"Finally the values are first rescaled to ``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and "
+            f"``std={self.std}``."
         )
