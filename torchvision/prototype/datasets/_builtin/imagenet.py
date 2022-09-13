@@ -133,9 +133,6 @@ class ImageNet(Dataset):
             "ILSVRC2012_validation_ground_truth.txt": ImageNetDemux.LABEL,
         }.get(pathlib.Path(data[0]).name)
 
-    def _imagenet_label_to_wnid(self, imagenet_label: str, *, wnids: Tuple[str, ...]) -> str:
-        return wnids[int(imagenet_label) - 1]
-
     _VAL_TEST_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_(val|test)_(?P<id>\d{8})[.]JPEG")
 
     def _val_test_image_key(self, path: pathlib.Path) -> int:
