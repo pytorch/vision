@@ -232,6 +232,7 @@ class StereoMatching(torch.nn.Module):
                 img = F.pil_to_tensor(img)
             img = F.convert_image_dtype(img, torch.float)
             img = F.normalize(img, mean=self.mean, std=self.std)
+            img = img.contiguous()
             return img
 
         left_image = _process_image(left_image)
