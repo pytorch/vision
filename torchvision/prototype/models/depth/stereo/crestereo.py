@@ -1,6 +1,6 @@
 import math
 from functools import partial
-from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -319,7 +319,7 @@ class AdaptiveGroupCorrelationLayer(nn.Module):
         left_features: Tensor,
         right_features: Tensor,
         flow: torch.Tensor,
-        extra_offset: Union[torch.Tensor, None],
+        extra_offset: Optional[Tensor],
         window_type: str = "1d",
         iter_mode: bool = False,
     ) -> Tensor:
@@ -1056,11 +1056,11 @@ def _crestereo(
     return model
 
 
-class CREStereo_B_Weights(WeightsEnum):
+class CREStereo_Base_Weights(WeightsEnum):
     pass
 
 
-def crestereo_base(*, weights: Optional[CREStereo_B_Weights] = None, progress=True, **kwargs) -> CREStereo:
+def crestereo_base(*, weights: Optional[CREStereo_Base_Weights] = None, progress=True, **kwargs) -> CREStereo:
     return _crestereo(
         weights=weights,
         progress=progress,
