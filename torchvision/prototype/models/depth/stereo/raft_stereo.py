@@ -204,7 +204,7 @@ class MultiLevelUpdateBlock(nn.Module):
         hidden_states: List[Tensor],
         contexts: List[List[Tensor]],
         corr_features: Tensor,
-        depth: Tensor,
+        disparity: Tensor,
         level_processed: List[bool],
     ) -> List[Tensor]:
         # We call it reverse_i because it has a reversed ordering compared to hidden_states
@@ -215,7 +215,7 @@ class MultiLevelUpdateBlock(nn.Module):
                 # X is concatination of 2x downsampled hidden_dim (or motion_features if no bigger dim) with
                 # upsampled hidden_dim (or nothing if not exist).
                 if i == 0:
-                    features = self.motion_encoder(depth, corr_features)
+                    features = self.motion_encoder(disparity, corr_features)
                 else:
                     # 2x downsampled features from larger hidden states
                     features = F.avg_pool2d(hidden_states[i - 1], kernel_size=3, stride=2, padding=1)
@@ -235,14 +235,14 @@ class MultiLevelUpdateBlock(nn.Module):
 
                 hidden_states[i] = gru(hidden_states[i], features, contexts[i])
 
-                # NOTE: For slow-fast gru, we dont always want to calculate delta depth for every call on UpdateBlock
-                # Hence we move the delta depth calculation to the RAFT-Stereo main forward
+                # NOTE: For slow-fast gru, we dont always want to calculate delta disparity for every call on UpdateBlock
+                # Hence we move the delta disparity calculation to the RAFT-Stereo main forward
 
         return hidden_states
 
 
 class MaskPredictor(raft.MaskPredictor):
-    """Mask predictor to be used when upsampling the predicted depth."""
+    """Mask predictor to be used when upsampling the predicted disparity."""
 
     # We add out_channels compared to raft.MaskPredictor
     def __init__(self, *, in_channels: int, hidden_size: int, out_channels: int, multiplier: float = 0.25):
@@ -346,7 +346,7 @@ class RaftStereo(nn.Module):
         corr_pyramid: CorrPyramid1d,
         corr_block: CorrBlock1d,
         update_block: MultiLevelUpdateBlock,
-        depth_head: nn.Module,
+        disparity_head: nn.Module,
         mask_predictor: Optional[nn.Module] = None,
         slow_fast: bool = False,
     ):
@@ -370,8 +370,8 @@ class RaftStereo(nn.Module):
 
             update_block (MultiLevelUpdateBlock): The update block, which contains the motion encoder, and the recurrent unit.
                 It takes as input the hidden state of its recurrent unit, the context, the correlation
-                features, and the current predicted depth. It outputs an updated hidden state
-            depth_head (nn.Module): The depth head block will convert from the hidden state into changes in depth.
+                features, and the current predicted disparity. It outputs an updated hidden state
+            disparity_head (nn.Module): The disparity head block will convert from the hidden state into changes in disparity.
             mask_predictor (nn.Module, optional): Predicts the mask that will be used to upsample the predicted flow.
                 If ``None`` (default), the flow is upsampled using interpolation.
             slow_fast (bool): A boolean that specify whether we should use slow-fast GRU or not. See RAFT-Stereo paper
@@ -392,7 +392,7 @@ class RaftStereo(nn.Module):
         self.corr_pyramid = corr_pyramid
         self.corr_block = corr_block
         self.update_block = update_block
-        self.depth_head = depth_head
+        self.disparity_head = disparity_head
         self.mask_predictor = mask_predictor
 
         hidden_dims = self.update_block.hidden_dims
@@ -407,7 +407,7 @@ class RaftStereo(nn.Module):
         self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor] = None, num_iters: int = 12
     ) -> List[Tensor]:
         """
-        Return dept predictions on every iterations as a list of Tensor.
+        Return disparity predictions on every iterations as a list of Tensor.
         args:
             left_image (Tensor): The input left image with layout B, C, H, W
             right_image (Tensor): The input right image with layout B, C, H, W
@@ -459,35 +459,37 @@ class RaftStereo(nn.Module):
         if flow_init is not None:
             coords1 = coords1 + flow_init
 
-        depth_predictions = []
+        disparity_predictions = []
         for _ in range(num_iters):
             coords1 = coords1.detach()  # Don't backpropagate gradients through this branch, see paper
             corr_features = self.corr_block(centroids_coords=coords1, corr_pyramid=corr_pyramid)
 
-            depth = coords1 - coords0
+            disparity = coords1 - coords0
             if self.slow_fast:
                 # Using slow_fast GRU (see paper section 3.4). The lower resolution are processed more often
                 for i in range(1, self.num_level):
                     # We only processed the smallest i levels
                     level_processed = [False] * (self.num_level - i) + [True] * i
                     hidden_states = self.update_block(
-                        hidden_states, contexts, corr_features, depth, level_processed=level_processed
+                        hidden_states, contexts, corr_features, disparity, level_processed=level_processed
                     )
             hidden_states = self.update_block(
-                hidden_states, contexts, corr_features, depth, level_processed=[True] * self.num_level
+                hidden_states, contexts, corr_features, disparity, level_processed=[True] * self.num_level
             )
-            # Take the largest hidden_state to get the depth
+            # Take the largest hidden_state to get the disparity
             hidden_state = hidden_states[0]
-            delta_depth = self.depth_head(hidden_state)
-            # in stereo mode, project depth onto epipolar
-            delta_depth[:, 1] = 0.0
+            delta_disparity = self.disparity_head(hidden_state)
+            # in stereo mode, project disparity onto epipolar
+            delta_disparity[:, 1] = 0.0
 
-            coords1 = coords1 + delta_depth
+            coords1 = coords1 + delta_disparity
             up_mask = None if self.mask_predictor is None else self.mask_predictor(hidden_state)
-            upsampled_depth = upsample_flow((coords1 - coords0), up_mask=up_mask, factor=self.base_downsampling_ratio)
-            depth_predictions.append(upsampled_depth[:, :1])
+            upsampled_disparity = upsample_flow(
+                (coords1 - coords0), up_mask=up_mask, factor=self.base_downsampling_ratio
+            )
+            disparity_predictions.append(upsampled_disparity[:, :1])
 
-        return depth_predictions
+        return disparity_predictions
 
 
 def _raft_stereo(
@@ -587,8 +589,8 @@ def _raft_stereo(
         motion_encoder=motion_encoder, hidden_dims=update_block_hidden_dims
     )
 
-    # We use the largest scale hidden_dims of update_block to get the predicted depth
-    depth_head = kwargs.pop("depth_head", None) or FlowHead(
+    # We use the largest scale hidden_dims of update_block to get the predicted disparity
+    disparity_head = kwargs.pop("disparity_head", None) or FlowHead(
         in_channels=update_block_hidden_dims[0],
         hidden_size=flow_head_hidden_size,
     )
@@ -609,7 +611,7 @@ def _raft_stereo(
         corr_pyramid=corr_pyramid,
         corr_block=corr_block,
         update_block=update_block,
-        depth_head=depth_head,
+        disparity_head=disparity_head,
         mask_predictor=mask_predictor,
         slow_fast=slow_fast,
         **kwargs,  # not really needed, all params should be consumed by now
