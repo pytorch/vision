@@ -36,7 +36,8 @@ def get_transform(train, args):
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
 
-        def preprocessing(img, target):
+        def preprocessing(sample):
+            img, target = sample
             img = trans(img)
             size = F.get_dimensions(img)[1:]
             target = F.resize(target, size, interpolation=InterpolationMode.NEAREST)
@@ -134,8 +135,8 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
-    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(True, args))
-    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(False, args))
+    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(train=True, args=args))
+    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(train=False, args=args))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)

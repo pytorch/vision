@@ -6,7 +6,7 @@ import torch.utils.data
 import torchvision
 from PIL import Image
 from pycocotools import mask as coco_mask
-from transforms import Compose
+from torchvision.prototype.transforms import Compose
 
 
 class FilterAndRemapCocoCategories:
@@ -14,7 +14,9 @@ class FilterAndRemapCocoCategories:
         self.categories = categories
         self.remap = remap
 
-    def __call__(self, image, anno):
+    def __call__(self, sample):
+        image, anno = sample
+
         anno = [obj for obj in anno if obj["category_id"] in self.categories]
         if not self.remap:
             return image, anno
@@ -42,7 +44,9 @@ def convert_coco_poly_to_mask(segmentations, height, width):
 
 
 class ConvertCocoPolysToMask:
-    def __call__(self, image, anno):
+    def __call__(self, sample):
+        image, anno = sample
+
         w, h = image.size
         segmentations = [obj["segmentation"] for obj in anno]
         cats = [obj["category_id"] for obj in anno]
