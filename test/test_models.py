@@ -348,8 +348,8 @@ for m in slow_models:
 skipped_big_models = {
     "vit_h_14": {("Windows", "cpu"), ("Windows", "cuda")},
     "regnet_y_128gf": {("Windows", "cpu"), ("Windows", "cuda")},
-    "mvit_v1_b": {("Windows", "cuda")},
-    "mvit_v2_s": {("Windows", "cuda")},
+    "mvit_v1_b": {("Windows", "cuda"), ("Linux", "cuda")},
+    "mvit_v2_s": {("Windows", "cuda"), ("Linux", "cuda")},
 }
 
 
