@@ -203,7 +203,11 @@ def convert_color_space_image_pil(
 
 
 def convert_color_space(
-    inpt: Any, *, color_space: ColorSpace, old_color_space: Optional[ColorSpace] = None, copy: bool = True
+    inpt: Union[PIL.Image.Image, torch.Tensor, features._Feature],
+    *,
+    color_space: ColorSpace,
+    old_color_space: Optional[ColorSpace] = None,
+    copy: bool = True,
 ) -> Any:
     if isinstance(inpt, Image):
         return inpt.to_color_space(color_space, copy=copy)

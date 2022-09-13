@@ -3,6 +3,7 @@ import functools
 import operator
 import os
 import pkgutil
+import platform
 import sys
 import warnings
 from collections import OrderedDict
@@ -16,7 +17,7 @@ import torch.nn as nn
 from _utils_internal import get_relative_path
 from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
 from torchvision import models
-from torchvision.models._api import find_model, list_models
+from torchvision.models import get_model_builder, list_models
 
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
@@ -24,7 +25,7 @@ SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 
 
 def list_model_fns(module):
-    return [find_model(name) for name in list_models(module)]
+    return [get_model_builder(name) for name in list_models(module)]
 
 
 @pytest.fixture
@@ -343,11 +344,24 @@ for m in slow_models:
     _model_params[m] = {"input_shape": (1, 3, 64, 64)}
 
 
-# skip big models to reduce memory usage on CI test
+# skip big models to reduce memory usage on CI test. We can exclude combinations of (platform-system, device).
 skipped_big_models = {
-    "vit_h_14",
-    "regnet_y_128gf",
+    "vit_h_14": {("Windows", "cpu"), ("Windows", "cuda")},
+    "regnet_y_128gf": {("Windows", "cpu"), ("Windows", "cuda")},
+    "mvit_v1_b": {("Windows", "cuda"), ("Linux", "cuda")},
+    "mvit_v2_s": {("Windows", "cuda"), ("Linux", "cuda")},
 }
+
+
+def is_skippable(model_name, device):
+    if model_name not in skipped_big_models:
+        return False
+
+    platform_system = platform.system()
+    device_name = str(device).split(":")[0]
+
+    return (platform_system, device_name) in skipped_big_models[model_name]
+
 
 # The following contains configuration and expected values to be used tests that are model specific
 _model_tests_values = {
@@ -612,7 +626,7 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
-    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+    if SKIP_BIG_MODEL and is_skippable(model_name, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
@@ -841,7 +855,7 @@ def test_video_model(model_fn, dev):
         "num_classes": 50,
     }
     model_name = model_fn.__name__
-    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+    if SKIP_BIG_MODEL and is_skippable(model_name, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
