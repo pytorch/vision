@@ -10,6 +10,8 @@ from common_utils import assert_equal, cpu_and_gpu
 from prototype_common_utils import (
     make_bounding_box,
     make_bounding_boxes,
+    make_detection_and_segmentation_masks,
+    make_detection_mask,
     make_image,
     make_images,
     make_label,
@@ -62,6 +64,7 @@ def parametrize_from_transforms(*transforms):
             make_one_hot_labels,
             make_vanilla_tensor_images,
             make_pil_images,
+            make_detection_and_segmentation_masks,
         ]:
             inputs = list(creation_fn())
             try:
@@ -131,7 +134,12 @@ class TestSmoke:
         # Check if we raise an error if sample contains bbox or mask or label
         err_msg = "does not support bounding boxes, segmentation masks and plain labels"
         input_copy = dict(input)
-        for unsup_data in [make_label(), make_bounding_box(format="XYXY"), make_segmentation_mask()]:
+        for unsup_data in [
+            make_label(),
+            make_bounding_box(format="XYXY"),
+            make_detection_mask(),
+            make_segmentation_mask(),
+        ]:
             input_copy["unsupported"] = unsup_data
             with pytest.raises(TypeError, match=err_msg):
                 transform(input_copy)
@@ -233,7 +241,7 @@ class TestSmoke:
             color_space=features.ColorSpace.RGB, old_color_space=features.ColorSpace.GRAY
         )
 
-        for inpt in [make_bounding_box(format="XYXY"), make_segmentation_mask()]:
+        for inpt in [make_bounding_box(format="XYXY"), make_detection_and_segmentation_masks()]:
             output = transform(inpt)
             assert output is inpt
 
@@ -1206,7 +1214,7 @@ class TestRandomIoUCrop:
         bboxes = make_bounding_box(format="XYXY", image_size=(32, 24), extra_dims=(6,))
         label = features.Label(torch.randint(0, 10, size=(6,)))
         ohe_label = features.OneHotLabel(torch.zeros(6, 10).scatter_(1, label.unsqueeze(1), 1))
-        masks = make_segmentation_mask((32, 24), num_objects=6)
+        masks = make_detection_mask((32, 24), num_objects=6)
 
         sample = [image, bboxes, label, ohe_label, masks]
 
@@ -1578,7 +1586,7 @@ class TestFixedSizeCrop:
         bounding_boxes = make_bounding_box(
             format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
         )
-        segmentation_masks = make_segmentation_mask(size=image_size, extra_dims=(batch_size,))
+        segmentation_masks = make_detection_mask(size=image_size, extra_dims=(batch_size,))
         labels = make_label(size=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))

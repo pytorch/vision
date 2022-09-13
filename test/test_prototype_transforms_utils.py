@@ -3,7 +3,7 @@ import pytest
 
 import torch
 
-from prototype_common_utils import make_bounding_box, make_image, make_segmentation_mask
+from prototype_common_utils import make_bounding_box, make_detection_mask, make_image
 
 from torchvision.prototype import features
 from torchvision.prototype.transforms._utils import has_all, has_any
@@ -12,7 +12,7 @@ from torchvision.prototype.transforms.functional import to_image_pil
 
 IMAGE = make_image(color_space=features.ColorSpace.RGB)
 BOUNDING_BOX = make_bounding_box(format=features.BoundingBoxFormat.XYXY, image_size=IMAGE.image_size)
-SEGMENTATION_MASK = make_segmentation_mask(size=IMAGE.image_size)
+SEGMENTATION_MASK = make_detection_mask(size=IMAGE.image_size)
 
 
 @pytest.mark.parametrize(
