@@ -186,6 +186,8 @@ def s3d(*, weights: Optional[S3D_Weights] = None, progress: bool = True, **kwarg
 
     Reference: `Rethinking Spatiotemporal Feature Learning <https://arxiv.org/abs/1712.04851>`__.
 
+    .. betastatus:: video module
+
     Args:
         weights (:class:`~torchvision.models.video.S3D_Weights`, optional): The
             pretrained weights to use. See
