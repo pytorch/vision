@@ -667,6 +667,8 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
     Constructs a base MViTV1 architecture from
     `Multiscale Vision Transformers <https://arxiv.org/abs/2104.11227>`__.
 
+    .. betastatus:: video module
+
     Args:
         weights (:class:`~torchvision.models.video.MViT_V1_B_Weights`, optional): The
             pretrained weights to use. See
@@ -762,6 +764,8 @@ def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = T
     """
     Constructs a small MViTV2 architecture from
     `Multiscale Vision Transformers <https://arxiv.org/abs/2104.11227>`__.
+
+    .. betastatus:: video module
 
     Args:
         weights (:class:`~torchvision.models.video.MViT_V2_S_Weights`, optional): The
