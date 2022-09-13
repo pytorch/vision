@@ -162,7 +162,7 @@ class ToTensor(torch.nn.Module):
 
 
 class AsymmetricColorJitter(T.ColorJitter):
-    # p determines the proba of doing asymmertric vs symmetric color jittering
+    # p determines the probability of doing asymmetric vs symmetric color jittering
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0, p=0.2):
         super().__init__(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
         self.p = p
@@ -509,13 +509,9 @@ class RandomResizeAndCrop(torch.nn.Module):
         elif self.scaling_type == "linear":
             scale = torch.empty(1, dtype=torch.float32).uniform_(self.min_scale, self.max_scale).item()
 
-        scale_x = scale
-        scale_y = scale
+        scale = max(scale, min_scale)
 
-        scale_x = max(scale_x, min_scale)
-        scale_y = max(scale_y, min_scale)
-
-        new_h, new_w = round(h * scale_y), round(w * scale_x)
+        new_h, new_w = round(h * scale), round(w * scale)
 
         if torch.rand(1).item() < self.resize_prob:
             # rescale the images
@@ -530,11 +526,11 @@ class RandomResizeAndCrop(torch.nn.Module):
                         resized_disparity = F.resize(disparity, size=(new_h, new_w), interpolation=INTERP_MODE)
                         # rescale the disparity
                         resized_disparity = (
-                            resized_disparity * torch.tensor([scale_x], device=resized_disparity.device)[:, None, None]
+                            resized_disparity * torch.tensor([scale], device=resized_disparity.device)[:, None, None]
                         )
                         resized_mask = None
                     else:
-                        resized_disparity, resized_mask = _resize_sparse_flow(disparity, mask, scale_x=scale_x)
+                        resized_disparity, resized_mask = _resize_sparse_flow(disparity, mask, scale_x=scale)
 
                 resized_masks += (resized_mask,)
                 resized_disparities += (resized_disparity,)
