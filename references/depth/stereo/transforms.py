@@ -218,7 +218,7 @@ class AsymetricGammaAdjust(torch.nn.Module):
 
 class RandomErase(torch.nn.Module):
     # Produces multiple symetric random erasures
-    # these can be viewed as occlusuions present in both camera views.
+    # these can be viewed as occlusions present in both camera views.
     # Similarly to Optical Flow occlusion prediction tasks, we mask these pixels in the disparity map
     def __init__(
         self, p: float = 0.5, erase_px_range: Tuple[int, int] = (50, 100), value=0, inplace=False, max_erase=2
