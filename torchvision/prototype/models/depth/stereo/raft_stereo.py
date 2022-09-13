@@ -354,8 +354,8 @@ class RaftStereo(nn.Module):
         `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
 
         args:
-            feature_encoder (FeatureEncoder): The feature encoder. Its input is the concatenation of ``image1`` and ``image2``.
-            context_encoder (MultiLevelContextEncoder): The context encoder. Its input is ``image1``.
+            feature_encoder (FeatureEncoder): The feature encoder. Its input is the concatenation of ``left_image`` and ``right_image``.
+            context_encoder (MultiLevelContextEncoder): The context encoder. Its input is ``left_image``.
                 It has multi-level output and each level will have 2 parts:
 
                 - one part will be used as the actual "context", passed to the recurrent unit of the ``update_block``
@@ -380,6 +380,10 @@ class RaftStereo(nn.Module):
         super().__init__()
         _log_api_usage_once(self)
 
+        # This indicate that the disparity output will be only have 1 channel (represent horizontal axis).
+        # We need this because some stereo matching model like CREStereo might have 2 channel on the output
+        self.output_channel = 1
+
         self.feature_encoder = feature_encoder
         self.context_encoder = context_encoder
 
@@ -399,18 +403,20 @@ class RaftStereo(nn.Module):
         )
         self.slow_fast = slow_fast
 
-    def forward(self, image1: Tensor, image2: Tensor, num_iters: int = 12) -> List[Tensor]:
+    def forward(
+        self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor] = None, num_iters: int = 12
+    ) -> List[Tensor]:
         """
         Return dept predictions on every iterations as a list of Tensor.
         args:
-            image1 (Tensor): The input left image with layout B, C, H, W
-            image2 (Tensor): The input right image with layout B, C, H, W
+            left_image (Tensor): The input left image with layout B, C, H, W
+            right_image (Tensor): The input right image with layout B, C, H, W
             num_iters (int): Number of update block iteration on the largest resolution. Default: 12
         """
-        batch_size, _, h, w = image1.shape
+        batch_size, _, h, w = left_image.shape
         torch._assert(
-            (h, w) == image2.shape[-2:],
-            f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}",
+            (h, w) == right_image.shape[-2:],
+            f"input images should have the same shape, instead got ({h}, {w}) != {right_image.shape[-2:]}",
         )
 
         torch._assert(
@@ -418,7 +424,7 @@ class RaftStereo(nn.Module):
             f"input image H and W should be divisible by {self.base_downsampling_ratio}, insted got H={h} and W={w}",
         )
 
-        fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))
+        fmaps = self.feature_encoder(torch.cat([left_image, right_image], dim=0))
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)
         torch._assert(
             fmap1.shape[-2:] == (h // self.base_downsampling_ratio, w // self.base_downsampling_ratio),
@@ -428,7 +434,7 @@ class RaftStereo(nn.Module):
         corr_pyramid = self.corr_pyramid(fmap1, fmap2)
 
         # Multi level contexts
-        context_outs = self.context_encoder(image1)
+        context_outs = self.context_encoder(left_image)
 
         hidden_dims = self.update_block.hidden_dims
         context_out_channels = [context_outs[i].shape[1] - hidden_dims[i] for i in range(len(context_outs))]
@@ -447,6 +453,10 @@ class RaftStereo(nn.Module):
         _, Cf, Hf, Wf = fmap1.shape
         coords0 = make_coords_grid(batch_size, Hf, Wf).to(fmap1.device)
         coords1 = make_coords_grid(batch_size, Hf, Wf).to(fmap1.device)
+
+        # We use flow_init for cascade inference
+        if flow_init is not None:
+            coords1 = coords1 + flow_init
 
         depth_predictions = []
         for _ in range(num_iters):
