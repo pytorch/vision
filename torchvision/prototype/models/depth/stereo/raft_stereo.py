@@ -382,7 +382,7 @@ class RaftStereo(nn.Module):
 
         # This indicate that the disparity output will be only have 1 channel (represent horizontal axis).
         # We need this because some stereo matching model like CREStereo might have 2 channel on the output
-        self.output_channel = 1
+        self.output_channels = 1
 
         self.feature_encoder = feature_encoder
         self.context_encoder = context_encoder
