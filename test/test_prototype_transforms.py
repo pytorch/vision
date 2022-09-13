@@ -1670,3 +1670,43 @@ class TestLabelToOneHot:
         assert isinstance(ohe_labels, features.OneHotLabel)
         assert ohe_labels.shape == (4, 3)
         assert ohe_labels.categories == labels.categories == categories
+
+
+class TestRandomResize:
+    def test__get_params(self):
+        min_size = 3
+        max_size = 6
+
+        transform = transforms.RandomResize(min_size=min_size, max_size=max_size)
+
+        for _ in range(10):
+            params = transform._get_params(None)
+
+            assert isinstance(params["size"], list) and len(params["size"]) == 1
+            size = params["size"][0]
+
+            assert min_size <= size < max_size
+
+    def test__transform(self, mocker):
+        interpolation_sentinel = mocker.MagicMock()
+        antialias_sentinel = mocker.MagicMock()
+
+        transform = transforms.RandomResize(
+            min_size=-1, max_size=-1, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
+        transform._transformed_types = (mocker.MagicMock,)
+
+        size_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.RandomResize._get_params",
+            return_value=dict(size=size_sentinel),
+        )
+
+        inpt_sentinel = mocker.MagicMock()
+
+        mock_resize = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        transform(inpt_sentinel)
+
+        mock_resize.assert_called_with(
+            inpt_sentinel, size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
