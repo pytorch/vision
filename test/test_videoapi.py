@@ -131,7 +131,7 @@ class TestVideoApi:
         assert config.duration == approx(reader_md["video"]["duration"][0], abs=0.5)
 
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    @pytest.mark.parametrize("backend", ["video_reader"])
+    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
     def test_seek_start(self, test_video, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
@@ -161,6 +161,7 @@ class TestVideoApi:
     @pytest.mark.parametrize("test_video", test_videos.keys())
     @pytest.mark.parametrize("backend", ["video_reader"])
     def test_accurateseek_middle(self, test_video, backend):
+        torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
         stream = "video"
         video_reader = VideoReader(full_path, stream)
@@ -199,7 +200,7 @@ class TestVideoApi:
 
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize("test_video,config", test_videos.items())
-    @pytest.mark.parametrize("backend", ["video_reader"])
+    @pytest.mark.parametrize("backend", ["pyav", "video_reader"])
     def test_keyframe_reading(self, test_video, config, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)

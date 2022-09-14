@@ -1,4 +1,5 @@
 from typing import Any, Dict, Iterator
+import warnings
 
 import torch
 
@@ -154,7 +155,7 @@ class VideoReader:
         else:
             try:
                 frame = next(self._c)
-                pts = frame.pts * frame.time_base
+                pts = float(frame.pts * frame.time_base)
                 if "video" in self.pyav_stream:
                     frame = torch.tensor(frame.to_rgb().to_ndarray()).permute(2, 0, 1)
                 elif "audio" in self.pyav_stream:
@@ -185,7 +186,18 @@ class VideoReader:
             frame with the exact timestamp if it exists or
             the first frame with timestamp larger than ``time_s``.
         """
-        self._c.seek(time_s, keyframes_only)
+        if self.backend in ["cuda", "video_reader"]:
+            self._c.seek(time_s, keyframes_only)
+        else:
+            # handle special case as pyav doesn't catch it
+            if time_s < 0:
+                time_s = 0
+            temp_str = self.container.streams.get(**self.pyav_stream)[0]
+            offset = int(round(time_s / temp_str.time_base))
+            if not keyframes_only:
+                warnings.warn("Accurate seek is not implemented for pyav backend")
+            self.container.seek(offset, backward=True, any_frame=False, stream=temp_str)
+            self._c = self.container.decode(**self.pyav_stream)
         return self
 
     def get_metadata(self) -> Dict[str, Any]:
