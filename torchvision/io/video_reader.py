@@ -16,6 +16,28 @@ else:
     def _has_video_opt() -> bool:
         return False
 
+try:
+    import av
+
+    av.logging.set_level(av.logging.ERROR)
+    if not hasattr(av.video.frame.VideoFrame, "pict_type"):
+        av = ImportError(
+            """\
+Your version of PyAV is too old for the necessary video operations in torchvision.
+If you are on Python 3.5, you will have to build from source (the conda-forge
+packages are not up-to-date).  See
+https://github.com/mikeboers/PyAV#installation for instructions on how to
+install PyAV on your system.
+"""
+        )
+except ImportError:
+    av = ImportError(
+        """\
+PyAV is not installed, and is necessary for the video operations in torchvision.
+See https://github.com/mikeboers/PyAV#installation for instructions on how to
+install PyAV on your system.
+""")
+
 
 class VideoReader:
     """
@@ -87,6 +109,7 @@ class VideoReader:
         _log_api_usage_once(self)
         from .. import get_video_backend
         self.backend = get_video_backend()
+        print("Initiated the backend", self.backend)
         if self.backend == "cuda":
             device = torch.device("cuda")
             self._c = torch.classes.torchvision.GPUDecoder(path, device)
@@ -96,7 +119,15 @@ class VideoReader:
             self._c = torch.classes.torchvision.Video(path, stream, num_threads)
         
         elif self.backend == "pyav":
-            pass
+            self.container = av.open(path, metadata_errors="ignore")
+            #TODO: load metadata
+            stream_type = stream.split(":")[0]
+            stream_id = 0 if len(stream.split(":")) == 1 else int(stream.split(":")[1])
+            self.pyav_stream = {stream_type: stream_id}
+            self._c = self.container.decode(**self.pyav_stream)
+
+            # TODO: add extradata exception
+
         else:
             raise RuntimeError("Unknown video backend: {}".format(self.backend))        
 
@@ -118,9 +149,24 @@ class VideoReader:
             if frame.numel() == 0:
                 raise StopIteration
             return {"data": frame}
-        frame, pts = self._c.next()
+        elif self.backend == "video_reader":
+            frame, pts = self._c.next()
+        else:
+            try:
+                frame = next(self._c)
+                pts = frame.pts * frame.time_base
+                if "video" in self.pyav_stream:
+                    frame = torch.tensor(frame.to_rgb().to_ndarray()).permute(2, 0, 1)
+                elif "audio" in self.pyav_stream:
+                    frame = torch.tensor(frame.to_ndarray()).permute(1, 0)
+                else:
+                    frame = None
+            except av.error.EOFError:
+                raise StopIteration
+        
         if frame.numel() == 0:
             raise StopIteration
+
         return {"data": frame, "pts": pts}
 
     def __iter__(self) -> Iterator[Dict[str, Any]]:

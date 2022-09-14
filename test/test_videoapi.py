@@ -53,7 +53,7 @@ test_videos = {
 class TestVideoApi:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    @pytest.mark.parametrize("backend", ["video_reader"])
+    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
     def test_frame_reading(self, test_video, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
@@ -123,6 +123,7 @@ class TestVideoApi:
         Test that the metadata returned via pyav corresponds to the one returned
         by the new video decoder API
         """
+        torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
         reader = VideoReader(full_path, "video")
         reader_md = reader.get_metadata()
@@ -132,6 +133,7 @@ class TestVideoApi:
     @pytest.mark.parametrize("test_video", test_videos.keys())
     @pytest.mark.parametrize("backend", ["video_reader"])
     def test_seek_start(self, test_video, backend):
+        torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
         video_reader = VideoReader(full_path, "video")
         num_frames = 0
@@ -199,6 +201,7 @@ class TestVideoApi:
     @pytest.mark.parametrize("test_video,config", test_videos.items())
     @pytest.mark.parametrize("backend", ["video_reader"])
     def test_keyframe_reading(self, test_video, config, backend):
+        torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
 
         av_reader = av.open(full_path)
