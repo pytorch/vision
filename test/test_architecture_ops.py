@@ -10,29 +10,36 @@ class MaxvitTester(unittest.TestCase):
     def test_maxvit_window_partition(self):
         input_shape = (1, 3, 224, 224)
         partition_size = 7
+        n_partitions = input_shape[3] // partition_size
 
         x = torch.randn(input_shape)
 
-        partition = WindowPartition(partition_size=7)
-        departition = WindowDepartition(partition_size=partition_size, n_partitions=(input_shape[3] // partition_size))
+        partition = WindowPartition()
+        departition = WindowDepartition()
 
-        assert torch.allclose(x, departition(partition(x)))
+        x_hat = partition(x, partition_size)
+        x_hat = departition(x_hat, partition_size, n_partitions, n_partitions)
+
+        assert torch.allclose(x, x_hat)
 
     def test_maxvit_grid_partition(self):
         input_shape = (1, 3, 224, 224)
         partition_size = 7
+        n_partitions = input_shape[3] // partition_size
 
         x = torch.randn(input_shape)
-        partition = torch.nn.Sequential(
-            WindowPartition(partition_size=(input_shape[3] // partition_size)),
-            SwapAxes(-2, -3),
-        )
-        departition = torch.nn.Sequential(
-            SwapAxes(-2, -3),
-            WindowDepartition(partition_size=(input_shape[3] // partition_size), n_partitions=partition_size),
-        )
+        pre_swap = SwapAxes(-2, -3)
+        post_swap = SwapAxes(-2, -3)
 
-        assert torch.allclose(x, departition(partition(x)))
+        partition = WindowPartition()
+        departition = WindowDepartition()
+
+        x_hat = partition(x, n_partitions)
+        x_hat = pre_swap(x_hat)
+        x_hat = post_swap(x_hat)
+        x_hat = departition(x_hat, n_partitions, partition_size, partition_size)
+
+        assert torch.allclose(x, x_hat)
 
 
 if __name__ == "__main__":
