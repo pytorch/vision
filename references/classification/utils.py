@@ -3,14 +3,15 @@ import datetime
 import errno
 import hashlib
 import os
+import random
 import time
 from collections import defaultdict, deque, OrderedDict
 from typing import List, Optional, Tuple
 
+import numpy as np
+
 import torch
 import torch.distributed as dist
-import numpy as np
-import random
 
 
 class SmoothedValue:
@@ -465,6 +466,7 @@ def set_weight_decay(
         if len(params[key]) > 0:
             param_groups.append({"params": params[key], "weight_decay": params_weight_decay[key]})
     return param_groups
+
 
 def set_seed(seed: int):
     """

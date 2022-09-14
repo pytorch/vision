@@ -1,5 +1,5 @@
-from functools import partial
 import math
+from functools import partial
 from typing import Any, Callable, List, Optional, OrderedDict, Sequence, Tuple
 
 import numpy as np
@@ -34,7 +34,7 @@ class MBConv(nn.Module):
         stride: int,
         activation_fn: Callable[..., nn.Module],
         normalization_fn: Callable[..., nn.Module],
-        p_stochastic_dropout: float = 0.,
+        p_stochastic_dropout: float = 0.0,
     ) -> None:
         super().__init__()
 
@@ -52,11 +52,11 @@ class MBConv(nn.Module):
 
         mid_channels = int(out_channels * expansion_ratio)
         sqz_channels = int(out_channels * squeeze_ratio)
-        
+
         if p_stochastic_dropout:
-            self.stochastic_depth = StochasticDepth(p_stochastic_dropout, mode="row") # type: ignore
+            self.stochastic_depth = StochasticDepth(p_stochastic_dropout, mode="row")  # type: ignore
         else:
-            self.stochastic_depth = nn.Identity() # type: ignore
+            self.stochastic_depth = nn.Identity()  # type: ignore
 
         _layers = OrderedDict()
         _layers["pre_norm"] = normalization_fn(in_channels)
@@ -161,7 +161,7 @@ class SwapAxes(nn.Module):
         res = torch.swapaxes(x, self.a, self.b)
         return res
 
-    
+
 class WindowPartition(nn.Module):
     """
     Function that takes in a tensor of shape [B, C, H, W] and partitions it
@@ -261,28 +261,27 @@ class PartitionAttentionLayer(nn.Module):
         )
 
         # layer scale factors
-        self.stochastic_dropout = StochasticDepth(p_stochastic_dropout, mode='row')
-
+        self.stochastic_dropout = StochasticDepth(p_stochastic_dropout, mode="row")
 
     def forward(self, x: Tensor) -> Tensor:
         B, C, H, W = x.shape
-        
+
         # Undefined behavior if H or W are not divisible by p
         # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L766
         torch._assert(
             H % self.p == 0 and W % self.p == 0,
-            f"H and W must be divisible by partition size. Got H: {H}, W: {W}, P: {self.p}"
+            f"H and W must be divisible by partition size. Got H: {H}, W: {W}, P: {self.p}",
         )
-        
+
         gh, gw = H // self.p, W // self.p
-        
+
         x = self.partition_op(x, self.p)
         x = self.partition_swap(x)
         x = x + self.stochastic_dropout(self.attn_layer(x))
         x = x + self.stochastic_dropout(self.mlp_layer(x))
         x = self.departition_swap(x)
         x = self.departition_op(x, self.p, gh, gw)
-        
+
         return x
 
 
@@ -457,16 +456,10 @@ class MaxVit(nn.Module):
                 norm_layer=normalization_fn,
                 activation_layer=activation_fn,
                 bias=False,
-                inplace=None
+                inplace=None,
             ),
             Conv2dNormActivation(
-                stem_channels,
-                stem_channels,
-                3,
-                stride=1,
-                norm_layer=None,
-                activation_layer=None,
-                bias=True
+                stem_channels, stem_channels, 3, stride=1, norm_layer=None, activation_layer=None, bias=True
             ),
         )
 
@@ -517,7 +510,7 @@ class MaxVit(nn.Module):
             nn.Tanh(),
             nn.Linear(block_channels[-1], num_classes, bias=False),
         )
-        
+
         self._init_weights()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -526,7 +519,7 @@ class MaxVit(nn.Module):
             x = block(x)
         x = self.classifier(x)
         return x
-    
+
     def _init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -627,6 +620,7 @@ def maxvit_t(*, weights: Optional[WeightsEnum] = None, progress: bool = True, **
         progress=progress,
         **kwargs,
     )
-    
+
+
 class MaxVit_T_Weights(WeightsEnum):
     pass
