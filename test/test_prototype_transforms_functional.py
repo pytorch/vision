@@ -534,6 +534,33 @@ def test_scriptable_kernel(kernel):
     jit.script(kernel)
 
 
+@pytest.mark.parametrize(
+    "midlevel",
+    [
+        pytest.param(midlevel, id=name)
+        for name, midlevel in F.__dict__.items()
+        if not name.startswith("_")
+        and callable(midlevel)
+        and not any(
+            name.endswith(kernel_type)
+            for kernel_type in {"_image_tensor", "_image_pil", "_mask", "_bounding_box", "_label"}
+        )
+        and name
+        not in {
+            "InterpolationMode",
+            "decode_image_with_pil",
+            "decode_video_with_av",
+            "pil_to_tensor",
+            "to_pil_image",
+            "to_tensor",
+            "to_grayscale",
+        }
+    ],
+)
+def test_scriptable_midlevel(midlevel):
+    jit.script(midlevel)
+
+
 # Test below is intended to test mid-level op vs low-level ops it calls
 # For example, resize -> resize_image_tensor, resize_bounding_boxes etc
 # TODO: Rewrite this tests as sample args may include more or less params
