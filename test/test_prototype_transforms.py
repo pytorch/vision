@@ -278,7 +278,7 @@ class TestRandomHorizontalFlip:
 
         assert_equal(features.Image(expected), actual)
 
-    def test_features_segmentation_mask(self, p):
+    def test_features_mask(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomHorizontalFlip(p=p)
 
@@ -331,7 +331,7 @@ class TestRandomVerticalFlip:
 
         assert_equal(features.Image(expected), actual)
 
-    def test_features_segmentation_mask(self, p):
+    def test_features_mask(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomVerticalFlip(p=p)
 
@@ -1586,7 +1586,7 @@ class TestFixedSizeCrop:
         bounding_boxes = make_bounding_box(
             format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
         )
-        segmentation_masks = make_detection_mask(size=image_size, extra_dims=(batch_size,))
+        masks = make_detection_mask(size=image_size, extra_dims=(batch_size,))
         labels = make_label(size=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
@@ -1596,13 +1596,13 @@ class TestFixedSizeCrop:
         output = transform(
             dict(
                 bounding_boxes=bounding_boxes,
-                segmentation_masks=segmentation_masks,
+                masks=masks,
                 labels=labels,
             )
         )
 
         assert_equal(output["bounding_boxes"], bounding_boxes[is_valid])
-        assert_equal(output["segmentation_masks"], segmentation_masks[is_valid])
+        assert_equal(output["masks"], masks[is_valid])
         assert_equal(output["labels"], labels[is_valid])
 
     def test__transform_bounding_box_clamping(self, mocker):

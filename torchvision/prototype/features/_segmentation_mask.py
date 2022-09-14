@@ -82,7 +82,7 @@ class Mask(_Feature):
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Mask:
-        output = self._F.affine_segmentation_mask(
+        output = self._F.affine_mask(
             self,
             angle,
             translate=translate,

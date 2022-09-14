@@ -109,9 +109,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
         if not (has_any(inputs, features.Image, features.is_simple_tensor) and has_any(inputs, features.OneHotLabel)):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images and one-hot labels.")
         if has_any(inputs, features.BoundingBox, features.Mask, features.Label):
-            raise TypeError(
-                f"{type(self).__name__}() does not support bounding boxes, segmentation masks and plain labels."
-            )
+            raise TypeError(f"{type(self).__name__}() does not support bounding boxes, masks and plain labels.")
         return super().forward(*inputs)
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
@@ -297,7 +295,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain equal sized list of Images, "
-                "BoundingBoxes, Segmentation Masks and Labels or OneHotLabels."
+                "BoundingBoxes, Masks and Labels or OneHotLabels."
             )
 
         targets = []

@@ -526,7 +526,7 @@ def erase_image_tensor():
         for name, kernel in F.__dict__.items()
         if not name.startswith("_")
         and callable(kernel)
-        and any(feature_type in name for feature_type in {"image", "segmentation_mask", "bounding_box", "label"})
+        and any(feature_type in name for feature_type in {"image", "mask", "bounding_box", "label"})
         and "pil" not in name
         and name
         not in {
@@ -551,9 +551,7 @@ def test_scriptable(kernel):
         for name, func in F.__dict__.items()
         if not name.startswith("_")
         and callable(func)
-        and all(
-            feature_type not in name for feature_type in {"image", "segmentation_mask", "bounding_box", "label", "pil"}
-        )
+        and all(feature_type not in name for feature_type in {"image", "mask", "bounding_box", "label", "pil"})
         and name
         not in {
             "to_image_tensor",

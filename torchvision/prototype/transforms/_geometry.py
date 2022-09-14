@@ -705,7 +705,7 @@ class RandomIoUCrop(Transform):
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
-                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
+                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Masks."
             )
         return super().forward(*inputs)
 
