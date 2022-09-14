@@ -6,15 +6,20 @@ import transforms as T
 
 class StereoMatchingEvalPreset(torch.nn.Module):
     def __init__(
-        self, mean: float = 0.5, std: float = 0.5, resize_size=None, interpolation_type: str = "bilinear"
+        self,
+        mean: float = 0.5,
+        std: float = 0.5,
+        resize_size=None,
+        max_disparity: float = 512,
+        interpolation_type: str = "bilinear",
     ) -> None:
         super().__init__()
 
         transforms = [
             T.ToTensor(),
-            T.MakeValidDisparityMask(512),  # we keep this transform for API consistency
             T.ConvertImageDtype(torch.float32),
             T.Normalize(mean=mean, std=std),
+            T.MakeValidDisparityMask(max_disparity),  # we keep this transform for API consistency
             T.ValidateModelInput(),
         ]
 
@@ -41,7 +46,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         mean: float = 0.5,
         std: float = 0.5,
         # processing device
-        gpu_transforms=False,
+        gpu_transforms: bool = False,
         # masking
         max_disparity: int = 256,
         # SpatialShift params
@@ -57,7 +62,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         hue: Union[int, Tuple[int, int]] = 0.0,
         asymmetric_jitter_prob: float = 1.0,
         # RandomHorizontalFlip
-        horizontal_flip_prob=0.5,
+        horizontal_flip_prob: float = 0.5,
         # RandomOcclusion
         occlusion_prob: float = 0.0,
         occlusion_px_range: Tuple[int, int] = (50, 100),

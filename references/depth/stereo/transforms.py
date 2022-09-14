@@ -1,5 +1,5 @@
 import random
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import PIL.Image
@@ -22,6 +22,9 @@ class InterpolationStrategy:
     _valid_modes: List[str] = ["mixed", "bicubic", "bilinear"]
 
     def __init__(self, mode: str = "mixed") -> None:
+        if mode not in self._valid_modes:
+            raise ValueError(f"Invalid interpolation mode: {mode}. Valid modes are: {self._valid_modes}")
+
         if mode == "mixed":
             self.strategies = [F.InterpolationMode.BILINEAR, F.InterpolationMode.BICUBIC]
         elif mode == "bicubic":
@@ -59,7 +62,7 @@ class ValidateModelInput(torch.nn.Module):
 
 
 class MakeValidDisparityMask(torch.nn.Module):
-    def __init__(self, max_disparity: int = 256) -> None:
+    def __init__(self, max_disparity: Optional[int] = 256) -> None:
         super().__init__()
         self.max_disparity = max_disparity
 
@@ -69,6 +72,9 @@ class MakeValidDisparityMask(torch.nn.Module):
         disparities: Tuple[T_FLOW, T_FLOW],
         masks: Tuple[T_MASK, T_MASK],
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
+        if self.max_disparity is None:
+            return images, disparities, masks
+
         valid_masks = ()
         for idx, disparity in enumerate(disparities):
             mask = masks[idx]
@@ -76,6 +82,7 @@ class MakeValidDisparityMask(torch.nn.Module):
                 mask = torch.logical_and(disparity < self.max_disparity, disparity > 0)
                 mask = mask.squeeze(0)
             valid_masks += (mask,)
+
         return images, disparities, valid_masks
 
 
@@ -251,7 +258,7 @@ class RandomErase(torch.nn.Module):
         image_left, image_right = images
         mask_left, mask_right = masks
         for _ in range(torch.randint(self.max_erase, size=(1,)).item()):
-            x, y, h, w, v = self._get_params(image_left)
+            y, x, h, w, v = self._get_params(image_left)
             image_right = F.erase(image_right, y, x, h, w, v, self.inplace)
             image_left = F.erase(image_left, y, x, h, w, v, self.inplace)
             # similarly to optical flow occlusion prediction, we consider
@@ -272,7 +279,7 @@ class RandomErase(torch.nn.Module):
         )
         crop_x, crop_y = (random.randint(0, img_w - crop_w), random.randint(0, img_h - crop_h))
 
-        return crop_x, crop_y, crop_h, crop_w, self.value
+        return crop_y, crop_x, crop_h, crop_w, self.value
 
 
 class RandomOcclusion(torch.nn.Module):
@@ -307,7 +314,7 @@ class RandomOcclusion(torch.nn.Module):
         if torch.rand(1) < self.p:
             return images, disparities, masks
 
-        x, y, h, w, v = self._get_params(right_image)
+        y, x, h, w, v = self._get_params(right_image)
         right_image = F.erase(right_image, y, x, h, w, v, self.inplace)
 
         return ((left_image, right_image), disparities, masks)
@@ -322,7 +329,7 @@ class RandomOcclusion(torch.nn.Module):
         crop_x, crop_y = (random.randint(0, img_w - crop_w), random.randint(0, img_h - crop_h))
         occlusion_value = img[..., crop_y : crop_y + crop_h, crop_x : crop_x + crop_w].mean(dim=(-2, -1), keepdim=True)
 
-        return (crop_x, crop_y, crop_h, crop_w, occlusion_value)
+        return (crop_y, crop_x, crop_h, crop_w, occlusion_value)
 
 
 class RandomSpatialShift(torch.nn.Module):
@@ -334,12 +341,6 @@ class RandomSpatialShift(torch.nn.Module):
         self.p = p
         self.max_angle = max_angle
         self.max_px_shift = max_px_shift
-
-        if not InterpolationStrategy.is_valid(interpolation_type):
-            raise ValueError(
-                f"Invalid interpolation type: {interpolation_type}. Allowed values: {InterpolationStrategy.valid_modes()}"
-            )
-
         self._interpolation_mode_strategy = InterpolationStrategy(interpolation_type)
 
     def forward(
@@ -405,12 +406,6 @@ class Resize(torch.nn.Module):
     def __init__(self, resize_size: Tuple[int, int], interpolation_type: str = "bilinear") -> None:
         super().__init__()
         self.resize_size = resize_size
-
-        if not InterpolationStrategy.is_valid(interpolation_type):
-            raise ValueError(
-                f"Invalid interpolation type: {interpolation_type}. Allowed values: {InterpolationStrategy.valid_modes()}"
-            )
-
         self._interpolation_mode_strategy = InterpolationStrategy(interpolation_type)
 
     def forward(
@@ -478,13 +473,10 @@ class RandomResizeAndCrop(torch.nn.Module):
         self.max_scale = scale_range[1]
         self.resize_prob = resize_prob
         self.scaling_type = scaling_type
-
-        if not InterpolationStrategy.is_valid(interpolation_type):
-            raise ValueError(
-                f"Invalid interpolation type: {interpolation_type}. Allowed values: {InterpolationStrategy.valid_modes()}"
-            )
-
         self._interpolation_mode_strategy = InterpolationStrategy(interpolation_type)
+
+        if self.scaling_type == "linear" and self.min_scale < 0:
+            raise ValueError("min_scale must be >= 0 for linear scaling")
 
     def forward(
         self,
@@ -504,8 +496,14 @@ class RandomResizeAndCrop(torch.nn.Module):
         # It shouldn't matter much
         min_scale = max((self.crop_size[0] + 8) / h, (self.crop_size[1] + 8) / w)
 
+        # exponential scaling will draw a random scale in (min_scale, max_scale) and then raise
+        # 2 to the power of that random value. This final scale distribution will have a different
+        # mean and variance than a uniform distribution. Note that a scale of 1 will result in
+        # in a rescaling of 2X the original size, whereas a scale of -1 will result in a rescaling
+        # of 0.5X the original size.
         if self.scaling_type == "exponential":
             scale = 2 ** torch.empty(1, dtype=torch.float32).uniform_(self.min_scale, self.max_scale).item()
+        # linear scaling will draw a random scale in (min_scale, max_scale)
         elif self.scaling_type == "linear":
             scale = torch.empty(1, dtype=torch.float32).uniform_(self.min_scale, self.max_scale).item()
 
