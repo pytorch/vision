@@ -7,8 +7,6 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F
 
-from ._meta import get_chw
-
 
 def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
@@ -54,10 +52,9 @@ def to_tensor(inpt: Any) -> torch.Tensor:
     return _F.to_tensor(inpt)
 
 
-def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
+def get_image_size(inpt: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
     warnings.warn(
         "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
         "Instead, please use `get_spatial_size(...)` which returns `[h, w]` instead of `[w, h]`."
     )
-    _, h, w = get_chw(image)
-    return [w, h]
+    return _F.get_image_size(inpt)

@@ -39,6 +39,8 @@ def get_num_channels(image: Union[PIL.Image.Image, torch.Tensor, features.Image]
     return num_channels
 
 
+ # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
+# deprecating the old names.
 get_image_num_channels = get_num_channels
 
 
