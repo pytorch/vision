@@ -38,7 +38,7 @@ class _AutoAugmentBase(Transform):
     def _extract_image(
         self,
         sample: Any,
-        unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask),
+        unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.Mask),
     ) -> Tuple[int, Union[PIL.Image.Image, torch.Tensor, features.Image]]:
         sample_flat, _ = tree_flatten(sample)
         images = []
