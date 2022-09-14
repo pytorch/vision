@@ -184,7 +184,7 @@ def make_detection_mask(size=None, *, num_objects=None, extra_dims=(), dtype=tor
     num_objects = num_objects if num_objects is not None else int(torch.randint(1, 11, ()))
     shape = (*extra_dims, num_objects, *size)
     data = make_tensor(shape, low=0, high=2, dtype=dtype)
-    return features.SegmentationMask(data)
+    return features.Mask(data)
 
 
 def make_detection_masks(
@@ -207,7 +207,7 @@ def make_segmentation_mask(size=None, *, num_categories=None, extra_dims=(), dty
     num_categories = num_categories if num_categories is not None else int(torch.randint(1, 11, ()))
     shape = (*extra_dims, *size)
     data = make_tensor(shape, low=0, high=num_categories, dtype=dtype)
-    return features.SegmentationMask(data)
+    return features.Mask(data)
 
 
 def make_segmentation_masks(
@@ -224,7 +224,7 @@ def make_segmentation_masks(
         yield make_segmentation_mask(size=sizes[0], num_categories=num_categories_, dtype=dtype, extra_dims=extra_dims_)
 
 
-def make_detection_and_segmentation_masks(
+def make_masks(
     sizes=((16, 16), (7, 33), (31, 9)),
     dtypes=(torch.uint8,),
     extra_dims=((), (0,), (4,), (2, 3), (5, 0), (0, 5)),
