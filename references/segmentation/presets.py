@@ -1,5 +1,6 @@
 import torch
 from torchvision.prototype import features, transforms as T
+from transforms import RandomCrop
 
 
 class WrapIntoFeatures(T.Transform):
@@ -19,7 +20,7 @@ class SegmentationPresetTrain(T.Compose):
             transforms.append(T.RandomHorizontalFlip(hflip_prob))
         transforms.extend(
             [
-                T.RandomCrop(crop_size, pad_if_needed=True),
+                RandomCrop(crop_size, pad_if_needed=True),
                 T.ConvertImageDtype(torch.float),
                 T.Normalize(mean=mean, std=std),
             ]
