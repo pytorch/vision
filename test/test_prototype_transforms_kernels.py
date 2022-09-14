@@ -13,7 +13,7 @@ from prototype_common_utils import (
     assert_close,
     make_bounding_box_loaders,
     make_image_loaders,
-    make_segmentation_mask_loaders,
+    make_mask_loaders,
 )
 
 from torch.utils._pytree import tree_map
@@ -80,8 +80,8 @@ def sample_inputs_horizontal_flip_bounding_box():
         )
 
 
-def sample_inputs_horizontal_flip_segmentation_mask():
-    for image_loader in make_segmentation_mask_loaders(dtypes=[torch.uint8]):
+def sample_inputs_horizontal_flip_mask():
+    for image_loader in make_mask_loaders(dtypes=[torch.uint8]):
         yield ArgsKwargs(image_loader)
 
 
@@ -101,8 +101,8 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_horizontal_flip_bounding_box,
         ),
         KernelInfo(
-            F.horizontal_flip_segmentation_mask,
-            sample_inputs_fn=sample_inputs_horizontal_flip_segmentation_mask,
+            F.horizontal_flip_mask,
+            sample_inputs_fn=sample_inputs_horizontal_flip_mask,
         ),
     ]
 )
@@ -374,7 +374,11 @@ class TestCommon:
         data_dims = {
             features.Image: 3,
             features.BoundingBox: 1,
-            features.SegmentationMask: 3,
+            # `Mask`'s are special in the sense that the data dimensions depend on the type of mask. For detection masks
+            # it is 3 `(*, N, H, W)`, but for segmentation masks it is 2 `(*, H, W)`. Since both a grouped under one
+            # type all kernels should also work without differentiating between the two. Thus, we go with 2 here as
+            # common ground.
+            features.Mask: 2,
         }.get(feature_type)
         if data_dims is None:
             raise pytest.UsageError(

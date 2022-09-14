@@ -10,9 +10,11 @@ from common_utils import assert_equal, cpu_and_gpu
 from prototype_common_utils import (
     make_bounding_box,
     make_bounding_boxes,
+    make_detection_mask,
     make_image,
     make_images,
     make_label,
+    make_masks,
     make_one_hot_labels,
     make_segmentation_mask,
 )
@@ -62,6 +64,7 @@ def parametrize_from_transforms(*transforms):
             make_one_hot_labels,
             make_vanilla_tensor_images,
             make_pil_images,
+            make_masks,
         ]:
             inputs = list(creation_fn())
             try:
@@ -129,9 +132,14 @@ class TestSmoke:
         transform(input_copy)
 
         # Check if we raise an error if sample contains bbox or mask or label
-        err_msg = "does not support bounding boxes, segmentation masks and plain labels"
+        err_msg = "does not support bounding boxes, masks and plain labels"
         input_copy = dict(input)
-        for unsup_data in [make_label(), make_bounding_box(format="XYXY"), make_segmentation_mask()]:
+        for unsup_data in [
+            make_label(),
+            make_bounding_box(format="XYXY"),
+            make_detection_mask(),
+            make_segmentation_mask(),
+        ]:
             input_copy["unsupported"] = unsup_data
             with pytest.raises(TypeError, match=err_msg):
                 transform(input_copy)
@@ -233,7 +241,7 @@ class TestSmoke:
             color_space=features.ColorSpace.RGB, old_color_space=features.ColorSpace.GRAY
         )
 
-        for inpt in [make_bounding_box(format="XYXY"), make_segmentation_mask()]:
+        for inpt in [make_bounding_box(format="XYXY"), make_masks()]:
             output = transform(inpt)
             assert output is inpt
 
@@ -270,13 +278,13 @@ class TestRandomHorizontalFlip:
 
         assert_equal(features.Image(expected), actual)
 
-    def test_features_segmentation_mask(self, p):
+    def test_features_mask(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomHorizontalFlip(p=p)
 
-        actual = transform(features.SegmentationMask(input))
+        actual = transform(features.Mask(input))
 
-        assert_equal(features.SegmentationMask(expected), actual)
+        assert_equal(features.Mask(expected), actual)
 
     def test_features_bounding_box(self, p):
         input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
@@ -323,13 +331,13 @@ class TestRandomVerticalFlip:
 
         assert_equal(features.Image(expected), actual)
 
-    def test_features_segmentation_mask(self, p):
+    def test_features_mask(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomVerticalFlip(p=p)
 
-        actual = transform(features.SegmentationMask(input))
+        actual = transform(features.Mask(input))
 
-        assert_equal(features.SegmentationMask(expected), actual)
+        assert_equal(features.Mask(expected), actual)
 
     def test_features_bounding_box(self, p):
         input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
@@ -1206,7 +1214,7 @@ class TestRandomIoUCrop:
         bboxes = make_bounding_box(format="XYXY", image_size=(32, 24), extra_dims=(6,))
         label = features.Label(torch.randint(0, 10, size=(6,)))
         ohe_label = features.OneHotLabel(torch.zeros(6, 10).scatter_(1, label.unsqueeze(1), 1))
-        masks = make_segmentation_mask((32, 24), num_objects=6)
+        masks = make_detection_mask((32, 24), num_objects=6)
 
         sample = [image, bboxes, label, ohe_label, masks]
 
@@ -1245,7 +1253,7 @@ class TestRandomIoUCrop:
         torch.testing.assert_close(output_ohe_label, ohe_label[is_within_crop_area])
 
         output_masks = output[4]
-        assert isinstance(output_masks, features.SegmentationMask)
+        assert isinstance(output_masks, features.Mask)
         assert len(output_masks) == expected_within_targets
 
 
@@ -1364,10 +1372,10 @@ class TestSimpleCopyPaste:
             # labels, bboxes, masks
             mocker.MagicMock(spec=features.Label),
             mocker.MagicMock(spec=features.BoundingBox),
-            mocker.MagicMock(spec=features.SegmentationMask),
+            mocker.MagicMock(spec=features.Mask),
             # labels, bboxes, masks
             mocker.MagicMock(spec=features.BoundingBox),
-            mocker.MagicMock(spec=features.SegmentationMask),
+            mocker.MagicMock(spec=features.Mask),
         ]
 
         with pytest.raises(TypeError, match="requires input sample to contain equal sized list of Images"):
@@ -1385,11 +1393,11 @@ class TestSimpleCopyPaste:
             # labels, bboxes, masks
             mocker.MagicMock(spec=label_type),
             mocker.MagicMock(spec=features.BoundingBox),
-            mocker.MagicMock(spec=features.SegmentationMask),
+            mocker.MagicMock(spec=features.Mask),
             # labels, bboxes, masks
             mocker.MagicMock(spec=label_type),
             mocker.MagicMock(spec=features.BoundingBox),
-            mocker.MagicMock(spec=features.SegmentationMask),
+            mocker.MagicMock(spec=features.Mask),
         ]
 
         images, targets = transform._extract_image_targets(flat_sample)
@@ -1405,7 +1413,7 @@ class TestSimpleCopyPaste:
         for target in targets:
             for key, type_ in [
                 ("boxes", features.BoundingBox),
-                ("masks", features.SegmentationMask),
+                ("masks", features.Mask),
                 ("labels", label_type),
             ]:
                 assert key in target
@@ -1428,7 +1436,7 @@ class TestSimpleCopyPaste:
             "boxes": features.BoundingBox(
                 torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", image_size=(32, 32)
             ),
-            "masks": features.SegmentationMask(masks),
+            "masks": features.Mask(masks),
             "labels": label_type(labels),
         }
 
@@ -1443,7 +1451,7 @@ class TestSimpleCopyPaste:
             "boxes": features.BoundingBox(
                 torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", image_size=(32, 32)
             ),
-            "masks": features.SegmentationMask(paste_masks),
+            "masks": features.Mask(paste_masks),
             "labels": label_type(paste_labels),
         }
 
@@ -1578,7 +1586,7 @@ class TestFixedSizeCrop:
         bounding_boxes = make_bounding_box(
             format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
         )
-        segmentation_masks = make_segmentation_mask(size=image_size, extra_dims=(batch_size,))
+        masks = make_segmentation_mask(size=image_size, extra_dims=(batch_size,))
         labels = make_label(extra_dims=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
@@ -1588,13 +1596,13 @@ class TestFixedSizeCrop:
         output = transform(
             dict(
                 bounding_boxes=bounding_boxes,
-                segmentation_masks=segmentation_masks,
+                masks=masks,
                 labels=labels,
             )
         )
 
         assert_equal(output["bounding_boxes"], bounding_boxes[is_valid])
-        assert_equal(output["segmentation_masks"], segmentation_masks[is_valid])
+        assert_equal(output["masks"], masks[is_valid])
         assert_equal(output["labels"], labels[is_valid])
 
     def test__transform_bounding_box_clamping(self, mocker):
@@ -1670,3 +1678,43 @@ class TestLabelToOneHot:
         assert isinstance(ohe_labels, features.OneHotLabel)
         assert ohe_labels.shape == (4, 3)
         assert ohe_labels.categories == labels.categories == categories
+
+
+class TestRandomResize:
+    def test__get_params(self):
+        min_size = 3
+        max_size = 6
+
+        transform = transforms.RandomResize(min_size=min_size, max_size=max_size)
+
+        for _ in range(10):
+            params = transform._get_params(None)
+
+            assert isinstance(params["size"], list) and len(params["size"]) == 1
+            size = params["size"][0]
+
+            assert min_size <= size < max_size
+
+    def test__transform(self, mocker):
+        interpolation_sentinel = mocker.MagicMock()
+        antialias_sentinel = mocker.MagicMock()
+
+        transform = transforms.RandomResize(
+            min_size=-1, max_size=-1, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )
+        transform._transformed_types = (mocker.MagicMock,)
+
+        size_sentinel = mocker.MagicMock()
+        mocker.patch(
+            "torchvision.prototype.transforms._geometry.RandomResize._get_params",
+            return_value=dict(size=size_sentinel),
+        )
+
+        inpt_sentinel = mocker.MagicMock()
+
+        mock_resize = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        transform(inpt_sentinel)
+
+        mock_resize.assert_called_with(
+            inpt_sentinel, size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
+        )

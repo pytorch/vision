@@ -33,9 +33,14 @@ __all__ = [
     "make_bounding_boxes",
     "make_label",
     "make_one_hot_labels",
+    "make_detection_mask_loaders",
+    "make_detection_mask",
+    "make_detection_masks",
     "make_segmentation_mask_loaders",
     "make_segmentation_mask",
     "make_segmentation_masks",
+    "make_mask_loaders",
+    "make_masks",
 ]
 
 
@@ -155,14 +160,28 @@ class ArgsKwargs:
         return args, kwargs
 
 
-DEFAULT_SQUARE_IMAGE_SIZE = (16, 16)
+DEFAULT_SQUARE_IMAGE_SIZE = 15
 DEFAULT_LANDSCAPE_IMAGE_SIZE = (7, 33)
 DEFAULT_PORTRAIT_IMAGE_SIZE = (31, 9)
 DEFAULT_IMAGE_SIZES = (DEFAULT_LANDSCAPE_IMAGE_SIZE, DEFAULT_PORTRAIT_IMAGE_SIZE, DEFAULT_SQUARE_IMAGE_SIZE, None)
 
 
-def random_image_size():
-    return tuple(torch.randint(16, 33, (2,)).tolist())
+def _parse_image_size(size, *, name="size"):
+    if size is None:
+        return tuple(torch.randint(16, 33, (2,)).tolist())
+    elif isinstance(size, int) and size > 0:
+        return (size, size)
+    elif (
+        isinstance(size, collections.abc.Sequence)
+        and len(size) == 2
+        and all(isinstance(length, int) and length > 0 for length in size)
+    ):
+        return tuple(size)
+    else:
+        raise pytest.UsageError(
+            f"'{name}' can either be `None`, a positive integer, or a sequence of two positive integers,"
+            f"but got {size} instead"
+        )
 
 
 DEFAULT_EXTRA_DIMS = ((), (0,), (4,), (2, 3), (5, 0), (0, 5))
@@ -211,8 +230,7 @@ def make_image_loader(
     dtype=torch.float32,
     constant_alpha=True,
 ):
-    if size is None:
-        size = random_image_size()
+    size = _parse_image_size(size)
 
     try:
         num_channels = {
@@ -291,8 +309,7 @@ def make_bounding_box_loader(*, extra_dims=(), format, image_size=None, dtype=to
     }:
         raise pytest.UsageError(f"Can't make bounding box in format {format}")
 
-    if image_size is None:
-        image_size = random_image_size()
+    image_size = _parse_image_size(image_size, name="image_size")
 
     def fn(shape, dtype, device):
         *extra_dims, num_coordinates = shape
@@ -422,32 +439,79 @@ def make_one_hot_label_loaders(
 make_one_hot_labels = from_loaders(make_one_hot_label_loaders)
 
 
-class SegmentationMaskLoader(TensorLoader):
+class MaskLoader(TensorLoader):
     pass
 
 
-def make_segmentation_mask_loader(size=None, *, num_objects=None, extra_dims=(), dtype=torch.uint8):
-    size = size if size is not None else torch.randint(16, 33, (2,)).tolist()
+def make_detection_mask_loader(size=None, *, num_objects=None, extra_dims=(), dtype=torch.uint8):
+    # This produces "detection" masks, i.e. `(*, N, H, W)`, where `N` denotes the number of objects
+    size = _parse_image_size(size)
     num_objects = num_objects if num_objects is not None else int(torch.randint(1, 11, ()))
 
     def fn(shape, dtype, device):
         data = torch.testing.make_tensor(shape, low=0, high=2, dtype=dtype, device=device)
-        return features.SegmentationMask(data)
+        return features.Mask(data)
 
-    return SegmentationMaskLoader(fn, shape=(*extra_dims, num_objects, *size), dtype=dtype)
+    return MaskLoader(fn, shape=(*extra_dims, num_objects, *size), dtype=dtype)
+
+
+make_detection_mask = from_loader(make_detection_mask_loader)
+
+
+def make_detection_mask_loaders(
+    sizes=DEFAULT_IMAGE_SIZES,
+    num_objects=(1, 0, None),
+    extra_dims=DEFAULT_EXTRA_DIMS,
+    dtypes=(torch.uint8,),
+):
+    for params in combinations_grid(size=sizes, num_objects=num_objects, extra_dims=extra_dims, dtype=dtypes):
+        yield make_detection_mask_loader(**params)
+
+
+make_detection_masks = from_loaders(make_detection_mask_loaders)
+
+
+def make_segmentation_mask_loader(size=None, *, num_categories=None, extra_dims=(), dtype=torch.uint8):
+    # This produces "segmentation" masks, i.e. `(*, H, W)`, where the category is encoded in the values
+    size = _parse_image_size(size)
+    num_categories = num_categories if num_categories is not None else int(torch.randint(1, 11, ()))
+
+    def fn(shape, dtype, device):
+        data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=dtype, device=device)
+        return features.Mask(data)
+
+    return MaskLoader(fn, shape=(*extra_dims, *size), dtype=dtype)
 
 
 make_segmentation_mask = from_loader(make_segmentation_mask_loader)
 
 
 def make_segmentation_mask_loaders(
+    *,
     sizes=DEFAULT_IMAGE_SIZES,
-    num_objects=(1, 0, None),
+    num_categories=(1, 2, None),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.uint8, torch.bool),
+    dtypes=(torch.uint8,),
 ):
-    for params in combinations_grid(size=sizes, num_objects=num_objects, extra_dims=extra_dims, dtype=dtypes):
+    for params in combinations_grid(size=sizes, num_categories=num_categories, extra_dims=extra_dims, dtype=dtypes):
         yield make_segmentation_mask_loader(**params)
 
 
 make_segmentation_masks = from_loaders(make_segmentation_mask_loaders)
+
+
+def make_mask_loaders(
+    *,
+    sizes=DEFAULT_IMAGE_SIZES,
+    num_objects=(1, 0, None),
+    num_categories=(1, 2, None),
+    extra_dims=DEFAULT_EXTRA_DIMS,
+    dtypes=(torch.uint8,),
+):
+    yield from make_detection_mask_loaders(sizes=sizes, num_objects=num_objects, extra_dims=extra_dims, dtypes=dtypes)
+    yield from make_segmentation_mask_loaders(
+        sizes=sizes, num_categories=num_categories, extra_dims=extra_dims, dtypes=dtypes
+    )
+
+
+make_masks = from_loaders(make_mask_loaders)
