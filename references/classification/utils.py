@@ -9,6 +9,8 @@ from typing import List, Optional, Tuple
 
 import torch
 import torch.distributed as dist
+import numpy as np
+import random
 
 
 class SmoothedValue:
@@ -463,3 +465,13 @@ def set_weight_decay(
         if len(params[key]) > 0:
             param_groups.append({"params": params[key], "weight_decay": params_weight_decay[key]})
     return param_groups
+
+def set_seed(seed: int):
+    """
+    Function for setting all the RNGs to the same seed
+    """
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)

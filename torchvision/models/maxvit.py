@@ -1,3 +1,4 @@
+from functools import partial
 import math
 from typing import Any, Callable, List, Optional, OrderedDict, Sequence, Tuple
 
@@ -5,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
-from torchvision.models._api import register_model, WeightsEnum
+from torchvision.models._api import WeightsEnum
 from torchvision.models._utils import _ovewrite_named_param
 from torchvision.ops.misc import Conv2dNormActivation, SqueezeExcitation
 from torchvision.ops.stochastic_depth import StochasticDepth
@@ -33,6 +34,7 @@ class MBConv(nn.Module):
         stride: int,
         activation_fn: Callable[..., nn.Module],
         normalization_fn: Callable[..., nn.Module],
+        p_stochastic_dropout: float = 0.,
     ) -> None:
         super().__init__()
 
@@ -41,7 +43,7 @@ class MBConv(nn.Module):
 
         should_proj = stride != 1 or in_channels != out_channels
         if should_proj:
-            proj = [nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, bias=False)]
+            proj = [nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, bias=True)]
             if stride == 2:
                 proj = [nn.AvgPool2d(kernel_size=3, stride=stride, padding=1)] + proj  # type: ignore
             self.proj = nn.Sequential(*proj)
@@ -49,7 +51,12 @@ class MBConv(nn.Module):
             self.proj = nn.Identity()  # type: ignore
 
         mid_channels = int(out_channels * expansion_ratio)
-        sqz_channels = int(mid_channels * squeeze_ratio)
+        sqz_channels = int(out_channels * squeeze_ratio)
+        
+        if p_stochastic_dropout:
+            self.stochastic_depth = StochasticDepth(p_stochastic_dropout, mode="row") # type: ignore
+        else:
+            self.stochastic_depth = nn.Identity() # type: ignore
 
         _layers = OrderedDict()
         _layers["pre_norm"] = normalization_fn(in_channels)
@@ -74,13 +81,15 @@ class MBConv(nn.Module):
             groups=mid_channels,
             inplace=None,
         )
-        _layers["squeeze_excitation"] = SqueezeExcitation(mid_channels, sqz_channels)
+        _layers["squeeze_excitation"] = SqueezeExcitation(mid_channels, sqz_channels, activation=nn.SiLU)
         _layers["conv_c"] = nn.Conv2d(in_channels=mid_channels, out_channels=out_channels, kernel_size=1, bias=True)
 
         self.layers = nn.Sequential(_layers)
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.layers(x) + self.proj(x)
+        res = self.proj(x)
+        x = self.stochastic_depth(self.layers(x))
+        return res + x
 
 
 class RelativePositionalMultiHeadAttention(nn.Module):
@@ -104,18 +113,17 @@ class RelativePositionalMultiHeadAttention(nn.Module):
         self.scale_factor = feat_dim**-0.5
 
         self.merge = nn.Linear(self.head_dim * self.n_heads, feat_dim)
-        self.positional_bias = nn.parameter.Parameter(
-            torch.zeros(((2 * self.size - 1) * (2 * self.size - 1), self.n_heads), dtype=torch.float32),
+        self.relative_position_bias_table = nn.parameter.Parameter(
+            torch.empty(((2 * self.size - 1) * (2 * self.size - 1), self.n_heads), dtype=torch.float32),
         )
 
         self.register_buffer("relative_position_index", get_relative_position_index(self.size, self.size))
-
         # initialize with truncated normal the bias
-        self.positional_bias.data.normal_(mean=0, std=0.02)
+        torch.nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
     def get_relative_positional_bias(self) -> torch.Tensor:
         bias_index = self.relative_position_index.view(-1)  # type: ignore
-        relative_bias = self.positional_bias[bias_index].view(self.max_seq_len, self.max_seq_len, -1)  # type: ignore
+        relative_bias = self.relative_position_bias_table[bias_index].view(self.max_seq_len, self.max_seq_len, -1)  # type: ignore
         relative_bias = relative_bias.permute(2, 0, 1).contiguous()
         return relative_bias.unsqueeze(0)
 
@@ -153,20 +161,19 @@ class SwapAxes(nn.Module):
         res = torch.swapaxes(x, self.a, self.b)
         return res
 
-
+    
 class WindowPartition(nn.Module):
     """
     Function that takes in a tensor of shape [B, C, H, W] and partitions it
     in to a tensor of shape [B, H/P, W/P, P*P, C]
     """
 
-    def __init__(self, partition_size: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.partition_size = partition_size
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor, p: int) -> Tensor:
         B, C, H, W = x.shape
-        P = self.partition_size
+        P = p
         # chunk up H and W dimensions
         x = x.reshape(B, C, H // P, P, W // P, P)
         x = x.permute(0, 2, 4, 3, 5, 1)
@@ -181,15 +188,13 @@ class WindowDepartition(nn.Module):
     and partitions it into a tensor of shape [B, C, H, W]
     """
 
-    def __init__(self, partition_size: int, n_partitions: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.partition_size = partition_size
-        self.n_partitions = n_partitions
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor, p: int, h_partitions: int, w_partitions: int) -> Tensor:
         B, G, PP, C = x.shape
-        P = self.partition_size
-        HP, WP = self.n_partitions, self.n_partitions
+        P = p
+        HP, WP = h_partitions, w_partitions
         # split P * P dimension into 2 P tile dimensionsa
         x = x.reshape(B, HP, WP, P, P, C)
         # permute into B, C, HP, P, WP, P
@@ -215,6 +220,7 @@ class PartitionAttentionLayer(nn.Module):
         normalization_fn: Callable[..., nn.Module],
         attn_dropout: float,
         mlp_dropout: float,
+        p_stochastic_dropout: float,
     ) -> None:
         super().__init__()
 
@@ -222,24 +228,20 @@ class PartitionAttentionLayer(nn.Module):
         self.head_dim = head_dim
         self.n_partitions = grid_size[0] // partition_size
         self.partition_type = partition_type
+        self.grid_size = grid_size
 
         if partition_type not in ["grid", "window"]:
             raise ValueError("partition_type must be either 'grid' or 'window'")
 
         if partition_type == "window":
-            p, g = partition_size, self.n_partitions
+            self.p, self.g = partition_size, self.n_partitions
         else:
-            p, g = self.n_partitions, partition_size
+            self.p, self.g = self.n_partitions, partition_size
 
-        partition_op = [WindowPartition(p)]
-        departition_op = [WindowDepartition(p, g)]
-
-        if partition_type == "grid":
-            partition_op = partition_op + [SwapAxes(-2, -3)]  # type: ignore
-            departition_op = [SwapAxes(-2, -3)] + departition_op  # type: ignore
-
-        self.partition_op = nn.Sequential(*partition_op)
-        self.departition_op = nn.Sequential(*departition_op)
+        self.partition_op = WindowPartition()
+        self.departition_op = WindowDepartition()
+        self.partition_swap = SwapAxes(-2, -3) if partition_type == "grid" else nn.Identity()
+        self.departition_swap = SwapAxes(-2, -3) if partition_type == "grid" else nn.Identity()
 
         self.attn_layer = nn.Sequential(
             normalization_fn(in_channels),
@@ -259,14 +261,28 @@ class PartitionAttentionLayer(nn.Module):
         )
 
         # layer scale factors
-        self.attn_layer_scale = nn.parameter.Parameter(torch.ones(in_channels) * 1e-6)
-        self.mlp_layer_scale = nn.parameter.Parameter(torch.ones(in_channels) * 1e-6)
+        self.stochastic_dropout = StochasticDepth(p_stochastic_dropout, mode='row')
+
 
     def forward(self, x: Tensor) -> Tensor:
-        x = self.partition_op(x)
-        x = x + self.attn_layer(x) * self.attn_layer_scale
-        x = x + self.mlp_layer(x) * self.mlp_layer_scale
-        x = self.departition_op(x)
+        B, C, H, W = x.shape
+        
+        # Undefined behavior if H or W are not divisible by p
+        # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L766
+        torch._assert(
+            H % self.p == 0 and W % self.p == 0,
+            f"H and W must be divisible by partition size. Got H: {H}, W: {W}, P: {self.p}"
+        )
+        
+        gh, gw = H // self.p, W // self.p
+        
+        x = self.partition_op(x, self.p)
+        x = self.partition_swap(x)
+        x = x + self.stochastic_dropout(self.attn_layer(x))
+        x = x + self.stochastic_dropout(self.mlp_layer(x))
+        x = self.departition_swap(x)
+        x = self.departition_op(x, self.p, gh, gw)
+        
         return x
 
 
@@ -287,6 +303,7 @@ class MaxVitLayer(nn.Module):
         mlp_ratio: int,
         mlp_dropout: float,
         attn_dropout: float,
+        p_stochastic_dropout: float,
         # partitioning parameters
         partition_size: int,
         grid_size: Tuple[int, int],
@@ -304,6 +321,7 @@ class MaxVitLayer(nn.Module):
             stride=stride,
             activation_fn=activation_fn,
             normalization_fn=normalization_fn,
+            p_stochastic_dropout=p_stochastic_dropout,
         )
         # attention layers, block -> grid
         layers["window_attention"] = PartitionAttentionLayer(
@@ -317,6 +335,7 @@ class MaxVitLayer(nn.Module):
             normalization_fn=nn.LayerNorm,
             attn_dropout=attn_dropout,
             mlp_dropout=mlp_dropout,
+            p_stochastic_dropout=p_stochastic_dropout,
         )
         layers["grid_attention"] = PartitionAttentionLayer(
             in_channels=out_channels,
@@ -329,11 +348,13 @@ class MaxVitLayer(nn.Module):
             normalization_fn=nn.LayerNorm,
             attn_dropout=attn_dropout,
             mlp_dropout=mlp_dropout,
+            p_stochastic_dropout=p_stochastic_dropout,
         )
         self.layers = nn.Sequential(layers)
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.layers(x)
+        x = self.layers(x)
+        return x
 
 
 class MaxVitBlock(nn.Module):
@@ -384,8 +405,8 @@ class MaxVitBlock(nn.Module):
                     attn_dropout=attn_dropout,
                     partition_size=partition_size,
                     grid_size=self.grid_size,
+                    p_stochastic_dropout=p,
                 ),
-                StochasticDepth(p, mode="row"),
             ]
 
     def forward(self, x: Tensor) -> Tensor:
@@ -429,15 +450,29 @@ class MaxVit(nn.Module):
         # stem
         self.stem = nn.Sequential(
             Conv2dNormActivation(
-                input_channels, stem_channels, 3, stride=2, norm_layer=None, activation_layer=None, bias=True
+                input_channels,
+                stem_channels,
+                3,
+                stride=2,
+                norm_layer=normalization_fn,
+                activation_layer=activation_fn,
+                bias=False,
+                inplace=None
             ),
             Conv2dNormActivation(
-                stem_channels, stem_channels, 3, stride=1, norm_layer=None, activation_layer=None, bias=True
+                stem_channels,
+                stem_channels,
+                3,
+                stride=1,
+                norm_layer=None,
+                activation_layer=None,
+                bias=True
             ),
         )
 
         # account for stem stride
         input_size = (input_size[0] // 2, input_size[1] // 2)
+        self.partition_size = partition_size
 
         # blocks
         self.blocks = nn.ModuleList()
@@ -447,7 +482,7 @@ class MaxVit(nn.Module):
         # precompute the stochastich depth probabilities from 0 to stochastic_depth_prob
         # since we have N blocks with L layers, we will have N * L probabilities uniformly distributed
         # over the range [0, stochastic_depth_prob]
-        p_stochastic = np.linspace(0, stochastic_depth_prob, num=sum(block_layers)).tolist()
+        p_stochastic = np.linspace(0, stochastic_depth_prob, sum(block_layers)).tolist()
 
         p_idx = 0
         for in_channel, out_channel, num_layers in zip(in_channels, out_channels, block_layers):
@@ -472,11 +507,18 @@ class MaxVit(nn.Module):
             input_size = self.blocks[-1].grid_size
             p_idx += num_layers
 
+        # see https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L1137-L1158
+        # for why there is Linear -> Tanh -> Linear
         self.classifier = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(),
+            nn.LayerNorm(block_channels[-1]),
+            nn.Linear(block_channels[-1], block_channels[-1]),
+            nn.Tanh(),
             nn.Linear(block_channels[-1], num_classes, bias=False),
         )
+        
+        self._init_weights()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.stem(x)
@@ -484,6 +526,20 @@ class MaxVit(nn.Module):
             x = block(x)
         x = self.classifier(x)
         return x
+    
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight, std=0.02)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, std=0.02)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
 
 
 def _maxvit(
@@ -550,7 +606,6 @@ def _maxvit(
     return model
 
 
-@register_model(name="maxvit_t")
 def maxvit_t(*, weights: Optional[WeightsEnum] = None, progress: bool = True, **kwargs: Any) -> MaxVit:
     return _maxvit(
         stem_channels=64,
@@ -559,10 +614,12 @@ def maxvit_t(*, weights: Optional[WeightsEnum] = None, progress: bool = True, **
         stochastic_depth_prob=0.2,
         squeeze_ratio=0.25,
         expansion_ratio=4.0,
-        normalization_fn=nn.BatchNorm2d,
+        # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L1029-L1030
+        # for the exact parameters used in batchnorm
+        normalization_fn=partial(nn.BatchNorm2d, eps=1e-3, momentum=0.99),
         activation_fn=nn.GELU,
         head_dim=32,
-        mlp_ratio=2,
+        mlp_ratio=4,
         mlp_dropout=0.0,
         attn_dropout=0.0,
         partition_size=7,
@@ -570,3 +627,6 @@ def maxvit_t(*, weights: Optional[WeightsEnum] = None, progress: bool = True, **
         progress=progress,
         **kwargs,
     )
+    
+class MaxVit_T_Weights(WeightsEnum):
+    pass
