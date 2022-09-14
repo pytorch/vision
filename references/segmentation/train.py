@@ -42,7 +42,7 @@ def get_transform(train, args):
         def preprocessing(sample):
             img, target = sample
             img = trans(img)
-            size = F.get_image_size(img)
+            size = F.get_dimensions(img)[1:]
             target = F.resize(target, size, interpolation=InterpolationMode.NEAREST)
             return img, F.to_image_tensor(target)
 
