@@ -526,19 +526,11 @@ def erase_image_tensor():
         for name, kernel in F.__dict__.items()
         if not name.startswith("_")
         and callable(kernel)
-        and any(feature_type in name for feature_type in {"image", "mask", "bounding_box", "label"})
-        and "pil" not in name
-        and name
-        not in {
-            "to_image_tensor",
-            "get_num_channels",
-            "get_spatial_size",
-            "get_image_num_channels",
-            "get_image_size",
-        }
+        and any(name.endswith(kernel_type) for kernel_type in {"_image_tensor", "_mask", "_bounding_box", "_label"})
+        and name not in {"to_image_tensor"}
     ],
 )
-def test_scriptable(kernel):
+def test_scriptable_kernel(kernel):
     jit.script(kernel)
 
 
