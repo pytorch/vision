@@ -9,7 +9,7 @@ from ._meta import (
     convert_color_space,
     get_dimensions,
     get_image_num_channels,
-    get_channel_size,
+    get_num_channels,
     get_spatial_size,
 )  # usort: skip
 
