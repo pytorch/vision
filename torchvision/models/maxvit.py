@@ -590,7 +590,6 @@ def _maxvit(
         attn_dropout=attn_dropout,
         partition_size=partition_size,
         input_size=input_size,
-        **kwargs,
     )
 
     if weights is not None:
