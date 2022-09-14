@@ -111,7 +111,12 @@ Stereo Matching
     CarlaStereo
     Kitti2012Stereo
     Kitti2015Stereo
+    CREStereo
+    FallingThingsStereo
     SceneFlowStereo
+    SintelStereo
+    InStereo2k
+    ETH3DStereo
 
 Image pairs
 ~~~~~~~~~~~

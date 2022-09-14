@@ -1,4 +1,6 @@
 import functools
+import json
+import os
 from abc import ABC, abstractmethod
 from glob import glob
 from pathlib import Path
@@ -361,6 +363,198 @@ class Kitti2015Stereo(StereoMatchingDataset):
         return super().__getitem__(index)
 
 
+class CREStereo(StereoMatchingDataset):
+    """Synthetic dataset used in training the `CREStereo <https://arxiv.org/pdf/2203.11483.pdf>`_ architecture.
+    Dataset details on the official paper `repo <https://github.com/megvii-research/CREStereo>`_.
+
+    The dataset is expected to have the following structure: ::
+
+        root
+            CREStereo
+                tree
+                    img1_left.jpg
+                    img1_right.jpg
+                    img1_left.disp.jpg
+                    img1_right.disp.jpg
+                    img2_left.jpg
+                    img2_right.jpg
+                    img2_left.disp.jpg
+                    img2_right.disp.jpg
+                    ...
+                shapenet
+                    img1_left.jpg
+                    img1_right.jpg
+                    img1_left.disp.jpg
+                    img1_right.disp.jpg
+                    ...
+                reflective
+                    img1_left.jpg
+                    img1_right.jpg
+                    img1_left.disp.jpg
+                    img1_right.disp.jpg
+                    ...
+                hole
+                    img1_left.jpg
+                    img1_right.jpg
+                    img1_left.disp.jpg
+                    img1_right.disp.jpg
+                    ...
+
+    Args:
+        root (str): Root directory of the dataset.
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+    """
+
+    _has_built_in_disparity_mask = True
+
+    def __init__(
+        self,
+        root: str,
+        transforms: Optional[Callable] = None,
+    ):
+        super().__init__(root, transforms)
+
+        root = Path(root) / "CREStereo"
+
+        dirs = ["shapenet", "reflective", "tree", "hole"]
+
+        for s in dirs:
+            left_image_pattern = str(root / s / "*_left.jpg")
+            right_image_pattern = str(root / s / "*_right.jpg")
+            imgs = self._scan_pairs(left_image_pattern, right_image_pattern)
+            self._images += imgs
+
+            left_disparity_pattern = str(root / s / "*_left.disp.png")
+            right_disparity_pattern = str(root / s / "*_right.disp.png")
+            disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
+            self._disparities += disparities
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
+        # unsqueeze the disparity map into (C, H, W) format
+        disparity_map = disparity_map[None, :, :] / 256.0
+        valid_mask = None
+        return disparity_map, valid_mask
+
+    def __getitem__(self, index: int) -> Tuple:
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.
+            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
+            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not
+            generate a valid mask.
+        """
+        return super().__getitem__(index)
+
+
+class FallingThingsStereo(StereoMatchingDataset):
+    """`FallingThings <https://research.nvidia.com/publication/2018-06_falling-things-synthetic-dataset-3d-object-detection-and-pose-estimation>`_ dataset.
+
+    The dataset is expected to have the following structre: ::
+
+        root
+            FallingThings
+                single
+                    dir1
+                        scene1
+                            _object_settings.json
+                            _camera_settings.json
+                            image1.left.depth.png
+                            image1.right.depth.png
+                            image1.left.jpg
+                            image1.right.jpg
+                            image2.left.depth.png
+                            image2.right.depth.png
+                            image2.left.jpg
+                            image2.right
+                            ...
+                        scene2
+                    ...
+                mixed
+                    scene1
+                        _object_settings.json
+                        _camera_settings.json
+                        image1.left.depth.png
+                        image1.right.depth.png
+                        image1.left.jpg
+                        image1.right.jpg
+                        image2.left.depth.png
+                        image2.right.depth.png
+                        image2.left.jpg
+                        image2.right
+                        ...
+                    scene2
+                    ...
+
+    Args:
+        root (string): Root directory where FallingThings is located.
+        variant (string): Which variant to use. Either "single", "mixed", or "both".
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+    """
+
+    def __init__(self, root: str, variant: str = "single", transforms: Optional[Callable] = None):
+        super().__init__(root, transforms)
+
+        root = Path(root) / "FallingThings"
+
+        verify_str_arg(variant, "variant", valid_values=("single", "mixed", "both"))
+
+        variants = {
+            "single": ["single"],
+            "mixed": ["mixed"],
+            "both": ["single", "mixed"],
+        }[variant]
+
+        split_prefix = {
+            "single": Path("*") / "*",
+            "mixed": Path("*"),
+        }
+
+        for s in variants:
+            left_img_pattern = str(root / s / split_prefix[s] / "*.left.jpg")
+            right_img_pattern = str(root / s / split_prefix[s] / "*.right.jpg")
+            self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
+
+            left_disparity_pattern = str(root / s / split_prefix[s] / "*.left.depth.png")
+            right_disparity_pattern = str(root / s / split_prefix[s] / "*.right.depth.png")
+            self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        # (H, W) image
+        depth = np.asarray(Image.open(file_path))
+        # as per https://research.nvidia.com/sites/default/files/pubs/2018-06_Falling-Things/readme_0.txt
+        # in order to extract disparity from depth maps
+        camera_settings_path = Path(file_path).parent / "_camera_settings.json"
+        with open(camera_settings_path, "r") as f:
+            # inverse of depth-from-disparity equation: depth = (baseline * focal) / (disparity * pixel_constatnt)
+            intrinsics = json.load(f)
+            focal = intrinsics["camera_settings"][0]["intrinsic_settings"]["fx"]
+            baseline, pixel_constant = 6, 100  # pixel constant is inverted
+            disparity_map = (baseline * focal * pixel_constant) / depth.astype(np.float32)
+            # unsqueeze disparity to (C, H, W)
+            disparity_map = disparity_map[None, :, :]
+            valid_mask = None
+            return disparity_map, valid_mask
+
+    def __getitem__(self, index: int) -> Tuple:
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: A 3-tuple with ``(img_left, img_right, disparity)``.
+            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
+            If a ``valid_mask`` is generated within the ``transforms`` parameter,
+            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
+        """
+        return super().__getitem__(index)
+
+
 class SceneFlowStereo(StereoMatchingDataset):
     """Dataset interface for `Scene Flow <https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html>`_ datasets.
     This interface provides access to the `FlyingThings3D, `Monkaa` and `Driving` datasets.
@@ -437,13 +631,19 @@ class SceneFlowStereo(StereoMatchingDataset):
 
         root = root / variant
 
+        prefix_directories = {
+            "Monkaa": Path("*"),
+            "FlyingThings3D": Path("*") / "*" / "*",
+            "Driving": Path("*") / "*" / "*",
+        }
+
         for p in passes:
-            left_image_pattern = str(root / p / "*" / "left" / "*.png")
-            right_image_pattern = str(root / p / "*" / "right" / "*.png")
+            left_image_pattern = str(root / p / prefix_directories[variant] / "left" / "*.png")
+            right_image_pattern = str(root / p / prefix_directories[variant] / "right" / "*.png")
             self._images += self._scan_pairs(left_image_pattern, right_image_pattern)
 
-            left_disparity_pattern = str(root / "disparity" / "*" / "left" / "*.pfm")
-            right_disparity_pattern = str(root / "disparity" / "*" / "right" / "*.pfm")
+            left_disparity_pattern = str(root / "disparity" / prefix_directories[variant] / "left" / "*.pfm")
+            right_disparity_pattern = str(root / "disparity" / prefix_directories[variant] / "right" / "*.pfm")
             self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
 
     def _read_disparity(self, file_path: str) -> Tuple:
@@ -463,5 +663,296 @@ class SceneFlowStereo(StereoMatchingDataset):
             The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
             If a ``valid_mask`` is generated within the ``transforms`` parameter,
             a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
+        """
+        return super().__getitem__(index)
+
+
+class SintelStereo(StereoMatchingDataset):
+    """Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
+
+    The dataset is expected to have the following structure: ::
+
+        root
+            Sintel
+                training
+                    final_left
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    final_right
+                        scene2
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    disparities
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    occlusions
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+                    outofframe
+                        scene1
+                            img1.png
+                            img2.png
+                            ...
+                        ...
+
+    Args:
+        root (string): Root directory where Sintel Stereo is located.
+        pass_name (string): The name of the pass to use, either "final", "clean" or "both".
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+    """
+
+    _has_built_in_disparity_mask = True
+
+    def __init__(self, root: str, pass_name: str = "final", transforms: Optional[Callable] = None):
+        super().__init__(root, transforms)
+
+        verify_str_arg(pass_name, "pass_name", valid_values=("final", "clean", "both"))
+
+        root = Path(root) / "Sintel"
+        pass_names = {
+            "final": ["final"],
+            "clean": ["clean"],
+            "both": ["final", "clean"],
+        }[pass_name]
+
+        for p in pass_names:
+            left_img_pattern = str(root / "training" / f"{p}_left" / "*" / "*.png")
+            right_img_pattern = str(root / "training" / f"{p}_right" / "*" / "*.png")
+            self._images += self._scan_pairs(left_img_pattern, right_img_pattern)
+
+            disparity_pattern = str(root / "training" / "disparities" / "*" / "*.png")
+            self._disparities += self._scan_pairs(disparity_pattern, None)
+
+    def _get_occlussion_mask_paths(self, file_path: str) -> Tuple[str, str]:
+        # helper function to get the occlusion mask paths
+        # a path will look like  .../.../.../training/disparities/scene1/img1.png
+        # we want to get something like .../.../.../training/occlusions/scene1/img1.png
+        fpath = Path(file_path)
+        basename = fpath.name
+        scenedir = fpath.parent
+        # the parent of the scenedir is actually the disparity dir
+        sampledir = scenedir.parent.parent
+
+        occlusion_path = str(sampledir / "occlusions" / scenedir.name / basename)
+        outofframe_path = str(sampledir / "outofframe" / scenedir.name / basename)
+
+        if not os.path.exists(occlusion_path):
+            raise FileNotFoundError(f"Occlusion mask {occlusion_path} does not exist")
+
+        if not os.path.exists(outofframe_path):
+            raise FileNotFoundError(f"Out of frame mask {outofframe_path} does not exist")
+
+        return occlusion_path, outofframe_path
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        if file_path is None:
+            return None, None
+
+        # disparity decoding as per Sintel instructions in the README provided with the dataset
+        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
+        r, g, b = np.split(disparity_map, 3, axis=-1)
+        disparity_map = r * 4 + g / (2**6) + b / (2**14)
+        # reshape into (C, H, W) format
+        disparity_map = np.transpose(disparity_map, (2, 0, 1))
+        # find the appropiate file paths
+        occlued_mask_path, out_of_frame_mask_path = self._get_occlussion_mask_paths(file_path)
+        # occlusion masks
+        valid_mask = np.asarray(Image.open(occlued_mask_path)) == 0
+        # out of frame masks
+        off_mask = np.asarray(Image.open(out_of_frame_mask_path)) == 0
+        # combine the masks together
+        valid_mask = np.logical_and(off_mask, valid_mask)
+        return disparity_map, valid_mask
+
+    def __getitem__(self, index: int) -> Tuple:
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
+            The disparity is a numpy array of shape (1, H, W) and the images are PIL images whilst
+            the valid_mask is a numpy array of shape (H, W).
+        """
+        return super().__getitem__(index)
+
+
+class InStereo2k(StereoMatchingDataset):
+    """`InStereo2k <https://github.com/YuhuaXu/StereoDataset>`_ dataset.
+
+    The dataset is expected to have the following structre: ::
+
+        root
+            InStereo2k
+                train
+                    scene1
+                        left.png
+                        right.png
+                        left_disp.png
+                        right_disp.png
+                        ...
+                    scene2
+                    ...
+                test
+                    scene1
+                        left.png
+                        right.png
+                        left_disp.png
+                        right_disp.png
+                        ...
+                    scene2
+                    ...
+
+    Args:
+        root (string): Root directory where InStereo2k is located.
+        split (string): Either "train" or "test".
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+    """
+
+    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
+        super().__init__(root, transforms)
+
+        root = Path(root) / "InStereo2k" / split
+
+        verify_str_arg(split, "split", valid_values=("train", "test"))
+
+        left_img_pattern = str(root / "*" / "left.png")
+        right_img_pattern = str(root / "*" / "right.png")
+        self._images = self._scan_pairs(left_img_pattern, right_img_pattern)
+
+        left_disparity_pattern = str(root / "*" / "left_disp.png")
+        right_disparity_pattern = str(root / "*" / "right_disp.png")
+        self._disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
+        # unsqueeze disparity to (C, H, W)
+        disparity_map = disparity_map[None, :, :] / 1024.0
+        valid_mask = None
+        return disparity_map, valid_mask
+
+    def __getitem__(self, index: int) -> Tuple:
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: A 3-tuple with ``(img_left, img_right, disparity)``.
+            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
+            If a ``valid_mask`` is generated within the ``transforms`` parameter,
+            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
+        """
+        return super().__getitem__(index)
+
+
+class ETH3DStereo(StereoMatchingDataset):
+    """ETH3D `Low-Res Two-View <https://www.eth3d.net/datasets>`_ dataset.
+
+    The dataset is expected to have the following structure: ::
+
+        root
+            ETH3D
+                two_view_training
+                    scene1
+                        im1.png
+                        im0.png
+                        images.txt
+                        cameras.txt
+                        calib.txt
+                    scene2
+                        im1.png
+                        im0.png
+                        images.txt
+                        cameras.txt
+                        calib.txt
+                    ...
+                two_view_training_gt
+                    scene1
+                        disp0GT.pfm
+                        mask0nocc.png
+                    scene2
+                        disp0GT.pfm
+                        mask0nocc.png
+                    ...
+                two_view_testing
+                    scene1
+                        im1.png
+                        im0.png
+                        images.txt
+                        cameras.txt
+                        calib.txt
+                    scene2
+                        im1.png
+                        im0.png
+                        images.txt
+                        cameras.txt
+                        calib.txt
+                    ...
+
+    Args:
+        root (string): Root directory of the ETH3D Dataset.
+        split (string, optional): The dataset split of scenes, either "train" (default) or "test".
+        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
+    """
+
+    _has_built_in_disparity_mask = True
+
+    def __init__(self, root: str, split: str = "train", transforms: Optional[Callable] = None):
+        super().__init__(root, transforms)
+
+        verify_str_arg(split, "split", valid_values=("train", "test"))
+
+        root = Path(root) / "ETH3D"
+
+        img_dir = "two_view_training" if split == "train" else "two_view_test"
+        anot_dir = "two_view_training_gt"
+
+        left_img_pattern = str(root / img_dir / "*" / "im0.png")
+        right_img_pattern = str(root / img_dir / "*" / "im1.png")
+        self._images = self._scan_pairs(left_img_pattern, right_img_pattern)
+
+        if split == "test":
+            self._disparities = list((None, None) for _ in self._images)
+        else:
+            disparity_pattern = str(root / anot_dir / "*" / "disp0GT.pfm")
+            self._disparities = self._scan_pairs(disparity_pattern, None)
+
+    def _read_disparity(self, file_path: str) -> Tuple:
+        # test split has no disparity maps
+        if file_path is None:
+            return None, None
+
+        disparity_map = _read_pfm_file(file_path)
+        disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
+        mask_path = Path(file_path).parent / "mask0nocc.png"
+        valid_mask = Image.open(mask_path)
+        valid_mask = np.asarray(valid_mask).astype(bool)
+        return disparity_map, valid_mask
+
+    def __getitem__(self, index: int) -> Tuple:
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.
+            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
+            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not
+            generate a valid mask.
+            Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.
         """
         return super().__getitem__(index)

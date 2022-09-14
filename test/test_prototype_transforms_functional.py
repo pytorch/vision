@@ -1,166 +1,19 @@
-import functools
 import itertools
 import math
 import os
 
 import numpy as np
+import PIL.Image
 import pytest
 import torch.testing
 import torchvision.prototype.transforms.functional as F
 from common_utils import cpu_and_gpu
+from prototype_common_utils import ArgsKwargs, make_bounding_boxes, make_image, make_images, make_segmentation_masks
 from torch import jit
-from torch.nn.functional import one_hot
 from torchvision.prototype import features
 from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
 from torchvision.prototype.transforms.functional._meta import convert_bounding_box_format
 from torchvision.transforms.functional import _get_perspective_coeffs
-from torchvision.transforms.functional_tensor import _max_value as get_max_value
-
-make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
-
-
-def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, constant_alpha=True):
-    size = size or torch.randint(16, 33, (2,)).tolist()
-
-    try:
-        num_channels = {
-            features.ColorSpace.GRAY: 1,
-            features.ColorSpace.GRAY_ALPHA: 2,
-            features.ColorSpace.RGB: 3,
-            features.ColorSpace.RGB_ALPHA: 4,
-        }[color_space]
-    except KeyError as error:
-        raise pytest.UsageError() from error
-
-    shape = (*extra_dims, num_channels, *size)
-    max_value = get_max_value(dtype)
-    data = make_tensor(shape, low=0, high=max_value, dtype=dtype)
-    if color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
-        data[..., -1, :, :] = max_value
-    return features.Image(data, color_space=color_space)
-
-
-make_grayscale_image = functools.partial(make_image, color_space=features.ColorSpace.GRAY)
-make_rgb_image = functools.partial(make_image, color_space=features.ColorSpace.RGB)
-
-
-def make_images(
-    sizes=((16, 16), (7, 33), (31, 9)),
-    color_spaces=(
-        features.ColorSpace.GRAY,
-        features.ColorSpace.GRAY_ALPHA,
-        features.ColorSpace.RGB,
-        features.ColorSpace.RGB_ALPHA,
-    ),
-    dtypes=(torch.float32, torch.uint8),
-    extra_dims=((4,), (2, 3)),
-):
-    for size, color_space, dtype in itertools.product(sizes, color_spaces, dtypes):
-        yield make_image(size, color_space=color_space, dtype=dtype)
-
-    for color_space, dtype, extra_dims_ in itertools.product(color_spaces, dtypes, extra_dims):
-        yield make_image(size=sizes[0], color_space=color_space, extra_dims=extra_dims_, dtype=dtype)
-
-
-def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
-    low, high = torch.broadcast_tensors(
-        *[torch.as_tensor(arg) for arg in ((0, arg1) if arg2 is None else (arg1, arg2))]
-    )
-    return torch.stack(
-        [
-            torch.randint(low_scalar, high_scalar, (), **kwargs)
-            for low_scalar, high_scalar in zip(low.flatten().tolist(), high.flatten().tolist())
-        ]
-    ).reshape(low.shape)
-
-
-def make_bounding_box(*, format, image_size=(32, 32), extra_dims=(), dtype=torch.int64):
-    if isinstance(format, str):
-        format = features.BoundingBoxFormat[format]
-
-    height, width = image_size
-
-    if format == features.BoundingBoxFormat.XYXY:
-        x1 = torch.randint(0, width // 2, extra_dims)
-        y1 = torch.randint(0, height // 2, extra_dims)
-        x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
-        y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
-        parts = (x1, y1, x2, y2)
-    elif format == features.BoundingBoxFormat.XYWH:
-        x = torch.randint(0, width // 2, extra_dims)
-        y = torch.randint(0, height // 2, extra_dims)
-        w = randint_with_tensor_bounds(1, width - x)
-        h = randint_with_tensor_bounds(1, height - y)
-        parts = (x, y, w, h)
-    elif format == features.BoundingBoxFormat.CXCYWH:
-        cx = torch.randint(1, width - 1, ())
-        cy = torch.randint(1, height - 1, ())
-        w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
-        h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
-        parts = (cx, cy, w, h)
-    else:
-        raise pytest.UsageError()
-
-    return features.BoundingBox(torch.stack(parts, dim=-1).to(dtype), format=format, image_size=image_size)
-
-
-make_xyxy_bounding_box = functools.partial(make_bounding_box, format=features.BoundingBoxFormat.XYXY)
-
-
-def make_bounding_boxes(
-    formats=(features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH),
-    image_sizes=((32, 32),),
-    dtypes=(torch.int64, torch.float32),
-    extra_dims=((4,), (2, 3)),
-):
-    for format, image_size, dtype in itertools.product(formats, image_sizes, dtypes):
-        yield make_bounding_box(format=format, image_size=image_size, dtype=dtype)
-
-    for format, extra_dims_ in itertools.product(formats, extra_dims):
-        yield make_bounding_box(format=format, extra_dims=extra_dims_)
-
-
-def make_label(size=(), *, categories=("category0", "category1")):
-    return features.Label(torch.randint(0, len(categories) if categories else 10, size), categories=categories)
-
-
-def make_one_hot_label(*args, **kwargs):
-    label = make_label(*args, **kwargs)
-    return features.OneHotLabel(one_hot(label, num_classes=len(label.categories)), categories=label.categories)
-
-
-def make_one_hot_labels(
-    *,
-    num_categories=(1, 2, 10),
-    extra_dims=((4,), (2, 3)),
-):
-    for num_categories_ in num_categories:
-        yield make_one_hot_label(categories=[f"category{idx}" for idx in range(num_categories_)])
-
-    for extra_dims_ in extra_dims:
-        yield make_one_hot_label(extra_dims_)
-
-
-def make_segmentation_mask(size=None, *, num_categories=80, extra_dims=(), dtype=torch.long):
-    size = size or torch.randint(16, 33, (2,)).tolist()
-    shape = (*extra_dims, 1, *size)
-    data = make_tensor(shape, low=0, high=num_categories, dtype=dtype)
-    return features.SegmentationMask(data)
-
-
-def make_segmentation_masks(
-    sizes=((16, 16), (7, 33), (31, 9)),
-    dtypes=(torch.long,),
-    extra_dims=((), (4,), (2, 3)),
-):
-    for size, dtype, extra_dims_ in itertools.product(sizes, dtypes, extra_dims):
-        yield make_segmentation_mask(size=size, dtype=dtype, extra_dims=extra_dims_)
-
-
-class SampleInput:
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
 
 
 class FunctionalInfo:
@@ -173,7 +26,7 @@ class FunctionalInfo:
         yield from self._sample_inputs_fn()
 
     def __call__(self, *args, **kwargs):
-        if len(args) == 1 and not kwargs and isinstance(args[0], SampleInput):
+        if len(args) == 1 and not kwargs and isinstance(args[0], ArgsKwargs):
             sample_input = args[0]
             return self.functional(*sample_input.args, **sample_input.kwargs)
 
@@ -191,37 +44,37 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 @register_kernel_info_from_sample_inputs_fn
 def horizontal_flip_image_tensor():
     for image in make_images():
-        yield SampleInput(image)
+        yield ArgsKwargs(image)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def horizontal_flip_bounding_box():
     for bounding_box in make_bounding_boxes(formats=[features.BoundingBoxFormat.XYXY]):
-        yield SampleInput(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
+        yield ArgsKwargs(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def horizontal_flip_segmentation_mask():
     for mask in make_segmentation_masks():
-        yield SampleInput(mask)
+        yield ArgsKwargs(mask)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def vertical_flip_image_tensor():
     for image in make_images():
-        yield SampleInput(image)
+        yield ArgsKwargs(image)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def vertical_flip_bounding_box():
     for bounding_box in make_bounding_boxes(formats=[features.BoundingBoxFormat.XYXY]):
-        yield SampleInput(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
+        yield ArgsKwargs(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def vertical_flip_segmentation_mask():
     for mask in make_segmentation_masks():
-        yield SampleInput(mask)
+        yield ArgsKwargs(mask)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -243,7 +96,7 @@ def resize_image_tensor():
         ]:
             if max_size is not None:
                 size = [size[0]]
-            yield SampleInput(image, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
+            yield ArgsKwargs(image, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -259,7 +112,7 @@ def resize_bounding_box():
         ]:
             if max_size is not None:
                 size = [size[0]]
-            yield SampleInput(bounding_box, size=size, image_size=bounding_box.image_size)
+            yield ArgsKwargs(bounding_box, size=size, image_size=bounding_box.image_size)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -275,19 +128,19 @@ def resize_segmentation_mask():
         ]:
             if max_size is not None:
                 size = [size[0]]
-            yield SampleInput(mask, size=size, max_size=max_size)
+            yield ArgsKwargs(mask, size=size, max_size=max_size)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def affine_image_tensor():
     for image, angle, translate, scale, shear in itertools.product(
-        make_images(extra_dims=((), (4,))),
+        make_images(),
         [-87, 15, 90],  # angle
         [5, -5],  # translate
         [0.77, 1.27],  # scale
         [0, 12],  # shear
     ):
-        yield SampleInput(
+        yield ArgsKwargs(
             image,
             angle=angle,
             translate=(translate, translate),
@@ -306,7 +159,7 @@ def affine_bounding_box():
         [0.77, 1.27],  # scale
         [0, 12],  # shear
     ):
-        yield SampleInput(
+        yield ArgsKwargs(
             bounding_box,
             format=bounding_box.format,
             image_size=bounding_box.image_size,
@@ -320,13 +173,13 @@ def affine_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def affine_segmentation_mask():
     for mask, angle, translate, scale, shear in itertools.product(
-        make_segmentation_masks(extra_dims=((), (4,))),
+        make_segmentation_masks(),
         [-87, 15, 90],  # angle
         [5, -5],  # translate
         [0.77, 1.27],  # scale
         [0, 12],  # shear
     ):
-        yield SampleInput(
+        yield ArgsKwargs(
             mask,
             angle=angle,
             translate=(translate, translate),
@@ -338,7 +191,7 @@ def affine_segmentation_mask():
 @register_kernel_info_from_sample_inputs_fn
 def rotate_image_tensor():
     for image, angle, expand, center, fill in itertools.product(
-        make_images(extra_dims=((), (4,))),
+        make_images(),
         [-87, 15, 90],  # angle
         [True, False],  # expand
         [None, [12, 23]],  # center
@@ -348,7 +201,7 @@ def rotate_image_tensor():
             # Skip warning: The provided center argument is ignored if expand is True
             continue
 
-        yield SampleInput(image, angle=angle, expand=expand, center=center, fill=fill)
+        yield ArgsKwargs(image, angle=angle, expand=expand, center=center, fill=fill)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -360,7 +213,7 @@ def rotate_bounding_box():
             # Skip warning: The provided center argument is ignored if expand is True
             continue
 
-        yield SampleInput(
+        yield ArgsKwargs(
             bounding_box,
             format=bounding_box.format,
             image_size=bounding_box.image_size,
@@ -373,7 +226,7 @@ def rotate_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def rotate_segmentation_mask():
     for mask, angle, expand, center in itertools.product(
-        make_segmentation_masks(extra_dims=((), (4,))),
+        make_segmentation_masks(),
         [-87, 15, 90],  # angle
         [True, False],  # expand
         [None, [12, 23]],  # center
@@ -382,7 +235,7 @@ def rotate_segmentation_mask():
             # Skip warning: The provided center argument is ignored if expand is True
             continue
 
-        yield SampleInput(
+        yield ArgsKwargs(
             mask,
             angle=angle,
             expand=expand,
@@ -393,7 +246,7 @@ def rotate_segmentation_mask():
 @register_kernel_info_from_sample_inputs_fn
 def crop_image_tensor():
     for image, top, left, height, width in itertools.product(make_images(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20]):
-        yield SampleInput(
+        yield ArgsKwargs(
             image,
             top=top,
             left=left,
@@ -405,7 +258,7 @@ def crop_image_tensor():
 @register_kernel_info_from_sample_inputs_fn
 def crop_bounding_box():
     for bounding_box, top, left in itertools.product(make_bounding_boxes(), [-8, 0, 9], [-8, 0, 9]):
-        yield SampleInput(
+        yield ArgsKwargs(
             bounding_box,
             format=bounding_box.format,
             top=top,
@@ -418,7 +271,7 @@ def crop_segmentation_mask():
     for mask, top, left, height, width in itertools.product(
         make_segmentation_masks(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20]
     ):
-        yield SampleInput(
+        yield ArgsKwargs(
             mask,
             top=top,
             left=left,
@@ -438,7 +291,7 @@ def resized_crop_image_tensor():
         [(16, 18)],
         [True, False],
     ):
-        yield SampleInput(mask, top=top, left=left, height=height, width=width, size=size, antialias=antialias)
+        yield ArgsKwargs(mask, top=top, left=left, height=height, width=width, size=size, antialias=antialias)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -446,7 +299,7 @@ def resized_crop_bounding_box():
     for bounding_box, top, left, height, width, size in itertools.product(
         make_bounding_boxes(), [-8, 9], [-8, 9], [32, 22], [34, 20], [(32, 32), (16, 18)]
     ):
-        yield SampleInput(
+        yield ArgsKwargs(
             bounding_box, format=bounding_box.format, top=top, left=left, height=height, width=width, size=size
         )
 
@@ -456,7 +309,7 @@ def resized_crop_segmentation_mask():
     for mask, top, left, height, width, size in itertools.product(
         make_segmentation_masks(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20], [(32, 32), (16, 18)]
     ):
-        yield SampleInput(mask, top=top, left=left, height=height, width=width, size=size)
+        yield ArgsKwargs(mask, top=top, left=left, height=height, width=width, size=size)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -467,7 +320,7 @@ def pad_image_tensor():
         [None, 12, 12.0],  # fill
         ["constant", "symmetric", "edge", "reflect"],  # padding mode,
     ):
-        yield SampleInput(image, padding=padding, fill=fill, padding_mode=padding_mode)
+        yield ArgsKwargs(image, padding=padding, fill=fill, padding_mode=padding_mode)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -477,7 +330,7 @@ def pad_segmentation_mask():
         [[1], [1, 1], [1, 1, 2, 2]],  # padding
         ["constant", "symmetric", "edge", "reflect"],  # padding mode,
     ):
-        yield SampleInput(mask, padding=padding, padding_mode=padding_mode)
+        yield ArgsKwargs(mask, padding=padding, padding_mode=padding_mode)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -486,7 +339,7 @@ def pad_bounding_box():
         make_bounding_boxes(),
         [[1], [1, 1], [1, 1, 2, 2]],
     ):
-        yield SampleInput(bounding_box, padding=padding, format=bounding_box.format)
+        yield ArgsKwargs(bounding_box, padding=padding, format=bounding_box.format)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -499,7 +352,7 @@ def perspective_image_tensor():
         ],
         [None, [128], [12.0]],  # fill
     ):
-        yield SampleInput(image, perspective_coeffs=perspective_coeffs, fill=fill)
+        yield ArgsKwargs(image, perspective_coeffs=perspective_coeffs, fill=fill)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -511,7 +364,7 @@ def perspective_bounding_box():
             [0.7366, -0.11724, 1.45775, -0.15012, 0.73406, 2.6019, -0.0072, -0.0063],
         ],
     ):
-        yield SampleInput(
+        yield ArgsKwargs(
             bounding_box,
             format=bounding_box.format,
             perspective_coeffs=perspective_coeffs,
@@ -527,7 +380,7 @@ def perspective_segmentation_mask():
             [0.7366, -0.11724, 1.45775, -0.15012, 0.73406, 2.6019, -0.0072, -0.0063],
         ],
     ):
-        yield SampleInput(
+        yield ArgsKwargs(
             mask,
             perspective_coeffs=perspective_coeffs,
         )
@@ -541,7 +394,7 @@ def elastic_image_tensor():
     ):
         h, w = image.shape[-2:]
         displacement = torch.rand(1, h, w, 2)
-        yield SampleInput(image, displacement=displacement, fill=fill)
+        yield ArgsKwargs(image, displacement=displacement, fill=fill)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -549,7 +402,7 @@ def elastic_bounding_box():
     for bounding_box in make_bounding_boxes():
         h, w = bounding_box.image_size
         displacement = torch.rand(1, h, w, 2)
-        yield SampleInput(
+        yield ArgsKwargs(
             bounding_box,
             format=bounding_box.format,
             displacement=displacement,
@@ -561,7 +414,7 @@ def elastic_segmentation_mask():
     for mask in make_segmentation_masks(extra_dims=((), (4,))):
         h, w = mask.shape[-2:]
         displacement = torch.rand(1, h, w, 2)
-        yield SampleInput(
+        yield ArgsKwargs(
             mask,
             displacement=displacement,
         )
@@ -573,13 +426,13 @@ def center_crop_image_tensor():
         make_images(sizes=((16, 16), (7, 33), (31, 9))),
         [[4, 3], [42, 70], [4]],  # crop sizes < image sizes, crop_sizes > image sizes, single crop size
     ):
-        yield SampleInput(mask, output_size)
+        yield ArgsKwargs(mask, output_size)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def center_crop_bounding_box():
     for bounding_box, output_size in itertools.product(make_bounding_boxes(), [(24, 12), [16, 18], [46, 48], [12]]):
-        yield SampleInput(
+        yield ArgsKwargs(
             bounding_box, format=bounding_box.format, output_size=output_size, image_size=bounding_box.image_size
         )
 
@@ -590,7 +443,7 @@ def center_crop_segmentation_mask():
         make_segmentation_masks(sizes=((16, 16), (7, 33), (31, 9))),
         [[4, 3], [42, 70], [4]],  # crop sizes < image sizes, crop_sizes > image sizes, single crop size
     ):
-        yield SampleInput(mask, output_size)
+        yield ArgsKwargs(mask, output_size)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -600,7 +453,7 @@ def gaussian_blur_image_tensor():
         [[3, 3]],
         [None, [3.0, 3.0]],
     ):
-        yield SampleInput(image, kernel_size=kernel_size, sigma=sigma)
+        yield ArgsKwargs(image, kernel_size=kernel_size, sigma=sigma)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -608,13 +461,13 @@ def equalize_image_tensor():
     for image in make_images(extra_dims=(), color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
         if image.dtype != torch.uint8:
             continue
-        yield SampleInput(image)
+        yield ArgsKwargs(image)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def invert_image_tensor():
     for image in make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
-        yield SampleInput(image)
+        yield ArgsKwargs(image)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -625,7 +478,7 @@ def posterize_image_tensor():
     ):
         if image.dtype != torch.uint8:
             continue
-        yield SampleInput(image, bits=bits)
+        yield ArgsKwargs(image, bits=bits)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -636,13 +489,13 @@ def solarize_image_tensor():
     ):
         if image.is_floating_point() and threshold > 1.0:
             continue
-        yield SampleInput(image, threshold=threshold)
+        yield ArgsKwargs(image, threshold=threshold)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def autocontrast_image_tensor():
     for image in make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
-        yield SampleInput(image)
+        yield ArgsKwargs(image)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -651,14 +504,14 @@ def adjust_sharpness_image_tensor():
         make_images(extra_dims=((4,),), color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
         [0.1, 0.5],
     ):
-        yield SampleInput(image, sharpness_factor=sharpness_factor)
+        yield ArgsKwargs(image, sharpness_factor=sharpness_factor)
 
 
 @register_kernel_info_from_sample_inputs_fn
 def erase_image_tensor():
     for image in make_images():
         c = image.shape[-3]
-        yield SampleInput(image, i=1, j=2, h=6, w=7, v=torch.rand(c, 6, 7))
+        yield ArgsKwargs(image, i=1, j=2, h=6, w=7, v=torch.rand(c, 6, 7))
 
 
 @pytest.mark.parametrize(
@@ -673,6 +526,8 @@ def erase_image_tensor():
         and name
         not in {
             "to_image_tensor",
+            "get_image_num_channels",
+            "get_image_size",
         }
     ],
 )
@@ -900,7 +755,7 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
 @pytest.mark.parametrize("center", [None, (12, 14)])
 def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, center):
     def _compute_expected_mask(mask, angle_, translate_, scale_, shear_, center_):
-        assert mask.ndim == 3 and mask.shape[0] == 1
+        assert mask.ndim == 3
         affine_matrix = _compute_affine_matrix(angle_, translate_, scale_, shear_, center_)
         inv_affine_matrix = np.linalg.inv(affine_matrix)
         inv_affine_matrix = inv_affine_matrix[:2, :]
@@ -909,10 +764,11 @@ def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, ce
         for out_y in range(expected_mask.shape[1]):
             for out_x in range(expected_mask.shape[2]):
                 output_pt = np.array([out_x + 0.5, out_y + 0.5, 1.0])
-                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype(np.int32)
+                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype("int")
                 in_x, in_y = input_pt[:2]
                 if 0 <= in_x < mask.shape[2] and 0 <= in_y < mask.shape[1]:
-                    expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
+                    for i in range(expected_mask.shape[0]):
+                        expected_mask[i, out_y, out_x] = mask[i, in_y, in_x]
         return expected_mask.to(mask.device)
 
     for mask in make_segmentation_masks(extra_dims=((), (4,))):
@@ -1110,12 +966,12 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
 
 
-@pytest.mark.parametrize("angle", range(-90, 90, 37))
+@pytest.mark.parametrize("angle", range(-89, 90, 37))
 @pytest.mark.parametrize("expand, center", [(True, None), (False, None), (False, (12, 14))])
 def test_correctness_rotate_segmentation_mask(angle, expand, center):
     def _compute_expected_mask(mask, angle_, expand_, center_):
-        assert mask.ndim == 3 and mask.shape[0] == 1
-        image_size = mask.shape[-2:]
+        assert mask.ndim == 3
+        c, *image_size = mask.shape
         affine_matrix = _compute_affine_matrix(angle_, [0.0, 0.0], 1.0, [0.0, 0.0], center_)
         inv_affine_matrix = np.linalg.inv(affine_matrix)
 
@@ -1136,22 +992,23 @@ def test_correctness_rotate_segmentation_mask(angle, expand, center):
             max_vals = np.max(new_points, axis=0)[:2]
             cmax = np.ceil(np.trunc(max_vals * 1e4) * 1e-4)
             cmin = np.floor(np.trunc((min_vals + 1e-8) * 1e4) * 1e-4)
-            new_width, new_height = (cmax - cmin).astype("int32").tolist()
+            new_width, new_height = (cmax - cmin).astype("int").tolist()
             tr = np.array([-(new_width - width) / 2.0, -(new_height - height) / 2.0, 1.0]) @ inv_affine_matrix.T
 
             inv_affine_matrix[:2, 2] = tr[:2]
             image_size = [new_height, new_width]
 
         inv_affine_matrix = inv_affine_matrix[:2, :]
-        expected_mask = torch.zeros(1, *image_size, dtype=mask.dtype)
+        expected_mask = torch.zeros(c, *image_size, dtype=mask.dtype)
 
         for out_y in range(expected_mask.shape[1]):
             for out_x in range(expected_mask.shape[2]):
                 output_pt = np.array([out_x + 0.5, out_y + 0.5, 1.0])
-                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype(np.int32)
+                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype("int")
                 in_x, in_y = input_pt[:2]
                 if 0 <= in_x < mask.shape[2] and 0 <= in_y < mask.shape[1]:
-                    expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
+                    for i in range(expected_mask.shape[0]):
+                        expected_mask[i, out_y, out_x] = mask[i, in_y, in_x]
         return expected_mask.to(mask.device)
 
     for mask in make_segmentation_masks(extra_dims=((), (4,))):
@@ -1425,7 +1282,7 @@ def test_correctness_pad_bounding_box(device, padding):
 
         output_boxes = F.pad_bounding_box(bboxes, padding, format=bboxes_format)
 
-        if bboxes.ndim < 2:
+        if bboxes.ndim < 2 or bboxes.shape[0] == 0:
             bboxes = [bboxes]
 
         expected_bboxes = []
@@ -1609,19 +1466,9 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
 )
 def test_correctness_perspective_segmentation_mask(device, startpoints, endpoints):
     def _compute_expected_mask(mask, pcoeffs_):
-        assert mask.ndim == 3 and mask.shape[0] == 1
-        m1 = np.array(
-            [
-                [pcoeffs_[0], pcoeffs_[1], pcoeffs_[2]],
-                [pcoeffs_[3], pcoeffs_[4], pcoeffs_[5]],
-            ]
-        )
-        m2 = np.array(
-            [
-                [pcoeffs_[6], pcoeffs_[7], 1.0],
-                [pcoeffs_[6], pcoeffs_[7], 1.0],
-            ]
-        )
+        assert mask.ndim == 3
+        m1 = np.array([[pcoeffs_[0], pcoeffs_[1], pcoeffs_[2]], [pcoeffs_[3], pcoeffs_[4], pcoeffs_[5]]])
+        m2 = np.array([[pcoeffs_[6], pcoeffs_[7], 1.0], [pcoeffs_[6], pcoeffs_[7], 1.0]])
 
         expected_mask = torch.zeros_like(mask.cpu())
         for out_y in range(expected_mask.shape[1]):
@@ -1634,7 +1481,8 @@ def test_correctness_perspective_segmentation_mask(device, startpoints, endpoint
 
                 in_x, in_y = input_pt[:2]
                 if 0 <= in_x < mask.shape[2] and 0 <= in_y < mask.shape[1]:
-                    expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
+                    for i in range(expected_mask.shape[0]):
+                        expected_mask[i, out_y, out_x] = mask[i, in_y, in_x]
         return expected_mask.to(mask.device)
 
     pcoeffs = _get_perspective_coeffs(startpoints, endpoints)
@@ -1808,10 +1656,11 @@ def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
     for sample in make_samples(sizes=((64, 76),), extra_dims=((), (4,))):
         c, h, w = sample.shape[-3:]
         # Setup a dummy image with 4 points
-        sample[..., in_box[1], in_box[0]] = torch.tensor([12, 34, 96, 112])[:c]
-        sample[..., in_box[3] - 1, in_box[0]] = torch.tensor([12, 34, 96, 112])[:c]
-        sample[..., in_box[3] - 1, in_box[2] - 1] = torch.tensor([12, 34, 96, 112])[:c]
-        sample[..., in_box[1], in_box[2] - 1] = torch.tensor([12, 34, 96, 112])[:c]
+        print(sample.shape)
+        sample[..., in_box[1], in_box[0]] = torch.arange(10, 10 + c)
+        sample[..., in_box[3] - 1, in_box[0]] = torch.arange(20, 20 + c)
+        sample[..., in_box[3] - 1, in_box[2] - 1] = torch.arange(30, 30 + c)
+        sample[..., in_box[1], in_box[2] - 1] = torch.arange(40, 40 + c)
         sample = sample.to(device)
 
         if fn == F.elastic_image_tensor:
@@ -1843,21 +1692,48 @@ def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
 
 def test_midlevel_normalize_output_type():
     inpt = torch.rand(1, 3, 32, 32)
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
+    output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
     assert isinstance(output, torch.Tensor)
     torch.testing.assert_close(inpt - 0.5, output)
-
-    inpt = make_segmentation_mask()
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
-    assert isinstance(output, features.SegmentationMask)
-    torch.testing.assert_close(inpt, output)
-
-    inpt = make_bounding_box(format="XYXY")
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
-    assert isinstance(output, features.BoundingBox)
-    torch.testing.assert_close(inpt, output)
 
     inpt = make_image(color_space=features.ColorSpace.RGB)
-    output = F.normalize(inpt, mean=(0.5, 0.5, 0.5), std=(1.0, 1.0, 1.0))
+    output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
     assert isinstance(output, torch.Tensor)
     torch.testing.assert_close(inpt - 0.5, output)
+
+
+@pytest.mark.parametrize(
+    "inpt",
+    [
+        127 * np.ones((32, 32, 3), dtype="uint8"),
+        PIL.Image.new("RGB", (32, 32), 122),
+    ],
+)
+def test_to_image_tensor(inpt):
+    output = F.to_image_tensor(inpt)
+    assert isinstance(output, torch.Tensor)
+
+    assert np.asarray(inpt).sum() == output.sum().item()
+
+    if isinstance(inpt, PIL.Image.Image):
+        # we can't check this option
+        # as PIL -> numpy is always copying
+        return
+
+    inpt[0, 0, 0] = 11
+    assert output[0, 0, 0] == 11
+
+
+@pytest.mark.parametrize(
+    "inpt",
+    [
+        torch.randint(0, 256, size=(3, 32, 32), dtype=torch.uint8),
+        127 * np.ones((32, 32, 3), dtype="uint8"),
+    ],
+)
+@pytest.mark.parametrize("mode", [None, "RGB"])
+def test_to_image_pil(inpt, mode):
+    output = F.to_image_pil(inpt, mode=mode)
+    assert isinstance(output, PIL.Image.Image)
+
+    assert np.asarray(inpt).sum() == np.asarray(output).sum()

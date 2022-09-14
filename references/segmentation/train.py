@@ -186,7 +186,7 @@ def main(args):
 
     iters_per_epoch = len(data_loader)
     main_lr_scheduler = PolynomialLR(
-        optimizer, total_steps=iters_per_epoch * (args.epochs - args.lr_warmup_epochs), power=0.9
+        optimizer, total_iters=iters_per_epoch * (args.epochs - args.lr_warmup_epochs), power=0.9
     )
 
     if args.lr_warmup_epochs > 0:
