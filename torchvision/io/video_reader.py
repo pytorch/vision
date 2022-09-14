@@ -4,10 +4,6 @@ import torch
 
 from ..utils import _log_api_usage_once
 
-try:
-    from ._load_gpu_decoder import _HAS_GPU_VIDEO_DECODER
-except ModuleNotFoundError:
-    _HAS_GPU_VIDEO_DECODER = False
 from ._video_opt import _HAS_VIDEO_OPT
 
 if _HAS_VIDEO_OPT:
@@ -87,25 +83,23 @@ class VideoReader:
 
     """
 
-    def __init__(self, path: str, stream: str = "video", num_threads: int = 0, device: str = "cpu") -> None:
+    def __init__(self, path: str, stream: str = "video", num_threads: int = 0) -> None:
         _log_api_usage_once(self)
-        self.is_cuda = False
-        device = torch.device(device)
-        if device.type == "cuda":
-            if not _HAS_GPU_VIDEO_DECODER:
-                raise RuntimeError("Not compiled with GPU decoder support.")
-            self.is_cuda = True
+        from .. import get_video_backend
+        self.backend = get_video_backend()
+        if self.backend == "cuda":
+            device = torch.device("cuda")
             self._c = torch.classes.torchvision.GPUDecoder(path, device)
             return
-        if not _has_video_opt():
-            raise RuntimeError(
-                "Not compiled with video_reader support, "
-                + "to enable video_reader support, please install "
-                + "ffmpeg (version 4.2 is currently supported) and "
-                + "build torchvision from source."
-            )
+    
+        elif self.backend == "video_reader":
+            self._c = torch.classes.torchvision.Video(path, stream, num_threads)
+        
+        elif self.backend == "pyav":
+            pass
+        else:
+            raise RuntimeError("Unknown video backend: {}".format(self.backend))        
 
-        self._c = torch.classes.torchvision.Video(path, stream, num_threads)
 
     def __next__(self) -> Dict[str, Any]:
         """Decodes and returns the next frame of the current stream.
@@ -119,7 +113,7 @@ class VideoReader:
             and corresponding timestamp (``pts``) in seconds
 
         """
-        if self.is_cuda:
+        if self.backend == "cuda":
             frame = self._c.next()
             if frame.numel() == 0:
                 raise StopIteration
@@ -173,6 +167,6 @@ class VideoReader:
         Returns:
             (bool): True on succes, False otherwise
         """
-        if self.is_cuda:
+        if self.backend == "cuda":
             print("GPU decoding only works with video stream.")
         return self._c.set_current_stream(stream)
