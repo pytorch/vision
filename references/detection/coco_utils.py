@@ -95,7 +95,7 @@ class WrapIntoFeatures:
             ),
             # TODO: add categories
             labels=features.Label(target["labels"], categories=None),
-            masks=features.SegmentationMask(target["masks"]),
+            masks=features.Mask(target["masks"]),
             image_id=int(target["image_id"]),
             area=target["area"].tolist(),
             iscrowd=target["iscrowd"].bool().tolist(),

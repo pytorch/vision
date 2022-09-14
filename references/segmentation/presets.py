@@ -4,8 +4,8 @@ from torchvision.prototype import features, transforms as T
 
 class WrapIntoFeatures(T.Transform):
     def forward(self, sample):
-        image, segmentation_mask = sample
-        return image, features.SegmentationMask(segmentation_mask.squeeze(0), dtype=torch.int64)
+        image, mask = sample
+        return image, features.Mask(mask.squeeze(0), dtype=torch.int64)
 
 
 class SegmentationPresetTrain(T.Compose):
