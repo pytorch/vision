@@ -70,7 +70,7 @@ class SequenceLoss(nn.Module):
         self.excluding_large = exclude_large_flows
         self.register_buffer("gamma", torch.tensor([gamma]))
         # cache the scale factor for the loss
-        self.weights = None
+        self._weights = None
 
     def forward(self, flow_preds: List[Tensor], flow_gt: Tensor, valid_flow_mask: Tensor) -> Tensor:
         """
@@ -80,15 +80,15 @@ class SequenceLoss(nn.Module):
             valid_flow_mask: mask of valid flow pixels of shape (batch_size, H, W)
         """
         loss, weights = _sequence_loss_fn(
-            flow_preds, flow_gt, valid_flow_mask, self.gamma, self.max_flow, self.excluding_large, self.weights
+            flow_preds, flow_gt, valid_flow_mask, self.gamma, self.max_flow, self.excluding_large, self._weights
         )
-        self.weights = weights
+        self._weights = weights
         return loss
 
     def set_gamma(self, gamma: float) -> None:
         self.gamma.fill_(gamma)
         # reset the cached scale factor
-        self.weights = None
+        self._weights = None
 
 
 def _ssim_loss_fn(
@@ -100,6 +100,8 @@ def _ssim_loss_fn(
     C2: float = 0.03**2,
     use_padding: bool = False,
 ) -> Tensor:
+    # ref: Algorithm section: https://en.wikipedia.org/wiki/Structural_similarity
+    # ref: Alternative implementation: https://kornia.readthedocs.io/en/latest/_modules/kornia/metrics/ssim.html#ssim
 
     torch._assert(
         source.ndim == reference.ndim == 4,
@@ -197,6 +199,8 @@ class SSIM(nn.Module):
 
 
 def _smothness_loss_fn(img_gx: Tensor, img_gy: Tensor, depth_gx: Tensor, depth_gy: Tensor):
+    # ref: https://github.com/nianticlabs/monodepth2/blob/b676244e5a1ca55564eb5d16ab521a48f823af31/layers.py#L202
+
     torch._assert(
         img_gx.ndim >= 3,
         "smothness_loss: `img_gx` must be at least 3-dimensional tensor of shape (..., C, H, W)",
@@ -357,7 +361,8 @@ def _psnr_loss_fn(source: torch.Tensor, target: torch.Tensor, max_val: float) ->
         "psnr_loss: source and target must have the same shape, but got {} and {}".format(source.shape, target.shape),
     )
 
-    return 10 * torch.log10(max_val**2 / ((source - target).abs().pow(2).mean(axis=(-3, -2, -1))))
+    # ref https://en.wikipedia.org/wiki/Peak_signal-to-noise_ratio
+    return 10 * torch.log10(max_val**2 / ((source - target).pow(2).mean(axis=(-3, -2, -1))))
 
 
 class PSNRLoss(nn.Module):
@@ -379,7 +384,9 @@ class PSNRLoss(nn.Module):
         Returns:
             psnr loss of shape (D1, D2, ..., DN)
         """
-        return _psnr_loss_fn(source, target, self.max_val)
+
+        # multiply by -1 as we want to maximize the psnr
+        return -1 * _psnr_loss_fn(source, target, self.max_val)
 
 
 class FlowPhotoMetricLoss(nn.Module):
