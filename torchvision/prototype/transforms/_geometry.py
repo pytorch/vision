@@ -170,8 +170,8 @@ class FiveCrop(Transform):
         return F.five_crop(inpt, self.size)
 
     def forward(self, *inputs: Any) -> Any:
-        if has_any(inputs, features.BoundingBox, features.SegmentationMask):
-            raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
+        if has_any(inputs, features.BoundingBox, features.Mask):
+            raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
         return super().forward(*inputs)
 
 
@@ -191,8 +191,8 @@ class TenCrop(Transform):
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
     def forward(self, *inputs: Any) -> Any:
-        if has_any(inputs, features.BoundingBox, features.SegmentationMask):
-            raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
+        if has_any(inputs, features.BoundingBox, features.Mask):
+            raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
         return super().forward(*inputs)
 
 
@@ -690,10 +690,10 @@ class RandomIoUCrop(Transform):
             bboxes = output[is_within_crop_area]
             bboxes = F.clamp_bounding_box(bboxes, output.format, output.image_size)
             output = features.BoundingBox.new_like(output, bboxes)
-        elif isinstance(output, features.SegmentationMask) and output.shape[-3] > 1:
+        elif isinstance(output, features.Mask) and output.shape[-3] > 1:
             # apply is_within_crop_area if mask is one-hot encoded
             masks = output[is_within_crop_area]
-            output = features.SegmentationMask.new_like(output, masks)
+            output = features.Mask.new_like(output, masks)
 
         return output
 
@@ -705,7 +705,7 @@ class RandomIoUCrop(Transform):
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
-                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Segmentation Masks."
+                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Masks."
             )
         return super().forward(*inputs)
 
@@ -842,7 +842,7 @@ class FixedSizeCrop(Transform):
             )
 
         if params["is_valid"] is not None:
-            if isinstance(inpt, (features.Label, features.OneHotLabel, features.SegmentationMask)):
+            if isinstance(inpt, (features.Label, features.OneHotLabel, features.Mask)):
                 inpt = inpt.new_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
             elif isinstance(inpt, features.BoundingBox):
                 inpt = features.BoundingBox.new_like(
@@ -866,3 +866,25 @@ class FixedSizeCrop(Transform):
             )
 
         return super().forward(*inputs)
+
+
+class RandomResize(Transform):
+    def __init__(
+        self,
+        min_size: int,
+        max_size: int,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        antialias: Optional[bool] = None,
+    ) -> None:
+        super().__init__()
+        self.min_size = min_size
+        self.max_size = max_size
+        self.interpolation = interpolation
+        self.antialias = antialias
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        size = int(torch.randint(self.min_size, self.max_size, ()))
+        return dict(size=[size])
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.resize(inpt, params["size"], interpolation=self.interpolation, antialias=self.antialias)

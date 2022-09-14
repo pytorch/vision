@@ -34,14 +34,19 @@ def get_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) 
     return list(get_chw(image))
 
 
-def get_image_num_channels(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> int:
+def get_num_channels(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> int:
     num_channels, *_ = get_chw(image)
     return num_channels
 
 
-def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
-    _, *image_size = get_chw(image)
-    return image_size
+# We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
+# deprecating the old names.
+get_image_num_channels = get_num_channels
+
+
+def get_spatial_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
+    _, *size = get_chw(image)
+    return size
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
