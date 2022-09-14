@@ -8,6 +8,7 @@ import torch
 import torch.testing
 from torch.nn.functional import one_hot
 from torch.testing._comparison import assert_equal as _assert_equal, TensorLikePair
+from torchvision._utils import StrEnum
 from torchvision.prototype import features
 from torchvision.prototype.transforms.functional import to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
@@ -53,7 +54,7 @@ class ArgsKwargs:
 make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
 
 
-def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, constant_alpha=True):
+def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, constant_alpha=True, gray_2d=False):
     size = size or torch.randint(16, 33, (2,)).tolist()
 
     try:
@@ -71,11 +72,22 @@ def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, co
     data = make_tensor(shape, low=0, high=max_value, dtype=dtype)
     if color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
         data[..., -1, :, :] = max_value
+    elif color_space == features.ColorSpace.GRAY and gray_2d:
+        data = data.squeeze(0)
     return features.Image(data, color_space=color_space)
 
 
 make_grayscale_image = functools.partial(make_image, color_space=features.ColorSpace.GRAY)
 make_rgb_image = functools.partial(make_image, color_space=features.ColorSpace.RGB)
+
+
+class Gray2d(StrEnum):
+    NO = StrEnum.auto()
+    ALL = StrEnum.auto()
+    EXTRA = StrEnum.auto()
+
+    def to_bool(self):
+        return not self == Gray2d.NO
 
 
 def make_images(
@@ -88,12 +100,31 @@ def make_images(
     ),
     dtypes=(torch.float32, torch.uint8),
     extra_dims=((), (0,), (4,), (2, 3), (5, 0), (0, 5)),
+    # FIXME: change this to "extra" if we support 2d images everywhere
+    gray_2d="no",
 ):
-    for size, color_space, dtype in itertools.product(sizes, color_spaces, dtypes):
-        yield make_image(size, color_space=color_space, dtype=dtype)
+    if isinstance(gray_2d, bool):
+        gray_2d = "all" if gray_2d else "no"
+    if isinstance(gray_2d, str):
+        gray_2d = Gray2d.from_str(gray_2d.upper())
+    if not isinstance(gray_2d, Gray2d):
+        raise pytest.UsageError("'gray_2d' can either be a boolean or `'no'`, `'all'`, or `'extra'`.")
 
-    for color_space, dtype, extra_dims_ in itertools.product(color_spaces, dtypes, extra_dims):
-        yield make_image(size=sizes[0], color_space=color_space, extra_dims=extra_dims_, dtype=dtype)
+    for gray_2d, color_spaces_ in {
+        Gray2d.NO: [(False, color_spaces)],
+        Gray2d.ALL: [(True, color_spaces)],
+        Gray2d.EXTRA: [
+            (False, color_spaces),
+            *([(True, [features.ColorSpace.GRAY])] if features.ColorSpace.GRAY in color_spaces else []),
+        ],
+    }[gray_2d]:
+        for size, color_space, dtype in itertools.product(sizes, color_spaces_, dtypes):
+            yield make_image(size, color_space=color_space, dtype=dtype, gray_2d=gray_2d)
+
+        for color_space, dtype, extra_dims_ in itertools.product(color_spaces_, dtypes, extra_dims):
+            yield make_image(
+                size=sizes[0], color_space=color_space, extra_dims=extra_dims_, dtype=dtype, gray_2d=gray_2d
+            )
 
 
 def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):

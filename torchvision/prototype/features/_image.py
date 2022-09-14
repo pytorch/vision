@@ -48,8 +48,6 @@ class Image(_Feature):
         data = torch.as_tensor(data, dtype=dtype, device=device)  # type: ignore[arg-type]
         if data.ndim < 2:
             raise ValueError
-        elif data.ndim == 2:
-            data = data.unsqueeze(0)
         image = super().__new__(cls, data, requires_grad=requires_grad)
 
         if color_space is None:
