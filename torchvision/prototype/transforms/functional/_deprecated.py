@@ -1,11 +1,12 @@
 import warnings
-from typing import Any, Union
+from typing import Any, List, Union
 
 import PIL.Image
 import torch
 
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F
+from ._meta import get_chw
 
 
 def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
