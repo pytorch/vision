@@ -9,7 +9,8 @@ from ._meta import (
     convert_color_space,
     get_dimensions,
     get_image_num_channels,
-    get_image_size,
+    get_channel_size,
+    get_spatial_size,
 )  # usort: skip
 
 from ._augment import erase, erase_image_pil, erase_image_tensor
@@ -125,4 +126,4 @@ from ._type_conversion import (
     to_pil_image,
 )
 
-from ._deprecated import rgb_to_grayscale, to_grayscale  # usort: skip
+from ._deprecated import get_image_size, rgb_to_grayscale, to_grayscale, to_tensor  # usort: skip

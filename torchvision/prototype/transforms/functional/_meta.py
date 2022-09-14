@@ -34,14 +34,17 @@ def get_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) 
     return list(get_chw(image))
 
 
-def get_image_num_channels(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> int:
+def get_channel_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> int:
     num_channels, *_ = get_chw(image)
     return num_channels
 
 
-def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
-    _, *image_size = get_chw(image)
-    return image_size
+get_image_num_channels = get_channel_size
+
+
+def get_spatial_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
+    _, *size = get_chw(image)
+    return size
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:

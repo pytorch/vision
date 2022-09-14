@@ -50,3 +50,12 @@ def to_tensor(inpt: Any) -> torch.Tensor:
         "Instead, please use `to_image_tensor(...)` followed by `convert_image_dtype(...)`."
     )
     return _F.to_tensor(inpt)
+
+
+def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
+    warnings.warn(
+        "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
+        "Instead, please use `get_spatial_size(...)` which returns `(h, w)` instead of `(w, h)`."
+    )
+    _, h, w = get_chw(image)
+    return [w, h]
