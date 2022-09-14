@@ -53,7 +53,9 @@ test_videos = {
 class TestVideoApi:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    def test_frame_reading(self, test_video):
+    @pytest.mark.parametrize("backend", ["video_reader"])
+    def test_frame_reading(self, test_video, backend):
+        torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
         with av.open(full_path) as av_reader:
             if av_reader.streams.video:
@@ -115,7 +117,8 @@ class TestVideoApi:
                     assert max_delta.item() < 0.001
 
     @pytest.mark.parametrize("test_video,config", test_videos.items())
-    def test_metadata(self, test_video, config):
+    @pytest.mark.parametrize("backend", ["video_reader"])
+    def test_metadata(self, test_video, config, backend):
         """
         Test that the metadata returned via pyav corresponds to the one returned
         by the new video decoder API
@@ -127,7 +130,8 @@ class TestVideoApi:
         assert config.duration == approx(reader_md["video"]["duration"][0], abs=0.5)
 
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    def test_seek_start(self, test_video):
+    @pytest.mark.parametrize("backend", ["video_reader"])
+    def test_seek_start(self, test_video, backend):
         full_path = os.path.join(VIDEO_DIR, test_video)
         video_reader = VideoReader(full_path, "video")
         num_frames = 0
@@ -153,7 +157,8 @@ class TestVideoApi:
         assert start_num_frames == num_frames
 
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    def test_accurateseek_middle(self, test_video):
+    @pytest.mark.parametrize("backend", ["video_reader"])
+    def test_accurateseek_middle(self, test_video, backend):
         full_path = os.path.join(VIDEO_DIR, test_video)
         stream = "video"
         video_reader = VideoReader(full_path, stream)
@@ -192,7 +197,8 @@ class TestVideoApi:
 
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize("test_video,config", test_videos.items())
-    def test_keyframe_reading(self, test_video, config):
+    @pytest.mark.parametrize("backend", ["video_reader"])
+    def test_keyframe_reading(self, test_video, config, backend):
         full_path = os.path.join(VIDEO_DIR, test_video)
 
         av_reader = av.open(full_path)
