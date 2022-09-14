@@ -213,20 +213,20 @@ class StereoMatching(torch.nn.Module):
     def __init__(
         self,
         *,
-        resize_size: Optional[int],
+        resize_size: Optional[Tuple[int, int]],
         mean: Tuple[float, ...] = (0.5, 0.5, 0.5),
         std: Tuple[float, ...] = (0.5, 0.5, 0.5),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
-        self.resize_size = [resize_size] if resize_size is not None else None
+        self.resize_size = resize_size
         self.mean = list(mean)
         self.std = list(std)
         self.interpolation = interpolation
 
     def forward(self, left_image: Tensor, right_image: Tensor) -> Tuple[Tensor, Tensor]:
         def _process_image(img) -> Tensor:
-            if isinstance(self.resize_size, list):
+            if self.resize_size is not None:
                 img = F.resize(img, self.resize_size, interpolation=self.interpolation)
             if not isinstance(img, Tensor):
                 img = F.pil_to_tensor(img)
