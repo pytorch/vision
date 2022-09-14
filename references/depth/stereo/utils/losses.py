@@ -40,7 +40,7 @@ def _sequence_loss_fn(
         flow_norm = torch.sum(flow_gt**2, dim=1).sqrt()
         valid_flow_mask = valid_flow_mask & (flow_norm < max_flow)
 
-    valid_flow_mask = valid_flow_mask[:, None, :, :]
+    valid_flow_mask = valid_flow_mask.unsqueeze(1)
     flow_preds = torch.stack(flow_preds)  # shape = (num_flow_updates, batch_size, 2, H, W)
 
     abs_diff = (flow_preds - flow_gt).abs()
@@ -116,7 +116,7 @@ def _ssim_loss_fn(
     )
 
     B, C, H, W = source.shape
-    kernel = kernel[None, None, ...].repeat(C, 1, 1, 1)
+    kernel = kernel.unsqueeze(0).unsqueeze(0).repeat(C, 1, 1, 1)
     if use_padding:
         pad_size = kernel.shape[2] // 2
         source = F.pad(source, (pad_size, pad_size, pad_size, pad_size), "reflect")
