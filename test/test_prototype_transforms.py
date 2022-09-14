@@ -1586,7 +1586,7 @@ class TestFixedSizeCrop:
         bounding_boxes = make_bounding_box(
             format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
         )
-        masks = make_segmentation_mask(size=image_size, extra_dims=(batch_size,))
+        masks = make_detection_mask(size=image_size, extra_dims=(batch_size,))
         labels = make_label(extra_dims=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
