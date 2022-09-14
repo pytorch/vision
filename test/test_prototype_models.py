@@ -53,7 +53,7 @@ def test_crestereo(model_fn, model_mode, dev):
     img2 = torch.rand(1, 3, 64, 64).to(dev)
     iterations = 3
 
-    preds = model(img1, img2, flow_init=None, iterations=iterations)
+    preds = model(img1, img2, flow_init=None, num_iters=iterations)
     disparity_pred = preds[-1]
 
     # all the pyramid levels except the highest res make only half the number of iterations

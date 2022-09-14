@@ -14,7 +14,7 @@ from torchvision.ops import Conv2dNormActivation
 
 all = (
     "CREStereo",
-    "CREStereo_B_Weights",
+    "CREStereo_Base_Weights",
     "crestereo_base",
 )
 
@@ -147,12 +147,11 @@ class IterativeCorrelationLayer(nn.Module):
             "1d": [search_dilate_1d for _ in range(self.groups)],
         }
 
-    def _make_coords(self, feature_map: Tensor) -> Tensor:
-        return make_coords_grid(feature_map.shape[0], feature_map.shape[2], feature_map.shape[3]).to(feature_map.device)
-
     def forward(self, left_feature: Tensor, right_feature: Tensor, flow: Tensor, window_type: str = "1d") -> Tensor:
         """Function that computes 1 pass of non-offsetted Group-Wise correlation"""
-        coords = self._make_coords(left_feature)
+        coords = make_coords_grid(
+            left_feature.shape[0], left_feature.shape[2], left_feature.shape[3], device=left_feature.device
+        )
 
         # we offset the coordinate grid in the flow direction
         coords = coords + flow
@@ -212,9 +211,6 @@ class AttentionOffsetCorrelationLayer(nn.Module):
         }
 
         self.attention_module = attention_module
-
-    def _make_coords(self, feature_map: Tensor) -> Tensor:
-        return make_coords_grid(feature_map.shape[0], feature_map.shape[2], feature_map.shape[3]).to(feature_map.device)
 
     def forward(
         self,
@@ -276,7 +272,12 @@ class AttentionOffsetCorrelationLayer(nn.Module):
             # extra offsets for search (i.e. deformed search indexes. Simillar concept to deformable convolutions)
             offsets = offsets + extra_offset
 
-            coords = self._make_coords(left_feature) + flow
+            coords = (
+                make_coords_grid(
+                    left_feature.shape[0], left_feature.shape[2], left_feature.shape[3], device=left_feature.device
+                )
+                + flow
+            )
             coords = coords.permute(0, 2, 3, 1).unsqueeze(1)
             coords = coords + offsets
             coords = coords.reshape(B, -1, W, 2)
@@ -494,11 +495,11 @@ class LocalFeatureEncoderLayer(nn.Module):
     ) -> None:
         super().__init__()
 
-        attention_module = attention_module()
+        self.attention_op = attention_module()
 
-        if not isinstance(attention_module, (LinearAttention, SoftmaxAttention)):
+        if not isinstance(self.attention_op, (LinearAttention, SoftmaxAttention)):
             raise ValueError(
-                f"attention_module must be an instance of LinearAttention or SoftmaxAttention. Got {type(attention_module)}"
+                f"attention_module must be an instance of LinearAttention or SoftmaxAttention. Got {type(self.attention_op)}"
             )
 
         self.dim_head = dim_model // num_heads
@@ -508,7 +509,6 @@ class LocalFeatureEncoderLayer(nn.Module):
         self.query_proj = nn.Linear(dim_model, dim_model, bias=False)
         self.key_proj = nn.Linear(dim_model, dim_model, bias=False)
         self.value_proj = nn.Linear(dim_model, dim_model, bias=False)
-        self.attention_op = attention_module
         self.merge = nn.Linear(dim_model, dim_model, bias=False)
 
         # feed forward network
