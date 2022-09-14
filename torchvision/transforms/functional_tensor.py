@@ -132,7 +132,7 @@ def hflip(img: Tensor) -> Tensor:
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     _assert_image_tensor(img)
 
-    w, h = get_image_size(img)
+    _, h, w = get_dimensions(img)
     right = left + width
     bottom = top + height
 
