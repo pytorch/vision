@@ -1,6 +1,8 @@
+import dataclasses
 import functools
 import itertools
 import math
+from typing import Any, Callable, Dict, Iterable, Optional
 
 import numpy as np
 import pytest
@@ -20,30 +22,32 @@ from torch.utils._pytree import tree_map
 from torchvision.prototype import features
 
 
+@dataclasses.dataclass
 class KernelInfo:
-    def __init__(
-        self,
-        kernel,
-        *,
-        sample_inputs_fn,
-        reference_fn=None,
-        reference_inputs_fn=None,
-        **closeness_kwargs,
-    ):
-        self.kernel = kernel
-        # This function takes no inputs and should return an iterable of `ArgsKwargs`'. Most common tests use these
-        # inputs to check the kernel. As such it should cover all valid code paths.
-        self.sample_inputs_fn = sample_inputs_fn
-        # This function should mirror the kernel. It should have the same signature as the kernel and as such also take
-        # tensors as inputs. Any conversion into another object type, e.g. PIL images or numpy arrays, should happen
-        # inside the function. It should return a tensor or to be more precise an object that can be compared to a
-        # tensor by `assert_close`.
-        self.reference_fn = reference_fn
-        # This function takes no inputs and should return an iterable of `ArgsKwargs`'. It is used only for the
-        # reference tests and thus can be comprehensive with regard to the parameter values to be tested.
-        self.reference_inputs_fn = reference_inputs_fn or sample_inputs_fn
-        # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
-        self.closeness_kwargs = closeness_kwargs
+    kernel: Callable
+    # Most common tests use these inputs to check the kernel. As such it should cover all valid code paths, but should
+    # not include extensive parameter combinations to keep to overall test count moderate.
+    sample_inputs_fn: Callable[[], Iterable[ArgsKwargs]]
+    # This function should mirror the kernel. It should have the same signature as the `kernel` and as such also take
+    # tensors as inputs. Any conversion into another object type, e.g. PIL images or numpy arrays, should happen
+    # inside the function. It should return a tensor or to be more precise an object that can be compared to a
+    # tensor by `assert_close`. If omitted, no reference test will be performed.
+    reference_fn: Optional[Callable] = None
+    # These inputs are only used for the reference tests and thus can be comprehensive with regard to the parameter
+    # values to be tested. If not specified, `sample_inputs_fn` will be used.
+    reference_inputs_fn: Optional[Callable[[], Iterable[ArgsKwargs]]] = None
+    # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
+    closeness_kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
+
+    def __post_init__(self):
+        self.reference_inputs_fn = self.reference_inputs_fn or self.sample_inputs_fn
+
+
+DEFAULT_IMAGE_CLOSENESS_KWARGS = dict(
+    atol=1e-5,
+    rtol=0,
+    agg_method="mean",
+)
 
 
 def pil_reference_wrapper(pil_kernel):
@@ -92,9 +96,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_horizontal_flip_image_tensor,
             reference_fn=pil_reference_wrapper(F.horizontal_flip_image_pil),
             reference_inputs_fn=reference_inputs_horizontal_flip_image_tensor,
-            atol=1e-5,
-            rtol=0,
-            agg_method="mean",
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.horizontal_flip_bounding_box,
@@ -159,9 +161,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_resize_image_tensor,
             reference_fn=pil_reference_wrapper(F.resize_image_pil),
             reference_inputs_fn=reference_inputs_resize_image_tensor,
-            atol=1e-5,
-            rtol=0,
-            agg_method="mean",
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.resize_bounding_box,
@@ -311,9 +311,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_image_tensor,
             reference_fn=pil_reference_wrapper(F.affine_image_pil),
             reference_inputs_fn=reference_inputs_affine_image_tensor,
-            atol=1e-5,
-            rtol=0,
-            agg_method="mean",
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.affine_bounding_box,

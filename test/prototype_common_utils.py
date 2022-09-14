@@ -1,7 +1,9 @@
 """This module is separated from common_utils.py to prevent the former to be dependent on torchvision.prototype"""
 
 import collections.abc
+import dataclasses
 import functools
+from typing import Callable, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import pytest
@@ -204,22 +206,25 @@ def from_loaders(loaders_fn):
     return wrapper
 
 
+@dataclasses.dataclass
 class TensorLoader:
-    def __init__(self, fn, *, shape, dtype):
-        self.fn = fn
-        self.shape = shape
-        self.dtype = dtype
+    fn: Callable[[Sequence[int], torch.dtype, Union[str, torch.device]], torch.Tensor]
+    shape: Sequence[int]
+    dtype: torch.dtype
 
     def load(self, device):
         return self.fn(self.shape, self.dtype, device)
 
 
+@dataclasses.dataclass
 class ImageLoader(TensorLoader):
-    def __init__(self, *args, color_space, **kwargs):
-        super().__init__(*args, **kwargs)
+    color_space: features.ColorSpace
+    image_size: Tuple[int, int] = dataclasses.field(init=False)
+    num_channels: int = dataclasses.field(init=False)
+
+    def __post_init__(self):
         self.image_size = self.shape[-2:]
         self.num_channels = self.shape[-3]
-        self.color_space = color_space
 
 
 def make_image_loader(
@@ -275,16 +280,10 @@ def make_image_loaders(
 make_images = from_loaders(make_image_loaders)
 
 
+@dataclasses.dataclass
 class BoundingBoxLoader(TensorLoader):
-    def __init__(self, *args, format, image_size, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.format = format
-        self.image_size = image_size
-
-    _TYPE_NAME = "features.BoundingBox"
-
-    def _extra_repr(self):
-        return [self.format, f"image_size={self.image_size}"]
+    format: features.BoundingBoxFormat
+    image_size: Tuple[int, int]
 
 
 def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
@@ -366,10 +365,9 @@ def make_bounding_box_loaders(
 make_bounding_boxes = from_loaders(make_bounding_box_loaders)
 
 
+@dataclasses.dataclass
 class LabelLoader(TensorLoader):
-    def __init__(self, *args, categories, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.categories = categories
+    categories: Optional[Sequence[str]]
 
 
 def _parse_categories(categories):
@@ -404,10 +402,9 @@ def make_label_loader(*, extra_dims=(), categories=None, dtype=torch.int64):
 make_label = from_loader(make_label_loader)
 
 
+@dataclasses.dataclass
 class OneHotLabelLoader(TensorLoader):
-    def __init__(self, *args, categories, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.categories = categories
+    categories: Optional[Sequence[str]]
 
 
 def make_one_hot_label_loader(*, categories=None, extra_dims=(), dtype=torch.int64):
