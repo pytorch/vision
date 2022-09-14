@@ -196,7 +196,8 @@ class AttentionOffsetCorrelationLayer(nn.Module):
             search_window_2d=search_window_2d,
             search_dilate_2d=search_dilate_2d,
         )
-        self.search_pixels = np.prod(search_window_1d)
+        # convert to python scalar
+        self.search_pixels = int(np.prod(search_window_1d))
         self.groups = groups
 
         # two selection tables for dealing withh the small_patch argument in the forward function
@@ -474,10 +475,8 @@ class PositionalEncodingSine(nn.Module):
             f"PositionalEncodingSine requires a 4-D dimensional input. Provided tensor is of shape {x.shape}",
         )
 
-        self.pe: Tensor
-
         B, C, H, W = x.shape
-        return x + self.pe[:, :, :H, :W]
+        return x + self.pe[:, :, :H, :W]  # type: ignore
 
 
 class LocalFeatureEncoderLayer(nn.Module):
