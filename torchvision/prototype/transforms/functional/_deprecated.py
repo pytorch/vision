@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Union
+from typing import Any, List, Union
 
 import PIL.Image
 import torch
@@ -50,3 +50,11 @@ def to_tensor(inpt: Any) -> torch.Tensor:
         "Instead, please use `to_image_tensor(...)` followed by `convert_image_dtype(...)`."
     )
     return _F.to_tensor(inpt)
+
+
+def get_image_size(inpt: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
+    warnings.warn(
+        "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
+        "Instead, please use `get_spatial_size(...)` which returns `[h, w]` instead of `[w, h]`."
+    )
+    return _F.get_image_size(inpt)
