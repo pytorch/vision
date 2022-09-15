@@ -163,7 +163,7 @@ class RemoveSmallBoundingBoxes(Transform):
         #  be in XYXY format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH
         #  format,we need to convert first just to afterwards compute the width and height again, although they were
         #  there in the first place for these formats.
-        bounding_box = F.convert_bounding_box_format(
+        bounding_box = F.convert_format_bounding_box(
             bounding_box, old_format=bounding_box.format, new_format=features.BoundingBoxFormat.XYXY
         )
         valid_indices = remove_small_boxes(bounding_box, min_size=self.min_size)
