@@ -49,24 +49,6 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def horizontal_flip_image_tensor():
-    for image in make_images():
-        yield ArgsKwargs(image)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def horizontal_flip_bounding_box():
-    for bounding_box in make_bounding_boxes(formats=[features.BoundingBoxFormat.XYXY]):
-        yield ArgsKwargs(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def horizontal_flip_mask():
-    for mask in make_masks():
-        yield ArgsKwargs(mask)
-
-
-@register_kernel_info_from_sample_inputs_fn
 def vertical_flip_image_tensor():
     for image in make_images():
         yield ArgsKwargs(image)
@@ -85,44 +67,6 @@ def vertical_flip_mask():
 
 
 @register_kernel_info_from_sample_inputs_fn
-def resize_image_tensor():
-    for image, interpolation, max_size, antialias in itertools.product(
-        make_images(),
-        [F.InterpolationMode.BILINEAR, F.InterpolationMode.NEAREST],  # interpolation
-        [None, 34],  # max_size
-        [False, True],  # antialias
-    ):
-
-        if antialias and interpolation == F.InterpolationMode.NEAREST:
-            continue
-
-        height, width = image.shape[-2:]
-        for size in [
-            (height, width),
-            (int(height * 0.75), int(width * 1.25)),
-        ]:
-            if max_size is not None:
-                size = [size[0]]
-            yield ArgsKwargs(image, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def resize_bounding_box():
-    for bounding_box, max_size in itertools.product(
-        make_bounding_boxes(),
-        [None, 34],  # max_size
-    ):
-        height, width = bounding_box.image_size
-        for size in [
-            (height, width),
-            (int(height * 0.75), int(width * 1.25)),
-        ]:
-            if max_size is not None:
-                size = [size[0]]
-            yield ArgsKwargs(bounding_box, size=size, image_size=bounding_box.image_size)
-
-
-@register_kernel_info_from_sample_inputs_fn
 def resize_mask():
     for mask, max_size in itertools.product(
         make_masks(),
@@ -136,45 +80,6 @@ def resize_mask():
             if max_size is not None:
                 size = [size[0]]
             yield ArgsKwargs(mask, size=size, max_size=max_size)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def affine_image_tensor():
-    for image, angle, translate, scale, shear in itertools.product(
-        make_images(),
-        [-87, 15, 90],  # angle
-        [5, -5],  # translate
-        [0.77, 1.27],  # scale
-        [0, 12],  # shear
-    ):
-        yield ArgsKwargs(
-            image,
-            angle=angle,
-            translate=(translate, translate),
-            scale=scale,
-            shear=(shear, shear),
-            interpolation=F.InterpolationMode.NEAREST,
-        )
-
-
-@register_kernel_info_from_sample_inputs_fn
-def affine_bounding_box():
-    for bounding_box, angle, translate, scale, shear in itertools.product(
-        make_bounding_boxes(),
-        [-87, 15, 90],  # angle
-        [5, -5],  # translate
-        [0.77, 1.27],  # scale
-        [0, 12],  # shear
-    ):
-        yield ArgsKwargs(
-            bounding_box,
-            format=bounding_box.format,
-            image_size=bounding_box.image_size,
-            angle=angle,
-            translate=(translate, translate),
-            scale=scale,
-            shear=(shear, shear),
-        )
 
 
 @register_kernel_info_from_sample_inputs_fn
