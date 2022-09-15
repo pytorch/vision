@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import torch
 import transforms as T
@@ -9,8 +9,8 @@ class StereoMatchingEvalPreset(torch.nn.Module):
         self,
         mean: float = 0.5,
         std: float = 0.5,
-        resize_size=None,
-        max_disparity: float = 512,
+        resize_size: Optional[Tuple[int, int]] = None,
+        max_disparity: Optional[float] = 512,
         interpolation_type: str = "bilinear",
     ) -> None:
         super().__init__()
@@ -48,7 +48,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         # processing device
         gpu_transforms: bool = False,
         # masking
-        max_disparity: int = 256,
+        max_disparity: Optional[int] = 256,
         # SpatialShift params
         spatial_shift_prob: float = 0.5,
         spatial_shift_max_angle: float = 0.5,
