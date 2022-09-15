@@ -12,19 +12,35 @@ class StereoMatchingEvalPreset(torch.nn.Module):
         resize_size: Optional[Tuple[int, int]] = None,
         max_disparity: Optional[float] = 512,
         interpolation_type: str = "bilinear",
+        use_grayscale: bool = False,
     ) -> None:
         super().__init__()
 
         transforms = [
             T.ToTensor(),
             T.ConvertImageDtype(torch.float32),
-            T.Normalize(mean=mean, std=std),
-            T.MakeValidDisparityMask(max_disparity),  # we keep this transform for API consistency
-            T.ValidateModelInput(),
         ]
+
+        if use_grayscale:
+            transforms.append(T.ConverToGrayscale())
+
+        transforms.extend(
+            [
+                T.ToTensor(),
+                T.ConvertImageDtype(torch.float32),
+                T.Normalize(mean=mean, std=std),
+            ]
+        )
 
         if resize_size is not None:
             transforms.append(T.Resize(resize_size, interpolation_type=interpolation_type))
+
+        transforms.extend(
+            [
+                T.MakeValidDisparityMask(max_disparity=max_disparity),
+                T.ValidateModelInput(),
+            ]
+        )
 
         self.transforms = T.Compose(transforms)
 
@@ -42,7 +58,9 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         scaling_type: str = "exponential",
         scale_range: Tuple[float, float] = (-0.2, 0.5),
         scale_interpolation_type: str = "bilinear",
-        # normalization params:
+        # convert to grayscale
+        use_grayscale: bool = False,
+        # normalization params
         mean: float = 0.5,
         std: float = 0.5,
         # processing device
@@ -80,12 +98,21 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         if gpu_transforms:
             transforms.append(T.ToGPU())
 
+        # color handling
+        color_transforms = [
+            T.AsymmetricColorJitter(
+                brightness=brightness, contrast=contrast, saturation=saturation, hue=hue, p=asymmetric_jitter_prob
+            ),
+            T.AsymetricGammaAdjust(p=asymmetric_jitter_prob, gamma_range=gamma_range),
+        ]
+
+        if use_grayscale:
+            color_transforms.append(T.ConverToGrayscale())
+
+        transforms.extend(color_transforms)
+
         transforms.extend(
             [
-                T.AsymmetricColorJitter(
-                    brightness=brightness, contrast=contrast, saturation=saturation, hue=hue, p=asymmetric_jitter_prob
-                ),
-                T.AsymetricGammaAdjust(p=asymmetric_jitter_prob, gamma_range=gamma_range),
                 T.RandomSpatialShift(
                     p=spatial_shift_prob,
                     max_angle=spatial_shift_max_angle,

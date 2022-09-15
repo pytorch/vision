@@ -61,6 +61,22 @@ class ValidateModelInput(torch.nn.Module):
         return images, disparities, masks
 
 
+class ConverToGrayscale(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def forward(
+        self,
+        images: T_STEREO_TENSOR,
+        disparities: Tuple[T_FLOW, T_FLOW],
+        masks: Tuple[T_MASK, T_MASK],
+    ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
+        img_left = F.to_grayscale(images[0], num_output_channels=3)
+        img_right = F.to_grayscale(images[1], num_output_channels=3)
+
+        return (img_left, img_right), disparities, masks
+
+
 class MakeValidDisparityMask(torch.nn.Module):
     def __init__(self, max_disparity: Optional[int] = 256) -> None:
         super().__init__()
