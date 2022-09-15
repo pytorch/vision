@@ -39,6 +39,14 @@ jobs:
       - name: Install test requirements
         run: pip install --progress-bar=off pytest pytest-mock
 
-      - name: Run prototype tests
+      - name: Run prototype datasets tests
         shell: bash
-        run: pytest -vvv --durations=20 test/test_prototype_*.py
+        run: pytest --durations=20 test/test_prototype_datasets*.py
+
+      - name: Run prototype transforms tests
+        shell: bash
+        run: pytest --durations=20 test/test_prototype_transforms*.py
+
+      - name: Run prototype models tests
+        shell: bash
+        run: pytest --durations=20 test/test_prototype_models*.py
