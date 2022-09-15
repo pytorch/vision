@@ -693,7 +693,7 @@ class CREStereo(nn.Module):
         self.mask_predictor = ConvexMaskPredictor(
             in_channels=feature_encoder.output_dim // 2,
             hidden_size=feature_encoder.output_dim,
-            upsample_factor=4,
+            upsample_factor=feature_encoder.downsample_factor,
             multiplier=0.25,
         )
 
