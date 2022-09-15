@@ -5,7 +5,86 @@ from common_utils import cpu_and_gpu, needs_cuda
 from prototype_common_utils import assert_close
 from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torch.utils._pytree import tree_map
+from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
+from torchvision.prototype.transforms import functional as F
+
+
+def test_coverage():
+    tested = {info.kernel.__name__ for info in KERNEL_INFOS}
+    exposed = {
+        name
+        for name, kernel in F.__dict__.items()
+        if callable(kernel)
+        and any(
+            name.endswith(f"_{feature_name}")
+            for feature_name in {
+                "bounding_box",
+                "image_tensor",
+                "label",
+                "mask",
+            }
+        )
+        and name not in {"to_image_tensor"}
+        # TODO: The list below should be quickly reduced in the transition period. There is nothing that prevents us
+        #  from adding `KernelInfo`'s for these kernels other than time.
+        and name
+        not in {
+            "adjust_brightness_image_tensor",
+            "adjust_contrast_image_tensor",
+            "adjust_gamma_image_tensor",
+            "adjust_hue_image_tensor",
+            "adjust_saturation_image_tensor",
+            "adjust_sharpness_image_tensor",
+            "affine_mask",
+            "autocontrast_image_tensor",
+            "center_crop_bounding_box",
+            "center_crop_image_tensor",
+            "center_crop_mask",
+            "clamp_bounding_box",
+            "convert_color_space_image_tensor",
+            "crop_bounding_box",
+            "crop_image_tensor",
+            "crop_mask",
+            "elastic_bounding_box",
+            "elastic_image_tensor",
+            "elastic_mask",
+            "equalize_image_tensor",
+            "erase_image_tensor",
+            "five_crop_image_tensor",
+            "gaussian_blur_image_tensor",
+            "horizontal_flip_image_tensor",
+            "invert_image_tensor",
+            "normalize_image_tensor",
+            "pad_bounding_box",
+            "pad_image_tensor",
+            "pad_mask",
+            "perspective_bounding_box",
+            "perspective_image_tensor",
+            "perspective_mask",
+            "posterize_image_tensor",
+            "resize_mask",
+            "resized_crop_bounding_box",
+            "resized_crop_image_tensor",
+            "resized_crop_mask",
+            "rotate_bounding_box",
+            "rotate_image_tensor",
+            "rotate_mask",
+            "solarize_image_tensor",
+            "ten_crop_image_tensor",
+            "vertical_flip_bounding_box",
+            "vertical_flip_image_tensor",
+            "vertical_flip_mask",
+        }
+    }
+
+    untested = exposed - tested
+    if untested:
+        raise AssertionError(
+            f"The kernel(s) {sequence_to_str(sorted(untested), separate_last='and ')} "
+            f"are exposed through `torchvision.prototype.transforms.functional`, but are not tested. "
+            f"Please add a `KernelInfo` to the `KERNEL_INFOS` list in `test/prototype_transforms_kernel_infos.py`."
+        )
 
 
 class TestCommon:
