@@ -38,11 +38,9 @@ class LabelToOneHot(Transform):
 
 
 class PILToTensor(Transform):
-    _transformed_types = (PIL.Image.Image, )
+    _transformed_types = (PIL.Image.Image,)
 
-    def _transform(
-        self, inpt: Union[PIL.Image.Image], params: Dict[str, Any]
-    ) -> torch.Tensor:
+    def _transform(self, inpt: Union[PIL.Image.Image], params: Dict[str, Any]) -> torch.Tensor:
         return F.pil_to_tensor(inpt)
 
 
