@@ -2162,8 +2162,8 @@ class ElasticTransform(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Transformed image.
         """
-        size = F.get_image_size(tensor)[::-1]
-        displacement = self.get_params(self.alpha, self.sigma, size)
+        _, height, width = F.get_dimensions(tensor)
+        displacement = self.get_params(self.alpha, self.sigma, [height, width])
         return F.elastic_transform(tensor, displacement, self.interpolation, self.fill)
 
     def __repr__(self):
