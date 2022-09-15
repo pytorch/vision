@@ -378,6 +378,28 @@ class TestPad:
 
         fn.assert_called_once_with(inpt, padding=padding, fill=fill, padding_mode=padding_mode)
 
+    @pytest.mark.parametrize("fill", [12, {features.Image: 12, features.Mask: 34}])
+    def test__transform_image_mask(self, fill, mocker):
+        transform = transforms.Pad(1, fill=fill, padding_mode="constant")
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.pad")
+        image = features.Image(torch.rand(3, 32, 32))
+        mask = features.Mask(torch.randint(0, 5, size=(32, 32)))
+        inpt = [image, mask]
+        _ = transform(inpt)
+
+        if isinstance(fill, int):
+            calls = [
+                mocker.call(image, padding=1, fill=fill, padding_mode="constant"),
+                mocker.call(mask, padding=1, fill=0, padding_mode="constant"),
+            ]
+        else:
+            calls = [
+                mocker.call(image, padding=1, fill=fill[type(image)], padding_mode="constant"),
+                mocker.call(mask, padding=1, fill=fill[type(mask)], padding_mode="constant"),
+            ]
+        fn.assert_has_calls(calls)
+
 
 class TestRandomZoomOut:
     def test_assertions(self):
@@ -400,7 +422,6 @@ class TestRandomZoomOut:
 
         params = transform._get_params(image)
 
-        assert params["fill"] == fill
         assert len(params["padding"]) == 4
         assert 0 <= params["padding"][0] <= (side_range[1] - 1) * w
         assert 0 <= params["padding"][1] <= (side_range[1] - 1) * h
@@ -426,7 +447,34 @@ class TestRandomZoomOut:
         torch.rand(1)  # random apply changes random state
         params = transform._get_params(inpt)
 
-        fn.assert_called_once_with(inpt, **params)
+        fn.assert_called_once_with(inpt, **params, fill=fill)
+
+    @pytest.mark.parametrize("fill", [12, {features.Image: 12, features.Mask: 34}])
+    def test__transform_image_mask(self, fill, mocker):
+        transform = transforms.RandomZoomOut(fill=fill, p=1.0)
+
+        fn = mocker.patch("torchvision.prototype.transforms.functional.pad")
+        image = features.Image(torch.rand(3, 32, 32))
+        mask = features.Mask(torch.randint(0, 5, size=(32, 32)))
+        inpt = [image, mask]
+
+        torch.manual_seed(12)
+        _ = transform(inpt)
+        torch.manual_seed(12)
+        torch.rand(1)  # random apply changes random state
+        params = transform._get_params(inpt)
+
+        if isinstance(fill, int):
+            calls = [
+                mocker.call(image, **params, fill=fill),
+                mocker.call(mask, **params, fill=0),
+            ]
+        else:
+            calls = [
+                mocker.call(image, **params, fill=fill[type(image)]),
+                mocker.call(mask, **params, fill=fill[type(mask)]),
+            ]
+        fn.assert_has_calls(calls)
 
 
 class TestRandomRotation:
