@@ -96,8 +96,8 @@ def _ssim_loss_fn(
     reference: Tensor,
     kernel: Tensor,
     eps: float = 1e-8,
-    C1: float = 0.01**2,
-    C2: float = 0.03**2,
+    c1: float = 0.01**2,
+    c2: float = 0.03**2,
     use_padding: bool = False,
 ) -> Tensor:
     # ref: Algorithm section: https://en.wikipedia.org/wiki/Structural_similarity
@@ -137,8 +137,8 @@ def _ssim_loss_fn(
     sigma2_sq = mu_img2_sq - mu2_sq
     sigma12 = mu_img1_mu2 - mu1_mu2
 
-    numerator = (2 * mu1_mu2 + C1) * (2 * sigma12 + C2)
-    denominator = (mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2)
+    numerator = (2 * mu1_mu2 + c1) * (2 * sigma12 + c2)
+    denominator = (mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2)
     ssim = numerator / (denominator + eps)
 
     # doing 1 - ssim because we want to maximize the ssim
@@ -172,8 +172,8 @@ class SSIM(nn.Module):
         gaussian_kernel = make_gaussian_kernel(kernel_size, sigma)
         self.register_buffer("gaussian_kernel", gaussian_kernel)
 
-        self.C1 = (0.01 * self.max_val) ** 2
-        self.C2 = (0.03 * self.max_val) ** 2
+        self.c1 = (0.01 * self.max_val) ** 2
+        self.c2 = (0.03 * self.max_val) ** 2
 
         self.use_padding = use_padding
         self.eps = eps
@@ -191,14 +191,14 @@ class SSIM(nn.Module):
             source,
             reference,
             kernel=self.gaussian_kernel,
-            C1=self.C1,
-            C2=self.C2,
+            c1=self.c1,
+            c2=self.c2,
             use_padding=self.use_padding,
             eps=self.eps,
         )
 
 
-def _smothness_loss_fn(img_gx: Tensor, img_gy: Tensor, depth_gx: Tensor, depth_gy: Tensor):
+def _smothness_loss_fn(img_gx: Tensor, img_gy: Tensor, val_gx: Tensor, val_gy: Tensor):
     # ref: https://github.com/nianticlabs/monodepth2/blob/b676244e5a1ca55564eb5d16ab521a48f823af31/layers.py#L202
 
     torch._assert(
@@ -207,23 +207,23 @@ def _smothness_loss_fn(img_gx: Tensor, img_gy: Tensor, depth_gx: Tensor, depth_g
     )
 
     torch._assert(
-        img_gx.ndim == depth_gx.ndim,
+        img_gx.ndim == val_gx.ndim,
         "smothness_loss: `img_gx` and `depth_gx` must have the same dimensionality, but got {} and {}".format(
-            img_gx.ndim, depth_gx.ndim
+            img_gx.ndim, val_gx.ndim
         ),
     )
 
     for idx in range(img_gx.ndim):
         torch._assert(
-            (img_gx.shape[idx] == depth_gx.shape[idx] or (img_gx.shape[idx] == 1 or depth_gx.shape[idx] == 1)),
+            (img_gx.shape[idx] == val_gx.shape[idx] or (img_gx.shape[idx] == 1 or val_gx.shape[idx] == 1)),
             "smothness_loss: `img_gx` and `depth_gx` must have either the same shape or broadcastable shape, but got {} and {}".format(
-                img_gx.shape, depth_gx.shape
+                img_gx.shape, val_gx.shape
             ),
         )
 
     # -3 is channel dimension
-    weights_x = torch.exp(-torch.mean(torch.abs(depth_gx), axis=-3, keepdim=True))
-    weights_y = torch.exp(-torch.mean(torch.abs(depth_gy), axis=-3, keepdim=True))
+    weights_x = torch.exp(-torch.mean(torch.abs(val_gx), axis=-3, keepdim=True))
+    weights_y = torch.exp(-torch.mean(torch.abs(val_gy), axis=-3, keepdim=True))
 
     smoothness_x = img_gx * weights_x
     smoothness_y = img_gy * weights_y
@@ -264,7 +264,7 @@ class SmoothnessLoss(nn.Module):
             grad = grad.reshape(original_shape)
         return grad
 
-    def forward(self, images: Tensor, depths: Tensor) -> Tensor:
+    def forward(self, images: Tensor, vals: Tensor) -> Tensor:
         """
         Args:
             images: tensor of shape (D1, D2, ..., DN, C, H, W)
@@ -276,10 +276,10 @@ class SmoothnessLoss(nn.Module):
         img_gx = self._x_gradient(images)
         img_gy = self._y_gradient(images)
 
-        depth_gx = self._x_gradient(depths)
-        depth_gy = self._y_gradient(depths)
+        val_gx = self._x_gradient(vals)
+        val_gy = self._y_gradient(vals)
 
-        return _smothness_loss_fn(img_gx, img_gy, depth_gx, depth_gy)
+        return _smothness_loss_fn(img_gx, img_gy, val_gx, val_gy)
 
 
 def _flow_sequence_consistency_loss_fn(
@@ -417,14 +417,14 @@ class FlowPhotoMetricLoss(nn.Module):
     def forward(
         self,
         source: Tensor,
-        other: Tensor,
+        reference: Tensor,
         flow_pred: Tensor,
         valid_mask: Optional[Tensor] = None,
     ):
         """
         Args:
             source: tensor of shape (B, C, H, W)
-            other: tensor of shape (B, C, H, W)
+            reference: tensor of shape (B, C, H, W)
             flow_pred: tensor of shape (B, 2, H, W)
             valid_mask: tensor of shape (B, H, W) or None
 
@@ -438,9 +438,9 @@ class FlowPhotoMetricLoss(nn.Module):
         )
 
         torch._assert(
-            other.ndim == source.ndim,
+            reference.ndim == source.ndim,
             "FlowPhotoMetricLoss: source and other must have the same number of dimensions, but got {} and {}".format(
-                source.ndim, other.ndim
+                source.ndim, reference.ndim
             ),
         )
 
@@ -464,10 +464,10 @@ class FlowPhotoMetricLoss(nn.Module):
         else:
             valid_mask = max_flow_mask.unsqueeze(1)
 
-        grid = make_coords_grid(B, H, W, device=source.device)
+        grid = make_coords_grid(B, H, W, device=str(source.device))
         resampled_grids = grid - flow_pred
         resampled_grids = resampled_grids.permute(0, 2, 3, 1)
-        resampled_source = grid_sample(other, resampled_grids, mode="bilinear")
+        resampled_source = grid_sample(reference, resampled_grids, mode="bilinear")
 
         # compute SSIM loss
         ssim_loss = self._ssim_loss(resampled_source * valid_mask, source * valid_mask)
