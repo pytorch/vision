@@ -43,6 +43,7 @@ def test_coverage():
             "center_crop_mask",
             "clamp_bounding_box",
             "convert_color_space_image_tensor",
+            "convert_format_bounding_box",
             "crop_bounding_box",
             "crop_image_tensor",
             "crop_mask",

@@ -242,7 +242,7 @@ def reference_affine_bounding_box(bounding_box, *, format, image_size, angle, tr
         affine_matrix = _compute_affine_matrix(angle, translate, scale, shear, center)
         affine_matrix = affine_matrix[:2, :]
 
-        bbox_xyxy = F.convert_bounding_box_format(bbox, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
+        bbox_xyxy = F.convert_format_bounding_box(bbox, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
         points = np.array(
             [
                 [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
@@ -261,7 +261,7 @@ def reference_affine_bounding_box(bounding_box, *, format, image_size, angle, tr
             ],
             dtype=bbox.dtype,
         )
-        return F.convert_bounding_box_format(
+        return F.convert_format_bounding_box(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
         )
 
