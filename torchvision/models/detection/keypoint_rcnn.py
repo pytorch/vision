@@ -444,8 +444,8 @@ def keypointrcnn_resnet50_fpn(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
-        num_keypoints = _ovewrite_value_param(num_keypoints, len(weights.meta["keypoint_names"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+        num_keypoints = _ovewrite_value_param("num_keypoints", num_keypoints, len(weights.meta["keypoint_names"]))
     else:
         if num_classes is None:
             num_classes = 2
