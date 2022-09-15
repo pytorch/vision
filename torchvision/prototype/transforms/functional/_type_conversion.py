@@ -25,16 +25,18 @@ def decode_video_with_av(encoded_video: torch.Tensor) -> Tuple[torch.Tensor, tor
 def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> features.Image:
     if isinstance(image, np.ndarray):
         output = torch.from_numpy(image)
+    elif isinstance(image, PIL.Image.Image):
+        output = pil_to_tensor(image)
     else:
-        output = _F.pil_to_tensor(image)
+        output = image
     return features.Image(output)
 
 
 to_image_pil = _F.to_pil_image
+pil_to_tensor = _F.pil_to_tensor
 
-# We changed the names to align them with the new naming scheme. Still, `to_pil_image` and `pil_to_tensor` are
-# prevalent and well understood. Thus, we just alias them without deprecating the old names.
+# We changed the names to align them with the new naming scheme. Still, `to_pil_image` is
+# prevalent and well understood. Thus, we just alias it without deprecating the old name.
 to_pil_image = to_image_pil
-pil_to_tensor = to_image_tensor
 
 convert_image_dtype = _F.convert_image_dtype
