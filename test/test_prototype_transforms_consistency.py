@@ -20,7 +20,7 @@ from prototype_common_utils import (
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
-from torchvision.prototype.transforms.functional import to_image_pil, to_pil_image
+from torchvision.prototype.transforms.functional import to_image_pil
 
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])
@@ -863,10 +863,10 @@ class TestRefDetTransforms:
         size = (600, 800)
         num_objects = 22
 
-        pil_image = to_pil_image(make_image(size=size, color_space=features.ColorSpace.RGB))
+        pil_image = to_image_pil(make_image(size=size, color_space=features.ColorSpace.RGB))
         target = {
             "boxes": make_bounding_box(image_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
-            "labels": make_label(size=(num_objects,)),
+            "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
             target["masks"] = make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long)
@@ -876,7 +876,7 @@ class TestRefDetTransforms:
         tensor_image = torch.randint(0, 256, size=(3, *size), dtype=torch.uint8)
         target = {
             "boxes": make_bounding_box(image_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
-            "labels": make_label(size=(num_objects,)),
+            "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
             target["masks"] = make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long)
@@ -886,7 +886,7 @@ class TestRefDetTransforms:
         feature_image = features.Image(torch.randint(0, 256, size=(3, *size), dtype=torch.uint8))
         target = {
             "boxes": make_bounding_box(image_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
-            "labels": make_label(size=(num_objects,)),
+            "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
             target["masks"] = make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long)
