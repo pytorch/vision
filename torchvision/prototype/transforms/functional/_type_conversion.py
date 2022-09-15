@@ -27,7 +27,7 @@ def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> 
         output = torch.from_numpy(image)
     elif isinstance(image, PIL.Image.Image):
         output = pil_to_tensor(image)
-    else:
+    else:  # isinstance(inpt, torch.Tensor):
         output = image
     return features.Image(output)
 

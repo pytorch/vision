@@ -47,7 +47,7 @@ def rgb_to_grayscale(
 def to_tensor(inpt: Any) -> torch.Tensor:
     warnings.warn(
         "The function `to_tensor(...)` is deprecated and will be removed in a future release. "
-        "Instead, please use `to_image_tensor(...)` followed by `convert_image_dtype(...)`."
+        "Instead, please use `pil_to_tensor(...)` followed by `convert_image_dtype(...)`."
     )
     return _F.to_tensor(inpt)
 
