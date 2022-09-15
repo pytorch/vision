@@ -68,7 +68,8 @@ class PILImagePair(TensorLikePair):
 
     def _process_inputs(self, actual, expected, *, id, allow_subclasses):
         actual, expected = [
-            to_image_tensor(input) if not isinstance(input, torch.Tensor) else input for input in [actual, expected]
+            to_image_tensor(input) if not isinstance(input, torch.Tensor) else features.Image(input)
+            for input in [actual, expected]
         ]
         return super()._process_inputs(actual, expected, id=id, allow_subclasses=allow_subclasses)
 
