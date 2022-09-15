@@ -671,7 +671,7 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for any valid boxes with centers within the crop area
-                xyxy_bboxes = F.convert_bounding_box_format(
+                xyxy_bboxes = F.convert_format_bounding_box(
                     bboxes, old_format=bboxes.format, new_format=features.BoundingBoxFormat.XYXY, copy=True
                 )
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])

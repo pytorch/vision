@@ -19,7 +19,7 @@ from prototype_common_utils import (
 from torch import jit
 from torchvision.prototype import features
 from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
-from torchvision.prototype.transforms.functional._meta import convert_bounding_box_format
+from torchvision.prototype.transforms.functional._meta import convert_format_bounding_box
 from torchvision.transforms.functional import _get_perspective_coeffs
 
 
@@ -531,6 +531,8 @@ def erase_image_tensor():
         and name
         not in {
             "to_image_tensor",
+            "get_num_channels",
+            "get_spatial_size",
             "get_image_num_channels",
             "get_image_size",
         }
@@ -631,7 +633,7 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
         affine_matrix = _compute_affine_matrix(angle_, translate_, scale_, shear_, center_)
         affine_matrix = affine_matrix[:2, :]
 
-        bbox_xyxy = convert_bounding_box_format(
+        bbox_xyxy = convert_format_bounding_box(
             bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
         )
         points = np.array(
@@ -656,7 +658,7 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
             dtype=torch.float32,
             device=bbox.device,
         )
-        return convert_bounding_box_format(
+        return convert_format_bounding_box(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
 
@@ -833,7 +835,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
         affine_matrix = affine_matrix[:2, :]
 
         image_size = bbox.image_size
-        bbox_xyxy = convert_bounding_box_format(
+        bbox_xyxy = convert_format_bounding_box(
             bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
         )
         points = np.array(
@@ -874,7 +876,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             dtype=torch.float32,
             device=bbox.device,
         )
-        return convert_bounding_box_format(
+        return convert_format_bounding_box(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
 
@@ -1095,7 +1097,7 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
     ]
     in_boxes = features.BoundingBox(in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=size, device=device)
     if format != features.BoundingBoxFormat.XYXY:
-        in_boxes = convert_bounding_box_format(in_boxes, features.BoundingBoxFormat.XYXY, format)
+        in_boxes = convert_format_bounding_box(in_boxes, features.BoundingBoxFormat.XYXY, format)
 
     output_boxes = F.crop_bounding_box(
         in_boxes,
@@ -1105,7 +1107,7 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
     )
 
     if format != features.BoundingBoxFormat.XYXY:
-        output_boxes = convert_bounding_box_format(output_boxes, format, features.BoundingBoxFormat.XYXY)
+        output_boxes = convert_format_bounding_box(output_boxes, format, features.BoundingBoxFormat.XYXY)
 
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
 
@@ -1211,12 +1213,12 @@ def test_correctness_resized_crop_bounding_box(device, format, top, left, height
         in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, device=device
     )
     if format != features.BoundingBoxFormat.XYXY:
-        in_boxes = convert_bounding_box_format(in_boxes, features.BoundingBoxFormat.XYXY, format)
+        in_boxes = convert_format_bounding_box(in_boxes, features.BoundingBoxFormat.XYXY, format)
 
     output_boxes = F.resized_crop_bounding_box(in_boxes, format, top, left, height, width, size)
 
     if format != features.BoundingBoxFormat.XYXY:
-        output_boxes = convert_bounding_box_format(output_boxes, format, features.BoundingBoxFormat.XYXY)
+        output_boxes = convert_format_bounding_box(output_boxes, format, features.BoundingBoxFormat.XYXY)
 
     torch.testing.assert_close(output_boxes, expected_bboxes)
 
@@ -1266,12 +1268,12 @@ def test_correctness_pad_bounding_box(device, padding):
 
         bbox_format = bbox.format
         bbox_dtype = bbox.dtype
-        bbox = convert_bounding_box_format(bbox, old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY)
+        bbox = convert_format_bounding_box(bbox, old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY)
 
         bbox[0::2] += pad_left
         bbox[1::2] += pad_up
 
-        bbox = convert_bounding_box_format(
+        bbox = convert_format_bounding_box(
             bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
         )
         if bbox.dtype != bbox_dtype:
@@ -1394,7 +1396,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             ]
         )
 
-        bbox_xyxy = convert_bounding_box_format(
+        bbox_xyxy = convert_format_bounding_box(
             bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
         )
         points = np.array(
@@ -1421,7 +1423,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             dtype=torch.float32,
             device=bbox.device,
         )
-        return convert_bounding_box_format(
+        return convert_format_bounding_box(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
 
@@ -1526,7 +1528,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
     def _compute_expected_bbox(bbox, output_size_):
         format_ = bbox.format
         image_size_ = bbox.image_size
-        bbox = convert_bounding_box_format(bbox, format_, features.BoundingBoxFormat.XYWH)
+        bbox = convert_format_bounding_box(bbox, format_, features.BoundingBoxFormat.XYWH)
 
         if len(output_size_) == 1:
             output_size_.append(output_size_[-1])
@@ -1546,7 +1548,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_bounding_box_format(out_bbox, features.BoundingBoxFormat.XYWH, format_, copy=False)
+        return convert_format_bounding_box(out_bbox, features.BoundingBoxFormat.XYWH, format_, copy=False)
 
     for bboxes in make_bounding_boxes(
         image_sizes=[(32, 32), (24, 33), (32, 25)],
