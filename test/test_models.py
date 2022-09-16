@@ -242,7 +242,10 @@ quantized_flaky_models = ("inception_v3", "resnet50")
 # The following contains configuration parameters for all models which are used by
 # the _test_*_model methods.
 _model_params = {
-    "inception_v3": {"input_shape": (1, 3, 299, 299)},
+    "inception_v3": {
+        "input_shape": (1, 3, 299, 299),
+        "init_weights": True
+    },
     "retinanet_resnet50_fpn": {
         "num_classes": 20,
         "score_thresh": 0.01,
@@ -318,8 +321,8 @@ _model_params = {
     },
     "googlenet": {
         "num_classes": 50,
-        "init_weights": False,
-    }
+        "init_weights": True,
+    },
 }
 # speeding up slow models:
 slow_models = [
@@ -621,7 +624,7 @@ def test_vitc_models(model_fn, dev):
     test_classification_model(model_fn, dev)
 
 
-@pytest.mark.parametrize("model_fn", [get_model_builder("googlenet")])
+@pytest.mark.parametrize("model_fn", list_model_fns(models))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_classification_model(model_fn, dev):
     set_rng_seed(0)
