@@ -477,15 +477,15 @@ def test_eager_vs_scripted(functional_info, sample_input):
         pytest.param(
             functional_info,
             sample_input,
-            id=f"{functional_info.kernel_name}-{idx}",
+            id=f"{functional_info.name}-{idx}",
             marks=[
                 *(
                     [pytest.mark.xfail(strict=False)]
-                    if functional_info.kernel_name
+                    if functional_info.name
                     in {
                         "rotate_bounding_box",
                         "crop_bounding_box",
-                        "resized_bounding_box",
+                        "resized_crop_bounding_box",
                         "perspective_bounding_box",
                         "elastic_bounding_box",
                         "center_crop_bounding_box",

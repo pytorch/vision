@@ -36,14 +36,11 @@ def test_coverage():
             "adjust_hue_image_tensor",
             "adjust_saturation_image_tensor",
             "adjust_sharpness_image_tensor",
-            "affine_mask",
             "autocontrast_image_tensor",
             "center_crop_bounding_box",
             "center_crop_image_tensor",
             "center_crop_mask",
             "clamp_bounding_box",
-            "convert_color_space_image_tensor",
-            "convert_format_bounding_box",
             "crop_bounding_box",
             "crop_image_tensor",
             "crop_mask",
@@ -54,7 +51,6 @@ def test_coverage():
             "erase_image_tensor",
             "five_crop_image_tensor",
             "gaussian_blur_image_tensor",
-            "horizontal_flip_image_tensor",
             "invert_image_tensor",
             "normalize_image_tensor",
             "pad_bounding_box",
@@ -64,7 +60,6 @@ def test_coverage():
             "perspective_image_tensor",
             "perspective_mask",
             "posterize_image_tensor",
-            "resize_mask",
             "resized_crop_bounding_box",
             "resized_crop_image_tensor",
             "resized_crop_mask",
@@ -189,7 +184,7 @@ class TestCommon:
         output_cpu = info.kernel(input_cpu, *other_args, **kwargs)
         output_cuda = info.kernel(input_cuda, *other_args, **kwargs)
 
-        assert_close(output_cuda, output_cpu, check_device=False)
+        assert_close(output_cuda, output_cpu, check_device=False, **info.closeness_kwargs)
 
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
@@ -239,4 +234,4 @@ class TestCommon:
         actual = info.kernel(*args, **kwargs)
         expected = info.reference_fn(*args, **kwargs)
 
-        assert_close(actual, expected, **info.closeness_kwargs, check_dtype=False)
+        assert_close(actual, expected, check_dtype=False, **info.closeness_kwargs)
