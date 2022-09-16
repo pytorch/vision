@@ -29,7 +29,7 @@ def erase(
 ) -> torch.Tensor:
     if isinstance(inpt, torch.Tensor):
         output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-        if not torch.jit.is_scripting() and not torch.jit.is_tracing() and isinstance(inpt, features.Image):
+        if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
             output = features.Image.new_like(inpt, output)
         return output
     else:  # isinstance(inpt, PIL.Image.Image):

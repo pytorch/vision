@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 import PIL.Image
 import torch
@@ -12,11 +12,9 @@ get_dimensions_image_pil = _FP.get_dimensions
 
 # TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
 def get_chw(image: torch.Tensor) -> Tuple[int, int, int]:
-    if isinstance(image, torch.Tensor) and (
-        torch.jit.is_scripting() or torch.jit.is_tracing() or not isinstance(image, features._Feature)
-    ):
+    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features._Feature)):
         channels, height, width = get_dimensions_image_tensor(image)
-    elif isinstance(image, features._Feature):
+    elif isinstance(image, features.Image):
         channels = image.num_channels
         height, width = image.image_size
     else:  # isinstance(image, PIL.Image.Image)
@@ -194,9 +192,7 @@ _COLOR_SPACE_TO_PIL_MODE = {
 
 
 @torch.jit.unused
-def convert_color_space_image_pil(
-    image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
-) -> PIL.Image.Image:
+def convert_color_space_image_pil(image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True):
     old_mode = image.mode
     try:
         new_mode = _COLOR_SPACE_TO_PIL_MODE[color_space]
@@ -215,9 +211,7 @@ def convert_color_space(
     old_color_space: Optional[ColorSpace] = None,
     copy: bool = True,
 ) -> torch.Tensor:
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or torch.jit.is_tracing() or not isinstance(inpt, features._Feature)
-    ):
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         if old_color_space is None:
             raise RuntimeError(
                 "In order to convert the color space of simple tensor images, "
