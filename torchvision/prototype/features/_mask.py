@@ -58,8 +58,6 @@ class Mask(_Feature):
         if not isinstance(padding, int):
             padding = list(padding)
 
-        
-
         output = self._F.pad_mask(self, padding, padding_mode=padding_mode, fill=fill)
 
         if isinstance(fill, (int, float)) or fill is None:

@@ -539,7 +539,9 @@ def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtyp
     return img
 
 
-def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[Union[int, float, List[float]]]) -> Tensor:
+def _apply_grid_transform(
+    img: Tensor, grid: Tensor, mode: str, fill: Optional[Union[int, float, List[float]]]
+) -> Tensor:
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [grid.dtype])
 
