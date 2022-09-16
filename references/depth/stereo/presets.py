@@ -52,9 +52,11 @@ class StereoMatchingTrainPreset(torch.nn.Module):
     def __init__(
         self,
         *,
+        resize_size: Optional[Tuple[int, int]],
+        resize_interpolation_type: str = "bilinear",
         # RandomResizeAndCrop params
         crop_size: Tuple[int, int],
-        resize_prob: float = 1.0,
+        rescale_prob: float = 1.0,
         scaling_type: str = "exponential",
         scale_range: Tuple[float, float] = (-0.2, 0.5),
         scale_interpolation_type: str = "bilinear",
@@ -95,6 +97,12 @@ class StereoMatchingTrainPreset(torch.nn.Module):
 
         super().__init__()
         transforms = [T.ToTensor()]
+
+        # when fixing size across multiple datasets, we ensure
+        # that the same size is used for all datasets when cropping
+        if resize_size is not None:
+            transforms.append(T.Resize(resize_size, interpolation_type=resize_interpolation_type))
+
         if gpu_transforms:
             transforms.append(T.ToGPU())
 
@@ -120,10 +128,10 @@ class StereoMatchingTrainPreset(torch.nn.Module):
                     interpolation_type=spatial_shift_interpolation_type,
                 ),
                 T.ConvertImageDtype(torch.float32),
-                T.RandomResizeAndCrop(
+                T.RandomRescaleAndCrop(
                     crop_size=crop_size,
                     scale_range=scale_range,
-                    resize_prob=resize_prob,
+                    rescale_prob=rescale_prob,
                     scaling_type=scaling_type,
                     interpolation_type=scale_interpolation_type,
                 ),

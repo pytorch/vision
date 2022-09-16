@@ -88,19 +88,18 @@ class MakeValidDisparityMask(torch.nn.Module):
         disparities: Tuple[T_FLOW, T_FLOW],
         masks: Tuple[T_MASK, T_MASK],
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
-        if self.max_disparity is None:
-            valid_masks = tuple(
-                torch.ones(images[0].shape[-2:], dtype=torch.bool, device=images[0].device) for i in range(2)
-            )
-            return images, disparities, valid_masks
+        valid_masks = tuple(
+            torch.ones(images[idx].shape[-2:], dtype=torch.bool, device=images[idx].device) if mask is None else mask
+            for idx, mask in enumerate(masks)
+        )
 
-        valid_masks = ()
-        for idx, disparity in enumerate(disparities):
-            mask = masks[idx]
-            if mask is None and disparity is not None:
-                mask = torch.logical_and(disparity < self.max_disparity, disparity > 0)
-                mask = mask.squeeze(0)
-            valid_masks += (mask,)
+        valid_masks = tuple(torch.logical_and(mask, disparity > 0) for mask, disparity in zip(valid_masks, disparities))
+
+        if self.max_disparity is not None:
+            valid_masks = tuple(
+                torch.logical_and(mask, disparity < self.max_disparity)
+                for mask, disparity in zip(valid_masks, disparities)
+            )
 
         return images, disparities, valid_masks
 
@@ -466,7 +465,7 @@ class Resize(torch.nn.Module):
         return resized_images, resized_disparities, resized_masks
 
 
-class RandomResizeAndCrop(torch.nn.Module):
+class RandomRescaleAndCrop(torch.nn.Module):
     # This transform will resize the input with a given proba, and then crop it.
     # These are the reversed operations of the built-in RandomResizedCrop,
     # although the order of the operations doesn't matter too much: resizing a
@@ -482,7 +481,7 @@ class RandomResizeAndCrop(torch.nn.Module):
         self,
         crop_size,
         scale_range: Tuple[float, float] = (-0.2, 0.5),
-        resize_prob=0.8,
+        rescale_prob=0.8,
         scaling_type="exponential",
         interpolation_type="bilinear",
     ) -> None:
@@ -490,7 +489,7 @@ class RandomResizeAndCrop(torch.nn.Module):
         self.crop_size = crop_size
         self.min_scale = scale_range[0]
         self.max_scale = scale_range[1]
-        self.resize_prob = resize_prob
+        self.rescale_prob = rescale_prob
         self.scaling_type = scaling_type
         self._interpolation_mode_strategy = InterpolationStrategy(interpolation_type)
 
@@ -530,7 +529,7 @@ class RandomResizeAndCrop(torch.nn.Module):
 
         new_h, new_w = round(h * scale), round(w * scale)
 
-        if torch.rand(1).item() < self.resize_prob:
+        if torch.rand(1).item() < self.rescale_prob:
             # rescale the images
             img_left = F.resize(img_left, size=(new_h, new_w), interpolation=INTERP_MODE)
             img_right = F.resize(img_right, size=(new_h, new_w), interpolation=INTERP_MODE)
@@ -613,7 +612,7 @@ def _resize_sparse_flow(
     valid_flow_new *= scale_x
 
     flow_new[:, ii_valid_new, jj_valid_new] = valid_flow_new
-    valid_new[ii_valid_new, jj_valid_new] = 1
+    valid_new[ii_valid_new, jj_valid_new] = valid_flow_mask[ii_valid, jj_valid]
 
     return flow_new, valid_new.bool()
 
