@@ -316,6 +316,10 @@ _model_params = {
     "s3d": {
         "input_shape": (1, 3, 16, 224, 224),
     },
+    "googlenet": {
+        "num_classes": 50,
+        "init_weights": False,
+    }
 }
 # speeding up slow models:
 slow_models = [
@@ -617,7 +621,7 @@ def test_vitc_models(model_fn, dev):
     test_classification_model(model_fn, dev)
 
 
-@pytest.mark.parametrize("model_fn", list_model_fns(models))
+@pytest.mark.parametrize("model_fn", [get_model_builder("googlenet")])
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_classification_model(model_fn, dev):
     set_rng_seed(0)
