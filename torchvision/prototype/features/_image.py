@@ -32,6 +32,31 @@ class ColorSpace(StrEnum):
         else:
             return cls.OTHER
 
+    @staticmethod
+    def from_tensor_shape(shape: List[int]) -> ColorSpace:
+        return _from_tensor_shape(shape)
+
+
+def _from_tensor_shape(shape: List[int]) -> ColorSpace:
+    # Needed as a standalone method for JIT
+    ndim = len(shape)
+    if ndim < 2:
+        return ColorSpace.OTHER
+    elif ndim == 2:
+        return ColorSpace.GRAY
+
+    num_channels = shape[-3]
+    if num_channels == 1:
+        return ColorSpace.GRAY
+    elif num_channels == 2:
+        return ColorSpace.GRAY_ALPHA
+    elif num_channels == 3:
+        return ColorSpace.RGB
+    elif num_channels == 4:
+        return ColorSpace.RGB_ALPHA
+    else:
+        return ColorSpace.OTHER
+
 
 class Image(_Feature):
     color_space: ColorSpace
@@ -53,7 +78,7 @@ class Image(_Feature):
         image = super().__new__(cls, data, requires_grad=requires_grad)
 
         if color_space is None:
-            color_space = cls.guess_color_space(image)
+            color_space = ColorSpace.from_tensor_shape(image.shape)
             if color_space == ColorSpace.OTHER:
                 warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
         elif isinstance(color_space, str):
@@ -82,25 +107,6 @@ class Image(_Feature):
     @property
     def num_channels(self) -> int:
         return self.shape[-3]
-
-    @staticmethod
-    def guess_color_space(data: torch.Tensor) -> ColorSpace:
-        if data.ndim < 2:
-            return ColorSpace.OTHER
-        elif data.ndim == 2:
-            return ColorSpace.GRAY
-
-        num_channels = data.shape[-3]
-        if num_channels == 1:
-            return ColorSpace.GRAY
-        elif num_channels == 2:
-            return ColorSpace.GRAY_ALPHA
-        elif num_channels == 3:
-            return ColorSpace.RGB
-        elif num_channels == 4:
-            return ColorSpace.RGB_ALPHA
-        else:
-            return ColorSpace.OTHER
 
     def to_color_space(self, color_space: Union[str, ColorSpace], copy: bool = True) -> Image:
         if isinstance(color_space, str):
