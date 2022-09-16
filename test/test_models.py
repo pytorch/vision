@@ -316,9 +316,7 @@ _model_params = {
     "s3d": {
         "input_shape": (1, 3, 16, 224, 224),
     },
-    "googlenet": {
-        "init_weights": True,
-    },
+    "googlenet": {"init_weights": True},
 }
 # speeding up slow models:
 slow_models = [
