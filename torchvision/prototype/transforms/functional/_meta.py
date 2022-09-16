@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import cast, List, Optional, Tuple
 
 import PIL.Image
 import torch
@@ -12,7 +12,7 @@ get_dimensions_image_pil = _FP.get_dimensions
 
 # TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
 def get_chw(image: features.ImageType) -> Tuple[int, int, int]:
-    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features._Feature)):
+    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
         channels, height, width = get_dimensions_image_tensor(image)
     elif isinstance(image, features.Image):
         channels = image.num_channels
@@ -213,7 +213,7 @@ def convert_color_space(
     old_color_space: Optional[ColorSpace] = None,
     copy: bool = True,
 ) -> features.ImageType:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image)):
         if old_color_space is None:
             raise RuntimeError(
                 "In order to convert the color space of simple tensor images, "
@@ -225,4 +225,4 @@ def convert_color_space(
     elif isinstance(inpt, features.Image):
         return inpt.to_color_space(color_space, copy=copy)
     else:
-        return convert_color_space_image_pil(inpt, color_space, copy=copy)  # type: ignore[no-any-return]
+        return cast(features.ImageType, convert_color_space_image_pil(inpt, color_space, copy=copy))
