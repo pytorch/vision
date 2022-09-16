@@ -23,7 +23,7 @@ def make_gaussian_kernel(kernel_size: int, sigma: float) -> torch.Tensor:
 def _sequence_loss_fn(
     flow_preds: List[Tensor],
     flow_gt: Tensor,
-    valid_flow_mask: Tensor,
+    valid_flow_mask: Optional[Tensor],
     gamma: Tensor,
     max_flow: int = 256,
     exclude_large: bool = False,
@@ -38,13 +38,20 @@ def _sequence_loss_fn(
     if exclude_large:
         # exclude invalid pixels and extremely large diplacements
         flow_norm = torch.sum(flow_gt**2, dim=1).sqrt()
-        valid_flow_mask = valid_flow_mask & (flow_norm < max_flow)
+        if valid_flow_mask is not None:
+            valid_flow_mask = valid_flow_mask & (flow_norm < max_flow)
+        else:
+            valid_flow_mask = flow_norm < max_flow
 
-    valid_flow_mask = valid_flow_mask.unsqueeze(1)
+    if valid_flow_mask is not None:
+        valid_flow_mask = valid_flow_mask.unsqueeze(1)
     flow_preds = torch.stack(flow_preds)  # shape = (num_flow_updates, batch_size, 2, H, W)
 
     abs_diff = (flow_preds - flow_gt).abs()
-    abs_diff = (abs_diff * valid_flow_mask).mean(axis=(1, 2, 3, 4))
+    if valid_flow_mask is not None:
+        abs_diff = abs_diff * valid_flow_mask
+
+    abs_diff = abs_diff.mean(axis=(1, 2, 3, 4))
 
     num_predictions = flow_preds.shape[0]
 
@@ -72,7 +79,7 @@ class SequenceLoss(nn.Module):
         # cache the scale factor for the loss
         self._weights = None
 
-    def forward(self, flow_preds: List[Tensor], flow_gt: Tensor, valid_flow_mask: Tensor) -> Tensor:
+    def forward(self, flow_preds: List[Tensor], flow_gt: Tensor, valid_flow_mask: Optional[Tensor]) -> Tensor:
         """
         Args:
             flow_preds: list of flow predictions of shape (batch_size, C, H, W)
@@ -464,14 +471,14 @@ class FlowPhotoMetricLoss(nn.Module):
         )
 
         B, C, H, W = source.shape
-        max_H = int(H * self._max_displacement_ratio)
-        max_W = int(W * self._max_displacement_ratio)
+
+        max_displacements = []
+        for dim in range(C):
+            shape_index = -1 - dim
+            max_displacements.append(int(self._max_displacement_ratio * source.shape[shape_index]))
 
         # mask out all pixels that have larger flow than the max flow allowed
-        max_flow_mask = torch.logical_and(
-            flow_pred[:, 0, :, :] < max_W,
-            flow_pred[:, 1, :, :] < max_H,
-        )
+        max_flow_mask = torch.logical_and(*[flow_pred[:, dim, :, :] < max_displacements[dim] for dim in range(C)])
 
         if valid_mask is not None:
             valid_mask = torch.logical_and(valid_mask, max_flow_mask).unsqueeze(1)
