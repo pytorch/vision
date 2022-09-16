@@ -10,6 +10,7 @@ get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
 
 
+# TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
 def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
     if isinstance(image, features.Image):
         channels = image.num_channels
