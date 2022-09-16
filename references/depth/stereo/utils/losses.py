@@ -471,14 +471,17 @@ class FlowPhotoMetricLoss(nn.Module):
         )
 
         B, C, H, W = source.shape
+        flow_channels = flow_pred.shape[1]
 
         max_displacements = []
-        for dim in range(C):
+        for dim in range(flow_channels):
             shape_index = -1 - dim
             max_displacements.append(int(self._max_displacement_ratio * source.shape[shape_index]))
 
         # mask out all pixels that have larger flow than the max flow allowed
-        max_flow_mask = torch.logical_and(*[flow_pred[:, dim, :, :] < max_displacements[dim] for dim in range(C)])
+        max_flow_mask = torch.logical_and(
+            *[flow_pred[:, dim, :, :] < max_displacements[dim] for dim in range(flow_channels)]
+        )
 
         if valid_mask is not None:
             valid_mask = torch.logical_and(valid_mask, max_flow_mask).unsqueeze(1)
