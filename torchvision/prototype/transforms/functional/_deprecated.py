@@ -24,7 +24,7 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
 
 def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
     old_color_space = (
-        features._image._from_tensor_shape(inpt.shape)
+        features._image._from_tensor_shape(list(inpt.shape))
         if isinstance(inpt, torch.Tensor)
         and (torch.jit.is_scripting() or torch.jit.is_tracing() or not isinstance(inpt, features._Feature))
         else None
