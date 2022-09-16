@@ -11,7 +11,7 @@ from torchvision.prototype.transforms import functional as F
 
 
 def test_coverage():
-    tested = {info.kernel.__name__ for info in KERNEL_INFOS}
+    tested = {info.kernel_name for info in KERNEL_INFOS}
     exposed = {
         name
         for name, kernel in F.__dict__.items()
@@ -79,6 +79,13 @@ def test_coverage():
         }
     }
 
+    needlessly_ignored = tested - exposed
+    if needlessly_ignored:
+        raise pytest.UsageError(
+            f"The kernel(s) {sequence_to_str(sorted(needlessly_ignored), separate_last='and ')} "
+            f"have an associated `KernelInfo` but are ignored by this test."
+        )
+
     untested = exposed - tested
     if untested:
         raise AssertionError(
@@ -92,7 +99,7 @@ class TestCommon:
     sample_inputs = pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
-            pytest.param(info, args_kwargs, id=f"{info.kernel.__name__}")
+            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-")
             for info in KERNEL_INFOS
             for args_kwargs in info.sample_inputs_fn()
         ],
@@ -187,7 +194,7 @@ class TestCommon:
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
-            pytest.param(info, args_kwargs, id=f"{info.kernel.__name__}")
+            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-")
             for info in KERNEL_INFOS
             for args_kwargs in info.reference_inputs_fn()
             if info.reference_fn is not None

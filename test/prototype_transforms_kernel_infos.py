@@ -22,6 +22,9 @@ class KernelInfo:
     # Most common tests use these inputs to check the kernel. As such it should cover all valid code paths, but should
     # not include extensive parameter combinations to keep to overall test count moderate.
     sample_inputs_fn: Callable[[], Iterable[ArgsKwargs]]
+    # Defaults to `kernel.__name__`. Should be set if the function is exposed under a different name
+    # TODO: This can probably be removed after roll-out since we shouldn't have any aliasing then
+    kernel_name: Optional[str] = None
     # This function should mirror the kernel. It should have the same signature as the `kernel` and as such also take
     # tensors as inputs. Any conversion into another object type, e.g. PIL images or numpy arrays, should happen
     # inside the function. It should return a tensor or to be more precise an object that can be compared to a
@@ -34,6 +37,7 @@ class KernelInfo:
     closeness_kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self):
+        self.kernel_name = self.kernel_name or self.kernel.__name__
         self.reference_inputs_fn = self.reference_inputs_fn or self.sample_inputs_fn
 
 
@@ -87,6 +91,7 @@ KERNEL_INFOS.extend(
     [
         KernelInfo(
             F.horizontal_flip_image_tensor,
+            kernel_name="horizontal_flip_image_tensor",
             sample_inputs_fn=sample_inputs_horizontal_flip_image_tensor,
             reference_fn=pil_reference_wrapper(F.horizontal_flip_image_pil),
             reference_inputs_fn=reference_inputs_horizontal_flip_image_tensor,
