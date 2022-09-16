@@ -110,10 +110,8 @@ class _BaseMixupCutmix(_RandomApplyTransform):
     def forward(self, *inputs: Any) -> Any:
         if not (has_any(inputs, features.Image, features.is_simple_tensor) and has_any(inputs, features.OneHotLabel)):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images and one-hot labels.")
-        if has_any(inputs, features.BoundingBox, features.SegmentationMask, features.Label):
-            raise TypeError(
-                f"{type(self).__name__}() does not support bounding boxes, segmentation masks and plain labels."
-            )
+        if has_any(inputs, features.BoundingBox, features.Mask, features.Label):
+            raise TypeError(f"{type(self).__name__}() does not support bounding boxes, masks and plain labels.")
         return super().forward(*inputs)
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
@@ -258,7 +256,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # There is a similar +1 in other reference implementations:
         # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
-        boxes = F.convert_bounding_box_format(
+        boxes = F.convert_format_bounding_box(
             xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
         )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
@@ -267,7 +265,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         out_target["labels"] = torch.cat([labels, paste_labels])
 
         # Check for degenerated boxes and remove them
-        boxes = F.convert_bounding_box_format(
+        boxes = F.convert_format_bounding_box(
             out_target["boxes"], old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY
         )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
@@ -282,7 +280,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
     def _extract_image_targets(self, flat_sample: List[Any]) -> Tuple[List[Any], List[Dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
-        # with List[image], List[BoundingBox], List[SegmentationMask], List[Label]
+        # with List[image], List[BoundingBox], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
             if isinstance(obj, features.Image) or features.is_simple_tensor(obj):
@@ -291,7 +289,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
                 images.append(F.to_image_tensor(obj))
             elif isinstance(obj, features.BoundingBox):
                 bboxes.append(obj)
-            elif isinstance(obj, features.SegmentationMask):
+            elif isinstance(obj, features.Mask):
                 masks.append(obj)
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
                 labels.append(obj)
@@ -299,7 +297,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain equal sized list of Images, "
-                "BoundingBoxes, Segmentation Masks and Labels or OneHotLabels."
+                "BoundingBoxes, Masks and Labels or OneHotLabels."
             )
 
         targets = []
@@ -325,8 +323,8 @@ class SimpleCopyPaste(_RandomApplyTransform):
             elif isinstance(obj, features.BoundingBox):
                 flat_sample[i] = features.BoundingBox.new_like(obj, output_targets[c1]["boxes"])
                 c1 += 1
-            elif isinstance(obj, features.SegmentationMask):
-                flat_sample[i] = features.SegmentationMask.new_like(obj, output_targets[c2]["masks"])
+            elif isinstance(obj, features.Mask):
+                flat_sample[i] = features.Mask.new_like(obj, output_targets[c2]["masks"])
                 c2 += 1
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
                 flat_sample[i] = obj.new_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]

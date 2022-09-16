@@ -335,3 +335,17 @@ class TestHandleLegacyInterface:
 
         with pytest.raises(ValueError, match="weights"):
             builder(pretrained=True, flag=False)
+
+    @pytest.mark.parametrize(
+        "model_fn",
+        [fn for fn in TM.list_model_fns(models) if fn.__name__ not in {"vit_h_14", "regnet_y_128gf"}]
+        + TM.list_model_fns(models.detection)
+        + TM.list_model_fns(models.quantization)
+        + TM.list_model_fns(models.segmentation)
+        + TM.list_model_fns(models.video)
+        + TM.list_model_fns(models.optical_flow),
+    )
+    @run_if_test_with_extended
+    def test_pretrained_deprecation(self, model_fn):
+        with pytest.warns(UserWarning, match="deprecated"):
+            model_fn(pretrained=True)

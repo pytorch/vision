@@ -9,7 +9,7 @@ from ...transforms._presets import VideoClassification
 from ...utils import _log_api_usage_once
 from .._api import register_model, Weights, WeightsEnum
 from .._meta import _KINETICS400_CATEGORIES
-from .._utils import _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -181,10 +181,13 @@ class S3D_Weights(WeightsEnum):
 
 
 @register_model()
+@handle_legacy_interface(weights=("pretrained", S3D_Weights.KINETICS400_V1))
 def s3d(*, weights: Optional[S3D_Weights] = None, progress: bool = True, **kwargs: Any) -> S3D:
     """Construct Separable 3D CNN model.
 
     Reference: `Rethinking Spatiotemporal Feature Learning <https://arxiv.org/abs/1712.04851>`__.
+
+    .. betastatus:: video module
 
     Args:
         weights (:class:`~torchvision.models.video.S3D_Weights`, optional): The
