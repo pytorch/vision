@@ -44,7 +44,9 @@ class VideoReader:
     """
     Fine-grained video-reading API.
     Supports frame-by-frame reading of various streams from a single video
-    container.
+    container. Much like previous video_reader API it supports the following
+    backends: video_reader, pyav, and cuda.
+    Backends can be set via `torchvision.set_video_backend` function.
 
     .. betastatus:: VideoReader class
 
@@ -100,9 +102,6 @@ class VideoReader:
         num_threads (int, optional): number of threads used by the codec to decode video.
             Default value (0) enables multithreading with codec-dependent heuristic. The performance
             will depend on the version of FFMPEG codecs supported.
-
-        device (str, optional): Device to be used for decoding. Defaults to ``"cpu"``.
-            To use GPU decoding, pass ``device="cuda"``.
 
     """
 
@@ -206,6 +205,17 @@ class VideoReader:
         Returns:
             (dict): dictionary containing duration and frame rate for every stream
         """
+        if self.backend == "pyav":
+            metadata = {}
+            for stream in self.container.streams:
+                if stream.type not in metadata:
+                    metadata[stream.type] = {"fps": [], "duration": []}
+                
+                rate = stream.average_rate if stream.average_rate is not None else stream.sample_rate
+                
+                metadata[stream.type]["duration"].append(float(stream.duration*stream.time_base))
+                metadata[stream.type]["fps"].append(float(rate))
+            return metadata
         return self._c.get_metadata()
 
     def set_current_stream(self, stream: str) -> bool:

@@ -117,7 +117,7 @@ class TestVideoApi:
                     assert max_delta.item() < 0.001
 
     @pytest.mark.parametrize("test_video,config", test_videos.items())
-    @pytest.mark.parametrize("backend", ["video_reader"])
+    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
     def test_metadata(self, test_video, config, backend):
         """
         Test that the metadata returned via pyav corresponds to the one returned
