@@ -472,7 +472,7 @@ def _get_distinct_midlevels():
     ],
 )
 def test_scriptable_kernel(kernel):
-    jit.script(kernel)
+    jit.script(kernel)  # TODO: pass data through it
 
 
 @pytest.mark.parametrize(
@@ -493,7 +493,7 @@ def test_scriptable_kernel(kernel):
     ],
 )
 def test_scriptable_midlevel(midlevel):
-    jit.script(midlevel)
+    jit.script(midlevel)  # TODO: pass data through it
 
 
 # Test below is intended to test mid-level op vs low-level ops it calls
