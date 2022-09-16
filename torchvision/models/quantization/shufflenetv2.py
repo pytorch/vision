@@ -312,6 +312,14 @@ def shufflenet_v2_x1_0(
 
 
 @register_model(name="quantized_shufflenet_v2_x1_5")
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ShuffleNet_V2_X1_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1,
+    )
+)
 def shufflenet_v2_x1_5(
     *,
     weights: Optional[Union[ShuffleNet_V2_X1_5_QuantizedWeights, ShuffleNet_V2_X1_5_Weights]] = None,
@@ -358,6 +366,14 @@ def shufflenet_v2_x1_5(
 
 
 @register_model(name="quantized_shufflenet_v2_x2_0")
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ShuffleNet_V2_X2_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1,
+    )
+)
 def shufflenet_v2_x2_0(
     *,
     weights: Optional[Union[ShuffleNet_V2_X2_0_QuantizedWeights, ShuffleNet_V2_X2_0_Weights]] = None,

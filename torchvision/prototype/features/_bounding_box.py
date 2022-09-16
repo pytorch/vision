@@ -65,7 +65,7 @@ class BoundingBox(_Feature):
             format = BoundingBoxFormat.from_str(format.upper())
 
         return BoundingBox.new_like(
-            self, self._F.convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
+            self, self._F.convert_format_bounding_box(self, old_format=self.format, new_format=format), format=format
         )
 
     def horizontal_flip(self) -> BoundingBox:

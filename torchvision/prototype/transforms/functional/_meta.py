@@ -34,14 +34,19 @@ def get_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) 
     return list(get_chw(image))
 
 
-def get_image_num_channels(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> int:
+def get_num_channels(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> int:
     num_channels, *_ = get_chw(image)
     return num_channels
 
 
-def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
-    _, *image_size = get_chw(image)
-    return image_size
+# We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
+# deprecating the old names.
+get_image_num_channels = get_num_channels
+
+
+def get_spatial_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
+    _, *size = get_chw(image)
+    return size
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
@@ -62,7 +67,7 @@ def _cxcywh_to_xyxy(cxcywh: torch.Tensor) -> torch.Tensor:
     y1 = cy - 0.5 * h
     x2 = cx + 0.5 * w
     y2 = cy + 0.5 * h
-    return torch.stack((x1, y1, x2, y2), dim=-1)
+    return torch.stack((x1, y1, x2, y2), dim=-1).to(cxcywh.dtype)
 
 
 def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
@@ -71,10 +76,10 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
     cy = (y1 + y2) / 2
     w = x2 - x1
     h = y2 - y1
-    return torch.stack((cx, cy, w, h), dim=-1)
+    return torch.stack((cx, cy, w, h), dim=-1).to(xyxy.dtype)
 
 
-def convert_bounding_box_format(
+def convert_format_bounding_box(
     bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, copy: bool = True
 ) -> torch.Tensor:
     if new_format == old_format:
@@ -101,10 +106,10 @@ def clamp_bounding_box(
 ) -> torch.Tensor:
     # TODO: (PERF) Possible speed up clamping if we have different implementations for each bbox format.
     # Not sure if they yield equivalent results.
-    xyxy_boxes = convert_bounding_box_format(bounding_box, format, BoundingBoxFormat.XYXY)
+    xyxy_boxes = convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
     xyxy_boxes[..., 0::2].clamp_(min=0, max=image_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=image_size[0])
-    return convert_bounding_box_format(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
+    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
 
 
 def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
