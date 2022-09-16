@@ -172,7 +172,6 @@ class Image(_Feature):
         padding: Union[int, Sequence[int]],
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         padding_mode: str = "constant",
-        fill_for_mask: Optional[Union[int, float]] = None,  # fill_for_mask has a different type vs others on purpose
     ) -> Image:
 
         # This cast does Sequence[int] -> List[int] and is required to make mypy happy
@@ -191,7 +190,6 @@ class Image(_Feature):
         expand: bool = False,
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
-        fill_for_mask: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> Image:
         fill = self._F._geometry._convert_fill_arg(fill)
 
@@ -209,7 +207,6 @@ class Image(_Feature):
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
-        fill_for_mask: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> Image:
         fill = self._F._geometry._convert_fill_arg(fill)
 
@@ -230,7 +227,6 @@ class Image(_Feature):
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
-        fill_for_mask: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> Image:
         fill = self._F._geometry._convert_fill_arg(fill)
 
@@ -244,7 +240,6 @@ class Image(_Feature):
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
-        fill_for_mask: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> Image:
         fill = self._F._geometry._convert_fill_arg(fill)
 

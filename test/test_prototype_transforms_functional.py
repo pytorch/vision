@@ -201,6 +201,10 @@ def pad_image_tensor():
         if padding_mode != "constant" and fill is not None:
             # ValueError: Padding mode 'reflect' is not supported if fill is not scalar
             continue
+
+        if isinstance(fill, list) and len(fill) != image.shape[-3]:
+            continue
+
         yield ArgsKwargs(image, padding=padding, fill=fill, padding_mode=padding_mode)
 
 
