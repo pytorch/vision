@@ -49,24 +49,6 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def vertical_flip_image_tensor():
-    for image in make_images():
-        yield ArgsKwargs(image)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def vertical_flip_bounding_box():
-    for bounding_box in make_bounding_boxes(formats=[features.BoundingBoxFormat.XYXY]):
-        yield ArgsKwargs(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def vertical_flip_mask():
-    for mask in make_masks():
-        yield ArgsKwargs(mask)
-
-
-@register_kernel_info_from_sample_inputs_fn
 def rotate_image_tensor():
     for image, angle, expand, center in itertools.product(
         make_images(),

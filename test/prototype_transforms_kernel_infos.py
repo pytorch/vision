@@ -451,3 +451,49 @@ KERNEL_INFOS.append(
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
     ),
 )
+
+
+def sample_inputs_vertical_flip_image_tensor():
+    for image_loader in make_image_loaders(sizes=["random"], dtypes=[torch.float32]):
+        yield ArgsKwargs(image_loader)
+
+
+def reference_inputs_vertical_flip_image_tensor():
+    for image_loader in make_image_loaders(extra_dims=[()]):
+        yield ArgsKwargs(image_loader)
+
+
+def sample_inputs_vertical_flip_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders(
+        formats=[features.BoundingBoxFormat.XYXY], dtypes=[torch.float32]
+    ):
+        yield ArgsKwargs(
+            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.image_size
+        )
+
+
+def sample_inputs_vertical_flip_mask():
+    for image_loader in make_mask_loaders(sizes=["random"], dtypes=[torch.uint8]):
+        yield ArgsKwargs(image_loader)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.vertical_flip_image_tensor,
+            kernel_name="vertical_flip_image_tensor",
+            sample_inputs_fn=sample_inputs_vertical_flip_image_tensor,
+            reference_fn=pil_reference_wrapper(F.vertical_flip_image_pil),
+            reference_inputs_fn=reference_inputs_vertical_flip_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.vertical_flip_bounding_box,
+            sample_inputs_fn=sample_inputs_vertical_flip_bounding_box,
+        ),
+        KernelInfo(
+            F.vertical_flip_mask,
+            sample_inputs_fn=sample_inputs_vertical_flip_mask,
+        ),
+    ]
+)
