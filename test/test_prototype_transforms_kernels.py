@@ -94,9 +94,9 @@ class TestCommon:
     sample_inputs = pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
-            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-")
+            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-{idx}")
             for info in KERNEL_INFOS
-            for args_kwargs in info.sample_inputs_fn()
+            for idx, args_kwargs in enumerate(info.sample_inputs_fn())
         ],
     )
 
@@ -222,9 +222,9 @@ class TestCommon:
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
-            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-")
+            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-{idx}")
             for info in KERNEL_INFOS
-            for args_kwargs in info.reference_inputs_fn()
+            for idx, args_kwargs in enumerate(info.reference_inputs_fn())
             if info.reference_fn is not None
         ],
     )
