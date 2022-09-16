@@ -67,7 +67,7 @@ KERNEL_INFOS = []
 
 
 def sample_inputs_horizontal_flip_image_tensor():
-    for image_loader in make_image_loaders(sizes=[None], dtypes=[torch.float32]):
+    for image_loader in make_image_loaders(sizes=["random"], dtypes=[torch.float32]):
         yield ArgsKwargs(image_loader)
 
 
@@ -86,7 +86,7 @@ def sample_inputs_horizontal_flip_bounding_box():
 
 
 def sample_inputs_horizontal_flip_mask():
-    for image_loader in make_mask_loaders(sizes=[None], dtypes=[torch.uint8]):
+    for image_loader in make_mask_loaders(sizes=["random"], dtypes=[torch.uint8]):
         yield ArgsKwargs(image_loader)
 
 
@@ -417,7 +417,7 @@ KERNEL_INFOS.append(
 
 def sample_inputs_convert_color_space_image_tensor():
     color_spaces = set(features.ColorSpace) - {features.ColorSpace.OTHER}
-    for image_loader in make_image_loaders(sizes=[None], color_spaces=color_spaces, constant_alpha=True):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=color_spaces, constant_alpha=True):
         old_color_space = image_loader.color_space
         for params in combinations_grid(new_color_space=color_spaces - {old_color_space}, copy=(True, False)):
             yield ArgsKwargs(image_loader, old_color_space=old_color_space, **params)
