@@ -6,14 +6,21 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
-from torchvision.models._api import WeightsEnum
+from ._api import register_model, Weights, WeightsEnum
+from ._meta import _IMAGENET_CATEGORIES
+from ..transforms._presets import ImageClassification, InterpolationMode
 from torchvision.models._utils import _ovewrite_named_param
 from torchvision.ops.misc import Conv2dNormActivation, SqueezeExcitation
 from torchvision.ops.stochastic_depth import StochasticDepth
 from torchvision.utils import _log_api_usage_once
 
+__all__ = [
+    "MaxVit",
+    "MaxVit_T_Weights",
+    "maxvit_t",
+]
 
-def get_relative_position_index(height: int, width: int) -> torch.Tensor:
+def _get_relative_position_index(height: int, width: int) -> torch.Tensor:
     coords = torch.stack(torch.meshgrid([torch.arange(height), torch.arange(width)]))
     coords_flat = torch.flatten(coords, 1)
     relative_coords = coords_flat[:, :, None] - coords_flat[:, None, :]
@@ -23,8 +30,23 @@ def get_relative_position_index(height: int, width: int) -> torch.Tensor:
     relative_coords[:, :, 0] *= 2 * width - 1
     return relative_coords.sum(-1)
 
+torch.fx.wrap("_get_relative_position_index")
+
 
 class MBConv(nn.Module):
+    """MBConv: Mobile Inverted Residual Bottleneck.
+    
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        expansion_ratio (float): Expansion ratio in the bottleneck.
+        squeeze_ratio (float): Squeeze ratio in the SE Layer.
+        stride (int): Stride of the depthwise convolution.
+        activation_fn (Callable[..., nn.Module]): Activation function.
+        normalization_fn (Callable[..., nn.Module]): Normalization function.
+        p_stochastic_dropout (float): Probability of stochastic depth.
+    """
+    
     def __init__(
         self,
         in_channels: int,
@@ -87,12 +109,26 @@ class MBConv(nn.Module):
         self.layers = nn.Sequential(_layers)
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x (Tensor): Input tensor with expected layout of [B, C, H, W].
+        Returns:
+            Tensor: Output tensor with expected layout of [B, C, H / stride, W / stride].
+        """
         res = self.proj(x)
         x = self.stochastic_depth(self.layers(x))
         return res + x
 
 
 class RelativePositionalMultiHeadAttention(nn.Module):
+    """Relative Positional Multi-Head Attention.
+    
+    Args:
+        feat_dim (int): Number of input features.
+        head_dim (int): Number of features per head.
+        max_seq_len (int): Maximum sequence length.
+    """
+    
     def __init__(
         self,
         feat_dim: int,
@@ -117,7 +153,7 @@ class RelativePositionalMultiHeadAttention(nn.Module):
             torch.empty(((2 * self.size - 1) * (2 * self.size - 1), self.n_heads), dtype=torch.float32),
         )
 
-        self.register_buffer("relative_position_index", get_relative_position_index(self.size, self.size))
+        self.register_buffer("relative_position_index", _get_relative_position_index(self.size, self.size))
         # initialize with truncated normal the bias
         torch.nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
@@ -128,6 +164,12 @@ class RelativePositionalMultiHeadAttention(nn.Module):
         return relative_bias.unsqueeze(0)
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x (Tensor): Input tensor with expected layout of [B, G, P, D].
+        Returns:
+            Tensor: Output tensor with expected layout of [B, G, P, D].
+        """
         B, G, P, D = x.shape
         H, DH = self.n_heads, self.head_dim
 
@@ -152,6 +194,8 @@ class RelativePositionalMultiHeadAttention(nn.Module):
 
 
 class SwapAxes(nn.Module):
+    """Permute the axes of a tensor."""
+    
     def __init__(self, a: int, b: int) -> None:
         super().__init__()
         self.a = a
@@ -164,14 +208,20 @@ class SwapAxes(nn.Module):
 
 class WindowPartition(nn.Module):
     """
-    Function that takes in a tensor of shape [B, C, H, W] and partitions it
-    in to a tensor of shape [B, H/P, W/P, P*P, C]
+    Partition the input tensor into non-overlapping windows.
     """
-
+    
     def __init__(self) -> None:
         super().__init__()
 
     def forward(self, x: Tensor, p: int) -> Tensor:
+        """
+        Args:
+            x (Tensor): Input tensor with expected layout of [B, C, H, W].
+            p (int): Number of partitions.
+        Returns:
+            Tensor: Output tensor with expected layout of [B, H/P, W/P, P*P, C].
+        """
         B, C, H, W = x.shape
         P = p
         # chunk up H and W dimensions
@@ -184,14 +234,22 @@ class WindowPartition(nn.Module):
 
 class WindowDepartition(nn.Module):
     """
-    Function that takes in a tensor of shape [B, H/P, W/P, P*P, C]
-    and partitions it into a tensor of shape [B, C, H, W]
+    Departition the input tensor of non-overlapping windows into a feature volume of layout [B, C, H, W].
     """
 
     def __init__(self) -> None:
         super().__init__()
 
     def forward(self, x: Tensor, p: int, h_partitions: int, w_partitions: int) -> Tensor:
+        """
+        Args:
+            x (Tensor): Input tensor with expected layout of [B, (H/P * W/P), P*P, C].
+            p (int): Number of partitions.
+            h_partitions (int): Number of vertical partitions.
+            w_partitions (int): Number of horizontal partitions.
+        Returns:
+            Tensor: Output tensor with expected layout of [B, C, H, W].
+        """
         B, G, PP, C = x.shape
         P = p
         HP, WP = h_partitions, w_partitions
@@ -205,6 +263,23 @@ class WindowDepartition(nn.Module):
 
 
 class PartitionAttentionLayer(nn.Module):
+    """
+    Layer for partitioning the input tensor into non-overlapping windows and applying attention to each window.
+    
+    Args:
+        in_channels (int): Number of input channels.
+        head_dim (int): Dimension of each attention head.
+        partition_size (int): Size of the partitions.
+        partition_type (str): Type of partitioning to use. Can be either "grid" or "window".
+        grid_size (Tuple[int, int]): Size of the grid to partition the input tensor into.
+        mlp_ratio (int): Ratio of the  feature size expansion in the MLP layer.
+        activation_fn (Callable[..., nn.Module]): Activation function to use.
+        normalization_fn (Callable[..., nn.Module]): Normalization function to use.
+        attn_dropout (float): Dropout probability for the attention layer.
+        mlp_dropout (float): Dropout probability for the MLP layer.
+        p_stochastic_dropout (float): Probability of dropping out a partition.
+    """
+    
     def __init__(
         self,
         in_channels: int,
@@ -264,6 +339,12 @@ class PartitionAttentionLayer(nn.Module):
         self.stochastic_dropout = StochasticDepth(p_stochastic_dropout, mode="row")
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x (Tensor): Input tensor with expected layout of [B, C, H, W].
+        Returns:
+            Tensor: Output tensor with expected layout of [B, C, H, W].
+        """
         B, C, H, W = x.shape
 
         # Undefined behavior if H or W are not divisible by p
@@ -286,6 +367,26 @@ class PartitionAttentionLayer(nn.Module):
 
 
 class MaxVitLayer(nn.Module):
+    """
+    MaxVit layer consisting of a MBConv layer followed by a PartitionAttentionLayer with `window` and a PartitionAttentionLayer with `grid`.
+    
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        expansion_ratio (float): Expansion ratio in the bottleneck.
+        squeeze_ratio (float): Squeeze ratio in the SE Layer.
+        stride (int): Stride of the depthwise convolution.
+        activation_fn (Callable[..., nn.Module]): Activation function.
+        normalization_fn (Callable[..., nn.Module]): Normalization function.
+        head_dim (int): Dimension of the attention heads.
+        mlp_ratio (int): Ratio of the MLP layer.
+        mlp_dropout (float): Dropout probability for the MLP layer.
+        attn_dropout (float): Dropout probability for the attention layer.
+        p_stochastic_dropout (float): Probability of stochastic depth.
+        partition_size (int): Size of the partitions.
+        grid_size (Tuple[int, int]): Size of the input feature grid.
+    """
+    
     def __init__(
         self,
         # conv parameters
@@ -352,11 +453,38 @@ class MaxVitLayer(nn.Module):
         self.layers = nn.Sequential(layers)
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x (Tensor): Input tensor of shape (B, C, H, W).
+        Returns:
+            Tensor: Output tensor of shape (B, C, H, W).
+        """
         x = self.layers(x)
         return x
 
 
 class MaxVitBlock(nn.Module):
+    """
+    A MaxVit block consisting of `n_layers` MaxVit layers.
+    
+     Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        expansion_ratio (float): Expansion ratio in the bottleneck.
+        squeeze_ratio (float): Squeeze ratio in the SE Layer.
+        activation_fn (Callable[..., nn.Module]): Activation function.
+        normalization_fn (Callable[..., nn.Module]): Normalization function.
+        head_dim (int): Dimension of the attention heads.
+        mlp_ratio (int): Ratio of the MLP layer.
+        mlp_dropout (float): Dropout probability for the MLP layer.
+        attn_dropout (float): Dropout probability for the attention layer.
+        p_stochastic_dropout (float): Probability of stochastic depth.
+        partition_size (int): Size of the partitions.
+        input_grid_size (Tuple[int, int]): Size of the input feature grid.
+        n_layers (int): Number of layers in the block.
+        p_stochastic (List[float]): List of probabilities for stochastic depth for each layer.
+    """
+    
     def __init__(
         self,
         # conv parameters
@@ -409,12 +537,39 @@ class MaxVitBlock(nn.Module):
             ]
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x (Tensor): Input tensor of shape (B, C, H, W).
+        Returns:
+            Tensor: Output tensor of shape (B, C, H, W).
+        """
         for layer in self.layers:
             x = layer(x)
         return x
 
 
 class MaxVit(nn.Module):
+    """
+    Implements MaxVit Transformer from the `MaxViT: Multi-Axis Vision Transformer <https://arxiv.org/abs/2204.01697>`_ paper.
+    Args:
+        input_size (Tuple[int, int]): Size of the input image.
+        input_channels (int): Number of input channels.
+        stem_channels (int): Number of channels in the stem.
+        num_classes (int): Number of classes.
+        block_channels (List[int]): Number of channels in each block.
+        block_layers (List[int]): Number of layers in each block.
+        stochastic_depth_prob (float): Probability of stochastic depth. Expands to a list of probabilities for each layer that scales linearly to the specified value.
+        squeeze_ratio (float): Squeeze ratio in the SE Layer.
+        expansion_ratio (float): Expansion ratio in the MBConv bottleneck.
+        normalization_fn (Callable[..., nn.Module]): Normalization function.
+        activation_fn (Callable[..., nn.Module]): Activation function.
+        head_dim (int): Dimension of the attention heads.
+        mlp_ratio (int): Expansion ratio of the MLP layer.
+        mlp_dropout (float): Dropout probability for the MLP layer.
+        attn_dropout (float): Dropout probability for the attention layer.
+        partition_size (int): Size of the partitions.
+    """
+    
     def __init__(
         self,
         # input size parameters
@@ -534,11 +689,10 @@ class MaxVit(nn.Module):
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
-
+@register_model()
 def _maxvit(
-    # stem and task parameters
+    # stem parameters
     stem_channels: int,
-    num_classes: int,
     # block parameters
     block_channels: List[int],
     block_layers: List[int],
@@ -561,14 +715,17 @@ def _maxvit(
     # Weights API
     weights: Optional[WeightsEnum],
     progress: bool,
+    # task parameters
+    num_classes: int = 1000,
     # kwargs,
     **kwargs,
 ) -> MaxVit:
+    print(weights)
+    
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
-        _ovewrite_named_param(kwargs, "input_size", weights.meta["min_size"][0])
-        _ovewrite_named_param(kwargs, "input_channels", weights.meta["input_channels"])
+        _ovewrite_named_param(kwargs, "input_size", weights.meta["min_size"])
 
     input_size = kwargs.pop("input_size", (224, 224))
     input_channels = kwargs.pop("input_channels", 3)
@@ -597,8 +754,58 @@ def _maxvit(
 
     return model
 
+_COMMON_META = {
+    "categories": _IMAGENET_CATEGORIES,
+}
 
-def maxvit_t(*, weights: Optional[WeightsEnum] = None, progress: bool = True, **kwargs: Any) -> MaxVit:
+class MaxVit_T_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        # URL empty until official release
+        url="",
+        transforms=partial(
+            ImageClassification, crop_size=224, resize_size=224, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META,
+            "num_params": 30919624,
+            "min_size": (224, 224),
+            # Recipe empty until official release
+            "recipe": "",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.700,
+                    "acc@5": 96.722,
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+@register_model()
+def maxvit_t(*, weights: Optional[MaxVit_T_Weights] = None, progress: bool = True, **kwargs: Any) -> MaxVit:
+    """
+    Constructs a maxvit_t architecture from
+    `MaxViT: Multi-Axis Vision Transformer <https://arxiv.org/abs/2204.01697>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.MaxVit_T_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MaxVit_T_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.maxvit.MaxVit``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/maxvit.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.MaxVit_T_Weights
+        :members:
+    """
+    weights = MaxVit_T_Weights.verify(weights)
+    
     return _maxvit(
         stem_channels=64,
         block_channels=[64, 128, 256, 512],
@@ -619,7 +826,3 @@ def maxvit_t(*, weights: Optional[WeightsEnum] = None, progress: bool = True, **
         progress=progress,
         **kwargs,
     )
-
-
-class MaxVit_T_Weights(WeightsEnum):
-    pass
