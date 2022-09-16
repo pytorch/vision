@@ -78,7 +78,7 @@ class Image(_Feature):
         image = super().__new__(cls, data, requires_grad=requires_grad)
 
         if color_space is None:
-            color_space = ColorSpace.from_tensor_shape(image.shape)
+            color_space = ColorSpace.from_tensor_shape(image.shape)  # type: ignore[arg-type]
             if color_space == ColorSpace.OTHER:
                 warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
         elif isinstance(color_space, str):
