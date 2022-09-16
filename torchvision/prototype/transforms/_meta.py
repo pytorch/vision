@@ -17,7 +17,7 @@ class ConvertBoundingBoxFormat(Transform):
         self.format = format
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
-        output = F.convert_bounding_box_format(inpt, old_format=inpt.format, new_format=params["format"])
+        output = F.convert_format_bounding_box(inpt, old_format=inpt.format, new_format=params["format"])
         return features.BoundingBox.new_like(inpt, output, format=params["format"])
 
 
