@@ -128,6 +128,7 @@ class QuantizableInception3(inception_module.Inception3):
         num_classes: int = 1000,
         aux_logits: bool = True,
         transform_input: bool = False,
+        init_weights: Optional[bool] = None,
     ) -> None:
         super().__init__(
             num_classes=num_classes,
@@ -142,6 +143,7 @@ class QuantizableInception3(inception_module.Inception3):
                 QuantizableInceptionE,
                 QuantizableInceptionAux,
             ],
+            init_weights=init_weights,
         )
         self.quant = torch.ao.quantization.QuantStub()
         self.dequant = torch.ao.quantization.DeQuantStub()

@@ -317,7 +317,6 @@ _model_params = {
         "input_shape": (1, 3, 16, 224, 224),
     },
     "googlenet": {
-        "num_classes": 50,
         "init_weights": True,
     },
 }
