@@ -38,7 +38,7 @@ class _AutoAugmentBase(Transform):
     def _extract_image(
         self,
         sample: Any,
-        unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask),
+        unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.Mask),
     ) -> Tuple[int, Union[PIL.Image.Image, torch.Tensor, features.Image]]:
         sample_flat, _ = tree_flatten(sample)
         images = []
@@ -487,7 +487,7 @@ class AugMix(_AutoAugmentBase):
         if isinstance(orig_image, torch.Tensor):
             image = orig_image
         else:  # isinstance(inpt, PIL.Image.Image):
-            image = F.to_image_tensor(orig_image)
+            image = F.pil_to_tensor(orig_image)
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
