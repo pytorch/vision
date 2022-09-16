@@ -606,7 +606,7 @@ def pad_image_tensor(
 def _pad_with_scalar_fill(
     img: torch.Tensor,
     padding: Union[int, List[int]],
-    fill: Optional[Union[int, float]] = None,
+    fill: Union[int, float, None],
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     num_channels, height, width = img.shape[-3:]
