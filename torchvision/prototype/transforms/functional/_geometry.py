@@ -17,7 +17,7 @@ from torchvision.transforms.functional import (
 )
 from torchvision.transforms.functional_tensor import _parse_pad_padding
 
-from ._meta import convert_bounding_box_format, get_dimensions_image_pil, get_dimensions_image_tensor
+from ._meta import convert_format_bounding_box, get_dimensions_image_pil, get_dimensions_image_tensor
 
 
 # shortcut type
@@ -28,8 +28,8 @@ horizontal_flip_image_tensor = _FT.hflip
 horizontal_flip_image_pil = _FP.hflip
 
 
-def horizontal_flip_segmentation_mask(segmentation_mask: torch.Tensor) -> torch.Tensor:
-    return horizontal_flip_image_tensor(segmentation_mask)
+def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
+    return horizontal_flip_image_tensor(mask)
 
 
 def horizontal_flip_bounding_box(
@@ -37,13 +37,13 @@ def horizontal_flip_bounding_box(
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
-    bounding_box = convert_bounding_box_format(
+    bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
     bounding_box[:, [0, 2]] = image_size[1] - bounding_box[:, [2, 0]]
 
-    return convert_bounding_box_format(
+    return convert_format_bounding_box(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
 
@@ -61,8 +61,8 @@ vertical_flip_image_tensor = _FT.vflip
 vertical_flip_image_pil = _FP.vflip
 
 
-def vertical_flip_segmentation_mask(segmentation_mask: torch.Tensor) -> torch.Tensor:
-    return vertical_flip_image_tensor(segmentation_mask)
+def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
+    return vertical_flip_image_tensor(mask)
 
 
 def vertical_flip_bounding_box(
@@ -70,13 +70,13 @@ def vertical_flip_bounding_box(
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
-    bounding_box = convert_bounding_box_format(
+    bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
     bounding_box[:, [1, 3]] = image_size[0] - bounding_box[:, [3, 1]]
 
-    return convert_bounding_box_format(
+    return convert_format_bounding_box(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
 
@@ -132,10 +132,19 @@ def resize_image_pil(
     return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation])
 
 
-def resize_segmentation_mask(
-    segmentation_mask: torch.Tensor, size: List[int], max_size: Optional[int] = None
-) -> torch.Tensor:
-    return resize_image_tensor(segmentation_mask, size=size, interpolation=InterpolationMode.NEAREST, max_size=max_size)
+def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
+    if mask.ndim < 3:
+        mask = mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = resize_image_tensor(mask, size=size, interpolation=InterpolationMode.NEAREST, max_size=max_size)
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def resize_bounding_box(
@@ -144,7 +153,7 @@ def resize_bounding_box(
     old_height, old_width = image_size
     new_height, new_width = _compute_resized_output_size(image_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
-    return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
+    return bounding_box.view(-1, 2, 2).mul(ratios).to(bounding_box.dtype).view(bounding_box.shape)
 
 
 def resize(
@@ -339,7 +348,7 @@ def _affine_bounding_box_xyxy(
         out_bboxes[:, 0::2] = out_bboxes[:, 0::2] - tr[:, 0]
         out_bboxes[:, 1::2] = out_bboxes[:, 1::2] - tr[:, 1]
 
-    return out_bboxes
+    return out_bboxes.to(bounding_box.dtype)
 
 
 def affine_bounding_box(
@@ -353,7 +362,7 @@ def affine_bounding_box(
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     original_shape = bounding_box.shape
-    bounding_box = convert_bounding_box_format(
+    bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
@@ -361,12 +370,12 @@ def affine_bounding_box(
 
     # out_bboxes should be of shape [N boxes, 4]
 
-    return convert_bounding_box_format(
+    return convert_format_bounding_box(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
 
 
-def affine_segmentation_mask(
+def affine_mask(
     mask: torch.Tensor,
     angle: float,
     translate: List[float],
@@ -374,7 +383,13 @@ def affine_segmentation_mask(
     shear: List[float],
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    return affine_image_tensor(
+    if mask.ndim < 3:
+        mask = mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = affine_image_tensor(
         mask,
         angle=angle,
         translate=translate,
@@ -383,6 +398,11 @@ def affine_segmentation_mask(
         interpolation=InterpolationMode.NEAREST,
         center=center,
     )
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def _convert_fill_arg(fill: Optional[Union[int, float, Sequence[int], Sequence[float]]]) -> Optional[List[float]]:
@@ -447,7 +467,7 @@ def rotate_image_tensor(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Optional[List[float]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     num_channels, height, width = img.shape[-3:]
@@ -510,30 +530,41 @@ def rotate_bounding_box(
         center = None
 
     original_shape = bounding_box.shape
-    bounding_box = convert_bounding_box_format(
+    bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
     out_bboxes = _affine_bounding_box_xyxy(bounding_box, image_size, angle=-angle, center=center, expand=expand)
 
-    return convert_bounding_box_format(
+    return convert_format_bounding_box(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
 
 
-def rotate_segmentation_mask(
-    img: torch.Tensor,
+def rotate_mask(
+    mask: torch.Tensor,
     angle: float,
     expand: bool = False,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    return rotate_image_tensor(
-        img,
+    if mask.ndim < 3:
+        mask = mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = rotate_image_tensor(
+        mask,
         angle=angle,
         expand=expand,
         interpolation=InterpolationMode.NEAREST,
         center=center,
     )
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def rotate(
@@ -604,10 +635,24 @@ def _pad_with_vector_fill(
     return output
 
 
-def pad_segmentation_mask(
-    segmentation_mask: torch.Tensor, padding: Union[int, List[int]], padding_mode: str = "constant"
+def pad_mask(
+    mask: torch.Tensor,
+    padding: Union[int, List[int]],
+    padding_mode: str = "constant",
+    fill: Optional[Union[int, float]] = 0,
 ) -> torch.Tensor:
-    return pad_image_tensor(img=segmentation_mask, padding=padding, fill=0, padding_mode=padding_mode)
+    if mask.ndim < 3:
+        mask = mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = pad_image_tensor(img=mask, padding=padding, fill=fill, padding_mode=padding_mode)
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def pad_bounding_box(
@@ -664,7 +709,7 @@ def crop_bounding_box(
     top: int,
     left: int,
 ) -> torch.Tensor:
-    bounding_box = convert_bounding_box_format(
+    bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     )
 
@@ -672,13 +717,13 @@ def crop_bounding_box(
     bounding_box[..., 0::2] -= left
     bounding_box[..., 1::2] -= top
 
-    return convert_bounding_box_format(
+    return convert_format_bounding_box(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     )
 
 
-def crop_segmentation_mask(img: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
-    return crop_image_tensor(img, top, left, height, width)
+def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
+    return crop_image_tensor(mask, top, left, height, width)
 
 
 def crop(inpt: DType, top: int, left: int, height: int, width: int) -> DType:
@@ -718,7 +763,7 @@ def perspective_bounding_box(
         raise ValueError("Argument perspective_coeffs should have 8 float values")
 
     original_shape = bounding_box.shape
-    bounding_box = convert_bounding_box_format(
+    bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
@@ -784,19 +829,30 @@ def perspective_bounding_box(
     transformed_points = transformed_points.view(-1, 4, 2)
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
-    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
+    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     # out_bboxes should be of shape [N boxes, 4]
 
-    return convert_bounding_box_format(
+    return convert_format_bounding_box(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
 
 
-def perspective_segmentation_mask(mask: torch.Tensor, perspective_coeffs: List[float]) -> torch.Tensor:
-    return perspective_image_tensor(
+def perspective_mask(mask: torch.Tensor, perspective_coeffs: List[float]) -> torch.Tensor:
+    if mask.ndim < 3:
+        mask = mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = perspective_image_tensor(
         mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST
     )
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def perspective(
@@ -849,7 +905,7 @@ def elastic_bounding_box(
     displacement = displacement.to(bounding_box.device)
 
     original_shape = bounding_box.shape
-    bounding_box = convert_bounding_box_format(
+    bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
@@ -873,15 +929,26 @@ def elastic_bounding_box(
     transformed_points = transformed_points.view(-1, 4, 2)
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
-    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
+    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
-    return convert_bounding_box_format(
+    return convert_format_bounding_box(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
 
 
-def elastic_segmentation_mask(mask: torch.Tensor, displacement: torch.Tensor) -> torch.Tensor:
-    return elastic_image_tensor(mask, displacement=displacement, interpolation=InterpolationMode.NEAREST)
+def elastic_mask(mask: torch.Tensor, displacement: torch.Tensor) -> torch.Tensor:
+    if mask.ndim < 3:
+        mask = mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = elastic_image_tensor(mask, displacement=displacement, interpolation=InterpolationMode.NEAREST)
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def elastic(
@@ -972,8 +1039,19 @@ def center_crop_bounding_box(
     return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left)
 
 
-def center_crop_segmentation_mask(segmentation_mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
-    return center_crop_image_tensor(img=segmentation_mask, output_size=output_size)
+def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
+    if mask.ndim < 3:
+        mask = mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = center_crop_image_tensor(img=mask, output_size=output_size)
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def center_crop(inpt: DType, output_size: List[int]) -> DType:
@@ -1025,7 +1103,7 @@ def resized_crop_bounding_box(
     return resize_bounding_box(bounding_box, size, (height, width))
 
 
-def resized_crop_segmentation_mask(
+def resized_crop_mask(
     mask: torch.Tensor,
     top: int,
     left: int,
@@ -1033,8 +1111,8 @@ def resized_crop_segmentation_mask(
     width: int,
     size: List[int],
 ) -> torch.Tensor:
-    mask = crop_segmentation_mask(mask, top, left, height, width)
-    return resize_segmentation_mask(mask, size)
+    mask = crop_mask(mask, top, left, height, width)
+    return resize_mask(mask, size)
 
 
 def resized_crop(

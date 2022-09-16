@@ -7,6 +7,7 @@ from ._stereo_matching import (
     InStereo2k,
     Kitti2012Stereo,
     Kitti2015Stereo,
+    Middlebury2014Stereo,
     SceneFlowStereo,
     SintelStereo,
 )
@@ -119,6 +120,7 @@ __all__ = (
     "Kitti2012Stereo",
     "Kitti2015Stereo",
     "CarlaStereo",
+    "Middlebury2014Stereo",
     "CREStereo",
     "FallingThingsStereo",
     "SceneFlowStereo",
