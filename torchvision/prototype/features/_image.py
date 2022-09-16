@@ -177,9 +177,7 @@ class Image(_Feature):
         if not isinstance(padding, int):
             padding = list(padding)
 
-        # This cast does Sequence -> List and is required to make mypy happy
-        if not (fill is None or isinstance(fill, (int, float))):
-            fill = list(fill)
+        fill = self._F._geometry._convert_fill_arg(fill)
 
         output = self._F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
         return Image.new_like(self, output)

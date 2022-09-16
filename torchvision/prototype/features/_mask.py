@@ -58,6 +58,8 @@ class Mask(_Feature):
         if not isinstance(padding, int):
             padding = list(padding)
 
+        fill = self._F._geometry._convert_fill_arg(fill)
+
         output = self._F.pad_mask(self, padding, padding_mode=padding_mode, fill=fill)
         return Mask.new_like(self, output)
 

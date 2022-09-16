@@ -594,7 +594,7 @@ def pad_image_tensor(
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     if fill is None:
-        # This JIT workaround
+        # This is a JIT workaround
         return _pad_with_scalar_fill(img, padding, fill=None, padding_mode=padding_mode)
     elif isinstance(fill, (int, float)) or len(fill) == 1:
         fill_number = fill[0] if isinstance(fill, list) else fill
@@ -714,9 +714,7 @@ def pad(
         if not isinstance(padding, int):
             padding = list(padding)
 
-        # This cast does Sequence -> List and is required to make mypy happy
-        if not (fill is None or isinstance(fill, (int, float))):
-            fill = list(fill)
+        fill = _convert_fill_arg(fill)
 
         return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
 
