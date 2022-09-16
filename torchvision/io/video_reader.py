@@ -1,5 +1,5 @@
-from typing import Any, Dict, Iterator
 import warnings
+from typing import Any, Dict, Iterator
 
 import torch
 
@@ -16,6 +16,7 @@ else:
 
     def _has_video_opt() -> bool:
         return False
+
 
 try:
     import av
@@ -37,7 +38,8 @@ except ImportError:
 PyAV is not installed, and is necessary for the video operations in torchvision.
 See https://github.com/mikeboers/PyAV#installation for instructions on how to
 install PyAV on your system.
-""")
+"""
+    )
 
 
 class VideoReader:
@@ -108,19 +110,20 @@ class VideoReader:
     def __init__(self, path: str, stream: str = "video", num_threads: int = 0) -> None:
         _log_api_usage_once(self)
         from .. import get_video_backend
+
         self.backend = get_video_backend()
         print("Initiated the backend", self.backend)
         if self.backend == "cuda":
             device = torch.device("cuda")
             self._c = torch.classes.torchvision.GPUDecoder(path, device)
             return
-    
+
         elif self.backend == "video_reader":
             self._c = torch.classes.torchvision.Video(path, stream, num_threads)
-        
+
         elif self.backend == "pyav":
             self.container = av.open(path, metadata_errors="ignore")
-            #TODO: load metadata
+            # TODO: load metadata
             stream_type = stream.split(":")[0]
             stream_id = 0 if len(stream.split(":")) == 1 else int(stream.split(":")[1])
             self.pyav_stream = {stream_type: stream_id}
@@ -129,8 +132,7 @@ class VideoReader:
             # TODO: add extradata exception
 
         else:
-            raise RuntimeError("Unknown video backend: {}".format(self.backend))        
-
+            raise RuntimeError("Unknown video backend: {}".format(self.backend))
 
     def __next__(self) -> Dict[str, Any]:
         """Decodes and returns the next frame of the current stream.
@@ -163,7 +165,7 @@ class VideoReader:
                     frame = None
             except av.error.EOFError:
                 raise StopIteration
-        
+
         if frame.numel() == 0:
             raise StopIteration
 
@@ -210,10 +212,10 @@ class VideoReader:
             for stream in self.container.streams:
                 if stream.type not in metadata:
                     metadata[stream.type] = {"fps": [], "duration": []}
-                
+
                 rate = stream.average_rate if stream.average_rate is not None else stream.sample_rate
-                
-                metadata[stream.type]["duration"].append(float(stream.duration*stream.time_base))
+
+                metadata[stream.type]["duration"].append(float(stream.duration * stream.time_base))
                 metadata[stream.type]["fps"].append(float(rate))
             return metadata
         return self._c.get_metadata()
