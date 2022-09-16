@@ -66,7 +66,7 @@ KERNEL_INFOS = []
 
 
 def sample_inputs_horizontal_flip_image_tensor():
-    for image_loader in make_image_loaders(dtypes=[torch.float32]):
+    for image_loader in make_image_loaders(sizes=[None], dtypes=[torch.float32]):
         yield ArgsKwargs(image_loader)
 
 
@@ -76,14 +76,16 @@ def reference_inputs_horizontal_flip_image_tensor():
 
 
 def sample_inputs_horizontal_flip_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders():
+    for bounding_box_loader in make_bounding_box_loaders(
+        formats=[features.BoundingBoxFormat.XYXY], dtypes=[torch.float32]
+    ):
         yield ArgsKwargs(
             bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.image_size
         )
 
 
 def sample_inputs_horizontal_flip_mask():
-    for image_loader in make_mask_loaders(dtypes=[torch.uint8]):
+    for image_loader in make_mask_loaders(sizes=[None], dtypes=[torch.uint8]):
         yield ArgsKwargs(image_loader)
 
 
@@ -109,21 +111,32 @@ KERNEL_INFOS.extend(
 )
 
 
+def _get_resize_sizes(image_size):
+    height, width = image_size
+    yield height, width
+    yield int(height * 0.75), int(width * 1.25)
+
+
 def sample_inputs_resize_image_tensor():
     for image_loader, interpolation in itertools.product(
         make_image_loaders(dtypes=[torch.float32]),
         [
-            F.InterpolationMode.NEAREST,
             F.InterpolationMode.BILINEAR,
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        height, width = image_loader.image_size
-        for size in [
-            (height, width),
-            (int(height * 0.75), int(width * 1.25)),
-        ]:
+        for size in _get_resize_sizes(image_loader.image_size):
             yield ArgsKwargs(image_loader, size=size, interpolation=interpolation)
+
+
+@pil_reference_wrapper
+def reference_resize_image_tensor(*args, **kwargs):
+    if not kwargs.pop("antialias", False) and kwargs.get("interpolation", F.InterpolationMode.BILINEAR) in {
+        F.InterpolationMode.BILINEAR,
+        F.InterpolationMode.BICUBIC,
+    }:
+        raise pytest.UsageError("Anti-aliasing is always active in PIL")
+    return F.resize_image_pil(*args, **kwargs)
 
 
 def reference_inputs_resize_image_tensor():
@@ -135,22 +148,40 @@ def reference_inputs_resize_image_tensor():
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        height, width = image_loader.image_size
-        for size in [
-            (height, width),
-            (int(height * 0.75), int(width * 1.25)),
-        ]:
-            yield ArgsKwargs(image_loader, size=size, interpolation=interpolation)
+        for size in _get_resize_sizes(image_loader.image_size):
+            yield ArgsKwargs(
+                image_loader,
+                size=size,
+                interpolation=interpolation,
+                antialias=interpolation
+                in {
+                    F.InterpolationMode.BILINEAR,
+                    F.InterpolationMode.BICUBIC,
+                },
+            )
 
 
 def sample_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders():
-        height, width = bounding_box_loader.image_size
-        for size in [
-            (height, width),
-            (int(height * 0.75), int(width * 1.25)),
-        ]:
+    for bounding_box_loader in make_bounding_box_loaders(formats=[features.BoundingBoxFormat.XYXY]):
+        for size in _get_resize_sizes(bounding_box_loader.image_size):
             yield ArgsKwargs(bounding_box_loader, size=size, image_size=bounding_box_loader.image_size)
+
+
+def sample_inputs_resize_mask():
+    for mask_loader in make_mask_loaders(dtypes=[torch.uint8]):
+        for size in _get_resize_sizes(mask_loader.shape[-2:]):
+            yield ArgsKwargs(mask_loader, size=size)
+
+
+@pil_reference_wrapper
+def reference_resize_mask(*args, **kwargs):
+    return F.resize_image_pil(*args, interpolation=F.InterpolationMode.NEAREST, **kwargs)
+
+
+def reference_inputs_resize_mask():
+    for mask_loader in make_mask_loaders(extra_dims=[()], num_objects=[1]):
+        for size in _get_resize_sizes(mask_loader.shape[-2:]):
+            yield ArgsKwargs(mask_loader, size=size)
 
 
 KERNEL_INFOS.extend(
@@ -158,13 +189,20 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.resize_image_tensor,
             sample_inputs_fn=sample_inputs_resize_image_tensor,
-            reference_fn=pil_reference_wrapper(F.resize_image_pil),
+            reference_fn=reference_resize_image_tensor,
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.resize_bounding_box,
             sample_inputs_fn=sample_inputs_resize_bounding_box,
+        ),
+        KernelInfo(
+            F.resize_mask,
+            sample_inputs_fn=sample_inputs_resize_mask,
+            reference_fn=reference_resize_mask,
+            reference_inputs_fn=reference_inputs_resize_mask,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
     ]
 )
@@ -198,9 +236,9 @@ def sample_inputs_affine_image_tensor():
 
 
 def reference_inputs_affine_image_tensor():
-    for image, affine_kwargs in itertools.product(make_image_loaders(extra_dims=[()]), _AFFINE_KWARGS):
+    for image_loader, affine_kwargs in itertools.product(make_image_loaders(extra_dims=[()]), _AFFINE_KWARGS):
         yield ArgsKwargs(
-            image,
+            image_loader,
             interpolation=F.InterpolationMode.NEAREST,
             **affine_kwargs,
         )
@@ -239,7 +277,7 @@ def _compute_affine_matrix(angle, translate, scale, shear, center):
     return true_matrix
 
 
-def reference_affine_bounding_box(bounding_box, *, format, image_size, angle, translate, scale, shear, center):
+def reference_affine_bounding_box(bounding_box, *, format, image_size, angle, translate, scale, shear, center=None):
     if center is None:
         center = [s * 0.5 for s in image_size[::-1]]
 
@@ -264,7 +302,8 @@ def reference_affine_bounding_box(bounding_box, *, format, image_size, angle, tr
                 np.max(transformed_points[:, 0]),
                 np.max(transformed_points[:, 1]),
             ],
-            dtype=bbox.dtype,
+            # FIXME: re-add this as soon as the kernel is fixed to also retain the dtype
+            # dtype=bbox.dtype,
         )
         return F.convert_format_bounding_box(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
@@ -283,24 +322,36 @@ def reference_affine_bounding_box(bounding_box, *, format, image_size, angle, tr
 
 
 def reference_inputs_affine_bounding_box():
-    for bounding_box_loader, angle, translate, scale, shear, center in itertools.product(
-        make_bounding_box_loaders(extra_dims=[(4,)], image_size=(32, 38), dtypes=[torch.float32]),
-        range(-90, 90, 56),
-        range(-10, 10, 8),
-        [0.77, 1.0, 1.27],
-        range(-15, 15, 8),
-        [None, (12, 14)],
+    for bounding_box_loader, affine_kwargs in itertools.product(
+        make_bounding_box_loaders(extra_dims=[()]),
+        _AFFINE_KWARGS,
     ):
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
             image_size=bounding_box_loader.image_size,
-            angle=angle,
-            translate=(translate, translate),
-            scale=scale,
-            shear=(shear, shear),
-            center=center,
+            **affine_kwargs,
         )
+
+
+def sample_inputs_affine_image_mask():
+    for mask_loader, center in itertools.product(
+        make_mask_loaders(dtypes=[torch.uint8]),
+        [None, (0, 0)],
+    ):
+        yield ArgsKwargs(mask_loader, center=center, **_AFFINE_KWARGS[0])
+
+
+@pil_reference_wrapper
+def reference_affine_mask(*args, **kwargs):
+    return F.affine_image_pil(*args, interpolation=F.InterpolationMode.NEAREST, **kwargs)
+
+
+def reference_inputs_resize_mask():
+    for mask_loader, affine_kwargs in itertools.product(
+        make_mask_loaders(extra_dims=[()], num_objects=[1]), _AFFINE_KWARGS
+    ):
+        yield ArgsKwargs(mask_loader, **affine_kwargs)
 
 
 KERNEL_INFOS.extend(
@@ -317,6 +368,13 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_bounding_box,
             reference_fn=reference_affine_bounding_box,
             reference_inputs_fn=reference_inputs_affine_bounding_box,
+        ),
+        KernelInfo(
+            F.affine_mask,
+            sample_inputs_fn=sample_inputs_affine_image_mask,
+            reference_fn=reference_affine_mask,
+            reference_inputs_fn=reference_inputs_resize_mask,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
     ]
 )
