@@ -205,17 +205,17 @@ class SSIM(nn.Module):
         )
 
 
-def _smothness_loss_fn(img_gx: Tensor, img_gy: Tensor, val_gx: Tensor, val_gy: Tensor):
+def _smoothness_loss_fn(img_gx: Tensor, img_gy: Tensor, val_gx: Tensor, val_gy: Tensor):
     # ref: https://github.com/nianticlabs/monodepth2/blob/b676244e5a1ca55564eb5d16ab521a48f823af31/layers.py#L202
 
     torch._assert(
         img_gx.ndim >= 3,
-        "smothness_loss: `img_gx` must be at least 3-dimensional tensor of shape (..., C, H, W)",
+        "smoothness_loss: `img_gx` must be at least 3-dimensional tensor of shape (..., C, H, W)",
     )
 
     torch._assert(
         img_gx.ndim == val_gx.ndim,
-        "smothness_loss: `img_gx` and `depth_gx` must have the same dimensionality, but got {} and {}".format(
+        "smoothness_loss: `img_gx` and `depth_gx` must have the same dimensionality, but got {} and {}".format(
             img_gx.ndim, val_gx.ndim
         ),
     )
@@ -223,7 +223,7 @@ def _smothness_loss_fn(img_gx: Tensor, img_gy: Tensor, val_gx: Tensor, val_gy: T
     for idx in range(img_gx.ndim):
         torch._assert(
             (img_gx.shape[idx] == val_gx.shape[idx] or (img_gx.shape[idx] == 1 or val_gx.shape[idx] == 1)),
-            "smothness_loss: `img_gx` and `depth_gx` must have either the same shape or broadcastable shape, but got {} and {}".format(
+            "smoothness_loss: `img_gx` and `depth_gx` must have either the same shape or broadcastable shape, but got {} and {}".format(
                 img_gx.shape, val_gx.shape
             ),
         )
@@ -286,7 +286,7 @@ class SmoothnessLoss(nn.Module):
         val_gx = self._x_gradient(vals)
         val_gy = self._y_gradient(vals)
 
-        return _smothness_loss_fn(img_gx, img_gy, val_gx, val_gy)
+        return _smoothness_loss_fn(img_gx, img_gy, val_gx, val_gy)
 
 
 def _flow_sequence_consistency_loss_fn(
