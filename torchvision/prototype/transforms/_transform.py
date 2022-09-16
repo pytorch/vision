@@ -1,15 +1,24 @@
 import enum
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Tuple, Type, Union
 
 import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.prototype.features import _Feature
+from torchvision.prototype import features
+from torchvision.prototype.transforms._utils import _isinstance
 from torchvision.utils import _log_api_usage_once
 
 
 class Transform(nn.Module):
+
+    # Class attribute defining transformed types. Other types are passed-through without any transformation
+    _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (
+        features.is_simple_tensor,
+        features._Feature,
+        PIL.Image.Image,
+    )
+
     def __init__(self) -> None:
         super().__init__()
         _log_api_usage_once(self)
@@ -26,9 +35,9 @@ class Transform(nn.Module):
         params = self._get_params(sample)
 
         flat_inputs, spec = tree_flatten(sample)
-        transformed_types = (torch.Tensor, _Feature, PIL.Image.Image)
         flat_outputs = [
-            self._transform(inpt, params) if isinstance(inpt, transformed_types) else inpt for inpt in flat_inputs
+            self._transform(inpt, params) if _isinstance(inpt, self._transformed_types) else inpt
+            for inpt in flat_inputs
         ]
         return tree_unflatten(flat_outputs, spec)
 
@@ -47,7 +56,7 @@ class Transform(nn.Module):
 
 
 class _RandomApplyTransform(Transform):
-    def __init__(self, *, p: float = 0.5) -> None:
+    def __init__(self, p: float = 0.5) -> None:
         if not (0.0 <= p <= 1.0):
             raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
 

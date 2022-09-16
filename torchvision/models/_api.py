@@ -13,7 +13,7 @@ from torchvision._utils import StrEnum
 from .._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ["WeightsEnum", "Weights", "get_model", "get_model_weights", "get_weight", "list_models"]
+__all__ = ["WeightsEnum", "Weights", "get_model", "get_model_builder", "get_model_weights", "get_weight", "list_models"]
 
 
 @dataclass
@@ -115,7 +115,7 @@ def get_weight(name: str) -> WeightsEnum:
 W = TypeVar("W", bound=WeightsEnum)
 
 
-def get_model_weights(model: Union[Callable, str]) -> W:
+def get_model_weights(name: Union[Callable, str]) -> W:
     """
     Retuns the weights enum class associated to the given model.
 
@@ -127,8 +127,7 @@ def get_model_weights(model: Union[Callable, str]) -> W:
     Returns:
         weights_enum (W): The weights enum class associated with the model.
     """
-    if isinstance(model, str):
-        model = find_model(model)
+    model = get_model_builder(name) if isinstance(name, str) else name
     return cast(W, _get_enum_from_fn(model))
 
 
@@ -200,7 +199,18 @@ def list_models(module: Optional[ModuleType] = None) -> List[str]:
     return sorted(models)
 
 
-def find_model(name: str) -> Callable[..., M]:
+def get_model_builder(name: str) -> Callable[..., M]:
+    """
+    Gets the model name and returns the model builder method.
+
+    .. betastatus:: function
+
+    Args:
+        name (str): The name under which the model is registered.
+
+    Returns:
+        fn (Callable): The model builder method.
+    """
     name = name.lower()
     try:
         fn = BUILTIN_MODELS[name]
@@ -222,5 +232,5 @@ def get_model(name: str, **config: Any) -> M:
     Returns:
         model (nn.Module): The initialized model.
     """
-    fn = find_model(name)
+    fn = get_model_builder(name)
     return fn(**config)

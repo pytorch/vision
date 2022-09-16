@@ -628,7 +628,7 @@ class RandomCrop(torch.nn.Module):
         _, h, w = F.get_dimensions(img)
         th, tw = output_size
 
-        if h + 1 < th or w + 1 < tw:
+        if h < th or w < tw:
             raise ValueError(f"Required crop size {(th, tw)} is larger than input image size {(h, w)}")
 
         if w == tw and h == th:
@@ -2162,8 +2162,8 @@ class ElasticTransform(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Transformed image.
         """
-        size = F.get_image_size(tensor)[::-1]
-        displacement = self.get_params(self.alpha, self.sigma, size)
+        _, height, width = F.get_dimensions(tensor)
+        displacement = self.get_params(self.alpha, self.sigma, [height, width])
         return F.elastic_transform(tensor, displacement, self.interpolation, self.fill)
 
     def __repr__(self):

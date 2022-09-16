@@ -1,6 +1,7 @@
 from typing import List, Union
 
 import torch
+import torch.fx
 from torch import nn, Tensor
 from torch.jit.annotations import BroadcastingList2
 from torch.nn.modules.utils import _pair
@@ -10,6 +11,7 @@ from ..utils import _log_api_usage_once
 from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
 
 
+@torch.fx.wrap
 def roi_pool(
     input: Tensor,
     boxes: Union[Tensor, List[Tensor]],
@@ -62,7 +64,7 @@ class RoIPool(nn.Module):
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 
-    def forward(self, input: Tensor, rois: Tensor) -> Tensor:
+    def forward(self, input: Tensor, rois: Union[Tensor, List[Tensor]]) -> Tensor:
         return roi_pool(input, rois, self.output_size, self.spatial_scale)
 
     def __repr__(self) -> str:
