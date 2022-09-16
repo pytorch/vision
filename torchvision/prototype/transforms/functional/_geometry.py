@@ -467,7 +467,7 @@ def rotate_image_tensor(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Optional[List[float]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     num_channels, height, width = img.shape[-3:]
@@ -635,14 +635,19 @@ def _pad_with_vector_fill(
     return output
 
 
-def pad_mask(mask: torch.Tensor, padding: Union[int, List[int]], padding_mode: str = "constant") -> torch.Tensor:
+def pad_mask(
+    mask: torch.Tensor,
+    padding: Union[int, List[int]],
+    padding_mode: str = "constant",
+    fill: Optional[Union[int, float]] = 0,
+) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
     else:
         needs_squeeze = False
 
-    output = pad_image_tensor(img=mask, padding=padding, fill=0, padding_mode=padding_mode)
+    output = pad_image_tensor(img=mask, padding=padding, fill=fill, padding_mode=padding_mode)
 
     if needs_squeeze:
         output = output.squeeze(0)

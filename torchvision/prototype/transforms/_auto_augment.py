@@ -487,7 +487,7 @@ class AugMix(_AutoAugmentBase):
         if isinstance(orig_image, torch.Tensor):
             image = orig_image
         else:  # isinstance(inpt, PIL.Image.Image):
-            image = F.to_image_tensor(orig_image)
+            image = F.pil_to_tensor(orig_image)
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
