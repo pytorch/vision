@@ -505,6 +505,41 @@ def test_eager_vs_scripted(functional_info, sample_input):
     torch.testing.assert_close(eager, scripted)
 
 
+@pytest.mark.parametrize(
+    ("functional_info", "sample_input"),
+    [
+        pytest.param(
+            functional_info,
+            sample_input,
+            id=f"{functional_info.kernel_name}-{idx}",
+            marks=[
+                *(
+                    [pytest.mark.xfail(strict=False)]
+                    if functional_info.kernel_name
+                    in {
+                        "rotate_bounding_box",
+                        "crop_bounding_box",
+                        "resized_bounding_box",
+                        "perspective_bounding_box",
+                        "elastic_bounding_box",
+                        "center_crop_bounding_box",
+                    }
+                    else []
+                )
+            ],
+        )
+        for functional_info in FUNCTIONAL_INFOS
+        for idx, sample_input in enumerate(functional_info.sample_inputs())
+    ],
+)
+def test_dtype_consistency(functional_info, sample_input):
+    (input, *other_args), kwargs = sample_input
+
+    output = functional_info.functional(input, *other_args, **kwargs)
+
+    assert output.dtype == input.dtype
+
+
 def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
     rot = math.radians(angle_)
     cx, cy = center_

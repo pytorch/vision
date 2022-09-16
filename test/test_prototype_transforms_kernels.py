@@ -194,6 +194,39 @@ class TestCommon:
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
+            pytest.param(
+                info,
+                args_kwargs,
+                id=f"{info.kernel_name}-",
+                marks=[
+                    *(
+                        [pytest.mark.xfail(strict=False)]
+                        if info.kernel_name
+                        in {
+                            "resize_bounding_box",
+                            "affine_bounding_box",
+                            "convert_format_bounding_box",
+                        }
+                        else []
+                    )
+                ],
+            )
+            for info in KERNEL_INFOS
+            for args_kwargs in info.sample_inputs_fn()
+        ],
+    )
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_dtype_and_device_consistency(self, info, args_kwargs, device):
+        (input, *other_args), kwargs = args_kwargs.load(device)
+
+        output = info.kernel(input, *other_args, **kwargs)
+
+        assert output.dtype == input.dtype
+        assert output.device == torch.device(device)
+
+    @pytest.mark.parametrize(
+        ("info", "args_kwargs"),
+        [
             pytest.param(info, args_kwargs, id=f"{info.kernel_name}-")
             for info in KERNEL_INFOS
             for args_kwargs in info.reference_inputs_fn()
