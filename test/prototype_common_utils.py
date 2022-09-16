@@ -14,6 +14,7 @@ from torch.nn.functional import one_hot
 from torch.testing._comparison import (
     assert_equal as _assert_equal,
     BooleanPair,
+    ErrorMeta,
     NonePair,
     NumberPair,
     TensorLikePair,
@@ -70,6 +71,19 @@ class PILImagePair(TensorLikePair):
         actual, expected = [
             to_image_tensor(input) if not isinstance(input, torch.Tensor) else input for input in [actual, expected]
         ]
+        # This broadcast is needed, because `features.Mask`'s can have a 2D shape, but converting the equivalent PIL
+        # image to a tensor adds a singleton leading dimension.
+        # Although it looks like this belongs in `self._equalize_attributes`, it has to happen here.
+        # `self._equalize_attributes` is called after `super()._compare_attributes` and that has an unconditional
+        # shape check that will fail if we don't broadcast before.
+        try:
+            actual, expected = torch.broadcast_tensors(actual, expected)
+        except RuntimeError:
+            raise ErrorMeta(
+                AssertionError,
+                f"The image shapes are not broadcastable: {actual.shape} != {expected.shape}.",
+                id=id,
+            ) from None
         return super()._process_inputs(actual, expected, id=id, allow_subclasses=allow_subclasses)
 
     def _equalize_attributes(self, actual, expected):
