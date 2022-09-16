@@ -19,14 +19,14 @@ def erase_image_pil(
 
 
 def erase(
-    inpt: torch.Tensor,
+    inpt: features.ImageType,
     i: int,
     j: int,
     h: int,
     w: int,
     v: torch.Tensor,
     inplace: bool = False,
-) -> torch.Tensor:
+) -> features.ImageType:
     if isinstance(inpt, torch.Tensor):
         output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
         if not torch.jit.is_scripting() and isinstance(inpt, features.Image):

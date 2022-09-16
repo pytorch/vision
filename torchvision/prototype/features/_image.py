@@ -12,6 +12,11 @@ from ._bounding_box import BoundingBox
 from ._feature import _Feature
 
 
+# Due to torch.jit.script limitation we keep ImageType as torch.Tensor
+# instead of Union[torch.Tensor, PIL.Image.Image, features.Image]
+ImageType = torch.Tensor
+
+
 class ColorSpace(StrEnum):
     OTHER = StrEnum.auto()
     GRAY = StrEnum.auto()

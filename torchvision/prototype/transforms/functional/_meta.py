@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.features import BoundingBoxFormat, ColorSpace, Image
+from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
 get_dimensions_image_tensor = _FT.get_dimensions
@@ -11,7 +11,7 @@ get_dimensions_image_pil = _FP.get_dimensions
 
 
 # TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
-def get_chw(image: torch.Tensor) -> Tuple[int, int, int]:
+def get_chw(image: features.ImageType) -> Tuple[int, int, int]:
     if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features._Feature)):
         channels, height, width = get_dimensions_image_tensor(image)
     elif isinstance(image, features.Image):
@@ -29,11 +29,11 @@ def get_chw(image: torch.Tensor) -> Tuple[int, int, int]:
 # detailed above.
 
 
-def get_dimensions(image: torch.Tensor) -> List[int]:
+def get_dimensions(image: features.ImageType) -> List[int]:
     return list(get_chw(image))
 
 
-def get_num_channels(image: torch.Tensor) -> int:
+def get_num_channels(image: features.ImageType) -> int:
     num_channels, *_ = get_chw(image)
     return num_channels
 
@@ -43,7 +43,7 @@ def get_num_channels(image: torch.Tensor) -> int:
 get_image_num_channels = get_num_channels
 
 
-def get_spatial_size(image: torch.Tensor) -> List[int]:
+def get_spatial_size(image: features.ImageType) -> List[int]:
     _, *size = get_chw(image)
     return size
 
@@ -192,7 +192,9 @@ _COLOR_SPACE_TO_PIL_MODE = {
 
 
 @torch.jit.unused
-def convert_color_space_image_pil(image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True):
+def convert_color_space_image_pil(
+    image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
+) -> PIL.Image.Image:
     old_mode = image.mode
     try:
         new_mode = _COLOR_SPACE_TO_PIL_MODE[color_space]
@@ -206,11 +208,11 @@ def convert_color_space_image_pil(image: PIL.Image.Image, color_space: ColorSpac
 
 
 def convert_color_space(
-    inpt: torch.Tensor,
+    inpt: features.ImageType,
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
     copy: bool = True,
-) -> torch.Tensor:
+) -> features.ImageType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         if old_color_space is None:
             raise RuntimeError(
@@ -220,7 +222,7 @@ def convert_color_space(
         return convert_color_space_image_tensor(
             inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
         )
-    elif isinstance(inpt, Image):
+    elif isinstance(inpt, features.Image):
         return inpt.to_color_space(color_space, copy=copy)
     else:
-        return convert_color_space_image_pil(inpt, color_space, copy=copy)
+        return convert_color_space_image_pil(inpt, color_space, copy=copy)  # type: ignore[no-any-return]
