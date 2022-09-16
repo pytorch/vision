@@ -829,7 +829,7 @@ def perspective_bounding_box(
     transformed_points = transformed_points.view(-1, 4, 2)
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
-    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
+    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     # out_bboxes should be of shape [N boxes, 4]
 
@@ -929,7 +929,7 @@ def elastic_bounding_box(
     transformed_points = transformed_points.view(-1, 4, 2)
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
-    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
+    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     return convert_format_bounding_box(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False

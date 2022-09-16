@@ -480,21 +480,6 @@ def test_eager_vs_scripted(functional_info, sample_input):
             functional_info,
             sample_input,
             id=f"{functional_info.name}-{idx}",
-            marks=[
-                *(
-                    [pytest.mark.xfail(strict=False)]
-                    if functional_info.name
-                    in {
-                        "rotate_bounding_box",
-                        "crop_bounding_box",
-                        "resized_crop_bounding_box",
-                        "perspective_bounding_box",
-                        "elastic_bounding_box",
-                        "center_crop_bounding_box",
-                    }
-                    else []
-                )
-            ],
         )
         for functional_info in FUNCTIONAL_INFOS
         for idx, sample_input in enumerate(functional_info.sample_inputs())
