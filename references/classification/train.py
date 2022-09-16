@@ -1,6 +1,5 @@
 import datetime
 import os
-import random
 import time
 import warnings
 
@@ -16,9 +15,7 @@ from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 
 
-def train_one_epoch(
-    model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None, scheduler=None
-):
+def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
@@ -46,9 +43,6 @@ def train_one_epoch(
             if args.clip_grad_norm is not None:
                 nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad_norm)
             optimizer.step()
-
-        if scheduler is not None and args.lr_step_every_batch:
-            scheduler.step()
 
         if model_ema and i % args.model_ema_steps == 0:
             model_ema.update_parameters(model)
@@ -197,11 +191,6 @@ def main(args):
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
-    if args.seed is None:
-        # randomly choose a seed
-        args.seed = random.randint(0, 2**32)
-    utils.set_seed(args.seed)
-
     utils.init_distributed_mode(args)
     print(args)
 
@@ -226,7 +215,10 @@ def main(args):
         mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
     if mixup_transforms:
         mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
-        collate_fn = lambda batch: mixupcutmix(*default_collate(batch))  # noqa: E731
+
+        def collate_fn(batch):
+            return mixupcutmix(*default_collate(batch))  # noqa: E731
+
     data_loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -281,20 +273,12 @@ def main(args):
 
     scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
-    batches_per_epoch = len(data_loader)
-    warmup_iters = args.lr_warmup_epochs
-    total_iters = args.epochs
-
-    if args.lr_step_every_batch:
-        warmup_iters *= batches_per_epoch
-        total_iters *= batches_per_epoch
-
     args.lr_scheduler = args.lr_scheduler.lower()
     if args.lr_scheduler == "steplr":
         main_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
     elif args.lr_scheduler == "cosineannealinglr":
         main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=total_iters - warmup_iters, eta_min=args.lr_min
+            optimizer, T_max=args.epochs - args.lr_warmup_epochs, eta_min=args.lr_min
         )
     elif args.lr_scheduler == "exponentiallr":
         main_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=args.lr_gamma)
@@ -307,18 +291,18 @@ def main(args):
     if args.lr_warmup_epochs > 0:
         if args.lr_warmup_method == "linear":
             warmup_lr_scheduler = torch.optim.lr_scheduler.LinearLR(
-                optimizer, start_factor=args.lr_warmup_decay, total_iters=warmup_iters
+                optimizer, start_factor=args.lr_warmup_decay, total_iters=args.lr_warmup_epochs
             )
         elif args.lr_warmup_method == "constant":
             warmup_lr_scheduler = torch.optim.lr_scheduler.ConstantLR(
-                optimizer, factor=args.lr_warmup_decay, total_iters=warmup_iters
+                optimizer, factor=args.lr_warmup_decay, total_iters=args.lr_warmup_epochs
             )
         else:
             raise RuntimeError(
                 f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant are supported."
             )
         lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
-            optimizer, schedulers=[warmup_lr_scheduler, main_lr_scheduler], milestones=[warmup_iters]
+            optimizer, schedulers=[warmup_lr_scheduler, main_lr_scheduler], milestones=[args.lr_warmup_epochs]
         )
     else:
         lr_scheduler = main_lr_scheduler
@@ -368,9 +352,8 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema, scaler, lr_scheduler)
-        if not args.lr_step_every_batch:
-            lr_scheduler.step()
+        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema, scaler)
+        lr_scheduler.step()
         evaluate(model, criterion, data_loader_test, device=device)
         if model_ema:
             evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
@@ -455,9 +438,6 @@ def get_args_parser(add_help=True):
     parser.add_argument("--lr-step-size", default=30, type=int, help="decrease lr every step-size epochs")
     parser.add_argument("--lr-gamma", default=0.1, type=float, help="decrease lr by a factor of lr-gamma")
     parser.add_argument("--lr-min", default=0.0, type=float, help="minimum lr of lr schedule (default: 0.0)")
-    parser.add_argument(
-        "--lr-step-every-batch", action="store_true", help="decrease lr every step-size batches", default=False
-    )
     parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
     parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
     parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
@@ -531,12 +511,6 @@ def get_args_parser(add_help=True):
         "--ra-reps", default=3, type=int, help="number of repetitions for Repeated Augmentation (default: 3)"
     )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
-    parser.add_argument(
-        "--seed",
-        default=None,
-        type=int,
-        help="the seed for randomness (default: None). A `None` value means a seed will be randomly generated",
-    )
     return parser
 
 
