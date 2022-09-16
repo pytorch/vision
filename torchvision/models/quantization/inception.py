@@ -124,7 +124,7 @@ class QuantizableInceptionAux(inception_module.InceptionAux):
 
 class QuantizableInception3(inception_module.Inception3):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(
+        super().__init__(  # type: ignore[misc]
             inception_blocks=[
                 QuantizableBasicConv2d,
                 QuantizableInceptionA,
