@@ -303,8 +303,7 @@ def reference_affine_bounding_box(bounding_box, *, format, image_size, angle, tr
                 np.max(transformed_points[:, 0]),
                 np.max(transformed_points[:, 1]),
             ],
-            # FIXME: re-add this as soon as the kernel is fixed to also retain the dtype
-            # dtype=bbox.dtype,
+            dtype=bbox.dtype,
         )
         return F.convert_format_bounding_box(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
@@ -369,6 +368,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_bounding_box,
             reference_fn=reference_affine_bounding_box,
             reference_inputs_fn=reference_inputs_affine_bounding_box,
+            closeness_kwargs=dict(atol=1, rtol=0),
         ),
         KernelInfo(
             F.affine_mask,
