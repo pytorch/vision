@@ -233,9 +233,7 @@ autocast_flaky_numerics = (
     "keypointrcnn_resnet50_fpn",
 )
 
-autocast_custom_prec = {
-    "fasterrcnn_resnet50_fpn": 0.012
-} if platform.system() == "Windows" else {}
+autocast_custom_prec = {"fasterrcnn_resnet50_fpn": 0.012} if platform.system() == "Windows" else {}
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
 # rounding errors in different platforms. For this reason the input/output consistency
