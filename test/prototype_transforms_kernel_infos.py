@@ -122,7 +122,7 @@ def sample_inputs_resize_image_tensor():
     for image_loader, interpolation in itertools.product(
         make_image_loaders(dtypes=[torch.float32]),
         [
-            F.InterpolationMode.BILINEAR,
+            F.InterpolationMode.NEAREST,
             F.InterpolationMode.BICUBIC,
         ],
     ):
