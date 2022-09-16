@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Iterable, Optional
 import numpy as np
 import pytest
 import torch.testing
+import torchvision.ops
 import torchvision.prototype.transforms.functional as F
 from datasets_utils import combinations_grid
 from prototype_common_utils import ArgsKwargs, make_bounding_box_loaders, make_image_loaders, make_mask_loaders
@@ -377,4 +378,76 @@ KERNEL_INFOS.extend(
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
     ]
+)
+
+
+def sample_inputs_convert_format_bounding_box():
+    formats = set(features.BoundingBoxFormat)
+    for bounding_box_loader in make_bounding_box_loaders(formats=formats):
+        old_format = bounding_box_loader.format
+        for params in combinations_grid(new_format=formats - {old_format}, copy=(True, False)):
+            yield ArgsKwargs(bounding_box_loader, old_format=old_format, **params)
+
+
+def reference_convert_format_bounding_box(bounding_box, old_format, new_format, copy):
+    if not copy:
+        raise pytest.UsageError("Reference for `convert_format_bounding_box` only supports `copy=True`")
+
+    return torchvision.ops.box_convert(
+        bounding_box, in_fmt=old_format.kernel_name.lower(), out_fmt=new_format.kernel_name.lower()
+    )
+
+
+def reference_inputs_convert_format_bounding_box():
+    for args_kwargs in sample_inputs_convert_color_space_image_tensor():
+        (image_loader, *other_args), kwargs = args_kwargs
+        if len(image_loader.shape) == 2 and kwargs.setdefault("copy", True):
+            yield args_kwargs
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.convert_format_bounding_box,
+        sample_inputs_fn=sample_inputs_convert_format_bounding_box,
+        reference_fn=reference_convert_format_bounding_box,
+        reference_inputs_fn=reference_inputs_convert_format_bounding_box,
+    ),
+)
+
+
+def sample_inputs_convert_color_space_image_tensor():
+    color_spaces = set(features.ColorSpace) - {features.ColorSpace.OTHER}
+    for image_loader in make_image_loaders(sizes=[None], color_spaces=color_spaces, constant_alpha=True):
+        old_color_space = image_loader.color_space
+        for params in combinations_grid(new_color_space=color_spaces - {old_color_space}, copy=(True, False)):
+            yield ArgsKwargs(image_loader, old_color_space=old_color_space, **params)
+
+
+@pil_reference_wrapper
+def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space, copy):
+    color_space_pil = features.ColorSpace.from_pil_mode(image_pil.mode)
+    if color_space_pil != old_color_space:
+        raise pytest.UsageError(
+            f"Converting the tensor image into an PIL image changed the colorspace "
+            f"from {old_color_space} to {color_space_pil}"
+        )
+
+    return F.convert_color_space_image_pil(image_pil, color_space=new_color_space, copy=copy)
+
+
+def reference_inputs_convert_color_space_image_tensor():
+    for args_kwargs in sample_inputs_convert_color_space_image_tensor():
+        (image_loader, *other_args), kwargs = args_kwargs
+        if len(image_loader.shape) == 3:
+            yield args_kwargs
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.convert_color_space_image_tensor,
+        sample_inputs_fn=sample_inputs_convert_color_space_image_tensor,
+        reference_fn=reference_convert_color_space_image_tensor,
+        reference_inputs_fn=reference_inputs_convert_color_space_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    ),
 )
