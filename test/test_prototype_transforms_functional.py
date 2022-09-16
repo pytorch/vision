@@ -102,18 +102,20 @@ def affine_mask():
 
 @register_kernel_info_from_sample_inputs_fn
 def rotate_image_tensor():
-    for image, angle, expand, center, fill in itertools.product(
+    for image, angle, expand, center in itertools.product(
         make_images(),
         [-87, 15, 90],  # angle
         [True, False],  # expand
         [None, [12, 23]],  # center
-        [None, [128], [12.0]],  # fill
     ):
         if center is not None and expand:
             # Skip warning: The provided center argument is ignored if expand is True
             continue
 
-        yield ArgsKwargs(image, angle=angle, expand=expand, center=center, fill=fill)
+        yield ArgsKwargs(image, angle=angle, expand=expand, center=center, fill=None)
+
+    for fill in [None, 128.0, 128, [12.0], [1.0, 2.0, 3.0]]:
+        yield ArgsKwargs(image, angle=23, expand=False, center=None, fill=fill)
 
 
 @register_kernel_info_from_sample_inputs_fn
