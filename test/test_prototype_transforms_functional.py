@@ -462,21 +462,6 @@ def test_eager_vs_scripted(functional_info, sample_input):
             functional_info,
             sample_input,
             id=f"{functional_info.name}-{idx}",
-            marks=[
-                *(
-                    [pytest.mark.xfail(strict=False)]
-                    if functional_info.name
-                    in {
-                        "rotate_bounding_box",
-                        "crop_bounding_box",
-                        "resized_crop_bounding_box",
-                        "perspective_bounding_box",
-                        "elastic_bounding_box",
-                        "center_crop_bounding_box",
-                    }
-                    else []
-                )
-            ],
         )
         for functional_info in FUNCTIONAL_INFOS
         for idx, sample_input in enumerate(functional_info.sample_inputs())
@@ -628,7 +613,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             out_bbox,
             format=features.BoundingBoxFormat.XYXY,
             image_size=image_size,
-            dtype=torch.float32,
+            dtype=bbox.dtype,
             device=bbox.device,
         )
         return convert_format_bounding_box(
@@ -665,7 +650,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             expected_bboxes = torch.stack(expected_bboxes)
         else:
             expected_bboxes = expected_bboxes[0]
-        torch.testing.assert_close(output_bboxes, expected_bboxes)
+        torch.testing.assert_close(output_bboxes, expected_bboxes, atol=1, rtol=0)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -1051,7 +1036,7 @@ def test_correctness_pad_bounding_box(device, padding):
             expected_bboxes = torch.stack(expected_bboxes)
         else:
             expected_bboxes = expected_bboxes[0]
-        torch.testing.assert_close(output_boxes, expected_bboxes)
+        torch.testing.assert_close(output_boxes, expected_bboxes, atol=1, rtol=0)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -1170,7 +1155,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             out_bbox,
             format=features.BoundingBoxFormat.XYXY,
             image_size=bbox.image_size,
-            dtype=torch.float32,
+            dtype=bbox.dtype,
             device=bbox.device,
         )
         return convert_format_bounding_box(
@@ -1204,7 +1189,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             expected_bboxes = torch.stack(expected_bboxes)
         else:
             expected_bboxes = expected_bboxes[0]
-        torch.testing.assert_close(output_bboxes, expected_bboxes, rtol=1e-5, atol=1e-5)
+        torch.testing.assert_close(output_bboxes, expected_bboxes, rtol=0, atol=1)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
