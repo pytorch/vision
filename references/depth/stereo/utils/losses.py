@@ -292,6 +292,12 @@ def _flow_sequence_consistency_loss_fn(
 ):
     """Loss function defined over sequence of flow predictions"""
 
+    # Simplified version of ref: https://arxiv.org/pdf/2006.11242.pdf
+    # In the original paper, an additional refinement network is used to refine a flow prediction.
+    # Each step performed by the recurrent module in Raft or CREStereo is a refinement step using a delta_flow update.
+    # which should be consistent with the previous step. In this implementation, we simplify the overall loss
+    # term and ignore left-right consistency loss or photometric loss which can be treated separetely.
+
     torch._assert(
         rescale_factor <= 1.0,
         "sequence_consistency_loss: `rescale_factor` must be less than or equal to 1, but got {}".format(
@@ -320,7 +326,7 @@ def _flow_sequence_consistency_loss_fn(
         weights = gamma ** torch.arange(num_predictions - 1, -1, -1, device=flow_preds.device, dtype=flow_preds.dtype)
 
     flow_loss = abs_diff * weights
-    return flow_loss
+    return flow_loss, weights
 
 
 class FlowSequenceConsistencyLoss(nn.Module):
@@ -336,8 +342,9 @@ class FlowSequenceConsistencyLoss(nn.Module):
         self.resize_factor = resize_factor
         self.rescale_factor = rescale_factor
         self.rescale_mode = rescale_mode
+        self._weights = None
 
-    def forward(self, flow_preds: List[Tensor], weights: Optional[Tensor] = None) -> Tensor:
+    def forward(self, flow_preds: List[Tensor]) -> Tensor:
         """
         Args:
             flow_preds: list of tensors of shape (batch_size, C, H, W)
@@ -345,14 +352,21 @@ class FlowSequenceConsistencyLoss(nn.Module):
         Returns:
             sequence consistency loss of shape (batch_size,)
         """
-        return _flow_sequence_consistency_loss_fn(
+        loss, weights = _flow_sequence_consistency_loss_fn(
             flow_preds,
             gamma=self.gamma,
             resize_factor=self.resize_factor,
             rescale_factor=self.rescale_factor,
             rescale_mode=self.rescale_mode,
-            weights=weights,
+            weights=self._weights,
         )
+        self._weights = weights
+        return loss
+
+    def set_gamma(self, gamma: float) -> None:
+        self.gamma.fill_(gamma)
+        # reset the cached scale factor
+        self._weights = None
 
 
 def _psnr_loss_fn(source: torch.Tensor, target: torch.Tensor, max_val: float) -> torch.Tensor:
