@@ -97,7 +97,7 @@ if [[ "$OSTYPE" == "msys" ]]; then
     "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_frcnn.bat" $PARALLELISM
     mv fasterrcnn_resnet50_fpn.pt Release
     cd Release
-    export PATH=$(cygpath "C:/Program Files (x86)/torchvision/bin"):$(cygpath $TORCH_PATH)/lib:$PATH
+    export PATH=$(cygpath -w "C:/Program Files/NVIDIA Corporation/NvToolsExt/bin/x64"):$(cygpath -w "C:/Program Files (x86)/torchvision/bin"):$(cygpath -w $TORCH_PATH)/lib:$PATH
 else
     make -j$PARALLELISM
 fi
