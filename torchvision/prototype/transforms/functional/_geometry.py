@@ -590,7 +590,23 @@ pad_image_pil = _FP.pad
 def pad_image_tensor(
     img: torch.Tensor,
     padding: Union[int, List[int]],
-    fill: Optional[Union[int, float]] = 0,
+    fill: Optional[Union[int, float, List[float]]] = None,
+    padding_mode: str = "constant",
+) -> torch.Tensor:
+    if fill is None:
+        # This JIT workaround
+        return _pad_with_scalar_fill(img, padding, fill=None, padding_mode=padding_mode)
+    elif isinstance(fill, (int, float)) or len(fill) == 1:
+        fill_number = fill[0] if isinstance(fill, list) else fill
+        return _pad_with_scalar_fill(img, padding, fill=fill_number, padding_mode=padding_mode)
+    else:
+        return _pad_with_vector_fill(img, padding, fill=fill, padding_mode=padding_mode)
+
+
+def _pad_with_scalar_fill(
+    img: torch.Tensor,
+    padding: Union[int, List[int]],
+    fill: Optional[Union[int, float]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     num_channels, height, width = img.shape[-3:]
@@ -613,13 +629,13 @@ def pad_image_tensor(
 def _pad_with_vector_fill(
     img: torch.Tensor,
     padding: Union[int, List[int]],
-    fill: Sequence[float] = [0.0],
+    fill: List[float],
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     if padding_mode != "constant":
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
-    output = pad_image_tensor(img, padding, fill=0, padding_mode="constant")
+    output = _pad_with_scalar_fill(img, padding, fill=0, padding_mode="constant")
     left, right, top, bottom = _parse_pad_padding(padding)
     fill = torch.tensor(fill, dtype=img.dtype, device=img.device).view(-1, 1, 1)
 
@@ -638,8 +654,14 @@ def pad_mask(
     mask: torch.Tensor,
     padding: Union[int, List[int]],
     padding_mode: str = "constant",
-    fill: Optional[Union[int, float]] = 0,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> torch.Tensor:
+    if fill is None:
+        fill = 0
+
+    if isinstance(fill, list):
+        raise ValueError("Non-scalar fill value is not supported")
+
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -692,10 +714,11 @@ def pad(
         if not isinstance(padding, int):
             padding = list(padding)
 
-        # TODO: PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
-        if isinstance(fill, (int, float)) or fill is None:
-            return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
-        return _pad_with_vector_fill(inpt, padding, fill=fill, padding_mode=padding_mode)
+        # This cast does Sequence -> List and is required to make mypy happy
+        if not (fill is None or isinstance(fill, (int, float))):
+            fill = list(fill)
+
+        return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
 
 
 crop_image_tensor = _FT.crop

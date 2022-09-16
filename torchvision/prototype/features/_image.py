@@ -177,12 +177,11 @@ class Image(_Feature):
         if not isinstance(padding, int):
             padding = list(padding)
 
-        # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
-        if isinstance(fill, (int, float)) or fill is None:
-            output = self._F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
-        else:
-            output = self._F._geometry._pad_with_vector_fill(self, padding, fill=fill, padding_mode=padding_mode)
+        # This cast does Sequence -> List and is required to make mypy happy
+        if not (fill is None or isinstance(fill, (int, float))):
+            fill = list(fill)
 
+        output = self._F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
         return Image.new_like(self, output)
 
     def rotate(

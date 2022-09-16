@@ -58,14 +58,7 @@ class Mask(_Feature):
         if not isinstance(padding, int):
             padding = list(padding)
 
-        if isinstance(fill, (int, float)) or fill is None:
-            if fill is None:
-                fill = 0
-            output = self._F.pad_mask(self, padding, padding_mode=padding_mode, fill=fill)
-        else:
-            # Let's raise an error for vector fill on masks
-            raise ValueError("Non-scalar fill value is not supported")
-
+        output = self._F.pad_mask(self, padding, padding_mode=padding_mode, fill=fill)
         return Mask.new_like(self, output)
 
     def rotate(
