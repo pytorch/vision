@@ -89,7 +89,10 @@ class MakeValidDisparityMask(torch.nn.Module):
         masks: Tuple[T_MASK, T_MASK],
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
         if self.max_disparity is None:
-            return images, disparities, masks
+            valid_masks = tuple(
+                torch.ones(images[0].shape[-2:], dtype=torch.bool, device=images[0].device) for i in range(2)
+            )
+            return images, disparities, valid_masks
 
         valid_masks = ()
         for idx, disparity in enumerate(disparities):
