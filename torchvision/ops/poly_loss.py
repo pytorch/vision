@@ -59,8 +59,10 @@ def poly_loss(
         loss = loss[valid_idxs].sum()
     elif reduction == "mean":
         loss = loss[valid_idxs].mean()
-    else:
+    elif reduction == "none":
         # if no reduction, reshape tensor like target
         loss = loss.view(*target.shape)
+    else:
+        raise ValueError(f"invalid value for arg 'reduction': {reduction}")
 
     return loss
