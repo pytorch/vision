@@ -123,17 +123,8 @@ class QuantizableInceptionAux(inception_module.InceptionAux):
 
 
 class QuantizableInception3(inception_module.Inception3):
-    def __init__(
-        self,
-        num_classes: int = 1000,
-        aux_logits: bool = True,
-        transform_input: bool = False,
-        init_weights: Optional[bool] = None,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(
-            num_classes=num_classes,
-            aux_logits=aux_logits,
-            transform_input=transform_input,
             inception_blocks=[
                 QuantizableBasicConv2d,
                 QuantizableInceptionA,
@@ -143,7 +134,8 @@ class QuantizableInception3(inception_module.Inception3):
                 QuantizableInceptionE,
                 QuantizableInceptionAux,
             ],
-            init_weights=init_weights,
+            *args,
+            **kwargs,
         )
         self.quant = torch.ao.quantization.QuantStub()
         self.dequant = torch.ao.quantization.DeQuantStub()
