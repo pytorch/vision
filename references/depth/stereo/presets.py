@@ -24,19 +24,12 @@ class StereoMatchingEvalPreset(torch.nn.Module):
         if use_grayscale:
             transforms.append(T.ConverToGrayscale())
 
-        transforms.extend(
-            [
-                T.ToTensor(),
-                T.ConvertImageDtype(torch.float32),
-                T.Normalize(mean=mean, std=std),
-            ]
-        )
-
         if resize_size is not None:
             transforms.append(T.Resize(resize_size, interpolation_type=interpolation_type))
 
         transforms.extend(
             [
+                T.Normalize(mean=mean, std=std),
                 T.MakeValidDisparityMask(max_disparity=max_disparity),
                 T.ValidateModelInput(),
             ]
@@ -124,7 +117,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
                 T.RandomSpatialShift(
                     p=spatial_shift_prob,
                     max_angle=spatial_shift_max_angle,
-                    max_displacement=spatial_shift_max_displacement,
+                    max_px_shift=spatial_shift_max_displacement,
                     interpolation_type=spatial_shift_interpolation_type,
                 ),
                 T.ConvertImageDtype(torch.float32),
@@ -138,7 +131,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
                 T.RandomHorizontalFlip(horizontal_flip_prob),
                 # occlusion after flip, otherwise we're occluding the reference image
                 T.RandomOcclusion(p=occlusion_prob, occlusion_px_range=occlusion_px_range),
-                T.RandomErase(p=erase_prob, erase_px_range=erase_px_range, num_repeats=erase_num_repeats),
+                T.RandomErase(p=erase_prob, erase_px_range=erase_px_range, max_erase=erase_num_repeats),
                 T.Normalize(mean=mean, std=std),
                 T.MakeValidDisparityMask(max_disparity),
                 T.ValidateModelInput(),

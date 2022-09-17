@@ -93,11 +93,13 @@ class MakeValidDisparityMask(torch.nn.Module):
             for idx, mask in enumerate(masks)
         )
 
-        valid_masks = tuple(torch.logical_and(mask, disparity > 0) for mask, disparity in zip(valid_masks, disparities))
+        valid_masks = tuple(
+            torch.logical_and(mask, disparity > 0).squeeze(0) for mask, disparity in zip(valid_masks, disparities)
+        )
 
         if self.max_disparity is not None:
             valid_masks = tuple(
-                torch.logical_and(mask, disparity < self.max_disparity)
+                torch.logical_and(mask, disparity < self.max_disparity).squeeze(0)
                 for mask, disparity in zip(valid_masks, disparities)
             )
 
