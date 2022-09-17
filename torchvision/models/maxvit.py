@@ -6,9 +6,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
-from ._api import register_model, Weights, WeightsEnum
-from ._meta import _IMAGENET_CATEGORIES
-from ..transforms._presets import ImageClassification, InterpolationMode
+from torchvision.models._api import register_model, Weights, WeightsEnum
+from torchvision.models._meta import _IMAGENET_CATEGORIES
+from torchvision.transforms._presets import ImageClassification, InterpolationMode
 from torchvision.models._utils import _ovewrite_named_param
 from torchvision.ops.misc import Conv2dNormActivation, SqueezeExcitation
 from torchvision.ops.stochastic_depth import StochasticDepth
@@ -20,6 +20,21 @@ __all__ = [
     "maxvit_t",
 ]
 
+def _get_conv_output_shape(input_size: Tuple[int, int], kernel_size: int, stride: int, padding: int) -> Tuple[int, int]:
+    return (
+        (input_size[0] - kernel_size + 2 * padding) // stride + 1,
+        (input_size[1] - kernel_size + 2 * padding) // stride + 1
+    )
+
+def _make_block_input_shapes(input_size: Tuple[int, int], n_blocks: int) -> Tuple[int, int]:
+    """Util function to check that the input size is correct for a MaxVit configuration."""
+    shapes = []
+    block_input_shape = _get_conv_output_shape(input_size, 3, 2, 1)
+    for _ in range(n_blocks):
+        block_input_shape = _get_conv_output_shape(block_input_shape, 3, 2, 1)
+        shapes.append(block_input_shape)
+    return shapes
+
 def _get_relative_position_index(height: int, width: int) -> torch.Tensor:
     coords = torch.stack(torch.meshgrid([torch.arange(height), torch.arange(width)]))
     coords_flat = torch.flatten(coords, 1)
@@ -29,8 +44,6 @@ def _get_relative_position_index(height: int, width: int) -> torch.Tensor:
     relative_coords[:, :, 1] += width - 1
     relative_coords[:, :, 0] *= 2 * width - 1
     return relative_coords.sum(-1)
-
-torch.fx.wrap("_get_relative_position_index")
 
 
 class MBConv(nn.Module):
@@ -345,16 +358,10 @@ class PartitionAttentionLayer(nn.Module):
         Returns:
             Tensor: Output tensor with expected layout of [B, C, H, W].
         """
-        B, C, H, W = x.shape
-
+        
         # Undefined behavior if H or W are not divisible by p
         # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L766
-        torch._assert(
-            H % self.p == 0 and W % self.p == 0,
-            f"H and W must be divisible by partition size. Got H: {H}, W: {W}, P: {self.p}",
-        )
-
-        gh, gw = H // self.p, W // self.p
+        gh, gw = self.grid_size[0] // self.p, self.grid_size[1] // self.p
 
         x = self.partition_op(x, self.p)
         x = self.partition_swap(x)
@@ -463,6 +470,7 @@ class MaxVitLayer(nn.Module):
         return x
 
 
+
 class MaxVitBlock(nn.Module):
     """
     A MaxVit block consisting of `n_layers` MaxVit layers.
@@ -513,7 +521,7 @@ class MaxVitBlock(nn.Module):
 
         self.layers = nn.ModuleList()
         # account for the first stride of the first layer
-        self.grid_size = (input_grid_size[0] // 2, input_grid_size[1] // 2)
+        self.grid_size = _get_conv_output_shape(input_grid_size, kernel_size=3, stride=2, padding=1)
 
         for idx, p in enumerate(p_stochastic):
             stride = 2 if idx == 0 else 1
@@ -600,6 +608,20 @@ class MaxVit(nn.Module):
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
+        
+        # Make sure input size will be divisible by the partition size in all blocks
+        # Undefined behavior if H or W are not divisible by p
+        # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L766
+        
+        # we do this check here to avoid torch.fx that cannot handle error checking on dynamic tensor shapes
+        block_input_sizes = _make_block_input_shapes(input_size, len(block_channels))
+        for idx, block_input_size in enumerate(block_input_sizes):
+            if block_input_size[0] % partition_size != 0 or block_input_size[1] % partition_size != 0:
+                raise ValueError(
+                    f"Input size {block_input_size} of block {idx} is not divisible by partition size {partition_size}. "
+                    f"Consider changing the partition size or the input size.\n"
+                    f"Current configuration yields the following block input sizes: {block_input_sizes}."
+                )
 
         # stem
         self.stem = nn.Sequential(
@@ -619,7 +641,7 @@ class MaxVit(nn.Module):
         )
 
         # account for stem stride
-        input_size = (input_size[0] // 2, input_size[1] // 2)
+        input_size = _get_conv_output_shape(input_size, kernel_size=3, stride=2, padding=1)
         self.partition_size = partition_size
 
         # blocks
@@ -689,7 +711,6 @@ class MaxVit(nn.Module):
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
-@register_model()
 def _maxvit(
     # stem parameters
     stem_channels: int,
@@ -720,7 +741,6 @@ def _maxvit(
     # kwargs,
     **kwargs,
 ) -> MaxVit:
-    print(weights)
     
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
