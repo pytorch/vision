@@ -11,7 +11,7 @@ from torchvision.prototype.transforms import functional as F
 
 
 def test_coverage():
-    tested = {info.kernel.__name__ for info in KERNEL_INFOS}
+    tested = {info.kernel_name for info in KERNEL_INFOS}
     exposed = {
         name
         for name, kernel in F.__dict__.items()
@@ -36,14 +36,11 @@ def test_coverage():
             "adjust_hue_image_tensor",
             "adjust_saturation_image_tensor",
             "adjust_sharpness_image_tensor",
-            "affine_mask",
             "autocontrast_image_tensor",
             "center_crop_bounding_box",
             "center_crop_image_tensor",
             "center_crop_mask",
             "clamp_bounding_box",
-            "convert_color_space_image_tensor",
-            "convert_format_bounding_box",
             "crop_bounding_box",
             "crop_image_tensor",
             "crop_mask",
@@ -54,7 +51,6 @@ def test_coverage():
             "erase_image_tensor",
             "five_crop_image_tensor",
             "gaussian_blur_image_tensor",
-            "horizontal_flip_image_tensor",
             "invert_image_tensor",
             "normalize_image_tensor",
             "pad_bounding_box",
@@ -64,7 +60,6 @@ def test_coverage():
             "perspective_image_tensor",
             "perspective_mask",
             "posterize_image_tensor",
-            "resize_mask",
             "resized_crop_bounding_box",
             "resized_crop_image_tensor",
             "resized_crop_mask",
@@ -79,6 +74,13 @@ def test_coverage():
         }
     }
 
+    needlessly_ignored = tested - exposed
+    if needlessly_ignored:
+        raise pytest.UsageError(
+            f"The kernel(s) {sequence_to_str(sorted(needlessly_ignored), separate_last='and ')} "
+            f"have an associated `KernelInfo` but are ignored by this test."
+        )
+
     untested = exposed - tested
     if untested:
         raise AssertionError(
@@ -92,9 +94,9 @@ class TestCommon:
     sample_inputs = pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
-            pytest.param(info, args_kwargs, id=f"{info.kernel.__name__}")
+            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-{idx}")
             for info in KERNEL_INFOS
-            for args_kwargs in info.sample_inputs_fn()
+            for idx, args_kwargs in enumerate(info.sample_inputs_fn())
         ],
     )
 
@@ -182,14 +184,24 @@ class TestCommon:
         output_cpu = info.kernel(input_cpu, *other_args, **kwargs)
         output_cuda = info.kernel(input_cuda, *other_args, **kwargs)
 
-        assert_close(output_cuda, output_cpu, check_device=False)
+        assert_close(output_cuda, output_cpu, check_device=False, **info.closeness_kwargs)
+
+    @sample_inputs
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_dtype_and_device_consistency(self, info, args_kwargs, device):
+        (input, *other_args), kwargs = args_kwargs.load(device)
+
+        output = info.kernel(input, *other_args, **kwargs)
+
+        assert output.dtype == input.dtype
+        assert output.device == torch.device(device)
 
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
-            pytest.param(info, args_kwargs, id=f"{info.kernel.__name__}")
+            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-{idx}")
             for info in KERNEL_INFOS
-            for args_kwargs in info.reference_inputs_fn()
+            for idx, args_kwargs in enumerate(info.reference_inputs_fn())
             if info.reference_fn is not None
         ],
     )
@@ -199,4 +211,4 @@ class TestCommon:
         actual = info.kernel(*args, **kwargs)
         expected = info.reference_fn(*args, **kwargs)
 
-        assert_close(actual, expected, **info.closeness_kwargs, check_dtype=False)
+        assert_close(actual, expected, check_dtype=False, **info.closeness_kwargs)
