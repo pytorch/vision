@@ -42,3 +42,6 @@ xcuserdata/
 # direnv
 .direnv
 .envrc
+
+slurm-*
+*checkpoint
