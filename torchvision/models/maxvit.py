@@ -26,7 +26,7 @@ def _get_conv_output_shape(input_size: Tuple[int, int], kernel_size: int, stride
         (input_size[1] - kernel_size + 2 * padding) // stride + 1
     )
 
-def _make_block_input_shapes(input_size: Tuple[int, int], n_blocks: int) -> Tuple[int, int]:
+def _make_block_input_shapes(input_size: Tuple[int, int], n_blocks: int) -> List[Tuple[int, int]]:
     """Util function to check that the input size is correct for a MaxVit configuration."""
     shapes = []
     block_input_shape = _get_conv_output_shape(input_size, 3, 2, 1)
