@@ -94,12 +94,13 @@ class MakeValidDisparityMask(torch.nn.Module):
         )
 
         valid_masks = tuple(
-            torch.logical_and(mask, disparity > 0).squeeze(0) for mask, disparity in zip(valid_masks, disparities)
+            torch.logical_and(mask, disparity > 0).squeeze(0) if disparity is not None else mask
+            for mask, disparity in zip(valid_masks, disparities)
         )
 
         if self.max_disparity is not None:
             valid_masks = tuple(
-                torch.logical_and(mask, disparity < self.max_disparity).squeeze(0)
+                torch.logical_and(mask, disparity < self.max_disparity).squeeze(0) if disparity is not None else mask
                 for mask, disparity in zip(valid_masks, disparities)
             )
 
@@ -548,8 +549,9 @@ class RandomRescaleAndCrop(torch.nn.Module):
                         )
                         resized_mask = None
                     else:
-                        resized_disparity, resized_mask = _resize_sparse_flow(disparity, mask, scale_x=scale)
-
+                        resized_disparity, resized_mask = _resize_sparse_flow(
+                            disparity, mask, scale_x=scale, scale_y=scale
+                        )
                 resized_masks += (resized_mask,)
                 resized_disparities += (resized_disparity,)
 
