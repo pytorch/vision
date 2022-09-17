@@ -611,8 +611,8 @@ def pad_image_tensor(
 def _pad_with_vector_fill(
     img: torch.Tensor,
     padding: Union[int, List[int]],
-    fill: Sequence[float] = [0.0],
-    padding_mode: str = "constant",
+    fill: Sequence[float],
+    padding_mode: str,
 ) -> torch.Tensor:
     if padding_mode != "constant":
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
