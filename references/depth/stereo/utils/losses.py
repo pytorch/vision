@@ -49,16 +49,16 @@ def _sequence_loss_fn(
 
     abs_diff = (flow_preds - flow_gt).abs()
     if valid_flow_mask is not None:
-        abs_diff = abs_diff * valid_flow_mask
+        abs_diff = abs_diff * valid_flow_mask.unsqueeze(0)
 
     abs_diff = abs_diff.mean(axis=(1, 2, 3, 4))
-
     num_predictions = flow_preds.shape[0]
 
     # alocating on CPU and moving to device during run-time can force
     # an unwanted GPU synchronization that produces a large overhead
     if weights is None or len(weights) != num_predictions:
         weights = gamma ** torch.arange(num_predictions - 1, -1, -1, device=flow_preds.device, dtype=flow_preds.dtype)
+
     flow_loss = (abs_diff * weights).sum()
     return flow_loss, weights
 
@@ -332,7 +332,7 @@ def _flow_sequence_consistency_loss_fn(
     if weights is None or len(weights) != num_predictions:
         weights = gamma ** torch.arange(num_predictions - 1, -1, -1, device=flow_preds.device, dtype=flow_preds.dtype)
 
-    flow_loss = abs_diff * weights
+    flow_loss = (abs_diff * weights).sum()
     return flow_loss, weights
 
 
@@ -457,14 +457,16 @@ class FlowPhotoMetricLoss(nn.Module):
             source.ndim == 4,
             "FlowPhotoMetricLoss: source must have 4 dimensions, but got {}".format(source.ndim),
         )
-
         torch._assert(
             reference.ndim == source.ndim,
             "FlowPhotoMetricLoss: source and other must have the same number of dimensions, but got {} and {}".format(
                 source.ndim, reference.ndim
             ),
         )
-
+        torch._assert(
+            flow_pred.shape[1] == 2,
+            "FlowPhotoMetricLoss: flow_pred must have 2 channels, but got {}".format(flow_pred.shape[1]),
+        )
         torch._assert(
             flow_pred.ndim == 4,
             "FlowPhotoMetricLoss: flow_pred must have 4 dimensions, but got {}".format(flow_pred.ndim),
