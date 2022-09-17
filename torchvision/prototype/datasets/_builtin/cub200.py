@@ -13,6 +13,7 @@ from torchdata.datapipes.iter import (
     LineReader,
     Mapper,
 )
+from torchdata.datapipes.map import IterToMapConverter
 from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
@@ -114,6 +115,9 @@ class CUB200(Dataset):
         else:
             return None
 
+    def _2011_extract_file_name(self, rel_posix_path: str) -> str:
+        return rel_posix_path.rsplit("/", maxsplit=1)[1]
+
     def _2011_filter_split(self, row: List[str]) -> bool:
         _, split_id = row
         return {
@@ -185,17 +189,16 @@ class CUB200(Dataset):
             )
 
             image_files_dp = CSVParser(image_files_dp, dialect="cub200")
-            image_files_map = dict(
-                (image_id, rel_posix_path.rsplit("/", maxsplit=1)[1]) for image_id, rel_posix_path in image_files_dp
-            )
+            image_files_dp = Mapper(image_files_dp, self._2011_extract_file_name, input_col=1)
+            image_files_map = IterToMapConverter(image_files_dp)
 
             split_dp = CSVParser(split_dp, dialect="cub200")
             split_dp = Filter(split_dp, self._2011_filter_split)
             split_dp = Mapper(split_dp, getitem(0))
-            split_dp = Mapper(split_dp, image_files_map.get)
+            split_dp = Mapper(split_dp, image_files_map.__getitem__)
 
             bounding_boxes_dp = CSVParser(bounding_boxes_dp, dialect="cub200")
-            bounding_boxes_dp = Mapper(bounding_boxes_dp, image_files_map.get, input_col=0)
+            bounding_boxes_dp = Mapper(bounding_boxes_dp, image_files_map.__getitem__, input_col=0)
 
             anns_dp = IterKeyZipper(
                 bounding_boxes_dp,
