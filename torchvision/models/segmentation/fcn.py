@@ -155,8 +155,8 @@ def fcn_resnet50(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
-        aux_loss = _ovewrite_value_param(aux_loss, True)
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param("aux_loss", aux_loss, True)
     elif num_classes is None:
         num_classes = 21
 
@@ -214,8 +214,8 @@ def fcn_resnet101(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
-        aux_loss = _ovewrite_value_param(aux_loss, True)
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param("aux_loss", aux_loss, True)
     elif num_classes is None:
         num_classes = 21
 

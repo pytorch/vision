@@ -27,7 +27,7 @@ __all__ = (
 class ResidualBlock(nn.Module):
     """Slightly modified Residual block with extra relu and biases."""
 
-    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
+    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1, always_project: bool = False):
         super().__init__()
 
         # Note regarding bias=True:
@@ -43,7 +43,10 @@ class ResidualBlock(nn.Module):
             out_channels, out_channels, norm_layer=norm_layer, kernel_size=3, bias=True
         )
 
-        if stride == 1:
+        # make mypy happy
+        self.downsample: nn.Module
+
+        if stride == 1 and not always_project:
             self.downsample = nn.Identity()
         else:
             self.downsample = Conv2dNormActivation(
@@ -143,6 +146,10 @@ class FeatureEncoder(nn.Module):
                     nn.init.constant_(m.weight, 1)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
+
+        num_downsamples = len(list(filter(lambda s: s == 2, strides)))
+        self.output_dim = layers[-1]
+        self.downsample_factor = 2**num_downsamples
 
     def _make_2_blocks(self, block, in_channels, out_channels, norm_layer, first_stride):
         block1 = block(in_channels, out_channels, norm_layer=norm_layer, stride=first_stride)

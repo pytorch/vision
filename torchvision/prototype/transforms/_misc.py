@@ -17,20 +17,20 @@ class Identity(Transform):
 
 
 class Lambda(Transform):
-    def __init__(self, fn: Callable[[Any], Any], *types: Type):
+    def __init__(self, lambd: Callable[[Any], Any], *types: Type):
         super().__init__()
-        self.fn = fn
+        self.lambd = lambd
         self.types = types or (object,)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if type(inpt) in self.types:
-            return self.fn(inpt)
+        if isinstance(inpt, self.types):
+            return self.lambd(inpt)
         else:
             return inpt
 
     def extra_repr(self) -> str:
         extras = []
-        name = getattr(self.fn, "__name__", None)
+        name = getattr(self.lambd, "__name__", None)
         if name:
             extras.append(name)
         extras.append(f"types={[type.__name__ for type in self.types]}")
@@ -68,7 +68,7 @@ class LinearTransformation(Transform):
 
         return super().forward(*inputs)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(self, inpt: Union[torch.Tensor, features._Feature], params: Dict[str, Any]) -> torch.Tensor:
         # Image instance after linear transformation is not Image anymore due to unknown data range
         # Thus we will return Tensor for input Image
 
@@ -95,13 +95,14 @@ class LinearTransformation(Transform):
 class Normalize(Transform):
     _transformed_types = (features.Image, features.is_simple_tensor)
 
-    def __init__(self, mean: Sequence[float], std: Sequence[float]):
+    def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()
         self.mean = list(mean)
         self.std = list(std)
+        self.inplace = inplace
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.normalize(inpt, mean=self.mean, std=self.std)
+    def _transform(self, inpt: Union[torch.Tensor, features._Feature], params: Dict[str, Any]) -> torch.Tensor:
+        return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
     def forward(self, *inpts: Any) -> Any:
         if has_any(inpts, PIL.Image.Image):
@@ -136,7 +137,7 @@ class GaussianBlur(Transform):
         return dict(sigma=[sigma, sigma])
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.gaussian_blur(inpt, **params)
+        return F.gaussian_blur(inpt, self.kernel_size, **params)
 
 
 class ToDtype(Lambda):
@@ -149,7 +150,7 @@ class ToDtype(Lambda):
 
 
 class RemoveSmallBoundingBoxes(Transform):
-    _transformed_types = (features.BoundingBox, features.SegmentationMask, features.Label, features.OneHotLabel)
+    _transformed_types = (features.BoundingBox, features.Mask, features.Label, features.OneHotLabel)
 
     def __init__(self, min_size: float = 1.0) -> None:
         super().__init__()
@@ -162,7 +163,7 @@ class RemoveSmallBoundingBoxes(Transform):
         #  be in XYXY format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH
         #  format,we need to convert first just to afterwards compute the width and height again, although they were
         #  there in the first place for these formats.
-        bounding_box = F.convert_bounding_box_format(
+        bounding_box = F.convert_format_bounding_box(
             bounding_box, old_format=bounding_box.format, new_format=features.BoundingBoxFormat.XYXY
         )
         valid_indices = remove_small_boxes(bounding_box, min_size=self.min_size)

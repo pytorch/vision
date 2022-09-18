@@ -1,5 +1,5 @@
 import warnings
-from typing import Any
+from typing import Any, List, Union
 
 import PIL.Image
 import torch
@@ -21,7 +21,9 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
     return _F.to_grayscale(inpt, num_output_channels=num_output_channels)
 
 
-def rgb_to_grayscale(inpt: Any, num_output_channels: int = 1) -> Any:
+def rgb_to_grayscale(
+    inpt: Union[PIL.Image.Image, torch.Tensor], num_output_channels: int = 1
+) -> Union[PIL.Image.Image, torch.Tensor]:
     old_color_space = features.Image.guess_color_space(inpt) if features.is_simple_tensor(inpt) else None
 
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
@@ -48,3 +50,11 @@ def to_tensor(inpt: Any) -> torch.Tensor:
         "Instead, please use `to_image_tensor(...)` followed by `convert_image_dtype(...)`."
     )
     return _F.to_tensor(inpt)
+
+
+def get_image_size(inpt: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
+    warnings.warn(
+        "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
+        "Instead, please use `get_spatial_size(...)` which returns `[h, w]` instead of `[w, h]`."
+    )
+    return _F.get_image_size(inpt)

@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -15,12 +15,15 @@ from ._utils import has_any, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
+    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image)
+
     def __init__(
         self,
         p: float = 0.5,
         scale: Tuple[float, float] = (0.02, 0.33),
         ratio: Tuple[float, float] = (0.3, 3.3),
         value: float = 0,
+        inplace: bool = False,
     ):
         super().__init__(p=p)
         if not isinstance(value, (numbers.Number, str, tuple, list)):
@@ -38,6 +41,7 @@ class RandomErasing(_RandomApplyTransform):
         self.scale = scale
         self.ratio = ratio
         self.value = value
+        self.inplace = inplace
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(sample)
@@ -86,15 +90,17 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(
+        self, inpt: Union[torch.Tensor, features.Image, PIL.Image.Image], params: Dict[str, Any]
+    ) -> Union[torch.Tensor, features.Image, PIL.Image.Image]:
         if params["v"] is not None:
-            inpt = F.erase(inpt, **params)
+            inpt = F.erase(inpt, **params, inplace=self.inplace)
 
         return inpt
 
 
 class _BaseMixupCutmix(_RandomApplyTransform):
-    def __init__(self, *, alpha: float, p: float = 0.5) -> None:
+    def __init__(self, alpha: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
@@ -102,10 +108,8 @@ class _BaseMixupCutmix(_RandomApplyTransform):
     def forward(self, *inputs: Any) -> Any:
         if not (has_any(inputs, features.Image, features.is_simple_tensor) and has_any(inputs, features.OneHotLabel)):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images and one-hot labels.")
-        if has_any(inputs, features.BoundingBox, features.SegmentationMask, features.Label):
-            raise TypeError(
-                f"{type(self).__name__}() does not support bounding boxes, segmentation masks and plain labels."
-            )
+        if has_any(inputs, features.BoundingBox, features.Mask, features.Label):
+            raise TypeError(f"{type(self).__name__}() does not support bounding boxes, masks and plain labels.")
         return super().forward(*inputs)
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
@@ -188,10 +192,12 @@ class SimpleCopyPaste(_RandomApplyTransform):
         p: float = 0.5,
         blending: bool = True,
         resize_interpolation: InterpolationMode = F.InterpolationMode.BILINEAR,
+        antialias: Optional[bool] = None,
     ) -> None:
         super().__init__(p=p)
         self.resize_interpolation = resize_interpolation
         self.blending = blending
+        self.antialias = antialias
 
     def _copy_paste(
         self,
@@ -200,8 +206,9 @@ class SimpleCopyPaste(_RandomApplyTransform):
         paste_image: Any,
         paste_target: Dict[str, Any],
         random_selection: torch.Tensor,
-        blending: bool = True,
-        resize_interpolation: F.InterpolationMode = F.InterpolationMode.BILINEAR,
+        blending: bool,
+        resize_interpolation: F.InterpolationMode,
+        antialias: Optional[bool],
     ) -> Tuple[Any, Dict[str, Any]]:
 
         paste_masks = paste_target["masks"].new_like(paste_target["masks"], paste_target["masks"][random_selection])
@@ -217,7 +224,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         size1 = image.shape[-2:]
         size2 = paste_image.shape[-2:]
         if size1 != size2:
-            paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation)
+            paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation, antialias=antialias)
             paste_masks = F.resize(paste_masks, size=size1)
             paste_boxes = F.resize(paste_boxes, size=size1)
 
@@ -247,7 +254,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # There is a similar +1 in other reference implementations:
         # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
-        boxes = F.convert_bounding_box_format(
+        boxes = F.convert_format_bounding_box(
             xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
         )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
@@ -256,7 +263,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         out_target["labels"] = torch.cat([labels, paste_labels])
 
         # Check for degenerated boxes and remove them
-        boxes = F.convert_bounding_box_format(
+        boxes = F.convert_format_bounding_box(
             out_target["boxes"], old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY
         )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
@@ -271,7 +278,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
     def _extract_image_targets(self, flat_sample: List[Any]) -> Tuple[List[Any], List[Dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
-        # with List[image], List[BoundingBox], List[SegmentationMask], List[Label]
+        # with List[image], List[BoundingBox], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
             if isinstance(obj, features.Image) or features.is_simple_tensor(obj):
@@ -280,7 +287,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
                 images.append(F.to_image_tensor(obj))
             elif isinstance(obj, features.BoundingBox):
                 bboxes.append(obj)
-            elif isinstance(obj, features.SegmentationMask):
+            elif isinstance(obj, features.Mask):
                 masks.append(obj)
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
                 labels.append(obj)
@@ -288,7 +295,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain equal sized list of Images, "
-                "BoundingBoxes, Segmentation Masks and Labels or OneHotLabels."
+                "BoundingBoxes, Masks and Labels or OneHotLabels."
             )
 
         targets = []
@@ -314,8 +321,8 @@ class SimpleCopyPaste(_RandomApplyTransform):
             elif isinstance(obj, features.BoundingBox):
                 flat_sample[i] = features.BoundingBox.new_like(obj, output_targets[c1]["boxes"])
                 c1 += 1
-            elif isinstance(obj, features.SegmentationMask):
-                flat_sample[i] = features.SegmentationMask.new_like(obj, output_targets[c2]["masks"])
+            elif isinstance(obj, features.Mask):
+                flat_sample[i] = features.Mask.new_like(obj, output_targets[c2]["masks"])
                 c2 += 1
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
                 flat_sample[i] = obj.new_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
@@ -356,6 +363,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
                     random_selection=random_selection,
                     blending=self.blending,
                     resize_interpolation=self.resize_interpolation,
+                    antialias=self.antialias,
                 )
             output_images.append(output_image)
             output_targets.append(output_target)
