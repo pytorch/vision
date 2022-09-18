@@ -67,7 +67,7 @@ class ConverToGrayscale(torch.nn.Module):
 
     def forward(
         self,
-        images: T_STEREO_TENSOR,
+        images: Tuple[PIL.Image.Image, PIL.Image.Image],
         disparities: Tuple[T_FLOW, T_FLOW],
         masks: Tuple[T_MASK, T_MASK],
     ) -> Tuple[T_STEREO_TENSOR, Tuple[T_FLOW, T_FLOW], Tuple[T_MASK, T_MASK]]:
