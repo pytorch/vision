@@ -376,12 +376,14 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
                 ).mean() # mean the smoothness loss over the batch
             loss += loss_smoothness / len(disp_predictions) * args.smoothness_weight
 
-        metrics, _ = utils.compute_metrics(
-            disp_predictions[-1][:, :1, :, :], # predictions might have 2 channels
-            disp_mask[:, :1, :, :], # so does the ground truth
-            valid_disp_mask,
-            args.metrics
-        )
+        with torch.no_grad():
+            metrics, _ = utils.compute_metrics(
+                disp_predictions[-1][:, :1, :, :], # predictions might have 2 channels
+                disp_mask[:, :1, :, :], # so does the ground truth
+                valid_disp_mask,
+                args.metrics
+            )
+        
         metrics.pop("f1", None)
         logger.update(loss=loss, **metrics)
 
@@ -567,12 +569,12 @@ def get_args_parser(add_help=True):
         "--train-datasets",
         type=str,
         nargs="+",
-        default=["crestereo", "middlebury2014-other"],
+        default=["crestereo"],
         help="dataset(s) to train on",
         choices=["crestereo", "eth3d-train", "middlebury2014-train-ambient", "middlebury2014-other", "instereo2k", "fallingthings", "carla-highres", "sintel"],
     )
     parser.add_argument(
-        "--dataset-steps", type=int, nargs="+", default=[270_000, 30_000], help="number of steps for each dataset"
+        "--dataset-steps", type=int, nargs="+", default=[300_000], help="number of steps for each dataset"
     )
     parser.add_argument("--steps-is-epochs", action="store_true", help="if set, dataset-steps are interpreted as epochs")
     parser.add_argument(
@@ -658,12 +660,12 @@ def get_args_parser(add_help=True):
         help="interpolation strategy",
         choices=["bilinear", "bicubic", "mixed"],
     )
-    parser.add_argument("--spatial-shift-prob", type=float, default=0.5, help="probability of shifting the image")
+    parser.add_argument("--spatial-shift-prob", type=float, default=1.0, help="probability of shifting the image")
     parser.add_argument(
-        "--spatial-shift-max-angle", type=float, default=0.5, help="maximum angle for the spatial shift"
+        "--spatial-shift-max-angle", type=float, default=0.1, help="maximum angle for the spatial shift"
     )
     parser.add_argument(
-        "--spatial-shift-max-displacement", type=float, default=0.5, help="maximum displacement for the spatial shift"
+        "--spatial-shift-max-displacement", type=float, default=2.0, help="maximum displacement for the spatial shift"
     )
     parser.add_argument("--gamma-range", type=float, nargs="+", default=[0.8, 1.2], help="range for gamma correction")
     parser.add_argument(
@@ -679,7 +681,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--asymmetric-jitter-prob",
         type=float,
-        default=0.5,
+        default=1.0,
         help="probability of using asymmetric jitter instead of symmetric jitter",
     )
     parser.add_argument("--occlusion-prob", type=float, default=0.5, help="probability of occluding the rightimage")
@@ -731,7 +733,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--metrics", type=str, nargs="+", default=["mae", "rmse", "1px", "3px", "5px", "relepe"], help="metrics to log", choices=AVAILABLE_METRICS)
 
     # distributed parameters
-    parser.add_argument("--world-size", type=int, default=2, help="number of distributed processes")
+    parser.add_argument("--world-size", type=int, default=8, help="number of distributed processes")
     parser.add_argument("--dist-url", type=str, default="env://", help="url used to set up distributed training")
     parser.add_argument("--device", type=str, default="cuda", help="device to use for training")
 

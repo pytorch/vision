@@ -2,6 +2,7 @@ from typing import List
 import torch
 import numpy as np
 from torch import Tensor
+import os
 from torchvision.utils import make_grid
 
 @torch.no_grad()
@@ -92,3 +93,29 @@ def make_disparity_sequence_grid(predictions: List[Tensor], disparities: Tensor)
     sequence = sequence.permute(1, 2, 0).numpy()
     sequence = (sequence * 255).astype(np.uint8)
     return sequence
+
+
+@torch.no_grad()
+def make_prediction_image_side_to_side(predictions: Tensor, disparities: Tensor, valid_mask: Tensor, save_path: str, prefix: str) -> None:
+    import matplotlib.pyplot as plt
+    
+    # normalize the predictions and disparities in [0, 1]
+    predictions = (predictions - predictions.min()) / (predictions.max() - predictions.min())
+    disparities = (disparities - disparities.min()) / (disparities.max() - disparities.min())
+    predictions = predictions * valid_mask
+    disparities = disparities * valid_mask
+    
+    predictions = predictions.detach().cpu()
+    disparities = disparities.detach().cpu() 
+    
+    for idx, (pred, gt) in enumerate(zip(predictions, disparities)):
+        pred = pred.permute(1, 2, 0).numpy()
+        gt = gt.permute(1, 2, 0).numpy()
+        # plot pred and gt side by side
+        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        ax[0].imshow(pred)
+        ax[0].set_title("Prediction")
+        ax[1].imshow(gt)
+        ax[1].set_title("Ground Truth")
+        save_name = os.path.join(save_path, "{}_{}.png".format(prefix, idx))
+        plt.savefig(save_name)
