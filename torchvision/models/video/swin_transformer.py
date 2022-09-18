@@ -76,26 +76,26 @@ def shifted_window_attention_3d(
     Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
     Args:
-        input (Tensor[B, D, H, W, C]): The input tensor, 5-dimensions.
+        input (Tensor[B, T, H, W, C]): The input tensor, 5-dimensions.
         qkv_weight (Tensor[in_dim, out_dim]): The weight tensor of query, key, value.
         proj_weight (Tensor[out_dim, out_dim]): The weight tensor of projection.
         relative_position_bias (Tensor): The learned relative position bias added to attention.
-        window_size (List[int]): 3-dimensions window size, D, H, W .
+        window_size (List[int]): 3-dimensions window size, T, H, W .
         num_heads (int): Number of attention heads.
-        shift_size (List[int]): Shift size for shifted window attention (D, H, W).
+        shift_size (List[int]): Shift size for shifted window attention (T, H, W).
         attention_dropout (float): Dropout ratio of attention weight. Default: 0.0.
         dropout (float): Dropout ratio of output. Default: 0.0.
         qkv_bias (Tensor[out_dim], optional): The bias tensor of query, key, value. Default: None.
         proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
     Returns:
-        Tensor[B, D, H, W, C]: The output tensor after shifted window attention.
+        Tensor[B, T, H, W, C]: The output tensor after shifted window attention.
     """
-    b, d, h, w, c = input.shape
+    b, t, h, w, c = input.shape
     # pad feature maps to multiples of window size
-    pad_size = _compute_pad_size_3d((d, h, w), (window_size[0], window_size[1], window_size[2]))
+    pad_size = _compute_pad_size_3d((t, h, w), (window_size[0], window_size[1], window_size[2]))
     x = F.pad(input, (0, 0, 0, pad_size[2], 0, pad_size[1], 0, pad_size[0]))
-    _, dp, hp, wp, _ = x.shape
-    padded_size = (dp, hp, wp)
+    _, tp, hp, wp, _ = x.shape
+    padded_size = (tp, hp, wp)
 
     # cyclic shift
     if sum(shift_size) > 0:
@@ -158,14 +158,14 @@ def shifted_window_attention_3d(
         window_size[2],
         c,
     )
-    x = x.permute(0, 1, 4, 2, 5, 3, 6, 7).reshape(b, dp, hp, wp, c)
+    x = x.permute(0, 1, 4, 2, 5, 3, 6, 7).reshape(b, tp, hp, wp, c)
 
     # reverse cyclic shift
     if sum(shift_size) > 0:
         x = torch.roll(x, shifts=(shift_size[0], shift_size[1], shift_size[2]), dims=(1, 2, 3))
 
     # unpad features
-    x = x[:, :d, :h, :w, :].contiguous()
+    x = x[:, :t, :h, :w, :].contiguous()
     return x
 
 
@@ -294,8 +294,8 @@ class PatchEmbed3d(nn.Module):
         _, _, d, h, w = x.size()
         pad_size = _compute_pad_size_3d((d, h, w), self.tuple_patch_size)
         x = F.pad(x, (0, pad_size[2], 0, pad_size[1], 0, pad_size[0]))
-        x = self.proj(x)  # B C D Wh Ww
-        x = x.permute(0, 2, 3, 4, 1)  # B D Wh Ww C
+        x = self.proj(x)  # B C T Wh Ww
+        x = x.permute(0, 2, 3, 4, 1)  # B T Wh Ww C
         if self.norm is not None:
             x = self.norm(x)
         return x
@@ -399,12 +399,12 @@ class SwinTransformer3d(nn.Module):
                     nn.init.zeros_(m.bias)
 
     def forward(self, x: Tensor) -> Tensor:
-        # x: B C D H W
-        x = self.patch_embed(x)  # B _D _H _W C
+        # x: B C T H W
+        x = self.patch_embed(x)  # B _T _H _W C
         x = self.pos_drop(x)
-        x = self.features(x)  # B _D _H _W C
+        x = self.features(x)  # B _T _H _W C
         x = self.norm(x)
-        x = x.permute(0, 4, 1, 2, 3)  # B, C, _D, _H, _W
+        x = x.permute(0, 4, 1, 2, 3)  # B, C, _T, _H, _W
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         if self.num_classes is not None:
