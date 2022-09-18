@@ -223,8 +223,8 @@ class ShiftedWindowAttention3d(nn.Module):
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
     def forward(self, x: Tensor) -> Tensor:
-        _, d, h, w, _ = x.shape
-        size_dhw = (d, h, w)
+        _, t, h, w, _ = x.shape
+        size_dhw = (t, h, w)
         window_size, shift_size = self.window_size.copy(), self.shift_size.copy()
         # Handle case where window_size is larger than the input tensor
         for i in range(3):
@@ -291,8 +291,8 @@ class PatchEmbed3d(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         """Forward function."""
         # padding
-        _, _, d, h, w = x.size()
-        pad_size = _compute_pad_size_3d((d, h, w), self.tuple_patch_size)
+        _, _, t, h, w = x.size()
+        pad_size = _compute_pad_size_3d((t, h, w), self.tuple_patch_size)
         x = F.pad(x, (0, pad_size[2], 0, pad_size[1], 0, pad_size[0]))
         x = self.proj(x)  # B C T Wh Ww
         x = x.permute(0, 2, 3, 4, 1)  # B T Wh Ww C
