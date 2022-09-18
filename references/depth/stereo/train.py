@@ -486,7 +486,12 @@ def main(args):
     train_dataset = get_train_dataset(args.dataset_root, args)
 
     # initialize the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    if args.optimizer == "adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    elif args.optimizer == "sgd":
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, momentum=0.9)
+    else:
+        raise ValueError(f"Unknown optimizer {args.optimizer}. Please choose between adam and sgd")
 
     # initialize the learning rate schedule
     scheduler = make_cre_stereo_schedule(args, optimizer)
