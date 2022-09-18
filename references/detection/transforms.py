@@ -607,14 +607,14 @@ class Mosaic(nn.Module):
         """
 
         # implementation  is heavily inspired from this colab notebook
-        sx, sy = images.shape[-2], images.shape[-3]
+        sx, sy = images.shape[-3], images.shape[-2]
 
         num_channels = images.shape[1]
 
         xc = torch.random.randint(sx * self.min_frac, sx * self.max_frac)
         yc = torch.random.randint(sy * self.min_frac, sy * self.min_frac)
 
-        mosaic_image = torch.zeros((sy, sx, num_channels), dtype=torch.float32)
+        mosaic_image = torch.zeros((sx, sy, num_channels), dtype=torch.float32)
 
         x1a1, y1a1, x2a1, y2a1 = 0, 0, xc, yc
         x1b1, y1b1, x2b1, y2b1 = sx - xc, sy - yc, sx, sy
