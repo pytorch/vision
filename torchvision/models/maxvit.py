@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 from torchvision.models._api import register_model, Weights, WeightsEnum
 from torchvision.models._meta import _IMAGENET_CATEGORIES
-from torchvision.models._utils import _ovewrite_named_param
+from torchvision.models._utils import _ovewrite_named_param, handle_legacy_interface
 from torchvision.ops.misc import Conv2dNormActivation, SqueezeExcitation
 from torchvision.ops.stochastic_depth import StochasticDepth
 from torchvision.transforms._presets import ImageClassification, InterpolationMode
@@ -809,6 +809,7 @@ class MaxVit_T_Weights(WeightsEnum):
 
 
 @register_model()
+@handle_legacy_interface(weights=("pretrained", MaxVit_T_Weights.IMAGENET1K_V1))
 def maxvit_t(*, weights: Optional[MaxVit_T_Weights] = None, progress: bool = True, **kwargs: Any) -> MaxVit:
     """
     Constructs a maxvit_t architecture from
