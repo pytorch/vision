@@ -15,7 +15,7 @@ __all__ = ["SwinTransformer3d"]
 
 def _compute_pad_size_3d(size_dhw: Tuple[int, int, int], patch_size: Tuple[int, int, int]) -> Tuple[int, int, int]:
     pad_size = [(patch_size[i] - size_dhw[i] % patch_size[i]) % patch_size[i] for i in range(3)]
-    return (pad_size[0], pad_size[1], pad_size[2])
+    return pad_size[0], pad_size[1], pad_size[2]
 
 
 def _compute_attention_mask_3d(
@@ -184,7 +184,7 @@ class ShiftedWindowAttention3d(nn.Module):
         proj_bias: bool = True,
         attention_dropout: float = 0.0,
         dropout: float = 0.0,
-    ):
+    ) -> None:
         super().__init__()
         self.window_size = window_size  # Wd, Wh, Ww
         self.shift_size = shift_size
@@ -273,7 +273,7 @@ class PatchEmbed3d(nn.Module):
         in_channels: int = 3,
         embed_dim: int = 96,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-    ):
+    ) -> None:
         super().__init__()
         self.tuple_patch_size = (patch_size[0], patch_size[1], patch_size[2])
 
@@ -313,11 +313,11 @@ class SwinTransformer3d(nn.Module):
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
         dropout (float): Dropout rate. Default: 0.0.
         attention_dropout (float): Attention dropout rate. Default: 0.0.
-        stochastic_depth_prob (float): Stochastic depth rate. Default: 0.0.
-        num_classes (int, optional): Number of classes for classification head,
-            if None it will have no head. Default: 400.
-        block (nn.Module, optional): SwinTransformer Block. Default: None.
+        stochastic_depth_prob (float): Stochastic depth rate. Default: 0.1.
+        num_classes (int): Number of classes for classification head. Default: 400.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
+        block (nn.Module, optional): SwinTransformer Block. Default: None.
+        downsample_layer (nn.Module): Downsample layer (patch merging). Default: PatchMerging.
         patch_embed (nn.Module, optional): Patch Embedding layer. Default: None.
     """
 
@@ -331,12 +331,13 @@ class SwinTransformer3d(nn.Module):
         mlp_ratio: float = 4.0,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
-        stochastic_depth_prob: float = 0.0,
-        num_classes: Optional[int] = 400,
+        stochastic_depth_prob: float = 0.1,
+        num_classes: int = 400,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         block: Optional[Callable[..., nn.Module]] = None,
+        downsample_layer: Callable[..., nn.Module] = PatchMerging,
         patch_embed: Optional[Callable[..., nn.Module]] = None,
-    ):
+    ) -> None:
         super().__init__()
         self.num_classes = num_classes
 
@@ -381,16 +382,13 @@ class SwinTransformer3d(nn.Module):
             layers.append(nn.Sequential(*stage))
             # add patch merging layer
             if i_stage < (len(depths) - 1):
-                layers.append(PatchMerging(dim, norm_layer))
+                layers.append(downsample_layer(dim, norm_layer))
         self.features = nn.Sequential(*layers)
 
         self.num_features = embed_dim * 2 ** (len(depths) - 1)
         self.norm = norm_layer(self.num_features)
         self.avgpool = nn.AdaptiveAvgPool3d(1)
-        if num_classes is not None:
-            self.head = nn.Linear(self.num_features, num_classes)
-        else:
-            self.head = None
+        self.head = nn.Linear(self.num_features, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
@@ -407,6 +405,5 @@ class SwinTransformer3d(nn.Module):
         x = x.permute(0, 4, 1, 2, 3)  # B, C, _T, _H, _W
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
-        if self.num_classes is not None:
-            x = self.head(x)
+        x = self.head(x)
         return x
