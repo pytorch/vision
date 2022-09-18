@@ -8,10 +8,10 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 from torchvision.models._api import register_model, Weights, WeightsEnum
 from torchvision.models._meta import _IMAGENET_CATEGORIES
-from torchvision.transforms._presets import ImageClassification, InterpolationMode
 from torchvision.models._utils import _ovewrite_named_param
 from torchvision.ops.misc import Conv2dNormActivation, SqueezeExcitation
 from torchvision.ops.stochastic_depth import StochasticDepth
+from torchvision.transforms._presets import ImageClassification, InterpolationMode
 from torchvision.utils import _log_api_usage_once
 
 __all__ = [
@@ -20,11 +20,13 @@ __all__ = [
     "maxvit_t",
 ]
 
+
 def _get_conv_output_shape(input_size: Tuple[int, int], kernel_size: int, stride: int, padding: int) -> Tuple[int, int]:
     return (
         (input_size[0] - kernel_size + 2 * padding) // stride + 1,
-        (input_size[1] - kernel_size + 2 * padding) // stride + 1
+        (input_size[1] - kernel_size + 2 * padding) // stride + 1,
     )
+
 
 def _make_block_input_shapes(input_size: Tuple[int, int], n_blocks: int) -> List[Tuple[int, int]]:
     """Util function to check that the input size is correct for a MaxVit configuration."""
@@ -34,6 +36,7 @@ def _make_block_input_shapes(input_size: Tuple[int, int], n_blocks: int) -> List
         block_input_shape = _get_conv_output_shape(block_input_shape, 3, 2, 1)
         shapes.append(block_input_shape)
     return shapes
+
 
 def _get_relative_position_index(height: int, width: int) -> torch.Tensor:
     coords = torch.stack(torch.meshgrid([torch.arange(height), torch.arange(width)]))
@@ -48,7 +51,7 @@ def _get_relative_position_index(height: int, width: int) -> torch.Tensor:
 
 class MBConv(nn.Module):
     """MBConv: Mobile Inverted Residual Bottleneck.
-    
+
     Args:
         in_channels (int): Number of input channels.
         out_channels (int): Number of output channels.
@@ -59,7 +62,7 @@ class MBConv(nn.Module):
         normalization_fn (Callable[..., nn.Module]): Normalization function.
         p_stochastic_dropout (float): Probability of stochastic depth.
     """
-    
+
     def __init__(
         self,
         in_channels: int,
@@ -135,13 +138,13 @@ class MBConv(nn.Module):
 
 class RelativePositionalMultiHeadAttention(nn.Module):
     """Relative Positional Multi-Head Attention.
-    
+
     Args:
         feat_dim (int): Number of input features.
         head_dim (int): Number of features per head.
         max_seq_len (int): Maximum sequence length.
     """
-    
+
     def __init__(
         self,
         feat_dim: int,
@@ -208,7 +211,7 @@ class RelativePositionalMultiHeadAttention(nn.Module):
 
 class SwapAxes(nn.Module):
     """Permute the axes of a tensor."""
-    
+
     def __init__(self, a: int, b: int) -> None:
         super().__init__()
         self.a = a
@@ -223,7 +226,7 @@ class WindowPartition(nn.Module):
     """
     Partition the input tensor into non-overlapping windows.
     """
-    
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -278,7 +281,7 @@ class WindowDepartition(nn.Module):
 class PartitionAttentionLayer(nn.Module):
     """
     Layer for partitioning the input tensor into non-overlapping windows and applying attention to each window.
-    
+
     Args:
         in_channels (int): Number of input channels.
         head_dim (int): Dimension of each attention head.
@@ -292,7 +295,7 @@ class PartitionAttentionLayer(nn.Module):
         mlp_dropout (float): Dropout probability for the MLP layer.
         p_stochastic_dropout (float): Probability of dropping out a partition.
     """
-    
+
     def __init__(
         self,
         in_channels: int,
@@ -358,7 +361,7 @@ class PartitionAttentionLayer(nn.Module):
         Returns:
             Tensor: Output tensor with expected layout of [B, C, H, W].
         """
-        
+
         # Undefined behavior if H or W are not divisible by p
         # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L766
         gh, gw = self.grid_size[0] // self.p, self.grid_size[1] // self.p
@@ -376,7 +379,7 @@ class PartitionAttentionLayer(nn.Module):
 class MaxVitLayer(nn.Module):
     """
     MaxVit layer consisting of a MBConv layer followed by a PartitionAttentionLayer with `window` and a PartitionAttentionLayer with `grid`.
-    
+
     Args:
         in_channels (int): Number of input channels.
         out_channels (int): Number of output channels.
@@ -393,7 +396,7 @@ class MaxVitLayer(nn.Module):
         partition_size (int): Size of the partitions.
         grid_size (Tuple[int, int]): Size of the input feature grid.
     """
-    
+
     def __init__(
         self,
         # conv parameters
@@ -470,11 +473,10 @@ class MaxVitLayer(nn.Module):
         return x
 
 
-
 class MaxVitBlock(nn.Module):
     """
     A MaxVit block consisting of `n_layers` MaxVit layers.
-    
+
      Args:
         in_channels (int): Number of input channels.
         out_channels (int): Number of output channels.
@@ -492,7 +494,7 @@ class MaxVitBlock(nn.Module):
         n_layers (int): Number of layers in the block.
         p_stochastic (List[float]): List of probabilities for stochastic depth for each layer.
     """
-    
+
     def __init__(
         self,
         # conv parameters
@@ -577,7 +579,7 @@ class MaxVit(nn.Module):
         attn_dropout (float): Dropout probability for the attention layer.
         partition_size (int): Size of the partitions.
     """
-    
+
     def __init__(
         self,
         # input size parameters
@@ -608,11 +610,11 @@ class MaxVit(nn.Module):
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
-        
+
         # Make sure input size will be divisible by the partition size in all blocks
         # Undefined behavior if H or W are not divisible by p
         # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L766
-        
+
         # we do this check here to avoid torch.fx that cannot handle error checking on dynamic tensor shapes
         block_input_sizes = _make_block_input_shapes(input_size, len(block_channels))
         for idx, block_input_size in enumerate(block_input_sizes):
@@ -711,6 +713,7 @@ class MaxVit(nn.Module):
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
+
 def _maxvit(
     # stem parameters
     stem_channels: int,
@@ -741,7 +744,7 @@ def _maxvit(
     # kwargs,
     **kwargs,
 ) -> MaxVit:
-    
+
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
@@ -774,9 +777,11 @@ def _maxvit(
 
     return model
 
+
 _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
 }
+
 
 class MaxVit_T_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
@@ -802,6 +807,7 @@ class MaxVit_T_Weights(WeightsEnum):
     )
     DEFAULT = IMAGENET1K_V1
 
+
 @register_model()
 def maxvit_t(*, weights: Optional[MaxVit_T_Weights] = None, progress: bool = True, **kwargs: Any) -> MaxVit:
     """
@@ -825,7 +831,7 @@ def maxvit_t(*, weights: Optional[MaxVit_T_Weights] = None, progress: bool = Tru
         :members:
     """
     weights = MaxVit_T_Weights.verify(weights)
-    
+
     return _maxvit(
         stem_channels=64,
         block_channels=[64, 128, 256, 512],
