@@ -16,14 +16,13 @@ class StereoMatchingEvalPreset(torch.nn.Module):
     ) -> None:
         super().__init__()
 
-        transforms = [T.ConverToGrayscale()] if use_grayscale else []
+        transforms = [
+            T.ToTensor(),
+            T.ConvertImageDtype(torch.float32),
+        ]
 
-        transforms.extend(
-            [
-                T.ToTensor(),
-                T.ConvertImageDtype(torch.float32),
-            ]
-        )
+        if use_grayscale:
+            transforms.append(T.ConverToGrayscale())
 
         if resize_size is not None:
             transforms.append(T.Resize(resize_size, interpolation_type=interpolation_type))
@@ -90,7 +89,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
             raise ValueError(f"Unknown scaling type: {scaling_type}. Available types: linear, exponential")
 
         super().__init__()
-        transforms = [T.ConverToGrayscale(), T.ToTensor()] if use_grayscale else [T.ToTensor()]
+        transforms = [T.ToTensor()]
 
         # when fixing size across multiple datasets, we ensure
         # that the same size is used for all datasets when cropping
@@ -107,6 +106,9 @@ class StereoMatchingTrainPreset(torch.nn.Module):
             ),
             T.AsymetricGammaAdjust(p=asymmetric_jitter_prob, gamma_range=gamma_range),
         ]
+
+        if use_grayscale:
+            color_transforms.append(T.ConverToGrayscale())
 
         transforms.extend(color_transforms)
 

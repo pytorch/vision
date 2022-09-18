@@ -213,6 +213,7 @@ class StereoMatching(torch.nn.Module):
     def __init__(
         self,
         *,
+        use_gray_scale: bool = False,
         resize_size: Optional[Tuple[int, int]],
         mean: Tuple[float, ...] = (0.5, 0.5, 0.5),
         std: Tuple[float, ...] = (0.5, 0.5, 0.5),
@@ -223,6 +224,7 @@ class StereoMatching(torch.nn.Module):
         self.mean = list(mean)
         self.std = list(std)
         self.interpolation = interpolation
+        self.use_gray_scale = use_gray_scale
 
     def forward(self, left_image: Tensor, right_image: Tensor) -> Tuple[Tensor, Tensor]:
         def _process_image(img) -> Tensor:
@@ -230,6 +232,8 @@ class StereoMatching(torch.nn.Module):
                 img = F.resize(img, self.resize_size, interpolation=self.interpolation)
             if not isinstance(img, Tensor):
                 img = F.pil_to_tensor(img)
+            if self.use_gray_scale is True:
+                img = F.rgb_to_grayscale(img)
             img = F.convert_image_dtype(img, torch.float)
             img = F.normalize(img, mean=self.mean, std=self.std)
             img = img.contiguous()
