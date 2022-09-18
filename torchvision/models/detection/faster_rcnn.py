@@ -550,7 +550,7 @@ def fasterrcnn_resnet50_fpn(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 
@@ -571,6 +571,10 @@ def fasterrcnn_resnet50_fpn(
 
 
 @register_model()
+@handle_legacy_interface(
+    weights=("pretrained", FasterRCNN_ResNet50_FPN_V2_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
+)
 def fasterrcnn_resnet50_fpn_v2(
     *,
     weights: Optional[FasterRCNN_ResNet50_FPN_V2_Weights] = None,
@@ -617,7 +621,7 @@ def fasterrcnn_resnet50_fpn_v2(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 
@@ -657,7 +661,7 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
 ) -> FasterRCNN:
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 

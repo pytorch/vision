@@ -1,8 +1,8 @@
 import enum
-import functools
 import pathlib
 import re
-from typing import Any, BinaryIO, cast, Dict, List, Match, Optional, Tuple, Union
+
+from typing import Any, BinaryIO, cast, Dict, Iterator, List, Match, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import (
     Demultiplexer,
@@ -14,6 +14,7 @@ from torchdata.datapipes.iter import (
     Mapper,
     TarArchiveLoader,
 )
+from torchdata.datapipes.map import IterToMapConverter
 from torchvision.prototype.datasets.utils import Dataset, ManualDownloadResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
@@ -45,6 +46,28 @@ class ImageNetResource(ManualDownloadResource):
 class ImageNetDemux(enum.IntEnum):
     META = 0
     LABEL = 1
+
+
+class CategoryAndWordNetIDExtractor(IterDataPipe):
+    # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849
+    # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment
+    _WNID_MAP = {
+        "n03126707": "construction crane",
+        "n03710721": "tank suit",
+    }
+
+    def __init__(self, datapipe: IterDataPipe[Tuple[str, BinaryIO]]) -> None:
+        self.datapipe = datapipe
+
+    def __iter__(self) -> Iterator[Tuple[str, str]]:
+        for _, stream in self.datapipe:
+            synsets = read_mat(stream, squeeze_me=True)["synsets"]
+            for _, wnid, category, _, num_children, *_ in synsets:
+                if num_children > 0:
+                    # we are looking at a superclass that has no direct instance
+                    continue
+
+                yield self._WNID_MAP.get(wnid, category.split(",", 1)[0]), wnid
 
 
 @register_dataset(NAME)
@@ -110,25 +133,6 @@ class ImageNet(Dataset):
             "ILSVRC2012_validation_ground_truth.txt": ImageNetDemux.LABEL,
         }.get(pathlib.Path(data[0]).name)
 
-    # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849
-    # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment
-    _WNID_MAP = {
-        "n03126707": "construction crane",
-        "n03710721": "tank suit",
-    }
-
-    def _extract_categories_and_wnids(self, data: Tuple[str, BinaryIO]) -> List[Tuple[str, str]]:
-        synsets = read_mat(data[1], squeeze_me=True)["synsets"]
-        return [
-            (self._WNID_MAP.get(wnid, category.split(",", 1)[0]), wnid)
-            for _, wnid, category, _, num_children, *_ in synsets
-            # if num_children > 0, we are looking at a superclass that has no direct instance
-            if num_children == 0
-        ]
-
-    def _imagenet_label_to_wnid(self, imagenet_label: str, *, wnids: Tuple[str, ...]) -> str:
-        return wnids[int(imagenet_label) - 1]
-
     _VAL_TEST_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_(val|test)_(?P<id>\d{8})[.]JPEG")
 
     def _val_test_image_key(self, path: pathlib.Path) -> int:
@@ -172,12 +176,15 @@ class ImageNet(Dataset):
                 devkit_dp, 2, self._classifiy_devkit, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
             )
 
-            meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
-            _, wnids = zip(*next(iter(meta_dp)))
+            # We cannot use self._wnids here, since we use a different order than the dataset
+            meta_dp = CategoryAndWordNetIDExtractor(meta_dp)
+            wnid_dp = Mapper(meta_dp, getitem(1))
+            wnid_dp = Enumerator(wnid_dp, 1)
+            wnid_map = IterToMapConverter(wnid_dp)
 
             label_dp = LineReader(label_dp, decode=True, return_path=False)
-            # We cannot use self._wnids here, since we use a different order than the dataset
-            label_dp = Mapper(label_dp, functools.partial(self._imagenet_label_to_wnid, wnids=wnids))
+            label_dp = Mapper(label_dp, int)
+            label_dp = Mapper(label_dp, wnid_map.__getitem__)
             label_dp: IterDataPipe[Tuple[int, str]] = Enumerator(label_dp, 1)
             label_dp = hint_shuffling(label_dp)
             label_dp = hint_sharding(label_dp)
@@ -209,8 +216,8 @@ class ImageNet(Dataset):
 
         devkit_dp = resources[1].load(self._root)
         meta_dp = Filter(devkit_dp, self._filter_meta)
-        meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
+        meta_dp = CategoryAndWordNetIDExtractor(meta_dp)
 
-        categories_and_wnids = cast(List[Tuple[str, ...]], next(iter(meta_dp)))
+        categories_and_wnids = cast(List[Tuple[str, ...]], list(meta_dp))
         categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])
         return categories_and_wnids

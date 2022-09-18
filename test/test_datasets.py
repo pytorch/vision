@@ -2841,6 +2841,37 @@ class CarlaStereoTestCase(datasets_utils.ImageDatasetTestCase):
                 datasets_utils.shape_test_for_stereo(left, right, disparity)
 
 
+class CREStereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.CREStereo
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, np.ndarray, type(None))
+
+    def inject_fake_data(self, tmpdir, config):
+        crestereo_dir = pathlib.Path(tmpdir) / "CREStereo"
+        os.makedirs(crestereo_dir, exist_ok=True)
+
+        examples = {"tree": 2, "shapenet": 3, "reflective": 6, "hole": 5}
+
+        for category_name in ["shapenet", "reflective", "tree", "hole"]:
+            split_dir = crestereo_dir / category_name
+            os.makedirs(split_dir, exist_ok=True)
+            num_examples = examples[category_name]
+
+            for idx in range(num_examples):
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.jpg", size=(100, 100))
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.jpg", size=(100, 100))
+                # these are going to end up being gray scale images
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_left.disp.png", size=(1, 100, 100))
+                datasets_utils.create_image_file(root=split_dir, name=f"{idx}_right.disp.png", size=(1, 100, 100))
+
+        return sum(examples.values())
+
+    def test_splits(self):
+        with self.create_dataset() as (dataset, _):
+            for left, right, disparity, mask in dataset:
+                assert mask is None
+                datasets_utils.shape_test_for_stereo(left, right, disparity)
+
+
 class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.FallingThingsStereo
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(variant=("single", "mixed", "both"))
@@ -3180,6 +3211,99 @@ class ETH3DStereoestCase(datasets_utils.ImageDatasetTestCase):
             for left, right, disparity, valid_mask in dataset:
                 assert valid_mask is None
                 datasets_utils.shape_test_for_stereo(left, right, disparity)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
+class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Middlebury2014Stereo
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "additional"),
+        calibration=("perfect", "imperfect", "both"),
+        use_ambient_views=(True, False),
+    )
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    @staticmethod
+    def _make_scene_folder(root_dir: str, scene_name: str, split: str) -> None:
+        calibrations = [None] if split == "test" else ["-perfect", "-imperfect"]
+        root_dir = pathlib.Path(root_dir)
+
+        for c in calibrations:
+            scene_dir = root_dir / f"{scene_name}{c}"
+            os.makedirs(scene_dir, exist_ok=True)
+            # make normal images first
+            datasets_utils.create_image_file(root=scene_dir, name="im0.png", size=(3, 100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name="im1.png", size=(3, 100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name="im1E.png", size=(3, 100, 100))
+            datasets_utils.create_image_file(root=scene_dir, name="im1L.png", size=(3, 100, 100))
+            # these are going to end up being gray scale images
+            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=scene_dir / "disp0.pfm")
+            datasets_utils.make_fake_pfm_file(h=100, w=100, file_name=scene_dir / "disp1.pfm")
+
+    def inject_fake_data(self, tmpdir, config):
+        split_scene_map = {
+            "train": ["Adirondack", "Jadeplant", "Motorcycle", "Piano"],
+            "additional": ["Backpack", "Bicycle1", "Cable", "Classroom1"],
+            "test": ["Plants", "Classroom2E", "Classroom2", "Australia"],
+        }
+
+        middlebury_dir = pathlib.Path(tmpdir, "Middlebury2014")
+        os.makedirs(middlebury_dir, exist_ok=True)
+
+        split_dir = middlebury_dir / config["split"]
+        os.makedirs(split_dir, exist_ok=True)
+
+        num_examples = {"train": 2, "additional": 3, "test": 4}.get(config["split"], 0)
+        for idx in range(num_examples):
+            scene_name = split_scene_map[config["split"]][idx]
+            self._make_scene_folder(root_dir=split_dir, scene_name=scene_name, split=config["split"])
+
+        if config["calibration"] == "both":
+            num_examples *= 2
+        return num_examples
+
+    def test_train_splits(self):
+        for split, calibration in itertools.product(["train", "additional"], ["perfect", "imperfect", "both"]):
+            with self.create_dataset(split=split, calibration=calibration) as (dataset, _):
+                for left, right, disparity, mask in dataset:
+                    datasets_utils.shape_test_for_stereo(left, right, disparity, mask)
+
+    def test_test_split(self):
+        for split in ["test"]:
+            with self.create_dataset(split=split, calibration=None) as (dataset, _):
+                for left, right, disparity, mask in dataset:
+                    datasets_utils.shape_test_for_stereo(left, right)
+
+    def test_augmented_view_usage(self):
+        with self.create_dataset(split="train", use_ambient_views=True) as (dataset, _):
+            for left, right, disparity, mask in dataset:
+                datasets_utils.shape_test_for_stereo(left, right, disparity, mask)
+
+    def test_value_err_train(self):
+        # train set invalid
+        split = "train"
+        calibration = None
+        with pytest.raises(
+            ValueError,
+            match=f"Split '{split}' has calibration settings, however None was provided as an argument."
+            f"\nSetting calibration to 'perfect' for split '{split}'. Available calibration settings are: 'perfect', 'imperfect', 'both'.",
+        ):
+            with self.create_dataset(split=split, calibration=calibration):
+                pass
+
+    def test_value_err_test(self):
+        # test set invalid
+        split = "test"
+        calibration = "perfect"
+        with pytest.raises(
+            ValueError, match="Split 'test' has only no calibration settings, please set `calibration=None`."
+        ):
+            with self.create_dataset(split=split, calibration=calibration):
+                pass
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):

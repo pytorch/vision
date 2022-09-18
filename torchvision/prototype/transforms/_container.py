@@ -18,6 +18,12 @@ class Compose(Transform):
             sample = transform(sample)
         return sample
 
+    def extra_repr(self) -> str:
+        format_string = []
+        for t in self.transforms:
+            format_string.append(f"    {t}")
+        return "\n".join(format_string)
+
 
 class RandomApply(Compose):
     def __init__(self, transforms: Sequence[Callable], p: float = 0.5) -> None:

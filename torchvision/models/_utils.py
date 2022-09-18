@@ -240,11 +240,11 @@ def _ovewrite_named_param(kwargs: Dict[str, Any], param: str, new_value: V) -> N
         kwargs[param] = new_value
 
 
-def _ovewrite_value_param(param: Optional[V], new_value: V) -> V:
-    if param is not None:
-        if param != new_value:
-            raise ValueError(f"The parameter '{param}' expected value {new_value} but got {param} instead.")
-    return new_value
+def _ovewrite_value_param(param: str, actual: Optional[V], expected: V) -> V:
+    if actual is not None:
+        if actual != expected:
+            raise ValueError(f"The parameter '{param}' expected value {expected} but got {actual} instead.")
+    return expected
 
 
 class _ModelURLs(dict):
