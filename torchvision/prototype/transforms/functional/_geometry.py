@@ -261,7 +261,7 @@ def affine_image_pil(
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
@@ -426,11 +426,10 @@ def affine(
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> features.DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        fill = _convert_fill_arg(fill)
         return affine_image_tensor(
             inpt,
             angle,
@@ -502,7 +501,7 @@ def rotate_image_pil(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     if center is not None and expand:
@@ -569,11 +568,10 @@ def rotate(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> features.DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        fill = _convert_fill_arg(fill)
         return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
     elif isinstance(inpt, features._Feature):
         return inpt.rotate(angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
@@ -698,17 +696,11 @@ def pad_bounding_box(
 
 def pad(
     inpt: features.DType,
-    padding: Union[int, Sequence[int]],
-    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    padding: Union[int, List[int]],
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> features.DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
-        if not isinstance(padding, int):
-            padding = list(padding)
-
-        fill = _convert_fill_arg(fill)
-
         return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
 
     elif isinstance(inpt, features._Feature):
@@ -879,12 +871,11 @@ def perspective(
     startpoints: List[List[int]],
     endpoints: List[List[int]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> features.DType:
     perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
 
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        fill = _convert_fill_arg(fill)
         return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, features._Feature):
         return inpt.perspective(perspective_coeffs, interpolation=interpolation, fill=fill)
@@ -906,11 +897,9 @@ def elastic_image_pil(
     img: PIL.Image.Image,
     displacement: torch.Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> PIL.Image.Image:
     t_img = pil_to_tensor(img)
-    fill = _convert_fill_arg(fill)
-
     output = elastic_image_tensor(t_img, displacement, interpolation=interpolation, fill=fill)
     return to_pil_image(output, mode=img.mode)
 
@@ -974,10 +963,9 @@ def elastic(
     inpt: features.DType,
     displacement: torch.Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> features.DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        fill = _convert_fill_arg(fill)
         return elastic_image_tensor(inpt, displacement, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, features._Feature):
         return inpt.elastic(displacement, interpolation=interpolation, fill=fill)

@@ -251,7 +251,14 @@ class Pad(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)
+
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        padding = self.padding
+        if not isinstance(padding, int):
+            padding = list(padding)
+
+        fill = F._geometry._convert_fill_arg(fill)
+        return F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
 
 
 class RandomZoomOut(_RandomApplyTransform):
@@ -290,6 +297,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.pad(inpt, **params, fill=fill)
 
 
@@ -321,12 +329,14 @@ class RandomRotation(Transform):
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        fill = self.fill
+        fill = F._geometry._convert_fill_arg(fill)
         return F.rotate(
             inpt,
             **params,
             interpolation=self.interpolation,
             expand=self.expand,
-            fill=self.fill,
+            fill=fill,
             center=self.center,
         )
 
@@ -404,11 +414,13 @@ class RandomAffine(Transform):
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        fill = self.fill
+        fill = F._geometry._convert_fill_arg(fill)
         return F.affine(
             inpt,
             **params,
             interpolation=self.interpolation,
-            fill=self.fill,
+            fill=fill,
             center=self.center,
         )
 
@@ -483,17 +495,26 @@ class RandomCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         # TODO: (PERF) check for speed optimization if we avoid repeated pad calls
+
+        fill = self.fill
+        fill = F._geometry._convert_fill_arg(fill)
+
         if self.padding is not None:
-            inpt = F.pad(inpt, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
+            # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+            padding = self.padding
+            if not isinstance(padding, int):
+                padding = list(padding)
+
+            inpt = F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
 
         if self.pad_if_needed:
             input_width, input_height = params["input_width"], params["input_height"]
             if input_width < self.size[1]:
                 padding = [self.size[1] - input_width, 0]
-                inpt = F.pad(inpt, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
+                inpt = F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
             if input_height < self.size[0]:
                 padding = [0, self.size[0] - input_height]
-                inpt = F.pad(inpt, padding=padding, fill=self.fill, padding_mode=self.padding_mode)
+                inpt = F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
 
         return F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
@@ -546,10 +567,13 @@ class RandomPerspective(_RandomApplyTransform):
         return dict(startpoints=startpoints, endpoints=endpoints)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        fill = self.fill
+        fill = F._geometry._convert_fill_arg(fill)
+
         return F.perspective(
             inpt,
             **params,
-            fill=self.fill,
+            fill=fill,
             interpolation=self.interpolation,
         )
 
@@ -614,10 +638,13 @@ class ElasticTransform(Transform):
         return dict(displacement=displacement)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        fill = self.fill
+        fill = F._geometry._convert_fill_arg(fill)
+
         return F.elastic(
             inpt,
             **params,
-            fill=self.fill,
+            fill=fill,
             interpolation=self.interpolation,
         )
 
@@ -869,7 +896,9 @@ class FixedSizeCrop(Transform):
                 )
 
         if params["needs_pad"]:
-            inpt = F.pad(inpt, params["padding"], fill=self.fill, padding_mode=self.padding_mode)
+            fill = self.fill
+            fill = F._geometry._convert_fill_arg(fill)
+            inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt
 
