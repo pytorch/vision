@@ -1,5 +1,4 @@
 import argparse
-from email.policy import default
 import os
 import warnings
 from pathlib import Path
