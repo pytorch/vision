@@ -936,7 +936,7 @@ class TestRefDetTransforms:
 seg_transforms = import_transforms_from_references("segmentation")
 
 
-class TestSegDetTransforms:
+class TestRefSegTransforms:
     def make_datapoints(self, supports_pil=True, image_dtype=torch.uint8):
         size = (256, 640)
         num_categories = 21
@@ -958,17 +958,17 @@ class TestSegDetTransforms:
 
             yield dp, dp_ref
 
-    def set_seed(self, seed):
+    def set_seed(self, seed=12):
         torch.manual_seed(seed)
         random.seed(seed)
 
     def check(self, t, t_ref, data_kwargs=None):
         for dp, dp_ref in self.make_datapoints(**data_kwargs or dict()):
 
-            self.set_seed(12)
+            self.set_seed()
             output = t(dp)
 
-            self.set_seed(12)
+            self.set_seed()
             expected_output = t_ref(*dp_ref)
 
             assert_equal(output, expected_output)
@@ -1003,6 +1003,33 @@ class TestSegDetTransforms:
     def test_common(self, t_ref, t, data_kwargs):
         self.check(t, t_ref, data_kwargs)
 
+    def check_resize(self, mocker, t_ref, t):
+        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        mock_ref = mocker.patch("torchvision.transforms.functional.resize")
+
+        for dp, dp_ref in self.make_datapoints():
+            mock.reset_mock()
+            mock_ref.reset_mock()
+
+            self.set_seed()
+            t(dp)
+            assert mock.call_count == 2
+            assert all(
+                actual is expected
+                for actual, expected in zip([call_args[0][0] for call_args in mock.call_args_list], dp)
+            )
+
+            self.set_seed()
+            t_ref(*dp_ref)
+            assert mock_ref.call_count == 2
+            assert all(
+                actual is expected
+                for actual, expected in zip([call_args[0][0] for call_args in mock_ref.call_args_list], dp_ref)
+            )
+
+            for args_kwargs, args_kwargs_ref in zip(mock.call_args_list, mock_ref.call_args_list):
+                assert args_kwargs[0][1] == [args_kwargs_ref[0][1]]
+
     def test_random_resize_train(self, mocker):
         base_size = 520
         min_size = base_size // 2
@@ -1016,22 +1043,24 @@ class TestSegDetTransforms:
 
             return random.randint(a, b)
 
+        # We are patching torch.randint -> random.randint here, because we can't patch the modules that are not imported
+        # normally
         t = prototype_transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
         mocker.patch(
             "torchvision.prototype.transforms._geometry.torch.randint",
             new=patched_randint,
         )
 
-        t_ref = det_transforms.RandomResize(min_size=min_size, max_size=max_size)
+        t_ref = seg_transforms.RandomResize(min_size=min_size, max_size=max_size)
 
-        self.check(t, t_ref)
+        self.check_resize(mocker, t_ref, t)
 
-    def test_random_resize_eval(self):
+    def test_random_resize_eval(self, mocker):
         torch.manual_seed(0)
         base_size = 520
 
         t = prototype_transforms.Resize(size=base_size, antialias=True)
 
-        t_ref = det_transforms.RandomResize(min_size=base_size, max_size=base_size)
+        t_ref = seg_transforms.RandomResize(min_size=base_size, max_size=base_size)
 
-        self.check(t, t_ref)
+        self.check_resize(mocker, t_ref, t)
