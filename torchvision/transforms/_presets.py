@@ -220,7 +220,7 @@ class StereoMatching(torch.nn.Module):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
-        self.resize_size = resize_size
+        self.resize_size = list(resize_size)  # doing this for mypy
         self.mean = list(mean)
         self.std = list(std)
         self.interpolation = interpolation
