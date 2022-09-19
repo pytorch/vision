@@ -195,9 +195,16 @@ def pad_image_tensor():
     for image, padding, fill, padding_mode in itertools.product(
         make_images(),
         [[1], [1, 1], [1, 1, 2, 2]],  # padding
-        [None, 12, 12.0],  # fill
+        [None, 128.0, 128, [12.0], [12.0, 13.0, 14.0]],  # fill
         ["constant", "symmetric", "edge", "reflect"],  # padding mode,
     ):
+        if padding_mode != "constant" and fill is not None:
+            # ValueError: Padding mode 'reflect' is not supported if fill is not scalar
+            continue
+
+        if isinstance(fill, list) and len(fill) != image.shape[-3]:
+            continue
+
         yield ArgsKwargs(image, padding=padding, fill=fill, padding_mode=padding_mode)
 
 

@@ -211,10 +211,12 @@ def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
 
 
 def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillType]:
+    _check_fill_arg(fill)
+
     if isinstance(fill, dict):
         return fill
-    else:
-        return defaultdict(lambda: fill, {features.Mask: 0})  # type: ignore[arg-type, return-value]
+
+    return defaultdict(lambda: fill)  # type: ignore[arg-type, return-value]
 
 
 def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
@@ -242,7 +244,6 @@ class Pad(Transform):
         super().__init__()
 
         _check_padding_arg(padding)
-        _check_fill_arg(fill)
         _check_padding_mode_arg(padding_mode)
 
         self.padding = padding
@@ -270,7 +271,6 @@ class RandomZoomOut(_RandomApplyTransform):
     ) -> None:
         super().__init__(p=p)
 
-        _check_fill_arg(fill)
         self.fill = _setup_fill_arg(fill)
 
         _check_sequence_input(side_range, "side_range", req_sizes=(2,))
@@ -307,7 +307,7 @@ class RandomRotation(Transform):
         degrees: Union[numbers.Number, Sequence],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[FillType, Dict[Type, FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -315,9 +315,7 @@ class RandomRotation(Transform):
         self.interpolation = interpolation
         self.expand = expand
 
-        _check_fill_arg(fill)
-
-        self.fill = fill
+        self.fill = _setup_fill_arg(fill)
 
         if center is not None:
             _check_sequence_input(center, "center", req_sizes=(2,))
@@ -329,7 +327,7 @@ class RandomRotation(Transform):
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill
+        fill = self.fill[type(inpt)]
         fill = F._geometry._convert_fill_arg(fill)
         return F.rotate(
             inpt,
@@ -349,7 +347,7 @@ class RandomAffine(Transform):
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[float, Sequence[float]]] = None,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[FillType, Dict[Type, FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -373,10 +371,7 @@ class RandomAffine(Transform):
             self.shear = shear
 
         self.interpolation = interpolation
-
-        _check_fill_arg(fill)
-
-        self.fill = fill
+        self.fill = _setup_fill_arg(fill)
 
         if center is not None:
             _check_sequence_input(center, "center", req_sizes=(2,))
@@ -414,7 +409,7 @@ class RandomAffine(Transform):
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill
+        fill = self.fill[type(inpt)]
         fill = F._geometry._convert_fill_arg(fill)
         return F.affine(
             inpt,
@@ -431,7 +426,7 @@ class RandomCrop(Transform):
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[FillType, Dict[Type, FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -441,12 +436,11 @@ class RandomCrop(Transform):
         if pad_if_needed or padding is not None:
             if padding is not None:
                 _check_padding_arg(padding)
-            _check_fill_arg(fill)
             _check_padding_mode_arg(padding_mode)
 
         self.padding = padding
         self.pad_if_needed = pad_if_needed
-        self.fill = fill
+        self.fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
@@ -495,8 +489,7 @@ class RandomCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         # TODO: (PERF) check for speed optimization if we avoid repeated pad calls
-
-        fill = self.fill
+        fill = self.fill[type(inpt)]
         fill = F._geometry._convert_fill_arg(fill)
 
         if self.padding is not None:
@@ -523,19 +516,18 @@ class RandomPerspective(_RandomApplyTransform):
     def __init__(
         self,
         distortion_scale: float = 0.5,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[FillType, Dict[Type, FillType]] = 0,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         p: float = 0.5,
     ) -> None:
         super().__init__(p=p)
 
-        _check_fill_arg(fill)
         if not (0 <= distortion_scale <= 1):
             raise ValueError("Argument distortion_scale value should be between 0 and 1")
 
         self.distortion_scale = distortion_scale
         self.interpolation = interpolation
-        self.fill = fill
+        self.fill = _setup_fill_arg(fill)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         # Get image size
@@ -567,9 +559,8 @@ class RandomPerspective(_RandomApplyTransform):
         return dict(startpoints=startpoints, endpoints=endpoints)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill
+        fill = self.fill[type(inpt)]
         fill = F._geometry._convert_fill_arg(fill)
-
         return F.perspective(
             inpt,
             **params,
@@ -600,17 +591,15 @@ class ElasticTransform(Transform):
         self,
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[FillType, Dict[Type, FillType]] = 0,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
         self.alpha = _setup_float_or_seq(alpha, "alpha", 2)
         self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
 
-        _check_fill_arg(fill)
-
         self.interpolation = interpolation
-        self.fill = fill
+        self.fill = _setup_fill_arg(fill)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         # Get image size
@@ -638,9 +627,8 @@ class ElasticTransform(Transform):
         return dict(displacement=displacement)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill
+        fill = self.fill[type(inpt)]
         fill = F._geometry._convert_fill_arg(fill)
-
         return F.elastic(
             inpt,
             **params,
@@ -816,14 +804,16 @@ class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[FillType, Dict[Type, FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()
         size = tuple(_setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
         self.crop_height = size[0]
         self.crop_width = size[1]
-        self.fill = fill  # TODO: Fill is currently respected only on PIL. Apply tensor patch.
+
+        self.fill = _setup_fill_arg(fill)
+
         self.padding_mode = padding_mode
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
@@ -896,7 +886,7 @@ class FixedSizeCrop(Transform):
                 )
 
         if params["needs_pad"]:
-            fill = self.fill
+            fill = self.fill[type(inpt)]
             fill = F._geometry._convert_fill_arg(fill)
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
