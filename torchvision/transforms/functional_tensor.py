@@ -600,7 +600,10 @@ def _gen_affine_grid(
 
 
 def affine(
-    img: Tensor, matrix: List[float], interpolation: str = "nearest", fill: Optional[List[float]] = None
+    img: Tensor,
+    matrix: List[float],
+    interpolation: str = "nearest",
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> Tensor:
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
 
@@ -693,7 +696,10 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
 
 
 def perspective(
-    img: Tensor, perspective_coeffs: List[float], interpolation: str = "bilinear", fill: Optional[List[float]] = None
+    img: Tensor,
+    perspective_coeffs: List[float],
+    interpolation: str = "bilinear",
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> Tensor:
     if not (isinstance(img, torch.Tensor)):
         raise TypeError("Input img should be Tensor.")
@@ -950,7 +956,7 @@ def elastic_transform(
     img: Tensor,
     displacement: Tensor,
     interpolation: str = "bilinear",
-    fill: Optional[List[float]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> Tensor:
 
     if not (isinstance(img, torch.Tensor)):
