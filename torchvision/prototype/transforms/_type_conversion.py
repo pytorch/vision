@@ -37,6 +37,13 @@ class LabelToOneHot(Transform):
         return f"num_categories={self.num_categories}"
 
 
+class PILToTensor(Transform):
+    _transformed_types = (PIL.Image.Image,)
+
+    def _transform(self, inpt: Union[PIL.Image.Image], params: Dict[str, Any]) -> torch.Tensor:
+        return F.pil_to_tensor(inpt)
+
+
 class ToImageTensor(Transform):
     _transformed_types = (features.is_simple_tensor, PIL.Image.Image, np.ndarray)
 
@@ -59,7 +66,6 @@ class ToImagePIL(Transform):
         return F.to_image_pil(inpt, mode=self.mode)
 
 
-# We changed the names to align them with the new naming scheme. Still, `PILToTensor` and `ToPILImage` are
-# prevalent and well understood. Thus, we just alias them without deprecating the old names.
-PILToTensor = ToImageTensor
+# We changed the name to align them with the new naming scheme. Still, `ToPILImage` is
+# prevalent and well understood. Thus, we just alias it without deprecating the old name.
 ToPILImage = ToImagePIL

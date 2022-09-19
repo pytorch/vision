@@ -150,7 +150,7 @@ class IterativeCorrelationLayer(nn.Module):
     def forward(self, left_feature: Tensor, right_feature: Tensor, flow: Tensor, window_type: str = "1d") -> Tensor:
         """Function that computes 1 pass of non-offsetted Group-Wise correlation"""
         coords = make_coords_grid(
-            left_feature.shape[0], left_feature.shape[2], left_feature.shape[3], device=left_feature.device
+            left_feature.shape[0], left_feature.shape[2], left_feature.shape[3], device=str(left_feature.device)
         )
 
         # we offset the coordinate grid in the flow direction
@@ -275,7 +275,7 @@ class AttentionOffsetCorrelationLayer(nn.Module):
 
             coords = (
                 make_coords_grid(
-                    left_feature.shape[0], left_feature.shape[2], left_feature.shape[3], device=left_feature.device
+                    left_feature.shape[0], left_feature.shape[2], left_feature.shape[3], device=str(left_feature.device)
                 )
                 + flow
             )
@@ -693,7 +693,7 @@ class CREStereo(nn.Module):
         self.mask_predictor = ConvexMaskPredictor(
             in_channels=feature_encoder.output_dim // 2,
             hidden_size=feature_encoder.output_dim,
-            upsample_factor=4,
+            upsample_factor=feature_encoder.downsample_factor,
             multiplier=0.25,
         )
 
