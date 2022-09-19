@@ -752,7 +752,7 @@ def test_detection_model(model_fn, dev):
     # Use real input
     img = Image.open(GRACE_HOPPER)
     preprocess = weights.transforms()
-    x = preprocess(img)
+    x = preprocess(img).to(device=dev)
 
     model_input = [x]
     out = model(model_input)
