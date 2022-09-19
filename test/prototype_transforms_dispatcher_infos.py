@@ -1,4 +1,5 @@
 import dataclasses
+import functools
 from typing import Callable, Dict, Type
 
 import pytest
@@ -24,13 +25,13 @@ class PreloadedArgsKwargs(ArgsKwargs):
         return args, kwargs
 
 
+def preloaded_sample_inputs(args_kwargs):
+    for args, kwargs in args_kwargs:
+        yield PreloadedArgsKwargs(*args, **kwargs)
+
+
 KERNEL_SAMPLE_INPUTS_FN_MAP.update(
-    {
-        info.functional: lambda: (
-            PreloadedArgsKwargs(*args_kwargs.args, **args_kwargs.kwargs) for args_kwargs in info.sample_inputs()
-        )
-        for info in FUNCTIONAL_INFOS
-    }
+    {info.functional: functools.partial(preloaded_sample_inputs, info.sample_inputs()) for info in FUNCTIONAL_INFOS}
 )
 
 
