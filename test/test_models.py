@@ -19,10 +19,16 @@ from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object
 from torchvision import models
 from torchvision.models import get_model_builder, list_models
 
+from torch._utils_internal import get_file_path_2
+from PIL import Image
+
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 
+GRACE_HOPPER = get_file_path_2(
+    os.path.dirname(os.path.abspath(__file__)), "assets", "encode_jpeg", "grace_hopper_517x606.jpg"
+)
 
 def list_model_fns(module):
     return [get_model_builder(name) for name in list_models(module)]
@@ -723,19 +729,31 @@ def test_segmentation_model(model_fn, dev):
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_detection_model(model_fn, dev):
     set_rng_seed(0)
-    defaults = {
-        "num_classes": 50,
-        "weights_backbone": None,
-        "input_shape": (3, 300, 300),
-    }
+    # defaults = {
+    #     "num_classes": 50,
+    #     "weights_backbone": None,
+    #     "input_shape": (3, 300, 300),
+    # }
     model_name = model_fn.__name__
-    kwargs = {**defaults, **_model_params.get(model_name, {})}
-    input_shape = kwargs.pop("input_shape")
+    # kwargs = {**defaults, **_model_params.get(model_name, {})}
+    # input_shape = kwargs.pop("input_shape")
 
-    model = model_fn(**kwargs)
+    # model = model_fn(**kwargs)
+
+    # Use real weight
+    # Note that we use DEFAULT and it meant we need to update expected file
+    # every time we change the default weight
+    weights = models.get_model_weights(model_name).DEFAULT
+    model = model_fn(weights=weights)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-    x = torch.rand(input_shape).to(device=dev)
+    # x = torch.rand(input_shape).to(device=dev)
+
+    # Use real input
+    img = Image.open(GRACE_HOPPER)
+    preprocess = weights.transforms()
+    x = preprocess(img)
+
     model_input = [x]
     out = model(model_input)
     assert model_input[0] is x
