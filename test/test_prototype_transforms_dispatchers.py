@@ -1,9 +1,8 @@
 import pytest
-import torch.jit
 
+import torch.jit
 from common_utils import cpu_and_gpu, script
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
-
 from torchvision.prototype import features
 
 
