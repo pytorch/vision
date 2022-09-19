@@ -1,3 +1,5 @@
+import itertools
+
 import pytest
 
 import torch.jit
@@ -13,7 +15,10 @@ class TestCommon:
         [
             pytest.param(info, args_kwargs, id=f"{info.dispatcher.__name__}-{idx}")
             for info in DISPATCHER_INFOS
-            for idx, args_kwargs in enumerate(info.sample_inputs(features.Image))
+            # FIXME: This is a hack to avoid undiagnosed memory issues in CI right now. The current working guess is
+            #  that we run out of memory, because to many tensors are instantiated upfront. This should be solved by
+            #  the loader architecture.
+            for idx, args_kwargs in itertools.islice(enumerate(info.sample_inputs(features.Image)), 10)
             if features.Image in info.kernels
         ],
     )
