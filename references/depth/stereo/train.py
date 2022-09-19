@@ -14,46 +14,28 @@ import utils
 from torch import nn
 import vizualization
 from utils.metrics import AVAILABLE_METRICS
+from utils.norm import freeze_batch_norm
+from torchvision.transforms.functional import get_dimensions
 
-from torchvision.utils import make_grid
 from parsing import make_train_transform, make_eval_transform, make_dataset
 
-def freeze_batch_norm(model):
-    for m in model.modules():
-        if isinstance(m, torch.nn.BatchNorm2d):
-            m.eval()
 
-def unfreeze_batch_norm(model):
-    for m in model.modules():
-        if isinstance(m, torch.nn.BatchNorm2d):
-            m.train()
 
-def make_stereo_flow(flow: torch.Tensor) -> torch.Tensor:
+def make_stereo_flow(flow: Union[torch.Tensor, List[torch.Tensor]], model_out_channels: int) -> torch.Tensor:
     """Helper function to make stereo flow from a given model output"""
+    if isinstance(flow, list):
+        return [make_stereo_flow(flow_i) for flow_i in flow]
+
     B, C, H, W = flow.shape
-    # we need to add zero flow
-    if C == 1:
+    # we need to add zero flow if the model outputs 2 channels
+    if C == 1 and model_out_channels == 2:
         zero_flow = torch.zeros_like(flow)
         # by convention the flow is X-Y axis, so we need the Y flow last
         flow = torch.cat([flow, zero_flow], dim=1)
     return flow
 
 
-def view_flow_as_stereo_target(
-    model_ouputs: Union[torch.Tensor, List[torch.Tensor]],
-    model_out_channels: int,
-) -> torch.Tensor:
-    """Helper function to construct the model outputs for a given architecture"""
-    if model_out_channels == 2:
-        # we need to add zero flow
-        if isinstance(model_ouputs, list):
-            model_ouputs = [make_stereo_flow(model_output) for model_output in model_ouputs]
-        else:
-            model_ouputs = make_stereo_flow(model_ouputs)
-    return model_ouputs
-
-
-def make_cre_stereo_schedule(args: argparse.Namespace, optimizer: torch.optim.Optimizer) -> np.ndarray:
+def make_lr_schedule(args: argparse.Namespace, optimizer: torch.optim.Optimizer) -> np.ndarray:
     """Helper function to return a learning rate scheduler for CRE-stereo"""
     if args.decay_after_steps < args.warmup_steps:
         raise ValueError(f"decay_after_steps: {args.function} must be greater than warmup_steps: {args.warmup_steps}")
@@ -251,9 +233,14 @@ def evaluate(model, args, writter=None, step=None):
         trans = weights.transforms()
 
         def preprocessing(image_left, image_right, disp, valid_disp_mask):
+            C_o, H_o, W_o = get_dimensions(image_left)        
             image_left, image_right = trans(image_left, image_right)
-            if disp is not None and not isinstance(disp, torch.Tensor):
-                disp = torch.from_numpy(disp)
+            
+            C_t, H_t, W_t = get_dimensions(image_left)
+            scale_factor = W_t / W_o
+            
+            if disp is not None and not isinstance(disp, torch.Tensor):                
+                disp = torch.from_numpy(disp) * scale_factor
             if valid_disp_mask is not None and not isinstance(valid_disp_mask, torch.Tensor):
                 valid_disp_mask = torch.from_numpy(valid_disp_mask)
             return image_left, image_right, disp, valid_disp_mask
@@ -280,8 +267,6 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
     device = torch.device(args.device)
     # wrap the loader in a logger
     loader = iter(logger.log_every(train_loader))
-    # buffered weights for the loss
-    loss_weights = None
     # output channels
     model_out_channels = model.module.output_channels if args.distributed else model.output_channels
 
@@ -331,10 +316,10 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
         with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
             disp_predictions = model(image_left, image_right, flow_init=None, num_iters=args.recurrent_updates)
             # different models have different outputs, make sure we get the right ones for this task
-            disp_predictions = view_flow_as_stereo_target(disp_predictions, model_out_channels)
+            disp_predictions = make_stereo_flow(disp_predictions, model_out_channels)
             # should the architecture or training loop require it, we have to adjust the disparity mask
             # target to possibly look like an optical flow mask
-            disp_mask = view_flow_as_stereo_target(disp_mask, model_out_channels)
+            disp_mask = make_stereo_flow(disp_mask, model_out_channels)
             # sequence loss on top of the model outputs
 
         loss = sequence_criterion(
@@ -442,6 +427,23 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
                     freeze_batch_norm(model.module)
                 else:
                     freeze_batch_norm(model)
+    
+    # one final save at the end
+    if not args.distributed or args.rank == 0:
+        model_without_ddp = (
+            model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
+        )
+        checkpoint = {
+            "model": model_without_ddp.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "scheduler": scheduler.state_dict(),
+            "step": step,
+            "args": args,
+        }
+        os.makedirs(args.checkpoint_dir, exist_ok=True)
+        torch.save(checkpoint, Path(args.checkpoint_dir) / f"{args.name}_{step}.pth")
+        torch.save(checkpoint, Path(args.checkpoint_dir) / f"{args.name}.pth")
+    
 
 def main(args):
     print(args)
@@ -494,7 +496,7 @@ def main(args):
         raise ValueError(f"Unknown optimizer {args.optimizer}. Please choose between adam and sgd")
 
     # initialize the learning rate schedule
-    scheduler = make_cre_stereo_schedule(args, optimizer)
+    scheduler = make_lr_schedule(args, optimizer)
 
     # load them from checkpoint if need
     if args.resume is not None and not args.finetune:
