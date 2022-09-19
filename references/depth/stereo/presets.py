@@ -89,6 +89,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
             raise ValueError(f"Unknown scaling type: {scaling_type}. Available types: linear, exponential")
 
         super().__init__()
+        
         transforms = [T.ToTensor()]
 
         # when fixing size across multiple datasets, we ensure

@@ -717,7 +717,7 @@ def get_args_parser(add_help=True):
         "--lr-warmup-method", type=str, default="linear", help="warmup method", choices=["linear", "cosine"]
     )
     parser.add_argument(
-        "--lr-warmup-factor", type=float, default=0.01, help="warmup factor for the learning rate"
+        "--lr-warmup-factor", type=float, default=0.02, help="warmup factor for the learning rate"
     )
     parser.add_argument(
         "--lr-decay-method", type=str, default="linear", help="decay method", choices=["linear", "cosine", "exponential"]
