@@ -539,7 +539,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
     @staticmethod
     def _transform_image_in_bboxes(
         fn: Callable[..., torch.Tensor], fn_kwrgs: dict, image: torch.Tensor, bboxes: torch.Tensor
-    ):
+    ) -> torch.Tensor:
         new_img = image.clone()
         for bbox in bboxes:
             bbox_img = new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]]
@@ -547,17 +547,17 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
             new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]] = out_bbox_img
         return new_img
 
-    def _extract_image(
+    def _extract_image_bboxes(
         self,
         sample: Any,
-        unsupported_types: Tuple[Type, ...] = (features.Mask),
+        unsupported_types: Tuple[Type, ...] = (features.Mask,),
     ) -> List[Tuple[int, Union[PIL.Image.Image, torch.Tensor, features.Image, features.BoundingBox]]]:
         sample_flat, _ = tree_flatten(sample)
         images = []
         for id, inpt in enumerate(sample_flat):
             if _isinstance(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor)):
                 images.append((id, inpt))
-            elif _isinstance(inpt, features.BoundingBox):
+            elif isinstance(inpt, features.BoundingBox):
                 images.append((id, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
@@ -570,7 +570,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
             )
         return images
 
-    def _apply_image_transform(
+    def _apply_image_bboxes_transform(
         self,
         image: Any,
         bboxes: features.BoundingBox,
@@ -584,10 +584,10 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         if transform_id.endswith("_Only_BBoxes"):
             transform_id = transform_id[:-12]
             fn_kwargs = dict(transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill)
-            image = self._transform_image_in_bboxes(super()._apply_image_transform, fn_kwargs, image, bboxes)
+            image = self._transform_image_in_bboxes(self._apply_image_transform, fn_kwargs, image, bboxes)
         elif transform_id.endswith("_BBox"):
             transform_id = transform_id[:-5]
-            image = super()._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
+            image = self._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
 
             if transform_id == "Rotate":
                 bboxes.data = F.rotate_bounding_box(bboxes.data, bboxes.format, bboxes.image_size, angle=magnitude)
@@ -612,7 +612,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
                     shear=[0.0, 0.0],
                 )
             elif transform_id == "ShearX":
-                bboxes = F.affine_bounding_box(
+                bboxes.data = F.affine_bounding_box(
                     bboxes.data,
                     bboxes.format,
                     bboxes.image_size,
@@ -636,6 +636,6 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         elif transform_id == "BBox_Cutout":
             raise NotImplementedError()
         else:
-            image = super()._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
+            image = self._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
 
         return image, bboxes
