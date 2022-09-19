@@ -1,7 +1,8 @@
 import math
 import numbers
 import warnings
-from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Union
+from collections import defaultdict
+from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -16,6 +17,7 @@ from ._utils import _check_sequence_input, _setup_angle, _setup_size, has_all, h
 
 
 DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
+FillType = Union[int, float, Sequence[int], Sequence[float]]
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -92,6 +94,8 @@ class RandomResizedCrop(Transform):
         self.interpolation = interpolation
         self.antialias = antialias
 
+        self._log_ratio = torch.log(torch.tensor(self.ratio))
+
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         # vfdev-5: techically, this op can work on bboxes/segm masks only inputs without image in samples
         # What if we have multiple images/bboxes/masks of different sizes ?
@@ -99,7 +103,7 @@ class RandomResizedCrop(Transform):
         _, height, width = query_chw(sample)
         area = height * width
 
-        log_ratio = torch.log(torch.tensor(self.ratio))
+        log_ratio = self._log_ratio
         for _ in range(10):
             target_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
             aspect_ratio = torch.exp(
@@ -196,9 +200,21 @@ class TenCrop(Transform):
         return super().forward(*inputs)
 
 
-def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> None:
-    if not isinstance(fill, (numbers.Number, tuple, list)):
-        raise TypeError("Got inappropriate fill arg")
+def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
+    if isinstance(fill, dict):
+        for key, value in fill.items():
+            # Check key for type
+            _check_fill_arg(value)
+    else:
+        if not isinstance(fill, (numbers.Number, tuple, list)):
+            raise TypeError("Got inappropriate fill arg")
+
+
+def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillType]:
+    if isinstance(fill, dict):
+        return fill
+    else:
+        return defaultdict(lambda: fill, {features.Mask: 0})  # type: ignore[arg-type, return-value]
 
 
 def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
@@ -220,7 +236,7 @@ class Pad(Transform):
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[FillType, Dict[Type, FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -230,24 +246,25 @@ class Pad(Transform):
         _check_padding_mode_arg(padding_mode)
 
         self.padding = padding
-        self.fill = fill
+        self.fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.pad(inpt, padding=self.padding, fill=self.fill, padding_mode=self.padding_mode)
+        fill = self.fill[type(inpt)]
+        return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)
 
 
 class RandomZoomOut(_RandomApplyTransform):
     def __init__(
         self,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[FillType, Dict[Type, FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
         super().__init__(p=p)
 
         _check_fill_arg(fill)
-        self.fill = fill
+        self.fill = _setup_fill_arg(fill)
 
         _check_sequence_input(side_range, "side_range", req_sizes=(2,))
 
@@ -256,7 +273,7 @@ class RandomZoomOut(_RandomApplyTransform):
             raise ValueError(f"Invalid canvas side range provided {side_range}.")
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        orig_c, orig_h, orig_w = query_chw(sample)
+        _, orig_h, orig_w = query_chw(sample)
 
         r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
         canvas_width = int(orig_w * r)
@@ -269,10 +286,11 @@ class RandomZoomOut(_RandomApplyTransform):
         bottom = canvas_height - (top + orig_h)
         padding = [left, top, right, bottom]
 
-        return dict(padding=padding, fill=self.fill)
+        return dict(padding=padding)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.pad(inpt, **params)
+        fill = self.fill[type(inpt)]
+        return F.pad(inpt, **params, fill=fill)
 
 
 class RandomRotation(Transform):
@@ -690,7 +708,7 @@ class RandomIoUCrop(Transform):
             bboxes = output[is_within_crop_area]
             bboxes = F.clamp_bounding_box(bboxes, output.format, output.image_size)
             output = features.BoundingBox.new_like(output, bboxes)
-        elif isinstance(output, features.Mask) and output.shape[-3] > 1:
+        elif isinstance(output, features.Mask):
             # apply is_within_crop_area if mask is one-hot encoded
             masks = output[is_within_crop_area]
             output = features.Mask.new_like(output, masks)
