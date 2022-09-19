@@ -94,6 +94,8 @@ class RandomResizedCrop(Transform):
         self.interpolation = interpolation
         self.antialias = antialias
 
+        self._log_ratio = torch.log(torch.tensor(self.ratio))
+
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         # vfdev-5: techically, this op can work on bboxes/segm masks only inputs without image in samples
         # What if we have multiple images/bboxes/masks of different sizes ?
@@ -101,7 +103,7 @@ class RandomResizedCrop(Transform):
         _, height, width = query_chw(sample)
         area = height * width
 
-        log_ratio = torch.log(torch.tensor(self.ratio))
+        log_ratio = self._log_ratio
         for _ in range(10):
             target_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
             aspect_ratio = torch.exp(
@@ -702,7 +704,7 @@ class RandomIoUCrop(Transform):
             bboxes = output[is_within_crop_area]
             bboxes = F.clamp_bounding_box(bboxes, output.format, output.image_size)
             output = features.BoundingBox.new_like(output, bboxes)
-        elif isinstance(output, features.Mask) and output.shape[-3] > 1:
+        elif isinstance(output, features.Mask):
             # apply is_within_crop_area if mask is one-hot encoded
             masks = output[is_within_crop_area]
             output = features.Mask.new_like(output, masks)
