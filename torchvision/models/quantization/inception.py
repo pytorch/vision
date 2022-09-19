@@ -125,6 +125,7 @@ class QuantizableInceptionAux(inception_module.InceptionAux):
 class QuantizableInception3(inception_module.Inception3):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(  # type: ignore[misc]
+            *args,
             inception_blocks=[
                 QuantizableBasicConv2d,
                 QuantizableInceptionA,
@@ -134,7 +135,6 @@ class QuantizableInception3(inception_module.Inception3):
                 QuantizableInceptionE,
                 QuantizableInceptionAux,
             ],
-            *args,
             **kwargs,
         )
         self.quant = torch.ao.quantization.QuantStub()
