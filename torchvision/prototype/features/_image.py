@@ -173,7 +173,6 @@ class Image(_Feature):
         fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         padding_mode: str = "constant",
     ) -> Image:
-
         # This cast does Sequence[int] -> List[int] and is required to make mypy happy
         if not isinstance(padding, int):
             padding = list(padding)
