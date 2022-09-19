@@ -589,7 +589,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
             transform_id = transform_id[:-5]
             image = super()._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
             format = features.BoundingBoxFormat.XYXY  # TODO
-            image_size = image  # TODO
+            image_size = image.shape[-2:]  # TODO
 
             if transform_id == "Rotate":
                 bboxes = F.rotate_bounding_box(bboxes, format, image_size, angle=magnitude)
