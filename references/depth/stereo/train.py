@@ -14,7 +14,8 @@ from torch import nn
 import vizualization
 from utils.metrics import AVAILABLE_METRICS
 from utils.norm import freeze_batch_norm
-from torchvision.transforms.functional import get_dimensions
+from torchvision.transforms.functional import get_dimensions, resize
+from torchvision.transforms.functional import InterpolationMode
 
 from parsing import make_train_transform, make_eval_transform, make_dataset
 
@@ -239,9 +240,13 @@ def evaluate(model, args, writter=None, step=None):
             scale_factor = W_t / W_o
             
             if disp is not None and not isinstance(disp, torch.Tensor):                
-                disp = torch.from_numpy(disp) * scale_factor
+                disp = torch.from_numpy(disp)
+                if scale_factor != 1:
+                    disp = resize(disp, (H_t, W_t), mode=InterpolationMode.BILINEAR) * scale_factor
             if valid_disp_mask is not None and not isinstance(valid_disp_mask, torch.Tensor):
                 valid_disp_mask = torch.from_numpy(valid_disp_mask)
+                if scale_factor != 1:
+                    valid_disp_mask = resize(valid_disp_mask, (H_t, W_t), mode=InterpolationMode.NEAREST)
             return image_left, image_right, disp, valid_disp_mask
 
     else:
