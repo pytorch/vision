@@ -533,3 +533,111 @@ class AugMix(_AutoAugmentBase):
             mix = F.to_image_pil(mix)
 
         return self._put_into_sample(sample, id, mix)
+
+
+class _AutoAugmentDetectionBase(_AutoAugmentBase):
+    @staticmethod
+    def _transform_image_in_bboxes(
+        fn: Callable[..., torch.Tensor], fn_kwrgs: dict, image: torch.Tensor, bboxes: torch.Tensor
+    ):
+        new_img = image.clone()
+        for bbox in bboxes:
+            bbox_img = new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]]
+            out_bbox_img = fn(bbox_img, **fn_kwrgs)
+            new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]] = out_bbox_img
+        return new_img
+
+    def _extract_image(
+        self,
+        sample: Any,
+        unsupported_types: Tuple[Type, ...] = (features.Mask),
+    ) -> List[Tuple[int, Union[PIL.Image.Image, torch.Tensor, features.Image, features.BoundingBox]]]:
+        sample_flat, _ = tree_flatten(sample)
+        images = []
+        for id, inpt in enumerate(sample_flat):
+            if _isinstance(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor)):
+                images.append((id, inpt))
+            elif _isinstance(inpt, features.BoundingBox):
+                images.append((id, inpt))
+            elif isinstance(inpt, unsupported_types):
+                raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
+
+        if not images:
+            raise TypeError("Found no image in the sample.")
+        if len(images) > 2:
+            raise TypeError(
+                f"Auto augment transformations are only properly defined for a single image and its bboxes, but found {len(images)}."
+            )
+        return images
+
+    def _apply_image_transform(
+        self,
+        image: Any,
+        bboxes: features.BoundingBox,
+        transform_id: str,
+        magnitude: float,
+        interpolation: InterpolationMode,
+        fill: Union[int, float, Sequence[int], Sequence[float]],
+    ) -> Tuple[Any, features.BoundingBox]:
+        # TODO: SolarizeAdd, Cutout, BBox_Cutout, Flip_Only_BBoxes, Cutout_Only_BBoxes
+
+        if transform_id.endswith("_Only_BBoxes"):
+            transform_id = transform_id[:-12]
+            fn_kwargs = dict(transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill)
+            image = self._transform_image_in_bboxes(super()._apply_image_transform, fn_kwargs, image, bboxes)
+        elif transform_id.endswith("_BBox"):
+            transform_id = transform_id[:-5]
+            image = super()._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
+            format = features.BoundingBoxFormat.XYXY  # TODO
+            image_size = image  # TODO
+
+            if transform_id == "Rotate":
+                bboxes = F.rotate_bounding_box(bboxes, format, image_size, angle=magnitude)
+            elif transform_id == "TranslateX":
+                bboxes = F.affine_bounding_box(
+                    bboxes,
+                    format,
+                    image_size,
+                    angle=0.0,
+                    translate=[int(magnitude), 0],
+                    scale=1.0,
+                    shear=[0.0, 0.0],
+                )
+            elif transform_id == "TranslateY":
+                bboxes = F.affine_bounding_box(
+                    bboxes,
+                    format,
+                    image_size,
+                    angle=0.0,
+                    translate=[0, int(magnitude)],
+                    scale=1.0,
+                    shear=[0.0, 0.0],
+                )
+            elif transform_id == "ShearX":
+                bboxes = F.affine_bounding_box(
+                    bboxes,
+                    format,
+                    image_size,
+                    angle=0.0,
+                    translate=[0, 0],
+                    scale=1.0,
+                    shear=[math.degrees(math.atan(magnitude)), 0.0],
+                    center=[0, 0],
+                )
+            elif transform_id == "ShearY":
+                bboxes = F.affine_bounding_box(
+                    bboxes,
+                    format,
+                    image_size,
+                    angle=0.0,
+                    translate=[0, 0],
+                    scale=1.0,
+                    shear=[0.0, math.degrees(math.atan(magnitude))],
+                    center=[0, 0],
+                )
+        elif transform_id == "BBox_Cutout":
+            raise NotImplementedError()
+        else:
+            image = super()._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
+
+        return image, bboxes
