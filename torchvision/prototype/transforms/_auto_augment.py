@@ -588,26 +588,24 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         elif transform_id.endswith("_BBox"):
             transform_id = transform_id[:-5]
             image = super()._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
-            format = features.BoundingBoxFormat.XYXY  # TODO
-            image_size = image.shape[-2:]  # TODO
 
             if transform_id == "Rotate":
-                bboxes = F.rotate_bounding_box(bboxes, format, image_size, angle=magnitude)
+                bboxes.data = F.rotate_bounding_box(bboxes.data, bboxes.format, bboxes.image_size, angle=magnitude)
             elif transform_id == "TranslateX":
-                bboxes = F.affine_bounding_box(
-                    bboxes,
-                    format,
-                    image_size,
+                bboxes.data = F.affine_bounding_box(
+                    bboxes.data,
+                    bboxes.format,
+                    bboxes.image_size,
                     angle=0.0,
                     translate=[int(magnitude), 0],
                     scale=1.0,
                     shear=[0.0, 0.0],
                 )
             elif transform_id == "TranslateY":
-                bboxes = F.affine_bounding_box(
-                    bboxes,
-                    format,
-                    image_size,
+                bboxes.data = F.affine_bounding_box(
+                    bboxes.data,
+                    bboxes.format,
+                    bboxes.image_size,
                     angle=0.0,
                     translate=[0, int(magnitude)],
                     scale=1.0,
@@ -615,9 +613,9 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
                 )
             elif transform_id == "ShearX":
                 bboxes = F.affine_bounding_box(
-                    bboxes,
-                    format,
-                    image_size,
+                    bboxes.data,
+                    bboxes.format,
+                    bboxes.image_size,
                     angle=0.0,
                     translate=[0, 0],
                     scale=1.0,
@@ -625,10 +623,10 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
                     center=[0, 0],
                 )
             elif transform_id == "ShearY":
-                bboxes = F.affine_bounding_box(
-                    bboxes,
-                    format,
-                    image_size,
+                bboxes.data = F.affine_bounding_box(
+                    bboxes.data,
+                    bboxes.format,
+                    bboxes.image_size,
                     angle=0.0,
                     translate=[0, 0],
                     scale=1.0,
