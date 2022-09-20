@@ -61,7 +61,7 @@ class ValidateModelInput(torch.nn.Module):
         return images, disparities, masks
 
 
-class ConverToGrayscale(torch.nn.Module):
+class ConvertToGrayscale(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
