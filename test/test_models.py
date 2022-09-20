@@ -745,7 +745,9 @@ def test_detection_model(model_fn, dev):
     # Note that we use DEFAULT and it meant we need to update expected file
     # every time we change the default weight
     weights = models.get_model_weights(model_name).DEFAULT
-    model = model_fn(weights=weights)
+    # Set higher rpn_score_thresh
+    rpn_score_thresh = 0.3
+    model = model_fn(weights=weights, rpn_score_thresh=rpn_score_thresh)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     # x = torch.rand(input_shape).to(device=dev)
