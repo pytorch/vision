@@ -49,54 +49,6 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def perspective_image_tensor():
-    for image, perspective_coeffs, fill in itertools.product(
-        make_images(extra_dims=((), (4,))),
-        [
-            [1.2405, 0.1772, -6.9113, 0.0463, 1.251, -5.235, 0.00013, 0.0018],
-            [0.7366, -0.11724, 1.45775, -0.15012, 0.73406, 2.6019, -0.0072, -0.0063],
-        ],
-        [None, 128.0, 128, [12.0], [1.0, 2.0, 3.0]],  # fill
-    ):
-        if isinstance(fill, list) and len(fill) == 3 and image.shape[1] != 3:
-            # skip the test with non-broadcastable fill value
-            continue
-
-        yield ArgsKwargs(image, perspective_coeffs=perspective_coeffs, fill=fill)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def perspective_bounding_box():
-    for bounding_box, perspective_coeffs in itertools.product(
-        make_bounding_boxes(),
-        [
-            [1.2405, 0.1772, -6.9113, 0.0463, 1.251, -5.235, 0.00013, 0.0018],
-            [0.7366, -0.11724, 1.45775, -0.15012, 0.73406, 2.6019, -0.0072, -0.0063],
-        ],
-    ):
-        yield ArgsKwargs(
-            bounding_box,
-            format=bounding_box.format,
-            perspective_coeffs=perspective_coeffs,
-        )
-
-
-@register_kernel_info_from_sample_inputs_fn
-def perspective_mask():
-    for mask, perspective_coeffs in itertools.product(
-        make_masks(extra_dims=((), (4,))),
-        [
-            [1.2405, 0.1772, -6.9113, 0.0463, 1.251, -5.235, 0.00013, 0.0018],
-            [0.7366, -0.11724, 1.45775, -0.15012, 0.73406, 2.6019, -0.0072, -0.0063],
-        ],
-    ):
-        yield ArgsKwargs(
-            mask,
-            perspective_coeffs=perspective_coeffs,
-        )
-
-
-@register_kernel_info_from_sample_inputs_fn
 def elastic_image_tensor():
     for image, fill in itertools.product(
         make_images(extra_dims=((), (4,))),

@@ -731,7 +731,7 @@ _PAD_PARAMS = combinations_grid(
 
 
 def sample_inputs_pad_image_tensor():
-    for image_loader, params in itertools.product(make_image_loaders(), _PAD_PARAMS):
+    for image_loader, params in itertools.product(make_image_loaders(sizes=["random"]), _PAD_PARAMS):
         fills = [None, 128.0, 128, [12.0]]
         if params["padding_mode"] == "constant":
             fills.append([12.0 + c for c in range(image_loader.num_channels)])
@@ -757,7 +757,7 @@ def sample_inputs_pad_bounding_box():
 
 
 def sample_inputs_pad_mask():
-    for image_loader, fill, params in itertools.product(make_mask_loaders(), [None, 127], _PAD_PARAMS):
+    for image_loader, fill, params in itertools.product(make_mask_loaders(sizes=["random"]), [None, 127], _PAD_PARAMS):
         yield ArgsKwargs(image_loader, fill=fill, **params)
 
 
@@ -784,6 +784,66 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_pad_mask,
             reference_fn=pil_reference_wrapper(F.pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_mask,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+    ]
+)
+
+_PERSPECTIVE_COEFFS = [
+    [1.2405, 0.1772, -6.9113, 0.0463, 1.251, -5.235, 0.00013, 0.0018],
+    [0.7366, -0.11724, 1.45775, -0.15012, 0.73406, 2.6019, -0.0072, -0.0063],
+]
+
+
+def sample_inputs_perspective_image_tensor():
+    for image_loader in make_image_loaders(sizes=["random"]):
+        for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
+            yield ArgsKwargs(image_loader, fill=fill, perspective_coeffs=_PERSPECTIVE_COEFFS[0])
+
+
+def reference_inputs_perspective_image_tensor():
+    for image_loader, perspective_coeffs in itertools.product(make_image_loaders(extra_dims=[()]), _PERSPECTIVE_COEFFS):
+        for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
+            yield ArgsKwargs(image_loader, fill=fill, perspective_coeffs=perspective_coeffs)
+
+
+def sample_inputs_perspective_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders():
+        yield ArgsKwargs(
+            bounding_box_loader, format=bounding_box_loader.format, perspective_coeffs=_PERSPECTIVE_COEFFS[0]
+        )
+
+
+def sample_inputs_perspective_mask():
+    for mask_loader in make_mask_loaders(sizes=["random"]):
+        yield ArgsKwargs(mask_loader, perspective_coeffs=_PERSPECTIVE_COEFFS[0])
+
+
+def reference_inputs_perspective_mask():
+    for mask_loader, perspective_coeffs in itertools.product(
+        make_mask_loaders(extra_dims=[()], num_objects=[1]), _PERSPECTIVE_COEFFS
+    ):
+        yield ArgsKwargs(mask_loader, perspective_coeffs=perspective_coeffs)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.perspective_image_tensor,
+            sample_inputs_fn=sample_inputs_perspective_image_tensor,
+            reference_fn=pil_reference_wrapper(F.perspective_image_pil),
+            reference_inputs_fn=reference_inputs_perspective_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.perspective_bounding_box,
+            sample_inputs_fn=sample_inputs_perspective_bounding_box,
+        ),
+        KernelInfo(
+            F.perspective_mask,
+            sample_inputs_fn=sample_inputs_perspective_mask,
+            reference_fn=pil_reference_wrapper(F.perspective_image_pil),
+            reference_inputs_fn=reference_inputs_perspective_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
     ]
