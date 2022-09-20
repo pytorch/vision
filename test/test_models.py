@@ -233,6 +233,8 @@ autocast_flaky_numerics = (
     "keypointrcnn_resnet50_fpn",
 )
 
+autocast_custom_prec = {"fasterrcnn_resnet50_fpn": 0.012} if platform.system() == "Windows" else {}
+
 # The tests for the following quantized models are flaky possibly due to inconsistent
 # rounding errors in different platforms. For this reason the input/output consistency
 # tests under test_quantized_classification_model will be skipped for the following models.
@@ -242,7 +244,7 @@ quantized_flaky_models = ("inception_v3", "resnet50")
 # The following contains configuration parameters for all models which are used by
 # the _test_*_model methods.
 _model_params = {
-    "inception_v3": {"input_shape": (1, 3, 299, 299)},
+    "inception_v3": {"input_shape": (1, 3, 299, 299), "init_weights": True},
     "retinanet_resnet50_fpn": {
         "num_classes": 20,
         "score_thresh": 0.01,
@@ -316,6 +318,7 @@ _model_params = {
     "s3d": {
         "input_shape": (1, 3, 16, 224, 224),
     },
+    "googlenet": {"init_weights": True},
 }
 # speeding up slow models:
 slow_models = [
@@ -738,7 +741,7 @@ def test_detection_model(model_fn, dev):
     out = model(model_input)
     assert model_input[0] is x
 
-    def check_out(out):
+    def check_out(out, prec=0.01):
         assert len(out) == 1
 
         def compact(tensor):
@@ -767,7 +770,6 @@ def test_detection_model(model_fn, dev):
             return {"mean": mean, "std": std}
 
         output = map_nested_tensor_object(out, tensor_map_fn=compact)
-        prec = 0.01
         try:
             # We first try to assert the entire output if possible. This is not
             # only the best way to assert results but also handles the cases
@@ -800,7 +802,7 @@ def test_detection_model(model_fn, dev):
             out = model(model_input)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
-                full_validation &= check_out(out)
+                full_validation &= check_out(out, autocast_custom_prec.get(model_name, 0.01))
 
     if not full_validation:
         msg = (

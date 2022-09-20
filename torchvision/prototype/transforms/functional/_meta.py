@@ -1,25 +1,24 @@
-from typing import Any, List, Optional, Tuple, Union
+from typing import cast, List, Optional, Tuple
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.features import BoundingBoxFormat, ColorSpace, Image
+from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
 get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
-    if isinstance(image, features.Image):
+# TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
+def get_chw(image: features.ImageType) -> Tuple[int, int, int]:
+    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
+        channels, height, width = get_dimensions_image_tensor(image)
+    elif isinstance(image, features.Image):
         channels = image.num_channels
         height, width = image.image_size
-    elif features.is_simple_tensor(image):
-        channels, height, width = get_dimensions_image_tensor(image)
-    elif isinstance(image, PIL.Image.Image):
+    else:  # isinstance(image, PIL.Image.Image)
         channels, height, width = get_dimensions_image_pil(image)
-    else:
-        raise TypeError(f"unable to get image dimensions from object of type {type(image).__name__}")
     return channels, height, width
 
 
@@ -30,11 +29,11 @@ def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tupl
 # detailed above.
 
 
-def get_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
+def get_dimensions(image: features.ImageType) -> List[int]:
     return list(get_chw(image))
 
 
-def get_num_channels(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> int:
+def get_num_channels(image: features.ImageType) -> int:
     num_channels, *_ = get_chw(image)
     return num_channels
 
@@ -44,7 +43,7 @@ def get_num_channels(image: Union[PIL.Image.Image, torch.Tensor, features.Image]
 get_image_num_channels = get_num_channels
 
 
-def get_spatial_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
+def get_spatial_size(image: features.ImageType) -> List[int]:
     _, *size = get_chw(image)
     return size
 
@@ -67,7 +66,7 @@ def _cxcywh_to_xyxy(cxcywh: torch.Tensor) -> torch.Tensor:
     y1 = cy - 0.5 * h
     x2 = cx + 0.5 * w
     y2 = cy + 0.5 * h
-    return torch.stack((x1, y1, x2, y2), dim=-1)
+    return torch.stack((x1, y1, x2, y2), dim=-1).to(cxcywh.dtype)
 
 
 def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
@@ -76,7 +75,7 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
     cy = (y1 + y2) / 2
     w = x2 - x1
     h = y2 - y1
-    return torch.stack((cx, cy, w, h), dim=-1)
+    return torch.stack((cx, cy, w, h), dim=-1).to(xyxy.dtype)
 
 
 def convert_format_bounding_box(
@@ -192,6 +191,7 @@ _COLOR_SPACE_TO_PIL_MODE = {
 }
 
 
+@torch.jit.unused
 def convert_color_space_image_pil(
     image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
 ) -> PIL.Image.Image:
@@ -208,17 +208,12 @@ def convert_color_space_image_pil(
 
 
 def convert_color_space(
-    inpt: Union[PIL.Image.Image, torch.Tensor, features._Feature],
-    *,
+    inpt: features.ImageType,
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
     copy: bool = True,
-) -> Any:
-    if isinstance(inpt, Image):
-        return inpt.to_color_space(color_space, copy=copy)
-    elif isinstance(inpt, PIL.Image.Image):
-        return convert_color_space_image_pil(inpt, color_space, copy=copy)
-    else:
+) -> features.ImageType:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image)):
         if old_color_space is None:
             raise RuntimeError(
                 "In order to convert the color space of simple tensor images, "
@@ -227,3 +222,7 @@ def convert_color_space(
         return convert_color_space_image_tensor(
             inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
         )
+    elif isinstance(inpt, features.Image):
+        return inpt.to_color_space(color_space, copy=copy)
+    else:
+        return cast(features.ImageType, convert_color_space_image_pil(inpt, color_space, copy=copy))
