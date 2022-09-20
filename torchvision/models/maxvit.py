@@ -786,7 +786,7 @@ _COMMON_META = {
 class MaxVit_T_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         # URL empty until official release
-        url="",
+        url="https://download.pytorch.org/models/maxvit_t-bc5ab103.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=224, interpolation=InterpolationMode.BICUBIC
         ),
