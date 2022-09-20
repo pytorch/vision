@@ -9,7 +9,6 @@ from torchvision.prototype import features
 
 
 class TestCommon:
-    @pytest.mark.xfail(reason="dispatchers are currently not scriptable")
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
         [
