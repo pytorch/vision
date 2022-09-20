@@ -600,21 +600,21 @@ class Mosaic(nn.Module):
         self.max_frac = max_frac
         self.size_limit = size_limit
 
-    def forward(self, images, targets):
+    def forward(self, images, targets=None):
         """
         images : torch.Tensor of NWHC type
         targets: list[torch.Tensor]; bounding boxes in xyxy format.
         """
 
         # implementation  is heavily inspired from this colab notebook
-        sx, sy = images.shape[-3], images.shape[-2]
+        sx, sy = images.shape[-2:]
 
-        num_channels = images.shape[1]
+        num_channels = images.shape[-3]
 
-        xc = torch.random.randint(sx * self.min_frac, sx * self.max_frac)
-        yc = torch.random.randint(sy * self.min_frac, sy * self.min_frac)
+        xc = torch.randint(int(sx * self.min_frac), int(sx * self.max_frac), size=(1,))
+        yc = torch.randint(int(sy * self.min_frac), int(sy * self.max_frac), size=(1,))
 
-        mosaic_image = torch.zeros((sx, sy, num_channels), dtype=torch.float32)
+        mosaic_image = torch.zeros((num_channels, sx, sy), dtype=torch.float32)
 
         x1a1, y1a1, x2a1, y2a1 = 0, 0, xc, yc
         x1b1, y1b1, x2b1, y2b1 = sx - xc, sy - yc, sx, sy
@@ -652,10 +652,10 @@ class Mosaic(nn.Module):
         targets[2][:, 0::2] += offset_x4
         targets[2][:, 1::2] += offset_y4
 
-        mosaic_image[y1a1:y2a1, x1a1:x2a1] = images[0][y1b1:y2b1, x1b1:x2b1]
-        mosaic_image[y1a2:y2a2, x1a2:x2a2] = images[1][y1b2:y2b2, x1b2:x2b2]
-        mosaic_image[y1a3:y2a3, x1a3:x2a3] = images[2][y1b3:y2b3, x1b3:x2b3]
-        mosaic_image[y1a4:y2a4, x1a4:x2a4] = images[3][y1b4:y2b4, x1b4:x2b4]
+        mosaic_image[:, x1a1:x2a1, y1a1:y2a1] = images[0][:, x1b1:x2b1, y1b1:y2b1]
+        mosaic_image[:, x1a2:x2a2, y1a2:y2a2] = images[1][:, x1b2:x2b2, y1b2:y2b2]
+        mosaic_image[:, x1a3:x2a3, y1a3:y2a3] = images[2][:, x1b3:x2b3, y1b3:y2b3]
+        mosaic_image[:, x1a4:x2a4, y1a4:y2a4] = images[3][:, x1b4:x2b4, y1b4:y2b4]
 
         mosaic_target = torch.vstack(targets)
 
@@ -665,6 +665,6 @@ class Mosaic(nn.Module):
         w = mosaic_target[:, 2] - mosaic_target[:, 0]
         h = mosaic_target[:, 3] - mosaic_target[:, 1]
 
-        final_boxes = final_boxes[(w >= self.size_limit) & (h >= self.size_limit)]
+        mosaic_target = mosaic_target[(w >= self.size_limit) & (h >= self.size_limit)]
 
-        return mosaic_image, final_boxes
+        return mosaic_image, mosaic_target
