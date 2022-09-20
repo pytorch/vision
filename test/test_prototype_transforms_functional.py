@@ -1,4 +1,3 @@
-import itertools
 import math
 import os
 
@@ -39,15 +38,6 @@ FUNCTIONAL_INFOS = []
 def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
     FUNCTIONAL_INFOS.append(FunctionalInfo(sample_inputs_fn.__name__, sample_inputs_fn=sample_inputs_fn))
     return sample_inputs_fn
-
-
-@register_kernel_info_from_sample_inputs_fn
-def adjust_sharpness_image_tensor():
-    for image, sharpness_factor in itertools.product(
-        make_images(extra_dims=((4,),), color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
-        [0.1, 0.5],
-    ):
-        yield ArgsKwargs(image, sharpness_factor=sharpness_factor)
 
 
 @register_kernel_info_from_sample_inputs_fn

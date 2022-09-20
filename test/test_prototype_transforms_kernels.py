@@ -35,7 +35,6 @@ def test_coverage():
             "adjust_gamma_image_tensor",
             "adjust_hue_image_tensor",
             "adjust_saturation_image_tensor",
-            "adjust_sharpness_image_tensor",
             "clamp_bounding_box",
             "erase_image_tensor",
             "five_crop_image_tensor",

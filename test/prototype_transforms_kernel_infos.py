@@ -1012,6 +1012,7 @@ KERNEL_INFOS.append(
 
 def sample_inputs_equalize_image_tensor():
     for image_loader in make_image_loaders(
+        sizes=["random"],
         # FIXME: kernel should support arbitrary batch sizes
         extra_dims=[(), (4,)],
         color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB),
@@ -1040,7 +1041,9 @@ KERNEL_INFOS.append(
 
 
 def sample_inputs_invert_image_tensor():
-    for image_loader in make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
+    ):
         yield ArgsKwargs(image_loader)
 
 
@@ -1068,7 +1071,7 @@ _POSTERIZE_BITS = [1, 4, 8]
 
 def sample_inputs_posterize_image_tensor():
     for image_loader in make_image_loaders(
-        color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
     ):
         yield ArgsKwargs(image_loader, bits=_POSTERIZE_BITS[0])
 
@@ -1102,7 +1105,9 @@ def _get_solarize_thresholds(dtype):
 
 
 def sample_inputs_solarize_image_tensor():
-    for image_loader in make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
+    ):
         yield ArgsKwargs(image_loader, threshold=next(_get_solarize_thresholds(image_loader.dtype)))
 
 
@@ -1127,7 +1132,9 @@ KERNEL_INFOS.append(
 
 
 def sample_inputs_autocontrast_image_tensor():
-    for image_loader in make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
+    ):
         yield ArgsKwargs(image_loader)
 
 
@@ -1145,6 +1152,38 @@ KERNEL_INFOS.append(
         sample_inputs_fn=sample_inputs_autocontrast_image_tensor,
         reference_fn=pil_reference_wrapper(F.autocontrast_image_pil),
         reference_inputs_fn=reference_inputs_autocontrast_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)
+
+_ADJUST_SHARPNESS_FACTORS = [0.1, 0.5]
+
+
+def sample_inputs_adjust_sharpness_image_tensor():
+    for image_loader in make_image_loaders(
+        sizes=["random", (2, 2)],
+        color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB),
+        # FIXME: kernel should support arbitrary batch sizes
+        extra_dims=[(), (4,)],
+    ):
+        yield ArgsKwargs(image_loader, sharpness_factor=_ADJUST_SHARPNESS_FACTORS[0])
+
+
+def reference_inputs_adjust_sharpness_image_tensor():
+    for image_loader, sharpness_factor in itertools.product(
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
+        _ADJUST_SHARPNESS_FACTORS,
+    ):
+        yield ArgsKwargs(image_loader, sharpness_factor=sharpness_factor)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.adjust_sharpness_image_tensor,
+        kernel_name="adjust_sharpness_image_tensor",
+        sample_inputs_fn=sample_inputs_adjust_sharpness_image_tensor,
+        reference_fn=pil_reference_wrapper(F.adjust_sharpness_image_pil),
+        reference_inputs_fn=reference_inputs_adjust_sharpness_image_tensor,
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
     )
 )
