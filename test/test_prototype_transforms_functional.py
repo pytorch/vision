@@ -8,14 +8,7 @@ import pytest
 import torch.testing
 import torchvision.prototype.transforms.functional as F
 from common_utils import cpu_and_gpu
-from prototype_common_utils import (
-    ArgsKwargs,
-    make_bounding_boxes,
-    make_detection_masks,
-    make_image,
-    make_images,
-    make_masks,
-)
+from prototype_common_utils import ArgsKwargs, make_bounding_boxes, make_image, make_images, make_masks
 from torch import jit
 from torchvision.prototype import features
 from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
@@ -46,44 +39,6 @@ FUNCTIONAL_INFOS = []
 def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
     FUNCTIONAL_INFOS.append(FunctionalInfo(sample_inputs_fn.__name__, sample_inputs_fn=sample_inputs_fn))
     return sample_inputs_fn
-
-
-@register_kernel_info_from_sample_inputs_fn
-def elastic_image_tensor():
-    for image, fill in itertools.product(
-        make_images(extra_dims=((), (4,))),
-        [None, 128.0, 128, [12.0], [1.0, 2.0, 3.0]],  # fill
-    ):
-        if isinstance(fill, list) and len(fill) == 3 and image.shape[1] != 3:
-            # skip the test with non-broadcastable fill value
-            continue
-
-        h, w = image.shape[-2:]
-        displacement = torch.rand(1, h, w, 2)
-        yield ArgsKwargs(image, displacement=displacement, fill=fill)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def elastic_bounding_box():
-    for bounding_box in make_bounding_boxes():
-        h, w = bounding_box.image_size
-        displacement = torch.rand(1, h, w, 2)
-        yield ArgsKwargs(
-            bounding_box,
-            format=bounding_box.format,
-            displacement=displacement,
-        )
-
-
-@register_kernel_info_from_sample_inputs_fn
-def elastic_mask():
-    for mask in make_masks(extra_dims=((), (4,))):
-        h, w = mask.shape[-2:]
-        displacement = torch.rand(1, h, w, 2)
-        yield ArgsKwargs(
-            mask,
-            displacement=displacement,
-        )
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -716,63 +671,6 @@ def test_correctness_pad_segmentation_mask_on_fixed_input(device):
     torch.testing.assert_close(out_mask, expected_mask)
 
 
-@pytest.mark.parametrize("padding", [[1, 2, 3, 4], [1], 1, [1, 2]])
-@pytest.mark.parametrize("padding_mode", ["constant", "edge", "reflect", "symmetric"])
-def test_correctness_pad_mask(padding, padding_mode):
-    def _compute_expected_mask(mask, padding_, padding_mode_):
-        h, w = mask.shape[-2], mask.shape[-1]
-        pad_left, pad_up, pad_right, pad_down = _parse_padding(padding_)
-
-        if any(pad <= 0 for pad in [pad_left, pad_up, pad_right, pad_down]):
-            raise pytest.UsageError(
-                "Expected output can be computed on positive pad values only, "
-                "but F.pad_* can also crop for negative values"
-            )
-
-        new_h = h + pad_up + pad_down
-        new_w = w + pad_left + pad_right
-
-        new_shape = (*mask.shape[:-2], new_h, new_w) if len(mask.shape) > 2 else (new_h, new_w)
-        output = torch.zeros(new_shape, dtype=mask.dtype)
-        output[..., pad_up:-pad_down, pad_left:-pad_right] = mask
-
-        if padding_mode_ == "edge":
-            # pad top-left corner, left vertical block, bottom-left corner
-            output[..., :pad_up, :pad_left] = mask[..., 0, 0].unsqueeze(-1).unsqueeze(-2)
-            output[..., pad_up:-pad_down, :pad_left] = mask[..., :, 0].unsqueeze(-1)
-            output[..., -pad_down:, :pad_left] = mask[..., -1, 0].unsqueeze(-1).unsqueeze(-2)
-            # pad top-right corner, right vertical block, bottom-right corner
-            output[..., :pad_up, -pad_right:] = mask[..., 0, -1].unsqueeze(-1).unsqueeze(-2)
-            output[..., pad_up:-pad_down, -pad_right:] = mask[..., :, -1].unsqueeze(-1)
-            output[..., -pad_down:, -pad_right:] = mask[..., -1, -1].unsqueeze(-1).unsqueeze(-2)
-            # pad top and bottom horizontal blocks
-            output[..., :pad_up, pad_left:-pad_right] = mask[..., 0, :].unsqueeze(-2)
-            output[..., -pad_down:, pad_left:-pad_right] = mask[..., -1, :].unsqueeze(-2)
-        elif padding_mode_ in ("reflect", "symmetric"):
-            d1 = 1 if padding_mode_ == "reflect" else 0
-            d2 = -1 if padding_mode_ == "reflect" else None
-            both = (-1, -2)
-            # pad top-left corner, left vertical block, bottom-left corner
-            output[..., :pad_up, :pad_left] = mask[..., d1 : pad_up + d1, d1 : pad_left + d1].flip(both)
-            output[..., pad_up:-pad_down, :pad_left] = mask[..., :, d1 : pad_left + d1].flip(-1)
-            output[..., -pad_down:, :pad_left] = mask[..., -pad_down - d1 : d2, d1 : pad_left + d1].flip(both)
-            # pad top-right corner, right vertical block, bottom-right corner
-            output[..., :pad_up, -pad_right:] = mask[..., d1 : pad_up + d1, -pad_right - d1 : d2].flip(both)
-            output[..., pad_up:-pad_down, -pad_right:] = mask[..., :, -pad_right - d1 : d2].flip(-1)
-            output[..., -pad_down:, -pad_right:] = mask[..., -pad_down - d1 : d2, -pad_right - d1 : d2].flip(both)
-            # pad top and bottom horizontal blocks
-            output[..., :pad_up, pad_left:-pad_right] = mask[..., d1 : pad_up + d1, :].flip(-2)
-            output[..., -pad_down:, pad_left:-pad_right] = mask[..., -pad_down - d1 : d2, :].flip(-2)
-
-        return output
-
-    for mask in make_masks():
-        out_mask = F.pad_mask(mask, padding, padding_mode=padding_mode)
-
-        expected_mask = _compute_expected_mask(mask, padding, padding_mode)
-        torch.testing.assert_close(out_mask, expected_mask)
-
-
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "startpoints, endpoints",
@@ -856,64 +754,6 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         else:
             expected_bboxes = expected_bboxes[0]
         torch.testing.assert_close(output_bboxes, expected_bboxes, rtol=0, atol=1)
-
-
-@pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize(
-    "startpoints, endpoints",
-    [
-        # FIXME: this configuration leads to a difference in a single pixel
-        # [[[0, 0], [33, 0], [33, 25], [0, 25]], [[3, 2], [32, 3], [30, 24], [2, 25]]],
-        [[[3, 2], [32, 3], [30, 24], [2, 25]], [[0, 0], [33, 0], [33, 25], [0, 25]]],
-        [[[3, 2], [32, 3], [30, 24], [2, 25]], [[5, 5], [30, 3], [33, 19], [4, 25]]],
-    ],
-)
-def test_correctness_perspective_mask(device, startpoints, endpoints):
-    def _compute_expected_mask(mask, pcoeffs_):
-        assert mask.ndim == 3
-        m1 = np.array([[pcoeffs_[0], pcoeffs_[1], pcoeffs_[2]], [pcoeffs_[3], pcoeffs_[4], pcoeffs_[5]]])
-        m2 = np.array([[pcoeffs_[6], pcoeffs_[7], 1.0], [pcoeffs_[6], pcoeffs_[7], 1.0]])
-
-        expected_mask = torch.zeros_like(mask.cpu())
-        for out_y in range(expected_mask.shape[1]):
-            for out_x in range(expected_mask.shape[2]):
-                output_pt = np.array([out_x + 0.5, out_y + 0.5, 1.0])
-
-                numer = np.matmul(output_pt, m1.T)
-                denom = np.matmul(output_pt, m2.T)
-                input_pt = np.floor(numer / denom).astype(np.int32)
-
-                in_x, in_y = input_pt[:2]
-                if 0 <= in_x < mask.shape[2] and 0 <= in_y < mask.shape[1]:
-                    for i in range(expected_mask.shape[0]):
-                        expected_mask[i, out_y, out_x] = mask[i, in_y, in_x]
-        return expected_mask.to(mask.device)
-
-    pcoeffs = _get_perspective_coeffs(startpoints, endpoints)
-
-    # FIXME: `_compute_expected_mask` currently only works for "detection" masks. Extend it for "segmentation" masks.
-    for mask in make_detection_masks(extra_dims=((), (4,))):
-        mask = mask.to(device)
-
-        output_mask = F.perspective_mask(
-            mask,
-            perspective_coeffs=pcoeffs,
-        )
-
-        if mask.ndim < 4:
-            masks = [mask]
-        else:
-            masks = [m for m in mask]
-
-        expected_masks = []
-        for mask in masks:
-            expected_mask = _compute_expected_mask(mask, pcoeffs)
-            expected_masks.append(expected_mask)
-        if len(expected_masks) > 1:
-            expected_masks = torch.stack(expected_masks)
-        else:
-            expected_masks = expected_masks[0]
-        torch.testing.assert_close(output_mask, expected_masks)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -1047,53 +887,6 @@ def test_correctness_gaussian_blur_image_tensor(device, image_size, dt, ksize, s
 
     out = fn(image, kernel_size=ksize, sigma=sigma)
     torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
-
-
-@pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize(
-    "fn, make_samples",
-    [
-        (F.elastic_image_tensor, make_images),
-        # FIXME: This test currently only works for "detection" masks. Extend it for "segmentation" masks.
-        (F.elastic_mask, make_detection_masks),
-    ],
-)
-def test_correctness_elastic_image_or_mask_tensor(device, fn, make_samples):
-    in_box = [10, 15, 25, 35]
-    for sample in make_samples(sizes=((64, 76),), extra_dims=((), (4,))):
-        c, h, w = sample.shape[-3:]
-        # Setup a dummy image with 4 points
-        sample[..., in_box[1], in_box[0]] = torch.arange(10, 10 + c)
-        sample[..., in_box[3] - 1, in_box[0]] = torch.arange(20, 20 + c)
-        sample[..., in_box[3] - 1, in_box[2] - 1] = torch.arange(30, 30 + c)
-        sample[..., in_box[1], in_box[2] - 1] = torch.arange(40, 40 + c)
-        sample = sample.to(device)
-
-        if fn == F.elastic_image_tensor:
-            sample = features.Image(sample)
-            kwargs = {"interpolation": F.InterpolationMode.NEAREST}
-        else:
-            sample = features.Mask(sample)
-            kwargs = {}
-
-        # Create a displacement grid using sin
-        n, m = 5.0, 0.1
-        d1 = m * torch.sin(torch.arange(h, dtype=torch.float) * torch.pi * n / h)
-        d2 = m * torch.sin(torch.arange(w, dtype=torch.float) * torch.pi * n / w)
-
-        d1 = d1[:, None].expand((h, w))
-        d2 = d2[None, :].expand((h, w))
-
-        displacement = torch.cat([d1[..., None], d2[..., None]], dim=-1)
-        displacement = displacement.reshape(1, h, w, 2)
-
-        output = fn(sample, displacement=displacement, **kwargs)
-
-        # Check places where transformed points should be
-        torch.testing.assert_close(output[..., 12, 9], sample[..., in_box[1], in_box[0]])
-        torch.testing.assert_close(output[..., 17, 27], sample[..., in_box[1], in_box[2] - 1])
-        torch.testing.assert_close(output[..., 31, 6], sample[..., in_box[3] - 1, in_box[0]])
-        torch.testing.assert_close(output[..., 37, 23], sample[..., in_box[3] - 1, in_box[2] - 1])
 
 
 def test_midlevel_normalize_output_type():

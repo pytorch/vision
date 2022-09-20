@@ -848,3 +848,112 @@ KERNEL_INFOS.extend(
         ),
     ]
 )
+
+
+def _get_elastic_displacement(image_size):
+    return torch.rand(1, *image_size, 2)
+
+
+# @register_kernel_info_from_sample_inputs_fn
+# def elastic_image_tensor():
+#     for image, fill in itertools.product(
+#         make_images(extra_dims=((), (4,))),
+#         [None, 128.0, 128, [12.0], [1.0, 2.0, 3.0]],  # fill
+#     ):
+#         if isinstance(fill, list) and len(fill) == 3 and image.shape[1] != 3:
+#             # skip the test with non-broadcastable fill value
+#             continue
+#
+#         h, w = image.shape[-2:]
+#         displacement =
+#         yield ArgsKwargs(image, displacement=displacement, fill=fill)
+#
+#
+# @register_kernel_info_from_sample_inputs_fn
+# def elastic_bounding_box():
+#     for bounding_box in make_bounding_boxes():
+#         h, w = bounding_box.image_size
+#         displacement = torch.rand(1, h, w, 2)
+#         yield ArgsKwargs(
+#             bounding_box,
+#             format=bounding_box.format,
+#             displacement=displacement,
+#         )
+#
+#
+# @register_kernel_info_from_sample_inputs_fn
+# def elastic_mask():
+#     for mask in make_masks(extra_dims=((), (4,))):
+#         h, w = mask.shape[-2:]
+#         displacement = torch.rand(1, h, w, 2)
+#         yield ArgsKwargs(
+#             mask,
+#             displacement=displacement,
+#         )
+
+
+def sample_inputs_elastic_image_tensor():
+    for image_loader in make_image_loaders(sizes=["random"]):
+        displacement = _get_elastic_displacement(image_loader.image_size)
+        for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
+            yield ArgsKwargs(image_loader, displacement=displacement, fill=fill)
+
+
+def reference_inputs_elastic_image_tensor():
+    for image_loader, interpolation in itertools.product(
+        make_image_loaders(extra_dims=[()]),
+        [
+            F.InterpolationMode.NEAREST,
+            F.InterpolationMode.BILINEAR,
+            F.InterpolationMode.BICUBIC,
+        ],
+    ):
+        displacement = _get_elastic_displacement(image_loader.image_size)
+        for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
+            yield ArgsKwargs(image_loader, interpolation=interpolation, displacement=displacement, fill=fill)
+
+
+def sample_inputs_elastic_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders():
+        displacement = _get_elastic_displacement(bounding_box_loader.image_size)
+        yield ArgsKwargs(
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            displacement=displacement,
+        )
+
+
+def sample_inputs_elastic_mask():
+    for mask_loader in make_mask_loaders(sizes=["random"]):
+        displacement = _get_elastic_displacement(mask_loader.shape[-2:])
+        yield ArgsKwargs(mask_loader, displacement=displacement)
+
+
+def reference_inputs_elastic_mask():
+    for mask_loader in make_mask_loaders(extra_dims=[()], num_objects=[1]):
+        displacement = _get_elastic_displacement(mask_loader.shape[-2:])
+        yield ArgsKwargs(mask_loader, displacement=displacement)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.elastic_image_tensor,
+            sample_inputs_fn=sample_inputs_elastic_image_tensor,
+            reference_fn=pil_reference_wrapper(F.elastic_image_pil),
+            reference_inputs_fn=reference_inputs_elastic_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.elastic_bounding_box,
+            sample_inputs_fn=sample_inputs_elastic_bounding_box,
+        ),
+        KernelInfo(
+            F.elastic_mask,
+            sample_inputs_fn=sample_inputs_elastic_mask,
+            reference_fn=pil_reference_wrapper(F.elastic_image_pil),
+            reference_inputs_fn=reference_inputs_elastic_mask,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+    ]
+)
