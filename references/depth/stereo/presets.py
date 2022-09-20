@@ -45,7 +45,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
     def __init__(
         self,
         *,
-        resize_size: Optional[Tuple[int, int]],
+        resize_size: Optional[Tuple[int, ...]],
         resize_interpolation_type: str = "bilinear",
         # RandomResizeAndCrop params
         crop_size: Tuple[int, int],

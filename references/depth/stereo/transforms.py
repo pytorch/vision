@@ -424,7 +424,7 @@ class RandomHorizontalFlip(torch.nn.Module):
 
 
 class Resize(torch.nn.Module):
-    def __init__(self, resize_size: Tuple[int, int], interpolation_type: str = "bilinear") -> None:
+    def __init__(self, resize_size: Tuple[int, ...], interpolation_type: str = "bilinear") -> None:
         super().__init__()
         self.resize_size = list(resize_size)  # doing this to keep mypy happy
         self._interpolation_mode_strategy = InterpolationStrategy(interpolation_type)
