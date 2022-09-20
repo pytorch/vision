@@ -1124,3 +1124,27 @@ KERNEL_INFOS.append(
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
     )
 )
+
+
+def sample_inputs_autocontrast_image_tensor():
+    for image_loader in make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+        yield ArgsKwargs(image_loader)
+
+
+def reference_inputs_autocontrast_image_tensor():
+    for image_loader in make_image_loaders(
+        color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]
+    ):
+        yield ArgsKwargs(image_loader)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.autocontrast_image_tensor,
+        kernel_name="autocontrast_image_tensor",
+        sample_inputs_fn=sample_inputs_autocontrast_image_tensor,
+        reference_fn=pil_reference_wrapper(F.autocontrast_image_pil),
+        reference_inputs_fn=reference_inputs_autocontrast_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)

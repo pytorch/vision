@@ -42,12 +42,6 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def autocontrast_image_tensor():
-    for image in make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
-        yield ArgsKwargs(image)
-
-
-@register_kernel_info_from_sample_inputs_fn
 def adjust_sharpness_image_tensor():
     for image, sharpness_factor in itertools.product(
         make_images(extra_dims=((4,),), color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
