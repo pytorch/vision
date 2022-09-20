@@ -57,9 +57,6 @@ def test_coverage():
             "perspective_image_tensor",
             "perspective_mask",
             "posterize_image_tensor",
-            "resized_crop_bounding_box",
-            "resized_crop_image_tensor",
-            "resized_crop_mask",
             "solarize_image_tensor",
             "ten_crop_image_tensor",
         }

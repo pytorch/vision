@@ -643,3 +643,83 @@ KERNEL_INFOS.extend(
         ),
     ]
 )
+
+_RESIZED_CROP_PARAMS = combinations_grid(top=[-8, 9], left=[-8, 9], height=[12], width=[12], size=[(16, 18)])
+
+
+def sample_inputs_resized_crop_image_tensor():
+    for image_loader in make_image_loaders():
+        yield ArgsKwargs(image_loader, **_RESIZED_CROP_PARAMS[0])
+
+
+@pil_reference_wrapper
+def reference_resized_crop_image_tensor(*args, **kwargs):
+    if not kwargs.pop("antialias", False) and kwargs.get("interpolation", F.InterpolationMode.BILINEAR) in {
+        F.InterpolationMode.BILINEAR,
+        F.InterpolationMode.BICUBIC,
+    }:
+        raise pytest.UsageError("Anti-aliasing is always active in PIL")
+    return F.resized_crop_image_pil(*args, **kwargs)
+
+
+def reference_inputs_resized_crop_image_tensor():
+    for image_loader, interpolation, params in itertools.product(
+        make_image_loaders(extra_dims=[()]),
+        [
+            F.InterpolationMode.NEAREST,
+            F.InterpolationMode.BILINEAR,
+            F.InterpolationMode.BICUBIC,
+        ],
+        _RESIZED_CROP_PARAMS,
+    ):
+        yield ArgsKwargs(
+            image_loader,
+            interpolation=interpolation,
+            antialias=interpolation
+            in {
+                F.InterpolationMode.BILINEAR,
+                F.InterpolationMode.BICUBIC,
+            },
+            **params,
+        )
+
+
+def sample_inputs_resized_crop_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders():
+        yield ArgsKwargs(bounding_box_loader, format=bounding_box_loader.format, **_RESIZED_CROP_PARAMS[0])
+
+
+def sample_inputs_resized_crop_mask():
+    for mask_loader in make_mask_loaders():
+        yield ArgsKwargs(mask_loader, **_RESIZED_CROP_PARAMS[0])
+
+
+def reference_inputs_resized_crop_mask():
+    for mask_loader, params in itertools.product(
+        make_mask_loaders(extra_dims=[()], num_objects=[1]), _RESIZED_CROP_PARAMS
+    ):
+        yield ArgsKwargs(mask_loader, **params)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.resized_crop_image_tensor,
+            sample_inputs_fn=sample_inputs_resized_crop_image_tensor,
+            reference_fn=reference_resized_crop_image_tensor,
+            reference_inputs_fn=reference_inputs_resized_crop_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.resized_crop_bounding_box,
+            sample_inputs_fn=sample_inputs_resized_crop_bounding_box,
+        ),
+        KernelInfo(
+            F.resized_crop_mask,
+            sample_inputs_fn=sample_inputs_resized_crop_mask,
+            reference_fn=pil_reference_wrapper(F.resized_crop_image_pil),
+            reference_inputs_fn=reference_inputs_resized_crop_mask,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+    ]
+)

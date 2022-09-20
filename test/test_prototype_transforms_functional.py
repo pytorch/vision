@@ -49,38 +49,6 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def resized_crop_image_tensor():
-    for mask, top, left, height, width, size, antialias in itertools.product(
-        make_images(),
-        [-8, 9],
-        [-8, 9],
-        [12],
-        [12],
-        [(16, 18)],
-        [True, False],
-    ):
-        yield ArgsKwargs(mask, top=top, left=left, height=height, width=width, size=size, antialias=antialias)
-
-
-@register_kernel_info_from_sample_inputs_fn
-def resized_crop_bounding_box():
-    for bounding_box, top, left, height, width, size in itertools.product(
-        make_bounding_boxes(), [-8, 9], [-8, 9], [32, 22], [34, 20], [(32, 32), (16, 18)]
-    ):
-        yield ArgsKwargs(
-            bounding_box, format=bounding_box.format, top=top, left=left, height=height, width=width, size=size
-        )
-
-
-@register_kernel_info_from_sample_inputs_fn
-def resized_crop_mask():
-    for mask, top, left, height, width, size in itertools.product(
-        make_masks(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20], [(32, 32), (16, 18)]
-    ):
-        yield ArgsKwargs(mask, top=top, left=left, height=height, width=width, size=size)
-
-
-@register_kernel_info_from_sample_inputs_fn
 def pad_image_tensor():
     for image, padding, fill, padding_mode in itertools.product(
         make_images(),
@@ -764,31 +732,6 @@ def test_correctness_resized_crop_bounding_box(device, format, top, left, height
         output_boxes = convert_format_bounding_box(output_boxes, format, features.BoundingBoxFormat.XYXY)
 
     torch.testing.assert_close(output_boxes, expected_bboxes)
-
-
-@pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize(
-    "top, left, height, width, size",
-    [
-        [0, 0, 30, 30, (60, 60)],
-        [5, 5, 35, 45, (32, 34)],
-    ],
-)
-def test_correctness_resized_crop_mask(device, top, left, height, width, size):
-    def _compute_expected_mask(mask, top_, left_, height_, width_, size_):
-        output = mask.clone()
-        output = output[:, top_ : top_ + height_, left_ : left_ + width_]
-        output = torch.nn.functional.interpolate(output[None, :].float(), size=size_, mode="nearest")
-        output = output[0, :].long()
-        return output
-
-    in_mask = torch.zeros(1, 100, 100, dtype=torch.long, device=device)
-    in_mask[0, 10:20, 10:20] = 1
-    in_mask[0, 5:15, 12:23] = 2
-
-    expected_mask = _compute_expected_mask(in_mask, top, left, height, width, size)
-    output_mask = F.resized_crop_mask(in_mask, top, left, height, width, size)
-    torch.testing.assert_close(output_mask, expected_mask)
 
 
 def _parse_padding(padding):
