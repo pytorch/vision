@@ -177,9 +177,16 @@ def pad_image_tensor():
     for image, padding, fill, padding_mode in itertools.product(
         make_images(),
         [[1], [1, 1], [1, 1, 2, 2]],  # padding
-        [None, 12, 12.0],  # fill
+        [None, 128.0, 128, [12.0], [12.0, 13.0, 14.0]],  # fill
         ["constant", "symmetric", "edge", "reflect"],  # padding mode,
     ):
+        if padding_mode != "constant" and fill is not None:
+            # ValueError: Padding mode 'reflect' is not supported if fill is not scalar
+            continue
+
+        if isinstance(fill, list) and len(fill) != image.shape[-3]:
+            continue
+
         yield ArgsKwargs(image, padding=padding, fill=fill, padding_mode=padding_mode)
 
 
@@ -210,8 +217,12 @@ def perspective_image_tensor():
             [1.2405, 0.1772, -6.9113, 0.0463, 1.251, -5.235, 0.00013, 0.0018],
             [0.7366, -0.11724, 1.45775, -0.15012, 0.73406, 2.6019, -0.0072, -0.0063],
         ],
-        [None, [128], [12.0]],  # fill
+        [None, 128.0, 128, [12.0], [1.0, 2.0, 3.0]],  # fill
     ):
+        if isinstance(fill, list) and len(fill) == 3 and image.shape[1] != 3:
+            # skip the test with non-broadcastable fill value
+            continue
+
         yield ArgsKwargs(image, perspective_coeffs=perspective_coeffs, fill=fill)
 
 
@@ -250,8 +261,12 @@ def perspective_mask():
 def elastic_image_tensor():
     for image, fill in itertools.product(
         make_images(extra_dims=((), (4,))),
-        [None, [128], [12.0]],  # fill
+        [None, 128.0, 128, [12.0], [1.0, 2.0, 3.0]],  # fill
     ):
+        if isinstance(fill, list) and len(fill) == 3 and image.shape[1] != 3:
+            # skip the test with non-broadcastable fill value
+            continue
+
         h, w = image.shape[-2:]
         displacement = torch.rand(1, h, w, 2)
         yield ArgsKwargs(image, displacement=displacement, fill=fill)
