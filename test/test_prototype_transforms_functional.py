@@ -42,12 +42,6 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def invert_image_tensor():
-    for image in make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
-        yield ArgsKwargs(image)
-
-
-@register_kernel_info_from_sample_inputs_fn
 def posterize_image_tensor():
     for image, bits in itertools.product(
         make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
