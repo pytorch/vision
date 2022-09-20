@@ -794,27 +794,8 @@ def test_detection_model(model_fn, dev):
             return {"mean": mean, "std": std}
 
         output = map_nested_tensor_object(out, tensor_map_fn=compact)
-        try:
-            # We first try to assert the entire output if possible. This is not
-            # only the best way to assert results but also handles the cases
-            # where we need to create a new expected result.
-            _assert_expected(output, model_name, prec=prec)
-        except AssertionError:
-            # Unfortunately detection models are flaky due to the unstable sort
-            # in NMS. If matching across all outputs fails, use the same approach
-            # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
-            # scores.
-            expected_file = _get_expected_file(model_name)
-            expected = torch.load(expected_file)
-            torch.testing.assert_close(
-                output[0]["scores"], expected[0]["scores"], rtol=prec, atol=prec, check_device=False, check_dtype=False
-            )
 
-            # Note: Fmassa proposed turning off NMS by adapting the threshold
-            # and then using the Hungarian algorithm as in DETR to find the
-            # best match between output and expected boxes and eliminate some
-            # of the flakiness. Worth exploring.
-            return False  # Partial validation performed
+        _assert_expected(output, model_name, prec=prec)
 
         return True  # Full validation performed
 
