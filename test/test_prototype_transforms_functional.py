@@ -42,17 +42,6 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def posterize_image_tensor():
-    for image, bits in itertools.product(
-        make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
-        [1, 4, 8],
-    ):
-        if image.dtype != torch.uint8:
-            continue
-        yield ArgsKwargs(image, bits=bits)
-
-
-@register_kernel_info_from_sample_inputs_fn
 def solarize_image_tensor():
     for image, threshold in itertools.product(
         make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),

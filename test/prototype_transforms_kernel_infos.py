@@ -1061,3 +1061,35 @@ KERNEL_INFOS.append(
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
     )
 )
+
+
+_POSTERIZE_BITS = [1, 4, 8]
+
+
+def sample_inputs_posterize_image_tensor():
+    for image_loader in make_image_loaders(
+        color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+    ):
+        yield ArgsKwargs(image_loader, bits=_POSTERIZE_BITS[0])
+
+
+def reference_inputs_posterize_image_tensor():
+    for image_loader, bits in itertools.product(
+        make_image_loaders(
+            color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
+        ),
+        _POSTERIZE_BITS,
+    ):
+        yield ArgsKwargs(image_loader, bits=bits)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.posterize_image_tensor,
+        kernel_name="posterize_image_tensor",
+        sample_inputs_fn=sample_inputs_posterize_image_tensor,
+        reference_fn=pil_reference_wrapper(F.posterize_image_pil),
+        reference_inputs_fn=reference_inputs_posterize_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)

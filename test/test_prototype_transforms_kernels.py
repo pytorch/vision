@@ -40,9 +40,7 @@ def test_coverage():
             "clamp_bounding_box",
             "erase_image_tensor",
             "five_crop_image_tensor",
-            "invert_image_tensor",
             "normalize_image_tensor",
-            "posterize_image_tensor",
             "solarize_image_tensor",
             "ten_crop_image_tensor",
         }
