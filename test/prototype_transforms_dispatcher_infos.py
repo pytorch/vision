@@ -113,14 +113,21 @@ DISPATCHER_INFOS = [
             features.Mask: F.pad_mask,
         },
     ),
-    DispatcherInfo(
-        F.perspective,
-        kernels={
-            features.Image: F.perspective_image_tensor,
-            features.BoundingBox: F.perspective_bounding_box,
-            features.Mask: F.perspective_mask,
-        },
-    ),
+    # FIXME:
+    # RuntimeError: perspective() is missing value for argument 'startpoints'.
+    # Declaration: perspective(Tensor inpt, int[][] startpoints, int[][] endpoints,
+    # Enum<__torch__.torchvision.transforms.functional.InterpolationMode> interpolation=Enum<InterpolationMode.BILINEAR>,
+    # Union(float[], float, int, NoneType) fill=None) -> Tensor
+    #
+    # This is probably due to the fact that F.perspective does not have the same signature as F.perspective_image_tensor
+    # DispatcherInfo(
+    #     F.perspective,
+    #     kernels={
+    #         features.Image: F.perspective_image_tensor,
+    #         features.BoundingBox: F.perspective_bounding_box,
+    #         features.Mask: F.perspective_mask,
+    #     },
+    # ),
     DispatcherInfo(
         F.center_crop,
         kernels={

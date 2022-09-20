@@ -252,7 +252,14 @@ class Pad(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)
+
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        padding = self.padding
+        if not isinstance(padding, int):
+            padding = list(padding)
+
+        fill = F._geometry._convert_fill_arg(fill)
+        return F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
 
 
 class RandomZoomOut(_RandomApplyTransform):
@@ -290,6 +297,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.pad(inpt, **params, fill=fill)
 
 
@@ -320,6 +328,7 @@ class RandomRotation(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.rotate(
             inpt,
             **params,
@@ -401,6 +410,7 @@ class RandomAffine(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.affine(
             inpt,
             **params,
@@ -480,8 +490,15 @@ class RandomCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         # TODO: (PERF) check for speed optimization if we avoid repeated pad calls
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
+
         if self.padding is not None:
-            inpt = F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)
+            # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+            padding = self.padding
+            if not isinstance(padding, int):
+                padding = list(padding)
+
+            inpt = F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
 
         if self.pad_if_needed:
             input_width, input_height = params["input_width"], params["input_height"]
@@ -543,6 +560,7 @@ class RandomPerspective(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.perspective(
             inpt,
             **params,
@@ -610,6 +628,7 @@ class ElasticTransform(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.elastic(
             inpt,
             **params,
@@ -868,6 +887,7 @@ class FixedSizeCrop(Transform):
 
         if params["needs_pad"]:
             fill = self.fill[type(inpt)]
+            fill = F._geometry._convert_fill_arg(fill)
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt
