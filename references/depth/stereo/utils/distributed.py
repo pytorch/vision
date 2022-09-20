@@ -23,27 +23,24 @@ def setup_ddp(args):
     # If you're confused (like I was), this might help a bit
     # https://discuss.pytorch.org/t/what-is-the-difference-between-rank-and-local-rank/61940/2
 
-    if all(key in os.environ for key in ("LOCAL_RANK", "RANK", "WORLD_SIZE")):
-        # if we're here, the script was called with torchrun. Otherwise
-        # these args will be set already by the run_with_submitit script
-        args.local_rank = int(os.environ["LOCAL_RANK"])
+    if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
         args.rank = int(os.environ["RANK"])
         args.world_size = int(os.environ["WORLD_SIZE"])
-
-    elif "gpu" in args:
-        # if we're here, the script was called by run_with_submitit.py
-        args.local_rank = args.gpu
+        args.gpu = int(os.environ["LOCAL_RANK"])
+    elif "SLURM_PROCID" in os.environ:
+        args.rank = int(os.environ["SLURM_PROCID"])
+        args.gpu = args.rank % torch.cuda.device_count()
+    elif hasattr(args, "rank"):
+        pass
     else:
-        print("Not using distributed mode!")
+        print("Not using distributed mode")
         args.distributed = False
         args.world_size = 1
         return
 
     args.distributed = True
 
-    _redefine_print(is_main=(args.rank == 0))
-
-    torch.cuda.set_device(args.local_rank)
+    torch.cuda.set_device(args.gpu)
     dist.init_process_group(
         backend="nccl",
         rank=args.rank,
@@ -51,6 +48,7 @@ def setup_ddp(args):
         init_method=args.dist_url,
     )
     torch.distributed.barrier()
+    _redefine_print(is_main=(args.rank == 0))
 
 
 def reduce_across_processes(val):

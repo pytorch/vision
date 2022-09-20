@@ -226,7 +226,7 @@ def load_checkpoint(args):
     
 def main(args):
     model = load_checkpoint(args)
-    evaluate(model, args, padder_mode="kitti")
+    evaluate(model, args)
 
 if __name__ == "__main__":
     args = get_args_parser().parse_args()

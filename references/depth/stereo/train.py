@@ -461,8 +461,8 @@ def main(args):
 
     # convert to DDP if need be
     if args.distributed:
-        model = model.to(args.local_rank)
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank])
+        model = model.to(args.gpu)
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
     else:
         model.to(device)
