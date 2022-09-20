@@ -1,17 +1,9 @@
-import argparse
-from collections import defaultdict
-from distutils.command.config import config
-from functools import partial
 import os
-import pathlib
-import time
-from typing import List, Union
 from parsing import make_dataset, make_eval_transform
 from torch.nn import functional as F
 import torch
 import utils
 import torchvision
-import numpy as np
 import torchvision.prototype.models.depth.stereo
 import warnings
 from vizualization import make_prediction_image_side_to_side
@@ -35,6 +27,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--device", type=str, default="cuda", help="device to use")
     
     parser.add_argument("--save-predictions", action="store_true", help="save predictions")
+    parser.add_argument("--padder-type", type=str, default="kitti", help="padder type", choices=["kitti", "sintel"])
     
     return parser
 
@@ -65,7 +58,7 @@ def cascade_inference(model, image_left, image_right, iterations, cascades):
 
 @torch.inference_mode()
 def _evaluate(
-    model, args, val_dataset, *, padder_mode, print_freq=10, writter=None, step=None, iterations=10, cascades=1, batch_size=None, header=None, save_images=False, save_path="",
+    model, args, val_loader, *, padder_mode, print_freq=10, writter=None, step=None, iterations=10, cascades=1, batch_size=None, header=None, save_images=False, save_path="",
 ):
     """Helper function to compute various metrics (epe, etc.) for a model on a given dataset.
     We process as many samples as possible with ddp.
@@ -75,22 +68,6 @@ def _evaluate(
     device = torch.device(args.device)
     metric_logger = utils.MetricLogger(delimiter="  ")
     
-    effective_batch_size = batch_size * args.world_size
-    can_do_distributed_test = effective_batch_size < len(val_dataset)
-    
-    if args.distributed and can_do_distributed_test:
-        sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
-    else:
-        sampler = torch.utils.data.SequentialSampler(val_dataset)
-    
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset,
-        sampler=sampler,
-        batch_size=batch_size,
-        pin_memory=True,
-        num_workers=args.workers,
-    )
-
     iterations = iterations or args.recurrent_updates
 
     logger = utils.MetricLogger()
@@ -98,46 +75,44 @@ def _evaluate(
         logger.add_meter(meter_name, fmt="{global_avg:.4f}")
     if "f1" not in args.metrics:
         logger.add_meter("f1", fmt="{global_avg:.4f}")
-        
-    if can_do_distributed_test:
-        should_forward = True
-        module = model
-    else:
-        should_forward = args.rank == 0
-        # doing forward on rank 0 will trigger a synchronization
-        # which will not be fulfilled by non rank 0 processes
-        module = model.module
 
     num_processed_samples = 0
     with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
-        if should_forward:
-            batch_idx = 0
-            for blob in metric_logger.log_every(val_loader, print_freq, header):
-                image_left, image_right, disp_gt, valid_disp_mask = (x.to(device) for x in blob)
-                padder = utils.InputPadder(image_left.shape, mode=padder_mode)
-                image_left, image_right = padder.pad(image_left, image_right)
+        batch_idx = 0
+        for blob in metric_logger.log_every(val_loader, print_freq, header):
+            image_left, image_right, disp_gt, valid_disp_mask = (x.to(device) for x in blob)
+            padder = utils.InputPadder(image_left.shape, mode=padder_mode)
+            image_left, image_right = padder.pad(image_left, image_right)
 
-                disp_pred = cascade_inference(module, image_left, image_right, iterations, cascades)
-                disp_pred = disp_pred[:, :1, :, :]
-                disp_pred = padder.unpad(disp_pred)
+            disp_pred = cascade_inference(model, image_left, image_right, iterations, cascades)
+            disp_pred = disp_pred[:, :1, :, :]
+            disp_pred = padder.unpad(disp_pred)
 
-                if save_images:
-                    make_prediction_image_side_to_side(disp_pred, disp_gt, valid_disp_mask, args.save_path, prefix=f"batch_{batch_idx}")
-                    
-                metrics, _ = utils.compute_metrics(disp_pred, disp_gt, valid_disp_mask, metrics=logger.meters.keys())
-                num_processed_samples += image_left.shape[0]
-                for name in metrics:
-                    logger.meters[name].update(metrics[name], n=1)
-                    
-                batch_idx += 1
+            if save_images:
+                if args.distributed:
+                    rank_prefix = args.rank
+                else:
+                    rank_prefix = 0
+                make_prediction_image_side_to_side(disp_pred, disp_gt, valid_disp_mask, args.save_path, prefix=f"batch_{rank_prefix}_{batch_idx}")
+                
+            metrics, _ = utils.compute_metrics(disp_pred, disp_gt, valid_disp_mask, metrics=logger.meters.keys())
+            num_processed_samples += image_left.shape[0]
+            for name in metrics:
+                logger.meters[name].update(metrics[name], n=1)
+                
+            batch_idx += 1
     
-    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+    num_processed_samples = utils.reduce_across_processes(num_processed_samples) / args.world_size 
     
     print("Num_processed_samples: ", num_processed_samples)
-    if num_processed_samples != len(val_dataset):
+    if (
+        hasattr(val_loader.dataset, "__len__")
+        and len(val_loader.dataset) != num_processed_samples
+        and torch.distributed.get_rank() == 0
+    ):
         warnings.warn(
             f"Number of processed samples {num_processed_samples} is different"
-            f"from the dataset size {len(val_dataset)}. This may happen if"
+            f"from the dataset size {len(val_loader.dataset)}. This may happen if"
             "the dataset is not divisible by the batch size. Try lowering the batch size for more accurate results."
         )
 
@@ -182,6 +157,23 @@ def evaluate(model, args, writter=None, step=None):
         
         metrics[name] = {}
         val_dataset = make_dataset(name, args.dataset_root, transforms=preprocessing)
+        
+        effective_batch_size = args.batch_size * args.world_size
+        can_do_distributed_test = effective_batch_size < len(val_dataset)
+        
+        if args.distributed and can_do_distributed_test:
+            sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=False)
+        else:
+            sampler = torch.utils.data.SequentialSampler(val_dataset)
+        
+        val_loader = torch.utils.data.DataLoader(
+            val_dataset,
+            sampler=sampler,
+            batch_size=args.batch_size,
+            pin_memory=True,
+            num_workers=args.workers,
+        )        
+        
         for n_cascades in args.num_cascades:
             for n_iters in args.num_iters:
                 
@@ -192,9 +184,9 @@ def evaluate(model, args, writter=None, step=None):
                 metrics[name][config] = _evaluate(
                     model,
                     args,
-                    val_dataset,
+                    val_loader,
                     iterations=args.recurrent_updates,
-                    padder_mode="kitti",
+                    padder_mode=args.padder_type,
                     header=f"{name} evaluation",
                     batch_size=args.batch_size,
                     writter=writter,

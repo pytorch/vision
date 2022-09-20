@@ -2,7 +2,7 @@ import argparse
 import os
 import warnings
 from pathlib import Path
-from typing import Callable, List, Union
+from typing import List, Union
 
 import numpy as np
 import torch
@@ -146,7 +146,7 @@ def get_train_dataset(dataset_root: str, args: argparse.Namespace) -> torch.util
 
 @torch.inference_mode()
 def _evaluate(
-    model, args, val_dataset, *, padder_mode, print_freq=10, writter=None, step=None, iterations=None, batch_size=None, header=None
+    model, args, val_loader, *, padder_mode, print_freq=10, writter=None, step=None, iterations=None, batch_size=None, header=None
 ):
     """Helper function to compute various metrics (epe, etc.) for a model on a given dataset.
     We process as many samples as possible with ddp.
@@ -155,22 +155,6 @@ def _evaluate(
     header = header or "Test:"
     device = torch.device(args.device)
     metric_logger = utils.MetricLogger(delimiter="  ")
-    
-    effective_batch_size = batch_size * args.world_size
-    can_do_distributed_test = effective_batch_size < len(val_dataset)
-    
-    if args.distributed and can_do_distributed_test:
-        sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
-    else:
-        sampler = torch.utils.data.SequentialSampler(val_dataset)
-    
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset,
-        sampler=sampler,
-        batch_size=batch_size,
-        pin_memory=True,
-        num_workers=args.workers,
-    )
 
     iterations = iterations or args.recurrent_updates
 
@@ -180,39 +164,33 @@ def _evaluate(
     if "f1" not in args.metrics:
         logger.add_meter("f1", fmt="{global_avg:.4f}")
         
-    if can_do_distributed_test:
-        should_forward = True
-        module = model
-    else:
-        should_forward = args.rank == 0
-        # doing forward on rank 0 will trigger a synchronization
-        # which will not be fulfilled by non rank 0 processes
-        module = model.module
-
     num_processed_samples = 0
     with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
-        if should_forward:
-            for blob in metric_logger.log_every(val_loader, print_freq, header):
-                image_left, image_right, disp_gt, valid_disp_mask = (x.to(device) for x in blob)
-                padder = utils.InputPadder(image_left.shape, mode=padder_mode)
-                image_left, image_right = padder.pad(image_left, image_right)
+        for blob in metric_logger.log_every(val_loader, print_freq, header):
+            image_left, image_right, disp_gt, valid_disp_mask = (x.to(device) for x in blob)
+            padder = utils.InputPadder(image_left.shape, mode=padder_mode)
+            image_left, image_right = padder.pad(image_left, image_right)
 
-                disp_predictions = module(image_left, image_right, flow_init=None, num_iters=iterations)
-                disp_pred = disp_predictions[-1][:, :1, :, :]
-                disp_pred = padder.unpad(disp_pred)
+            disp_predictions = model(image_left, image_right, flow_init=None, num_iters=iterations)
+            disp_pred = disp_predictions[-1][:, :1, :, :]
+            disp_pred = padder.unpad(disp_pred)
 
-                metrics, _ = utils.compute_metrics(disp_pred, disp_gt, valid_disp_mask, metrics=logger.meters.keys())
-                num_processed_samples += image_left.shape[0]
-                for name in metrics:
-                    logger.meters[name].update(metrics[name], n=1)
+            metrics, _ = utils.compute_metrics(disp_pred, disp_gt, valid_disp_mask, metrics=logger.meters.keys())
+            num_processed_samples += image_left.shape[0]
+            for name in metrics:
+                logger.meters[name].update(metrics[name], n=1)
     
-    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+    num_processed_samples = utils.reduce_across_processes(num_processed_samples) / args.world_size
     
     print("Num_processed_samples: ", num_processed_samples)
-    if num_processed_samples != len(val_dataset):
+    if (
+        hasattr(val_loader.dataset, "__len__")
+        and len(val_loader.dataset) != num_processed_samples
+        and torch.distributed.get_rank() == 0
+    ):
         warnings.warn(
             f"Number of processed samples {num_processed_samples} is different"
-            f"from the dataset size {len(val_dataset)}. This may happen if"
+            f"from the dataset size {len(val_loader.dataset)}. This may happen if"
             "the dataset is not divisible by the batch size. Try lowering the batch size for more accurate results."
         )
 
@@ -254,12 +232,28 @@ def evaluate(model, args, writter=None, step=None):
 
     for name in val_datasets:
         val_dataset = make_dataset(name, args.dataset_root, transforms=preprocessing)
+        effective_batch_size = args.batch_size * args.world_size
+        can_do_distributed_test = effective_batch_size < len(val_dataset)
+        
+        if args.distributed and can_do_distributed_test:
+            sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=False)
+        else:
+            sampler = torch.utils.data.SequentialSampler(val_dataset)
+        
+        val_loader = torch.utils.data.DataLoader(
+            val_dataset,
+            sampler=sampler,
+            batch_size=args.batch_size,
+            pin_memory=True,
+            num_workers=args.workers,
+        )
+        
         _evaluate(
             model,
             args,
-            val_dataset,
+            val_loader,
             iterations=args.recurrent_updates,
-            padder_mode="kitti",
+            padder_mode=args.padder_type,
             header=f"{name} evaluation",
             batch_size=args.batch_size,
             writter=writter,
@@ -750,6 +744,9 @@ def get_args_parser(add_help=True):
 
     # weights API
     parser.add_argument("--weights", type=str, default=None, help="weights API url")
+    
+    # padder parameters
+    parser.add_argument("--padder-type", type=str, default="kitti", help="padder type", choices=["kitti", "sintel"])
     return parser
 
 if __name__ == "__main__":
