@@ -219,7 +219,7 @@ _AFFINE_KWARGS = combinations_grid(
 
 def sample_inputs_affine_image_tensor():
     for image_loader, interpolation_mode, center in itertools.product(
-        make_image_loaders(dtypes=[torch.float32]),
+        make_image_loaders(sizes=["random"], dtypes=[torch.float32]),
         [
             F.InterpolationMode.NEAREST,
             F.InterpolationMode.BILINEAR,
@@ -336,7 +336,7 @@ def reference_inputs_affine_bounding_box():
 
 def sample_inputs_affine_image_mask():
     for mask_loader, center in itertools.product(
-        make_mask_loaders(dtypes=[torch.uint8]),
+        make_mask_loaders(sizes=["random"], dtypes=[torch.uint8]),
         [None, (0, 0)],
     ):
         yield ArgsKwargs(mask_loader, center=center, **_AFFINE_KWARGS[0])
@@ -494,6 +494,98 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.vertical_flip_mask,
             sample_inputs_fn=sample_inputs_vertical_flip_mask,
+        ),
+    ]
+)
+
+_ROTATE_ANGLES = [-87, 15, 90]
+
+
+def sample_inputs_rotate_image_tensor():
+    for image_loader, params in itertools.product(
+        make_image_loaders(sizes=["random"], dtypes=[torch.float32]),
+        combinations_grid(
+            interpolation=[F.InterpolationMode.NEAREST, F.InterpolationMode.BILINEAR],
+            expand=[True, False],
+            center=[None, (0, 0)],
+        ),
+    ):
+        if params["center"] is not None and params["expand"]:
+            # Otherwise this will emit a warning and ignore center anyway
+            continue
+
+        for fill in [None, 0.5, [0.5] * image_loader.num_channels]:
+            yield ArgsKwargs(
+                image_loader,
+                angle=_ROTATE_ANGLES[0],
+                fill=fill,
+                **params,
+            )
+
+
+def reference_inputs_rotate_image_tensor():
+    for image_loader, angle in itertools.product(make_image_loaders(extra_dims=[()]), _ROTATE_ANGLES):
+        yield ArgsKwargs(image_loader, angle=angle)
+
+
+def sample_inputs_rotate_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders():
+        yield ArgsKwargs(
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            image_size=bounding_box_loader.image_size,
+            angle=_ROTATE_ANGLES[0],
+        )
+
+
+def sample_inputs_rotate_mask():
+    for image_loader, params in itertools.product(
+        make_image_loaders(sizes=["random"], dtypes=[torch.uint8]),
+        combinations_grid(
+            expand=[True, False],
+            center=[None, (0, 0)],
+        ),
+    ):
+        if params["center"] is not None and params["expand"]:
+            # Otherwise this will emit a warning and ignore center anyway
+            continue
+
+        yield ArgsKwargs(
+            image_loader,
+            angle=_ROTATE_ANGLES[0],
+            **params,
+        )
+
+
+@pil_reference_wrapper
+def reference_rotate_mask(*args, **kwargs):
+    return F.rotate_image_pil(*args, interpolation=F.InterpolationMode.NEAREST, **kwargs)
+
+
+def reference_inputs_rotate_mask():
+    for mask_loader, angle in itertools.product(make_mask_loaders(extra_dims=[()], num_objects=[1]), _ROTATE_ANGLES):
+        yield ArgsKwargs(mask_loader, angle=angle)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.rotate_image_tensor,
+            sample_inputs_fn=sample_inputs_rotate_image_tensor,
+            reference_fn=pil_reference_wrapper(F.rotate_image_pil),
+            reference_inputs_fn=reference_inputs_rotate_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.rotate_bounding_box,
+            sample_inputs_fn=sample_inputs_rotate_bounding_box,
+        ),
+        KernelInfo(
+            F.rotate_mask,
+            sample_inputs_fn=sample_inputs_rotate_mask,
+            reference_fn=reference_rotate_mask,
+            reference_inputs_fn=reference_inputs_rotate_mask,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
     ]
 )

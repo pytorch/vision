@@ -63,14 +63,8 @@ def test_coverage():
             "resized_crop_bounding_box",
             "resized_crop_image_tensor",
             "resized_crop_mask",
-            "rotate_bounding_box",
-            "rotate_image_tensor",
-            "rotate_mask",
             "solarize_image_tensor",
             "ten_crop_image_tensor",
-            "vertical_flip_bounding_box",
-            "vertical_flip_image_tensor",
-            "vertical_flip_mask",
         }
     }
 
