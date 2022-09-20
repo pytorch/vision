@@ -21,6 +21,7 @@ from torchvision.models import get_model_builder, list_models
 
 from torch._utils_internal import get_file_path_2
 from PIL import Image
+from torchvision.io.image import read_image
 
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
@@ -750,7 +751,8 @@ def test_detection_model(model_fn, dev):
     # x = torch.rand(input_shape).to(device=dev)
 
     # Use real input
-    img = Image.open(GRACE_HOPPER)
+    # img = Image.open(GRACE_HOPPER)
+    img = read_image(GRACE_HOPPER)
     preprocess = weights.transforms()
     x = preprocess(img).to(device=dev)
 
