@@ -42,16 +42,6 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def gaussian_blur_image_tensor():
-    for image, kernel_size, sigma in itertools.product(
-        make_images(extra_dims=((4,),)),
-        [[3, 3]],
-        [None, [3.0, 3.0]],
-    ):
-        yield ArgsKwargs(image, kernel_size=kernel_size, sigma=sigma)
-
-
-@register_kernel_info_from_sample_inputs_fn
 def equalize_image_tensor():
     for image in make_images(extra_dims=(), color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
         if image.dtype != torch.uint8:

@@ -985,3 +985,26 @@ KERNEL_INFOS.extend(
         ),
     ]
 )
+
+
+def sample_inputs_gaussian_blur():
+    for image_loader, params in itertools.product(
+        make_image_loaders(
+            sizes=["random"],
+            # FIXME: kernel should support arbitrary batch sizes
+            extra_dims=[(), (4,)],
+        ),
+        combinations_grid(
+            kernel_size=[(3, 3)],
+            sigma=[None, (3.0, 3.0)],
+        ),
+    ):
+        yield ArgsKwargs(image_loader, **params)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.gaussian_blur_image_tensor,
+        sample_inputs_fn=sample_inputs_gaussian_blur,
+    )
+)

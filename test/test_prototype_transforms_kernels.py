@@ -41,7 +41,6 @@ def test_coverage():
             "equalize_image_tensor",
             "erase_image_tensor",
             "five_crop_image_tensor",
-            "gaussian_blur_image_tensor",
             "invert_image_tensor",
             "normalize_image_tensor",
             "posterize_image_tensor",
