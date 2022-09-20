@@ -42,14 +42,6 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def equalize_image_tensor():
-    for image in make_images(extra_dims=(), color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
-        if image.dtype != torch.uint8:
-            continue
-        yield ArgsKwargs(image)
-
-
-@register_kernel_info_from_sample_inputs_fn
 def invert_image_tensor():
     for image in make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
         yield ArgsKwargs(image)

@@ -987,7 +987,7 @@ KERNEL_INFOS.extend(
 )
 
 
-def sample_inputs_gaussian_blur():
+def sample_inputs_gaussian_blur_image_tensor():
     for image_loader, params in itertools.product(
         make_image_loaders(
             sizes=["random"],
@@ -1005,6 +1005,25 @@ def sample_inputs_gaussian_blur():
 KERNEL_INFOS.append(
     KernelInfo(
         F.gaussian_blur_image_tensor,
-        sample_inputs_fn=sample_inputs_gaussian_blur,
+        sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
+    )
+)
+
+
+def sample_inputs_equalize_image_tensor():
+    for image_loader in make_image_loaders(
+        # FIXME: kernel should support arbitrary batch sizes
+        extra_dims=[(), (4,)],
+        color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB),
+        dtypes=[torch.uint8],
+    ):
+        yield ArgsKwargs(image_loader)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.equalize_image_tensor,
+        kernel_name="equalize_image_tensor",
+        sample_inputs_fn=sample_inputs_equalize_image_tensor,
     )
 )

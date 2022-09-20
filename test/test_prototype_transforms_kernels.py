@@ -38,7 +38,6 @@ def test_coverage():
             "adjust_sharpness_image_tensor",
             "autocontrast_image_tensor",
             "clamp_bounding_box",
-            "equalize_image_tensor",
             "erase_image_tensor",
             "five_crop_image_tensor",
             "invert_image_tensor",
