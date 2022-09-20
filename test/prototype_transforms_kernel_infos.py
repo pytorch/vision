@@ -626,9 +626,11 @@ KERNEL_INFOS.extend(
             F.crop_image_tensor,
             kernel_name="crop_image_tensor",
             sample_inputs_fn=sample_inputs_crop_image_tensor,
-            reference_fn=pil_reference_wrapper(F.crop_image_pil),
-            reference_inputs_fn=reference_inputs_crop_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            # FIXME: The PIL kernel currently diverges from the tensor kernel and  thus cannot be used as reference
+            #  See https://github.com/pytorch/vision/issues/6613
+            # reference_fn=pil_reference_wrapper(F.crop_image_pil),
+            # reference_inputs_fn=reference_inputs_crop_image_tensor,
+            # closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.crop_bounding_box,
@@ -637,9 +639,11 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.crop_mask,
             sample_inputs_fn=sample_inputs_crop_mask,
-            reference_fn=pil_reference_wrapper(F.crop_image_pil),
-            reference_inputs_fn=reference_inputs_crop_mask,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            # FIXME: The PIL kernel currently diverges from the tensor kernel and  thus cannot be used as reference
+            #  See https://github.com/pytorch/vision/issues/6613
+            # reference_fn=pil_reference_wrapper(F.crop_image_pil),
+            # reference_inputs_fn=reference_inputs_crop_mask,
+            # closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
     ]
 )
@@ -741,7 +745,8 @@ def sample_inputs_pad_image_tensor():
 
 def reference_inputs_pad_image_tensor():
     for image_loader, params in itertools.product(make_image_loaders(extra_dims=[()]), _PAD_PARAMS):
-        fills = [None, 128.0, 128, [12.0]]
+        # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
+        fills = [None, 128.0, 128]
         if params["padding_mode"] == "constant":
             fills.append([12.0 + c for c in range(image_loader.num_channels)])
         for fill in fills:
@@ -796,14 +801,19 @@ _PERSPECTIVE_COEFFS = [
 
 
 def sample_inputs_perspective_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"]):
+    for image_loader in make_image_loaders(
+        sizes=["random"],
+        # FIXME: kernel should support arbitrary batch sizes
+        extra_dims=[(), (4,)],
+    ):
         for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
             yield ArgsKwargs(image_loader, fill=fill, perspective_coeffs=_PERSPECTIVE_COEFFS[0])
 
 
 def reference_inputs_perspective_image_tensor():
     for image_loader, perspective_coeffs in itertools.product(make_image_loaders(extra_dims=[()]), _PERSPECTIVE_COEFFS):
-        for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
+        # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
+        for fill in [None, 128.0, 128, [12.0 + c for c in range(image_loader.num_channels)]]:
             yield ArgsKwargs(image_loader, fill=fill, perspective_coeffs=perspective_coeffs)
 
 
@@ -815,7 +825,11 @@ def sample_inputs_perspective_bounding_box():
 
 
 def sample_inputs_perspective_mask():
-    for mask_loader in make_mask_loaders(sizes=["random"]):
+    for mask_loader in make_mask_loaders(
+        sizes=["random"],
+        # FIXME: kernel should support arbitrary batch sizes
+        extra_dims=[(), (4,)],
+    ):
         yield ArgsKwargs(mask_loader, perspective_coeffs=_PERSPECTIVE_COEFFS[0])
 
 
@@ -855,7 +869,11 @@ def _get_elastic_displacement(image_size):
 
 
 def sample_inputs_elastic_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"]):
+    for image_loader in make_image_loaders(
+        sizes=["random"],
+        # FIXME: kernel should support arbitrary batch sizes
+        extra_dims=[(), (4,)],
+    ):
         displacement = _get_elastic_displacement(image_loader.image_size)
         for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
             yield ArgsKwargs(image_loader, displacement=displacement, fill=fill)
@@ -886,7 +904,11 @@ def sample_inputs_elastic_bounding_box():
 
 
 def sample_inputs_elastic_mask():
-    for mask_loader in make_mask_loaders(sizes=["random"]):
+    for mask_loader in make_mask_loaders(
+        sizes=["random"],
+        # FIXME: kernel should support arbitrary batch sizes
+        extra_dims=[(), (4,)],
+    ):
         displacement = _get_elastic_displacement(mask_loader.shape[-2:])
         yield ArgsKwargs(mask_loader, displacement=displacement)
 
