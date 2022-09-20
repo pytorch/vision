@@ -1,6 +1,7 @@
 import enum
 import inspect
 import random
+from collections import defaultdict
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
@@ -22,8 +23,9 @@ from prototype_common_utils import (
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
+from torchvision.prototype.transforms import functional as F
+from torchvision.prototype.transforms._utils import query_chw
 from torchvision.prototype.transforms.functional import to_image_pil
-
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])
 
@@ -936,6 +938,32 @@ class TestRefDetTransforms:
 seg_transforms = import_transforms_from_references("segmentation")
 
 
+# We need this transform for two reasons:
+# 1. transforms.RandomCrop uses a different scheme to pad images and masks of insufficient size than its name
+#    counterpart in the detection references. Thus, we cannot use it with `pad_if_needed=True`
+# 2. transforms.Pad only supports a fixed padding, but the segmentation datasets don't have a fixed image size.
+class PadIfSmaller(prototype_transforms.Transform):
+    def __init__(self, size, fill=0):
+        super().__init__()
+        self.size = size
+        self.fill = prototype_transforms._geometry._setup_fill_arg(fill)
+
+    def _get_params(self, sample):
+        _, height, width = query_chw(sample)
+        padding = [0, 0, max(self.size - width, 0), max(self.size - height, 0)]
+        needs_padding = any(padding)
+        return dict(padding=padding, needs_padding=needs_padding)
+
+    def _transform(self, inpt, params):
+        if not params["needs_padding"]:
+            return inpt
+
+        fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
+
+        return F.pad(inpt, padding=params["padding"], fill=fill)
+
+
 class TestRefSegTransforms:
     def make_datapoints(self, supports_pil=True, image_dtype=torch.uint8):
         size = (256, 640)
@@ -986,13 +1014,16 @@ class TestRefSegTransforms:
                 prototype_transforms.RandomHorizontalFlip(p=0.0),
                 dict(),
             ),
-            # (
-            #     seg_transforms.RandomCrop(size=480),
-            #     prototype_transforms.RandomCrop(
-            #         size=480, pad_if_needed=True, fill=defaultdict(lambda: 0, {features.Mask: 255})
-            #     ),
-            #     dict(),
-            # ),
+            (
+                seg_transforms.RandomCrop(size=480),
+                prototype_transforms.Compose(
+                    [
+                        PadIfSmaller(size=480, fill=defaultdict(lambda: 0, {features.Mask: 255})),
+                        prototype_transforms.RandomCrop(size=480),
+                    ]
+                ),
+                dict(),
+            ),
             (
                 seg_transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
                 prototype_transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
