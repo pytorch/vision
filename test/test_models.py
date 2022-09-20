@@ -235,12 +235,10 @@ autocast_flaky_numerics = (
     "fcn_resnet50",
     "fcn_resnet101",
     "lraspp_mobilenet_v3_large",
-    "maskrcnn_resnet50_fpn",
-    "maskrcnn_resnet50_fpn_v2",
-    "keypointrcnn_resnet50_fpn",
 )
 
-autocast_custom_prec = {"fasterrcnn_resnet50_fpn": 0.012} if platform.system() == "Windows" else {}
+# autocast_custom_prec = {"fasterrcnn_resnet50_fpn": 0.012} if platform.system() == "Windows" else {}
+autocast_custom_prec = {}
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
 # rounding errors in different platforms. For this reason the input/output consistency
@@ -746,8 +744,11 @@ def test_detection_model(model_fn, dev):
     # every time we change the default weight
     weights = models.get_model_weights(model_name).DEFAULT
     # Set higher rpn_score_thresh
-    rpn_score_thresh = 0.3
-    model = model_fn(weights=weights, rpn_score_thresh=rpn_score_thresh)
+    score_thresh = 0.3
+    if model_name.startswith("fcos"):
+        model = model_fn(weights=weights, score_thresh=score_thresh)
+    else:
+        model = model_fn(weights=weights, rpn_score_thresh=score_thresh)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     # x = torch.rand(input_shape).to(device=dev)
