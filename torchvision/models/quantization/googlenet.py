@@ -39,7 +39,7 @@ class QuantizableBasicConv2d(BasicConv2d):
 
 class QuantizableInception(Inception):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(*args, conv_block=QuantizableBasicConv2d, **kwargs)  # type: ignore[misc]
         self.cat = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -50,7 +50,7 @@ class QuantizableInception(Inception):
 class QuantizableInceptionAux(InceptionAux):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(*args, conv_block=QuantizableBasicConv2d, **kwargs)  # type: ignore[misc]
         self.relu = nn.ReLU()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -75,7 +75,7 @@ class QuantizableGoogLeNet(GoogLeNet):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(  # type: ignore[misc]
-            blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux], *args, **kwargs
+            *args, blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux], **kwargs
         )
         self.quant = torch.ao.quantization.QuantStub()
         self.dequant = torch.ao.quantization.DeQuantStub()
