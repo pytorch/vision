@@ -1187,3 +1187,20 @@ KERNEL_INFOS.append(
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
     )
 )
+
+
+def sample_inputs_erase_image_tensor():
+    for image_loader in make_image_loaders(sizes=["random"]):
+        # FIXME: make the parameters more diverse
+        h, w = 6, 7
+        v = torch.rand(image_loader.num_channels, h, w)
+        yield ArgsKwargs(image_loader, i=1, j=2, h=h, w=w, v=v)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.erase_image_tensor,
+        kernel_name="erase_image_tensor",
+        sample_inputs_fn=sample_inputs_erase_image_tensor,
+    )
+)

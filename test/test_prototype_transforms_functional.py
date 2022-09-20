@@ -7,7 +7,7 @@ import pytest
 import torch.testing
 import torchvision.prototype.transforms.functional as F
 from common_utils import cpu_and_gpu
-from prototype_common_utils import ArgsKwargs, make_bounding_boxes, make_image, make_images
+from prototype_common_utils import ArgsKwargs, make_bounding_boxes, make_image
 from torch import jit
 from torchvision.prototype import features
 from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
@@ -38,13 +38,6 @@ FUNCTIONAL_INFOS = []
 def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
     FUNCTIONAL_INFOS.append(FunctionalInfo(sample_inputs_fn.__name__, sample_inputs_fn=sample_inputs_fn))
     return sample_inputs_fn
-
-
-@register_kernel_info_from_sample_inputs_fn
-def erase_image_tensor():
-    for image in make_images():
-        c = image.shape[-3]
-        yield ArgsKwargs(image, i=1, j=2, h=6, w=7, v=torch.rand(c, 6, 7))
 
 
 @pytest.mark.parametrize(
