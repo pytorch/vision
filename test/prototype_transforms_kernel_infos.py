@@ -589,3 +589,57 @@ KERNEL_INFOS.extend(
         ),
     ]
 )
+
+_CROP_PARAMS = combinations_grid(top=[-8, 0, 9], left=[-8, 0, 9], height=[12, 20], width=[12, 20])
+
+
+def sample_inputs_crop_image_tensor():
+    for image_loader, params in itertools.product(make_image_loaders(), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]):
+        yield ArgsKwargs(image_loader, **params)
+
+
+def reference_inputs_crop_image_tensor():
+    for image_loader, params in itertools.product(make_image_loaders(extra_dims=[()]), _CROP_PARAMS):
+        yield ArgsKwargs(image_loader, **params)
+
+
+def sample_inputs_crop_bounding_box():
+    for bounding_box_loader, params in itertools.product(
+        make_bounding_box_loaders(), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]
+    ):
+        yield ArgsKwargs(bounding_box_loader, format=bounding_box_loader.format, top=params["top"], left=params["left"])
+
+
+def sample_inputs_crop_mask():
+    for mask_loader, params in itertools.product(make_mask_loaders(), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]):
+        yield ArgsKwargs(mask_loader, **params)
+
+
+def reference_inputs_crop_mask():
+    for mask_loader, params in itertools.product(make_mask_loaders(extra_dims=[()], num_objects=[1]), _CROP_PARAMS):
+        yield ArgsKwargs(mask_loader, **params)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.crop_image_tensor,
+            kernel_name="crop_image_tensor",
+            sample_inputs_fn=sample_inputs_crop_image_tensor,
+            reference_fn=pil_reference_wrapper(F.crop_image_pil),
+            reference_inputs_fn=reference_inputs_crop_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.crop_bounding_box,
+            sample_inputs_fn=sample_inputs_crop_bounding_box,
+        ),
+        KernelInfo(
+            F.crop_mask,
+            sample_inputs_fn=sample_inputs_crop_mask,
+            reference_fn=pil_reference_wrapper(F.crop_image_pil),
+            reference_inputs_fn=reference_inputs_crop_mask,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+    ]
+)
