@@ -600,7 +600,7 @@ class Mosaic(nn.Module):
         self.max_frac = max_frac
         self.size_limit = size_limit
 
-    def forward(self, images, targets=None):
+    def forward(self, images, targets):
         """
         images : torch.Tensor of NWHC type
         targets: list[torch.Tensor]; bounding boxes in xyxy format.
