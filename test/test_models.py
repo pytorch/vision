@@ -743,12 +743,12 @@ def test_detection_model(model_fn, dev):
     # Note that we use DEFAULT and it meant we need to update expected file
     # every time we change the default weight
     weights = models.get_model_weights(model_name).DEFAULT
-    # Set higher rpn_score_thresh
-    score_thresh = 0.3
+    # Set higher box_score_thresh
+    score_thresh = 0.4
     if model_name.startswith("fcos"):
         model = model_fn(weights=weights, score_thresh=score_thresh)
     else:
-        model = model_fn(weights=weights, rpn_score_thresh=score_thresh)
+        model = model_fn(weights=weights, box_score_thresh=score_thresh)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     # x = torch.rand(input_shape).to(device=dev)
@@ -762,6 +762,8 @@ def test_detection_model(model_fn, dev):
     model_input = [x]
     out = model(model_input)
     assert model_input[0] is x
+    # Make sure it is not empty detection
+    assert len(out[0]["scores"]) > 0
 
     def check_out(out, prec=0.01):
         assert len(out) == 1
