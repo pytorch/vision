@@ -854,44 +854,6 @@ def _get_elastic_displacement(image_size):
     return torch.rand(1, *image_size, 2)
 
 
-# @register_kernel_info_from_sample_inputs_fn
-# def elastic_image_tensor():
-#     for image, fill in itertools.product(
-#         make_images(extra_dims=((), (4,))),
-#         [None, 128.0, 128, [12.0], [1.0, 2.0, 3.0]],  # fill
-#     ):
-#         if isinstance(fill, list) and len(fill) == 3 and image.shape[1] != 3:
-#             # skip the test with non-broadcastable fill value
-#             continue
-#
-#         h, w = image.shape[-2:]
-#         displacement =
-#         yield ArgsKwargs(image, displacement=displacement, fill=fill)
-#
-#
-# @register_kernel_info_from_sample_inputs_fn
-# def elastic_bounding_box():
-#     for bounding_box in make_bounding_boxes():
-#         h, w = bounding_box.image_size
-#         displacement = torch.rand(1, h, w, 2)
-#         yield ArgsKwargs(
-#             bounding_box,
-#             format=bounding_box.format,
-#             displacement=displacement,
-#         )
-#
-#
-# @register_kernel_info_from_sample_inputs_fn
-# def elastic_mask():
-#     for mask in make_masks(extra_dims=((), (4,))):
-#         h, w = mask.shape[-2:]
-#         displacement = torch.rand(1, h, w, 2)
-#         yield ArgsKwargs(
-#             mask,
-#             displacement=displacement,
-#         )
-
-
 def sample_inputs_elastic_image_tensor():
     for image_loader in make_image_loaders(sizes=["random"]):
         displacement = _get_elastic_displacement(image_loader.image_size)
@@ -953,6 +915,72 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_elastic_mask,
             reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_mask,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+    ]
+)
+
+
+_CENTER_CROP_IMAGE_SIZES = [(16, 16), (7, 33), (31, 9)]
+_CENTER_CROP_OUTPUT_SIZES = [[4, 3], [42, 70], [4]]
+
+
+def sample_inputs_center_crop_image_tensor():
+    for image_loader, output_size in itertools.product(
+        make_image_loaders(sizes=_CENTER_CROP_IMAGE_SIZES), _CENTER_CROP_OUTPUT_SIZES
+    ):
+        yield ArgsKwargs(image_loader, output_size=output_size)
+
+
+def reference_inputs_center_crop_image_tensor():
+    for image_loader, output_size in itertools.product(
+        make_image_loaders(sizes=_CENTER_CROP_IMAGE_SIZES, extra_dims=[()]), _CENTER_CROP_OUTPUT_SIZES
+    ):
+        yield ArgsKwargs(image_loader, output_size=output_size)
+
+
+def sample_inputs_center_crop_bounding_box():
+    for bounding_box_loader, output_size in itertools.product(make_bounding_box_loaders(), _CENTER_CROP_OUTPUT_SIZES):
+        yield ArgsKwargs(
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            image_size=bounding_box_loader.image_size,
+            output_size=output_size,
+        )
+
+
+def sample_inputs_center_crop_mask():
+    for mask_loader, output_size in itertools.product(
+        make_mask_loaders(sizes=_CENTER_CROP_IMAGE_SIZES), _CENTER_CROP_OUTPUT_SIZES
+    ):
+        yield ArgsKwargs(mask_loader, output_size=output_size)
+
+
+def reference_inputs_center_crop_mask():
+    for mask_loader, output_size in itertools.product(
+        make_mask_loaders(sizes=_CENTER_CROP_IMAGE_SIZES, extra_dims=[()], num_objects=[1]), _CENTER_CROP_OUTPUT_SIZES
+    ):
+        yield ArgsKwargs(mask_loader, output_size=output_size)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.center_crop_image_tensor,
+            sample_inputs_fn=sample_inputs_center_crop_image_tensor,
+            reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
+            reference_inputs_fn=reference_inputs_center_crop_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.center_crop_bounding_box,
+            sample_inputs_fn=sample_inputs_center_crop_bounding_box,
+        ),
+        KernelInfo(
+            F.center_crop_mask,
+            sample_inputs_fn=sample_inputs_center_crop_mask,
+            reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
+            reference_inputs_fn=reference_inputs_center_crop_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
     ]
