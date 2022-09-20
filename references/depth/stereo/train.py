@@ -24,7 +24,7 @@ from parsing import make_train_transform, make_eval_transform, make_dataset
 def make_stereo_flow(flow: Union[torch.Tensor, List[torch.Tensor]], model_out_channels: int) -> torch.Tensor:
     """Helper function to make stereo flow from a given model output"""
     if isinstance(flow, list):
-        return [make_stereo_flow(flow_i) for flow_i in flow]
+        return [make_stereo_flow(flow_i, model_out_channels) for flow_i in flow]
 
     B, C, H, W = flow.shape
     # we need to add zero flow if the model outputs 2 channels

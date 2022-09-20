@@ -64,9 +64,9 @@ def make_dataset(dataset_name: str, dataset_root: str, transforms: torch.nn.Modu
         "carla-highres": CarlaStereo(root=dataset_root, transforms=transforms),
         "instereo2k": InStereo2k(root=dataset_root, transforms=transforms),
         "sintel": SintelStereo(root=dataset_root, transforms=transforms),
-        "sceneflow-monkaa": SceneFlowStereo(root=dataset_root, transforms=transforms, split="monkaa", pass_name="both"),
-        "sceneflow-flyingthings": SceneFlowStereo(root=dataset_root, transforms=transforms, split="flyingthings", pass_name="both"),
-        "sceneflow-driving": SceneFlowStereo(root=dataset_root, transforms=transforms, split="driving", pass_name="both"),
+        "sceneflow-monkaa": SceneFlowStereo(root=dataset_root, transforms=transforms, variant="Monkaa", pass_name="both"),
+        "sceneflow-flyingthings": SceneFlowStereo(root=dataset_root, transforms=transforms, variant="FlyingThings3D", pass_name="both"),
+        "sceneflow-driving": SceneFlowStereo(root=dataset_root, transforms=transforms, variant="Driving", pass_name="both"),
         "fallingthings": FallingThingsStereo(root=dataset_root, transforms=transforms, variant="both"),
         "eth3d-train": ETH3DStereo(root=dataset_root, transforms=transforms, split="train"),
         "eth3d-test": ETH3DStereo(root=dataset_root, transforms=transforms, split="test"),
@@ -76,7 +76,7 @@ def make_dataset(dataset_name: str, dataset_root: str, transforms: torch.nn.Modu
         "kitti2012-test": Kitti2012Stereo(root=dataset_root, transforms=transforms, split="test"),
         "middlebury2014-other": Middlebury2014Stereo(root=dataset_root, transforms=transforms, split="additional", use_ambient_views=True, calibration="both"),
         "middlebury2014-train": Middlebury2014Stereo(root=dataset_root, transforms=transforms, split="train", calibration="perfect"),
-        "middlebury2014-test": Middlebury2014Stereo(root=dataset_root, transforms=transforms, split="test", calibration="perfect"),
+        "middlebury2014-test": Middlebury2014Stereo(root=dataset_root, transforms=transforms, split="test", calibration=None),
         "middlebury2014-train-ambient": Middlebury2014Stereo(root=dataset_root, transforms=transforms, split="train", use_ambient_views=True, calibration="perfect"),
     }
 
