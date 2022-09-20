@@ -723,3 +723,68 @@ KERNEL_INFOS.extend(
         ),
     ]
 )
+
+_PAD_PARAMS = combinations_grid(
+    padding=[[1], [1, 1], [1, 1, 2, 2]],
+    padding_mode=["constant", "symmetric", "edge", "reflect"],
+)
+
+
+def sample_inputs_pad_image_tensor():
+    for image_loader, params in itertools.product(make_image_loaders(), _PAD_PARAMS):
+        fills = [None, 128.0, 128, [12.0]]
+        if params["padding_mode"] == "constant":
+            fills.append([12.0 + c for c in range(image_loader.num_channels)])
+        for fill in fills:
+            yield ArgsKwargs(image_loader, fill=fill, **params)
+
+
+def reference_inputs_pad_image_tensor():
+    for image_loader, params in itertools.product(make_image_loaders(extra_dims=[()]), _PAD_PARAMS):
+        fills = [None, 128.0, 128, [12.0]]
+        if params["padding_mode"] == "constant":
+            fills.append([12.0 + c for c in range(image_loader.num_channels)])
+        for fill in fills:
+            yield ArgsKwargs(image_loader, fill=fill, **params)
+
+
+def sample_inputs_pad_bounding_box():
+    for bounding_box_loader, params in itertools.product(make_bounding_box_loaders(), _PAD_PARAMS):
+        if params["padding_mode"] != "constant":
+            continue
+
+        yield ArgsKwargs(bounding_box_loader, format=bounding_box_loader.format, **params)
+
+
+def sample_inputs_pad_mask():
+    for image_loader, fill, params in itertools.product(make_mask_loaders(), [None, 127], _PAD_PARAMS):
+        yield ArgsKwargs(image_loader, fill=fill, **params)
+
+
+def reference_inputs_pad_mask():
+    for image_loader, fill, params in itertools.product(make_image_loaders(extra_dims=[()]), [None, 127], _PAD_PARAMS):
+        yield ArgsKwargs(image_loader, fill=fill, **params)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.pad_image_tensor,
+            sample_inputs_fn=sample_inputs_pad_image_tensor,
+            reference_fn=pil_reference_wrapper(F.pad_image_pil),
+            reference_inputs_fn=reference_inputs_pad_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.pad_bounding_box,
+            sample_inputs_fn=sample_inputs_pad_bounding_box,
+        ),
+        KernelInfo(
+            F.pad_mask,
+            sample_inputs_fn=sample_inputs_pad_mask,
+            reference_fn=pil_reference_wrapper(F.pad_image_pil),
+            reference_inputs_fn=reference_inputs_pad_mask,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+    ]
+)
