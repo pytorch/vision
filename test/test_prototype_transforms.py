@@ -391,7 +391,7 @@ class TestPad:
         if isinstance(fill, int):
             calls = [
                 mocker.call(image, padding=1, fill=fill, padding_mode="constant"),
-                mocker.call(mask, padding=1, fill=0, padding_mode="constant"),
+                mocker.call(mask, padding=1, fill=fill, padding_mode="constant"),
             ]
         else:
             calls = [
@@ -467,7 +467,7 @@ class TestRandomZoomOut:
         if isinstance(fill, int):
             calls = [
                 mocker.call(image, **params, fill=fill),
-                mocker.call(mask, **params, fill=0),
+                mocker.call(mask, **params, fill=fill),
             ]
         else:
             calls = [
@@ -1555,7 +1555,7 @@ class TestFixedSizeCrop:
 
     @pytest.mark.parametrize("needs", list(itertools.product((False, True), repeat=2)))
     def test__transform(self, mocker, needs):
-        fill_sentinel = mocker.MagicMock()
+        fill_sentinel = 12
         padding_mode_sentinel = mocker.MagicMock()
 
         transform = transforms.FixedSizeCrop((-1, -1), fill=fill_sentinel, padding_mode=padding_mode_sentinel)
