@@ -42,17 +42,6 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def solarize_image_tensor():
-    for image, threshold in itertools.product(
-        make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)),
-        [0.1, 0.5, 127.0],
-    ):
-        if image.is_floating_point() and threshold > 1.0:
-            continue
-        yield ArgsKwargs(image, threshold=threshold)
-
-
-@register_kernel_info_from_sample_inputs_fn
 def autocontrast_image_tensor():
     for image in make_images(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
         yield ArgsKwargs(image)

@@ -41,7 +41,6 @@ def test_coverage():
             "erase_image_tensor",
             "five_crop_image_tensor",
             "normalize_image_tensor",
-            "solarize_image_tensor",
             "ten_crop_image_tensor",
         }
     }

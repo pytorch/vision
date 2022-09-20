@@ -11,8 +11,8 @@ import torchvision.ops
 import torchvision.prototype.transforms.functional as F
 from datasets_utils import combinations_grid
 from prototype_common_utils import ArgsKwargs, make_bounding_box_loaders, make_image_loaders, make_mask_loaders
-
 from torchvision.prototype import features
+from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 __all__ = ["KernelInfo", "KERNEL_INFOS"]
 
@@ -1090,6 +1090,37 @@ KERNEL_INFOS.append(
         sample_inputs_fn=sample_inputs_posterize_image_tensor,
         reference_fn=pil_reference_wrapper(F.posterize_image_pil),
         reference_inputs_fn=reference_inputs_posterize_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)
+
+
+def _get_solarize_thresholds(dtype):
+    for factor in [0.1, 0.5]:
+        max_value = get_max_value(dtype)
+        yield (float if dtype.is_floating_point else int)(max_value * factor)
+
+
+def sample_inputs_solarize_image_tensor():
+    for image_loader in make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)):
+        yield ArgsKwargs(image_loader, threshold=next(_get_solarize_thresholds(image_loader.dtype)))
+
+
+def reference_inputs_solarize_image_tensor():
+    for image_loader in make_image_loaders(
+        color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]
+    ):
+        for threshold in _get_solarize_thresholds(image_loader.dtype):
+            yield ArgsKwargs(image_loader, threshold=threshold)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.solarize_image_tensor,
+        kernel_name="solarize_image_tensor",
+        sample_inputs_fn=sample_inputs_solarize_image_tensor,
+        reference_fn=pil_reference_wrapper(F.solarize_image_pil),
+        reference_inputs_fn=reference_inputs_solarize_image_tensor,
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
     )
 )
