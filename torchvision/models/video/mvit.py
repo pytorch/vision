@@ -147,7 +147,7 @@ def _add_rel_pos(
     k_t_ratio = max(q_t / k_t, 1.0)
     dist_t = torch.arange(q_t)[:, None] * q_t_ratio - (torch.arange(k_t)[None, :] + (1.0 - k_t)) * k_t_ratio
 
-    # Interpolate rel pos if needed.
+    # Intepolate rel pos if needed.
     rel_pos_h = _interpolate(rel_pos_h, dh)
     rel_pos_w = _interpolate(rel_pos_w, dw)
     rel_pos_t = _interpolate(rel_pos_t, dt)

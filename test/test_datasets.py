@@ -617,6 +617,7 @@ class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
             year=[f"20{year:02d}" for year in range(7, 13)], image_set=("train", "val", "trainval")
         ),
         dict(year="2007", image_set="test"),
+        dict(year="2007-test", image_set="test"),
     )
 
     def inject_fake_data(self, tmpdir, config):

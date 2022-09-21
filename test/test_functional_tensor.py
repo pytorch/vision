@@ -1104,8 +1104,6 @@ def test_hflip(device):
         (2, 12, 3, 4),  # crop inside top-right corner
         (8, 3, 5, 6),  # crop inside bottom-left corner
         (8, 11, 4, 3),  # crop inside bottom-right corner
-        (50, 50, 10, 10),  # crop outside the image
-        (-50, -50, 10, 10),  # crop outside the image
     ],
 )
 def test_crop(device, top, left, height, width):

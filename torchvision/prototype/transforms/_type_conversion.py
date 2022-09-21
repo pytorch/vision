@@ -1,4 +1,4 @@
-from typing import Any, cast, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import PIL.Image
@@ -13,7 +13,7 @@ class DecodeImage(Transform):
     _transformed_types = (features.EncodedImage,)
 
     def _transform(self, inpt: torch.Tensor, params: Dict[str, Any]) -> features.Image:
-        return cast(features.Image, F.decode_image_with_pil(inpt))
+        return F.decode_image_with_pil(inpt)
 
 
 class LabelToOneHot(Transform):
@@ -50,7 +50,7 @@ class ToImageTensor(Transform):
     def _transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
     ) -> features.Image:
-        return cast(features.Image, F.to_image_tensor(inpt))
+        return F.to_image_tensor(inpt)
 
 
 class ToImagePIL(Transform):

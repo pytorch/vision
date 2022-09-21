@@ -10,11 +10,6 @@ from torchvision.transforms import InterpolationMode
 F = TypeVar("F", bound="_Feature")
 
 
-# Due to torch.jit.script limitation we keep DType as torch.Tensor
-# instead of Union[torch.Tensor, PIL.Image.Image, features._Feature]
-DType = torch.Tensor
-
-
 def is_simple_tensor(inpt: Any) -> bool:
     return isinstance(inpt, torch.Tensor) and not isinstance(inpt, _Feature)
 
@@ -153,8 +148,8 @@ class _Feature(torch.Tensor):
 
     def pad(
         self,
-        padding: Union[int, List[int]],
-        fill: Optional[Union[int, float, List[float]]] = None,
+        padding: Union[int, Sequence[int]],
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         padding_mode: str = "constant",
     ) -> _Feature:
         return self
@@ -164,7 +159,7 @@ class _Feature(torch.Tensor):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> _Feature:
         return self
@@ -176,7 +171,7 @@ class _Feature(torch.Tensor):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> _Feature:
         return self
@@ -185,7 +180,7 @@ class _Feature(torch.Tensor):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> _Feature:
         return self
 
@@ -193,7 +188,7 @@ class _Feature(torch.Tensor):
         self,
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
     ) -> _Feature:
         return self
 

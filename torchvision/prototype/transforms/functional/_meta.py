@@ -1,24 +1,25 @@
-from typing import cast, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
+from torchvision.prototype.features import BoundingBoxFormat, ColorSpace, Image
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
 get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-# TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
-def get_chw(image: features.ImageType) -> Tuple[int, int, int]:
-    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
-        channels, height, width = get_dimensions_image_tensor(image)
-    elif isinstance(image, features.Image):
+def get_chw(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
+    if isinstance(image, features.Image):
         channels = image.num_channels
         height, width = image.image_size
-    else:  # isinstance(image, PIL.Image.Image)
+    elif features.is_simple_tensor(image):
+        channels, height, width = get_dimensions_image_tensor(image)
+    elif isinstance(image, PIL.Image.Image):
         channels, height, width = get_dimensions_image_pil(image)
+    else:
+        raise TypeError(f"unable to get image dimensions from object of type {type(image).__name__}")
     return channels, height, width
 
 
@@ -29,11 +30,11 @@ def get_chw(image: features.ImageType) -> Tuple[int, int, int]:
 # detailed above.
 
 
-def get_dimensions(image: features.ImageType) -> List[int]:
+def get_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
     return list(get_chw(image))
 
 
-def get_num_channels(image: features.ImageType) -> int:
+def get_num_channels(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> int:
     num_channels, *_ = get_chw(image)
     return num_channels
 
@@ -43,7 +44,7 @@ def get_num_channels(image: features.ImageType) -> int:
 get_image_num_channels = get_num_channels
 
 
-def get_spatial_size(image: features.ImageType) -> List[int]:
+def get_spatial_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> List[int]:
     _, *size = get_chw(image)
     return size
 
@@ -191,7 +192,6 @@ _COLOR_SPACE_TO_PIL_MODE = {
 }
 
 
-@torch.jit.unused
 def convert_color_space_image_pil(
     image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
 ) -> PIL.Image.Image:
@@ -208,12 +208,17 @@ def convert_color_space_image_pil(
 
 
 def convert_color_space(
-    inpt: features.ImageType,
+    inpt: Union[PIL.Image.Image, torch.Tensor, features._Feature],
+    *,
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
     copy: bool = True,
-) -> features.ImageType:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image)):
+) -> Any:
+    if isinstance(inpt, Image):
+        return inpt.to_color_space(color_space, copy=copy)
+    elif isinstance(inpt, PIL.Image.Image):
+        return convert_color_space_image_pil(inpt, color_space, copy=copy)
+    else:
         if old_color_space is None:
             raise RuntimeError(
                 "In order to convert the color space of simple tensor images, "
@@ -222,7 +227,3 @@ def convert_color_space(
         return convert_color_space_image_tensor(
             inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
         )
-    elif isinstance(inpt, features.Image):
-        return inpt.to_color_space(color_space, copy=copy)
-    else:
-        return cast(features.ImageType, convert_color_space_image_pil(inpt, color_space, copy=copy))
