@@ -9,7 +9,6 @@ from torchvision.transforms import functional_pil as _FP, functional_tensor as _
 from torchvision.transforms.functional import (
     _compute_resized_output_size,
     _get_inverse_affine_matrix,
-    _get_perspective_coeffs,
     InterpolationMode,
     pil_modes_mapping,
     pil_to_tensor,
@@ -379,6 +378,7 @@ def affine_mask(
     translate: List[float],
     scale: float,
     shear: List[float],
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
@@ -394,6 +394,7 @@ def affine_mask(
         scale=scale,
         shear=shear,
         interpolation=InterpolationMode.NEAREST,
+        fill=fill,
         center=center,
     )
 
@@ -541,6 +542,7 @@ def rotate_mask(
     mask: torch.Tensor,
     angle: float,
     expand: bool = False,
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
@@ -554,6 +556,7 @@ def rotate_mask(
         angle=angle,
         expand=expand,
         interpolation=InterpolationMode.NEAREST,
+        fill=fill,
         center=center,
     )
 
@@ -849,7 +852,11 @@ def perspective_bounding_box(
     ).view(original_shape)
 
 
-def perspective_mask(mask: torch.Tensor, perspective_coeffs: List[float]) -> torch.Tensor:
+def perspective_mask(
+    mask: torch.Tensor,
+    perspective_coeffs: List[float],
+    fill: Optional[Union[int, float, List[float]]] = None,
+) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -857,7 +864,7 @@ def perspective_mask(mask: torch.Tensor, perspective_coeffs: List[float]) -> tor
         needs_squeeze = False
 
     output = perspective_image_tensor(
-        mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST
+        mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST, fill=fill
     )
 
     if needs_squeeze:
@@ -868,13 +875,10 @@ def perspective_mask(mask: torch.Tensor, perspective_coeffs: List[float]) -> tor
 
 def perspective(
     inpt: features.DType,
-    startpoints: List[List[int]],
-    endpoints: List[List[int]],
+    perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: Optional[Union[int, float, List[float]]] = None,
 ) -> features.DType:
-    perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
-
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, features._Feature):
@@ -944,14 +948,18 @@ def elastic_bounding_box(
     ).view(original_shape)
 
 
-def elastic_mask(mask: torch.Tensor, displacement: torch.Tensor) -> torch.Tensor:
+def elastic_mask(
+    mask: torch.Tensor,
+    displacement: torch.Tensor,
+    fill: Optional[Union[int, float, List[float]]] = None,
+) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
     else:
         needs_squeeze = False
 
-    output = elastic_image_tensor(mask, displacement=displacement, interpolation=InterpolationMode.NEAREST)
+    output = elastic_image_tensor(mask, displacement=displacement, interpolation=InterpolationMode.NEAREST, fill=fill)
 
     if needs_squeeze:
         output = output.squeeze(0)
