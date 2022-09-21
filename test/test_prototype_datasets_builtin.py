@@ -10,10 +10,7 @@ from torch.testing._comparison import assert_equal, ObjectPair, TensorLikePair
 from torch.utils.data import DataLoader
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
-from torchdata.datapipes.iter import (
-    Demultiplexer,
-)
-from torchdata.datapipes.iter import Shuffler, ShardingFilter
+from torchdata.datapipes.iter import ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datasets, transforms
@@ -107,7 +104,6 @@ class TestCommon:
         list(iterator)  # Cleanups and closing streams in buffers
 
         if len(StreamWrapper.session_streams) > 0:
-            Demultiplexer.buffers()
             raise Exception(StreamWrapper.session_streams)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)

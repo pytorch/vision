@@ -1,5 +1,6 @@
 import pathlib
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
+
 from torchdata import janitor
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, JsonParser, Mapper, UnBatcher
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
