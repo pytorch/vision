@@ -1232,7 +1232,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             np.max(transformed_points[:, 1]),
         ]
         out_bbox = features.BoundingBox(
-            out_bbox,
+            np.array(out_bbox),
             format=features.BoundingBoxFormat.XYXY,
             image_size=bbox.image_size,
             dtype=bbox.dtype,
