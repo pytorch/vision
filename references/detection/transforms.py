@@ -649,8 +649,8 @@ class Mosaic(nn.Module):
 
         targets[2][:, 0::2] += offset_x3
         targets[2][:, 1::2] += offset_y3
-        targets[2][:, 0::2] += offset_x4
-        targets[2][:, 1::2] += offset_y4
+        targets[3][:, 0::2] += offset_x4
+        targets[3][:, 1::2] += offset_y4
 
         mosaic_image[:, x1a1:x2a1, y1a1:y2a1] = images[0][:, x1b1:x2b1, y1b1:y2b1]
         mosaic_image[:, x1a2:x2a2, y1a2:y2a2] = images[1][:, x1b2:x2b2, y1b2:y2b2]
