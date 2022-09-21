@@ -1312,3 +1312,32 @@ KERNEL_INFOS.append(
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
     )
 )
+
+_ADJUST_SATURATION_FACTORS = [0.1, 0.5]
+
+
+def sample_inputs_adjust_saturation_image_tensor():
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
+    ):
+        yield ArgsKwargs(image_loader, saturation_factor=_ADJUST_SATURATION_FACTORS[0])
+
+
+def reference_inputs_adjust_saturation_image_tensor():
+    for image_loader, saturation_factor in itertools.product(
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
+        _ADJUST_SATURATION_FACTORS,
+    ):
+        yield ArgsKwargs(image_loader, saturation_factor=saturation_factor)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.adjust_saturation_image_tensor,
+        kernel_name="adjust_saturation_image_tensor",
+        sample_inputs_fn=sample_inputs_adjust_saturation_image_tensor,
+        reference_fn=pil_reference_wrapper(F.adjust_saturation_image_pil),
+        reference_inputs_fn=reference_inputs_adjust_saturation_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)
