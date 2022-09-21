@@ -1282,3 +1282,33 @@ KERNEL_INFOS.append(
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
     )
 )
+
+
+_ADJUST_HUE_FACTORS = [-0.1, 0.5]
+
+
+def sample_inputs_adjust_hue_image_tensor():
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
+    ):
+        yield ArgsKwargs(image_loader, hue_factor=_ADJUST_HUE_FACTORS[0])
+
+
+def reference_inputs_adjust_hue_image_tensor():
+    for image_loader, hue_factor in itertools.product(
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
+        _ADJUST_HUE_FACTORS,
+    ):
+        yield ArgsKwargs(image_loader, hue_factor=hue_factor)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.adjust_hue_image_tensor,
+        kernel_name="adjust_hue_image_tensor",
+        sample_inputs_fn=sample_inputs_adjust_hue_image_tensor,
+        reference_fn=pil_reference_wrapper(F.adjust_hue_image_pil),
+        reference_inputs_fn=reference_inputs_adjust_hue_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)
