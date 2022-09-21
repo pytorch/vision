@@ -1447,3 +1447,25 @@ KERNEL_INFOS.extend(
         ),
     ]
 )
+
+_NORMALIZE_MEANS_STDS = [
+    ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
+]
+
+
+def sample_inputs_normalize_image_tensor():
+    for image_loader, (mean, std) in itertools.product(
+        make_image_loaders(sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]),
+        _NORMALIZE_MEANS_STDS,
+    ):
+        yield ArgsKwargs(image_loader, mean=mean, std=std)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.normalize,
+        kernel_name="normalize_image_tensor",
+        sample_inputs_fn=sample_inputs_normalize_image_tensor,
+    )
+)
