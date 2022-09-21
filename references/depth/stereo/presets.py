@@ -9,7 +9,7 @@ class StereoMatchingEvalPreset(torch.nn.Module):
         self,
         mean: float = 0.5,
         std: float = 0.5,
-        resize_size: Optional[Tuple[int, int]] = None,
+        resize_size: Optional[Tuple[int, ...]] = None,
         max_disparity: Optional[float] = None,
         interpolation_type: str = "bilinear",
         use_grayscale: bool = False,

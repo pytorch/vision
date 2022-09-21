@@ -17,7 +17,7 @@ class StereoMatching(torch.nn.Module):
         self,
         *,
         use_gray_scale: bool = False,
-        resize_size: Optional[Tuple[int, int]],
+        resize_size: Optional[Tuple[int, ...]],
         mean: Tuple[float, ...] = (0.5, 0.5, 0.5),
         std: Tuple[float, ...] = (0.5, 0.5, 0.5),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,

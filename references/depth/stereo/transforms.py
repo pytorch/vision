@@ -1,5 +1,5 @@
 import random
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import PIL.Image
@@ -11,6 +11,7 @@ from torch import Tensor
 T_FLOW = Union[Tensor, np.ndarray, None]
 T_MASK = Union[Tensor, np.ndarray, None]
 T_STEREO_TENSOR = Tuple[Tensor, Tensor]
+T_COLOR_AUG_PARAM = Union[float, Tuple[float, float]]
 
 
 def rand_float_range(size: Sequence[int], low: float, high: float) -> Tensor:
@@ -46,7 +47,7 @@ class InterpolationStrategy:
 
 class ValidateModelInput(torch.nn.Module):
     # Pass-through transform that checks the shape and dtypes to make sure the model gets what it expects
-    def forward(self, images, disparities, masks):
+    def forward(self, images: T_STEREO_TENSOR, disparities: T_FLOW, masks: T_MASK):
         if images[0].shape != images[1].shape:
             raise ValueError("img1 and img2 should have the same shape.")
         h, w = images[0].shape[-2:]
@@ -124,7 +125,7 @@ class ToGPU(torch.nn.Module):
 
 
 class ConvertImageDtype(torch.nn.Module):
-    def __init__(self, dtype):
+    def __init__(self, dtype: torch.dtype):
         super().__init__()
         self.dtype = dtype
 
@@ -191,7 +192,14 @@ class ToTensor(torch.nn.Module):
 
 class AsymmetricColorJitter(T.ColorJitter):
     # p determines the probability of doing asymmetric vs symmetric color jittering
-    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0, p=0.2):
+    def __init__(
+        self,
+        brightness: T_COLOR_AUG_PARAM = 0,
+        contrast: T_COLOR_AUG_PARAM = 0,
+        saturation: T_COLOR_AUG_PARAM = 0,
+        hue: T_COLOR_AUG_PARAM = 0,
+        p: float = 0.2,
+    ):
         super().__init__(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
         self.p = p
 
@@ -249,7 +257,12 @@ class RandomErase(torch.nn.Module):
     # these can be viewed as occlusions present in both camera views.
     # Similarly to Optical Flow occlusion prediction tasks, we mask these pixels in the disparity map
     def __init__(
-        self, p: float = 0.5, erase_px_range: Tuple[int, int] = (50, 100), value=0, inplace=False, max_erase=2
+        self,
+        p: float = 0.5,
+        erase_px_range: Tuple[int, int] = (50, 100),
+        value: Union[Tensor, float] = 0,
+        inplace: bool = False,
+        max_erase: int = 2,
     ):
         super().__init__()
         self.min_px_erase = erase_px_range[0]
@@ -307,7 +320,7 @@ class RandomOcclusion(torch.nn.Module):
     # This adds an occlusion in the right image
     # the occluded patch works as a patch erase where the erase value is the mean
     # of the pixels from the selected zone
-    def __init__(self, p=0.5, occlusion_px_range: Tuple[int, int] = (50, 100), inplace=False):
+    def __init__(self, p: float = 0.5, occlusion_px_range: Tuple[int, int] = (50, 100), inplace: bool = False):
         super().__init__()
 
         self.min_px_occlusion = occlusion_px_range[0]
@@ -482,11 +495,11 @@ class RandomRescaleAndCrop(torch.nn.Module):
     # https://github.com/pytorch/vision/pull/5026/files#r762932579
     def __init__(
         self,
-        crop_size,
+        crop_size: Tuple[int, int],
         scale_range: Tuple[float, float] = (-0.2, 0.5),
-        rescale_prob=0.8,
-        scaling_type="exponential",
-        interpolation_type="bilinear",
+        rescale_prob: float = 0.8,
+        scaling_type: str = "exponential",
+        interpolation_type: str = "bilinear",
     ) -> None:
         super().__init__()
         self.crop_size = crop_size
@@ -622,7 +635,7 @@ def _resize_sparse_flow(
 
 
 class Compose(torch.nn.Module):
-    def __init__(self, transforms):
+    def __init__(self, transforms: List[Callable]):
         super().__init__()
         self.transforms = transforms
 
