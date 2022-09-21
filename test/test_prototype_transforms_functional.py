@@ -63,7 +63,7 @@ class TestKernels:
             F.normalize_image_tensor,
             F.ten_crop_image_tensor,
         ],
-        id=lambda kernel: kernel.__name__,
+        ids=lambda kernel: kernel.__name__,
     )
     def test_scriptable(self, kernel):
         script(kernel)
@@ -146,7 +146,7 @@ class TestKernels:
         output = info.kernel(input, *other_args, **kwargs)
 
         assert output.dtype == input.dtype
-        assert output.device == input.dtype
+        assert output.device == input.device
 
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
