@@ -207,6 +207,7 @@ weights:
    models/efficientnetv2
    models/googlenet
    models/inception
+   models/maxvit
    models/mnasnet
    models/mobilenetv2
    models/mobilenetv3
@@ -216,7 +217,6 @@ weights:
    models/shufflenetv2
    models/squeezenet
    models/swin_transformer
-   models/maxvit
    models/vgg
    models/vision_transformer
    models/wide_resnet

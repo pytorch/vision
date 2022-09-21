@@ -58,8 +58,8 @@ class MBConv(nn.Module):
         expansion_ratio (float): Expansion ratio in the bottleneck.
         squeeze_ratio (float): Squeeze ratio in the SE Layer.
         stride (int): Stride of the depthwise convolution.
-        activation_fn (Callable[..., nn.Module]): Activation function.
-        normalization_fn (Callable[..., nn.Module]): Normalization function.
+        activation_layer (Callable[..., nn.Module]): Activation function.
+        normalization_layer (Callable[..., nn.Module]): Normalization function.
         p_stochastic_dropout (float): Probability of stochastic depth.
     """
 
@@ -70,8 +70,8 @@ class MBConv(nn.Module):
         expansion_ratio: float,
         squeeze_ratio: float,
         stride: int,
-        activation_fn: Callable[..., nn.Module],
-        normalization_fn: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
+        norm_layer: Callable[..., nn.Module],
         p_stochastic_dropout: float = 0.0,
     ) -> None:
         super().__init__()
@@ -97,15 +97,15 @@ class MBConv(nn.Module):
             self.stochastic_depth = nn.Identity()  # type: ignore
 
         _layers = OrderedDict()
-        _layers["pre_norm"] = normalization_fn(in_channels)
+        _layers["pre_norm"] = norm_layer(in_channels)
         _layers["conv_a"] = Conv2dNormActivation(
             in_channels,
             mid_channels,
             kernel_size=1,
             stride=1,
             padding=0,
-            activation_layer=activation_fn,
-            norm_layer=normalization_fn,
+            activation_layer=activation_layer,
+            norm_layer=norm_layer,
             inplace=None,
         )
         _layers["conv_b"] = Conv2dNormActivation(
@@ -114,8 +114,8 @@ class MBConv(nn.Module):
             kernel_size=3,
             stride=stride,
             padding=1,
-            activation_layer=activation_fn,
-            norm_layer=normalization_fn,
+            activation_layer=activation_layer,
+            norm_layer=norm_layer,
             groups=mid_channels,
             inplace=None,
         )
@@ -289,8 +289,8 @@ class PartitionAttentionLayer(nn.Module):
         partition_type (str): Type of partitioning to use. Can be either "grid" or "window".
         grid_size (Tuple[int, int]): Size of the grid to partition the input tensor into.
         mlp_ratio (int): Ratio of the  feature size expansion in the MLP layer.
-        activation_fn (Callable[..., nn.Module]): Activation function to use.
-        normalization_fn (Callable[..., nn.Module]): Normalization function to use.
+        activation_layer (Callable[..., nn.Module]): Activation function to use.
+        normalization_layer (Callable[..., nn.Module]): Normalization function to use.
         attn_dropout (float): Dropout probability for the attention layer.
         mlp_dropout (float): Dropout probability for the MLP layer.
         p_stochastic_dropout (float): Probability of dropping out a partition.
@@ -307,8 +307,8 @@ class PartitionAttentionLayer(nn.Module):
         # because we need to know hamy relative offsets there are in the grid
         grid_size: Tuple[int, int],
         mlp_ratio: int,
-        activation_fn: Callable[..., nn.Module],
-        normalization_fn: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
+        normalization_layer: Callable[..., nn.Module],
         attn_dropout: float,
         mlp_dropout: float,
         p_stochastic_dropout: float,
@@ -335,7 +335,7 @@ class PartitionAttentionLayer(nn.Module):
         self.departition_swap = SwapAxes(-2, -3) if partition_type == "grid" else nn.Identity()
 
         self.attn_layer = nn.Sequential(
-            normalization_fn(in_channels),
+            normalization_layer(in_channels),
             # it's always going to be partition_size ** 2 because
             # of the axis swap in the case of grid partitioning
             RelativePositionalMultiHeadAttention(in_channels, head_dim, partition_size**2),
@@ -346,7 +346,7 @@ class PartitionAttentionLayer(nn.Module):
         self.mlp_layer = nn.Sequential(
             nn.LayerNorm(in_channels),
             nn.Linear(in_channels, in_channels * mlp_ratio),
-            activation_fn(),
+            activation_layer(),
             nn.Linear(in_channels * mlp_ratio, in_channels),
             nn.Dropout(mlp_dropout),
         )
@@ -365,6 +365,12 @@ class PartitionAttentionLayer(nn.Module):
         # Undefined behavior if H or W are not divisible by p
         # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L766
         gh, gw = self.grid_size[0] // self.p, self.grid_size[1] // self.p
+        torch._assert(
+            self.grid_size[0] % self.p == 0 and self.grid_size[1] % self.p == 0,
+            "Grid size must be divisible by partition size. Got grid size of {} and partition size of {}".format(
+                self.grid_size, self.p
+            ),
+        )
 
         x = self.partition_op(x, self.p)
         x = self.partition_swap(x)
@@ -386,8 +392,8 @@ class MaxVitLayer(nn.Module):
         expansion_ratio (float): Expansion ratio in the bottleneck.
         squeeze_ratio (float): Squeeze ratio in the SE Layer.
         stride (int): Stride of the depthwise convolution.
-        activation_fn (Callable[..., nn.Module]): Activation function.
-        normalization_fn (Callable[..., nn.Module]): Normalization function.
+        activation_layer (Callable[..., nn.Module]): Activation function.
+        normalization_layer (Callable[..., nn.Module]): Normalization function.
         head_dim (int): Dimension of the attention heads.
         mlp_ratio (int): Ratio of the MLP layer.
         mlp_dropout (float): Dropout probability for the MLP layer.
@@ -406,8 +412,8 @@ class MaxVitLayer(nn.Module):
         expansion_ratio: float,
         stride: int,
         # conv + transformer parameters
-        normalization_fn: Callable[..., nn.Module],
-        activation_fn: Callable[..., nn.Module],
+        normalization_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
         # transformer parameters
         head_dim: int,
         mlp_ratio: int,
@@ -429,8 +435,8 @@ class MaxVitLayer(nn.Module):
             expansion_ratio=expansion_ratio,
             squeeze_ratio=squeeze_ratio,
             stride=stride,
-            activation_fn=activation_fn,
-            normalization_fn=normalization_fn,
+            activation_layer=activation_layer,
+            norm_layer=normalization_layer,
             p_stochastic_dropout=p_stochastic_dropout,
         )
         # attention layers, block -> grid
@@ -441,8 +447,8 @@ class MaxVitLayer(nn.Module):
             partition_type="window",
             grid_size=grid_size,
             mlp_ratio=mlp_ratio,
-            activation_fn=activation_fn,
-            normalization_fn=nn.LayerNorm,
+            activation_layer=activation_layer,
+            normalization_layer=nn.LayerNorm,
             attn_dropout=attn_dropout,
             mlp_dropout=mlp_dropout,
             p_stochastic_dropout=p_stochastic_dropout,
@@ -454,8 +460,8 @@ class MaxVitLayer(nn.Module):
             partition_type="grid",
             grid_size=grid_size,
             mlp_ratio=mlp_ratio,
-            activation_fn=activation_fn,
-            normalization_fn=nn.LayerNorm,
+            activation_layer=activation_layer,
+            normalization_layer=nn.LayerNorm,
             attn_dropout=attn_dropout,
             mlp_dropout=mlp_dropout,
             p_stochastic_dropout=p_stochastic_dropout,
@@ -482,8 +488,8 @@ class MaxVitBlock(nn.Module):
         out_channels (int): Number of output channels.
         expansion_ratio (float): Expansion ratio in the bottleneck.
         squeeze_ratio (float): Squeeze ratio in the SE Layer.
-        activation_fn (Callable[..., nn.Module]): Activation function.
-        normalization_fn (Callable[..., nn.Module]): Normalization function.
+        activation_layer (Callable[..., nn.Module]): Activation function.
+        normalization_layer (Callable[..., nn.Module]): Normalization function.
         head_dim (int): Dimension of the attention heads.
         mlp_ratio (int): Ratio of the MLP layer.
         mlp_dropout (float): Dropout probability for the MLP layer.
@@ -503,8 +509,8 @@ class MaxVitBlock(nn.Module):
         squeeze_ratio: float,
         expansion_ratio: float,
         # conv + transformer parameters
-        normalization_fn: Callable[..., nn.Module],
-        activation_fn: Callable[..., nn.Module],
+        normalization_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
         # transformer parameters
         head_dim: int,
         mlp_ratio: int,
@@ -534,8 +540,8 @@ class MaxVitBlock(nn.Module):
                     squeeze_ratio=squeeze_ratio,
                     expansion_ratio=expansion_ratio,
                     stride=stride,
-                    normalization_fn=normalization_fn,
-                    activation_fn=activation_fn,
+                    normalization_layer=normalization_layer,
+                    activation_layer=activation_layer,
                     head_dim=head_dim,
                     mlp_ratio=mlp_ratio,
                     mlp_dropout=mlp_dropout,
@@ -571,8 +577,8 @@ class MaxVit(nn.Module):
         stochastic_depth_prob (float): Probability of stochastic depth. Expands to a list of probabilities for each layer that scales linearly to the specified value.
         squeeze_ratio (float): Squeeze ratio in the SE Layer.
         expansion_ratio (float): Expansion ratio in the MBConv bottleneck.
-        normalization_fn (Callable[..., nn.Module]): Normalization function.
-        activation_fn (Callable[..., nn.Module]): Activation function.
+        normalization_layer (Callable[..., nn.Module]): Normalization function.
+        activation_layer (Callable[..., nn.Module]): Activation function.
         head_dim (int): Dimension of the attention heads.
         mlp_ratio (int): Expansion ratio of the MLP layer.
         mlp_dropout (float): Dropout probability for the MLP layer.
@@ -585,37 +591,42 @@ class MaxVit(nn.Module):
         # input size parameters
         input_size: Tuple[int, int],
         # stem and task parameters
-        input_channels: int,
         stem_channels: int,
         num_classes: int,
+        # partitioning parameters
+        partition_size: int,
         # block parameters
         block_channels: List[int],
         block_layers: List[int],
-        stochastic_depth_prob: float,
-        # conv parameters
-        squeeze_ratio: float,
-        expansion_ratio: float,
-        # conv + transformer parameters
-        # normalization_fn is applied only to the conv layers
-        # activation_fn is applied both to conv and transformer layers
-        normalization_fn: Callable[..., nn.Module],
-        activation_fn: Callable[..., nn.Module],
-        # transformer parameters
+        # attention head dimensions
         head_dim: int,
-        mlp_ratio: int,
-        mlp_dropout: float,
-        attn_dropout: float,
-        # partitioning parameters
-        partition_size: int,
+        stochastic_depth_prob: float,
+        # conv + transformer parameters
+        # normalization_layer is applied only to the conv layers
+        # activation_layer is applied both to conv and transformer layers
+        normalization_layer: Optional[Callable[..., nn.Module]] = None,
+        activation_layer: Callable[..., nn.Module] = nn.GELU,
+        # conv parameters
+        squeeze_ratio: float = 0.25,
+        expansion_ratio: float = 4,
+        # transformer parameters
+        mlp_ratio: int = 4,
+        mlp_dropout: float = 0.0,
+        attn_dropout: float = 0.0,
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
+        input_channels = 3
+
+        # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L1029-L1030
+        # for the exact parameters used in batchnorm
+        if normalization_layer is None:
+            normalization_layer = partial(nn.BatchNorm2d, eps=1e-3, momentum=0.99)
+
         # Make sure input size will be divisible by the partition size in all blocks
         # Undefined behavior if H or W are not divisible by p
         # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L766
-
-        # we do this check here to avoid torch.fx that cannot handle error checking on dynamic tensor shapes
         block_input_sizes = _make_block_input_shapes(input_size, len(block_channels))
         for idx, block_input_size in enumerate(block_input_sizes):
             if block_input_size[0] % partition_size != 0 or block_input_size[1] % partition_size != 0:
@@ -632,8 +643,8 @@ class MaxVit(nn.Module):
                 stem_channels,
                 3,
                 stride=2,
-                norm_layer=normalization_fn,
-                activation_layer=activation_fn,
+                norm_layer=normalization_layer,
+                activation_layer=activation_layer,
                 bias=False,
                 inplace=None,
             ),
@@ -664,8 +675,8 @@ class MaxVit(nn.Module):
                     out_channels=out_channel,
                     squeeze_ratio=squeeze_ratio,
                     expansion_ratio=expansion_ratio,
-                    normalization_fn=normalization_fn,
-                    activation_fn=activation_fn,
+                    normalization_layer=normalization_layer,
+                    activation_layer=activation_layer,
                     head_dim=head_dim,
                     mlp_ratio=mlp_ratio,
                     mlp_dropout=mlp_dropout,
@@ -721,26 +732,13 @@ def _maxvit(
     block_channels: List[int],
     block_layers: List[int],
     stochastic_depth_prob: float,
-    # conv parameters
-    squeeze_ratio: float,
-    expansion_ratio: float,
-    # conv + transformer parameters
-    # normalization_fn is applied only to the conv layers
-    # activation_fn is applied both to conv and transformer layers
-    normalization_fn: Callable[..., nn.Module],
-    activation_fn: Callable[..., nn.Module],
-    # transformer parameters
-    head_dim: int,
-    mlp_ratio: int,
-    mlp_dropout: float,
-    attn_dropout: float,
     # partitioning parameters
     partition_size: int,
+    # transformer parameters
+    head_dim: int,
     # Weights API
-    weights: Optional[WeightsEnum],
-    progress: bool,
-    # task parameters
-    num_classes: int = 1000,
+    weights: Optional[WeightsEnum] = None,
+    progress: bool = False,
     # kwargs,
     **kwargs: Any,
 ) -> MaxVit:
@@ -751,36 +749,22 @@ def _maxvit(
         _ovewrite_named_param(kwargs, "input_size", weights.meta["min_size"])
 
     input_size = kwargs.pop("input_size", (224, 224))
-    input_channels = kwargs.pop("input_channels", 3)
 
     model = MaxVit(
-        input_channels=input_channels,
         stem_channels=stem_channels,
-        num_classes=num_classes,
         block_channels=block_channels,
         block_layers=block_layers,
         stochastic_depth_prob=stochastic_depth_prob,
-        squeeze_ratio=squeeze_ratio,
-        expansion_ratio=expansion_ratio,
-        normalization_fn=normalization_fn,
-        activation_fn=activation_fn,
         head_dim=head_dim,
-        mlp_ratio=mlp_ratio,
-        mlp_dropout=mlp_dropout,
-        attn_dropout=attn_dropout,
         partition_size=partition_size,
         input_size=input_size,
+        **kwargs,
     )
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-_COMMON_META = {
-    "categories": _IMAGENET_CATEGORIES,
-}
 
 
 class MaxVit_T_Weights(WeightsEnum):
@@ -791,7 +775,7 @@ class MaxVit_T_Weights(WeightsEnum):
             ImageClassification, crop_size=224, resize_size=224, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
-            **_COMMON_META,
+            "categories": _IMAGENET_CATEGORIES,
             "num_params": 30919624,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#maxvit",
@@ -836,17 +820,8 @@ def maxvit_t(*, weights: Optional[MaxVit_T_Weights] = None, progress: bool = Tru
         stem_channels=64,
         block_channels=[64, 128, 256, 512],
         block_layers=[2, 2, 5, 2],
-        stochastic_depth_prob=0.2,
-        squeeze_ratio=0.25,
-        expansion_ratio=4.0,
-        # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L1029-L1030
-        # for the exact parameters used in batchnorm
-        normalization_fn=partial(nn.BatchNorm2d, eps=1e-3, momentum=0.99),
-        activation_fn=nn.GELU,
         head_dim=32,
-        mlp_ratio=4,
-        mlp_dropout=0.0,
-        attn_dropout=0.0,
+        stochastic_depth_prob=0.2,
         partition_size=7,
         weights=weights,
         progress=progress,
