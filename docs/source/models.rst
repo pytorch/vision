@@ -216,6 +216,7 @@ weights:
    models/shufflenetv2
    models/squeezenet
    models/swin_transformer
+   models/maxvit
    models/vgg
    models/vision_transformer
    models/wide_resnet

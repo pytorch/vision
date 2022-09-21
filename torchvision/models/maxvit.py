@@ -794,8 +794,7 @@ class MaxVit_T_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 30919624,
             "min_size": (224, 224),
-            # Recipe empty until official release
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#maxvit",
             "_metrics": {
                 "ImageNet-1K": {
                     "acc@1": 83.700,
