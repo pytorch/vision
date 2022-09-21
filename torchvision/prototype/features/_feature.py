@@ -232,3 +232,7 @@ class _Feature(torch.Tensor):
 
     def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> _Feature:
         return self
+
+
+class GenericFeature(_Feature):
+    pass
