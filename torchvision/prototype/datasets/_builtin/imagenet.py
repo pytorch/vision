@@ -128,10 +128,11 @@ class ImageNet(Dataset):
         return None, data
 
     def _classifiy_devkit(self, data: Tuple[str, BinaryIO]) -> Optional[int]:
+        name, binary_io = data
         return {
             "meta.mat": ImageNetDemux.META,
             "ILSVRC2012_validation_ground_truth.txt": ImageNetDemux.LABEL,
-        }.get(pathlib.Path(data[0]).name)
+        }.get(pathlib.Path(name).name)
 
     _VAL_TEST_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_(val|test)_(?P<id>\d{8})[.]JPEG")
 
@@ -151,11 +152,13 @@ class ImageNet(Dataset):
         data: Tuple[Optional[Tuple[Label, str]], Tuple[str, BinaryIO]],
     ) -> Dict[str, Any]:
         label_data, (path, buffer) = data
+        image = EncodedImage.from_file(buffer)
+        buffer.close()
 
         return dict(
             dict(zip(("label", "wnid"), label_data if label_data else (None, None))),
             path=path,
-            image=EncodedImage.from_file(buffer),
+            image=image,
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

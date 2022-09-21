@@ -29,8 +29,8 @@ class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
         self.fieldnames = fieldnames
 
     def __iter__(self) -> Iterator[Tuple[str, Dict[str, str]]]:
-        for _, file in self.datapipe:
-            file = (line.decode() for line in file)
+        for _, fh in self.datapipe:
+            file = (line.decode() for line in fh)
 
             if self.fieldnames:
                 fieldnames = self.fieldnames
@@ -47,6 +47,8 @@ class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
 
             for line in csv.DictReader(file, fieldnames=fieldnames, dialect="celeba"):
                 yield line.pop("image_id"), line
+
+            fh.close()
 
 
 NAME = "celeba"
@@ -132,6 +134,7 @@ class CelebA(Dataset):
         path, buffer = image_data
 
         image = EncodedImage.from_file(buffer)
+        buffer.close()
         (_, identity), (_, attributes), (_, bounding_box), (_, landmarks) = ann_data
 
         return dict(

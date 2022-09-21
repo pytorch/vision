@@ -1,6 +1,7 @@
 import pathlib
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
+from torchdata import janitor
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, JsonParser, Mapper, UnBatcher
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
@@ -62,10 +63,12 @@ class CLEVR(Dataset):
     def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Optional[Dict[str, Any]]]) -> Dict[str, Any]:
         image_data, scenes_data = data
         path, buffer = image_data
+        image = EncodedImage.from_file(buffer)
+        buffer.close()
 
         return dict(
             path=path,
-            image=EncodedImage.from_file(buffer),
+            image=image,
             label=Label(len(scenes_data["objects"])) if scenes_data else None,
         )
 
@@ -97,6 +100,8 @@ class CLEVR(Dataset):
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
         else:
+            for i in scenes_dp:
+                janitor(i)
             dp = Mapper(images_dp, self._add_empty_anns)
 
         return Mapper(dp, self._prepare_sample)

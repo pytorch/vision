@@ -24,6 +24,7 @@ class StanfordCarsLabelReader(IterDataPipe[Tuple[int, int, int, int, int, str]])
             data = read_mat(file, squeeze_me=True)
             for ann in data["annotations"]:
                 yield tuple(ann)  # type: ignore[misc]
+            file.close()
 
 
 NAME = "stanford-cars"
@@ -84,6 +85,7 @@ class StanfordCars(Dataset):
         image, target = data
         path, buffer = image
         image = EncodedImage.from_file(buffer)
+        buffer.close()
 
         return dict(
             path=path,

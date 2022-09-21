@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import ShardingFilter, Shuffler
+from torchdata.datapipes.utils import StreamWrapper
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datasets, transforms
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
@@ -64,9 +65,9 @@ class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_sample(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
-
         try:
-            sample = next(iter(dataset))
+            iterator = iter(dataset)
+            sample = next(iterator)
         except StopIteration:
             raise AssertionError("Unable to draw any sample.") from None
         except Exception as error:
@@ -78,22 +79,32 @@ class TestCommon:
         if not sample:
             raise AssertionError("Sample dictionary is empty.")
 
+        list(iterator)  # Cleanups and closing streams in buffers
+
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_num_samples(self, dataset_mock, config):
         dataset, mock_info = dataset_mock.load(config)
-
         assert len(list(dataset)) == mock_info["num_samples"]
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_no_vanilla_tensors(self, dataset_mock, config):
+        StreamWrapper.session_streams = {}
         dataset, _ = dataset_mock.load(config)
 
-        vanilla_tensors = {key for key, value in next(iter(dataset)).items() if type(value) is torch.Tensor}
+        iterator = iter(dataset)
+        one_element = next(iterator)
+
+        vanilla_tensors = {key for key, value in one_element.items() if type(value) is torch.Tensor}
         if vanilla_tensors:
             raise AssertionError(
                 f"The values of key(s) "
                 f"{sequence_to_str(sorted(vanilla_tensors), separate_last='and ')} contained vanilla tensors."
             )
+
+        list(iterator)  # Cleanups and closing streams in buffers
+
+        if len(StreamWrapper.session_streams) > 0:
+            raise Exception(StreamWrapper.session_streams)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_transformable(self, dataset_mock, config):

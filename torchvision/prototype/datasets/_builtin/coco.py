@@ -16,6 +16,7 @@ from torchdata.datapipes.iter import (
 )
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
+    close_buffer,
     getitem,
     hint_sharding,
     hint_shuffling,
@@ -169,9 +170,10 @@ class Coco(Dataset):
 
     def _prepare_image(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
         path, buffer = data
+        image = close_buffer(EncodedImage.from_file, buffer)
         return dict(
             path=path,
-            image=EncodedImage.from_file(buffer),
+            image=image,
         )
 
     def _prepare_sample(
@@ -182,9 +184,11 @@ class Coco(Dataset):
         anns, image_meta = ann_data
 
         sample = self._prepare_image(image_data)
+
         # this method is only called if we have annotations
         annotations = cast(str, self._annotations)
         sample.update(self._ANN_DECODERS[annotations](self, anns, image_meta))
+
         return sample
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

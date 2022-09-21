@@ -49,10 +49,12 @@ class EuroSAT(Dataset):
     def _prepare_sample(self, data: Tuple[str, Any]) -> Dict[str, Any]:
         path, buffer = data
         category = pathlib.Path(path).parent.name
+        image = EncodedImage.from_file(buffer)
+        buffer.close()
         return dict(
             label=Label.from_category(category, categories=self._categories),
             path=path,
-            image=EncodedImage.from_file(buffer),
+            image=image,
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
