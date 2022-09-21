@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import PIL.Image
 import torch
@@ -7,16 +7,15 @@ from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 
-# shortcut type
-DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
+# Due to torch.jit.script limitation we keep TensorImageType as torch.Tensor
+# instead of Union[torch.Tensor, features.Image]
+TensorImageType = torch.Tensor
 
 
 normalize_image_tensor = _FT.normalize
 
 
-def normalize(
-    inpt: Union[torch.Tensor, features.Image], mean: List[float], std: List[float], inplace: bool = False
-) -> torch.Tensor:
+def normalize(inpt: TensorImageType, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
     if not isinstance(inpt, torch.Tensor):
         raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
     else:
@@ -54,6 +53,7 @@ def gaussian_blur_image_tensor(
     return _FT.gaussian_blur(img, kernel_size, sigma)
 
 
+@torch.jit.unused
 def gaussian_blur_image_pil(
     img: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> PIL.Image.Image:
@@ -62,10 +62,10 @@ def gaussian_blur_image_pil(
     return to_pil_image(output, mode=img.mode)
 
 
-def gaussian_blur(inpt: DType, kernel_size: List[int], sigma: Optional[List[float]] = None) -> DType:
-    if isinstance(inpt, features._Feature):
-        return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)
-    elif isinstance(inpt, PIL.Image.Image):
-        return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)
-    else:
+def gaussian_blur(inpt: features.DType, kernel_size: List[int], sigma: Optional[List[float]] = None) -> features.DType:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
+    elif isinstance(inpt, features._Feature):
+        return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)
+    else:
+        return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)
