@@ -1,14 +1,14 @@
 from functools import partial
-from typing import Tuple, Optional, Callable, List, Sequence, Type, Any, Union
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
 import torch.nn as nn
 from torch import Tensor
 
 from ...transforms._presets import VideoClassification
 from ...utils import _log_api_usage_once
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _KINETICS400_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -373,6 +373,7 @@ class R2Plus1D_18_Weights(WeightsEnum):
     DEFAULT = KINETICS400_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", R3D_18_Weights.KINETICS400_V1))
 def r3d_18(*, weights: Optional[R3D_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     """Construct 18 layer Resnet3D model.
@@ -409,6 +410,7 @@ def r3d_18(*, weights: Optional[R3D_18_Weights] = None, progress: bool = True, *
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", MC3_18_Weights.KINETICS400_V1))
 def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     """Construct 18 layer Mixed Convolution network as in
@@ -445,6 +447,7 @@ def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, *
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", R2Plus1D_18_Weights.KINETICS400_V1))
 def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     """Construct 18 layer deep R(2+1)D network as in

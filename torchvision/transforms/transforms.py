@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import Tuple, List, Optional
+from typing import List, Optional, Tuple
 
 import torch
 from torch import Tensor
@@ -15,7 +15,7 @@ except ImportError:
 
 from ..utils import _log_api_usage_once
 from . import functional as F
-from .functional import InterpolationMode, _interpolation_modes_from_int
+from .functional import _interpolation_modes_from_int, InterpolationMode
 
 __all__ = [
     "Compose",
@@ -628,8 +628,8 @@ class RandomCrop(torch.nn.Module):
         _, h, w = F.get_dimensions(img)
         th, tw = output_size
 
-        if h + 1 < th or w + 1 < tw:
-            raise ValueError(f"Required crop size {(th, tw)} is larger then input image size {(h, w)}")
+        if h < th or w < tw:
+            raise ValueError(f"Required crop size {(th, tw)} is larger than input image size {(h, w)}")
 
         if w == tw and h == th:
             return 0, 0, h, w
@@ -1855,7 +1855,7 @@ def _check_sequence_input(x, name, req_sizes):
     if not isinstance(x, Sequence):
         raise TypeError(f"{name} should be a sequence of length {msg}.")
     if len(x) not in req_sizes:
-        raise ValueError(f"{name} should be sequence of length {msg}.")
+        raise ValueError(f"{name} should be a sequence of length {msg}.")
 
 
 def _setup_angle(x, name, req_sizes=(2,)):
@@ -2162,8 +2162,8 @@ class ElasticTransform(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Transformed image.
         """
-        size = F.get_image_size(tensor)[::-1]
-        displacement = self.get_params(self.alpha, self.sigma, size)
+        _, height, width = F.get_dimensions(tensor)
+        displacement = self.get_params(self.alpha, self.sigma, [height, width])
         return F.elastic_transform(tensor, displacement, self.interpolation, self.fill)
 
     def __repr__(self):

@@ -3,12 +3,12 @@ import functools
 import operator
 import pathlib
 import string
-from typing import Any, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO, Union, Sequence
+from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, Demultiplexer, Mapper, Zipper, Decompressor
+from torchdata.datapipes.iter import Decompressor, Demultiplexer, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, hint_sharding, hint_shuffling
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, INFINITE_BUFFER_SIZE
 from torchvision.prototype.features import Image, Label
 from torchvision.prototype.utils._internal import fromfile
 

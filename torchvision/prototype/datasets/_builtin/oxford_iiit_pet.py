@@ -1,23 +1,19 @@
 import enum
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
+from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, CSVDictParser
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    HttpResource,
-    OnlineResource,
-)
+from torchdata.datapipes.iter import CSVDictParser, Demultiplexer, Filter, IterDataPipe, IterKeyZipper, Mapper
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
+    getitem,
     hint_sharding,
     hint_shuffling,
-    getitem,
+    INFINITE_BUFFER_SIZE,
     path_accessor,
-    read_categories_file,
     path_comparator,
+    read_categories_file,
 )
-from torchvision.prototype.features import Label, EncodedImage
+from torchvision.prototype.features import EncodedImage, Label
 
 from .._api import register_dataset, register_info
 

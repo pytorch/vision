@@ -1,19 +1,12 @@
 import io
 import pathlib
 from collections import namedtuple
-from typing import Any, Dict, List, Optional, Tuple, Iterator, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
 from torchvision.prototype import features
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    OnlineResource,
-    GDriveResource,
-)
-from torchvision.prototype.datasets.utils._internal import (
-    hint_sharding,
-    hint_shuffling,
-)
+from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import Label
 
 from .._api import register_dataset, register_info

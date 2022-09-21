@@ -10,7 +10,7 @@ from torchvision.ops import Conv2dNormActivation
 
 from ...transforms._presets import OpticalFlow
 from ...utils import _log_api_usage_once
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._utils import handle_legacy_interface
 from ._utils import grid_sample, make_coords_grid, upsample_flow
 
@@ -27,7 +27,7 @@ __all__ = (
 class ResidualBlock(nn.Module):
     """Slightly modified Residual block with extra relu and biases."""
 
-    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
+    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1, always_project: bool = False):
         super().__init__()
 
         # Note regarding bias=True:
@@ -43,7 +43,10 @@ class ResidualBlock(nn.Module):
             out_channels, out_channels, norm_layer=norm_layer, kernel_size=3, bias=True
         )
 
-        if stride == 1:
+        # make mypy happy
+        self.downsample: nn.Module
+
+        if stride == 1 and not always_project:
             self.downsample = nn.Identity()
         else:
             self.downsample = Conv2dNormActivation(
@@ -143,6 +146,10 @@ class FeatureEncoder(nn.Module):
                     nn.init.constant_(m.weight, 1)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
+
+        num_downsamples = len(list(filter(lambda s: s == 2, strides)))
+        self.output_dim = layers[-1]
+        self.downsample_factor = 2**num_downsamples
 
     def _make_2_blocks(self, block, in_channels, out_channels, norm_layer, first_stride):
         block1 = block(in_channels, out_channels, norm_layer=norm_layer, stride=first_stride)
@@ -800,6 +807,7 @@ def _raft(
     return model
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", Raft_Large_Weights.C_T_SKHT_V2))
 def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT model from
@@ -855,6 +863,7 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", Raft_Small_Weights.C_T_V2))
 def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT "small" model from
