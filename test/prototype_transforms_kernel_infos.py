@@ -2,7 +2,7 @@ import dataclasses
 import functools
 import itertools
 import math
-from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, Optional, Sequence
 
 import numpy as np
 import pytest
@@ -21,7 +21,7 @@ __all__ = ["KernelInfo", "KERNEL_INFOS"]
 class Skip:
     test_name: str
     reason: str
-    condition: Callable[[Tuple[ArgsKwargs, str]], bool] = lambda args_kwargs, device: True
+    condition: Callable[[ArgsKwargs, str], bool] = lambda args_kwargs, device: True
 
 
 @dataclasses.dataclass
@@ -44,7 +44,7 @@ class KernelInfo:
     # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
     closeness_kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
     skips: Sequence[Skip] = dataclasses.field(default_factory=list)
-    _skip_map: Dict[Tuple[Optional[str], str], Skip] = dataclasses.field(default=None, init=False)
+    _skips_map: Dict[str, Skip] = dataclasses.field(default=None, init=False)
 
     def __post_init__(self):
         self.kernel_name = self.kernel_name or self.kernel.__name__
@@ -1497,7 +1497,7 @@ def sample_inputs_normalize_image_tensor():
 
 KERNEL_INFOS.append(
     KernelInfo(
-        F.normalize,
+        F.normalize_image_tensor,
         kernel_name="normalize_image_tensor",
         sample_inputs_fn=sample_inputs_normalize_image_tensor,
     )

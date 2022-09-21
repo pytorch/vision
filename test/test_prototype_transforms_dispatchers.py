@@ -8,6 +8,25 @@ from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
 from torchvision.prototype import features
 
 
+@pytest.fixture(autouse=True)
+def maybe_skip(request):
+    # In case the test uses no parametrization or fixtures, the `callspec` attribute does not exist
+    try:
+        callspec = request.node.callspec
+    except AttributeError:
+        return
+
+    try:
+        info = callspec.params["info"]
+        args_kwargs = callspec.params["args_kwargs"]
+    except KeyError:
+        return
+
+    info.maybe_skip(
+        test_name=request.node.originalname, args_kwargs=args_kwargs, device=callspec.params.get("device", "cpu")
+    )
+
+
 class TestCommon:
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
