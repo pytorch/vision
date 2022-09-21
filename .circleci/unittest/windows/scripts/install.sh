@@ -24,8 +24,8 @@ else
     fi
 
     cuda_toolkit_pckg="cudatoolkit"
-    if [[ "$CU_VERSION" == cu116 ]]; then
-        cuda_toolkit_pckg="cuda"
+    if [[ $CUDA_VERSION == 11.6 || $CUDA_VERSION == 11.7 ]]; then
+        cuda_toolkit_pckg="pytorch-cuda"
     fi
 
     echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION"

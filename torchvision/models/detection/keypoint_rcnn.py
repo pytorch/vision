@@ -6,10 +6,10 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
 from ...transforms._presets import ObjectDetection
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from ._utils import overwrite_eps
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .faster_rcnn import FasterRCNN
@@ -353,6 +353,7 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
     DEFAULT = COCO_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -443,8 +444,8 @@ def keypointrcnn_resnet50_fpn(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
-        num_keypoints = _ovewrite_value_param(num_keypoints, len(weights.meta["keypoint_names"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+        num_keypoints = _ovewrite_value_param("num_keypoints", num_keypoints, len(weights.meta["keypoint_names"]))
     else:
         if num_classes is None:
             num_classes = 2

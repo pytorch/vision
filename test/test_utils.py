@@ -10,7 +10,7 @@ import torch
 import torchvision.transforms.functional as F
 import torchvision.utils as utils
 from common_utils import assert_equal
-from PIL import Image, __version__ as PILLOW_VERSION, ImageColor
+from PIL import __version__ as PILLOW_VERSION, Image, ImageColor
 
 
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
@@ -45,8 +45,8 @@ def test_normalize_in_make_grid():
 
     # Rounding the result to one decimal for comparison
     n_digits = 1
-    rounded_grid_max = torch.round(grid_max * 10 ** n_digits) / (10 ** n_digits)
-    rounded_grid_min = torch.round(grid_min * 10 ** n_digits) / (10 ** n_digits)
+    rounded_grid_max = torch.round(grid_max * 10**n_digits) / (10**n_digits)
+    rounded_grid_min = torch.round(grid_min * 10**n_digits) / (10**n_digits)
 
     assert_equal(norm_max, rounded_grid_max, msg="Normalized max is not equal to 1")
     assert_equal(norm_min, rounded_grid_min, msg="Normalized min is not equal to 0")

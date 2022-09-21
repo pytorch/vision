@@ -1,7 +1,7 @@
 import abc
 import importlib
 import pathlib
-from typing import Any, Dict, List, Optional, Sequence, Union, Collection, Iterator
+from typing import Any, Collection, Dict, Iterator, List, Optional, Sequence, Union
 
 from torch.utils.data import IterDataPipe
 from torchvision.datasets.utils import verify_str_arg

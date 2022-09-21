@@ -7,9 +7,9 @@ import subprocess
 import sys
 
 import torch
-from pkg_resources import parse_version, get_distribution, DistributionNotFound
-from setuptools import setup, find_packages
-from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
+from pkg_resources import DistributionNotFound, get_distribution, parse_version
+from setuptools import find_packages, setup
+from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDA_HOME, CUDAExtension
 
 
 def read(*names, **kwargs):

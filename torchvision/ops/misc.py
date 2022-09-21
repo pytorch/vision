@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, List, Optional, Union, Tuple, Sequence
+from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import torch
 from torch import Tensor

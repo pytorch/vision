@@ -22,23 +22,36 @@ if(NOT (CMAKE_VERSION VERSION_LESS 3.0))
 # Don't include targets if this file is being picked up by another
 # project which has already built this as a subproject
 #-----------------------------------------------------------------------------
-if(NOT TARGET ${PN}::TorchVision)
+if(NOT TARGET ${PN}::${PN})
 include("${CMAKE_CURRENT_LIST_DIR}/${PN}Targets.cmake")
 
-if(NOT TARGET torch_library)
-find_package(Torch REQUIRED)
+target_include_directories(${PN}::${PN} INTERFACE "${${PN}_INCLUDE_DIR}")
+
+if(@WITH_CUDA@)
+  target_compile_definitions(${PN}::${PN} INTERFACE WITH_CUDA)
 endif()
+
+find_package(Torch REQUIRED)
+target_link_libraries(${PN}::${PN} INTERFACE torch)
+
+if(@WITH_PNG@)
+  find_package(PNG REQUIRED)
+  target_link_libraries(${PN}::${PN} INTERFACE ${PNG_LIBRARY})
+  target_compile_definitions(${PN}::${PN} INTERFACE PNG_FOUND)
+endif()
+
+if(@WITH_JPEG@)
+  find_package(JPEG REQUIRED)
+  target_link_libraries(${PN}::${PN} INTERFACE ${JPEG_LIBRARIES})
+  target_compile_definitions(${PN}::${PN} INTERFACE JPEG_FOUND)
+endif()
+
 if (@USE_PYTHON@)
   if(NOT TARGET Python3::Python)
     find_package(Python3 COMPONENTS Development)
   endif()
-endif()
-
-set_target_properties(TorchVision::TorchVision PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${${PN}_INCLUDE_DIR}" INTERFACE_LINK_LIBRARIES "torch;Python3::Python" )
-
-
-if(@WITH_CUDA@)
-  target_compile_definitions(TorchVision::TorchVision INTERFACE WITH_CUDA)
+  target_link_libraries(torch INTERFACE Python3::Python)
+  target_compile_definitions(${PN}::${PN} INTERFACE USE_PYTHON)
 endif()
 
 endif()
