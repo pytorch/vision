@@ -186,11 +186,15 @@ def evaluate(model, loader, args, writter=None, step=None):
             )
     
     metric_log = []
+    metric_log_dict = {}
     # print the final results
     for config in metrics:
         config_tokens = config.split("_")
         config_iters = config_tokens[1][:-1]
         config_cascades = config_tokens[0][:-1]
+
+        metric_log_dict[config_cascades] = metric_log_dict.get(config_cascades, {})
+        metric_log_dict[config_cascades][config_iters] = metrics[config]
         
         evaluation_str = f"{args.dataset} evaluation@ size:{args.eval_size} n_cascades:{config_cascades} recurrent_updates:{config_iters}"
         metrics_str = f"Metrics: {metrics[config]}"
@@ -202,7 +206,15 @@ def evaluate(model, loader, args, writter=None, step=None):
     eval_log_name = f"{checkpoint_name.replace('.pth', '')}_eval.log"
     print("Saving eval log to: ", eval_log_name)
     with open(eval_log_name, "w") as f:
-        f.write("\n".join(metric_log))
+        f.write(f"Dataset: {args.dataset} @size: {args.eval_size}:\n")
+        # write the dict line by line for each key, and each value in the keys
+        for config_cascades in metric_log_dict:
+            f.write("{\n")
+            f.write(f"\t{config_cascades}: {{\n")
+            for config_iters in metric_log_dict[config_cascades]:
+                f.write(f"\t\t{config_iters}: {metric_log_dict[config_cascades][config_iters]}\n")
+            f.write("\t}\n")
+            f.write("}\n")
             
 
 def load_checkpoint(args):
