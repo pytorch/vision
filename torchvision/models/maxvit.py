@@ -742,7 +742,7 @@ def _maxvit(
     # task parameters
     num_classes: int = 1000,
     # kwargs,
-    **kwargs,
+    **kwargs: Any,
 ) -> MaxVit:
 
     if weights is not None:
