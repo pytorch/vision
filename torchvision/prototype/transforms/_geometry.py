@@ -9,6 +9,7 @@ import torch
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
+from torchvision.transforms.functional import _get_perspective_coeffs
 
 from typing_extensions import Literal
 
@@ -252,7 +253,14 @@ class Pad(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)
+
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        padding = self.padding
+        if not isinstance(padding, int):
+            padding = list(padding)
+
+        fill = F._geometry._convert_fill_arg(fill)
+        return F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
 
 
 class RandomZoomOut(_RandomApplyTransform):
@@ -290,6 +298,7 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.pad(inpt, **params, fill=fill)
 
 
@@ -320,6 +329,7 @@ class RandomRotation(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.rotate(
             inpt,
             **params,
@@ -401,6 +411,7 @@ class RandomAffine(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.affine(
             inpt,
             **params,
@@ -480,8 +491,15 @@ class RandomCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         # TODO: (PERF) check for speed optimization if we avoid repeated pad calls
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
+
         if self.padding is not None:
-            inpt = F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)
+            # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+            padding = self.padding
+            if not isinstance(padding, int):
+                padding = list(padding)
+
+            inpt = F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
 
         if self.pad_if_needed:
             input_width, input_height = params["input_width"], params["input_height"]
@@ -539,10 +557,12 @@ class RandomPerspective(_RandomApplyTransform):
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
-        return dict(startpoints=startpoints, endpoints=endpoints)
+        perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
+        return dict(perspective_coeffs=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.perspective(
             inpt,
             **params,
@@ -610,6 +630,7 @@ class ElasticTransform(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
+        fill = F._geometry._convert_fill_arg(fill)
         return F.elastic(
             inpt,
             **params,
@@ -868,6 +889,7 @@ class FixedSizeCrop(Transform):
 
         if params["needs_pad"]:
             fill = self.fill[type(inpt)]
+            fill = F._geometry._convert_fill_arg(fill)
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt

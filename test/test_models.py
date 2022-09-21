@@ -249,7 +249,7 @@ quantized_flaky_models = ("inception_v3", "resnet50")
 # The following contains configuration parameters for all models which are used by
 # the _test_*_model methods.
 _model_params = {
-    "inception_v3": {"input_shape": (1, 3, 299, 299)},
+    "inception_v3": {"input_shape": (1, 3, 299, 299), "init_weights": True},
     "retinanet_resnet50_fpn": {
         "num_classes": 20,
         "score_thresh": 0.01,
@@ -323,6 +323,7 @@ _model_params = {
     "s3d": {
         "input_shape": (1, 3, 16, 224, 224),
     },
+    "googlenet": {"init_weights": True},
 }
 # speeding up slow models:
 slow_models = [
