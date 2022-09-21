@@ -36,6 +36,8 @@ jobs:
         if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }}
         run: |
           echo "CHANNEL=test" >> "$GITHUB_ENV"
+      - name: Setup miniconda
+        uses: pytorch/test-infra/.github/actions/setup-miniconda@main
       - name: Build TorchVision M1 wheel
         shell: arch -arch arm64 bash {0}
         env:
@@ -109,12 +111,13 @@ jobs:
         if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }}
         run: |
           echo "CHANNEL=test" >> "$GITHUB_ENV"
+      - name: Setup miniconda
+        uses: pytorch/test-infra/.github/actions/setup-miniconda@main
       - name: Install conda-build and purge previous artifacts
         shell: arch -arch arm64 bash {0}
         run: |
           conda install -yq conda-build
           conda build purge-all
-
       - name: Build TorchVision M1 conda package
         shell: arch -arch arm64 bash {0}
         env:

@@ -72,11 +72,10 @@ class _AutoAugmentBase(Transform):
 
         # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
         # So, we have to put fill as None if fill == 0
-        fill_: Optional[Union[int, float, Sequence[int], Sequence[float]]]
+        # This is due to BC with stable API which has fill = None by default
+        fill_ = F._geometry._convert_fill_arg(fill)
         if isinstance(fill, int) and fill == 0:
             fill_ = None
-        else:
-            fill_ = fill
 
         if transform_id == "Identity":
             return image
@@ -487,7 +486,7 @@ class AugMix(_AutoAugmentBase):
         if isinstance(orig_image, torch.Tensor):
             image = orig_image
         else:  # isinstance(inpt, PIL.Image.Image):
-            image = F.to_image_tensor(orig_image)
+            image = F.pil_to_tensor(orig_image)
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 

@@ -1,5 +1,3 @@
-from typing import Union
-
 import PIL.Image
 
 import torch
@@ -11,6 +9,7 @@ from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 erase_image_tensor = _FT.erase
 
 
+@torch.jit.unused
 def erase_image_pil(
     img: PIL.Image.Image, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
 ) -> PIL.Image.Image:
@@ -20,17 +19,17 @@ def erase_image_pil(
 
 
 def erase(
-    inpt: Union[torch.Tensor, PIL.Image.Image, features.Image],
+    inpt: features.ImageType,
     i: int,
     j: int,
     h: int,
     w: int,
     v: torch.Tensor,
     inplace: bool = False,
-) -> Union[torch.Tensor, PIL.Image.Image, features.Image]:
+) -> features.ImageType:
     if isinstance(inpt, torch.Tensor):
         output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-        if isinstance(inpt, features.Image):
+        if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
             output = features.Image.new_like(inpt, output)
         return output
     else:  # isinstance(inpt, PIL.Image.Image):

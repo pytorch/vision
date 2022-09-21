@@ -3,13 +3,14 @@
 from torchvision.transforms import InterpolationMode  # usort: skip
 from ._meta import (
     clamp_bounding_box,
-    convert_bounding_box_format,
+    convert_format_bounding_box,
     convert_color_space_image_tensor,
     convert_color_space_image_pil,
     convert_color_space,
     get_dimensions,
     get_image_num_channels,
-    get_image_size,
+    get_num_channels,
+    get_spatial_size,
 )  # usort: skip
 
 from ._augment import erase, erase_image_pil, erase_image_tensor
@@ -73,7 +74,7 @@ from ._geometry import (
     five_crop,
     five_crop_image_pil,
     five_crop_image_tensor,
-    hflip,
+    hflip,  # TODO: Consider moving all pure alias definitions at the bottom of the file
     horizontal_flip,
     horizontal_flip_bounding_box,
     horizontal_flip_image_pil,
@@ -125,4 +126,4 @@ from ._type_conversion import (
     to_pil_image,
 )
 
-from ._deprecated import rgb_to_grayscale, to_grayscale  # usort: skip
+from ._deprecated import get_image_size, rgb_to_grayscale, to_grayscale, to_tensor  # usort: skip

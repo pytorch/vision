@@ -114,7 +114,7 @@ class RandomPhotometricDistort(Transform):
 
     def _permute_channels(self, inpt: Any, permutation: torch.Tensor) -> Any:
         if isinstance(inpt, PIL.Image.Image):
-            inpt = F.to_image_tensor(inpt)
+            inpt = F.pil_to_tensor(inpt)
 
         output = inpt[..., permutation, :, :]
 

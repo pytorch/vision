@@ -853,7 +853,7 @@ jobs:
     executor:
       name: windows-gpu
     environment:
-      CUDA_VERSION: "11.3"
+      CUDA_VERSION: "11.6"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -969,6 +969,7 @@ jobs:
           command: docker run -e CU_VERSION -e PYTHON_VERSION -e UNICODE_ABI -e PYTORCH_VERSION -t --gpus all -v $PWD:$PWD -w $PWD << parameters.wheel_docker_image >> .circleci/unittest/linux/scripts/setup_env.sh
       - run:
           name: Build torchvision C++ distribution and test
+          no_output_timeout: 30m
           command: docker run -e CU_VERSION -e PYTHON_VERSION -e UNICODE_ABI -e PYTORCH_VERSION -e UPLOAD_CHANNEL -t --gpus all -v $PWD:$PWD -w $PWD << parameters.wheel_docker_image >> packaging/build_cmake.sh
 
   cmake_macos_cpu:
@@ -1006,6 +1007,9 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - run:
+          name: Update CUDA driver
+          command: packaging/windows/internal/driver_update.bat
       - run:
           command: |
             set -ex

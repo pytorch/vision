@@ -475,7 +475,7 @@ def _assert_grid_transform_inputs(
     img: Tensor,
     matrix: Optional[List[float]],
     interpolation: str,
-    fill: Optional[List[float]],
+    fill: Optional[Union[int, float, List[float]]],
     supported_interpolation_modes: List[str],
     coeffs: Optional[List[float]] = None,
 ) -> None:
@@ -499,7 +499,7 @@ def _assert_grid_transform_inputs(
 
     # Check fill
     num_channels = get_dimensions(img)[0]
-    if isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
+    if fill is not None and isinstance(fill, (tuple, list)) and len(fill) > 1 and len(fill) != num_channels:
         msg = (
             "The number of elements in 'fill' cannot broadcast to match the number of "
             "channels of the image ({} != {})"
@@ -539,7 +539,9 @@ def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtyp
     return img
 
 
-def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[List[float]]) -> Tensor:
+def _apply_grid_transform(
+    img: Tensor, grid: Tensor, mode: str, fill: Optional[Union[int, float, List[float]]]
+) -> Tensor:
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [grid.dtype])
 
@@ -559,8 +561,8 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[L
         mask = img[:, -1:, :, :]  # N * 1 * H * W
         img = img[:, :-1, :, :]  # N * C * H * W
         mask = mask.expand_as(img)
-        len_fill = len(fill) if isinstance(fill, (tuple, list)) else 1
-        fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, len_fill, 1, 1).expand_as(img)
+        fill_list, len_fill = (fill, len(fill)) if isinstance(fill, (tuple, list)) else ([float(fill)], 1)
+        fill_img = torch.tensor(fill_list, dtype=img.dtype, device=img.device).view(1, len_fill, 1, 1).expand_as(img)
         if mode == "nearest":
             mask = mask < 0.5
             img[mask] = fill_img[mask]
@@ -598,7 +600,10 @@ def _gen_affine_grid(
 
 
 def affine(
-    img: Tensor, matrix: List[float], interpolation: str = "nearest", fill: Optional[List[float]] = None
+    img: Tensor,
+    matrix: List[float],
+    interpolation: str = "nearest",
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> Tensor:
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
 
@@ -648,7 +653,7 @@ def rotate(
     matrix: List[float],
     interpolation: str = "nearest",
     expand: bool = False,
-    fill: Optional[List[float]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> Tensor:
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
     w, h = img.shape[-1], img.shape[-2]
@@ -691,7 +696,10 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
 
 
 def perspective(
-    img: Tensor, perspective_coeffs: List[float], interpolation: str = "bilinear", fill: Optional[List[float]] = None
+    img: Tensor,
+    perspective_coeffs: List[float],
+    interpolation: str = "bilinear",
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> Tensor:
     if not (isinstance(img, torch.Tensor)):
         raise TypeError("Input img should be Tensor.")
@@ -948,7 +956,7 @@ def elastic_transform(
     img: Tensor,
     displacement: Tensor,
     interpolation: str = "bilinear",
-    fill: Optional[List[float]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> Tensor:
 
     if not (isinstance(img, torch.Tensor)):
