@@ -15,6 +15,16 @@ __all__ = ["SwinTransformer3d"]
 from ...utils import _log_api_usage_once
 
 
+def _get_relative_position_bias(relative_position_bias_table: torch.Tensor, window_size: List[int]):
+    window_vol = window_size[0] * window_size[1] * window_size[2]
+    relative_position_bias = relative_position_bias_table[
+        relative_position_index[:window_vol, :window_vol].flatten()  # type: ignore[index]
+    ]
+    relative_position_bias = relative_position_bias.view(window_vol, window_vol, -1)
+    relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous().unsqueeze(0)
+    return relative_position_bias
+
+
 def _compute_pad_size_3d(size_dhw: Tuple[int, int, int], patch_size: Tuple[int, int, int]) -> Tuple[int, int, int]:
     pad_size = [(patch_size[i] - size_dhw[i] % patch_size[i]) % patch_size[i] for i in range(3)]
     return pad_size[0], pad_size[1], pad_size[2]
@@ -232,6 +242,11 @@ class ShiftedWindowAttention3d(nn.Module):
         relative_position_index = relative_coords.sum(-1)  # Wd*Wh*Ww, Wd*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
+    def get_relative_position_bias(self) -> torch.Tensor:
+        return _get_relative_position_bias(
+            self.relative_position_bias_table, self.window_size  # type: ignore[arg-type]
+        )
+
     def forward(self, x: Tensor) -> Tensor:
         _, t, h, w, _ = x.shape
         size_dhw = (t, h, w)
@@ -243,12 +258,7 @@ class ShiftedWindowAttention3d(nn.Module):
                 window_size[i] = size_dhw[i]
                 shift_size[i] = 0
 
-        window_vol = window_size[0] * window_size[1] * window_size[2]
-        relative_position_bias = self.relative_position_bias_table[
-            self.relative_position_index[:window_vol, :window_vol].flatten()  # type: ignore[index]
-        ]
-        relative_position_bias = relative_position_bias.view(window_vol, window_vol, -1)
-        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous().unsqueeze(0)
+        relative_position_bias = self.get_relative_position_bias()
 
         return shifted_window_attention_3d(
             x,
