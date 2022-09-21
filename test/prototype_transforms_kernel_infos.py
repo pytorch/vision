@@ -226,7 +226,7 @@ def sample_inputs_affine_image_tensor():
         ],
         [None, (0, 0)],
     ):
-        for fill in [None, [0.5] * image_loader.num_channels]:
+        for fill in [None, 128.0, 128, [12.0], [0.5] * image_loader.num_channels]:
             yield ArgsKwargs(
                 image_loader,
                 interpolation=interpolation_mode,

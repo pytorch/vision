@@ -12,6 +12,11 @@ from ._bounding_box import BoundingBox
 from ._feature import _Feature
 
 
+# Due to torch.jit.script limitation we keep ImageType as torch.Tensor
+# instead of Union[torch.Tensor, PIL.Image.Image, features.Image]
+ImageType = torch.Tensor
+
+
 class ColorSpace(StrEnum):
     OTHER = StrEnum.auto()
     GRAY = StrEnum.auto()
@@ -31,6 +36,31 @@ class ColorSpace(StrEnum):
             return cls.RGB_ALPHA
         else:
             return cls.OTHER
+
+    @staticmethod
+    def from_tensor_shape(shape: List[int]) -> ColorSpace:
+        return _from_tensor_shape(shape)
+
+
+def _from_tensor_shape(shape: List[int]) -> ColorSpace:
+    # Needed as a standalone method for JIT
+    ndim = len(shape)
+    if ndim < 2:
+        return ColorSpace.OTHER
+    elif ndim == 2:
+        return ColorSpace.GRAY
+
+    num_channels = shape[-3]
+    if num_channels == 1:
+        return ColorSpace.GRAY
+    elif num_channels == 2:
+        return ColorSpace.GRAY_ALPHA
+    elif num_channels == 3:
+        return ColorSpace.RGB
+    elif num_channels == 4:
+        return ColorSpace.RGB_ALPHA
+    else:
+        return ColorSpace.OTHER
 
 
 class Image(_Feature):
@@ -53,7 +83,7 @@ class Image(_Feature):
         image = super().__new__(cls, data, requires_grad=requires_grad)
 
         if color_space is None:
-            color_space = cls.guess_color_space(image)
+            color_space = ColorSpace.from_tensor_shape(image.shape)  # type: ignore[arg-type]
             if color_space == ColorSpace.OTHER:
                 warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
         elif isinstance(color_space, str):
@@ -82,25 +112,6 @@ class Image(_Feature):
     @property
     def num_channels(self) -> int:
         return self.shape[-3]
-
-    @staticmethod
-    def guess_color_space(data: torch.Tensor) -> ColorSpace:
-        if data.ndim < 2:
-            return ColorSpace.OTHER
-        elif data.ndim == 2:
-            return ColorSpace.GRAY
-
-        num_channels = data.shape[-3]
-        if num_channels == 1:
-            return ColorSpace.GRAY
-        elif num_channels == 2:
-            return ColorSpace.GRAY_ALPHA
-        elif num_channels == 3:
-            return ColorSpace.RGB
-        elif num_channels == 4:
-            return ColorSpace.RGB_ALPHA
-        else:
-            return ColorSpace.OTHER
 
     def to_color_space(self, color_space: Union[str, ColorSpace], copy: bool = True) -> Image:
         if isinstance(color_space, str):
@@ -177,12 +188,9 @@ class Image(_Feature):
         if not isinstance(padding, int):
             padding = list(padding)
 
-        # PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
-        if isinstance(fill, (int, float)) or fill is None:
-            output = self._F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
-        else:
-            output = self._F._geometry._pad_with_vector_fill(self, padding, fill=fill, padding_mode=padding_mode)
+        fill = self._F._geometry._convert_fill_arg(fill)
 
+        output = self._F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
         return Image.new_like(self, output)
 
     def rotate(
