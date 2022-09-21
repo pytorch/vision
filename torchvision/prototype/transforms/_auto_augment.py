@@ -1,5 +1,4 @@
 import math
-import numbers
 from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import PIL.Image
@@ -10,7 +9,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.prototype.transforms.functional._meta import get_chw
 
-from ._utils import _isinstance
+from ._utils import _isinstance, _setup_fill_arg, FillType
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -21,14 +20,11 @@ class _AutoAugmentBase(Transform):
         self,
         *,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[FillType, Dict[Type, FillType]] = 0,
     ) -> None:
         super().__init__()
         self.interpolation = interpolation
-
-        if not isinstance(fill, (numbers.Number, tuple, list)):
-            raise TypeError("Got inappropriate fill arg")
-        self.fill = fill
+        self.fill = _setup_fill_arg(fill)
 
     def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
         keys = tuple(dct.keys())
@@ -63,18 +59,19 @@ class _AutoAugmentBase(Transform):
 
     def _apply_image_transform(
         self,
-        image: Any,
+        image: Union[torch.Tensor, PIL.Image.Image, features.Image],
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Union[int, float, Sequence[int], Sequence[float]],
+        fill: Dict[Type, FillType],
     ) -> Any:
 
+        fill_ = fill[type(image)]
         # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
         # So, we have to put fill as None if fill == 0
         # This is due to BC with stable API which has fill = None by default
-        fill_ = F._geometry._convert_fill_arg(fill)
-        if isinstance(fill, int) and fill == 0:
+        fill_ = F._geometry._convert_fill_arg(fill_)
+        if isinstance(fill_, int) and fill_ == 0:
             fill_ = None
 
         if transform_id == "Identity":
@@ -286,7 +283,7 @@ class AutoAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         id, image = self._extract_image(sample)
-        num_channels, height, width = get_chw(image)
+        _, height, width = get_chw(image)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
