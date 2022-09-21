@@ -379,6 +379,7 @@ def affine_mask(
     translate: List[float],
     scale: float,
     shear: List[float],
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
@@ -394,6 +395,7 @@ def affine_mask(
         scale=scale,
         shear=shear,
         interpolation=InterpolationMode.NEAREST,
+        fill=fill,
         center=center,
     )
 
@@ -541,6 +543,7 @@ def rotate_mask(
     mask: torch.Tensor,
     angle: float,
     expand: bool = False,
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
@@ -554,6 +557,7 @@ def rotate_mask(
         angle=angle,
         expand=expand,
         interpolation=InterpolationMode.NEAREST,
+        fill=fill,
         center=center,
     )
 
@@ -849,7 +853,11 @@ def perspective_bounding_box(
     ).view(original_shape)
 
 
-def perspective_mask(mask: torch.Tensor, perspective_coeffs: List[float]) -> torch.Tensor:
+def perspective_mask(
+    mask: torch.Tensor,
+    perspective_coeffs: List[float],
+    fill: Optional[Union[int, float, List[float]]] = None,
+) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -857,7 +865,7 @@ def perspective_mask(mask: torch.Tensor, perspective_coeffs: List[float]) -> tor
         needs_squeeze = False
 
     output = perspective_image_tensor(
-        mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST
+        mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST, fill=fill
     )
 
     if needs_squeeze:
@@ -944,14 +952,18 @@ def elastic_bounding_box(
     ).view(original_shape)
 
 
-def elastic_mask(mask: torch.Tensor, displacement: torch.Tensor) -> torch.Tensor:
+def elastic_mask(
+    mask: torch.Tensor,
+    displacement: torch.Tensor,
+    fill: Optional[Union[int, float, List[float]]] = None,
+) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
     else:
         needs_squeeze = False
 
-    output = elastic_image_tensor(mask, displacement=displacement, interpolation=InterpolationMode.NEAREST)
+    output = elastic_image_tensor(mask, displacement=displacement, interpolation=InterpolationMode.NEAREST, fill=fill)
 
     if needs_squeeze:
         output = output.squeeze(0)
