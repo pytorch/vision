@@ -9,11 +9,8 @@ from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F
 
-KERNEL_INFOS = KERNEL_INFOS[-3:]
 
-
-def test_coverage(maybe_skip):
-    maybe_skip(None)
+def test_coverage():
     tested = {info.kernel_name for info in KERNEL_INFOS}
     exposed = {
         name
@@ -29,20 +26,6 @@ def test_coverage(maybe_skip):
             }
         )
         and name not in {"to_image_tensor"}
-        # TODO: The list below should be quickly reduced in the transition period. There is nothing that prevents us
-        #  from adding `KernelInfo`'s for these kernels other than time.
-        and name
-        not in {
-            "adjust_brightness_image_tensor",
-            "adjust_contrast_image_tensor",
-            "adjust_gamma_image_tensor",
-            "adjust_hue_image_tensor",
-            "adjust_saturation_image_tensor",
-            "clamp_bounding_box",
-            "five_crop_image_tensor",
-            "normalize_image_tensor",
-            "ten_crop_image_tensor",
-        }
     }
 
     needlessly_ignored = tested - exposed
