@@ -212,8 +212,11 @@ def evaluate(model, loader, args, writter=None, step=None):
             f.write("{\n")
             f.write(f"\t{config_cascades}: {{\n")
             for config_iters in metric_log_dict[config_cascades]:
-                f.write(f"\t\t{config_iters}: {metric_log_dict[config_cascades][config_iters]}\n")
-            f.write("\t}\n")
+                # convert every metric to 4 decimal places
+                metrics = metric_log_dict[config_cascades][config_iters]
+                metrics = {k: float(f"{v:.3f}") for k, v in metrics.items()}
+                f.write(f"\t\t{config_iters}: {metrics}\n")
+            f.write("\t},\n")
             f.write("}\n")
             
 

@@ -463,10 +463,6 @@ def main(args):
         model_without_ddp = model
 
     os.makedirs(args.checkpoint_dir, exist_ok=True)
-    # load checkpoints if needed
-    if args.resume is not None:
-        checkpoint = torch.load(args.resume, map_location="cpu")
-        model_without_ddp.load_state_dict(checkpoint["model"])
         
     val_loaders = {
         name: make_eval_loader(name, args) for name in args.test_datasets
@@ -493,14 +489,26 @@ def main(args):
 
     # initialize the learning rate schedule
     scheduler = make_lr_schedule(args, optimizer)
-
+    
     # load them from checkpoint if need
-    if args.resume is not None and not args.finetune:
-        optimizer.load_state_dict(checkpoint["optimizer"])
-        scheduler.load_state_dict(checkpoint["scheduler"])
-        args.start_step = checkpoint["step"] + 1
-    else:
-        args.start_step = 0
+    args.start_step = 0
+    if args.resume_path is not None:
+        checkpoint = torch.load(args.resume_path, map_location="cpu")
+        if "model" in checkpoint:
+            # this means the user requested to resume from a training checkpoint
+            model_without_ddp.load_state_dict(checkpoint["model"])
+            optimizer.load_state_dict(checkpoint["optimizer"])
+            scheduler.load_state_dict(checkpoint["scheduler"])
+            # this means the user wants to continue training from where it was left off
+            if args.resume_schedule:
+                args.start_step = checkpoint["step"] + 1        
+                # modify starting point of the dat
+                sample_start_step = args.start_step * args.batch_size * args.world_size
+                dataset = dataset[sample_start_step:]
+        else:
+            # this means the user wants to finetune on top of a model state dict
+            # and that no other changes are required
+            model_without_ddp.load_state_dict(checkpoint)
 
     torch.backends.cudnn.benchmark = True
 
@@ -527,8 +535,6 @@ def main(args):
         pin_memory=True,
         num_workers=args.workers,
     )
-    
-  
 
     # intialize the logger
     if args.tensorboard_summaries:
@@ -577,7 +583,7 @@ def get_args_parser(add_help=True):
         nargs="+",
         default=["crestereo"],
         help="dataset(s) to train on",
-        choices=["crestereo", "eth3d-train", "middlebury2014-train-ambient", "middlebury2014-other", "instereo2k", "fallingthings", "carla-highres", "sintel"],
+        choices=["crestereo", "eth3d-train", "middlebury2014-train-ambient", "middlebury2014-other", "instereo2k", "fallingthings", "carla-highres", "sintel", "sceneflow-monkaa", "sceneflow-driving"],
     )
     parser.add_argument(
         "--dataset-steps", type=int, nargs="+", default=[300_000], help="number of steps for each dataset"
@@ -745,6 +751,8 @@ def get_args_parser(add_help=True):
 
     # weights API
     parser.add_argument("--weights", type=str, default=None, help="weights API url")
+    parser.add_argument("--resume-path", type=str, default=None, help="a path from which to resume or start fine-tuning")
+    parser.add_argument("--resume-schedule", action="store_true", help="resume optimizer state")
     
     # padder parameters
     parser.add_argument("--padder-type", type=str, default="kitti", help="padder type", choices=["kitti", "sintel"])
