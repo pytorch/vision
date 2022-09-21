@@ -2,7 +2,7 @@
 This file is part of the private API. Please do not use directly these classes as they will be modified on
 future versions without warning. The classes should be accessed only via the transforms argument of Weights.
 """
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import PIL.Image
 
@@ -25,10 +25,14 @@ class StereoMatching(torch.nn.Module):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
+
+        # pacify mypy
+        self.resize_size: Union[None, List]
+
         if resize_size is not None:
-            self.resize_size = list(resize_size)  # type: ignore
+            self.resize_size = list(resize_size)
         else:
-            self.resize_size = None  # type: ignore
+            self.resize_size = None
 
         self.mean = list(mean)
         self.std = list(std)
