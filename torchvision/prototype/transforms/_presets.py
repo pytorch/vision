@@ -4,6 +4,8 @@ future versions without warning. The classes should be accessed only via the tra
 """
 from typing import Optional, Tuple
 
+import PIL.Image
+
 import torch
 from torch import Tensor
 
@@ -23,14 +25,18 @@ class StereoMatching(torch.nn.Module):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
-        self.resize_size = list(resize_size)  # doing this for mypy
+        if resize_size is not None:
+            self.resize_size = list(resize_size)
+        else:
+            self.resize_size = None
+
         self.mean = list(mean)
         self.std = list(std)
         self.interpolation = interpolation
         self.use_gray_scale = use_gray_scale
 
     def forward(self, left_image: Tensor, right_image: Tensor) -> Tuple[Tensor, Tensor]:
-        def _process_image(img) -> Tensor:
+        def _process_image(img: PIL.Image.Image) -> Tensor:
             if self.resize_size is not None:
                 img = F.resize(img, self.resize_size, interpolation=self.interpolation)
             if not isinstance(img, Tensor):
