@@ -20,11 +20,11 @@ class _AutoAugmentBase(Transform):
         self,
         *,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Optional[Union[FillType, Dict[Type, FillType]]] = None,
     ) -> None:
         super().__init__()
         self.interpolation = interpolation
-        self.fill = _setup_fill_arg(fill)
+        self.fill = _setup_fill_arg(fill) if fill is not None else fill
 
     def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
         keys = tuple(dct.keys())
@@ -63,16 +63,10 @@ class _AutoAugmentBase(Transform):
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Dict[Type, FillType],
+        fill: Optional[Dict[Type, FillType]],
     ) -> Any:
-
-        fill_ = fill[type(image)]
-        # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
-        # So, we have to put fill as None if fill == 0
-        # This is due to BC with stable API which has fill = None by default
+        fill_ = fill[type(image)] if fill is not None else fill
         fill_ = F._geometry._convert_fill_arg(fill_)
-        if isinstance(fill_, int) and fill_ == 0:
-            fill_ = None
 
         if transform_id == "Identity":
             return image
@@ -183,7 +177,7 @@ class AutoAugment(_AutoAugmentBase):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Optional[Union[FillType, Dict[Type, FillType]]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -343,7 +337,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Optional[Union[FillType, Dict[Type, FillType]]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -399,7 +393,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         self,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Optional[Union[FillType, Dict[Type, FillType]]] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -459,7 +453,7 @@ class AugMix(_AutoAugmentBase):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Optional[Union[FillType, Dict[Type, FillType]]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10
