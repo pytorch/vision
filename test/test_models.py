@@ -744,7 +744,7 @@ def test_detection_model(model_fn, dev):
     # every time we change the default weight
     weights = models.get_model_weights(model_name).DEFAULT
     # Set higher box_score_thresh
-    score_thresh = 0.4
+    score_thresh = 0.35
     if model_name.startswith("fcos"):
         model = model_fn(weights=weights, score_thresh=score_thresh)
     else:
@@ -754,8 +754,8 @@ def test_detection_model(model_fn, dev):
     # x = torch.rand(input_shape).to(device=dev)
 
     # Use real input
-    # img = Image.open(GRACE_HOPPER)
-    img = read_image(GRACE_HOPPER)
+    img = Image.open(GRACE_HOPPER)
+    # img = read_image(GRACE_HOPPER)
     preprocess = weights.transforms()
     x = preprocess(img).to(device=dev)
 
