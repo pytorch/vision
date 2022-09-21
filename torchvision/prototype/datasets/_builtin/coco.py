@@ -17,9 +17,7 @@ from torchdata.datapipes.iter import (
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
-    read_categories_file,
     close_buffer,
-    path_accessor,
     hint_sharding,
     hint_shuffling,
     INFINITE_BUFFER_SIZE,
