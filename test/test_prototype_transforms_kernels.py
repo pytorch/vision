@@ -159,7 +159,7 @@ class TestCommon:
         output = info.kernel(input, *other_args, **kwargs)
 
         assert output.dtype == input.dtype
-        assert output.device == torch.device(device)
+        assert output.device == input.device
 
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),

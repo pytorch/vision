@@ -1024,6 +1024,7 @@ KERNEL_INFOS.append(
     KernelInfo(
         F.gaussian_blur_image_tensor,
         sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
     )
 )
 
