@@ -25,7 +25,7 @@ def test_coverage():
                 "mask",
             }
         )
-        and name not in {"to_image_tensor"}
+        and name != "to_image_tensor"
     }
 
     needlessly_ignored = tested - exposed
