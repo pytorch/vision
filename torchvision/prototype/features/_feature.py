@@ -10,6 +10,11 @@ from torchvision.transforms import InterpolationMode
 F = TypeVar("F", bound="_Feature")
 
 
+# Due to torch.jit.script limitation we keep DType as torch.Tensor
+# instead of Union[torch.Tensor, PIL.Image.Image, features._Feature]
+DType = torch.Tensor
+
+
 def is_simple_tensor(inpt: Any) -> bool:
     return isinstance(inpt, torch.Tensor) and not isinstance(inpt, _Feature)
 

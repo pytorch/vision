@@ -74,7 +74,7 @@ from ._geometry import (
     five_crop,
     five_crop_image_pil,
     five_crop_image_tensor,
-    hflip,
+    hflip,  # TODO: Consider moving all pure alias definitions at the bottom of the file
     horizontal_flip,
     horizontal_flip_bounding_box,
     horizontal_flip_image_pil,

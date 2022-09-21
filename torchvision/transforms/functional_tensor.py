@@ -499,7 +499,7 @@ def _assert_grid_transform_inputs(
 
     # Check fill
     num_channels = get_dimensions(img)[0]
-    if fill is not None and isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
+    if fill is not None and isinstance(fill, (tuple, list)) and len(fill) > 1 and len(fill) != num_channels:
         msg = (
             "The number of elements in 'fill' cannot broadcast to match the number of "
             "channels of the image ({} != {})"
