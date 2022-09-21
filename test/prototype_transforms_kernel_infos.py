@@ -1223,3 +1223,34 @@ KERNEL_INFOS.append(
         sample_inputs_fn=sample_inputs_erase_image_tensor,
     )
 )
+
+_ADJUST_BRIGHTNESS_FACTORS = [0.1, 0.5]
+
+
+def sample_inputs_adjust_brightness_image_tensor():
+    for image_loader in make_image_loaders(
+        sizes=["random"],
+        color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB),
+        # FIXME: kernel should support arbitrary batch sizes
+    ):
+        yield ArgsKwargs(image_loader, brightness_factor=_ADJUST_BRIGHTNESS_FACTORS[0])
+
+
+def reference_inputs_adjust_brightness_image_tensor():
+    for image_loader, brightness_factor in itertools.product(
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
+        _ADJUST_BRIGHTNESS_FACTORS,
+    ):
+        yield ArgsKwargs(image_loader, brightness_factor=brightness_factor)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.adjust_brightness_image_tensor,
+        kernel_name="adjust_brightness_image_tensor",
+        sample_inputs_fn=sample_inputs_adjust_brightness_image_tensor,
+        reference_fn=pil_reference_wrapper(F.adjust_brightness_image_pil),
+        reference_inputs_fn=reference_inputs_adjust_brightness_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)
