@@ -1,7 +1,9 @@
+from collections import defaultdict
+
 import torch
 from torchvision.prototype import features, transforms as T
 from torchvision.prototype.transforms import functional as F
-from transforms import RandomCrop
+from transforms import PadIfSmaller
 
 
 class WrapIntoFeatures(T.Transform):
@@ -20,7 +22,10 @@ class SegmentationPresetTrain(T.Compose):
             transforms.append(T.RandomHorizontalFlip(hflip_prob))
         transforms.extend(
             [
-                RandomCrop(crop_size, pad_if_needed=True),
+                # We need a custom pad transform here, since the padding we want to perform here is fundamentally
+                # different from the padding in `RandomCrop` if `pad_if_needed=True`.
+                PadIfSmaller(crop_size, fill=defaultdict(lambda: 0, {features.Mask: 255})),
+                T.RandomCrop(crop_size),
                 T.ToImageTensor(),
                 T.ConvertImageDtype(torch.float),
                 T.Normalize(mean=mean, std=std),
