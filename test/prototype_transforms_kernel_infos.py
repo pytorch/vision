@@ -1341,3 +1341,18 @@ KERNEL_INFOS.append(
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
     )
 )
+
+
+def sample_inputs_clamp_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders():
+        yield ArgsKwargs(
+            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.image_size
+        )
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.clamp_bounding_box,
+        sample_inputs_fn=sample_inputs_clamp_bounding_box,
+    )
+)
