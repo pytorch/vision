@@ -762,7 +762,7 @@ def perspective_image_pil(
     img: PIL.Image.Image,
     perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BICUBIC,
-    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> PIL.Image.Image:
     return _FP.perspective(img, perspective_coeffs, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
