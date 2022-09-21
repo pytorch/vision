@@ -26,9 +26,9 @@ class StereoMatching(torch.nn.Module):
     ) -> None:
         super().__init__()
         if resize_size is not None:
-            self.resize_size = list(resize_size)
+            self.resize_size = list(resize_size)  # type: ignore
         else:
-            self.resize_size = None
+            self.resize_size = None  # type: ignore
 
         self.mean = list(mean)
         self.std = list(std)
