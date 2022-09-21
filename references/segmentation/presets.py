@@ -2,14 +2,7 @@ from collections import defaultdict
 
 import torch
 from torchvision.prototype import features, transforms as T
-from torchvision.prototype.transforms import functional as F
-from transforms import PadIfSmaller
-
-
-class WrapIntoFeatures(T.Transform):
-    def forward(self, sample):
-        image, mask = sample
-        return image, features.Mask(F.to_image_tensor(mask).squeeze(0), dtype=torch.int64)
+from transforms import PadIfSmaller, WrapIntoFeatures
 
 
 class SegmentationPresetTrain(T.Compose):
