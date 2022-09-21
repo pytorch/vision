@@ -35,42 +35,10 @@ def test_coverage():
             "adjust_gamma_image_tensor",
             "adjust_hue_image_tensor",
             "adjust_saturation_image_tensor",
-            "adjust_sharpness_image_tensor",
-            "autocontrast_image_tensor",
-            "center_crop_bounding_box",
-            "center_crop_image_tensor",
-            "center_crop_mask",
             "clamp_bounding_box",
-            "crop_bounding_box",
-            "crop_image_tensor",
-            "crop_mask",
-            "elastic_bounding_box",
-            "elastic_image_tensor",
-            "elastic_mask",
-            "equalize_image_tensor",
-            "erase_image_tensor",
             "five_crop_image_tensor",
-            "gaussian_blur_image_tensor",
-            "invert_image_tensor",
             "normalize_image_tensor",
-            "pad_bounding_box",
-            "pad_image_tensor",
-            "pad_mask",
-            "perspective_bounding_box",
-            "perspective_image_tensor",
-            "perspective_mask",
-            "posterize_image_tensor",
-            "resized_crop_bounding_box",
-            "resized_crop_image_tensor",
-            "resized_crop_mask",
-            "rotate_bounding_box",
-            "rotate_image_tensor",
-            "rotate_mask",
-            "solarize_image_tensor",
             "ten_crop_image_tensor",
-            "vertical_flip_bounding_box",
-            "vertical_flip_image_tensor",
-            "vertical_flip_mask",
         }
     }
 
@@ -191,7 +159,7 @@ class TestCommon:
         output = info.kernel(input, *other_args, **kwargs)
 
         assert output.dtype == input.dtype
-        assert output.device == torch.device(device)
+        assert output.device == input.device
 
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
