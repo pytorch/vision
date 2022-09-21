@@ -24,7 +24,7 @@ class _AutoAugmentBase(Transform):
     ) -> None:
         super().__init__()
         self.interpolation = interpolation
-        self.fill = _setup_fill_arg(fill) if fill is not None else fill
+        self.fill = _setup_fill_arg(fill)
 
     def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
         keys = tuple(dct.keys())
@@ -63,9 +63,9 @@ class _AutoAugmentBase(Transform):
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Optional[Dict[Type, FillType]],
+        fill: Union[Dict[Type, FillType], Dict[Type, None]],
     ) -> Any:
-        fill_ = fill[type(image)] if fill is not None else fill
+        fill_ = fill[type(image)]
         fill_ = F._geometry._convert_fill_arg(fill_)
 
         if transform_id == "Identity":

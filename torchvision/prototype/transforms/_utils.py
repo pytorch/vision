@@ -1,7 +1,7 @@
 import numbers
 from collections import defaultdict
 
-from typing import Any, Callable, Dict, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 
@@ -21,23 +21,25 @@ DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
 FillType = Union[int, float, Sequence[int], Sequence[float]]
 
 
-def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
+def _check_fill_arg(fill: Optional[Union[FillType, Dict[Type, FillType]]]) -> None:
     if isinstance(fill, dict):
         for key, value in fill.items():
             # Check key for type
             _check_fill_arg(value)
     else:
-        if not isinstance(fill, (numbers.Number, tuple, list)):
+        if fill is not None and not isinstance(fill, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate fill arg")
 
 
-def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillType]:
+def _setup_fill_arg(
+    fill: Optional[Union[FillType, Dict[Type, FillType]]]
+) -> Union[Dict[Type, FillType], Dict[Type, None]]:
     _check_fill_arg(fill)
 
     if isinstance(fill, dict):
         return fill
 
-    return defaultdict(lambda: fill)  # type: ignore[arg-type, return-value]
+    return defaultdict(lambda: fill)  # type: ignore[return-value]
 
 
 def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
