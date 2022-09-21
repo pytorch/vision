@@ -148,9 +148,7 @@ def get_train_dataset(dataset_root: str, args: argparse.Namespace) -> torch.util
 def _evaluate(
     model, args, val_loader, *, padder_mode, print_freq=10, writter=None, step=None, iterations=None, batch_size=None, header=None
 ):
-    """Helper function to compute various metrics (epe, etc.) for a model on a given dataset.
-    We process as many samples as possible with ddp.
-    """
+    """Helper function to compute various metrics (epe, etc.) for a model on a given dataset."""
     model.eval()
     header = header or "Test:"
     device = torch.device(args.device)
@@ -180,7 +178,7 @@ def _evaluate(
             for name in metrics:
                 logger.meters[name].update(metrics[name], n=1)
     
-    num_processed_samples = utils.reduce_across_processes(num_processed_samples) / args.world_size
+    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
     
     print("Num_processed_samples: ", num_processed_samples)
     if (
@@ -191,7 +189,7 @@ def _evaluate(
         warnings.warn(
             f"Number of processed samples {num_processed_samples} is different"
             f"from the dataset size {len(val_loader.dataset)}. This may happen if"
-            "the dataset is not divisible by the batch size. Try lowering the batch size for more accurate results."
+            "the dataset is not divisible by the batch size. Try lowering the batch size or GPU number for more accurate results."
         )
 
     if writter is not None and args.rank == 0:
@@ -202,10 +200,7 @@ def _evaluate(
     logger.synchronize_between_processes()
     print(header, logger)
 
-
-def evaluate(model, args, writter=None, step=None):
-    val_datasets = args.test_datasets or []
-
+def make_eval_loader(dataset_name: str, args: argparse.Namespace) -> torch.utils.data.DataLoader:
     if args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
@@ -219,49 +214,47 @@ def evaluate(model, args, writter=None, step=None):
             
             if disp is not None and not isinstance(disp, torch.Tensor):                
                 disp = torch.from_numpy(disp)
-                if scale_factor != 1:
+                if W_t != W_o:
                     disp = resize(disp, (H_t, W_t), mode=InterpolationMode.BILINEAR) * scale_factor
             if valid_disp_mask is not None and not isinstance(valid_disp_mask, torch.Tensor):
                 valid_disp_mask = torch.from_numpy(valid_disp_mask)
-                if scale_factor != 1:
+                if W_t != W_o:
                     valid_disp_mask = resize(valid_disp_mask, (H_t, W_t), mode=InterpolationMode.NEAREST)
             return image_left, image_right, disp, valid_disp_mask
-
     else:
         preprocessing = make_eval_transform(args)
 
-    for name in val_datasets:
-        val_dataset = make_dataset(name, args.dataset_root, transforms=preprocessing)
-        effective_batch_size = args.batch_size * args.world_size
-        can_do_distributed_test = effective_batch_size < len(val_dataset)
-        
-        if args.distributed and can_do_distributed_test:
-            sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=False)
-        else:
-            sampler = torch.utils.data.SequentialSampler(val_dataset)
-        
-        val_loader = torch.utils.data.DataLoader(
-            val_dataset,
-            sampler=sampler,
-            batch_size=args.batch_size,
-            pin_memory=True,
-            num_workers=args.workers,
-        )
-        
+    val_dataset = make_dataset(dataset_name, args.dataset_root, transforms=preprocessing)    
+    if args.distributed:
+        sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=False)
+    else:
+        sampler = torch.utils.data.SequentialSampler(val_dataset)
+    
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset,
+        sampler=sampler,
+        batch_size=args.batch_size,
+        pin_memory=True,
+        num_workers=args.workers,
+    )
+    
+    return val_loader
+
+def evaluate(model, loaders, args, writter=None, step=None):
+    for loader_name, loader in loaders.items():
         _evaluate(
             model,
             args,
-            val_loader,
+            loader,
             iterations=args.recurrent_updates,
             padder_mode=args.padder_type,
-            header=f"{name} evaluation",
+            header=f"{loader_name} evaluation",
             batch_size=args.batch_size,
             writter=writter,
             step=step,
         )
 
-
-def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args):
+def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, scaler, args):
     device = torch.device(args.device)
     # wrap the loader in a logger
     loader = iter(logger.log_every(train_loader))
@@ -418,7 +411,7 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
                 torch.save(checkpoint, Path(args.checkpoint_dir) / f"{args.name}.pth")
 
         if step % args.valid_frequency == 0:
-            evaluate(model, args, writer, step)
+            evaluate(model, val_loaders, args, writer, step)
             model.train()
             if args.freeze_batch_norm:
                 if isinstance(model, nn.parallel.DistributedDataParallel):
@@ -444,11 +437,12 @@ def run(model, optimizer, scheduler, train_loader, logger, writer, scaler, args)
     
 
 def main(args):
-    print(args)
     args.total_iterations = sum(args.dataset_steps)
 
     # intialize DDP setting
     utils.setup_ddp(args)
+    print(args)
+
     args.test_only = args.train_datasets is None
 
     # set the appropiate devices
@@ -473,10 +467,14 @@ def main(args):
     if args.resume is not None:
         checkpoint = torch.load(args.resume, map_location="cpu")
         model_without_ddp.load_state_dict(checkpoint["model"])
-
+        
+    val_loaders = {
+        name: make_eval_loader(name, args) for name in args.test_datasets
+    }
+    
     # EVAL ONLY configurations
     if args.test_only:
-        evaluate(model, args)
+        evaluate(model, val_loaders, args)
         return
 
     # Sanity check for the parameter count
@@ -529,6 +527,8 @@ def main(args):
         pin_memory=True,
         num_workers=args.workers,
     )
+    
+  
 
     # intialize the logger
     if args.tensorboard_summaries:
@@ -552,6 +552,7 @@ def main(args):
         optimizer=optimizer,
         scheduler=scheduler,
         train_loader=train_loader,
+        val_loaders=val_loaders,
         logger=logger,
         writer=writer,
         scaler=scaler,
@@ -657,7 +658,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--use-grayscale", action="store_true", help="use grayscale images instead of RGB", default=False
     )
-    parser.add_argument("--max-disparity", type=float, default=512.0, help="maximum disparity")
+    parser.add_argument("--max-disparity", type=float, default=None, help="maximum disparity")
     parser.add_argument(
         "--interpolation-strategy",
         type=str,

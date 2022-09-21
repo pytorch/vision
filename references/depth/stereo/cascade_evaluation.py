@@ -1,5 +1,4 @@
 import os
-from parsing import make_dataset, make_eval_transform
 from torch.nn import functional as F
 import torch
 import utils
@@ -7,6 +6,10 @@ import torchvision
 import torchvision.prototype.models.depth.stereo
 import warnings
 from vizualization import make_prediction_image_side_to_side
+from train import make_eval_loader
+
+from utils.metrics import AVAILABLE_METRICS
+
 
 def get_args_parser(add_help=True):
     import argparse
@@ -16,15 +19,40 @@ def get_args_parser(add_help=True):
     parser.add_argument("--dataset-root", type=str, default="/fsx/users/teodorponcu/datasets", help="root of the dataset")
     
     parser.add_argument("--checkpoint", type=str, default="", help="path to weights")
+    parser.add_argument("--weights", type=str, default=None, help="torchvision API weight")
+    parser.add_argument("--model", type=str, default="crestereo_base", help="which model to use if not speciffying a training checkpoint")
     parser.add_argument("--img-folder", type=str, default="images")
     
     parser.add_argument("--batch-size", type=int, default=1, help="batch size")
-    parser.add_argument("--num-workers", type=int, default=0, help="number of workers")
+    parser.add_argument("--workers", type=int, default=0, help="number of workers")
     
-    parser.add_argument("--resize-size", type=int, n_args='+', default=[384, 512], help="resize size")
+    parser.add_argument("--eval-size", type=int, nargs='+', default=[384, 512], help="resize size")
+    parser.add_argument(
+        "--norm-mean", type=float, nargs="+", default=[0.5, 0.5, 0.5], help="mean for image normalization"
+    )
+    parser.add_argument(
+        "--norm-std", type=float, nargs="+", default=[0.5, 0.5, 0.5], help="std for image normalization"
+    )
+    parser.add_argument(
+        "--use-grayscale", action="store_true", help="use grayscale images instead of RGB", default=False
+    )
+    parser.add_argument("--max-disparity", type=float, default=None, help="maximum disparity")
+    parser.add_argument(
+        "--interpolation-strategy",
+        type=str,
+        default="bilinear",
+        help="interpolation strategy",
+        choices=["bilinear", "bicubic", "mixed"],
+    )
+    
     parser.add_argument("--n_iterations", nargs='+', type=int, default=[10], help="number of recurent iterations")
     parser.add_argument("--n_cascades", nargs='+', type=int, default=[1], help="number of cascades")
-    parser.add_argument("--device", type=str, default="cuda", help="device to use")
+    parser.add_argument("--metrics", type=str, nargs="+", default=["mae", "rmse", "1px", "3px", "5px", "relepe"], help="metrics to log", choices=AVAILABLE_METRICS)
+    parser.add_argument("--mixed-precision", action="store_true", help="use mixed precision training")
+    
+    parser.add_argument("--world-size", type=int, default=1, help="number of distributed processes")
+    parser.add_argument("--dist-url", type=str, default="env://", help="url used to set up distributed training")
+    parser.add_argument("--device", type=str, default="cuda", help="device to use for training")
     
     parser.add_argument("--save-predictions", action="store_true", help="save predictions")
     parser.add_argument("--padder-type", type=str, default="kitti", help="padder type", choices=["kitti", "sintel"])
@@ -50,7 +78,7 @@ def cascade_inference(model, image_left, image_right, iterations, cascades):
         
     flow_init = None
     for left_image, right_image in zip(reversed(left_image_pyramid), reversed(right_image_pyramid)):
-        flow_pred = model(left_image, right_image, flow_init, iterations=iterations)
+        flow_pred = model(left_image, right_image, flow_init, num_iters=iterations)
         # flow pred is a list
         flow_init = flow_pred[-1]
         
@@ -128,87 +156,48 @@ def _evaluate(
     return logger_metrics
 
 
-def evaluate(model, args, writter=None, step=None):
-    val_datasets = args.test_datasets or []
+def evaluate(model, loader, args, writter=None, step=None):
     os.makedirs(args.img_folder, exist_ok=True)
-    
     checkpoint_name = os.path.basename(args.checkpoint)
     image_checkpoint_folder = os.path.join(args.img_folder, checkpoint_name)
-
-    if args.weights and args.test_only:
-        weights = torchvision.models.get_weight(args.weights)
-        trans = weights.transforms()
-
-        def preprocessing(image_left, image_right, disp, valid_disp_mask):
-            image_left, image_right = trans(image_left, image_right)
-            if disp is not None and not isinstance(disp, torch.Tensor):
-                disp = torch.from_numpy(disp)
-            if valid_disp_mask is not None and not isinstance(valid_disp_mask, torch.Tensor):
-                valid_disp_mask = torch.from_numpy(valid_disp_mask)
-            return image_left, image_right, disp, valid_disp_mask
-
-    else:
-        preprocessing = make_eval_transform(args)
-
+    
     metrics = {}
-    for name in val_datasets:
-        base_image_folder = os.path.join(image_checkpoint_folder, name)
-        os.makedirs(base_image_folder, exist_ok=True)
+    base_image_folder = os.path.join(image_checkpoint_folder, args.dataset)
+    os.makedirs(base_image_folder, exist_ok=True)
         
-        metrics[name] = {}
-        val_dataset = make_dataset(name, args.dataset_root, transforms=preprocessing)
-        
-        effective_batch_size = args.batch_size * args.world_size
-        can_do_distributed_test = effective_batch_size < len(val_dataset)
-        
-        if args.distributed and can_do_distributed_test:
-            sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=False)
-        else:
-            sampler = torch.utils.data.SequentialSampler(val_dataset)
-        
-        val_loader = torch.utils.data.DataLoader(
-            val_dataset,
-            sampler=sampler,
-            batch_size=args.batch_size,
-            pin_memory=True,
-            num_workers=args.workers,
-        )        
-        
-        for n_cascades in args.num_cascades:
-            for n_iters in args.num_iters:
-                
-                config = f"{n_cascades}c_{n_iters}i"
-                config_image_folder = os.path.join(base_image_folder, config)
-                os.makedirs(config_image_folder, exist_ok=True)
-                
-                metrics[name][config] = _evaluate(
-                    model,
-                    args,
-                    val_loader,
-                    iterations=args.recurrent_updates,
-                    padder_mode=args.padder_type,
-                    header=f"{name} evaluation",
-                    batch_size=args.batch_size,
-                    writter=writter,
-                    step=step,
-                    iterations=n_iters,
-                    cascades=n_cascades,
-                )
+    for n_cascades in args.n_cascades:
+        for n_iters in args.n_iterations:
+            
+            config = f"{n_cascades}c_{n_iters}i"
+            config_image_folder = os.path.join(base_image_folder, config)
+            os.makedirs(config_image_folder, exist_ok=True)
+            
+            metrics[config] = _evaluate(
+                model,
+                args,
+                loader,
+                padder_mode=args.padder_type,
+                header=f"{args.dataset} evaluation@ size:{args.eval_size} n_cascades:{n_cascades} n_iters:{n_iters}",
+                batch_size=args.batch_size,
+                writter=writter,
+                step=step,
+                iterations=n_iters,
+                cascades=n_cascades,
+            )
     
     metric_log = []
     # print the final results
-    for name in val_datasets:
-        for config in metrics[name]:
-            config_tokens = config.split("_")
-            config_iters = config_tokens[1][:-1]
-            config_cascades = config_tokens[0][:-1]
-            
-            evaluation_str = f"{name} evaluation@ size:{args.resize_size} n_cascades:{config_cascades} recurrent_updates:{config_iters}"
-            metrics_str = f"Metrics: {metrics[name][config]}"
-            metric_log.extend([evaluation_str, metrics_str])
-            
-            print(evaluation_str)
-            print(metrics_str)        
+    for config in metrics:
+        config_tokens = config.split("_")
+        config_iters = config_tokens[1][:-1]
+        config_cascades = config_tokens[0][:-1]
+        
+        evaluation_str = f"{args.dataset} evaluation@ size:{args.eval_size} n_cascades:{config_cascades} recurrent_updates:{config_iters}"
+        metrics_str = f"Metrics: {metrics[config]}"
+        metric_log.extend([evaluation_str, metrics_str])
+        
+        print(evaluation_str)
+        print(metrics_str)        
 
     eval_log_name = f"{checkpoint_name.replace('.pth', '')}_eval.log"
     print("Saving eval log to: ", eval_log_name)
@@ -217,16 +206,40 @@ def evaluate(model, args, writter=None, step=None):
             
 
 def load_checkpoint(args):
-    checkpoint = torch.load(args.checkpoint, map_location=torch.device("cpu"))
-    experiment_args = checkpoint["args"]
-    model = torchvision.prototype.models.depth.stereo.__dict__[experiment_args.model](weights=None)
-    model.load_state_dict(checkpoint["model"])
+    utils.setup_ddp(args)
+    
+    checkpoint = torch.load(args.checkpoint, map_location="cpu")
+    if not args.weights:
+        if "model" in checkpoint:
+            checkpoint = torch.load(args.checkpoint, map_location=torch.device("cpu"))
+            experiment_args = checkpoint["args"]
+            model = torchvision.prototype.models.depth.stereo.__dict__[experiment_args.model](weights=None)
+            model.load_state_dict(checkpoint["model"])
+        else:
+            model = torchvision.prototype.models.depth.stereo.__dict__[args.model](weights=None)
+            model.load_state_dict(checkpoint)
+        
+        # set the appropiate devices
+        if args.distributed and args.device == "cpu":
+            raise ValueError("The device must be cuda if we want to run in distributed mode using torchrun")
+        device = torch.device(args.device)
+    else:
+        model = torchvision.prototype.models.depth.stereo.__dict__[args.model](weights=args.weights)
+    
+    # convert to DDP if need be
+    if args.distributed:
+        model = model.to(args.device)
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+    else:
+        model.to(device)
+    
     return model
 
     
 def main(args):
     model = load_checkpoint(args)
-    evaluate(model, args)
+    loader = make_eval_loader(args.dataset, args)
+    evaluate(model, loader, args)
 
 if __name__ == "__main__":
     args = get_args_parser().parse_args()
