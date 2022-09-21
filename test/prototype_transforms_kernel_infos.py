@@ -626,11 +626,9 @@ KERNEL_INFOS.extend(
             F.crop_image_tensor,
             kernel_name="crop_image_tensor",
             sample_inputs_fn=sample_inputs_crop_image_tensor,
-            # FIXME: The PIL kernel currently diverges from the tensor kernel and  thus cannot be used as reference
-            #  See https://github.com/pytorch/vision/issues/6613
-            # reference_fn=pil_reference_wrapper(F.crop_image_pil),
-            # reference_inputs_fn=reference_inputs_crop_image_tensor,
-            # closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            reference_fn=pil_reference_wrapper(F.crop_image_pil),
+            reference_inputs_fn=reference_inputs_crop_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.crop_bounding_box,
@@ -639,11 +637,9 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.crop_mask,
             sample_inputs_fn=sample_inputs_crop_mask,
-            # FIXME: The PIL kernel currently diverges from the tensor kernel and  thus cannot be used as reference
-            #  See https://github.com/pytorch/vision/issues/6613
-            # reference_fn=pil_reference_wrapper(F.crop_image_pil),
-            # reference_inputs_fn=reference_inputs_crop_mask,
-            # closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            reference_fn=pil_reference_wrapper(F.crop_image_pil),
+            reference_inputs_fn=reference_inputs_crop_mask,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
     ]
 )
