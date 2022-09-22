@@ -45,3 +45,7 @@ xcuserdata/
 
 slurm-*
 *checkpoint
+*.pth
+events.out.tfevents.*
+*.png
+*.log
