@@ -192,7 +192,6 @@ class TestDispatchers:
         [
             F.convert_color_space,
             F.convert_image_dtype,
-            F.elastic_transform,
             F.get_dimensions,
             F.get_image_num_channels,
             F.get_image_size,
@@ -214,6 +213,7 @@ class TestDispatchers:
             (F.vflip, F.vertical_flip),
             (F.get_image_num_channels, F.get_num_channels),
             (F.to_pil_image, F.to_image_pil),
+            (F.elastic_transform, F.elastic),
         ]
     ],
 )

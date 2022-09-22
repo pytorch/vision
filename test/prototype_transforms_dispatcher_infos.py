@@ -108,6 +108,14 @@ DISPATCHER_INFOS = [
         },
     ),
     DispatcherInfo(
+        F.elastic,
+        kernels={
+            features.Image: F.elastic_image_tensor,
+            features.BoundingBox: F.elastic_bounding_box,
+            features.Mask: F.elastic_mask,
+        },
+    ),
+    DispatcherInfo(
         F.center_crop,
         kernels={
             features.Image: F.center_crop_image_tensor,
