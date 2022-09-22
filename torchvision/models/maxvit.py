@@ -59,7 +59,7 @@ class MBConv(nn.Module):
         squeeze_ratio (float): Squeeze ratio in the SE Layer.
         stride (int): Stride of the depthwise convolution.
         activation_layer (Callable[..., nn.Module]): Activation function.
-        normalization_layer (Callable[..., nn.Module]): Normalization function.
+        norm_layer (Callable[..., nn.Module]): Normalization function.
         p_stochastic_dropout (float): Probability of stochastic depth.
     """
 
@@ -290,8 +290,8 @@ class PartitionAttentionLayer(nn.Module):
         grid_size (Tuple[int, int]): Size of the grid to partition the input tensor into.
         mlp_ratio (int): Ratio of the  feature size expansion in the MLP layer.
         activation_layer (Callable[..., nn.Module]): Activation function to use.
-        normalization_layer (Callable[..., nn.Module]): Normalization function to use.
-        attn_dropout (float): Dropout probability for the attention layer.
+        norm_layer (Callable[..., nn.Module]): Normalization function to use.
+        attention_dropout (float): Dropout probability for the attention layer.
         mlp_dropout (float): Dropout probability for the MLP layer.
         p_stochastic_dropout (float): Probability of dropping out a partition.
     """
@@ -308,8 +308,8 @@ class PartitionAttentionLayer(nn.Module):
         grid_size: Tuple[int, int],
         mlp_ratio: int,
         activation_layer: Callable[..., nn.Module],
-        normalization_layer: Callable[..., nn.Module],
-        attn_dropout: float,
+        norm_layer: Callable[..., nn.Module],
+        attention_dropout: float,
         mlp_dropout: float,
         p_stochastic_dropout: float,
     ) -> None:
@@ -335,11 +335,11 @@ class PartitionAttentionLayer(nn.Module):
         self.departition_swap = SwapAxes(-2, -3) if partition_type == "grid" else nn.Identity()
 
         self.attn_layer = nn.Sequential(
-            normalization_layer(in_channels),
+            norm_layer(in_channels),
             # it's always going to be partition_size ** 2 because
             # of the axis swap in the case of grid partitioning
             RelativePositionalMultiHeadAttention(in_channels, head_dim, partition_size**2),
-            nn.Dropout(attn_dropout),
+            nn.Dropout(attention_dropout),
         )
 
         # pre-normalization similar to transformer layers
@@ -393,11 +393,11 @@ class MaxVitLayer(nn.Module):
         squeeze_ratio (float): Squeeze ratio in the SE Layer.
         stride (int): Stride of the depthwise convolution.
         activation_layer (Callable[..., nn.Module]): Activation function.
-        normalization_layer (Callable[..., nn.Module]): Normalization function.
+        norm_layer (Callable[..., nn.Module]): Normalization function.
         head_dim (int): Dimension of the attention heads.
         mlp_ratio (int): Ratio of the MLP layer.
         mlp_dropout (float): Dropout probability for the MLP layer.
-        attn_dropout (float): Dropout probability for the attention layer.
+        attention_dropout (float): Dropout probability for the attention layer.
         p_stochastic_dropout (float): Probability of stochastic depth.
         partition_size (int): Size of the partitions.
         grid_size (Tuple[int, int]): Size of the input feature grid.
@@ -412,13 +412,13 @@ class MaxVitLayer(nn.Module):
         expansion_ratio: float,
         stride: int,
         # conv + transformer parameters
-        normalization_layer: Callable[..., nn.Module],
+        norm_layer: Callable[..., nn.Module],
         activation_layer: Callable[..., nn.Module],
         # transformer parameters
         head_dim: int,
         mlp_ratio: int,
         mlp_dropout: float,
-        attn_dropout: float,
+        attention_dropout: float,
         p_stochastic_dropout: float,
         # partitioning parameters
         partition_size: int,
@@ -436,7 +436,7 @@ class MaxVitLayer(nn.Module):
             squeeze_ratio=squeeze_ratio,
             stride=stride,
             activation_layer=activation_layer,
-            norm_layer=normalization_layer,
+            norm_layer=norm_layer,
             p_stochastic_dropout=p_stochastic_dropout,
         )
         # attention layers, block -> grid
@@ -448,8 +448,8 @@ class MaxVitLayer(nn.Module):
             grid_size=grid_size,
             mlp_ratio=mlp_ratio,
             activation_layer=activation_layer,
-            normalization_layer=nn.LayerNorm,
-            attn_dropout=attn_dropout,
+            norm_layer=nn.LayerNorm,
+            attention_dropout=attention_dropout,
             mlp_dropout=mlp_dropout,
             p_stochastic_dropout=p_stochastic_dropout,
         )
@@ -461,8 +461,8 @@ class MaxVitLayer(nn.Module):
             grid_size=grid_size,
             mlp_ratio=mlp_ratio,
             activation_layer=activation_layer,
-            normalization_layer=nn.LayerNorm,
-            attn_dropout=attn_dropout,
+            norm_layer=nn.LayerNorm,
+            attention_dropout=attention_dropout,
             mlp_dropout=mlp_dropout,
             p_stochastic_dropout=p_stochastic_dropout,
         )
@@ -489,11 +489,11 @@ class MaxVitBlock(nn.Module):
         expansion_ratio (float): Expansion ratio in the bottleneck.
         squeeze_ratio (float): Squeeze ratio in the SE Layer.
         activation_layer (Callable[..., nn.Module]): Activation function.
-        normalization_layer (Callable[..., nn.Module]): Normalization function.
+        norm_layer (Callable[..., nn.Module]): Normalization function.
         head_dim (int): Dimension of the attention heads.
         mlp_ratio (int): Ratio of the MLP layer.
         mlp_dropout (float): Dropout probability for the MLP layer.
-        attn_dropout (float): Dropout probability for the attention layer.
+        attention_dropout (float): Dropout probability for the attention layer.
         p_stochastic_dropout (float): Probability of stochastic depth.
         partition_size (int): Size of the partitions.
         input_grid_size (Tuple[int, int]): Size of the input feature grid.
@@ -509,13 +509,13 @@ class MaxVitBlock(nn.Module):
         squeeze_ratio: float,
         expansion_ratio: float,
         # conv + transformer parameters
-        normalization_layer: Callable[..., nn.Module],
+        norm_layer: Callable[..., nn.Module],
         activation_layer: Callable[..., nn.Module],
         # transformer parameters
         head_dim: int,
         mlp_ratio: int,
         mlp_dropout: float,
-        attn_dropout: float,
+        attention_dropout: float,
         # partitioning parameters
         partition_size: int,
         input_grid_size: Tuple[int, int],
@@ -540,12 +540,12 @@ class MaxVitBlock(nn.Module):
                     squeeze_ratio=squeeze_ratio,
                     expansion_ratio=expansion_ratio,
                     stride=stride,
-                    normalization_layer=normalization_layer,
+                    norm_layer=norm_layer,
                     activation_layer=activation_layer,
                     head_dim=head_dim,
                     mlp_ratio=mlp_ratio,
                     mlp_dropout=mlp_dropout,
-                    attn_dropout=attn_dropout,
+                    attention_dropout=attention_dropout,
                     partition_size=partition_size,
                     grid_size=self.grid_size,
                     p_stochastic_dropout=p,
@@ -571,19 +571,19 @@ class MaxVit(nn.Module):
         input_size (Tuple[int, int]): Size of the input image.
         input_channels (int): Number of input channels.
         stem_channels (int): Number of channels in the stem.
-        num_classes (int): Number of classes.
+        partition_size (int): Size of the partitions.
         block_channels (List[int]): Number of channels in each block.
         block_layers (List[int]): Number of layers in each block.
         stochastic_depth_prob (float): Probability of stochastic depth. Expands to a list of probabilities for each layer that scales linearly to the specified value.
-        squeeze_ratio (float): Squeeze ratio in the SE Layer.
-        expansion_ratio (float): Expansion ratio in the MBConv bottleneck.
-        normalization_layer (Callable[..., nn.Module]): Normalization function.
-        activation_layer (Callable[..., nn.Module]): Activation function.
+        squeeze_ratio (float): Squeeze ratio in the SE Layer. Default: 0.25.
+        expansion_ratio (float): Expansion ratio in the MBConv bottleneck. Default: 4.
+        norm_layer (Callable[..., nn.Module]): Normalization function. Default: None (setting to None will produce a `BatchNorm2d(eps=1e-3, momentum=0.99)`).
+        activation_layer (Callable[..., nn.Module]): Activation function Default: nn.GELU.
         head_dim (int): Dimension of the attention heads.
-        mlp_ratio (int): Expansion ratio of the MLP layer.
-        mlp_dropout (float): Dropout probability for the MLP layer.
-        attn_dropout (float): Dropout probability for the attention layer.
-        partition_size (int): Size of the partitions.
+        mlp_ratio (int): Expansion ratio of the MLP layer. Default: 4.
+        mlp_dropout (float): Dropout probability for the MLP layer. Default: 0.0.
+        attention_dropout (float): Dropout probability for the attention layer. Default: 0.0.
+        num_classes (int): Number of classes. Default: 1000.
     """
 
     def __init__(
@@ -592,7 +592,6 @@ class MaxVit(nn.Module):
         input_size: Tuple[int, int],
         # stem and task parameters
         stem_channels: int,
-        num_classes: int,
         # partitioning parameters
         partition_size: int,
         # block parameters
@@ -602,9 +601,9 @@ class MaxVit(nn.Module):
         head_dim: int,
         stochastic_depth_prob: float,
         # conv + transformer parameters
-        # normalization_layer is applied only to the conv layers
+        # norm_layer is applied only to the conv layers
         # activation_layer is applied both to conv and transformer layers
-        normalization_layer: Optional[Callable[..., nn.Module]] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
         activation_layer: Callable[..., nn.Module] = nn.GELU,
         # conv parameters
         squeeze_ratio: float = 0.25,
@@ -612,7 +611,9 @@ class MaxVit(nn.Module):
         # transformer parameters
         mlp_ratio: int = 4,
         mlp_dropout: float = 0.0,
-        attn_dropout: float = 0.0,
+        attention_dropout: float = 0.0,
+        # task parameters
+        num_classes: int = 1000,
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
@@ -621,8 +622,8 @@ class MaxVit(nn.Module):
 
         # https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L1029-L1030
         # for the exact parameters used in batchnorm
-        if normalization_layer is None:
-            normalization_layer = partial(nn.BatchNorm2d, eps=1e-3, momentum=0.99)
+        if norm_layer is None:
+            norm_layer = partial(nn.BatchNorm2d, eps=1e-3, momentum=0.99)
 
         # Make sure input size will be divisible by the partition size in all blocks
         # Undefined behavior if H or W are not divisible by p
@@ -643,7 +644,7 @@ class MaxVit(nn.Module):
                 stem_channels,
                 3,
                 stride=2,
-                norm_layer=normalization_layer,
+                norm_layer=norm_layer,
                 activation_layer=activation_layer,
                 bias=False,
                 inplace=None,
@@ -675,12 +676,12 @@ class MaxVit(nn.Module):
                     out_channels=out_channel,
                     squeeze_ratio=squeeze_ratio,
                     expansion_ratio=expansion_ratio,
-                    normalization_layer=normalization_layer,
+                    norm_layer=norm_layer,
                     activation_layer=activation_layer,
                     head_dim=head_dim,
                     mlp_ratio=mlp_ratio,
                     mlp_dropout=mlp_dropout,
-                    attn_dropout=attn_dropout,
+                    attention_dropout=attention_dropout,
                     partition_size=partition_size,
                     input_grid_size=input_size,
                     n_layers=num_layers,
