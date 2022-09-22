@@ -17,6 +17,7 @@ from torchvision.transforms.functional import (
 from torchvision.transforms.functional_tensor import _parse_pad_padding
 
 from ._meta import convert_format_bounding_box, get_dimensions_image_pil, get_dimensions_image_tensor
+from ._utils import DType, ImageType
 
 
 horizontal_flip_image_tensor = _FT.hflip
@@ -43,7 +44,7 @@ def horizontal_flip_bounding_box(
     ).view(shape)
 
 
-def horizontal_flip(inpt: features.DType) -> features.DType:
+def horizontal_flip(inpt: DType) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return horizontal_flip_image_tensor(inpt)
     elif isinstance(inpt, features._Feature):
@@ -76,7 +77,7 @@ def vertical_flip_bounding_box(
     ).view(shape)
 
 
-def vertical_flip(inpt: features.DType) -> features.DType:
+def vertical_flip(inpt: DType) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return vertical_flip_image_tensor(inpt)
     elif isinstance(inpt, features._Feature):
@@ -153,12 +154,12 @@ def resize_bounding_box(
 
 
 def resize(
-    inpt: features.DType,
+    inpt: DType,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,
-) -> features.DType:
+) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         antialias = False if antialias is None else antialias
         return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
@@ -421,7 +422,7 @@ def _convert_fill_arg(
 
 
 def affine(
-    inpt: features.DType,
+    inpt: DType,
     angle: float,
     translate: List[float],
     scale: float,
@@ -429,7 +430,7 @@ def affine(
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
-) -> features.DType:
+) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return affine_image_tensor(
             inpt,
@@ -567,13 +568,13 @@ def rotate_mask(
 
 
 def rotate(
-    inpt: features.DType,
+    inpt: DType,
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
     fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
-) -> features.DType:
+) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
     elif isinstance(inpt, features._Feature):
@@ -698,11 +699,11 @@ def pad_bounding_box(
 
 
 def pad(
-    inpt: features.DType,
+    inpt: DType,
     padding: Union[int, List[int]],
     fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
-) -> features.DType:
+) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
 
@@ -739,7 +740,7 @@ def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) 
     return crop_image_tensor(mask, top, left, height, width)
 
 
-def crop(inpt: features.DType, top: int, left: int, height: int, width: int) -> features.DType:
+def crop(inpt: DType, top: int, left: int, height: int, width: int) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return crop_image_tensor(inpt, top, left, height, width)
     elif isinstance(inpt, features._Feature):
@@ -874,11 +875,11 @@ def perspective_mask(
 
 
 def perspective(
-    inpt: features.DType,
+    inpt: DType,
     perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: Optional[Union[int, float, List[float]]] = None,
-) -> features.DType:
+) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, features._Feature):
@@ -968,11 +969,11 @@ def elastic_mask(
 
 
 def elastic(
-    inpt: features.DType,
+    inpt: DType,
     displacement: torch.Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: Optional[Union[int, float, List[float]]] = None,
-) -> features.DType:
+) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return elastic_image_tensor(inpt, displacement, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, features._Feature):
@@ -1069,7 +1070,7 @@ def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor
     return output
 
 
-def center_crop(inpt: features.DType, output_size: List[int]) -> features.DType:
+def center_crop(inpt: DType, output_size: List[int]) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return center_crop_image_tensor(inpt, output_size)
     elif isinstance(inpt, features._Feature):
@@ -1132,7 +1133,7 @@ def resized_crop_mask(
 
 
 def resized_crop(
-    inpt: features.DType,
+    inpt: DType,
     top: int,
     left: int,
     height: int,
@@ -1140,7 +1141,7 @@ def resized_crop(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     antialias: Optional[bool] = None,
-) -> features.DType:
+) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         antialias = False if antialias is None else antialias
         return resized_crop_image_tensor(
@@ -1204,10 +1205,8 @@ def five_crop_image_pil(
     return tl, tr, bl, br, center
 
 
-def five_crop(
-    inpt: features.ImageType, size: List[int]
-) -> Tuple[features.ImageType, features.ImageType, features.ImageType, features.ImageType, features.ImageType]:
-    # TODO: consider breaking BC here to return List[features.ImageType] to align this op with `ten_crop`
+def five_crop(inpt: ImageType, size: List[int]) -> Tuple[ImageType, ImageType, ImageType, ImageType, ImageType]:
+    # TODO: consider breaking BC here to return List[ImageType] to align this op with `ten_crop`
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
         if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
@@ -1244,7 +1243,7 @@ def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: boo
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
 
-def ten_crop(inpt: features.ImageType, size: List[int], vertical_flip: bool = False) -> List[features.ImageType]:
+def ten_crop(inpt: ImageType, size: List[int], vertical_flip: bool = False) -> List[ImageType]:
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
         if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
