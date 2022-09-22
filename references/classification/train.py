@@ -131,8 +131,8 @@ def load_data(traindir, valdir, args):
     else:
         auto_augment_policy = getattr(args, "auto_augment", None)
         random_erase_prob = getattr(args, "random_erase", 0.0)
-        ra_magnitude = getattr(args, "ra_magnitude", 9)
-        augmix_severity = getattr(args, "augmix_severity", 3)
+        ra_magnitude = args.ra_magnitude
+        augmix_severity = args.augmix_severity
         dataset = torchvision.datasets.ImageFolder(
             traindir,
             presets.ClassificationPresetTrain(
@@ -461,8 +461,8 @@ def get_args_parser(add_help=True):
         action="store_true",
     )
     parser.add_argument("--auto-augment", default=None, type=str, help="auto augment policy (default: None)")
-    parser.add_argument("--ra-magnitude", default=None, type=int, help="magnitude of auto augment policy")
-    parser.add_argument("--augmix-severity", default=None, type=int, help="severity of augmix policy")
+    parser.add_argument("--ra-magnitude", default=9, type=int, help="magnitude of auto augment policy")
+    parser.add_argument("--augmix-severity", default=3, type=int, help="severity of augmix policy")
     parser.add_argument("--random-erase", default=0.0, type=float, help="random erasing probability (default: 0.0)")
 
     # Mixed precision training parameters
