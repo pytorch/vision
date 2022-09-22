@@ -8,9 +8,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models.optical_flow.raft as raft
 from torch import Tensor
-from torchvision.models._api import WeightsEnum
+from torchvision.models._api import register_model, Weights, WeightsEnum
+from torchvision.models._utils import handle_legacy_interface
 from torchvision.models.optical_flow._utils import grid_sample, make_coords_grid, upsample_flow
 from torchvision.ops import Conv2dNormActivation
+from torchvision.prototype.transforms._presets import StereoMatching
 
 all = (
     "CREStereo",
@@ -1055,11 +1057,145 @@ def _crestereo(
     return model
 
 
+_COMMON_META = {
+    "min_size": (384, 512),
+}
+
+
 class CREStereo_Base_Weights(WeightsEnum):
-    pass
+    """The metrics reported here are as follows.
+
+    ``mae`` is the "mean-average-error" and indicates how far (in pixels) the
+    predicted disparity is from its true value (equivalent to ``epe``). This is averaged over all pixels
+    of all images. ``1px``, ``3px``, ``5px`` and indicate the percentage of pixels that have a lower
+    error than that of the ground truth. ``relepe`` is the "relative-end-point-error" and is the
+    average ``epe`` divided by the average ground truth disparity. ``f1`` corresponds to the average of pixels whose epe
+    is either >3px, or whom's ``relepe`` is higher than 0.05 (therefore lower is better).
+
+    """
+
+    MEGVII = Weights(
+        # Weights ported from https://github.com/megvii-research/CREStereo
+        url="https://download.pytorch.org/models/crestereo_756c8b0f.pth",
+        transforms=StereoMatching,
+        meta={
+            **_COMMON_META,
+            "num_params": 5432948,
+            "recipe": "https://github.com/megvii-research/CREStereo",
+            "_metrics": {
+                "Middlebury2014-train": {
+                    # number of cascade stages
+                    1: {
+                        # number of refininement interations
+                        2: {
+                            "mae": 1.704,
+                            "rmse": 3.738,
+                            "1px": 0.738,
+                            "3px": 0.896,
+                            "5px": 0.933,
+                            "relepe": 0.157,
+                            "f1": 10.041,
+                        },
+                        5: {
+                            "mae": 0.956,
+                            "rmse": 2.963,
+                            "1px": 0.88,
+                            "3px": 0.948,
+                            "5px": 0.965,
+                            "relepe": 0.124,
+                            "f1": 5.056,
+                        },
+                        10: {
+                            "mae": 0.792,
+                            "rmse": 2.765,
+                            "1px": 0.905,
+                            "3px": 0.958,
+                            "5px": 0.97,
+                            "relepe": 0.114,
+                            "f1": 4.059,
+                        },
+                        20: {
+                            "mae": 0.749,
+                            "rmse": 2.706,
+                            "1px": 0.907,
+                            "3px": 0.961,
+                            "5px": 0.972,
+                            "relepe": 0.113,
+                            "f1": 3.782,
+                        },
+                    },
+                    2: {
+                        2: {
+                            "mae": 1.702,
+                            "rmse": 3.784,
+                            "1px": 0.784,
+                            "3px": 0.894,
+                            "5px": 0.924,
+                            "relepe": 0.172,
+                            "f1": 10.337,
+                        },
+                        5: {
+                            "mae": 0.932,
+                            "rmse": 2.907,
+                            "1px": 0.877,
+                            "3px": 0.944,
+                            "5px": 0.963,
+                            "relepe": 0.125,
+                            "f1": 5.45,
+                        },
+                        10: {
+                            "mae": 0.773,
+                            "rmse": 2.768,
+                            "1px": 0.901,
+                            "3px": 0.958,
+                            "5px": 0.972,
+                            "relepe": 0.117,
+                            "f1": 4.03,
+                        },
+                        20: {
+                            "mae": 0.854,
+                            "rmse": 2.971,
+                            "1px": 0.9,
+                            "3px": 0.957,
+                            "5px": 0.97,
+                            "relepe": 0.122,
+                            "f1": 4.109,
+                        },
+                    },
+                }
+            },
+            "_docs": """These weights were ported from the original paper. They
+            are trained on a dataset mixture of the author's choice.""",
+        },
+    )
+
+    DEFAULT = MEGVII
 
 
+@register_model()
+@handle_legacy_interface(weights=("pretrained", CREStereo_Base_Weights.MEGVII))
 def crestereo_base(*, weights: Optional[CREStereo_Base_Weights] = None, progress=True, **kwargs) -> CREStereo:
+    """CREStereo model from
+    `Practical Stereo Matching via Cascaded Recurrent Network
+    With Adaptive Correlation <https://openaccess.thecvf.com/content/CVPR2022/papers/Li_Practical_Stereo_Matching_via_Cascaded_Recurrent_Network_With_Adaptive_Correlation_CVPR_2022_paper.pdf>`_.
+
+    Please see the example below for a tutorial on how to use this model.
+
+    Args:
+        weights(:class:`~torchvision.prototype.models.depth.stereo.CREStereo_Base_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.prototype.models.depth.stereo.CREStereo_Base_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
+        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.prototype.models.depth.stereo.raft_stereo.RaftStereo``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/crestereo.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.prototype.models.depth.stereo.CREStereo_Base_Weights
+        :members:
+    """
     return _crestereo(
         weights=weights,
         progress=progress,
