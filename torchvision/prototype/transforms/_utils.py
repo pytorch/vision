@@ -1,12 +1,60 @@
-from typing import Any, Callable, Tuple, Type, Union
+import numbers
+from collections import defaultdict
+
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
+
+import torch
 from torch.utils._pytree import tree_flatten
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
 
 from torchvision.prototype.transforms.functional._meta import get_chw
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
+
+from typing_extensions import Literal
+
+
+# Type shortcuts:
+DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
+FillType = Union[int, float, Sequence[int], Sequence[float]]
+
+
+def _check_fill_arg(fill: Optional[Union[FillType, Dict[Type, FillType]]]) -> None:
+    if isinstance(fill, dict):
+        for key, value in fill.items():
+            # Check key for type
+            _check_fill_arg(value)
+    else:
+        if fill is not None and not isinstance(fill, (numbers.Number, tuple, list)):
+            raise TypeError("Got inappropriate fill arg")
+
+
+def _setup_fill_arg(
+    fill: Optional[Union[FillType, Dict[Type, FillType]]]
+) -> Union[Dict[Type, FillType], Dict[Type, None]]:
+    _check_fill_arg(fill)
+
+    if isinstance(fill, dict):
+        return fill
+
+    return defaultdict(lambda: fill)  # type: ignore[return-value]
+
+
+def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
+    if not isinstance(padding, (numbers.Number, tuple, list)):
+        raise TypeError("Got inappropriate padding arg")
+
+    if isinstance(padding, (tuple, list)) and len(padding) not in [1, 2, 4]:
+        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
+
+
+# TODO: let's use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)
+# https://github.com/pytorch/vision/issues/6250
+def _check_padding_mode_arg(padding_mode: Literal["constant", "edge", "reflect", "symmetric"]) -> None:
+    if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
+        raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
 
 def query_bounding_box(sample: Any) -> features.BoundingBox:

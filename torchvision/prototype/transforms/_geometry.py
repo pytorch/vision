@@ -1,7 +1,6 @@
 import math
 import numbers
 import warnings
-from collections import defaultdict
 from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
@@ -14,11 +13,20 @@ from torchvision.transforms.functional import _get_perspective_coeffs
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import _check_sequence_input, _setup_angle, _setup_size, has_all, has_any, query_bounding_box, query_chw
-
-
-DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
-FillType = Union[int, float, Sequence[int], Sequence[float]]
+from ._utils import (
+    _check_padding_arg,
+    _check_padding_mode_arg,
+    _check_sequence_input,
+    _setup_angle,
+    _setup_fill_arg,
+    _setup_size,
+    DType,
+    FillType,
+    has_all,
+    has_any,
+    query_bounding_box,
+    query_chw,
+)
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -199,40 +207,6 @@ class TenCrop(Transform):
         if has_any(inputs, features.BoundingBox, features.Mask):
             raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
         return super().forward(*inputs)
-
-
-def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
-    if isinstance(fill, dict):
-        for key, value in fill.items():
-            # Check key for type
-            _check_fill_arg(value)
-    else:
-        if not isinstance(fill, (numbers.Number, tuple, list)):
-            raise TypeError("Got inappropriate fill arg")
-
-
-def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillType]:
-    _check_fill_arg(fill)
-
-    if isinstance(fill, dict):
-        return fill
-
-    return defaultdict(lambda: fill)  # type: ignore[arg-type, return-value]
-
-
-def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
-    if not isinstance(padding, (numbers.Number, tuple, list)):
-        raise TypeError("Got inappropriate padding arg")
-
-    if isinstance(padding, (tuple, list)) and len(padding) not in [1, 2, 4]:
-        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
-
-
-# TODO: let's use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)
-# https://github.com/pytorch/vision/issues/6250
-def _check_padding_mode_arg(padding_mode: Literal["constant", "edge", "reflect", "symmetric"]) -> None:
-    if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
-        raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
 
 class Pad(Transform):
