@@ -1,5 +1,5 @@
 import collections.abc
-from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
@@ -7,9 +7,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_chw
-
-T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
+from ._utils import ImageType, query_chw
 
 
 class ColorJitter(Transform):
@@ -112,7 +110,7 @@ class RandomPhotometricDistort(Transform):
             channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
         )
 
-    def _permute_channels(self, inpt: Any, permutation: torch.Tensor) -> Any:
+    def _permute_channels(self, inpt: ImageType, permutation: torch.Tensor) -> ImageType:
         if isinstance(inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)
 
@@ -125,9 +123,7 @@ class RandomPhotometricDistort(Transform):
 
         return output
 
-    def _transform(
-        self, inpt: Union[torch.Tensor, features.Image, PIL.Image.Image], params: Dict[str, Any]
-    ) -> Union[torch.Tensor, features.Image, PIL.Image.Image]:
+    def _transform(self, inpt: ImageType, params: Dict[str, Any]) -> ImageType:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])

@@ -20,10 +20,10 @@ from ._utils import (
     _setup_angle,
     _setup_fill_arg,
     _setup_size,
-    DType,
     FillType,
     has_all,
     has_any,
+    ImageType,
     query_bounding_box,
     query_chw,
 )
@@ -179,7 +179,9 @@ class FiveCrop(Transform):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _transform(self, inpt: DType, params: Dict[str, Any]) -> Tuple[DType, DType, DType, DType, DType]:
+    def _transform(
+        self, inpt: ImageType, params: Dict[str, Any]
+    ) -> Tuple[ImageType, ImageType, ImageType, ImageType, ImageType]:
         return F.five_crop(inpt, self.size)
 
     def forward(self, *inputs: Any) -> Any:
@@ -200,7 +202,7 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _transform(self, inpt: DType, params: Dict[str, Any]) -> List[DType]:
+    def _transform(self, inpt: ImageType, params: Dict[str, Any]) -> List[ImageType]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
     def forward(self, *inputs: Any) -> Any:
@@ -226,7 +228,7 @@ class Pad(Transform):
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self.fill[type(inpt)] if self.fill is not None else None
 
         # This cast does Sequence[int] -> List[int] and is required to make mypy happy
         padding = self.padding
@@ -271,7 +273,7 @@ class RandomZoomOut(_RandomApplyTransform):
         return dict(padding=padding)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self.fill[type(inpt)] if self.fill is not None else None
         fill = F._geometry._convert_fill_arg(fill)
         return F.pad(inpt, **params, fill=fill)
 
@@ -302,7 +304,7 @@ class RandomRotation(Transform):
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self.fill[type(inpt)] if self.fill is not None else None
         fill = F._geometry._convert_fill_arg(fill)
         return F.rotate(
             inpt,
@@ -384,7 +386,7 @@ class RandomAffine(Transform):
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self.fill[type(inpt)] if self.fill is not None else None
         fill = F._geometry._convert_fill_arg(fill)
         return F.affine(
             inpt,
@@ -464,7 +466,7 @@ class RandomCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         # TODO: (PERF) check for speed optimization if we avoid repeated pad calls
-        fill = self.fill[type(inpt)]
+        fill = self.fill[type(inpt)] if self.fill is not None else None
         fill = F._geometry._convert_fill_arg(fill)
 
         if self.padding is not None:
@@ -535,7 +537,7 @@ class RandomPerspective(_RandomApplyTransform):
         return dict(perspective_coeffs=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self.fill[type(inpt)] if self.fill is not None else None
         fill = F._geometry._convert_fill_arg(fill)
         return F.perspective(
             inpt,
@@ -603,7 +605,7 @@ class ElasticTransform(Transform):
         return dict(displacement=displacement)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self.fill[type(inpt)] if self.fill is not None else None
         fill = F._geometry._convert_fill_arg(fill)
         return F.elastic(
             inpt,
@@ -862,7 +864,7 @@ class FixedSizeCrop(Transform):
                 )
 
         if params["needs_pad"]:
-            fill = self.fill[type(inpt)]
+            fill = self.fill[type(inpt)] if self.fill is not None else None
             fill = F._geometry._convert_fill_arg(fill)
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 

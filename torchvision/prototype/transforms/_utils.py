@@ -18,10 +18,12 @@ from typing_extensions import Literal
 
 # Type shortcuts:
 DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
-FillType = Union[int, float, Sequence[int], Sequence[float]]
+ImageType = Union[torch.Tensor, PIL.Image.Image, features.Image]
+TensorImageType = Union[torch.Tensor, features.Image]
+FillType = Union[int, float, Sequence[int], Sequence[float], None]
 
 
-def _check_fill_arg(fill: Optional[Union[FillType, Dict[Type, FillType]]]) -> None:
+def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
     if isinstance(fill, dict):
         for key, value in fill.items():
             # Check key for type
@@ -31,12 +33,10 @@ def _check_fill_arg(fill: Optional[Union[FillType, Dict[Type, FillType]]]) -> No
             raise TypeError("Got inappropriate fill arg")
 
 
-def _setup_fill_arg(
-    fill: Optional[Union[FillType, Dict[Type, FillType]]]
-) -> Union[Dict[Type, FillType], Dict[Type, None]]:
+def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Optional[Dict[Type, FillType]]:
     _check_fill_arg(fill)
 
-    if isinstance(fill, dict):
+    if fill is None or isinstance(fill, dict):
         return fill
 
     return defaultdict(lambda: fill)  # type: ignore[return-value]
