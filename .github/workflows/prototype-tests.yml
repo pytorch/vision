@@ -40,13 +40,18 @@ jobs:
         run: pip install --progress-bar=off pytest pytest-mock
 
       - name: Run prototype datasets tests
+        id: datasets
         shell: bash
         run: pytest --durations=20 test/test_prototype_datasets*.py
 
       - name: Run prototype transforms tests
+        id: transforms
+        if: ${{ success() || steps.datasets.conclusion == 'failure' }}
         shell: bash
         run: pytest --durations=20 test/test_prototype_transforms*.py
 
       - name: Run prototype models tests
+        if: ${{ success() || steps.datasets.conclusion == 'failure' || steps.transforms.conclusion == 'failure' }}
+        id: models
         shell: bash
         run: pytest --durations=20 test/test_prototype_models*.py
