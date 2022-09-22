@@ -1,6 +1,8 @@
-import torch.distributed as dist
 import os
+
 import torch
+import torch.distributed as dist
+
 
 def _redefine_print(is_main):
     """disables printing when not in main process"""

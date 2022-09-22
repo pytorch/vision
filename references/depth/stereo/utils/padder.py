@@ -1,5 +1,6 @@
 import torch.nn.functional as F
 
+
 class InputPadder:
     """Pads images such that dimensions are divisible by 8"""
 

@@ -1,9 +1,11 @@
-from typing import List
-import torch
-import numpy as np
-from torch import Tensor
 import os
+from typing import List
+
+import numpy as np
+import torch
+from torch import Tensor
 from torchvision.utils import make_grid
+
 
 @torch.no_grad()
 def make_disparity_image(disparity: Tensor):
@@ -11,6 +13,7 @@ def make_disparity_image(disparity: Tensor):
     disparity = disparity.detach().cpu()
     disparity = (disparity - disparity.min()) / (disparity.max() - disparity.min())
     return disparity
+
 
 @torch.no_grad()
 def make_disparity_image_pairs(disparity: Tensor, image: Tensor):
@@ -20,6 +23,7 @@ def make_disparity_image_pairs(disparity: Tensor, image: Tensor):
     image = image * 0.5 + 0.5
     return disparity, image
 
+
 @torch.no_grad()
 def make_disparity_sequence(disparities: List[Tensor]):
     # convert each disparity to [0, 1]
@@ -28,6 +32,7 @@ def make_disparity_sequence(disparities: List[Tensor]):
     # make the list into a batch
     disparity_sequences = torch.stack(disparities)
     return disparity_sequences
+
 
 @torch.no_grad()
 def make_pair_grid(*inputs, orientation="horizontal"):
@@ -77,6 +82,7 @@ def make_training_sample_grid(
     pred_grid = (pred_grid * 255).astype(np.uint8)
     return pred_grid
 
+
 @torch.no_grad()
 def make_disparity_sequence_grid(predictions: List[Tensor], disparities: Tensor) -> np.ndarray:
     # right most we will be adding the ground truth
@@ -84,11 +90,7 @@ def make_disparity_sequence_grid(predictions: List[Tensor], disparities: Tensor)
     predictions = list(map(lambda x: x[:, :1, :, :].detach().cpu(), predictions + [disparities]))
     sequence = make_disparity_sequence(predictions)
     # swap axes to have the in the correct order for each batch sample
-    sequence = (
-        torch.swapaxes(sequence, 0, 1)\
-            .contiguous()\
-            .reshape(-1, 1, disparities.shape[-2], disparities.shape[-1])
-    )
+    sequence = torch.swapaxes(sequence, 0, 1).contiguous().reshape(-1, 1, disparities.shape[-2], disparities.shape[-1])
     sequence = make_grid(sequence, nrow=seq_len, padding=16, normalize=True, scale_each=True)
     sequence = sequence.permute(1, 2, 0).numpy()
     sequence = (sequence * 255).astype(np.uint8)
@@ -96,18 +98,20 @@ def make_disparity_sequence_grid(predictions: List[Tensor], disparities: Tensor)
 
 
 @torch.no_grad()
-def make_prediction_image_side_to_side(predictions: Tensor, disparities: Tensor, valid_mask: Tensor, save_path: str, prefix: str) -> None:
+def make_prediction_image_side_to_side(
+    predictions: Tensor, disparities: Tensor, valid_mask: Tensor, save_path: str, prefix: str
+) -> None:
     import matplotlib.pyplot as plt
-    
+
     # normalize the predictions and disparities in [0, 1]
     predictions = (predictions - predictions.min()) / (predictions.max() - predictions.min())
     disparities = (disparities - disparities.min()) / (disparities.max() - disparities.min())
     predictions = predictions * valid_mask
     disparities = disparities * valid_mask
-    
+
     predictions = predictions.detach().cpu()
-    disparities = disparities.detach().cpu() 
-    
+    disparities = disparities.detach().cpu()
+
     for idx, (pred, gt) in enumerate(zip(predictions, disparities)):
         pred = pred.permute(1, 2, 0).numpy()
         gt = gt.permute(1, 2, 0).numpy()

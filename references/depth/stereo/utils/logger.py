@@ -1,11 +1,11 @@
 import datetime
-import os
 import time
 from collections import defaultdict, deque
 
 import torch
-import torch.nn.functional as F
+
 from .distributed import reduce_across_processes
+
 
 class SmoothedValue:
     """Track a series of values and provide access to smoothed values over a

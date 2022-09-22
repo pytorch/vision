@@ -1,19 +1,20 @@
 import argparse
+
 import torch
+
+from presets import StereoMatchingEvalPreset, StereoMatchingTrainPreset
 from torchvision.datasets import (
-    CREStereo,
     CarlaStereo,
-    InStereo2k,
-    SintelStereo,
-    SceneFlowStereo,
-    FallingThingsStereo,
+    CREStereo,
     ETH3DStereo,
+    FallingThingsStereo,
+    InStereo2k,
     Kitti2012Stereo,
     Kitti2015Stereo,
     Middlebury2014Stereo,
+    SceneFlowStereo,
+    SintelStereo,
 )
-
-from presets import StereoMatchingTrainPreset, StereoMatchingEvalPreset
 
 
 def make_train_transform(args: argparse.Namespace) -> torch.nn.Module:
@@ -48,7 +49,7 @@ def make_eval_transform(args: argparse.Namespace) -> torch.nn.Module:
         resize_size = args.crop_size
     else:
         resize_size = args.eval_size
-        
+
     return StereoMatchingEvalPreset(
         mean=args.norm_mean,
         std=args.norm_std,
@@ -64,9 +65,15 @@ def make_dataset(dataset_name: str, dataset_root: str, transforms: torch.nn.Modu
         "carla-highres": CarlaStereo(root=dataset_root, transforms=transforms),
         "instereo2k": InStereo2k(root=dataset_root, transforms=transforms),
         "sintel": SintelStereo(root=dataset_root, transforms=transforms),
-        "sceneflow-monkaa": SceneFlowStereo(root=dataset_root, transforms=transforms, variant="Monkaa", pass_name="both"),
-        "sceneflow-flyingthings": SceneFlowStereo(root=dataset_root, transforms=transforms, variant="FlyingThings3D", pass_name="both"),
-        "sceneflow-driving": SceneFlowStereo(root=dataset_root, transforms=transforms, variant="Driving", pass_name="both"),
+        "sceneflow-monkaa": SceneFlowStereo(
+            root=dataset_root, transforms=transforms, variant="Monkaa", pass_name="both"
+        ),
+        "sceneflow-flyingthings": SceneFlowStereo(
+            root=dataset_root, transforms=transforms, variant="FlyingThings3D", pass_name="both"
+        ),
+        "sceneflow-driving": SceneFlowStereo(
+            root=dataset_root, transforms=transforms, variant="Driving", pass_name="both"
+        ),
         "fallingthings": FallingThingsStereo(root=dataset_root, transforms=transforms, variant="both"),
         "eth3d-train": ETH3DStereo(root=dataset_root, transforms=transforms, split="train"),
         "eth3d-test": ETH3DStereo(root=dataset_root, transforms=transforms, split="test"),
@@ -74,10 +81,18 @@ def make_dataset(dataset_name: str, dataset_root: str, transforms: torch.nn.Modu
         "kitti2015-test": Kitti2015Stereo(root=dataset_root, transforms=transforms, split="test"),
         "kitti2012-train": Kitti2012Stereo(root=dataset_root, transforms=transforms, split="train"),
         "kitti2012-test": Kitti2012Stereo(root=dataset_root, transforms=transforms, split="test"),
-        "middlebury2014-other": Middlebury2014Stereo(root=dataset_root, transforms=transforms, split="additional", use_ambient_views=True, calibration="both"),
-        "middlebury2014-train": Middlebury2014Stereo(root=dataset_root, transforms=transforms, split="train", calibration="perfect"),
-        "middlebury2014-test": Middlebury2014Stereo(root=dataset_root, transforms=transforms, split="test", calibration=None),
-        "middlebury2014-train-ambient": Middlebury2014Stereo(root=dataset_root, transforms=transforms, split="train", use_ambient_views=True, calibration="perfect"),
+        "middlebury2014-other": Middlebury2014Stereo(
+            root=dataset_root, transforms=transforms, split="additional", use_ambient_views=True, calibration="both"
+        ),
+        "middlebury2014-train": Middlebury2014Stereo(
+            root=dataset_root, transforms=transforms, split="train", calibration="perfect"
+        ),
+        "middlebury2014-test": Middlebury2014Stereo(
+            root=dataset_root, transforms=transforms, split="test", calibration=None
+        ),
+        "middlebury2014-train-ambient": Middlebury2014Stereo(
+            root=dataset_root, transforms=transforms, split="train", use_ambient_views=True, calibration="perfect"
+        ),
     }
 
     # raise a key-error just to inform the user about which datasets are valid
@@ -85,4 +100,3 @@ def make_dataset(dataset_name: str, dataset_root: str, transforms: torch.nn.Modu
         raise KeyError(f"Invalid dataset name: {dataset_name}. Valid datasets are: {valid_datasets.keys()}")
 
     return valid_datasets[dataset_name]
-        

@@ -10,15 +10,13 @@ import torch.distributed as dist
 import torchvision.models.optical_flow
 import torchvision.prototype.models.depth.stereo
 import utils
-from torch import nn
 import vizualization
+
+from parsing import make_dataset, make_eval_transform, make_train_transform
+from torch import nn
+from torchvision.transforms.functional import get_dimensions, InterpolationMode, resize
 from utils.metrics import AVAILABLE_METRICS
 from utils.norm import freeze_batch_norm
-from torchvision.transforms.functional import get_dimensions, resize
-from torchvision.transforms.functional import InterpolationMode
-
-from parsing import make_train_transform, make_eval_transform, make_dataset
-
 
 
 def make_stereo_flow(flow: Union[torch.Tensor, List[torch.Tensor]], model_out_channels: int) -> torch.Tensor:
@@ -39,7 +37,7 @@ def make_lr_schedule(args: argparse.Namespace, optimizer: torch.optim.Optimizer)
     """Helper function to return a learning rate scheduler for CRE-stereo"""
     if args.decay_after_steps < args.warmup_steps:
         raise ValueError(f"decay_after_steps: {args.function} must be greater than warmup_steps: {args.warmup_steps}")
-    
+
     warmup_steps = args.warmup_steps if args.warmup_steps else 0
     flat_lr_steps = args.decay_after_steps - warmup_steps if args.decay_after_steps else 0
     decay_lr_steps = args.total_iterations - flat_lr_steps
@@ -86,9 +84,7 @@ def make_lr_schedule(args: argparse.Namespace, optimizer: torch.optim.Optimizer)
             raise ValueError(f"Unknown lr decay method {args.lr_decay_method}")
         schedulers.append(decay_lr_scheduler)
 
-    scheduler = torch.optim.lr_scheduler.SequentialLR(
-        optimizer, schedulers, milestones=milestones
-    )
+    scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers, milestones=milestones)
     return scheduler
 
 
@@ -146,7 +142,17 @@ def get_train_dataset(dataset_root: str, args: argparse.Namespace) -> torch.util
 
 @torch.inference_mode()
 def _evaluate(
-    model, args, val_loader, *, padder_mode, print_freq=10, writter=None, step=None, iterations=None, batch_size=None, header=None
+    model,
+    args,
+    val_loader,
+    *,
+    padder_mode,
+    print_freq=10,
+    writter=None,
+    step=None,
+    iterations=None,
+    batch_size=None,
+    header=None,
 ):
     """Helper function to compute various metrics (epe, etc.) for a model on a given dataset."""
     model.eval()
@@ -161,7 +167,7 @@ def _evaluate(
         logger.add_meter(meter_name, fmt="{global_avg:.4f}")
     if "f1" not in args.metrics:
         logger.add_meter("f1", fmt="{global_avg:.4f}")
-        
+
     num_processed_samples = 0
     with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
         for blob in metric_logger.log_every(val_loader, print_freq, header):
@@ -177,9 +183,9 @@ def _evaluate(
             num_processed_samples += image_left.shape[0]
             for name in metrics:
                 logger.meters[name].update(metrics[name], n=1)
-    
+
     num_processed_samples = utils.reduce_across_processes(num_processed_samples)
-    
+
     print("Num_processed_samples: ", num_processed_samples)
     if (
         hasattr(val_loader.dataset, "__len__")
@@ -196,9 +202,10 @@ def _evaluate(
         for meter_name, meter_value in logger.meters.items():
             scalar_name = f"{meter_name} {header}"
             writter.add_scalar(scalar_name, meter_value.avg, step)
-    
+
     logger.synchronize_between_processes()
     print(header, logger)
+
 
 def make_eval_loader(dataset_name: str, args: argparse.Namespace) -> torch.utils.data.DataLoader:
     if args.weights and args.test_only:
@@ -206,13 +213,13 @@ def make_eval_loader(dataset_name: str, args: argparse.Namespace) -> torch.utils
         trans = weights.transforms()
 
         def preprocessing(image_left, image_right, disp, valid_disp_mask):
-            C_o, H_o, W_o = get_dimensions(image_left)        
+            C_o, H_o, W_o = get_dimensions(image_left)
             image_left, image_right = trans(image_left, image_right)
-            
+
             C_t, H_t, W_t = get_dimensions(image_left)
             scale_factor = W_t / W_o
-            
-            if disp is not None and not isinstance(disp, torch.Tensor):                
+
+            if disp is not None and not isinstance(disp, torch.Tensor):
                 disp = torch.from_numpy(disp)
                 if W_t != W_o:
                     disp = resize(disp, (H_t, W_t), mode=InterpolationMode.BILINEAR) * scale_factor
@@ -221,15 +228,16 @@ def make_eval_loader(dataset_name: str, args: argparse.Namespace) -> torch.utils
                 if W_t != W_o:
                     valid_disp_mask = resize(valid_disp_mask, (H_t, W_t), mode=InterpolationMode.NEAREST)
             return image_left, image_right, disp, valid_disp_mask
+
     else:
         preprocessing = make_eval_transform(args)
 
-    val_dataset = make_dataset(dataset_name, args.dataset_root, transforms=preprocessing)    
+    val_dataset = make_dataset(dataset_name, args.dataset_root, transforms=preprocessing)
     if args.distributed:
         sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=False)
     else:
         sampler = torch.utils.data.SequentialSampler(val_dataset)
-    
+
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
         sampler=sampler,
@@ -237,8 +245,9 @@ def make_eval_loader(dataset_name: str, args: argparse.Namespace) -> torch.utils
         pin_memory=True,
         num_workers=args.workers,
     )
-    
+
     return val_loader
+
 
 def evaluate(model, loaders, args, writter=None, step=None):
     for loader_name, loader in loaders.items():
@@ -254,6 +263,7 @@ def evaluate(model, loaders, args, writter=None, step=None):
             step=step,
         )
 
+
 def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, scaler, args):
     device = torch.device(args.device)
     # wrap the loader in a logger
@@ -262,42 +272,42 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
     model_out_channels = model.module.output_channels if args.distributed else model.output_channels
 
     torch.set_num_threads(args.threads)
-    
+
     sequence_criterion = utils.SequenceLoss(
         gamma=args.gamma,
         max_flow=args.max_disparity,
         exclude_large_flows=args.flow_loss_exclude_large,
     ).to(device)
-    
+
     if args.consistency_weight:
         consistency_criterion = utils.FlowSequenceConsistencyLoss(
             args.gamma,
-            resize_factor=.25,
-            rescale_factor=.25,
+            resize_factor=0.25,
+            rescale_factor=0.25,
             rescale_mode="bilinear",
         ).to(device)
     else:
         consistency_criterion = None
-        
+
     if args.psnr_weight:
         psnr_criterion = utils.PSNRLoss().to(device)
     else:
-        psnr_criterion = None    
-    
+        psnr_criterion = None
+
     if args.smoothness_weight:
         smoothness_criterion = utils.SmoothnessLoss().to(device)
     else:
         smoothness_criterion = None
-    
+
     if args.photometric_weight:
         photometric_criterion = utils.FlowPhotoMetricLoss(
             ssim_weight=args.photometric_ssim_weight,
-            max_displacement_ratio=args.photometric_max_displacement_ratio,            
+            max_displacement_ratio=args.photometric_max_displacement_ratio,
             ssim_use_padding=False,
         ).to(device)
     else:
         photometric_criterion = None
-    
+
     for step in range(args.start_step + 1, args.total_iterations + 1):
         data_blob = next(loader)
         optimizer.zero_grad()
@@ -313,53 +323,51 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
             disp_mask = make_stereo_flow(disp_mask, model_out_channels)
             # sequence loss on top of the model outputs
 
-        loss = sequence_criterion(
-            disp_predictions, disp_mask, valid_disp_mask
-        ) * args.flow_loss_weight
+        loss = sequence_criterion(disp_predictions, disp_mask, valid_disp_mask) * args.flow_loss_weight
 
         if args.consistency_weight > 0:
             loss_consistency = consistency_criterion(disp_predictions)
             loss += loss_consistency * args.consistency_weight
-            
+
         if args.psnr_weight > 0:
-            loss_psnr = 0.
+            loss_psnr = 0.0
             for pred in disp_predictions:
                 # predictions might have 2 channels
                 loss_psnr += psnr_criterion(
                     pred * valid_disp_mask.unsqueeze(1),
                     disp_mask * valid_disp_mask.unsqueeze(1),
-                ).mean() # mean the psnr loss over the batch
+                ).mean()  # mean the psnr loss over the batch
             loss += loss_psnr / len(disp_predictions) * args.psnr_weight
 
         if args.photometric_weight > 0:
-            loss_photometric = 0.
+            loss_photometric = 0.0
             for pred in disp_predictions:
                 # predictions might have 1 channel, therefore we need to inpute 0s for the second channel
                 if model_out_channels == 1:
                     pred = torch.cat([pred, torch.zeros_like(pred)], dim=1)
-                
+
                 loss_photometric += photometric_criterion(
                     image_left, image_right, pred, valid_disp_mask
-                ) # photometric loss already comes out meaned over the batch
+                )  # photometric loss already comes out meaned over the batch
             loss += loss_photometric / len(disp_predictions) * args.photometric_weight
 
         if args.smoothness_weight > 0:
-            loss_smoothness = 0.
+            loss_smoothness = 0.0
             for pred in disp_predictions:
                 # predictions might have 2 channels
                 loss_smoothness += smoothness_criterion(
                     image_left, pred[:, :1, :, :]
-                ).mean() # mean the smoothness loss over the batch
+                ).mean()  # mean the smoothness loss over the batch
             loss += loss_smoothness / len(disp_predictions) * args.smoothness_weight
 
         with torch.no_grad():
             metrics, _ = utils.compute_metrics(
-                disp_predictions[-1][:, :1, :, :], # predictions might have 2 channels
-                disp_mask[:, :1, :, :], # so does the ground truth
+                disp_predictions[-1][:, :1, :, :],  # predictions might have 2 channels
+                disp_mask[:, :1, :, :],  # so does the ground truth
                 valid_disp_mask,
-                args.metrics
+                args.metrics,
             )
-        
+
         metrics.pop("f1", None)
         logger.update(loss=loss, **metrics)
 
@@ -378,14 +386,10 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
 
         scheduler.step()
 
-        # synchronize the metrics before logging to tensorboard if need be
-        if step % args.tensorboard_log_frequency == 0:
-            logger.synchronize_between_processes()
-
         if not dist.is_initialized() or dist.get_rank() == 0:
             if writer is not None and step % args.tensorboard_log_frequency == 0:
                 # log the loss and metrics to tensorboard
-  
+
                 writer.add_scalar("loss", loss, step)
                 for name, value in logger.meters.items():
                     writer.add_scalar(name, value.avg, step)
@@ -423,12 +427,10 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
                     freeze_batch_norm(model.module)
                 else:
                     freeze_batch_norm(model)
-    
+
     # one final save at the end
     if not args.distributed or args.rank == 0:
-        model_without_ddp = (
-            model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
-        )
+        model_without_ddp = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
         checkpoint = {
             "model": model_without_ddp.state_dict(),
             "optimizer": optimizer.state_dict(),
@@ -439,7 +441,7 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
         os.makedirs(args.checkpoint_dir, exist_ok=True)
         torch.save(checkpoint, Path(args.checkpoint_dir) / f"{args.name}_{step}.pth")
         torch.save(checkpoint, Path(args.checkpoint_dir) / f"{args.name}.pth")
-    
+
 
 def main(args):
     args.total_iterations = sum(args.dataset_steps)
@@ -468,11 +470,9 @@ def main(args):
         model_without_ddp = model
 
     os.makedirs(args.checkpoint_dir, exist_ok=True)
-        
-    val_loaders = {
-        name: make_eval_loader(name, args) for name in args.test_datasets
-    }
-    
+
+    val_loaders = {name: make_eval_loader(name, args) for name in args.test_datasets}
+
     # EVAL ONLY configurations
     if args.test_only:
         evaluate(model, val_loaders, args)
@@ -494,7 +494,7 @@ def main(args):
 
     # initialize the learning rate schedule
     scheduler = make_lr_schedule(args, optimizer)
-    
+
     # load them from checkpoint if need
     args.start_step = 0
     if args.resume_path is not None:
@@ -506,11 +506,11 @@ def main(args):
             if args.resume_schedule:
                 optimizer.load_state_dict(checkpoint["optimizer"])
                 scheduler.load_state_dict(checkpoint["scheduler"])
-                args.start_step = checkpoint["step"] + 1        
+                args.start_step = checkpoint["step"] + 1
                 # modify starting point of the dat
                 sample_start_step = args.start_step * args.batch_size * args.world_size
-                dataset = dataset[sample_start_step:]
-                
+                train_dataset = train_dataset[sample_start_step:]
+
         else:
             # this means the user wants to finetune on top of a model state dict
             # and that no other changes are required
@@ -545,6 +545,7 @@ def main(args):
     # intialize the logger
     if args.tensorboard_summaries:
         from torch.utils.tensorboard import SummaryWriter
+
         tensorboard_path = Path(args.checkpoint_dir) / "tensorboard"
         os.makedirs(tensorboard_path, exist_ok=True)
 
@@ -582,19 +583,34 @@ def get_args_parser(add_help=True):
     parser.add_argument("--checkpoint-dir", type=str, default="checkpoints", help="path to the checkpoint directory")
 
     # dataset
-    parser.add_argument("--dataset-root", type=str, default="/fsx/users/teodorponcu/datasets", help="path to the dataset root directory")
+    parser.add_argument(
+        "--dataset-root", type=str, default="/fsx/users/teodorponcu/datasets", help="path to the dataset root directory"
+    )
     parser.add_argument(
         "--train-datasets",
         type=str,
         nargs="+",
         default=["crestereo"],
         help="dataset(s) to train on",
-        choices=["crestereo", "eth3d-train", "middlebury2014-train-ambient", "middlebury2014-other", "instereo2k", "fallingthings", "carla-highres", "sintel", "sceneflow-monkaa", "sceneflow-driving"],
+        choices=[
+            "crestereo",
+            "eth3d-train",
+            "middlebury2014-train-ambient",
+            "middlebury2014-other",
+            "instereo2k",
+            "fallingthings",
+            "carla-highres",
+            "sintel",
+            "sceneflow-monkaa",
+            "sceneflow-driving",
+        ],
     )
     parser.add_argument(
         "--dataset-steps", type=int, nargs="+", default=[300_000], help="number of steps for each dataset"
     )
-    parser.add_argument("--steps-is-epochs", action="store_true", help="if set, dataset-steps are interpreted as epochs")
+    parser.add_argument(
+        "--steps-is-epochs", action="store_true", help="if set, dataset-steps are interpreted as epochs"
+    )
     parser.add_argument(
         "--test-datasets",
         type=str,
@@ -632,7 +648,7 @@ def get_args_parser(add_help=True):
         "--flow-loss-exclude-large",
         action="store_true",
         help="exclude large flow values from the loss. A large value is defined as a value greater than the ground truth flow norm",
-        default=False
+        default=False,
     )
     parser.add_argument("--consistency-weight", type=float, default=0.0, help="consistency loss weight")
     parser.add_argument(
@@ -654,12 +670,16 @@ def get_args_parser(add_help=True):
 
     # transforms parameters
     parser.add_argument("--gpu-transforms", action="store_true", help="use GPU transforms")
-    parser.add_argument("--eval-size", type=int, nargs="+", default=[384, 512], help="size of the images for evaluation")
+    parser.add_argument(
+        "--eval-size", type=int, nargs="+", default=[384, 512], help="size of the images for evaluation"
+    )
     parser.add_argument("--resize-size", type=int, nargs=2, default=None, help="resize size")
     parser.add_argument("--crop-size", type=int, nargs=2, default=[384, 512], help="crop size")
     parser.add_argument("--scale-range", type=float, nargs=2, default=[0.6, 1.0], help="random scale range")
     parser.add_argument("--rescale-prob", type=float, default=1.0, help="probability of resizing the image")
-    parser.add_argument("--scaling-type", type=str, default="linear", help="scaling type", choices=["exponential", "linear"])
+    parser.add_argument(
+        "--scaling-type", type=str, default="linear", help="scaling type", choices=["exponential", "linear"]
+    )
     parser.add_argument("--flip-prob", type=float, default=0.5, help="probability of flipping the image")
     parser.add_argument(
         "--norm-mean", type=float, nargs="+", default=[0.5, 0.5, 0.5], help="mean for image normalization"
@@ -729,11 +749,13 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--lr-warmup-method", type=str, default="linear", help="warmup method", choices=["linear", "cosine"]
     )
+    parser.add_argument("--lr-warmup-factor", type=float, default=0.02, help="warmup factor for the learning rate")
     parser.add_argument(
-        "--lr-warmup-factor", type=float, default=0.02, help="warmup factor for the learning rate"
-    )
-    parser.add_argument(
-        "--lr-decay-method", type=str, default="linear", help="decay method", choices=["linear", "cosine", "exponential"]
+        "--lr-decay-method",
+        type=str,
+        default="linear",
+        help="decay method",
+        choices=["linear", "cosine", "exponential"],
     )
     parser.add_argument("--lr-decay-gamma", type=float, default=0.8, help="decay factor for the learning rate")
 
@@ -748,7 +770,14 @@ def get_args_parser(add_help=True):
     parser.add_argument("--tensorboard-log-frequency", type=int, default=100, help="log frequency")
     parser.add_argument("--save-frequency", type=int, default=1_000, help="save frequency")
     parser.add_argument("--valid-frequency", type=int, default=1_000, help="validation frequency")
-    parser.add_argument("--metrics", type=str, nargs="+", default=["mae", "rmse", "1px", "3px", "5px", "relepe"], help="metrics to log", choices=AVAILABLE_METRICS)
+    parser.add_argument(
+        "--metrics",
+        type=str,
+        nargs="+",
+        default=["mae", "rmse", "1px", "3px", "5px", "relepe"],
+        help="metrics to log",
+        choices=AVAILABLE_METRICS,
+    )
 
     # distributed parameters
     parser.add_argument("--world-size", type=int, default=8, help="number of distributed processes")
@@ -757,12 +786,15 @@ def get_args_parser(add_help=True):
 
     # weights API
     parser.add_argument("--weights", type=str, default=None, help="weights API url")
-    parser.add_argument("--resume-path", type=str, default=None, help="a path from which to resume or start fine-tuning")
+    parser.add_argument(
+        "--resume-path", type=str, default=None, help="a path from which to resume or start fine-tuning"
+    )
     parser.add_argument("--resume-schedule", action="store_true", help="resume optimizer state")
-    
+
     # padder parameters
     parser.add_argument("--padder-type", type=str, default="kitti", help="padder type", choices=["kitti", "sintel"])
     return parser
+
 
 if __name__ == "__main__":
     args = get_args_parser().parse_args()
