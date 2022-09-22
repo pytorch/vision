@@ -119,7 +119,7 @@ def _is_numpy_image(img: Any) -> bool:
     return img.ndim in {2, 3}
 
 
-def to_tensor(pic) -> Tensor:
+def to_tensor(pic, device: torch.device) -> Tensor:
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     This function does not support torchscript.
 
@@ -127,6 +127,7 @@ def to_tensor(pic) -> Tensor:
 
     Args:
         pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
+        device (torch.device): Device to send the tensor to.
 
     Returns:
         Tensor: Converted image.
@@ -146,7 +147,7 @@ def to_tensor(pic) -> Tensor:
         if pic.ndim == 2:
             pic = pic[:, :, None]
 
-        img = torch.from_numpy(pic.transpose((2, 0, 1))).contiguous()
+        img = torch.from_numpy(pic.transpose((2, 0, 1))).to(device).contiguous()
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
             return img.to(dtype=default_float_dtype).div(255)
@@ -156,11 +157,11 @@ def to_tensor(pic) -> Tensor:
     if accimage is not None and isinstance(pic, accimage.Image):
         nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
         pic.copyto(nppic)
-        return torch.from_numpy(nppic).to(dtype=default_float_dtype)
+        return torch.from_numpy(nppic).to(device=device, dtype=default_float_dtype)
 
     # handle PIL Image
     mode_to_nptype = {"I": np.int32, "I;16": np.int16, "F": np.float32}
-    img = torch.from_numpy(np.array(pic, mode_to_nptype.get(pic.mode, np.uint8), copy=True))
+    img = torch.from_numpy(np.array(pic, mode_to_nptype.get(pic.mode, np.uint8), copy=True)).to(device)
 
     if pic.mode == "1":
         img = 255 * img
@@ -173,7 +174,7 @@ def to_tensor(pic) -> Tensor:
         return img
 
 
-def pil_to_tensor(pic: Any) -> Tensor:
+def pil_to_tensor(pic: Any, device: torch.device) -> Tensor:
     """Convert a ``PIL Image`` to a tensor of the same type.
     This function does not support torchscript.
 
@@ -198,10 +199,10 @@ def pil_to_tensor(pic: Any) -> Tensor:
         # accimage format is always uint8 internally, so always return uint8 here
         nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.uint8)
         pic.copyto(nppic)
-        return torch.as_tensor(nppic)
+        return torch.as_tensor(nppic, device=device)
 
     # handle PIL Image
-    img = torch.as_tensor(np.array(pic, copy=True))
+    img = torch.as_tensor(np.array(pic, copy=True), device=device)
     img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1))

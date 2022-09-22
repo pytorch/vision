@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -114,6 +114,9 @@ class ToTensor:
 
     In the other cases, tensors are returned without scaling.
 
+    Args:
+        device (int, str, or torch.device): Device to send the tensor to. Default is "cpu".
+
     .. note::
         Because the input image is scaled to [0.0, 1.0], this transformation should not be used when
         transforming target image masks. See the `references`_ for implementing the transforms for image masks.
@@ -121,8 +124,14 @@ class ToTensor:
     .. _references: https://github.com/pytorch/vision/tree/main/references/segmentation
     """
 
-    def __init__(self) -> None:
+    def __init__(self, device: Union[int, str, torch.device] = "cpu") -> None:
         _log_api_usage_once(self)
+        if isinstance(device, str):
+            self.device = torch.device(device)
+        elif isinstance(device, int):
+            self.device = torch.device("cuda", device)
+        else:
+            self.device = device
 
     def __call__(self, pic):
         """
@@ -132,7 +141,7 @@ class ToTensor:
         Returns:
             Tensor: Converted image.
         """
-        return F.to_tensor(pic)
+        return F.to_tensor(pic, self.device)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
@@ -142,10 +151,19 @@ class PILToTensor:
     """Convert a ``PIL Image`` to a tensor of the same type. This transform does not support torchscript.
 
     Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
+
+    Args:
+        device (int, str, or torch.device): Device to send the tensor to. Default is "cpu".
     """
 
-    def __init__(self) -> None:
+    def __init__(self, device: Union[int, str, torch.device] = "cpu") -> None:
         _log_api_usage_once(self)
+        if isinstance(device, str):
+            self.device = torch.device(device)
+        elif isinstance(device, int):
+            self.device = torch.device("cuda", device)
+        else:
+            self.device = device
 
     def __call__(self, pic):
         """
@@ -159,7 +177,7 @@ class PILToTensor:
         Returns:
             Tensor: Converted image.
         """
-        return F.pil_to_tensor(pic)
+        return F.pil_to_tensor(pic, self.device)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
