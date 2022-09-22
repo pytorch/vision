@@ -49,7 +49,7 @@ jobs:
         id: transforms
         if: ${{ success() || steps.datasets.conclusion == 'failure' }}
         shell: bash
-        run: exit 0
+        run: exit 1
 
       - name: Run prototype models tests
         if: ${{ success() || steps.datasets.conclusion == 'failure' || steps.transforms.conclusion == 'failure' }}
