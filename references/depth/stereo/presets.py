@@ -9,8 +9,8 @@ class StereoMatchingEvalPreset(torch.nn.Module):
         self,
         mean: float = 0.5,
         std: float = 0.5,
-        resize_size: Optional[Tuple[int, int]] = None,
-        max_disparity: Optional[float] = 512,
+        resize_size: Optional[Tuple[int, ...]] = None,
+        max_disparity: Optional[float] = None,
         interpolation_type: str = "bilinear",
         use_grayscale: bool = False,
     ) -> None:
@@ -22,7 +22,7 @@ class StereoMatchingEvalPreset(torch.nn.Module):
         ]
 
         if use_grayscale:
-            transforms.append(T.ConverToGrayscale())
+            transforms.append(T.ConvertToGrayscale())
 
         if resize_size is not None:
             transforms.append(T.Resize(resize_size, interpolation_type=interpolation_type))
@@ -45,7 +45,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
     def __init__(
         self,
         *,
-        resize_size: Optional[Tuple[int, int]],
+        resize_size: Optional[Tuple[int, ...]],
         resize_interpolation_type: str = "bilinear",
         # RandomResizeAndCrop params
         crop_size: Tuple[int, int],
@@ -89,7 +89,6 @@ class StereoMatchingTrainPreset(torch.nn.Module):
             raise ValueError(f"Unknown scaling type: {scaling_type}. Available types: linear, exponential")
 
         super().__init__()
-        
         transforms = [T.ToTensor()]
 
         # when fixing size across multiple datasets, we ensure
@@ -109,7 +108,7 @@ class StereoMatchingTrainPreset(torch.nn.Module):
         ]
 
         if use_grayscale:
-            color_transforms.append(T.ConverToGrayscale())
+            color_transforms.append(T.ConvertToGrayscale())
 
         transforms.extend(color_transforms)
 
