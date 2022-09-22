@@ -1076,7 +1076,7 @@ class CREStereo_Base_Weights(WeightsEnum):
 
     MEGVII_V1 = Weights(
         # Weights ported from https://github.com/megvii-research/CREStereo
-        url="https://download.pytorch.org/models/crestereo_756c8b0f.pth",
+        url="https://download.pytorch.org/models/crestereo-756c8b0f.pth",
         transforms=StereoMatching,
         meta={
             **_COMMON_META,
@@ -1084,88 +1084,314 @@ class CREStereo_Base_Weights(WeightsEnum):
             "recipe": "https://github.com/megvii-research/CREStereo",
             "_metrics": {
                 "Middlebury2014-train": {
-                    # number of cascade stages
-                    1: {
-                        # number of refininement interations
+                    # metrics for 10 refinement iterations and 1 cascade
+                    "mae": 0.792,
+                    "rmse": 2.765,
+                    "1px": 0.905,
+                    "3px": 0.958,
+                    "5px": 0.97,
+                    "relepe": 0.114,
+                    "fl-all": 90.429,
+                    "_detailed": {
+                        1: {
+                            # number of refininement interations
+                            2: {
+                                "mae": 1.704,
+                                "rmse": 3.738,
+                                "1px": 0.738,
+                                "3px": 0.896,
+                                "5px": 0.933,
+                                "relepe": 0.157,
+                                "fl-all": 76.464,
+                            },
+                            5: {
+                                "mae": 0.956,
+                                "rmse": 2.963,
+                                "1px": 0.88,
+                                "3px": 0.948,
+                                "5px": 0.965,
+                                "relepe": 0.124,
+                                "fl-all": 88.186,
+                            },
+                            10: {
+                                "mae": 0.792,
+                                "rmse": 2.765,
+                                "1px": 0.905,
+                                "3px": 0.958,
+                                "5px": 0.97,
+                                "relepe": 0.114,
+                                "fl-all": 90.429,
+                            },
+                            20: {
+                                "mae": 0.749,
+                                "rmse": 2.706,
+                                "1px": 0.907,
+                                "3px": 0.961,
+                                "5px": 0.972,
+                                "relepe": 0.113,
+                                "fl-all": 90.807,
+                            },
+                        },
                         2: {
-                            "mae": 1.704,
-                            "rmse": 3.738,
-                            "1px": 0.738,
-                            "3px": 0.896,
-                            "5px": 0.933,
-                            "relepe": 0.157,
-                            "fl-all": 76.464,
-                        },
-                        5: {
-                            "mae": 0.956,
-                            "rmse": 2.963,
-                            "1px": 0.88,
-                            "3px": 0.948,
-                            "5px": 0.965,
-                            "relepe": 0.124,
-                            "fl-all": 88.186,
-                        },
-                        10: {
-                            "mae": 0.792,
-                            "rmse": 2.765,
-                            "1px": 0.905,
-                            "3px": 0.958,
-                            "5px": 0.97,
-                            "relepe": 0.114,
-                            "fl-all": 90.429,
-                        },
-                        20: {
-                            "mae": 0.749,
-                            "rmse": 2.706,
-                            "1px": 0.907,
-                            "3px": 0.961,
-                            "5px": 0.972,
-                            "relepe": 0.113,
-                            "fl-all": 90.807,
-                        },
-                    },
-                    2: {
-                        2: {
-                            "mae": 1.702,
-                            "rmse": 3.784,
-                            "1px": 0.784,
-                            "3px": 0.894,
-                            "5px": 0.924,
-                            "relepe": 0.172,
-                            "fl-all": 80.313,
-                        },
-                        5: {
-                            "mae": 0.932,
-                            "rmse": 2.907,
-                            "1px": 0.877,
-                            "3px": 0.944,
-                            "5px": 0.963,
-                            "relepe": 0.125,
-                            "fl-all": 87.979,
-                        },
-                        10: {
-                            "mae": 0.773,
-                            "rmse": 2.768,
-                            "1px": 0.901,
-                            "3px": 0.958,
-                            "5px": 0.972,
-                            "relepe": 0.117,
-                            "fl-all": 90.43,
-                        },
-                        20: {
-                            "mae": 0.854,
-                            "rmse": 2.971,
-                            "1px": 0.9,
-                            "3px": 0.957,
-                            "5px": 0.97,
-                            "relepe": 0.122,
-                            "fl-all": 90.269,
+                            2: {
+                                "mae": 1.702,
+                                "rmse": 3.784,
+                                "1px": 0.784,
+                                "3px": 0.894,
+                                "5px": 0.924,
+                                "relepe": 0.172,
+                                "fl-all": 80.313,
+                            },
+                            5: {
+                                "mae": 0.932,
+                                "rmse": 2.907,
+                                "1px": 0.877,
+                                "3px": 0.944,
+                                "5px": 0.963,
+                                "relepe": 0.125,
+                                "fl-all": 87.979,
+                            },
+                            10: {
+                                "mae": 0.773,
+                                "rmse": 2.768,
+                                "1px": 0.901,
+                                "3px": 0.958,
+                                "5px": 0.972,
+                                "relepe": 0.117,
+                                "fl-all": 90.43,
+                            },
+                            20: {
+                                "mae": 0.854,
+                                "rmse": 2.971,
+                                "1px": 0.9,
+                                "3px": 0.957,
+                                "5px": 0.97,
+                                "relepe": 0.122,
+                                "fl-all": 90.269,
+                            },
                         },
                     },
                 }
             },
             "_docs": """These weights were ported from the original paper. They
             are trained on a dataset mixture of the author's choice.""",
+        },
+    )
+
+    CRESTEREO_ETH_MBL_V1 = Weights(
+        # Weights ported from https://github.com/megvii-research/CREStereo
+        url="https://download.pytorch.org/models/crestereo-8f0e0e9a.pth",
+        transforms=StereoMatching,
+        meta={
+            **_COMMON_META,
+            "num_params": 5432948,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/depth/stereo",
+            "_metrics": {
+                "Middlebury2014-train": {
+                    # metrics for 10 refinement iterations and 1 cascade
+                    "mae": 1.416,
+                    "rmse": 3.53,
+                    "1px": 0.777,
+                    "3px": 0.896,
+                    "5px": 0.933,
+                    "relepe": 0.148,
+                    "fl-all": 78.388,
+                    "_detailed": {
+                        1: {
+                            2: {
+                                "mae": 2.363,
+                                "rmse": 4.352,
+                                "1px": 0.611,
+                                "3px": 0.828,
+                                "5px": 0.891,
+                                "relepe": 0.176,
+                                "fl-all": 64.511,
+                            },
+                            5: {
+                                "mae": 1.618,
+                                "rmse": 3.71,
+                                "1px": 0.761,
+                                "3px": 0.879,
+                                "5px": 0.918,
+                                "relepe": 0.154,
+                                "fl-all": 77.128,
+                            },
+                            10: {
+                                "mae": 1.416,
+                                "rmse": 3.53,
+                                "1px": 0.777,
+                                "3px": 0.896,
+                                "5px": 0.933,
+                                "relepe": 0.148,
+                                "fl-all": 78.388,
+                            },
+                            20: {
+                                "mae": 1.448,
+                                "rmse": 3.583,
+                                "1px": 0.771,
+                                "3px": 0.893,
+                                "5px": 0.931,
+                                "relepe": 0.145,
+                                "fl-all": 77.7,
+                            },
+                        },
+                        2: {
+                            2: {
+                                "mae": 1.972,
+                                "rmse": 4.125,
+                                "1px": 0.73,
+                                "3px": 0.865,
+                                "5px": 0.908,
+                                "relepe": 0.169,
+                                "fl-all": 74.396,
+                            },
+                            5: {
+                                "mae": 1.403,
+                                "rmse": 3.448,
+                                "1px": 0.793,
+                                "3px": 0.905,
+                                "5px": 0.937,
+                                "relepe": 0.151,
+                                "fl-all": 80.186,
+                            },
+                            10: {
+                                "mae": 1.312,
+                                "rmse": 3.368,
+                                "1px": 0.799,
+                                "3px": 0.912,
+                                "5px": 0.943,
+                                "relepe": 0.148,
+                                "fl-all": 80.379,
+                            },
+                            20: {
+                                "mae": 1.376,
+                                "rmse": 3.542,
+                                "1px": 0.796,
+                                "3px": 0.91,
+                                "5px": 0.942,
+                                "relepe": 0.149,
+                                "fl-all": 80.054,
+                            },
+                        },
+                    },
+                }
+            },
+            "_docs": """These weights were trained from scratch on
+            :class:`~torchvision.datasets._stereo_matching.CREStereo` +
+            :class:`~torchvision.datasets._stereo_matching.Middlebury2014Stereo` +
+            :class:`~torchvision.datasets._stereo_matching.ETH3DStereo`.""",
+        },
+    )
+
+    CRESTEREO_FINETUNE_MULTI_V1 = Weights(
+        # Weights ported from https://github.com/megvii-research/CREStereo
+        url="https://download.pytorch.org/models/crestereo-1eaae843.pth",
+        transforms=StereoMatching,
+        meta={
+            **_COMMON_META,
+            "num_params": 5432948,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/depth/stereo",
+            "_metrics": {
+                "Middlebury2014-train": {
+                    # metrics for 10 refinement iterations and 1 cascade
+                    "mae": 1.038,
+                    "rmse": 3.108,
+                    "1px": 0.852,
+                    "3px": 0.942,
+                    "5px": 0.963,
+                    "relepe": 0.129,
+                    "fl-all": 85.522,
+                    "_detailed": {
+                        {
+                            1: {
+                                2: {
+                                    "mae": 1.962,
+                                    "rmse": 3.997,
+                                    "1px": 0.687,
+                                    "3px": 0.862,
+                                    "5px": 0.915,
+                                    "relepe": 0.178,
+                                    "fl-all": 71.724,
+                                },
+                                5: {
+                                    "mae": 1.205,
+                                    "rmse": 3.326,
+                                    "1px": 0.834,
+                                    "3px": 0.928,
+                                    "5px": 0.955,
+                                    "relepe": 0.138,
+                                    "fl-all": 84.081,
+                                },
+                                10: {
+                                    "mae": 1.038,
+                                    "rmse": 3.108,
+                                    "1px": 0.852,
+                                    "3px": 0.942,
+                                    "5px": 0.963,
+                                    "relepe": 0.129,
+                                    "fl-all": 85.522,
+                                },
+                                20: {
+                                    "mae": 1.01,
+                                    "rmse": 3.09,
+                                    "1px": 0.855,
+                                    "3px": 0.946,
+                                    "5px": 0.965,
+                                    "relepe": 0.126,
+                                    "fl-all": 85.825,
+                                },
+                            },
+                            2: {
+                                2: {
+                                    "mae": 1.564,
+                                    "rmse": 3.741,
+                                    "1px": 0.793,
+                                    "3px": 0.904,
+                                    "5px": 0.933,
+                                    "relepe": 0.158,
+                                    "fl-all": 80.625,
+                                },
+                                5: {
+                                    "mae": 1.187,
+                                    "rmse": 3.345,
+                                    "1px": 0.843,
+                                    "3px": 0.931,
+                                    "5px": 0.954,
+                                    "relepe": 0.135,
+                                    "fl-all": 84.78,
+                                },
+                                10: {
+                                    "mae": 1.052,
+                                    "rmse": 3.159,
+                                    "1px": 0.852,
+                                    "3px": 0.942,
+                                    "5px": 0.963,
+                                    "relepe": 0.129,
+                                    "fl-all": 85.581,
+                                },
+                                20: {
+                                    "mae": 1.029,
+                                    "rmse": 3.136,
+                                    "1px": 0.855,
+                                    "3px": 0.945,
+                                    "5px": 0.965,
+                                    "relepe": 0.127,
+                                    "fl-all": 85.904,
+                                },
+                            },
+                        },
+                    },
+                }
+            },
+            "_docs": """These weights were finetuned on a mixture of
+            :class:`~torchvision.datasets._stereo_matching.CREStereo` +
+            :class:`~torchvision.datasets._stereo_matching.Middlebury2014Stereo` +
+            :class:`~torchvision.datasets._stereo_matching.ETH3DStereo` +
+            :class:`~torchvision.datasets._stereo_matching.InStereo2k` +
+            :class:`~torchvision.datasets._stereo_matching.CarlaStereo` +
+            :class:`~torchvision.datasets._stereo_matching.SintelStereo` +
+            :class:`~torchvision.datasets._stereo_matching.FallingThingsStereo` +
+            .""",
         },
     )
 
