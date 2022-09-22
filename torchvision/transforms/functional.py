@@ -120,7 +120,7 @@ def _is_numpy_image(img: Any) -> bool:
     return img.ndim in {2, 3}
 
 
-def to_tensor(pic, device: torch.device = "cpu") -> Tensor:
+def to_tensor(pic: Union[Image.Image, np.ndarray], device: torch.device = "cpu") -> Tensor:
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     This function does not support torchscript.
 
@@ -175,7 +175,7 @@ def to_tensor(pic, device: torch.device = "cpu") -> Tensor:
         return img
 
 
-def pil_to_tensor(pic: Any, device: torch.device = "cpu") -> Tensor:
+def pil_to_tensor(pic: Image.Image, device: torch.device = "cpu") -> Tensor:
     """Convert a ``PIL Image`` to a tensor of the same type.
     This function does not support torchscript.
 
