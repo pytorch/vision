@@ -208,7 +208,7 @@ def _evaluate(
 
 
 def make_eval_loader(dataset_name: str, args: argparse.Namespace) -> torch.utils.data.DataLoader:
-    if args.weights and args.test_only:
+    if args.weights:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
 

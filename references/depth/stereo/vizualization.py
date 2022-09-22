@@ -123,3 +123,4 @@ def make_prediction_image_side_to_side(
         ax[1].set_title("Ground Truth")
         save_name = os.path.join(save_path, "{}_{}.png".format(prefix, idx))
         plt.savefig(save_name)
+        plt.close()

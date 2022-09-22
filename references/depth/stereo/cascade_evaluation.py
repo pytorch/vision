@@ -196,7 +196,7 @@ def _evaluate(
 
 def evaluate(model, loader, args, writter=None, step=None):
     os.makedirs(args.img_folder, exist_ok=True)
-    checkpoint_name = os.path.basename(args.checkpoint)
+    checkpoint_name = os.path.basename(args.checkpoint) or args.weights
     image_checkpoint_folder = os.path.join(args.img_folder, checkpoint_name)
 
     metrics = {}
@@ -263,7 +263,6 @@ def evaluate(model, loader, args, writter=None, step=None):
 def load_checkpoint(args):
     utils.setup_ddp(args)
 
-    checkpoint = torch.load(args.checkpoint, map_location="cpu")
     if not args.weights:
         if "model" in checkpoint:
             checkpoint = torch.load(args.checkpoint, map_location=torch.device("cpu"))
