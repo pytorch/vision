@@ -69,6 +69,15 @@ class DropBlockWrapper(nn.Module):
         self.layer(a)
 
 
+class PoolWrapper(nn.Module):
+    def __init__(self, pool: nn.Module):
+        super().__init__()
+        self.pool = pool
+
+    def forward(self, imgs: Tensor, boxes: List[Tensor]) -> Tensor:
+        return self.pool(imgs, boxes)
+
+
 class RoIOpTester(ABC):
     dtype = torch.float64
 
@@ -108,6 +117,25 @@ class RoIOpTester(ABC):
         assert len(graph_node_names) == 2
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_torch_fx_trace(self, device, x_dtype=torch.float, rois_dtype=torch.float):
+        op_obj = self.make_obj().to(device=device)
+        graph_module = torch.fx.symbolic_trace(op_obj)
+        pool_size = 5
+        n_channels = 2 * (pool_size**2)
+        x = torch.rand(2, n_channels, 5, 5, dtype=x_dtype, device=device)
+        rois = torch.tensor(
+            [[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]],  # format is (xyxy)
+            dtype=rois_dtype,
+            device=device,
+        )
+        output_gt = op_obj(x, rois)
+        assert output_gt.dtype == x.dtype
+        output_fx = graph_module(x, rois)
+        assert output_fx.dtype == x.dtype
+        tol = 1e-5
+        torch.testing.assert_close(output_gt, output_fx, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -149,6 +177,14 @@ class RoIOpTester(ABC):
             a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
             ops.roi_pool(a, [boxes], output_size=(2, 2))
+
+    def _helper_jit_boxes_list(self, model):
+        x = torch.rand(2, 1, 10, 10)
+        roi = torch.tensor([[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]], dtype=torch.float).t()
+        rois = [roi, roi]
+        scriped = torch.jit.script(model)
+        y = scriped(x, rois)
+        assert y.shape == (10, 1, 3, 3)
 
     @abstractmethod
     def fn(*args, **kwargs):
@@ -209,6 +245,10 @@ class TestRoiPool(RoIOpTester):
 
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
+
+    def test_jit_boxes_list(self):
+        model = PoolWrapper(ops.RoIPool(output_size=[3, 3], spatial_scale=1.0))
+        self._helper_jit_boxes_list(model)
 
 
 class TestPSRoIPool(RoIOpTester):
@@ -449,6 +489,10 @@ class TestRoIAlign(RoIOpTester):
         qrois = torch.quantize_per_tensor(rois, scale=1, zero_point=0, dtype=torch.qint8)
         with pytest.raises(RuntimeError, match="Only one image per batch is allowed"):
             ops.roi_align(qx, qrois, output_size=5)
+
+    def test_jit_boxes_list(self):
+        model = PoolWrapper(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
+        self._helper_jit_boxes_list(model)
 
 
 class TestPSRoIAlign(RoIOpTester):
@@ -1111,14 +1155,6 @@ class TestBoxConvert:
         torch.testing.assert_close(scripted_cxcywh, box_cxcywh)
 
 
-INT_BOXES = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
-FLOAT_BOXES = [
-    [285.3538, 185.5758, 1193.5110, 851.4551],
-    [285.1472, 188.7374, 1192.4984, 851.0669],
-    [279.2440, 197.9812, 1189.4746, 849.2019],
-]
-
-
 class TestBoxArea:
     def area_check(self, box, expected, atol=1e-4):
         out = ops.box_area(box)
@@ -1152,98 +1188,154 @@ class TestBoxArea:
         torch.testing.assert_close(scripted_area, expected)
 
 
+INT_BOXES = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300], [0, 0, 25, 25]]
+INT_BOXES2 = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
+FLOAT_BOXES = [
+    [285.3538, 185.5758, 1193.5110, 851.4551],
+    [285.1472, 188.7374, 1192.4984, 851.0669],
+    [279.2440, 197.9812, 1189.4746, 849.2019],
+]
+
+
+def gen_box(size, dtype=torch.float):
+    xy1 = torch.rand((size, 2), dtype=dtype)
+    xy2 = xy1 + torch.rand((size, 2), dtype=dtype)
+    return torch.cat([xy1, xy2], axis=-1)
+
+
 class TestIouBase:
     @staticmethod
-    def _run_test(target_fn: Callable, test_input: List, dtypes: List[torch.dtype], atol: float, expected: List):
+    def _run_test(target_fn: Callable, actual_box1, actual_box2, dtypes, atol, expected):
         for dtype in dtypes:
-            actual_box = torch.tensor(test_input, dtype=dtype)
+            actual_box1 = torch.tensor(actual_box1, dtype=dtype)
+            actual_box2 = torch.tensor(actual_box2, dtype=dtype)
             expected_box = torch.tensor(expected)
-            out = target_fn(actual_box, actual_box)
+            out = target_fn(actual_box1, actual_box2)
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
-    def _run_jit_test(target_fn: Callable, test_input: List):
-        box_tensor = torch.tensor(test_input, dtype=torch.float)
+    def _run_jit_test(target_fn: Callable, actual_box: List):
+        box_tensor = torch.tensor(actual_box, dtype=torch.float)
         expected = target_fn(box_tensor, box_tensor)
         scripted_fn = torch.jit.script(target_fn)
         scripted_out = scripted_fn(box_tensor, box_tensor)
         torch.testing.assert_close(scripted_out, expected)
 
+    @staticmethod
+    def _cartesian_product(boxes1, boxes2, target_fn: Callable):
+        N = boxes1.size(0)
+        M = boxes2.size(0)
+        result = torch.zeros((N, M))
+        for i in range(N):
+            for j in range(M):
+                result[i, j] = target_fn(boxes1[i].unsqueeze(0), boxes2[j].unsqueeze(0))
+        return result
+
+    @staticmethod
+    def _run_cartesian_test(target_fn: Callable):
+        boxes1 = gen_box(5)
+        boxes2 = gen_box(7)
+        a = TestIouBase._cartesian_product(boxes1, boxes2, target_fn)
+        b = target_fn(boxes1, boxes2)
+        assert torch.allclose(a, b)
+
 
 class TestBoxIou(TestIouBase):
-    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, atol, expected",
+        "actual_box1, actual_box2, dtypes, atol, expected",
         [
-            pytest.param(INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(FLOAT_BOXES, [torch.float16], 0.002, float_expected),
-            pytest.param(FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, atol, expected):
-        self._run_test(ops.box_iou, test_input, dtypes, atol, expected)
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.box_iou, INT_BOXES)
 
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.box_iou)
+
 
 class TestGeneralizedBoxIou(TestIouBase):
-    int_expected = [[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0]]
+    int_expected = [[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0], [0.0625, 0.25, -0.8819]]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, atol, expected",
+        "actual_box1, actual_box2, dtypes, atol, expected",
         [
-            pytest.param(INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(FLOAT_BOXES, [torch.float16], 0.002, float_expected),
-            pytest.param(FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, atol, expected):
-        self._run_test(ops.generalized_box_iou, test_input, dtypes, atol, expected)
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.generalized_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.generalized_box_iou, INT_BOXES)
 
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.generalized_box_iou)
+
 
 class TestDistanceBoxIoU(TestIouBase):
-    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    int_expected = [
+        [1.0000, 0.1875, -0.4444],
+        [0.1875, 1.0000, -0.5625],
+        [-0.4444, -0.5625, 1.0000],
+        [-0.0781, 0.1875, -0.6267],
+    ]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, atol, expected",
+        "actual_box1, actual_box2, dtypes, atol, expected",
         [
-            pytest.param(INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(FLOAT_BOXES, [torch.float16], 0.002, float_expected),
-            pytest.param(FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, atol, expected):
-        self._run_test(ops.distance_box_iou, test_input, dtypes, atol, expected)
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.distance_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.distance_box_iou, INT_BOXES)
 
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.distance_box_iou)
+
 
 class TestCompleteBoxIou(TestIouBase):
-    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    int_expected = [
+        [1.0000, 0.1875, -0.4444],
+        [0.1875, 1.0000, -0.5625],
+        [-0.4444, -0.5625, 1.0000],
+        [-0.0781, 0.1875, -0.6267],
+    ]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, atol, expected",
+        "actual_box1, actual_box2, dtypes, atol, expected",
         [
-            pytest.param(INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(FLOAT_BOXES, [torch.float16], 0.002, float_expected),
-            pytest.param(FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, atol, expected):
-        self._run_test(ops.complete_box_iou, test_input, dtypes, atol, expected)
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.complete_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.complete_box_iou, INT_BOXES)
+
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.complete_box_iou)
 
 
 def get_boxes(dtype, device):

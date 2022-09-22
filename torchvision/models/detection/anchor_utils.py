@@ -213,8 +213,8 @@ class DefaultBoxGenerator(nn.Module):
         for k, f_k in enumerate(grid_sizes):
             # Now add the default boxes for each width-height pair
             if self.steps is not None:
-                x_f_k = image_size[0] / self.steps[k]
-                y_f_k = image_size[1] / self.steps[k]
+                x_f_k = image_size[1] / self.steps[k]
+                y_f_k = image_size[0] / self.steps[k]
             else:
                 y_f_k, x_f_k = f_k
 

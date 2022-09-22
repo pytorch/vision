@@ -99,8 +99,8 @@ class TestModelsDetectionNegativeSamples:
         ],
     )
     def test_forward_negative_sample_frcnn(self, name):
-        model = torchvision.models.detection.__dict__[name](
-            weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
+        model = torchvision.models.get_model(
+            name, weights=None, weights_backbone=None, num_classes=2, min_size=100, max_size=100
         )
 
         images, targets = self._make_empty_sample()

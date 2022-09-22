@@ -7,7 +7,7 @@ from torch.ao.quantization import DeQuantStub, QuantStub
 
 from ...ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ...transforms._presets import ImageClassification
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import _ovewrite_named_param, handle_legacy_interface
 from ..mobilenetv3 import (
@@ -83,7 +83,7 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
 class QuantizableInvertedResidual(InvertedResidual):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(se_layer=QuantizableSqueezeExcitation, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(*args, se_layer=QuantizableSqueezeExcitation, **kwargs)  # type: ignore[misc]
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -184,6 +184,7 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
     DEFAULT = IMAGENET1K_QNNPACK_V1
 
 
+@register_model(name="quantized_mobilenet_v3_large")
 @handle_legacy_interface(
     weights=(
         "pretrained",

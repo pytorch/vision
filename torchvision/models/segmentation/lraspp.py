@@ -7,7 +7,7 @@ from torch.nn import functional as F
 
 from ...transforms._presets import SemanticSegmentation
 from ...utils import _log_api_usage_once
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _VOC_CATEGORIES
 from .._utils import _ovewrite_value_param, handle_legacy_interface, IntermediateLayerGetter
 from ..mobilenetv3 import mobilenet_v3_large, MobileNet_V3_Large_Weights, MobileNetV3
@@ -117,6 +117,7 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
     DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", LRASPP_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1),
     weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
@@ -162,7 +163,7 @@ def lraspp_mobilenet_v3_large(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 21
 

@@ -36,15 +36,15 @@ jobs:
         if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }}
         run: |
           echo "CHANNEL=test" >> "$GITHUB_ENV"
+      - name: Setup miniconda
+        uses: pytorch/test-infra/.github/actions/setup-miniconda@main
       - name: Build TorchVision M1 wheel
         shell: arch -arch arm64 bash {0}
         env:
           ENV_NAME: conda-env-${{ github.run_id }}
           PY_VERS: ${{ matrix.py_vers }}
         run: |
-          . ~/miniconda3/etc/profile.d/conda.sh
-          # Needed for JPEG library detection as setup.py detects conda presence by running `shlex.which('conda')`
-          export PATH=~/miniconda3/bin:$PATH
+          # Needed for JPEG library detection as setup.py detects conda presence by running `shutil.which('conda')`
           set -ex
           . packaging/pkg_helpers.bash
           # if we are uploading to test channell, our version consist only of the base: 0.x.x - no date string or suffix added
@@ -67,7 +67,6 @@ jobs:
           ENV_NAME: conda-test-env-${{ github.run_id }}
           PY_VERS: ${{ matrix.py_vers }}
         run: |
-          . ~/miniconda3/etc/profile.d/conda.sh
           set -ex
           conda create -yp ${ENV_NAME} python=${PY_VERS} numpy
           conda run -p ${ENV_NAME} python3 -mpip install torch --pre --extra-index-url=https://download.pytorch.org/whl/${CHANNEL}
@@ -112,13 +111,13 @@ jobs:
         if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }}
         run: |
           echo "CHANNEL=test" >> "$GITHUB_ENV"
+      - name: Setup miniconda
+        uses: pytorch/test-infra/.github/actions/setup-miniconda@main
       - name: Install conda-build and purge previous artifacts
         shell: arch -arch arm64 bash {0}
         run: |
-          . ~/miniconda3/etc/profile.d/conda.sh
           conda install -yq conda-build
           conda build purge-all
-
       - name: Build TorchVision M1 conda package
         shell: arch -arch arm64 bash {0}
         env:
@@ -126,7 +125,6 @@ jobs:
           PYTHON_VERSION: ${{ matrix.py_vers }}
           CU_VERSION: cpu
         run: |
-          . ~/miniconda3/etc/profile.d/conda.sh
           set -ex
           . packaging/pkg_helpers.bash
 
@@ -156,7 +154,7 @@ jobs:
         env:
           CONDA_PYTORCHBOT_TOKEN: ${{ secrets.CONDA_PYTORCHBOT_TOKEN }}
         run: |
-          . ~/miniconda3/etc/profile.d/conda.sh
           conda install -yq anaconda-client
           set -x
-          anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload ~/miniconda3/conda-bld/osx-arm64/*.tar.bz2 -u "pytorch-${CHANNEL}" --label main --no-progress --force
+          export ANACONDA_PATH=$(conda info --base)/bin
+          $ANACONDA_PATH/anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload dist/osx-arm64/*.tar.bz2 -u "pytorch-${CHANNEL}" --label main --no-progress --force

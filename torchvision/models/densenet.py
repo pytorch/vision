@@ -11,7 +11,7 @@ from torch import Tensor
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import Weights, WeightsEnum
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param, handle_legacy_interface
 
@@ -337,6 +337,7 @@ class DenseNet201_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", DenseNet121_Weights.IMAGENET1K_V1))
 def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-121 model from
@@ -362,6 +363,7 @@ def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool
     return _densenet(32, (6, 12, 24, 16), 64, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", DenseNet161_Weights.IMAGENET1K_V1))
 def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-161 model from
@@ -387,6 +389,7 @@ def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool
     return _densenet(48, (6, 12, 36, 24), 96, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", DenseNet169_Weights.IMAGENET1K_V1))
 def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-169 model from
@@ -412,6 +415,7 @@ def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool
     return _densenet(32, (6, 12, 32, 32), 64, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", DenseNet201_Weights.IMAGENET1K_V1))
 def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-201 model from
