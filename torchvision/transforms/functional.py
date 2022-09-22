@@ -15,7 +15,8 @@ except ImportError:
     accimage = None
 
 from ..utils import _log_api_usage_once
-from . import functional_pil as F_pil, functional_tensor as F_t
+from . import functional_pil as F_pil
+from . import functional_tensor as F_t
 
 
 class InterpolationMode(Enum):
@@ -119,7 +120,7 @@ def _is_numpy_image(img: Any) -> bool:
     return img.ndim in {2, 3}
 
 
-def to_tensor(pic, device: torch.device) -> Tensor:
+def to_tensor(pic, device: torch.device = "cpu") -> Tensor:
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     This function does not support torchscript.
 
@@ -174,7 +175,7 @@ def to_tensor(pic, device: torch.device) -> Tensor:
         return img
 
 
-def pil_to_tensor(pic: Any, device: torch.device) -> Tensor:
+def pil_to_tensor(pic: Any, device: torch.device = "cpu") -> Tensor:
     """Convert a ``PIL Image`` to a tensor of the same type.
     This function does not support torchscript.
 
