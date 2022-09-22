@@ -378,11 +378,14 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
 
         scheduler.step()
 
+        # synchronize the metrics before logging to tensorboard if need be
+        if step % args.tensorboard_log_frequency == 0:
+            logger.synchronize_between_processes()
+
         if not dist.is_initialized() or dist.get_rank() == 0:
             if writer is not None and step % args.tensorboard_log_frequency == 0:
                 # log the loss and metrics to tensorboard
-                logger.synchronize_between_processes()
-
+  
                 writer.add_scalar("loss", loss, step)
                 for name, value in logger.meters.items():
                     writer.add_scalar(name, value.avg, step)
