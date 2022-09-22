@@ -1074,7 +1074,7 @@ class CREStereo_Base_Weights(WeightsEnum):
 
     """
 
-    MEGVII = Weights(
+    MEGVII_V1 = Weights(
         # Weights ported from https://github.com/megvii-research/CREStereo
         url="https://download.pytorch.org/models/crestereo_756c8b0f.pth",
         transforms=StereoMatching,
@@ -1169,11 +1169,11 @@ class CREStereo_Base_Weights(WeightsEnum):
         },
     )
 
-    DEFAULT = MEGVII
+    DEFAULT = MEGVII_V1
 
 
 @register_model()
-@handle_legacy_interface(weights=("pretrained", CREStereo_Base_Weights.MEGVII))
+@handle_legacy_interface(weights=("pretrained", CREStereo_Base_Weights.MEGVII_V1))
 def crestereo_base(*, weights: Optional[CREStereo_Base_Weights] = None, progress=True, **kwargs) -> CREStereo:
     """CREStereo model from
     `Practical Stereo Matching via Cascaded Recurrent Network
