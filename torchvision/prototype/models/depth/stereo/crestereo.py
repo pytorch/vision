@@ -1058,7 +1058,7 @@ def _crestereo(
 
 
 _COMMON_META = {
-    "min_size": (384, 512),
+    "resize_size": (384, 512),
 }
 
 
