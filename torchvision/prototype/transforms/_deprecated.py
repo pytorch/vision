@@ -11,10 +11,7 @@ from torchvision.transforms import functional as _F
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_chw
-
-
-DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
+from ._utils import DType, query_chw
 
 
 class ToTensor(Transform):
