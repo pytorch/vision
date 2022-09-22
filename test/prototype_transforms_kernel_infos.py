@@ -2,7 +2,7 @@ import dataclasses
 import functools
 import itertools
 import math
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable, Optional, Sequence
 
 import numpy as np
 import pytest
@@ -15,6 +15,13 @@ from torchvision.prototype import features
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 __all__ = ["KernelInfo", "KERNEL_INFOS"]
+
+
+@dataclasses.dataclass
+class Skip:
+    test_name: str
+    reason: str
+    condition: Callable[[ArgsKwargs, str], bool] = lambda args_kwargs, device: True
 
 
 @dataclasses.dataclass
@@ -36,10 +43,18 @@ class KernelInfo:
     reference_inputs_fn: Optional[Callable[[], Iterable[ArgsKwargs]]] = None
     # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
     closeness_kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    skips: Sequence[Skip] = dataclasses.field(default_factory=list)
+    _skips_map: Dict[str, Skip] = dataclasses.field(default=None, init=False)
 
     def __post_init__(self):
         self.kernel_name = self.kernel_name or self.kernel.__name__
         self.reference_inputs_fn = self.reference_inputs_fn or self.sample_inputs_fn
+        self._skips_map = {skip.test_name: skip for skip in self.skips}
+
+    def maybe_skip(self, *, test_name, args_kwargs, device):
+        skip = self._skips_map.get(test_name)
+        if skip and skip.condition(args_kwargs, device):
+            pytest.skip(skip.reason)
 
 
 DEFAULT_IMAGE_CLOSENESS_KWARGS = dict(
@@ -1221,5 +1236,269 @@ KERNEL_INFOS.append(
         F.erase_image_tensor,
         kernel_name="erase_image_tensor",
         sample_inputs_fn=sample_inputs_erase_image_tensor,
+    )
+)
+
+_ADJUST_BRIGHTNESS_FACTORS = [0.1, 0.5]
+
+
+def sample_inputs_adjust_brightness_image_tensor():
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
+    ):
+        yield ArgsKwargs(image_loader, brightness_factor=_ADJUST_BRIGHTNESS_FACTORS[0])
+
+
+def reference_inputs_adjust_brightness_image_tensor():
+    for image_loader, brightness_factor in itertools.product(
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
+        _ADJUST_BRIGHTNESS_FACTORS,
+    ):
+        yield ArgsKwargs(image_loader, brightness_factor=brightness_factor)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.adjust_brightness_image_tensor,
+        kernel_name="adjust_brightness_image_tensor",
+        sample_inputs_fn=sample_inputs_adjust_brightness_image_tensor,
+        reference_fn=pil_reference_wrapper(F.adjust_brightness_image_pil),
+        reference_inputs_fn=reference_inputs_adjust_brightness_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)
+
+
+_ADJUST_CONTRAST_FACTORS = [0.1, 0.5]
+
+
+def sample_inputs_adjust_contrast_image_tensor():
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
+    ):
+        yield ArgsKwargs(image_loader, contrast_factor=_ADJUST_CONTRAST_FACTORS[0])
+
+
+def reference_inputs_adjust_contrast_image_tensor():
+    for image_loader, contrast_factor in itertools.product(
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
+        _ADJUST_CONTRAST_FACTORS,
+    ):
+        yield ArgsKwargs(image_loader, contrast_factor=contrast_factor)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.adjust_contrast_image_tensor,
+        kernel_name="adjust_contrast_image_tensor",
+        sample_inputs_fn=sample_inputs_adjust_contrast_image_tensor,
+        reference_fn=pil_reference_wrapper(F.adjust_contrast_image_pil),
+        reference_inputs_fn=reference_inputs_adjust_contrast_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)
+
+_ADJUST_GAMMA_GAMMAS_GAINS = [
+    (0.5, 2.0),
+    (0.0, 1.0),
+]
+
+
+def sample_inputs_adjust_gamma_image_tensor():
+    gamma, gain = _ADJUST_GAMMA_GAMMAS_GAINS[0]
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
+    ):
+        yield ArgsKwargs(image_loader, gamma=gamma, gain=gain)
+
+
+def reference_inputs_adjust_gamma_image_tensor():
+    for image_loader, (gamma, gain) in itertools.product(
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
+        _ADJUST_GAMMA_GAMMAS_GAINS,
+    ):
+        yield ArgsKwargs(image_loader, gamma=gamma, gain=gain)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.adjust_gamma_image_tensor,
+        kernel_name="adjust_gamma_image_tensor",
+        sample_inputs_fn=sample_inputs_adjust_gamma_image_tensor,
+        reference_fn=pil_reference_wrapper(F.adjust_gamma_image_pil),
+        reference_inputs_fn=reference_inputs_adjust_gamma_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)
+
+
+_ADJUST_HUE_FACTORS = [-0.1, 0.5]
+
+
+def sample_inputs_adjust_hue_image_tensor():
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
+    ):
+        yield ArgsKwargs(image_loader, hue_factor=_ADJUST_HUE_FACTORS[0])
+
+
+def reference_inputs_adjust_hue_image_tensor():
+    for image_loader, hue_factor in itertools.product(
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
+        _ADJUST_HUE_FACTORS,
+    ):
+        yield ArgsKwargs(image_loader, hue_factor=hue_factor)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.adjust_hue_image_tensor,
+        kernel_name="adjust_hue_image_tensor",
+        sample_inputs_fn=sample_inputs_adjust_hue_image_tensor,
+        reference_fn=pil_reference_wrapper(F.adjust_hue_image_pil),
+        reference_inputs_fn=reference_inputs_adjust_hue_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)
+
+_ADJUST_SATURATION_FACTORS = [0.1, 0.5]
+
+
+def sample_inputs_adjust_saturation_image_tensor():
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
+    ):
+        yield ArgsKwargs(image_loader, saturation_factor=_ADJUST_SATURATION_FACTORS[0])
+
+
+def reference_inputs_adjust_saturation_image_tensor():
+    for image_loader, saturation_factor in itertools.product(
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
+        _ADJUST_SATURATION_FACTORS,
+    ):
+        yield ArgsKwargs(image_loader, saturation_factor=saturation_factor)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.adjust_saturation_image_tensor,
+        kernel_name="adjust_saturation_image_tensor",
+        sample_inputs_fn=sample_inputs_adjust_saturation_image_tensor,
+        reference_fn=pil_reference_wrapper(F.adjust_saturation_image_pil),
+        reference_inputs_fn=reference_inputs_adjust_saturation_image_tensor,
+        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+    )
+)
+
+
+def sample_inputs_clamp_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders():
+        yield ArgsKwargs(
+            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.image_size
+        )
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.clamp_bounding_box,
+        sample_inputs_fn=sample_inputs_clamp_bounding_box,
+    )
+)
+
+_FIVE_TEN_CROP_SIZES = [7, (6,), [5], (6, 5), [7, 6]]
+
+
+def _get_five_ten_crop_image_size(size):
+    if isinstance(size, int):
+        crop_height = crop_width = size
+    elif len(size) == 1:
+        crop_height = crop_width = size[0]
+    else:
+        crop_height, crop_width = size
+    return 2 * crop_height, 2 * crop_width
+
+
+def sample_inputs_five_crop_image_tensor():
+    for size in _FIVE_TEN_CROP_SIZES:
+        for image_loader in make_image_loaders(sizes=[_get_five_ten_crop_image_size(size)]):
+            yield ArgsKwargs(image_loader, size=size)
+
+
+def reference_inputs_five_crop_image_tensor():
+    for size in _FIVE_TEN_CROP_SIZES:
+        for image_loader in make_image_loaders(sizes=[_get_five_ten_crop_image_size(size)], extra_dims=[()]):
+            yield ArgsKwargs(image_loader, size=size)
+
+
+def sample_inputs_ten_crop_image_tensor():
+    for size, vertical_flip in itertools.product(_FIVE_TEN_CROP_SIZES, [False, True]):
+        for image_loader in make_image_loaders(sizes=[_get_five_ten_crop_image_size(size)]):
+            yield ArgsKwargs(image_loader, size=size, vertical_flip=vertical_flip)
+
+
+def reference_inputs_ten_crop_image_tensor():
+    for size, vertical_flip in itertools.product(_FIVE_TEN_CROP_SIZES, [False, True]):
+        for image_loader in make_image_loaders(sizes=[_get_five_ten_crop_image_size(size)], extra_dims=[()]):
+            yield ArgsKwargs(image_loader, size=size, vertical_flip=vertical_flip)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.five_crop_image_tensor,
+            sample_inputs_fn=sample_inputs_five_crop_image_tensor,
+            reference_fn=pil_reference_wrapper(F.five_crop_image_pil),
+            reference_inputs_fn=reference_inputs_five_crop_image_tensor,
+            skips=[
+                Skip(
+                    "test_scripted_vs_eager",
+                    condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
+                    reason="Integer size is not supported when scripting five_crop_image_tensor.",
+                ),
+                Skip("test_batched_vs_single", reason="Custom batching needed for five_crop_image_tensor."),
+                Skip("test_no_inplace", reason="Output of five_crop_image_tensor is not a tensor."),
+                Skip("test_dtype_and_device_consistency", reason="Output of five_crop_image_tensor is not a tensor."),
+            ],
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.ten_crop_image_tensor,
+            sample_inputs_fn=sample_inputs_ten_crop_image_tensor,
+            reference_fn=pil_reference_wrapper(F.ten_crop_image_pil),
+            reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
+            skips=[
+                Skip(
+                    "test_scripted_vs_eager",
+                    condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
+                    reason="Integer size is not supported when scripting ten_crop_image_tensor.",
+                ),
+                Skip("test_batched_vs_single", reason="Custom batching needed for ten_crop_image_tensor."),
+                Skip("test_no_inplace", reason="Output of ten_crop_image_tensor is not a tensor."),
+                Skip("test_dtype_and_device_consistency", reason="Output of ten_crop_image_tensor is not a tensor."),
+            ],
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+    ]
+)
+
+_NORMALIZE_MEANS_STDS = [
+    ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
+]
+
+
+def sample_inputs_normalize_image_tensor():
+    for image_loader, (mean, std) in itertools.product(
+        make_image_loaders(sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]),
+        _NORMALIZE_MEANS_STDS,
+    ):
+        yield ArgsKwargs(image_loader, mean=mean, std=std)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.normalize_image_tensor,
+        kernel_name="normalize_image_tensor",
+        sample_inputs_fn=sample_inputs_normalize_image_tensor,
     )
 )

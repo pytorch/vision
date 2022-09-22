@@ -1,13 +1,9 @@
 import dataclasses
-import functools
-from typing import Callable, Dict, Type
+from typing import Callable, Dict, Sequence, Type
 
 import pytest
-import torch
 import torchvision.prototype.transforms.functional as F
-from prototype_common_utils import ArgsKwargs
-from prototype_transforms_kernel_infos import KERNEL_INFOS
-from test_prototype_transforms_functional import FUNCTIONAL_INFOS
+from prototype_transforms_kernel_infos import KERNEL_INFOS, Skip
 from torchvision.prototype import features
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
@@ -15,30 +11,15 @@ __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
 KERNEL_SAMPLE_INPUTS_FN_MAP = {info.kernel: info.sample_inputs_fn for info in KERNEL_INFOS}
 
 
-# Helper class to use the infos from the old framework for now tests
-class PreloadedArgsKwargs(ArgsKwargs):
-    def load(self, device="cpu"):
-        args = tuple(arg.to(device) if isinstance(arg, torch.Tensor) else arg for arg in self.args)
-        kwargs = {
-            keyword: arg.to(device) if isinstance(arg, torch.Tensor) else arg for keyword, arg in self.kwargs.items()
-        }
-        return args, kwargs
-
-
-def preloaded_sample_inputs(args_kwargs):
-    for args, kwargs in args_kwargs:
-        yield PreloadedArgsKwargs(*args, **kwargs)
-
-
-KERNEL_SAMPLE_INPUTS_FN_MAP.update(
-    {info.functional: functools.partial(preloaded_sample_inputs, info.sample_inputs()) for info in FUNCTIONAL_INFOS}
-)
-
-
 @dataclasses.dataclass
 class DispatcherInfo:
     dispatcher: Callable
     kernels: Dict[Type, Callable]
+    skips: Sequence[Skip] = dataclasses.field(default_factory=list)
+    _skips_map: Dict[str, Skip] = dataclasses.field(default=None, init=False)
+
+    def __post_init__(self):
+        self._skips_map = {skip.test_name: skip for skip in self.skips}
 
     def sample_inputs(self, *types):
         for type in types or self.kernels.keys():
@@ -46,6 +27,11 @@ class DispatcherInfo:
                 raise pytest.UsageError(f"There is no kernel registered for type {type.__name__}")
 
             yield from KERNEL_SAMPLE_INPUTS_FN_MAP[self.kernels[type]]()
+
+    def maybe_skip(self, *, test_name, args_kwargs, device):
+        skip = self._skips_map.get(test_name)
+        if skip and skip.condition(args_kwargs, device):
+            pytest.skip(skip.reason)
 
 
 DISPATCHER_INFOS = [
@@ -122,6 +108,14 @@ DISPATCHER_INFOS = [
         },
     ),
     DispatcherInfo(
+        F.elastic,
+        kernels={
+            features.Image: F.elastic_image_tensor,
+            features.BoundingBox: F.elastic_bounding_box,
+            features.Mask: F.elastic_mask,
+        },
+    ),
+    DispatcherInfo(
         F.center_crop,
         kernels={
             features.Image: F.center_crop_image_tensor,
@@ -175,6 +169,68 @@ DISPATCHER_INFOS = [
         F.erase,
         kernels={
             features.Image: F.erase_image_tensor,
+        },
+    ),
+    DispatcherInfo(
+        F.adjust_brightness,
+        kernels={
+            features.Image: F.adjust_brightness_image_tensor,
+        },
+    ),
+    DispatcherInfo(
+        F.adjust_contrast,
+        kernels={
+            features.Image: F.adjust_contrast_image_tensor,
+        },
+    ),
+    DispatcherInfo(
+        F.adjust_gamma,
+        kernels={
+            features.Image: F.adjust_gamma_image_tensor,
+        },
+    ),
+    DispatcherInfo(
+        F.adjust_hue,
+        kernels={
+            features.Image: F.adjust_hue_image_tensor,
+        },
+    ),
+    DispatcherInfo(
+        F.adjust_saturation,
+        kernels={
+            features.Image: F.adjust_saturation_image_tensor,
+        },
+    ),
+    DispatcherInfo(
+        F.five_crop,
+        kernels={
+            features.Image: F.five_crop_image_tensor,
+        },
+        skips=[
+            Skip(
+                "test_scripted_smoke",
+                condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
+                reason="Integer size is not supported when scripting five_crop_image_tensor.",
+            ),
+        ],
+    ),
+    DispatcherInfo(
+        F.ten_crop,
+        kernels={
+            features.Image: F.ten_crop_image_tensor,
+        },
+        skips=[
+            Skip(
+                "test_scripted_smoke",
+                condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
+                reason="Integer size is not supported when scripting ten_crop_image_tensor.",
+            ),
+        ],
+    ),
+    DispatcherInfo(
+        F.normalize,
+        kernels={
+            features.Image: F.normalize_image_tensor,
         },
     ),
 ]
