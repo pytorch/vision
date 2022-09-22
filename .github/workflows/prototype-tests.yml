@@ -42,26 +42,26 @@ jobs:
       - name: Run prototype datasets tests
         shell: bash
         run: |
-          pytest 
-            --durations=20 
-            --cov=torchvision/prototype/datasets
-            --cov-report=term-missing
+          pytest \
+            --durations=20 \
+            --cov=torchvision/prototype/datasets \
+            --cov-report=term-missing \
             test/test_prototype_datasets*.py
 
       - name: Run prototype transforms tests
         shell: bash
         run: |
-          pytest 
-            --durations=20 
-            --cov=torchvision/prototype/transforms
-            --cov-report=term-missing 
+          pytest \
+            --durations=20 \
+            --cov=torchvision/prototype/transforms \
+            --cov-report=term-missing \
             test/test_prototype_transforms*.py
 
       - name: Run prototype models tests
         shell: bash
         run: |
-          pytest 
-            --durations=20 
-            --cov=torchvision/prototype/models
-            --cov-report=term-missing 
+          pytest \
+            --durations=20 \
+            --cov=torchvision/prototype/models \
+            --cov-report=term-missing \
             test/test_prototype_models*.py
