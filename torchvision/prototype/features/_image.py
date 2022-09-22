@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, cast, List, Optional, Sequence, Tuple, Union
+from typing import Any, cast, List, Optional, Tuple, Union
 
 import torch
 from torchvision._utils import StrEnum
@@ -180,16 +180,10 @@ class Image(_Feature):
 
     def pad(
         self,
-        padding: Union[int, Sequence[int]],
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        padding: Union[int, List[int]],
+        fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> Image:
-        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
-        if not isinstance(padding, int):
-            padding = list(padding)
-
-        fill = self._F._geometry._convert_fill_arg(fill)
-
         output = self._F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
         return Image.new_like(self, output)
 
@@ -198,11 +192,9 @@ class Image(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: Optional[Union[int, float, List[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Image:
-        fill = self._F._geometry._convert_fill_arg(fill)
-
         output = self._F._geometry.rotate_image_tensor(
             self, angle, interpolation=interpolation, expand=expand, fill=fill, center=center
         )
@@ -215,11 +207,9 @@ class Image(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: Optional[Union[int, float, List[float]]] = None,
         center: Optional[List[float]] = None,
     ) -> Image:
-        fill = self._F._geometry._convert_fill_arg(fill)
-
         output = self._F._geometry.affine_image_tensor(
             self,
             angle,
@@ -236,10 +226,8 @@ class Image(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: Optional[Union[int, float, List[float]]] = None,
     ) -> Image:
-        fill = self._F._geometry._convert_fill_arg(fill)
-
         output = self._F._geometry.perspective_image_tensor(
             self, perspective_coeffs, interpolation=interpolation, fill=fill
         )
@@ -249,10 +237,8 @@ class Image(_Feature):
         self,
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: Optional[Union[int, float, List[float]]] = None,
     ) -> Image:
-        fill = self._F._geometry._convert_fill_arg(fill)
-
         output = self._F._geometry.elastic_image_tensor(self, displacement, interpolation=interpolation, fill=fill)
         return Image.new_like(self, output)
 
