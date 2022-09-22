@@ -68,21 +68,21 @@ class TestKernels:
     def test_scriptable(self, kernel):
         script(kernel)
 
+    def _unbind_batch_dims(self, batched_tensor, *, data_dims):
+        if batched_tensor.ndim == data_dims:
+            return batched_tensor
+
+        return [self._unbind_batch_dims(t, data_dims=data_dims) for t in batched_tensor.unbind(0)]
+
+    def _stack_batch_dims(self, unbound_tensor):
+        if isinstance(unbound_tensor[0], torch.Tensor):
+            return torch.stack(unbound_tensor)
+
+        return torch.stack([self._stack_batch_dims(t) for t in unbound_tensor])
+
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_batched_vs_single(self, info, args_kwargs, device):
-        def unbind_batch_dims(batched_tensor, *, data_dims):
-            if batched_tensor.ndim == data_dims:
-                return batched_tensor
-
-            return [unbind_batch_dims(t, data_dims=data_dims) for t in batched_tensor.unbind(0)]
-
-        def stack_batch_dims(unbound_tensor):
-            if isinstance(unbound_tensor[0], torch.Tensor):
-                return torch.stack(unbound_tensor)
-
-            return torch.stack([stack_batch_dims(t) for t in unbound_tensor])
-
         (batched_input, *other_args), kwargs = args_kwargs.load(device)
 
         feature_type = features.Image if features.is_simple_tensor(batched_input) else type(batched_input)
@@ -108,9 +108,9 @@ class TestKernels:
 
         actual = info.kernel(batched_input, *other_args, **kwargs)
 
-        single_inputs = unbind_batch_dims(batched_input, data_dims=data_dims)
+        single_inputs = self._unbind_batch_dims(batched_input, data_dims=data_dims)
         single_outputs = tree_map(lambda single_input: info.kernel(single_input, *other_args, **kwargs), single_inputs)
-        expected = stack_batch_dims(single_outputs)
+        expected = self._stack_batch_dims(single_outputs)
 
         assert_close(actual, expected, **info.closeness_kwargs)
 
