@@ -1069,8 +1069,8 @@ class CREStereo_Base_Weights(WeightsEnum):
     predicted disparity is from its true value (equivalent to ``epe``). This is averaged over all pixels
     of all images. ``1px``, ``3px``, ``5px`` and indicate the percentage of pixels that have a lower
     error than that of the ground truth. ``relepe`` is the "relative-end-point-error" and is the
-    average ``epe`` divided by the average ground truth disparity. ``f1`` corresponds to the average of pixels whose epe
-    is either >3px, or whom's ``relepe`` is higher than 0.05 (therefore lower is better).
+    average ``epe`` divided by the average ground truth disparity. ``fl-all`` corresponds to the average of pixels whose epe
+    is either <3px, or whom's ``relepe`` is lower than 0.05 (therefore higher is better).
 
     """
 
@@ -1094,7 +1094,7 @@ class CREStereo_Base_Weights(WeightsEnum):
                             "3px": 0.896,
                             "5px": 0.933,
                             "relepe": 0.157,
-                            "f1": 10.041,
+                            "fl-all": 76.464,
                         },
                         5: {
                             "mae": 0.956,
@@ -1103,7 +1103,7 @@ class CREStereo_Base_Weights(WeightsEnum):
                             "3px": 0.948,
                             "5px": 0.965,
                             "relepe": 0.124,
-                            "f1": 5.056,
+                            "fl-all": 88.186,
                         },
                         10: {
                             "mae": 0.792,
@@ -1112,7 +1112,7 @@ class CREStereo_Base_Weights(WeightsEnum):
                             "3px": 0.958,
                             "5px": 0.97,
                             "relepe": 0.114,
-                            "f1": 4.059,
+                            "fl-all": 90.429,
                         },
                         20: {
                             "mae": 0.749,
@@ -1121,7 +1121,7 @@ class CREStereo_Base_Weights(WeightsEnum):
                             "3px": 0.961,
                             "5px": 0.972,
                             "relepe": 0.113,
-                            "f1": 3.782,
+                            "fl-all": 90.807,
                         },
                     },
                     2: {
@@ -1132,7 +1132,7 @@ class CREStereo_Base_Weights(WeightsEnum):
                             "3px": 0.894,
                             "5px": 0.924,
                             "relepe": 0.172,
-                            "f1": 10.337,
+                            "fl-all": 80.313,
                         },
                         5: {
                             "mae": 0.932,
@@ -1141,7 +1141,7 @@ class CREStereo_Base_Weights(WeightsEnum):
                             "3px": 0.944,
                             "5px": 0.963,
                             "relepe": 0.125,
-                            "f1": 5.45,
+                            "fl-all": 87.979,
                         },
                         10: {
                             "mae": 0.773,
@@ -1150,7 +1150,7 @@ class CREStereo_Base_Weights(WeightsEnum):
                             "3px": 0.958,
                             "5px": 0.972,
                             "relepe": 0.117,
-                            "f1": 4.03,
+                            "fl-all": 90.43,
                         },
                         20: {
                             "mae": 0.854,
@@ -1159,7 +1159,7 @@ class CREStereo_Base_Weights(WeightsEnum):
                             "3px": 0.957,
                             "5px": 0.97,
                             "relepe": 0.122,
-                            "f1": 4.109,
+                            "fl-all": 90.269,
                         },
                     },
                 }
