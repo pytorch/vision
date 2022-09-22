@@ -381,6 +381,8 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
         if not dist.is_initialized() or dist.get_rank() == 0:
             if writer is not None and step % args.tensorboard_log_frequency == 0:
                 # log the loss and metrics to tensorboard
+                logger.synchronize_between_processes()
+
                 writer.add_scalar("loss", loss, step)
                 for name, value in logger.meters.items():
                     writer.add_scalar(name, value.avg, step)
@@ -497,14 +499,15 @@ def main(args):
         if "model" in checkpoint:
             # this means the user requested to resume from a training checkpoint
             model_without_ddp.load_state_dict(checkpoint["model"])
-            optimizer.load_state_dict(checkpoint["optimizer"])
-            scheduler.load_state_dict(checkpoint["scheduler"])
             # this means the user wants to continue training from where it was left off
             if args.resume_schedule:
+                optimizer.load_state_dict(checkpoint["optimizer"])
+                scheduler.load_state_dict(checkpoint["scheduler"])
                 args.start_step = checkpoint["step"] + 1        
                 # modify starting point of the dat
                 sample_start_step = args.start_step * args.batch_size * args.world_size
                 dataset = dataset[sample_start_step:]
+                
         else:
             # this means the user wants to finetune on top of a model state dict
             # and that no other changes are required
