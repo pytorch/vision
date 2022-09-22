@@ -165,8 +165,8 @@ def _evaluate(
     logger = utils.MetricLogger()
     for meter_name in args.metrics:
         logger.add_meter(meter_name, fmt="{global_avg:.4f}")
-    if "f1" not in args.metrics:
-        logger.add_meter("f1", fmt="{global_avg:.4f}")
+    if "fl-all" not in args.metrics:
+        logger.add_meter("fl-all", fmt="{global_avg:.4f}")
 
     num_processed_samples = 0
     with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
@@ -368,7 +368,7 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
                 args.metrics,
             )
 
-        metrics.pop("f1", None)
+        metrics.pop("fl-all", None)
         logger.update(loss=loss, **metrics)
 
         if scaler is not None:

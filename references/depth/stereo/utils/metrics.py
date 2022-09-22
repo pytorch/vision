@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Tuple
 
 from torch import Tensor
 
-AVAILABLE_METRICS = ["mae", "rmse", "epe", "bad1", "bad2", "epe", "1px", "3px", "5px", "f1", "relepe"]
+AVAILABLE_METRICS = ["mae", "rmse", "epe", "bad1", "bad2", "epe", "1px", "3px", "5px", "fl-all", "relepe"]
 
 
 def compute_metrics(
@@ -41,8 +41,8 @@ def compute_metrics(
         metrics_dict["3px"] = (pixels_diffs < 3).float().mean().item()
     if "5px" in metrics:
         metrics_dict["5px"] = (pixels_diffs < 5).float().mean().item()
-    if "f1" in metrics:
-        metrics_dict["f1"] = ((pixels_diffs > 3) & ((pixels_diffs / flow_norm) > 0.05)).float().mean().item() * 100
+    if "fl-all" in metrics:
+        metrics_dict["fl-all"] = ((pixels_diffs < 3) & ((pixels_diffs / flow_norm) < 0.05)).float().mean().item() * 100
     if "relepe" in metrics:
         metrics_dict["relepe"] = (pixels_diffs / flow_norm).mean().item()
 

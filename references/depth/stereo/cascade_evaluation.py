@@ -69,7 +69,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--dist-url", type=str, default="env://", help="url used to set up distributed training")
     parser.add_argument("--device", type=str, default="cuda", help="device to use for training")
 
-    parser.add_argument("--save-predictions", action="store_true", help="save predictions")
+    parser.add_argument("--save-images", action="store_true", help="save images of the predictions")
     parser.add_argument("--padder-type", type=str, default="kitti", help="padder type", choices=["kitti", "sintel"])
 
     return parser
@@ -137,8 +137,8 @@ def _evaluate(
     logger = utils.MetricLogger()
     for meter_name in args.metrics:
         logger.add_meter(meter_name, fmt="{global_avg:.4f}")
-    if "f1" not in args.metrics:
-        logger.add_meter("f1", fmt="{global_avg:.4f}")
+    if "fl-all" not in args.metrics:
+        logger.add_meter("fl-all", fmt="{global_avg:.4f}")
 
     num_processed_samples = 0
     with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
@@ -158,7 +158,7 @@ def _evaluate(
                 else:
                     rank_prefix = 0
                 make_prediction_image_side_to_side(
-                    disp_pred, disp_gt, valid_disp_mask, args.save_path, prefix=f"batch_{rank_prefix}_{batch_idx}"
+                    disp_pred, disp_gt, valid_disp_mask, save_path, prefix=f"batch_{rank_prefix}_{batch_idx}"
                 )
 
             metrics, _ = utils.compute_metrics(disp_pred, disp_gt, valid_disp_mask, metrics=logger.meters.keys())
@@ -221,6 +221,8 @@ def evaluate(model, loader, args, writter=None, step=None):
                 step=step,
                 iterations=n_iters,
                 cascades=n_cascades,
+                save_path=config_image_folder,
+                save_images=args.save_images,
             )
 
     metric_log = []
