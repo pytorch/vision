@@ -166,6 +166,18 @@ class TestKernels:
         assert_close(actual, expected, check_dtype=False, **info.closeness_kwargs)
 
 
+@pytest.fixture
+def spy_on(mocker):
+    def make_spy(fn, *, module=None, name=None):
+        # TODO: we can probably get rid of the non-default modules and names if we eliminate aliasing
+        module = module or fn.__module__
+        name = name or fn.__name__
+        spy = mocker.patch(f"{module}.{name}", wraps=fn)
+        return spy
+
+    return make_spy
+
+
 class TestDispatchers:
     @pytest.mark.parametrize(
         ("info", "args_kwargs"),
@@ -202,6 +214,69 @@ class TestDispatchers:
     )
     def test_scriptable(self, dispatcher):
         script(dispatcher)
+
+    @pytest.mark.parametrize(
+        ("info", "args_kwargs"),
+        [
+            pytest.param(info, args_kwargs, id=f"{info.dispatcher.__name__}-{idx}")
+            for info in DISPATCHER_INFOS
+            for idx, args_kwargs in enumerate(info.sample_inputs(features.Image))
+            if features.Image in info.kernels
+        ],
+    )
+    def test_dispatch_simple_tensor(self, info, args_kwargs, spy_on):
+        (image_feature, *other_args), kwargs = args_kwargs.load()
+        image_simple_tensor = torch.Tensor(image_feature)
+
+        kernel_info = info.kernel_infos[features.Image]
+        spy = spy_on(kernel_info.kernel, module=info.dispatcher.__module__, name=kernel_info.kernel_name)
+
+        info.dispatcher(image_simple_tensor, *other_args, **kwargs)
+
+        spy.assert_called_once()
+
+    @pytest.mark.parametrize(
+        ("info", "args_kwargs"),
+        [
+            pytest.param(info, args_kwargs, id=f"{info.dispatcher.__name__}-{idx}")
+            for info in DISPATCHER_INFOS
+            for idx, args_kwargs in enumerate(info.sample_inputs(features.Image))
+            if features.Image in info.kernels and info.pil_kernel_info is not None
+        ],
+    )
+    def test_dispatch_pil(self, info, args_kwargs, spy_on):
+        (image_feature, *other_args), kwargs = args_kwargs.load()
+
+        if image_feature.ndim > 3:
+            pytest.skip("Input is batched")
+
+        image_pil = F.to_image_pil(image_feature)
+
+        pil_kernel_info = info.pil_kernel_info
+        spy = spy_on(pil_kernel_info.kernel, module=info.dispatcher.__module__, name=pil_kernel_info.kernel_name)
+
+        info.dispatcher(image_pil, *other_args, **kwargs)
+
+        spy.assert_called_once()
+
+    @pytest.mark.parametrize(
+        ("info", "args_kwargs"),
+        [
+            pytest.param(info, args_kwargs, id=f"{info.dispatcher.__name__}-{idx}")
+            for info in DISPATCHER_INFOS
+            for idx, args_kwargs in enumerate(info.sample_inputs())
+        ],
+    )
+    def test_dispatch_feature(self, info, args_kwargs, spy_on):
+        (feature, *other_args), kwargs = args_kwargs.load()
+
+        method = getattr(feature, info.method_name)
+        feature_type = type(feature)
+        spy = spy_on(method, module=feature_type.__module__, name=f"{feature_type.__name__}.{info.method_name}")
+
+        info.dispatcher(feature, *other_args, **kwargs)
+
+        spy.assert_called_once()
 
 
 @pytest.mark.parametrize(
