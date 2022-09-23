@@ -14,9 +14,6 @@ from ._transform import _RandomApplyTransform
 from ._utils import query_chw
 
 
-DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
-
-
 class ToTensor(Transform):
     _transformed_types = (PIL.Image.Image, np.ndarray)
 
@@ -55,7 +52,7 @@ class Grayscale(Transform):
         super().__init__()
         self.num_output_channels = num_output_channels
 
-    def _transform(self, inpt: DType, params: Dict[str, Any]) -> DType:
+    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
         output = _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
         if isinstance(inpt, features.Image):
             output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.GRAY)
@@ -84,7 +81,7 @@ class RandomGrayscale(_RandomApplyTransform):
         num_input_channels, _, _ = query_chw(sample)
         return dict(num_input_channels=num_input_channels)
 
-    def _transform(self, inpt: DType, params: Dict[str, Any]) -> DType:
+    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
         output = _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
         if isinstance(inpt, features.Image):
             output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.GRAY)
