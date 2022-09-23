@@ -403,7 +403,7 @@ def affine_mask(
     return output
 
 
-def _convert_fill_arg(fill: Optional[Union[int, float, Sequence[int], Sequence[float]]]) -> features.FillTypeJIT:
+def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
     # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
     # So, we can't reassign fill to 0
     # if fill is None:
