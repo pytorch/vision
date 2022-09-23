@@ -92,7 +92,7 @@ vflip = vertical_flip
 
 def resize_image_tensor(
     image: torch.Tensor,
-    size: Union[List[int], int],
+    size: Union[int, List[int]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: bool = False,
@@ -129,7 +129,7 @@ def resize_image_pil(
     return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation])
 
 
-def resize_mask(mask: torch.Tensor, size: Union[List[int], int], max_size: Optional[int] = None) -> torch.Tensor:
+def resize_mask(mask: torch.Tensor, size: Union[int, List[int]], max_size: Optional[int] = None) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -145,7 +145,7 @@ def resize_mask(mask: torch.Tensor, size: Union[List[int], int], max_size: Optio
 
 
 def resize_bounding_box(
-    bounding_box: torch.Tensor, size: Union[List[int], int], image_size: Tuple[int, int], max_size: Optional[int] = None
+    bounding_box: torch.Tensor, size: Union[int, List[int]], image_size: Tuple[int, int], max_size: Optional[int] = None
 ) -> torch.Tensor:
     if isinstance(size, int):
         size = [size]
@@ -157,7 +157,7 @@ def resize_bounding_box(
 
 def resize(
     inpt: features.InputTypeJIT,
-    size: Union[List[int], int],
+    size: Union[int, List[int]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,

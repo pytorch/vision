@@ -19,7 +19,7 @@ class Mask(_Feature):
 
     def resize(  # type: ignore[override]
         self,
-        size: Union[List[int], int],
+        size: Union[int, List[int]],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         max_size: Optional[int] = None,
         antialias: bool = False,
