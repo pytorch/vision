@@ -50,6 +50,13 @@ DISPATCHER_INFOS = [
             features.BoundingBox: F.resize_bounding_box,
             features.Mask: F.resize_mask,
         },
+        skips=[
+            Skip(
+                "test_scripted_smoke",
+                condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
+                reason="Integer size is not supported when scripting ten_crop_image_tensor.",
+            ),
+        ],
     ),
     DispatcherInfo(
         F.affine,
