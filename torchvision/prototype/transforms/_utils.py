@@ -33,13 +33,13 @@ def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
             raise TypeError("Got inappropriate fill arg")
 
 
-def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Optional[Dict[Type, FillType]]:
+def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillType]:
     _check_fill_arg(fill)
 
-    if fill is None or isinstance(fill, dict):
+    if isinstance(fill, dict):
         return fill
 
-    return defaultdict(lambda: fill)  # type: ignore[return-value]
+    return defaultdict(lambda: fill)  # type: ignore[return-value, arg-type]
 
 
 def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:

@@ -10,6 +10,7 @@ from torchvision.utils import draw_bounding_boxes, make_grid
 
 from ._bounding_box import BoundingBox
 from ._feature import _Feature
+from ._utils import FillType
 
 
 class ColorSpace(StrEnum):
@@ -176,7 +177,7 @@ class Image(_Feature):
     def pad(
         self,
         padding: Union[int, List[int]],
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillType = None,
         padding_mode: str = "constant",
     ) -> Image:
         output = self._F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
@@ -187,7 +188,7 @@ class Image(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillType = None,
         center: Optional[List[float]] = None,
     ) -> Image:
         output = self._F._geometry.rotate_image_tensor(
@@ -202,7 +203,7 @@ class Image(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillType = None,
         center: Optional[List[float]] = None,
     ) -> Image:
         output = self._F._geometry.affine_image_tensor(
@@ -221,7 +222,7 @@ class Image(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillType = None,
     ) -> Image:
         output = self._F._geometry.perspective_image_tensor(
             self, perspective_coeffs, interpolation=interpolation, fill=fill
@@ -232,7 +233,7 @@ class Image(_Feature):
         self,
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillType = None,
     ) -> Image:
         output = self._F._geometry.elastic_image_tensor(self, displacement, interpolation=interpolation, fill=fill)
         return Image.new_like(self, output)

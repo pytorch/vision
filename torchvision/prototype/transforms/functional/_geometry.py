@@ -17,7 +17,7 @@ from torchvision.transforms.functional import (
 from torchvision.transforms.functional_tensor import _parse_pad_padding
 
 from ._meta import convert_format_bounding_box, get_dimensions_image_pil, get_dimensions_image_tensor
-from ._utils import DType, ImageType
+from ._utils import DType, FillType, ImageType
 
 
 horizontal_flip_image_tensor = _FT.hflip
@@ -229,7 +229,7 @@ def affine_image_tensor(
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if img.numel() == 0:
@@ -261,7 +261,7 @@ def affine_image_pil(
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
@@ -379,7 +379,7 @@ def affine_mask(
     translate: List[float],
     scale: float,
     shear: List[float],
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
@@ -405,9 +405,7 @@ def affine_mask(
     return output
 
 
-def _convert_fill_arg(
-    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]]
-) -> Optional[Union[int, float, List[float]]]:
+def _convert_fill_arg(fill: Optional[Union[int, float, Sequence[int], Sequence[float]]]) -> FillType:
     # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
     # So, we can't reassign fill to 0
     # if fill is None:
@@ -428,7 +426,7 @@ def affine(
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
     center: Optional[List[float]] = None,
 ) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
@@ -464,7 +462,7 @@ def rotate_image_tensor(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     num_channels, height, width = img.shape[-3:]
@@ -503,7 +501,7 @@ def rotate_image_pil(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     if center is not None and expand:
@@ -543,7 +541,7 @@ def rotate_mask(
     mask: torch.Tensor,
     angle: float,
     expand: bool = False,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
@@ -572,7 +570,7 @@ def rotate(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
     center: Optional[List[float]] = None,
 ) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
@@ -589,7 +587,7 @@ pad_image_pil = _FP.pad
 def pad_image_tensor(
     img: torch.Tensor,
     padding: Union[int, List[int]],
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     if fill is None:
@@ -653,7 +651,7 @@ def pad_mask(
     mask: torch.Tensor,
     padding: Union[int, List[int]],
     padding_mode: str = "constant",
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
 ) -> torch.Tensor:
     if fill is None:
         fill = 0
@@ -701,7 +699,7 @@ def pad_bounding_box(
 def pad(
     inpt: DType,
     padding: Union[int, List[int]],
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
     padding_mode: str = "constant",
 ) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
@@ -753,7 +751,7 @@ def perspective_image_tensor(
     img: torch.Tensor,
     perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
 ) -> torch.Tensor:
     return _FT.perspective(img, perspective_coeffs, interpolation=interpolation.value, fill=fill)
 
@@ -763,7 +761,7 @@ def perspective_image_pil(
     img: PIL.Image.Image,
     perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BICUBIC,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
 ) -> PIL.Image.Image:
     return _FP.perspective(img, perspective_coeffs, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
@@ -856,7 +854,7 @@ def perspective_bounding_box(
 def perspective_mask(
     mask: torch.Tensor,
     perspective_coeffs: List[float],
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -878,7 +876,7 @@ def perspective(
     inpt: DType,
     perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
 ) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
@@ -892,7 +890,7 @@ def elastic_image_tensor(
     img: torch.Tensor,
     displacement: torch.Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
 ) -> torch.Tensor:
     return _FT.elastic_transform(img, displacement, interpolation=interpolation.value, fill=fill)
 
@@ -902,7 +900,7 @@ def elastic_image_pil(
     img: PIL.Image.Image,
     displacement: torch.Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
 ) -> PIL.Image.Image:
     t_img = pil_to_tensor(img)
     output = elastic_image_tensor(t_img, displacement, interpolation=interpolation, fill=fill)
@@ -952,7 +950,7 @@ def elastic_bounding_box(
 def elastic_mask(
     mask: torch.Tensor,
     displacement: torch.Tensor,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -972,7 +970,7 @@ def elastic(
     inpt: DType,
     displacement: torch.Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[Union[int, float, List[float]]] = None,
+    fill: FillType = None,
 ) -> DType:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return elastic_image_tensor(inpt, displacement, interpolation=interpolation, fill=fill)

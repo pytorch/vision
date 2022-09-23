@@ -7,6 +7,9 @@ import torch
 from torch._C import _TensorBase, DisableTorchFunction
 from torchvision.transforms import InterpolationMode
 
+from ._utils import FillType
+
+
 F = TypeVar("F", bound="_Feature")
 
 
@@ -149,7 +152,7 @@ class _Feature(torch.Tensor):
     def pad(
         self,
         padding: Union[int, List[int]],
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillType = None,
         padding_mode: str = "constant",
     ) -> _Feature:
         return self
@@ -159,7 +162,7 @@ class _Feature(torch.Tensor):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillType = None,
         center: Optional[List[float]] = None,
     ) -> _Feature:
         return self
@@ -171,7 +174,7 @@ class _Feature(torch.Tensor):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillType = None,
         center: Optional[List[float]] = None,
     ) -> _Feature:
         return self
@@ -180,7 +183,7 @@ class _Feature(torch.Tensor):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillType = None,
     ) -> _Feature:
         return self
 
@@ -188,7 +191,7 @@ class _Feature(torch.Tensor):
         self,
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillType = None,
     ) -> _Feature:
         return self
 
