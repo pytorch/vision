@@ -116,7 +116,12 @@ def _get_cache_path(filepath):
 def load_data(traindir, valdir, args):
     # Data loading code
     print("Loading data")
-    val_resize_size, val_crop_size, train_crop_size = args.val_resize_size, args.val_crop_size, args.train_crop_size
+    val_resize_size, val_crop_size, train_crop_size, center_crop = (
+        args.val_resize_size,
+        args.val_crop_size,
+        args.train_crop_size,
+        args.train_center_crop,
+    )
     interpolation = InterpolationMode(args.interpolation)
 
     print("Loading training data")
@@ -129,13 +134,18 @@ def load_data(traindir, valdir, args):
     else:
         auto_augment_policy = getattr(args, "auto_augment", None)
         random_erase_prob = getattr(args, "random_erase", 0.0)
+        ra_magnitude = args.ra_magnitude
+        augmix_severity = args.augmix_severity
         dataset = torchvision.datasets.ImageFolder(
             traindir,
             transform=presets.ClassificationPresetTrain(
+                center_crop=center_crop,
                 crop_size=train_crop_size,
                 interpolation=interpolation,
                 auto_augment_policy=auto_augment_policy,
                 random_erase_prob=random_erase_prob,
+                ra_magnitude=ra_magnitude,
+                augmix_severity=augmix_severity,
             ),
             target_transform=lambda target: features.Label(target),
         )
@@ -219,7 +229,10 @@ def main(args):
                 transforms.RandomChoice(mixup_or_cutmix),
             ]
         )
-        collate_fn = lambda batch: batch_transform(default_collate(batch))  # noqa: E731
+
+        def collate_fn(batch):
+            return mixupcutmix(*default_collate(batch))
+
     data_loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -460,6 +473,8 @@ def get_args_parser(add_help=True):
         action="store_true",
     )
     parser.add_argument("--auto-augment", default=None, type=str, help="auto augment policy (default: None)")
+    parser.add_argument("--ra-magnitude", default=9, type=int, help="magnitude of auto augment policy")
+    parser.add_argument("--augmix-severity", default=3, type=int, help="severity of augmix policy")
     parser.add_argument("--random-erase", default=0.0, type=float, help="random erasing probability (default: 0.0)")
 
     # Mixed precision training parameters
@@ -498,13 +513,17 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
+    parser.add_argument(
+        "--train-center-crop",
+        action="store_true",
+        help="use center crop instead of random crop for training (default: False)",
+    )
     parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
     parser.add_argument("--ra-sampler", action="store_true", help="whether to use Repeated Augmentation in training")
     parser.add_argument(
         "--ra-reps", default=3, type=int, help="number of repetitions for Repeated Augmentation (default: 3)"
     )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
-
     return parser
 
 
