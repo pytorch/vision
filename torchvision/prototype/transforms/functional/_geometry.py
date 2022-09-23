@@ -1,6 +1,6 @@
 import numbers
 import warnings
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import cast, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
@@ -1154,11 +1154,13 @@ def resized_crop(
         return resized_crop_image_pil(inpt, top, left, height, width, size=size, interpolation=interpolation)
 
 
-def _parse_five_crop_size(size: List[int]) -> List[int]:
+def _parse_five_crop_size(size: Union[int, List[int]]) -> List[int]:
     if isinstance(size, numbers.Number):
         size = [int(size), int(size)]
     elif isinstance(size, (tuple, list)) and len(size) == 1:
         size = [size[0], size[0]]
+    else:
+        size = cast(List[int], size)
 
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
@@ -1167,7 +1169,7 @@ def _parse_five_crop_size(size: List[int]) -> List[int]:
 
 
 def five_crop_image_tensor(
-    img: torch.Tensor, size: List[int]
+    img: torch.Tensor, size: Union[int, List[int]]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     crop_height, crop_width = _parse_five_crop_size(size)
     _, image_height, image_width = get_dimensions_image_tensor(img)
@@ -1187,7 +1189,7 @@ def five_crop_image_tensor(
 
 @torch.jit.unused
 def five_crop_image_pil(
-    img: PIL.Image.Image, size: List[int]
+    img: PIL.Image.Image, size: Union[int, List[int]]
 ) -> Tuple[PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]:
     crop_height, crop_width = _parse_five_crop_size(size)
     _, image_height, image_width = get_dimensions_image_pil(img)
@@ -1206,7 +1208,7 @@ def five_crop_image_pil(
 
 
 def five_crop(
-    inpt: features.ImageTypeJIT, size: List[int]
+    inpt: features.ImageTypeJIT, size: Union[int, List[int]]
 ) -> Tuple[
     features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT
 ]:
