@@ -17,9 +17,7 @@ def get_args_parser(add_help=True):
 
     parser = argparse.ArgumentParser(description="PyTorch Stereo Matching Evaluation", add_help=add_help)
     parser.add_argument("--dataset", type=str, default="middlebury2014-train", help="dataset to use")
-    parser.add_argument(
-        "--dataset-root", type=str, default="/fsx/users/teodorponcu/datasets", help="root of the dataset"
-    )
+    parser.add_argument("--dataset-root", type=str, default="", help="root of the dataset")
 
     parser.add_argument("--checkpoint", type=str, default="", help="path to weights")
     parser.add_argument("--weights", type=str, default=None, help="torchvision API weight")

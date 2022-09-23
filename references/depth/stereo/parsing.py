@@ -1,4 +1,5 @@
 import argparse
+from functools import partial
 
 import torch
 
@@ -15,6 +16,31 @@ from torchvision.datasets import (
     SceneFlowStereo,
     SintelStereo,
 )
+
+VALID_DATASETS = {
+    "crestereo": partial(CREStereo),
+    "carla-highres": partial(CarlaStereo),
+    "instereo2k": partial(InStereo2k),
+    "sintel": partial(SintelStereo),
+    "sceneflow-monkaa": partial(SceneFlowStereo, variant="Monkaa", pass_name="both"),
+    "sceneflow-flyingthings": partial(SceneFlowStereo, variant="FlyingThings3D", pass_name="both"),
+    "sceneflow-driving": partial(SceneFlowStereo, variant="Driving", pass_name="both"),
+    "fallingthings": partial(FallingThingsStereo, variant="both"),
+    "eth3d-train": partial(ETH3DStereo, split="train"),
+    "eth3d-test": partial(ETH3DStereo, split="test"),
+    "kitti2015-train": partial(Kitti2015Stereo, split="train"),
+    "kitti2015-test": partial(Kitti2015Stereo, split="test"),
+    "kitti2012-train": partial(Kitti2012Stereo, split="train"),
+    "kitti2012-test": partial(Kitti2012Stereo, split="train"),
+    "middlebury2014-other": partial(
+        Middlebury2014Stereo, split="additional", use_ambient_view=True, calibration="both"
+    ),
+    "middlebury2014-train": partial(Middlebury2014Stereo, split="train", calibration="perfect"),
+    "middlebury2014-test": partial(Middlebury2014Stereo, split="test", calibration=None),
+    "middlebury2014-train-ambient": partial(
+        Middlebury2014Stereo, split="train", use_ambient_views=True, calibrartion="perfect"
+    ),
+}
 
 
 def make_train_transform(args: argparse.Namespace) -> torch.nn.Module:
@@ -60,43 +86,4 @@ def make_eval_transform(args: argparse.Namespace) -> torch.nn.Module:
 
 
 def make_dataset(dataset_name: str, dataset_root: str, transforms: torch.nn.Module) -> torch.utils.data.Dataset:
-    valid_datasets = {
-        "crestereo": CREStereo(root=dataset_root, transforms=transforms),
-        "carla-highres": CarlaStereo(root=dataset_root, transforms=transforms),
-        "instereo2k": InStereo2k(root=dataset_root, transforms=transforms),
-        "sintel": SintelStereo(root=dataset_root, transforms=transforms),
-        "sceneflow-monkaa": SceneFlowStereo(
-            root=dataset_root, transforms=transforms, variant="Monkaa", pass_name="both"
-        ),
-        "sceneflow-flyingthings": SceneFlowStereo(
-            root=dataset_root, transforms=transforms, variant="FlyingThings3D", pass_name="both"
-        ),
-        "sceneflow-driving": SceneFlowStereo(
-            root=dataset_root, transforms=transforms, variant="Driving", pass_name="both"
-        ),
-        "fallingthings": FallingThingsStereo(root=dataset_root, transforms=transforms, variant="both"),
-        "eth3d-train": ETH3DStereo(root=dataset_root, transforms=transforms, split="train"),
-        "eth3d-test": ETH3DStereo(root=dataset_root, transforms=transforms, split="test"),
-        "kitti2015-train": Kitti2015Stereo(root=dataset_root, transforms=transforms, split="train"),
-        "kitti2015-test": Kitti2015Stereo(root=dataset_root, transforms=transforms, split="test"),
-        "kitti2012-train": Kitti2012Stereo(root=dataset_root, transforms=transforms, split="train"),
-        "kitti2012-test": Kitti2012Stereo(root=dataset_root, transforms=transforms, split="test"),
-        "middlebury2014-other": Middlebury2014Stereo(
-            root=dataset_root, transforms=transforms, split="additional", use_ambient_views=True, calibration="both"
-        ),
-        "middlebury2014-train": Middlebury2014Stereo(
-            root=dataset_root, transforms=transforms, split="train", calibration="perfect"
-        ),
-        "middlebury2014-test": Middlebury2014Stereo(
-            root=dataset_root, transforms=transforms, split="test", calibration=None
-        ),
-        "middlebury2014-train-ambient": Middlebury2014Stereo(
-            root=dataset_root, transforms=transforms, split="train", use_ambient_views=True, calibration="perfect"
-        ),
-    }
-
-    # raise a key-error just to inform the user about which datasets are valid
-    if dataset_name not in valid_datasets:
-        raise KeyError(f"Invalid dataset name: {dataset_name}. Valid datasets are: {valid_datasets.keys()}")
-
-    return valid_datasets[dataset_name]
+    return VALID_DATASETS[dataset_name](root=dataset_root, transforms=transforms)

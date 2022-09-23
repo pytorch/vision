@@ -12,7 +12,7 @@ import torchvision.prototype.models.depth.stereo
 import utils
 import vizualization
 
-from parsing import make_dataset, make_eval_transform, make_train_transform
+from parsing import make_dataset, make_eval_transform, make_train_transform, VALID_DATASETS
 from torch import nn
 from torchvision.transforms.functional import get_dimensions, InterpolationMode, resize
 from utils.metrics import AVAILABLE_METRICS
@@ -583,27 +583,14 @@ def get_args_parser(add_help=True):
     parser.add_argument("--checkpoint-dir", type=str, default="checkpoints", help="path to the checkpoint directory")
 
     # dataset
-    parser.add_argument(
-        "--dataset-root", type=str, default="/fsx/users/teodorponcu/datasets", help="path to the dataset root directory"
-    )
+    parser.add_argument("--dataset-root", type=str, default="", help="path to the dataset root directory")
     parser.add_argument(
         "--train-datasets",
         type=str,
         nargs="+",
         default=["crestereo"],
         help="dataset(s) to train on",
-        choices=[
-            "crestereo",
-            "eth3d-train",
-            "middlebury2014-train-ambient",
-            "middlebury2014-other",
-            "instereo2k",
-            "fallingthings",
-            "carla-highres",
-            "sintel",
-            "sceneflow-monkaa",
-            "sceneflow-driving",
-        ],
+        choices=list(VALID_DATASETS.keys()),
     )
     parser.add_argument(
         "--dataset-steps", type=int, nargs="+", default=[300_000], help="number of steps for each dataset"
