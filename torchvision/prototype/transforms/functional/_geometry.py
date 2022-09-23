@@ -1222,7 +1222,9 @@ def five_crop(
         return five_crop_image_pil(inpt, size)
 
 
-def ten_crop_image_tensor(img: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
+def ten_crop_image_tensor(
+    img: torch.Tensor, size: Union[int, List[int]], vertical_flip: bool = False
+) -> List[torch.Tensor]:
     tl, tr, bl, br, center = five_crop_image_tensor(img, size)
 
     if vertical_flip:
@@ -1236,7 +1238,9 @@ def ten_crop_image_tensor(img: torch.Tensor, size: List[int], vertical_flip: boo
 
 
 @torch.jit.unused
-def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: bool = False) -> List[PIL.Image.Image]:
+def ten_crop_image_pil(
+    img: PIL.Image.Image, size: Union[int, List[int]], vertical_flip: bool = False
+) -> List[PIL.Image.Image]:
     tl, tr, bl, br, center = five_crop_image_pil(img, size)
 
     if vertical_flip:
@@ -1249,7 +1253,9 @@ def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: boo
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
 
-def ten_crop(inpt: features.ImageTypeJIT, size: List[int], vertical_flip: bool = False) -> List[features.ImageTypeJIT]:
+def ten_crop(
+    inpt: features.ImageTypeJIT, size: Union[int, List[int]], vertical_flip: bool = False
+) -> List[features.ImageTypeJIT]:
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
         if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
