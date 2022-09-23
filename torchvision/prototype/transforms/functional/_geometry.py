@@ -1,6 +1,6 @@
 import numbers
 import warnings
-from typing import cast, List, Optional, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
@@ -993,10 +993,13 @@ elastic_transform = elastic
 def _center_crop_parse_output_size(output_size: Union[int, List[int]]) -> List[int]:
     if isinstance(output_size, numbers.Number):
         return [int(output_size), int(output_size)]
-    elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
-        return [output_size[0], output_size[0]]
+    elif isinstance(output_size, (tuple, list)):
+        if len(output_size) == 1:
+            return [output_size[0], output_size[0]]
+        else:
+            return list(output_size)
     else:
-        return list(output_size)  # type: ignore[arg-type]
+        raise ValueError("Invalid output_size")  # Needed for jit
 
 
 def _center_crop_compute_padding(crop_height: int, crop_width: int, image_height: int, image_width: int) -> List[int]:
@@ -1162,10 +1165,13 @@ def resized_crop(
 def _parse_five_crop_size(size: Union[int, List[int]]) -> List[int]:
     if isinstance(size, numbers.Number):
         size = [int(size), int(size)]
-    elif isinstance(size, (tuple, list)) and len(size) == 1:
-        size = [size[0], size[0]]
+    elif isinstance(size, (tuple, list)):
+        if len(size) == 1:
+            size = [size[0], size[0]]
+        else:
+            size = list(size)
     else:
-        size = cast(List[int], size)
+        raise ValueError("Invalid size")  # Needed for jit
 
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
