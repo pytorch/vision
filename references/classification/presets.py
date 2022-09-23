@@ -13,18 +13,25 @@ class ClassificationPresetTrain:
         interpolation=InterpolationMode.BILINEAR,
         hflip_prob=0.5,
         auto_augment_policy=None,
+        ra_magnitude=9,
+        augmix_severity=3,
         random_erase_prob=0.0,
+        center_crop=False,
     ):
-        trans = [transforms.RandomResizedCrop(crop_size, interpolation=interpolation)]
+        trans = (
+            [transforms.RandomResizedCrop(crop_size, interpolation=interpolation)]
+            if center_crop
+            else [transforms.CenterCrop(crop_size)]
+        )
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(hflip_prob))
         if auto_augment_policy is not None:
             if auto_augment_policy == "ra":
-                trans.append(autoaugment.RandAugment(interpolation=interpolation))
+                trans.append(autoaugment.RandAugment(interpolation=interpolation, magnitude=ra_magnitude))
             elif auto_augment_policy == "ta_wide":
                 trans.append(autoaugment.TrivialAugmentWide(interpolation=interpolation))
             elif auto_augment_policy == "augmix":
-                trans.append(autoaugment.AugMix(interpolation=interpolation))
+                trans.append(autoaugment.AugMix(interpolation=interpolation, severity=augmix_severity))
             else:
                 aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
                 trans.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))
