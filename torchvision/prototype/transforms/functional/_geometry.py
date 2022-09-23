@@ -175,10 +175,10 @@ def resize(
 
 
 def _affine_parse_args(
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: List[float],
+    shear: Union[int, float, List[float]],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     center: Optional[List[float]] = None,
 ) -> Tuple[float, List[float], List[float], Optional[List[float]]]:
@@ -226,10 +226,10 @@ def _affine_parse_args(
 
 def affine_image_tensor(
     img: torch.Tensor,
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: List[float],
+    shear: Union[int, float, List[float]],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
@@ -258,10 +258,10 @@ def affine_image_tensor(
 @torch.jit.unused
 def affine_image_pil(
     img: PIL.Image.Image,
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: List[float],
+    shear: Union[int, float, List[float]],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
@@ -282,16 +282,17 @@ def affine_image_pil(
 def _affine_bounding_box_xyxy(
     bounding_box: torch.Tensor,
     image_size: Tuple[int, int],
-    angle: float,
+    angle: Union[int, float],
     translate: Optional[List[float]] = None,
     scale: Optional[float] = None,
-    shear: Optional[List[float]] = None,
+    shear: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
     expand: bool = False,
 ) -> torch.Tensor:
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
     device = bounding_box.device
 
+    angle = float(angle)
     if translate is None:
         translate = [0.0, 0.0]
 
@@ -300,6 +301,10 @@ def _affine_bounding_box_xyxy(
 
     if shear is None:
         shear = [0.0, 0.0]
+    elif isinstance(shear, (int, float)):
+        shear = [float(shear), 0.0]
+    elif len(shear) == 1:
+        shear = [shear[0], shear[0]]
 
     if center is None:
         height, width = image_size
@@ -355,10 +360,10 @@ def affine_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
     image_size: Tuple[int, int],
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: List[float],
+    shear: Union[int, float, List[float]],
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     original_shape = bounding_box.shape
@@ -377,10 +382,10 @@ def affine_bounding_box(
 
 def affine_mask(
     mask: torch.Tensor,
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: List[float],
+    shear: Union[int, float, List[float]],
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
@@ -423,10 +428,10 @@ def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
 
 def affine(
     inpt: features.InputTypeJIT,
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: List[float],
+    shear: Union[int, float, List[float]],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,

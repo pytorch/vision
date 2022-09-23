@@ -198,10 +198,10 @@ class Image(_Feature):
 
     def affine(
         self,
-        angle: float,
+        angle: Union[int, float],
         translate: List[float],
         scale: float,
-        shear: List[float],
+        shear: Union[int, float, List[float]],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,

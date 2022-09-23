@@ -321,7 +321,7 @@ class RandomAffine(Transform):
         degrees: Union[numbers.Number, Sequence],
         translate: Optional[Sequence[float]] = None,
         scale: Optional[Sequence[float]] = None,
-        shear: Optional[Union[float, Sequence[float]]] = None,
+        shear: Optional[Union[int, float, Sequence[float]]] = None,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         center: Optional[List[float]] = None,
