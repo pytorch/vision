@@ -129,6 +129,9 @@ KERNEL_INFOS.extend(
 
 def _get_resize_sizes(image_size):
     height, width = image_size
+    length = max(image_size)
+    # yield length
+    yield [length]
     yield height, width
     yield int(height * 0.75), int(width * 1.25)
 
@@ -208,10 +211,24 @@ KERNEL_INFOS.extend(
             reference_fn=reference_resize_image_tensor,
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            skips=[
+                Skip(
+                    "test_scripted_vs_eager",
+                    condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
+                    reason="Integer size is not supported when scripting resize_image_tensor.",
+                ),
+            ],
         ),
         KernelInfo(
             F.resize_bounding_box,
             sample_inputs_fn=sample_inputs_resize_bounding_box,
+            skips=[
+                Skip(
+                    "test_scripted_vs_eager",
+                    condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
+                    reason="Integer size is not supported when scripting resize_image_tensor.",
+                ),
+            ],
         ),
         KernelInfo(
             F.resize_mask,
@@ -219,6 +236,13 @@ KERNEL_INFOS.extend(
             reference_fn=reference_resize_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            skips=[
+                Skip(
+                    "test_scripted_vs_eager",
+                    condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
+                    reason="Integer size is not supported when scripting resize_image_tensor.",
+                ),
+            ],
         ),
     ]
 )
