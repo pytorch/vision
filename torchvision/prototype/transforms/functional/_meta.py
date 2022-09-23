@@ -1,12 +1,51 @@
-from typing import Tuple, Optional
+from typing import cast, List, Optional, Tuple
 
 import PIL.Image
 import torch
+from torchvision.prototype import features
 from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
-from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
+from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
 get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
+
+
+# TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
+def get_chw(image: features.ImageTypeJIT) -> Tuple[int, int, int]:
+    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
+        channels, height, width = get_dimensions_image_tensor(image)
+    elif isinstance(image, features.Image):
+        channels = image.num_channels
+        height, width = image.image_size
+    else:  # isinstance(image, PIL.Image.Image)
+        channels, height, width = get_dimensions_image_pil(image)
+    return channels, height, width
+
+
+# The three functions below are here for BC. Whether we want to have two different kernels and how they and the
+# compound version should be named is still under discussion: https://github.com/pytorch/vision/issues/6491
+# Given that these kernels should also support boxes, masks, and videos, it is unlikely that there name will stay.
+# They will either be deprecated or simply aliased to the new kernels if we have reached consensus about the issue
+# detailed above.
+
+
+def get_dimensions(image: features.ImageTypeJIT) -> List[int]:
+    return list(get_chw(image))
+
+
+def get_num_channels(image: features.ImageTypeJIT) -> int:
+    num_channels, *_ = get_chw(image)
+    return num_channels
+
+
+# We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
+# deprecating the old names.
+get_image_num_channels = get_num_channels
+
+
+def get_spatial_size(image: features.ImageTypeJIT) -> List[int]:
+    _, *size = get_chw(image)
+    return size
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
@@ -27,7 +66,7 @@ def _cxcywh_to_xyxy(cxcywh: torch.Tensor) -> torch.Tensor:
     y1 = cy - 0.5 * h
     x2 = cx + 0.5 * w
     y2 = cy + 0.5 * h
-    return torch.stack((x1, y1, x2, y2), dim=-1)
+    return torch.stack((x1, y1, x2, y2), dim=-1).to(cxcywh.dtype)
 
 
 def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
@@ -36,10 +75,10 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
     cy = (y1 + y2) / 2
     w = x2 - x1
     h = y2 - y1
-    return torch.stack((cx, cy, w, h), dim=-1)
+    return torch.stack((cx, cy, w, h), dim=-1).to(xyxy.dtype)
 
 
-def convert_bounding_box_format(
+def convert_format_bounding_box(
     bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, copy: bool = True
 ) -> torch.Tensor:
     if new_format == old_format:
@@ -59,6 +98,17 @@ def convert_bounding_box_format(
         bounding_box = _xyxy_to_cxcywh(bounding_box)
 
     return bounding_box
+
+
+def clamp_bounding_box(
+    bounding_box: torch.Tensor, format: BoundingBoxFormat, image_size: Tuple[int, int]
+) -> torch.Tensor:
+    # TODO: (PERF) Possible speed up clamping if we have different implementations for each bbox format.
+    # Not sure if they yield equivalent results.
+    xyxy_boxes = convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
+    xyxy_boxes[..., 0::2].clamp_(min=0, max=image_size[1])
+    xyxy_boxes[..., 1::2].clamp_(min=0, max=image_size[0])
+    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
 
 
 def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -91,7 +141,7 @@ def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
 _rgb_to_gray = _FT.rgb_to_grayscale
 
 
-def convert_image_color_space_tensor(
+def convert_color_space_image_tensor(
     image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
 ) -> torch.Tensor:
     if new_color_space == old_color_space:
@@ -141,7 +191,8 @@ _COLOR_SPACE_TO_PIL_MODE = {
 }
 
 
-def convert_image_color_space_pil(
+@torch.jit.unused
+def convert_color_space_image_pil(
     image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
 ) -> PIL.Image.Image:
     old_mode = image.mode
@@ -154,3 +205,24 @@ def convert_image_color_space_pil(
         return image
 
     return image.convert(new_mode)
+
+
+def convert_color_space(
+    inpt: features.ImageTypeJIT,
+    color_space: ColorSpace,
+    old_color_space: Optional[ColorSpace] = None,
+    copy: bool = True,
+) -> features.ImageTypeJIT:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image)):
+        if old_color_space is None:
+            raise RuntimeError(
+                "In order to convert the color space of simple tensor images, "
+                "the `old_color_space=...` parameter needs to be passed."
+            )
+        return convert_color_space_image_tensor(
+            inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
+        )
+    elif isinstance(inpt, features.Image):
+        return inpt.to_color_space(color_space, copy=copy)
+    else:
+        return cast(features.ImageTypeJIT, convert_color_space_image_pil(inpt, color_space, copy=copy))

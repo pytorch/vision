@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 from torch import Tensor
 
 from .folder import find_classes, make_dataset
-from .utils import download_and_extract_archive, download_url, verify_str_arg, check_integrity
+from .utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -21,7 +21,7 @@ def _dl_wrap(tarpath: str, videopath: str, line: str) -> None:
 
 
 class Kinetics(VisionDataset):
-    """`Generic Kinetics <https://deepmind.com/research/open-source/open-source-datasets/kinetics/>`_
+    """`Generic Kinetics <https://www.deepmind.com/open-source/kinetics>`_
     dataset.
 
     Kinetics-400/600/700 are action recognition video datasets.

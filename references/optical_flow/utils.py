@@ -1,8 +1,7 @@
 import datetime
 import os
 import time
-from collections import defaultdict
-from collections import deque
+from collections import defaultdict, deque
 
 import torch
 import torch.distributed as dist
@@ -158,7 +157,7 @@ class MetricLogger:
 def compute_metrics(flow_pred, flow_gt, valid_flow_mask=None):
 
     epe = ((flow_pred - flow_gt) ** 2).sum(dim=1).sqrt()
-    flow_norm = (flow_gt ** 2).sum(dim=1).sqrt()
+    flow_norm = (flow_gt**2).sum(dim=1).sqrt()
 
     if valid_flow_mask is not None:
         epe = epe[valid_flow_mask]
@@ -183,7 +182,7 @@ def sequence_loss(flow_preds, flow_gt, valid_flow_mask, gamma=0.8, max_flow=400)
         raise ValueError(f"Gamma should be < 1, got {gamma}.")
 
     # exlude invalid pixels and extremely large diplacements
-    flow_norm = torch.sum(flow_gt ** 2, dim=1).sqrt()
+    flow_norm = torch.sum(flow_gt**2, dim=1).sqrt()
     valid_flow_mask = valid_flow_mask & (flow_norm < max_flow)
 
     valid_flow_mask = valid_flow_mask[:, None, :, :]

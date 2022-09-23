@@ -1,5 +1,5 @@
 import math
-from typing import List, Tuple, Dict, Optional, Any
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torchvision

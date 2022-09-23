@@ -1,17 +1,16 @@
 import warnings
 from functools import partial
-from typing import Callable, Any, Optional, List
+from typing import Any, Callable, List, Optional
 
 import torch
-from torch import Tensor
-from torch import nn
+from torch import nn, Tensor
 
 from ..ops.misc import Conv2dNormActivation
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param, _make_divisible
+from ._utils import _make_divisible, _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = ["MobileNetV2", "MobileNet_V2_Weights", "mobilenet_v2"]
@@ -239,6 +238,7 @@ class MobileNet_V2_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V2
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", MobileNet_V2_Weights.IMAGENET1K_V1))
 def mobilenet_v2(
     *, weights: Optional[MobileNet_V2_Weights] = None, progress: bool = True, **kwargs: Any

@@ -46,19 +46,19 @@ setup_cuda() {
 
   # Now work out the CUDA settings
   case "$CU_VERSION" in
+    cu117)
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.7"
+      else
+        export CUDA_HOME=/usr/local/cuda-11.7/
+      fi
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
+      ;;
     cu116)
       if [[ "$OSTYPE" == "msys" ]]; then
         export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.6"
       else
         export CUDA_HOME=/usr/local/cuda-11.6/
-      fi
-      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
-      ;;
-    cu113)
-      if [[ "$OSTYPE" == "msys" ]]; then
-        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.3"
-      else
-        export CUDA_HOME=/usr/local/cuda-11.3/
       fi
       export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
       ;;
@@ -100,16 +100,31 @@ setup_cuda() {
 # Usage: setup_build_version 0.2.0
 setup_build_version() {
   if [[ -z "$BUILD_VERSION" ]]; then
-    export BUILD_VERSION="$1.dev$(date "+%Y%m%d")$VERSION_SUFFIX"
+    if [[ -z "$1" ]]; then
+      setup_base_build_version
+    else
+      BUILD_VERSION="$1"
+    fi
+    BUILD_VERSION="$BUILD_VERSION.dev$(date "+%Y%m%d")$VERSION_SUFFIX"
   else
-    export BUILD_VERSION="$BUILD_VERSION$VERSION_SUFFIX"
+    BUILD_VERSION="$BUILD_VERSION$VERSION_SUFFIX"
   fi
 
   # Set build version based on tag if on tag
   if [[ -n "${CIRCLE_TAG}" ]]; then
     # Strip tag
-    export BUILD_VERSION="$(echo "${CIRCLE_TAG}" | sed -e 's/^v//' -e 's/-.*$//')${VERSION_SUFFIX}"
+    BUILD_VERSION="$(echo "${CIRCLE_TAG}" | sed -e 's/^v//' -e 's/-.*$//')${VERSION_SUFFIX}"
   fi
+
+  export BUILD_VERSION
+}
+
+setup_base_build_version() {
+  SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+  # version.txt for some reason has `a` character after major.minor.rev
+  # command below yields 0.10.0 from version.txt containing 0.10.0a0
+  BUILD_VERSION=$( cut -f 1 -d a "$SCRIPT_DIR/../version.txt" )
+  export BUILD_VERSION
 }
 
 # Set some useful variables for OS X, if applicable
@@ -206,8 +221,13 @@ setup_pip_pytorch_version() {
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
     export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c pytorch-nightly -c pytorch"
+    PYTHON="python"
+    # Check if we have python 3 instead and prefer that
+    if python3 --version >/dev/null 2>/dev/null; then
+      PYTHON="python3"
+    fi
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
-                              python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
+                              ${PYTHON} -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
                                cuver_1 = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
                                cuver_2 = (cuver[:-1] + '.' + cuver[-1]).replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
                                print(re.sub(r'\\+.*$', '', \
@@ -241,11 +261,11 @@ setup_conda_cudatoolkit_constraint() {
     export CONDA_BUILD_VARIANT="cpu"
   else
     case "$CU_VERSION" in
-      cu116)
-        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.6,<11.7 # [not osx]"
+      cu117)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- pytorch-cuda=11.7 # [not osx]"
         ;;
-      cu113)
-        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.3,<11.4 # [not osx]"
+      cu116)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- pytorch-cuda=11.6 # [not osx]"
         ;;
       cu102)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.2,<10.3 # [not osx]"
@@ -270,11 +290,11 @@ setup_conda_cudatoolkit_plain_constraint() {
     export CMAKE_USE_CUDA=0
   else
     case "$CU_VERSION" in
-      cu116)
-        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.6"
+      cu117)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="pytorch-cuda=11.7"
         ;;
-      cu113)
-        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.3"
+      cu116)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="pytorch-cuda=11.6"
         ;;
       cu102)
         export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.2"

@@ -1,45 +1,35 @@
-from typing import Tuple
+import PIL.Image
 
 import torch
+from torchvision.prototype import features
 from torchvision.transforms import functional_tensor as _FT
-
+from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 erase_image_tensor = _FT.erase
 
 
-def _mixup_tensor(input: torch.Tensor, batch_dim: int, lam: float) -> torch.Tensor:
-    input = input.clone()
-    return input.roll(1, batch_dim).mul_(1 - lam).add_(input.mul_(lam))
+@torch.jit.unused
+def erase_image_pil(
+    img: PIL.Image.Image, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
+) -> PIL.Image.Image:
+    t_img = pil_to_tensor(img)
+    output = erase_image_tensor(t_img, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+    return to_pil_image(output, mode=img.mode)
 
 
-def mixup_image_tensor(image_batch: torch.Tensor, *, lam: float) -> torch.Tensor:
-    if image_batch.ndim < 4:
-        raise ValueError("Need a batch of images")
-
-    return _mixup_tensor(image_batch, -4, lam)
-
-
-def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float) -> torch.Tensor:
-    if one_hot_label_batch.ndim < 2:
-        raise ValueError("Need a batch of one hot labels")
-
-    return _mixup_tensor(one_hot_label_batch, -2, lam)
-
-
-def cutmix_image_tensor(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int]) -> torch.Tensor:
-    if image_batch.ndim < 4:
-        raise ValueError("Need a batch of images")
-
-    x1, y1, x2, y2 = box
-    image_rolled = image_batch.roll(1, -4)
-
-    image_batch = image_batch.clone()
-    image_batch[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
-    return image_batch
-
-
-def cutmix_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam_adjusted: float) -> torch.Tensor:
-    if one_hot_label_batch.ndim < 2:
-        raise ValueError("Need a batch of one hot labels")
-
-    return _mixup_tensor(one_hot_label_batch, -2, lam_adjusted)
+def erase(
+    inpt: features.ImageTypeJIT,
+    i: int,
+    j: int,
+    h: int,
+    w: int,
+    v: torch.Tensor,
+    inplace: bool = False,
+) -> features.ImageTypeJIT:
+    if isinstance(inpt, torch.Tensor):
+        output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+        if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
+            output = features.Image.new_like(inpt, output)
+        return output
+    else:  # isinstance(inpt, PIL.Image.Image):
+        return erase_image_pil(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)

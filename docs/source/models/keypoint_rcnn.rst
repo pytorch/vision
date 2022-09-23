@@ -6,6 +6,8 @@ Keypoint R-CNN
 The Keypoint R-CNN model is based on the `Mask R-CNN
 <https://arxiv.org/abs/1703.06870>`__ paper.
 
+.. betastatus:: detection module
+
 
 Model builders
 --------------

@@ -15,7 +15,7 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . "$script_dir/pkg_helpers.bash"
 
 export BUILD_TYPE=conda
-setup_env 0.14.0
+setup_env
 export SOURCE_ROOT_DIR="$PWD"
 setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_plain_constraint
@@ -97,7 +97,7 @@ if [[ "$OSTYPE" == "msys" ]]; then
     "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_frcnn.bat" $PARALLELISM
     mv fasterrcnn_resnet50_fpn.pt Release
     cd Release
-    export PATH=$(cygpath "C:/Program Files (x86)/torchvision/bin"):$(cygpath $TORCH_PATH)/lib:$PATH
+    export PATH=$(cygpath -w "C:/Program Files/NVIDIA Corporation/NvToolsExt/bin/x64"):$(cygpath -w "C:/Program Files (x86)/torchvision/bin"):$(cygpath -w $TORCH_PATH)/lib:$PATH
 else
     make -j$PARALLELISM
 fi
