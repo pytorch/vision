@@ -127,7 +127,13 @@ Dataset: middlebury2014-train @size: [384, 512]:
 }
 ```
 
+### Concerns when training
+
+# Disparity scaling
+
 We encourage users to be aware of the aspect-ratio and disparity scale they are targetting when doing any sort of training or fine-tuning.
-The model is highly sensitive to these two factors, as a consequence with naive multi-set fine-tuning one can achieve `0.2 mae` relatively fast.
+The model is highly sensitive to these two factors, as a consequence with naive multi-set fine-tuning one can achieve `0.2 mae` relatively fast. The top row contains a sample from `Sintel` whereas the bottom row one from `Middlebury`.
 
 ![Disparity](assets/Disparity%20domain%20drift.jpg)
+
+From left to right (`left_image`, `right_image`, `valid_mask`, `valid_mask & ground_truth`, `prediction`). Darker is further away, lighter is closer. In the case of `Sintel` which is more closely aligned to the original distribution of `CREStereo` we notice that the model accurately predicts the background scale whereas in the case of `Middlebury2014` it cannot correcly estimate the continous disparity. Notice that the frame composition is similar for both examples. The blue skybox in the `Sintel` scene behaves similarly to the `Middlebury` black background. However, because the `Middlebury` samples comes from an extremly large scene the crop size of `384x512` does not correctly capture the general training distribution.
