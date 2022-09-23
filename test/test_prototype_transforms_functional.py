@@ -407,27 +407,74 @@ def erase_image_tensor():
         yield ArgsKwargs(image, i=1, j=2, h=6, w=7, v=torch.rand(c, 6, 7))
 
 
+_KERNEL_TYPES = {"_image_tensor", "_image_pil", "_mask", "_bounding_box", "_label"}
+
+
+def _distinct_callables(callable_names):
+    # Ensure we deduplicate callables (due to aliases) without losing the names on the new API
+    remove = set()
+    distinct = set()
+    for name in callable_names:
+        item = F.__dict__[name]
+        if item not in distinct:
+            distinct.add(item)
+        else:
+            remove.add(name)
+    callable_names -= remove
+
+    # create tuple and sort by name
+    return sorted([(name, F.__dict__[name]) for name in callable_names], key=lambda t: t[0])
+
+
+def _get_distinct_kernels():
+    kernel_names = {
+        name
+        for name, f in F.__dict__.items()
+        if callable(f) and not name.startswith("_") and any(name.endswith(k) for k in _KERNEL_TYPES)
+    }
+    return _distinct_callables(kernel_names)
+
+
+def _get_distinct_midlevels():
+    midlevel_names = {
+        name
+        for name, f in F.__dict__.items()
+        if callable(f) and not name.startswith("_") and not any(name.endswith(k) for k in _KERNEL_TYPES)
+    }
+    return _distinct_callables(midlevel_names)
+
+
 @pytest.mark.parametrize(
     "kernel",
     [
         pytest.param(kernel, id=name)
-        for name, kernel in F.__dict__.items()
-        if not name.startswith("_")
-        and callable(kernel)
-        and any(feature_type in name for feature_type in {"image", "mask", "bounding_box", "label"})
-        and "pil" not in name
-        and name
+        for name, kernel in _get_distinct_kernels()
+        if not name.endswith("_image_pil") and name not in {"to_image_tensor"}
+    ],
+)
+def test_scriptable_kernel(kernel):
+    jit.script(kernel)  # TODO: pass data through it
+
+
+@pytest.mark.parametrize(
+    "midlevel",
+    [
+        pytest.param(midlevel, id=name)
+        for name, midlevel in _get_distinct_midlevels()
+        if name
         not in {
-            "to_image_tensor",
-            "get_num_channels",
-            "get_spatial_size",
-            "get_image_num_channels",
-            "get_image_size",
+            "InterpolationMode",
+            "decode_image_with_pil",
+            "decode_video_with_av",
+            "pil_to_tensor",
+            "to_grayscale",
+            "to_pil_image",
+            "to_tensor",
         }
     ],
 )
-def test_scriptable(kernel):
-    jit.script(kernel)
+def test_scriptable_midlevel(midlevel):
+    jit.script(midlevel)  # TODO: pass data through it
 
 
 # Test below is intended to test mid-level op vs low-level ops it calls
@@ -439,8 +486,8 @@ def test_scriptable(kernel):
     [
         pytest.param(func, id=name)
         for name, func in F.__dict__.items()
-        if not name.startswith("_")
-        and callable(func)
+        if not name.startswith("_") and callable(func)
+        # TODO: remove aliases
         and all(feature_type not in name for feature_type in {"image", "mask", "bounding_box", "label", "pil"})
         and name
         not in {
