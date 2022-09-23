@@ -1,38 +1,14 @@
 import dataclasses
-import functools
 from typing import Callable, Dict, Type
 
 import pytest
-import torch
 import torchvision.prototype.transforms.functional as F
-from prototype_common_utils import ArgsKwargs
 from prototype_transforms_kernel_infos import KERNEL_INFOS
-from test_prototype_transforms_functional import FUNCTIONAL_INFOS
 from torchvision.prototype import features
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
 
 KERNEL_SAMPLE_INPUTS_FN_MAP = {info.kernel: info.sample_inputs_fn for info in KERNEL_INFOS}
-
-
-# Helper class to use the infos from the old framework for now tests
-class PreloadedArgsKwargs(ArgsKwargs):
-    def load(self, device="cpu"):
-        args = tuple(arg.to(device) if isinstance(arg, torch.Tensor) else arg for arg in self.args)
-        kwargs = {
-            keyword: arg.to(device) if isinstance(arg, torch.Tensor) else arg for keyword, arg in self.kwargs.items()
-        }
-        return args, kwargs
-
-
-def preloaded_sample_inputs(args_kwargs):
-    for args, kwargs in args_kwargs:
-        yield PreloadedArgsKwargs(*args, **kwargs)
-
-
-KERNEL_SAMPLE_INPUTS_FN_MAP.update(
-    {info.functional: functools.partial(preloaded_sample_inputs, info.sample_inputs()) for info in FUNCTIONAL_INFOS}
-)
 
 
 @dataclasses.dataclass

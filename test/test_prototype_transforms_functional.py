@@ -4,188 +4,233 @@ import os
 import numpy as np
 import PIL.Image
 import pytest
-import torch.testing
-import torchvision.prototype.transforms.functional as F
-from common_utils import cpu_and_gpu
-from prototype_common_utils import ArgsKwargs, make_bounding_boxes, make_image
-from torch import jit
+
+import torch
+from common_utils import cache, cpu_and_gpu, needs_cuda
+from prototype_common_utils import assert_close, make_bounding_boxes, make_image
+from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
+from prototype_transforms_kernel_infos import KERNEL_INFOS
+from torch.utils._pytree import tree_map
 from torchvision.prototype import features
+from torchvision.prototype.transforms import functional as F
 from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
 from torchvision.prototype.transforms.functional._meta import convert_format_bounding_box
 from torchvision.transforms.functional import _get_perspective_coeffs
 
 
-class FunctionalInfo:
-    def __init__(self, name, *, sample_inputs_fn):
-        self.name = name
-        self.functional = getattr(F, name)
-        self._sample_inputs_fn = sample_inputs_fn
-
-    def sample_inputs(self):
-        yield from self._sample_inputs_fn()
-
-    def __call__(self, *args, **kwargs):
-        if len(args) == 1 and not kwargs and isinstance(args[0], ArgsKwargs):
-            sample_input = args[0]
-            return self.functional(*sample_input.args, **sample_input.kwargs)
-
-        return self.functional(*args, **kwargs)
+@cache
+def script(fn):
+    try:
+        return torch.jit.script(fn)
+    except Exception as error:
+        raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
-FUNCTIONAL_INFOS = []
+class TestKernels:
+    sample_inputs = pytest.mark.parametrize(
+        ("info", "args_kwargs"),
+        [
+            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-{idx}")
+            for info in KERNEL_INFOS
+            for idx, args_kwargs in enumerate(info.sample_inputs_fn())
+        ],
+    )
+
+    @sample_inputs
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_scripted_vs_eager(self, info, args_kwargs, device):
+        kernel_eager = info.kernel
+        kernel_scripted = script(kernel_eager)
+
+        args, kwargs = args_kwargs.load(device)
+
+        actual = kernel_scripted(*args, **kwargs)
+        expected = kernel_eager(*args, **kwargs)
+
+        assert_close(actual, expected, **info.closeness_kwargs)
+
+    # TODO: We need this until the kernels below also have `KernelInfo`'s. If they do, `test_scripted_vs_eager` replaces
+    #  this test for them.
+    @pytest.mark.parametrize(
+        "kernel",
+        [
+            F.adjust_brightness_image_tensor,
+            F.adjust_gamma_image_tensor,
+            F.adjust_hue_image_tensor,
+            F.adjust_saturation_image_tensor,
+            F.clamp_bounding_box,
+            F.five_crop_image_tensor,
+            F.normalize_image_tensor,
+            F.ten_crop_image_tensor,
+        ],
+        ids=lambda kernel: kernel.__name__,
+    )
+    def test_scriptable(self, kernel):
+        script(kernel)
+
+    def _unbind_batch_dims(self, batched_tensor, *, data_dims):
+        if batched_tensor.ndim == data_dims:
+            return batched_tensor
+
+        return [self._unbind_batch_dims(t, data_dims=data_dims) for t in batched_tensor.unbind(0)]
+
+    def _stack_batch_dims(self, unbound_tensor):
+        if isinstance(unbound_tensor[0], torch.Tensor):
+            return torch.stack(unbound_tensor)
+
+        return torch.stack([self._stack_batch_dims(t) for t in unbound_tensor])
+
+    @sample_inputs
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_batched_vs_single(self, info, args_kwargs, device):
+        (batched_input, *other_args), kwargs = args_kwargs.load(device)
+
+        feature_type = features.Image if features.is_simple_tensor(batched_input) else type(batched_input)
+        # This dictionary contains the number of rightmost dimensions that contain the actual data.
+        # Everything to the left is considered a batch dimension.
+        data_dims = {
+            features.Image: 3,
+            features.BoundingBox: 1,
+            # `Mask`'s are special in the sense that the data dimensions depend on the type of mask. For detection masks
+            # it is 3 `(*, N, H, W)`, but for segmentation masks it is 2 `(*, H, W)`. Since both a grouped under one
+            # type all kernels should also work without differentiating between the two. Thus, we go with 2 here as
+            # common ground.
+            features.Mask: 2,
+        }.get(feature_type)
+        if data_dims is None:
+            raise pytest.UsageError(
+                f"The number of data dimensions cannot be determined for input of type {feature_type.__name__}."
+            ) from None
+        elif batched_input.ndim <= data_dims:
+            pytest.skip("Input is not batched.")
+        elif not all(batched_input.shape[:-data_dims]):
+            pytest.skip("Input has a degenerate batch shape.")
+
+        actual = info.kernel(batched_input, *other_args, **kwargs)
+
+        single_inputs = self._unbind_batch_dims(batched_input, data_dims=data_dims)
+        single_outputs = tree_map(lambda single_input: info.kernel(single_input, *other_args, **kwargs), single_inputs)
+        expected = self._stack_batch_dims(single_outputs)
+
+        assert_close(actual, expected, **info.closeness_kwargs)
+
+    @sample_inputs
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_no_inplace(self, info, args_kwargs, device):
+        (input, *other_args), kwargs = args_kwargs.load(device)
+
+        if input.numel() == 0:
+            pytest.skip("The input has a degenerate shape.")
+
+        input_version = input._version
+        output = info.kernel(input, *other_args, **kwargs)
+
+        assert output is not input or output._version == input_version
+
+    @sample_inputs
+    @needs_cuda
+    def test_cuda_vs_cpu(self, info, args_kwargs):
+        (input_cpu, *other_args), kwargs = args_kwargs.load("cpu")
+        input_cuda = input_cpu.to("cuda")
+
+        output_cpu = info.kernel(input_cpu, *other_args, **kwargs)
+        output_cuda = info.kernel(input_cuda, *other_args, **kwargs)
+
+        assert_close(output_cuda, output_cpu, check_device=False, **info.closeness_kwargs)
+
+    @sample_inputs
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_dtype_and_device_consistency(self, info, args_kwargs, device):
+        (input, *other_args), kwargs = args_kwargs.load(device)
+
+        output = info.kernel(input, *other_args, **kwargs)
+
+        assert output.dtype == input.dtype
+        assert output.device == input.device
+
+    @pytest.mark.parametrize(
+        ("info", "args_kwargs"),
+        [
+            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-{idx}")
+            for info in KERNEL_INFOS
+            for idx, args_kwargs in enumerate(info.reference_inputs_fn())
+            if info.reference_fn is not None
+        ],
+    )
+    def test_against_reference(self, info, args_kwargs):
+        args, kwargs = args_kwargs.load("cpu")
+
+        actual = info.kernel(*args, **kwargs)
+        expected = info.reference_fn(*args, **kwargs)
+
+        assert_close(actual, expected, check_dtype=False, **info.closeness_kwargs)
 
 
-def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
-    FUNCTIONAL_INFOS.append(FunctionalInfo(sample_inputs_fn.__name__, sample_inputs_fn=sample_inputs_fn))
-    return sample_inputs_fn
+class TestDispatchers:
+    @pytest.mark.parametrize(
+        ("info", "args_kwargs"),
+        [
+            pytest.param(info, args_kwargs, id=f"{info.dispatcher.__name__}-{idx}")
+            for info in DISPATCHER_INFOS
+            for idx, args_kwargs in enumerate(info.sample_inputs(features.Image))
+            if features.Image in info.kernels
+        ],
+    )
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_scripted_smoke(self, info, args_kwargs, device):
+        dispatcher = script(info.dispatcher)
 
+        (image_feature, *other_args), kwargs = args_kwargs.load(device)
+        image_simple_tensor = torch.Tensor(image_feature)
 
-_KERNEL_TYPES = {"_image_tensor", "_image_pil", "_mask", "_bounding_box", "_label"}
+        dispatcher(image_simple_tensor, *other_args, **kwargs)
 
-
-def _distinct_callables(callable_names):
-    # Ensure we deduplicate callables (due to aliases) without losing the names on the new API
-    remove = set()
-    distinct = set()
-    for name in callable_names:
-        item = F.__dict__[name]
-        if item not in distinct:
-            distinct.add(item)
-        else:
-            remove.add(name)
-    callable_names -= remove
-
-    # create tuple and sort by name
-    return sorted([(name, F.__dict__[name]) for name in callable_names], key=lambda t: t[0])
-
-
-def _get_distinct_kernels():
-    kernel_names = {
-        name
-        for name, f in F.__dict__.items()
-        if callable(f) and not name.startswith("_") and any(name.endswith(k) for k in _KERNEL_TYPES)
-    }
-    return _distinct_callables(kernel_names)
-
-
-def _get_distinct_midlevels():
-    midlevel_names = {
-        name
-        for name, f in F.__dict__.items()
-        if callable(f) and not name.startswith("_") and not any(name.endswith(k) for k in _KERNEL_TYPES)
-    }
-    return _distinct_callables(midlevel_names)
+    # TODO: We need this until the dispatchers below also have `DispatcherInfo`'s. If they do, `test_scripted_smoke`
+    #  replaces this test for them.
+    @pytest.mark.parametrize(
+        "dispatcher",
+        [
+            F.adjust_brightness,
+            F.adjust_contrast,
+            F.adjust_gamma,
+            F.adjust_hue,
+            F.adjust_saturation,
+            F.convert_color_space,
+            F.convert_image_dtype,
+            F.elastic_transform,
+            F.five_crop,
+            F.get_dimensions,
+            F.get_image_num_channels,
+            F.get_image_size,
+            F.get_spatial_size,
+            F.normalize,
+            F.rgb_to_grayscale,
+            F.ten_crop,
+        ],
+        ids=lambda dispatcher: dispatcher.__name__,
+    )
+    def test_scriptable(self, dispatcher):
+        script(dispatcher)
 
 
 @pytest.mark.parametrize(
-    "kernel",
+    ("alias", "target"),
     [
-        pytest.param(kernel, id=name)
-        for name, kernel in _get_distinct_kernels()
-        if not name.endswith("_image_pil") and name not in {"to_image_tensor"}
+        pytest.param(alias, target, id=alias.__name__)
+        for alias, target in [
+            (F.hflip, F.horizontal_flip),
+            (F.vflip, F.vertical_flip),
+            (F.get_image_num_channels, F.get_num_channels),
+            (F.to_pil_image, F.to_image_pil),
+        ]
     ],
 )
-def test_scriptable_kernel(kernel):
-    jit.script(kernel)  # TODO: pass data through it
+def test_alias(alias, target):
+    assert alias is target
 
 
-@pytest.mark.parametrize(
-    "midlevel",
-    [
-        pytest.param(midlevel, id=name)
-        for name, midlevel in _get_distinct_midlevels()
-        if name
-        not in {
-            "InterpolationMode",
-            "decode_image_with_pil",
-            "decode_video_with_av",
-            "pil_to_tensor",
-            "to_grayscale",
-            "to_pil_image",
-            "to_tensor",
-        }
-    ],
-)
-def test_scriptable_midlevel(midlevel):
-    jit.script(midlevel)  # TODO: pass data through it
-
-
-# Test below is intended to test mid-level op vs low-level ops it calls
-# For example, resize -> resize_image_tensor, resize_bounding_boxes etc
-# TODO: Rewrite this tests as sample args may include more or less params
-# than needed by functions
-@pytest.mark.parametrize(
-    "func",
-    [
-        pytest.param(func, id=name)
-        for name, func in F.__dict__.items()
-        if not name.startswith("_") and callable(func)
-        # TODO: remove aliases
-        and all(feature_type not in name for feature_type in {"image", "mask", "bounding_box", "label", "pil"})
-        and name
-        not in {
-            "to_image_tensor",
-            "InterpolationMode",
-            "decode_video_with_av",
-            "crop",
-            "perspective",
-            "elastic_transform",
-            "elastic",
-        }
-        # We skip 'crop' due to missing 'height' and 'width'
-        # We skip 'perspective' as it requires different input args than perspective_image_tensor etc
-        # Skip 'elastic', TODO: inspect why test is failing
-    ],
-)
-def test_functional_mid_level(func):
-    finfos = [finfo for finfo in FUNCTIONAL_INFOS if f"{func.__name__}_" in finfo.name]
-    for finfo in finfos:
-        for sample_input in finfo.sample_inputs():
-            expected = finfo(sample_input)
-            kwargs = dict(sample_input.kwargs)
-            for key in ["format", "image_size"]:
-                if key in kwargs:
-                    del kwargs[key]
-            output = func(*sample_input.args, **kwargs)
-            torch.testing.assert_close(
-                output, expected, msg=f"finfo={finfo.name}, output={output}, expected={expected}"
-            )
-            break
-
-
-@pytest.mark.parametrize(
-    ("functional_info", "sample_input"),
-    [
-        pytest.param(functional_info, sample_input, id=f"{functional_info.name}-{idx}")
-        for functional_info in FUNCTIONAL_INFOS
-        for idx, sample_input in enumerate(functional_info.sample_inputs())
-    ],
-)
-def test_eager_vs_scripted(functional_info, sample_input):
-    eager = functional_info(sample_input)
-    scripted = jit.script(functional_info.functional)(*sample_input.args, **sample_input.kwargs)
-
-    torch.testing.assert_close(eager, scripted)
-
-
-@pytest.mark.parametrize(
-    ("functional_info", "sample_input"),
-    [
-        pytest.param(
-            functional_info,
-            sample_input,
-            id=f"{functional_info.name}-{idx}",
-        )
-        for functional_info in FUNCTIONAL_INFOS
-        for idx, sample_input in enumerate(functional_info.sample_inputs())
-    ],
-)
-def test_dtype_consistency(functional_info, sample_input):
-    (input, *other_args), kwargs = sample_input
-
-    output = functional_info.functional(input, *other_args, **kwargs)
-
-    assert output.dtype == input.dtype
+# TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
+#  `prototype_transforms_kernel_infos.py`
 
 
 def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
