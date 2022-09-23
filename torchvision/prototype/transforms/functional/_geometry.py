@@ -232,7 +232,7 @@ def affine_image_tensor(
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Optional[List[float]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if img.numel() == 0:
@@ -405,7 +405,9 @@ def affine_mask(
     return output
 
 
-def _convert_fill_arg(fill: Optional[Union[int, float, Sequence[int], Sequence[float]]]) -> Optional[List[float]]:
+def _convert_fill_arg(
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]]
+) -> Optional[Union[int, float, List[float]]]:
     # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
     # So, we can't reassign fill to 0
     # if fill is None:
@@ -416,9 +418,6 @@ def _convert_fill_arg(fill: Optional[Union[int, float, Sequence[int], Sequence[f
     # This cast does Sequence -> List[float] to please mypy and torch.jit.script
     if not isinstance(fill, (int, float)):
         fill = [float(v) for v in list(fill)]
-    else:
-        # It is OK to cast int to float as later we use inpt.dtype
-        fill = [float(fill)]
     return fill
 
 
@@ -591,7 +590,23 @@ pad_image_pil = _FP.pad
 def pad_image_tensor(
     img: torch.Tensor,
     padding: Union[int, List[int]],
-    fill: Optional[Union[int, float]] = 0,
+    fill: Optional[Union[int, float, List[float]]] = None,
+    padding_mode: str = "constant",
+) -> torch.Tensor:
+    if fill is None:
+        # This is a JIT workaround
+        return _pad_with_scalar_fill(img, padding, fill=None, padding_mode=padding_mode)
+    elif isinstance(fill, (int, float)) or len(fill) == 1:
+        fill_number = fill[0] if isinstance(fill, list) else fill
+        return _pad_with_scalar_fill(img, padding, fill=fill_number, padding_mode=padding_mode)
+    else:
+        return _pad_with_vector_fill(img, padding, fill=fill, padding_mode=padding_mode)
+
+
+def _pad_with_scalar_fill(
+    img: torch.Tensor,
+    padding: Union[int, List[int]],
+    fill: Union[int, float, None],
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     num_channels, height, width = img.shape[-3:]
@@ -614,13 +629,13 @@ def pad_image_tensor(
 def _pad_with_vector_fill(
     img: torch.Tensor,
     padding: Union[int, List[int]],
-    fill: Sequence[float] = [0.0],
+    fill: List[float],
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     if padding_mode != "constant":
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
-    output = pad_image_tensor(img, padding, fill=0, padding_mode="constant")
+    output = _pad_with_scalar_fill(img, padding, fill=0, padding_mode="constant")
     left, right, top, bottom = _parse_pad_padding(padding)
     fill = torch.tensor(fill, dtype=img.dtype, device=img.device).view(-1, 1, 1)
 
@@ -639,8 +654,14 @@ def pad_mask(
     mask: torch.Tensor,
     padding: Union[int, List[int]],
     padding_mode: str = "constant",
-    fill: Optional[Union[int, float]] = 0,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> torch.Tensor:
+    if fill is None:
+        fill = 0
+
+    if isinstance(fill, list):
+        raise ValueError("Non-scalar fill value is not supported")
+
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -693,10 +714,9 @@ def pad(
         if not isinstance(padding, int):
             padding = list(padding)
 
-        # TODO: PyTorch's pad supports only scalars on fill. So we need to overwrite the colour
-        if isinstance(fill, (int, float)) or fill is None:
-            return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
-        return _pad_with_vector_fill(inpt, padding, fill=fill, padding_mode=padding_mode)
+        fill = _convert_fill_arg(fill)
+
+        return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
 
 
 crop_image_tensor = _FT.crop
@@ -739,7 +759,7 @@ def perspective_image_tensor(
     img: torch.Tensor,
     perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[List[float]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> torch.Tensor:
     return _FT.perspective(img, perspective_coeffs, interpolation=interpolation.value, fill=fill)
 
@@ -878,7 +898,7 @@ def elastic_image_tensor(
     img: torch.Tensor,
     displacement: torch.Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[List[float]] = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
 ) -> torch.Tensor:
     return _FT.elastic_transform(img, displacement, interpolation=interpolation.value, fill=fill)
 
