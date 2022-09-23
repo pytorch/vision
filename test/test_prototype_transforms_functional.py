@@ -26,6 +26,25 @@ def script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
+@pytest.fixture(autouse=True)
+def maybe_skip(request):
+    # In case the test uses no parametrization or fixtures, the `callspec` attribute does not exist
+    try:
+        callspec = request.node.callspec
+    except AttributeError:
+        return
+
+    try:
+        info = callspec.params["info"]
+        args_kwargs = callspec.params["args_kwargs"]
+    except KeyError:
+        return
+
+    info.maybe_skip(
+        test_name=request.node.originalname, args_kwargs=args_kwargs, device=callspec.params.get("device", "cpu")
+    )
+
+
 class TestKernels:
     sample_inputs = pytest.mark.parametrize(
         ("info", "args_kwargs"),
@@ -48,25 +67,6 @@ class TestKernels:
         expected = kernel_eager(*args, **kwargs)
 
         assert_close(actual, expected, **info.closeness_kwargs)
-
-    # TODO: We need this until the kernels below also have `KernelInfo`'s. If they do, `test_scripted_vs_eager` replaces
-    #  this test for them.
-    @pytest.mark.parametrize(
-        "kernel",
-        [
-            F.adjust_brightness_image_tensor,
-            F.adjust_gamma_image_tensor,
-            F.adjust_hue_image_tensor,
-            F.adjust_saturation_image_tensor,
-            F.clamp_bounding_box,
-            F.five_crop_image_tensor,
-            F.normalize_image_tensor,
-            F.ten_crop_image_tensor,
-        ],
-        ids=lambda kernel: kernel.__name__,
-    )
-    def test_scriptable(self, kernel):
-        script(kernel)
 
     def _unbind_batch_dims(self, batched_tensor, *, data_dims):
         if batched_tensor.ndim == data_dims:
@@ -190,22 +190,13 @@ class TestDispatchers:
     @pytest.mark.parametrize(
         "dispatcher",
         [
-            F.adjust_brightness,
-            F.adjust_contrast,
-            F.adjust_gamma,
-            F.adjust_hue,
-            F.adjust_saturation,
             F.convert_color_space,
             F.convert_image_dtype,
-            F.elastic_transform,
-            F.five_crop,
             F.get_dimensions,
             F.get_image_num_channels,
             F.get_image_size,
             F.get_spatial_size,
-            F.normalize,
             F.rgb_to_grayscale,
-            F.ten_crop,
         ],
         ids=lambda dispatcher: dispatcher.__name__,
     )
@@ -222,6 +213,7 @@ class TestDispatchers:
             (F.vflip, F.vertical_flip),
             (F.get_image_num_channels, F.get_num_channels),
             (F.to_pil_image, F.to_image_pil),
+            (F.elastic_transform, F.elastic),
         ]
     ],
 )
