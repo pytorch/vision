@@ -68,7 +68,7 @@ def get_correlation(
     right_padded = F.pad(right_feature, (pad_x, pad_x, pad_y, pad_y), mode="replicate")
     # in order to vectorize the correlation computation over all pixel candidates
     # we create multiple shifted right images which we stack on an extra dimension
-    right_padded = F.unfold(right_padded, kernel_size=(H, W), dilation=dilate).detach()
+    right_padded = F.unfold(right_padded, kernel_size=(H, W), dilation=dilate)
     # torch unfold returns a tensor of shape [B, flattened_values, n_selections]
     right_padded = right_padded.permute(0, 2, 1)
     # we consider rehsape back into [B, n_views, C, H, W]
@@ -1093,8 +1093,9 @@ class CREStereo_Base_Weights(WeightsEnum):
                     "relepe": 0.114,
                     "fl-all": 90.429,
                     "_detailed": {
+                        # 1 is the number of cascades
                         1: {
-                            # number of refininement interations
+                            # 2 is number of refininement interations
                             2: {
                                 "mae": 1.704,
                                 "rmse": 3.738,
@@ -1197,7 +1198,9 @@ class CREStereo_Base_Weights(WeightsEnum):
                     "relepe": 0.148,
                     "fl-all": 78.388,
                     "_detailed": {
+                        # 1 is the number of cascades
                         1: {
+                            # 2 is the number of refinement iterations
                             2: {
                                 "mae": 2.363,
                                 "rmse": 4.352,
@@ -1285,7 +1288,7 @@ class CREStereo_Base_Weights(WeightsEnum):
 
     CRESTEREO_FINETUNE_MULTI_V1 = Weights(
         # Weights ported from https://github.com/megvii-research/CREStereo
-        url="https://download.pytorch.org/models/crestereo-1eaae843.pth",
+        url="https://download.pytorch.org/models/crestereo-697c38f4.pth	",
         transforms=StereoMatching,
         meta={
             **_COMMON_META,
@@ -1302,86 +1305,86 @@ class CREStereo_Base_Weights(WeightsEnum):
                     "relepe": 0.129,
                     "fl-all": 85.522,
                     "_detailed": {
-                        {
-                            1: {
-                                2: {
-                                    "mae": 1.962,
-                                    "rmse": 3.997,
-                                    "1px": 0.687,
-                                    "3px": 0.862,
-                                    "5px": 0.915,
-                                    "relepe": 0.178,
-                                    "fl-all": 71.724,
-                                },
-                                5: {
-                                    "mae": 1.205,
-                                    "rmse": 3.326,
-                                    "1px": 0.834,
-                                    "3px": 0.928,
-                                    "5px": 0.955,
-                                    "relepe": 0.138,
-                                    "fl-all": 84.081,
-                                },
-                                10: {
-                                    "mae": 1.038,
-                                    "rmse": 3.108,
-                                    "1px": 0.852,
-                                    "3px": 0.942,
-                                    "5px": 0.963,
-                                    "relepe": 0.129,
-                                    "fl-all": 85.522,
-                                },
-                                20: {
-                                    "mae": 1.01,
-                                    "rmse": 3.09,
-                                    "1px": 0.855,
-                                    "3px": 0.946,
-                                    "5px": 0.965,
-                                    "relepe": 0.126,
-                                    "fl-all": 85.825,
-                                },
-                            },
+                        # 1 is the number of cascades
+                        1: {
+                            # 2 is number of refininement interations
                             2: {
-                                2: {
-                                    "mae": 1.564,
-                                    "rmse": 3.741,
-                                    "1px": 0.793,
-                                    "3px": 0.904,
-                                    "5px": 0.933,
-                                    "relepe": 0.158,
-                                    "fl-all": 80.625,
-                                },
-                                5: {
-                                    "mae": 1.187,
-                                    "rmse": 3.345,
-                                    "1px": 0.843,
-                                    "3px": 0.931,
-                                    "5px": 0.954,
-                                    "relepe": 0.135,
-                                    "fl-all": 84.78,
-                                },
-                                10: {
-                                    "mae": 1.052,
-                                    "rmse": 3.159,
-                                    "1px": 0.852,
-                                    "3px": 0.942,
-                                    "5px": 0.963,
-                                    "relepe": 0.129,
-                                    "fl-all": 85.581,
-                                },
-                                20: {
-                                    "mae": 1.029,
-                                    "rmse": 3.136,
-                                    "1px": 0.855,
-                                    "3px": 0.945,
-                                    "5px": 0.965,
-                                    "relepe": 0.127,
-                                    "fl-all": 85.904,
-                                },
+                                "mae": 1.85,
+                                "rmse": 3.797,
+                                "1px": 0.673,
+                                "3px": 0.862,
+                                "5px": 0.917,
+                                "relepe": 0.171,
+                                "fl-all": 69.736,
+                            },
+                            5: {
+                                "mae": 1.111,
+                                "rmse": 3.166,
+                                "1px": 0.838,
+                                "3px": 0.93,
+                                "5px": 0.957,
+                                "relepe": 0.134,
+                                "fl-all": 84.596,
+                            },
+                            10: {
+                                "mae": 1.02,
+                                "rmse": 3.073,
+                                "1px": 0.854,
+                                "3px": 0.938,
+                                "5px": 0.96,
+                                "relepe": 0.129,
+                                "fl-all": 86.042,
+                            },
+                            20: {
+                                "mae": 0.993,
+                                "rmse": 3.059,
+                                "1px": 0.855,
+                                "3px": 0.942,
+                                "5px": 0.967,
+                                "relepe": 0.126,
+                                "fl-all": 85.784,
+                            },
+                        },
+                        2: {
+                            2: {
+                                "mae": 1.667,
+                                "rmse": 3.867,
+                                "1px": 0.78,
+                                "3px": 0.891,
+                                "5px": 0.922,
+                                "relepe": 0.165,
+                                "fl-all": 78.89,
+                            },
+                            5: {
+                                "mae": 1.158,
+                                "rmse": 3.278,
+                                "1px": 0.843,
+                                "3px": 0.926,
+                                "5px": 0.955,
+                                "relepe": 0.135,
+                                "fl-all": 84.556,
+                            },
+                            10: {
+                                "mae": 1.046,
+                                "rmse": 3.13,
+                                "1px": 0.85,
+                                "3px": 0.934,
+                                "5px": 0.96,
+                                "relepe": 0.13,
+                                "fl-all": 85.464,
+                            },
+                            20: {
+                                "mae": 1.021,
+                                "rmse": 3.102,
+                                "1px": 0.85,
+                                "3px": 0.935,
+                                "5px": 0.963,
+                                "relepe": 0.129,
+                                "fl-all": 85.417,
                             },
                         },
                     },
-                }
+                },
             },
             "_docs": """These weights were finetuned on a mixture of
             :class:`~torchvision.datasets._stereo_matching.CREStereo` +
