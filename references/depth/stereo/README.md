@@ -1,0 +1,133 @@
+# Stereo Matching reference training scripts
+
+This folder contains reference training scripts for Stereo Matching.
+They serve as a log of how to train specific models, so as to provide baseline
+training and evaluation scripts to quickly bootstrap research. 
+
+
+### CREStereo
+
+The CREStereo model was trained on a dataset mixture between CREStereo, ETH3D and the additional split from Middlebury2014.
+A ratio of 88-6-6 was used in order to train a baseline weight set. We provide multi-set variant as well.
+Both used 8 A100 GPUs and a batch size of 2 (so effective batch size is 16). The
+rest of the hyper-parameters loosely follow the recipe from https://github.com/megvii-research/CREStereo.
+The original recipe trains for 300000 updates (or steps) on the dataset mixture. We modify the learning rate
+schedule to one that starts decaying the weight much sooner. Throughout experiments we found that this reduces overfitting
+during evaluation time and gradient clip help stabilize the loss during a pre-mature learning rate change.
+
+```
+torchrun --nproc_per_node 8 --nnodes 1 train.py \
+    --dataset-root $dataset_root \
+    --name $name_cre \
+    --model crestereo_base \
+    --train-datasets crestereo eth3d-train middlebury2014-other \
+    --dataset-steps 264000 18000 18000
+    --batch-size 2 \
+    --lr 0.0004 \
+    --lr-decay-method cosine \
+    --decay-after-steps 60000 \
+    --clip-grad-norm 1.0 \
+```
+
+We employ a multi-set fine-tuning stage where we 
+
+```
+torchrun --nproc_per_node 8 --nnodes 1 train.py \
+    --dataset-root $dataset_root \
+    --name $name_things \
+    --model raft_large \
+    --train-datasets crestereo eth3d-train middlebury2014-other instereo2k fallingthings carla-highres sintel sceneflow-monkaa sceneflow-driving \
+    --dataset-steps 12000 12000 12000 12000 12000 12000 12000 12000 12000
+    --batch-size 2 \
+    --scale-range 0.2 0.8 \
+    --lr 0.0004 \
+    --resume_path $checkpoint_dir/$name_cre.pth
+```
+
+
+### Evaluation
+
+Evaluating the base weights
+
+```
+torchrun --nproc_per_node 1 --nnodes 1 cascade_evaluation.py --dataset middlebury2014-train --batch-size 1 --dataset-root $dataset_root --model crestereo_base --weights CREStereo_Base_Weights.CRESTEREO_ETH_MBL_V1
+```
+
+This should give an mae of about 0.792 on the train set of Middlebury2014. Results may vary slightly depending on the batch size and the number of GPUs. For the most accurate resuts use 1 GPU and `--batch-size 1`. The created log file should look like this, where the first key is the number of cascades and the nested key is the number of recursive iterations:
+
+```
+Dataset: middlebury2014-train @size: [384, 512]:
+{
+	1: {
+		2: {'mae': 2.363, 'rmse': 4.352, '1px': 0.611, '3px': 0.828, '5px': 0.891, 'relepe': 0.176, 'fl-all': 64.511}
+		5: {'mae': 1.618, 'rmse': 3.71, '1px': 0.761, '3px': 0.879, '5px': 0.918, 'relepe': 0.154, 'fl-all': 77.128}
+		10: {'mae': 1.416, 'rmse': 3.53, '1px': 0.777, '3px': 0.896, '5px': 0.933, 'relepe': 0.148, 'fl-all': 78.388}
+		20: {'mae': 1.448, 'rmse': 3.583, '1px': 0.771, '3px': 0.893, '5px': 0.931, 'relepe': 0.145, 'fl-all': 77.7}
+	},
+}
+{
+	2: {
+		2: {'mae': 1.972, 'rmse': 4.125, '1px': 0.73, '3px': 0.865, '5px': 0.908, 'relepe': 0.169, 'fl-all': 74.396}
+		5: {'mae': 1.403, 'rmse': 3.448, '1px': 0.793, '3px': 0.905, '5px': 0.937, 'relepe': 0.151, 'fl-all': 80.186}
+		10: {'mae': 1.312, 'rmse': 3.368, '1px': 0.799, '3px': 0.912, '5px': 0.943, 'relepe': 0.148, 'fl-all': 80.379}
+		20: {'mae': 1.376, 'rmse': 3.542, '1px': 0.796, '3px': 0.91, '5px': 0.942, 'relepe': 0.149, 'fl-all': 80.054}
+	},
+}
+```
+
+You can also evaluate the Finetuned weights:
+
+```
+torchrun --nproc_per_node 1 --nnodes 1 cascade_evaluation.py --dataset middlebury2014-train --batch-size 1 --dataset-root $dataset_root --model crestereo_base --weights CREStereo_Base_Weights.CRESTEREO_FINETUNE_MULTI_V1
+```
+
+```
+Dataset: middlebury2014-train @size: [384, 512]:
+{
+	1: {
+		2: {'mae': 1.962, 'rmse': 3.997, '1px': 0.687, '3px': 0.862, '5px': 0.915, 'relepe': 0.178, 'fl-all': 71.724}
+		5: {'mae': 1.205, 'rmse': 3.326, '1px': 0.834, '3px': 0.928, '5px': 0.955, 'relepe': 0.138, 'fl-all': 84.081}
+		10: {'mae': 1.038, 'rmse': 3.108, '1px': 0.852, '3px': 0.942, '5px': 0.963, 'relepe': 0.129, 'fl-all': 85.522}
+		20: {'mae': 1.01, 'rmse': 3.09, '1px': 0.855, '3px': 0.946, '5px': 0.965, 'relepe': 0.126, 'fl-all': 85.825}
+	},
+}
+{
+	2: {
+		2: {'mae': 1.564, 'rmse': 3.741, '1px': 0.793, '3px': 0.904, '5px': 0.933, 'relepe': 0.158, 'fl-all': 80.625}
+		5: {'mae': 1.187, 'rmse': 3.345, '1px': 0.843, '3px': 0.931, '5px': 0.954, 'relepe': 0.135, 'fl-all': 84.78}
+		10: {'mae': 1.052, 'rmse': 3.159, '1px': 0.852, '3px': 0.942, '5px': 0.963, 'relepe': 0.129, 'fl-all': 85.581}
+		20: {'mae': 1.029, 'rmse': 3.136, '1px': 0.855, '3px': 0.945, '5px': 0.965, 'relepe': 0.127, 'fl-all': 85.904}
+	},
+}
+```
+
+Evaluating the author provided weights:
+
+```
+torchrun --nproc_per_node 1 --nnodes 1 cascade_evaluation.py --dataset middlebury2014-train --batch-size 1 --dataset-root $dataset_root --model crestereo_base --weights CREStereo_Base_Weights.MEGVII_V1
+```
+
+```
+Dataset: middlebury2014-train @size: [384, 512]:
+{
+	1: {
+		2: {'mae': 1.704, 'rmse': 3.738, '1px': 0.738, '3px': 0.896, '5px': 0.933, 'relepe': 0.157, 'fl-all': 76.464}
+		5: {'mae': 0.956, 'rmse': 2.963, '1px': 0.88, '3px': 0.948, '5px': 0.965, 'relepe': 0.124, 'fl-all': 88.186}
+		10: {'mae': 0.792, 'rmse': 2.765, '1px': 0.905, '3px': 0.958, '5px': 0.97, 'relepe': 0.114, 'fl-all': 90.429}
+		20: {'mae': 0.749, 'rmse': 2.706, '1px': 0.907, '3px': 0.961, '5px': 0.972, 'relepe': 0.113, 'fl-all': 90.807}
+	},
+}
+{
+	2: {
+		2: {'mae': 1.702, 'rmse': 3.784, '1px': 0.784, '3px': 0.894, '5px': 0.924, 'relepe': 0.172, 'fl-all': 80.313}
+		5: {'mae': 0.932, 'rmse': 2.907, '1px': 0.877, '3px': 0.944, '5px': 0.963, 'relepe': 0.125, 'fl-all': 87.979}
+		10: {'mae': 0.773, 'rmse': 2.768, '1px': 0.901, '3px': 0.958, '5px': 0.972, 'relepe': 0.117, 'fl-all': 90.43}
+		20: {'mae': 0.854, 'rmse': 2.971, '1px': 0.9, '3px': 0.957, '5px': 0.97, 'relepe': 0.122, 'fl-all': 90.269}
+	},
+}
+```
+
+We encourage users to be aware of the aspect-ratio and disparity scale they are targetting when doing any sort of training or fine-tuning.
+The model is highly sensitive to these two factors, as a consequence with naive multi-set fine-tuning one can achieve `0.2 mae` relatively fast.
+
+![Disparity](assets/Disparity%20domain%20drift.jpg)
