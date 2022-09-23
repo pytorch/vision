@@ -569,7 +569,6 @@ class MaxVit(nn.Module):
     Implements MaxVit Transformer from the `MaxViT: Multi-Axis Vision Transformer <https://arxiv.org/abs/2204.01697>`_ paper.
     Args:
         input_size (Tuple[int, int]): Size of the input image.
-        input_channels (int): Number of input channels.
         stem_channels (int): Number of channels in the stem.
         partition_size (int): Size of the partitions.
         block_channels (List[int]): Number of channels in each block.
