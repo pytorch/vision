@@ -42,6 +42,9 @@ def test_coverage():
         )
 
 
+# TODO: Remove filterwarnings after only_datapipe is deprecated from traverse function
+#       and `traverse` function behaves like only_datapipe=True by default
+@pytest.mark.filterwarnings("ignore:`only_datapipe` is deprecated:FutureWarning")
 @pytest.mark.filterwarnings("error")
 class TestCommon:
     @pytest.mark.parametrize("name", datasets.list_datasets())
