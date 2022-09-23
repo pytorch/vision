@@ -63,7 +63,7 @@ class _AutoAugmentBase(Transform):
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Optional[Dict[Type, Optional[FillType]]],
+        fill: Optional[Dict[Type, FillType]],
     ) -> ImageType:
         fill_ = fill[type(image)] if fill is not None else None
         fill_ = F._geometry._convert_fill_arg(fill_)
