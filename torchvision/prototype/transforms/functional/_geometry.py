@@ -9,7 +9,6 @@ from torchvision.transforms import functional_pil as _FP, functional_tensor as _
 from torchvision.transforms.functional import (
     _compute_resized_output_size,
     _get_inverse_affine_matrix,
-    _get_perspective_coeffs,
     InterpolationMode,
     pil_modes_mapping,
     pil_to_tensor,
@@ -876,13 +875,10 @@ def perspective_mask(
 
 def perspective(
     inpt: features.DType,
-    startpoints: List[List[int]],
-    endpoints: List[List[int]],
+    perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: Optional[Union[int, float, List[float]]] = None,
 ) -> features.DType:
-    perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
-
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, features._Feature):
