@@ -24,7 +24,9 @@ torchrun --nproc_per_node 8 --nnodes 1 train.py \
     --dataset-steps 264000 18000 18000
     --batch-size 2 \
     --lr 0.0004 \
+    --min-lr 0.00002 \
     --lr-decay-method cosine \
+    --warmup-steps 6000 \
     --decay-after-steps 30000 \
     --clip-grad-norm 1.0 \
 ```
@@ -35,13 +37,17 @@ We employ a multi-set fine-tuning stage where we uniformly sample from multiple 
 torchrun --nproc_per_node 8 --nnodes 1 train.py \
     --dataset-root $dataset_root \
     --name $name_things \
-    --model raft_large \
+    --model crestereo_base \
     --train-datasets crestereo eth3d-train middlebury2014-other instereo2k fallingthings carla-highres sintel sceneflow-monkaa sceneflow-driving \
     --dataset-steps 12000 12000 12000 12000 12000 12000 12000 12000 12000
     --batch-size 2 \
     --scale-range 0.2 0.8 \
     --lr 0.0004 \
-    --resume_path $checkpoint_dir/$name_cre.pth
+    --lr-decay-method cosine \
+    --decay-after-steps 0 \
+    --warmup-steps 0 \
+    --min-lr 0.00002 \
+    --resume-path $checkpoint_dir/$name_cre.pth
 ```
 
 
@@ -53,7 +59,7 @@ Evaluating the base weights
 torchrun --nproc_per_node 1 --nnodes 1 cascade_evaluation.py --dataset middlebury2014-train --batch-size 1 --dataset-root $dataset_root --model crestereo_base --weights CREStereo_Base_Weights.CRESTEREO_ETH_MBL_V1
 ```
 
-This should give an **mae of about 0.792** on the train set of Middlebury2014. Results may vary slightly depending on the batch size and the number of GPUs. For the most accurate resuts use 1 GPU and `--batch-size 1`. The created log file should look like this, where the first key is the number of cascades and the nested key is the number of recursive iterations:
+This should give an **mae of about 1.416** on the train set of `Middlebury2014`. Results may vary slightly depending on the batch size and the number of GPUs. For the most accurate resuts use 1 GPU and `--batch-size 1`. The created log file should look like this, where the first key is the number of cascades and the nested key is the number of recursive iterations:
 
 ```
 Dataset: middlebury2014-train @size: [384, 512]:
