@@ -132,7 +132,7 @@ class TestSmoke:
         transform(input_copy)
 
         # Check if we raise an error if sample contains bbox or mask or label
-        err_msg = "does not support bounding boxes, masks and plain labels"
+        err_msg = "does not support PIL images, bounding boxes, masks and plain labels"
         input_copy = dict(input)
         for unsup_data in [
             make_label(),
@@ -894,21 +894,8 @@ class TestRandomPerspective:
         params = transform._get_params(image)
 
         h, w = image.image_size
-        assert len(params["startpoints"]) == 4
-        for x, y in params["startpoints"]:
-            assert x in (0, w - 1)
-            assert y in (0, h - 1)
-
-        assert len(params["endpoints"]) == 4
-        for (x, y), name in zip(params["endpoints"], ["tl", "tr", "br", "bl"]):
-            if "t" in name:
-                assert 0 <= y <= int(dscale * h // 2), (x, y, name)
-            if "b" in name:
-                assert h - int(dscale * h // 2) - 1 <= y <= h, (x, y, name)
-            if "l" in name:
-                assert 0 <= x <= int(dscale * w // 2), (x, y, name)
-            if "r" in name:
-                assert w - int(dscale * w // 2) - 1 <= x <= w, (x, y, name)
+        assert "perspective_coeffs" in params
+        assert len(params["perspective_coeffs"]) == 8
 
     @pytest.mark.parametrize("distortion_scale", [0.1, 0.7])
     def test__transform(self, distortion_scale, mocker):

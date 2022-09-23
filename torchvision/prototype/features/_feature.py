@@ -3,16 +3,14 @@ from __future__ import annotations
 from types import ModuleType
 from typing import Any, Callable, cast, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
+import PIL.Image
 import torch
 from torch._C import _TensorBase, DisableTorchFunction
 from torchvision.transforms import InterpolationMode
 
 F = TypeVar("F", bound="_Feature")
-
-
-# Due to torch.jit.script limitation we keep DType as torch.Tensor
-# instead of Union[torch.Tensor, PIL.Image.Image, features._Feature]
-DType = torch.Tensor
+FillType = Union[int, float, Sequence[int], Sequence[float], None]
+FillTypeJIT = Union[int, float, List[float], None]
 
 
 def is_simple_tensor(inpt: Any) -> bool:
@@ -154,7 +152,7 @@ class _Feature(torch.Tensor):
     def pad(
         self,
         padding: Union[int, List[int]],
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> _Feature:
         return self
@@ -164,7 +162,7 @@ class _Feature(torch.Tensor):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> _Feature:
         return self
@@ -176,7 +174,7 @@ class _Feature(torch.Tensor):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> _Feature:
         return self
@@ -185,7 +183,7 @@ class _Feature(torch.Tensor):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillTypeJIT = None,
     ) -> _Feature:
         return self
 
@@ -193,7 +191,7 @@ class _Feature(torch.Tensor):
         self,
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillTypeJIT = None,
     ) -> _Feature:
         return self
 
@@ -232,3 +230,7 @@ class _Feature(torch.Tensor):
 
     def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> _Feature:
         return self
+
+
+InputType = Union[torch.Tensor, PIL.Image.Image, _Feature]
+InputTypeJIT = torch.Tensor

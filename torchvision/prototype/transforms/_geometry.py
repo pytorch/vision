@@ -1,7 +1,6 @@
 import math
 import numbers
 import warnings
-from collections import defaultdict
 from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
@@ -9,15 +8,23 @@ import torch
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
+from torchvision.transforms.functional import _get_perspective_coeffs
 
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import _check_sequence_input, _setup_angle, _setup_size, has_all, has_any, query_bounding_box, query_chw
-
-
-DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
-FillType = Union[int, float, Sequence[int], Sequence[float]]
+from ._utils import (
+    _check_padding_arg,
+    _check_padding_mode_arg,
+    _check_sequence_input,
+    _setup_angle,
+    _setup_fill_arg,
+    _setup_size,
+    has_all,
+    has_any,
+    query_bounding_box,
+    query_chw,
+)
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -170,7 +177,9 @@ class FiveCrop(Transform):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _transform(self, inpt: DType, params: Dict[str, Any]) -> Tuple[DType, DType, DType, DType, DType]:
+    def _transform(
+        self, inpt: features.ImageType, params: Dict[str, Any]
+    ) -> Tuple[features.ImageType, features.ImageType, features.ImageType, features.ImageType, features.ImageType]:
         return F.five_crop(inpt, self.size)
 
     def forward(self, *inputs: Any) -> Any:
@@ -191,7 +200,7 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _transform(self, inpt: DType, params: Dict[str, Any]) -> List[DType]:
+    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> List[features.ImageType]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
     def forward(self, *inputs: Any) -> Any:
@@ -200,45 +209,11 @@ class TenCrop(Transform):
         return super().forward(*inputs)
 
 
-def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
-    if isinstance(fill, dict):
-        for key, value in fill.items():
-            # Check key for type
-            _check_fill_arg(value)
-    else:
-        if not isinstance(fill, (numbers.Number, tuple, list)):
-            raise TypeError("Got inappropriate fill arg")
-
-
-def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillType]:
-    _check_fill_arg(fill)
-
-    if isinstance(fill, dict):
-        return fill
-
-    return defaultdict(lambda: fill)  # type: ignore[arg-type, return-value]
-
-
-def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
-    if not isinstance(padding, (numbers.Number, tuple, list)):
-        raise TypeError("Got inappropriate padding arg")
-
-    if isinstance(padding, (tuple, list)) and len(padding) not in [1, 2, 4]:
-        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
-
-
-# TODO: let's use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)
-# https://github.com/pytorch/vision/issues/6250
-def _check_padding_mode_arg(padding_mode: Literal["constant", "edge", "reflect", "symmetric"]) -> None:
-    if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
-        raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
-
-
 class Pad(Transform):
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -265,7 +240,7 @@ class Pad(Transform):
 class RandomZoomOut(_RandomApplyTransform):
     def __init__(
         self,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -307,7 +282,7 @@ class RandomRotation(Transform):
         degrees: Union[numbers.Number, Sequence],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -347,7 +322,7 @@ class RandomAffine(Transform):
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[float, Sequence[float]]] = None,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -426,7 +401,7 @@ class RandomCrop(Transform):
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -516,7 +491,7 @@ class RandomPerspective(_RandomApplyTransform):
     def __init__(
         self,
         distortion_scale: float = 0.5,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         p: float = 0.5,
     ) -> None:
@@ -556,7 +531,8 @@ class RandomPerspective(_RandomApplyTransform):
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
-        return dict(startpoints=startpoints, endpoints=endpoints)
+        perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
+        return dict(perspective_coeffs=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
@@ -591,7 +567,7 @@ class ElasticTransform(Transform):
         self,
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
@@ -804,7 +780,7 @@ class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()

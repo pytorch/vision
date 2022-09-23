@@ -11,7 +11,7 @@ get_dimensions_image_pil = _FP.get_dimensions
 
 
 # TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
-def get_chw(image: features.ImageType) -> Tuple[int, int, int]:
+def get_chw(image: features.ImageTypeJIT) -> Tuple[int, int, int]:
     if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
         channels, height, width = get_dimensions_image_tensor(image)
     elif isinstance(image, features.Image):
@@ -29,11 +29,11 @@ def get_chw(image: features.ImageType) -> Tuple[int, int, int]:
 # detailed above.
 
 
-def get_dimensions(image: features.ImageType) -> List[int]:
+def get_dimensions(image: features.ImageTypeJIT) -> List[int]:
     return list(get_chw(image))
 
 
-def get_num_channels(image: features.ImageType) -> int:
+def get_num_channels(image: features.ImageTypeJIT) -> int:
     num_channels, *_ = get_chw(image)
     return num_channels
 
@@ -43,7 +43,7 @@ def get_num_channels(image: features.ImageType) -> int:
 get_image_num_channels = get_num_channels
 
 
-def get_spatial_size(image: features.ImageType) -> List[int]:
+def get_spatial_size(image: features.ImageTypeJIT) -> List[int]:
     _, *size = get_chw(image)
     return size
 
@@ -208,11 +208,11 @@ def convert_color_space_image_pil(
 
 
 def convert_color_space(
-    inpt: features.ImageType,
+    inpt: features.ImageTypeJIT,
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
     copy: bool = True,
-) -> features.ImageType:
+) -> features.ImageTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image)):
         if old_color_space is None:
             raise RuntimeError(
@@ -225,4 +225,4 @@ def convert_color_space(
     elif isinstance(inpt, features.Image):
         return inpt.to_color_space(color_space, copy=copy)
     else:
-        return cast(features.ImageType, convert_color_space_image_pil(inpt, color_space, copy=copy))
+        return cast(features.ImageTypeJIT, convert_color_space_image_pil(inpt, color_space, copy=copy))
