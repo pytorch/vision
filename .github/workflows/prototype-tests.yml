@@ -46,6 +46,9 @@ jobs:
       - name: Check conclusion
         run: echo ${{ steps.setup.conclusion }}
 
+      - name: Failure
+        run: exit 1
+
       - name: Use in condition
         if: ${{ steps.setup.conclusion == 'success' }}
         run: echo WOOHOO
