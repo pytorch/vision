@@ -45,16 +45,16 @@ jobs:
       - name: Run prototype datasets tests
         id: datasets
         shell: bash
-        run: exit 1
+        run: exit 0
 
       - name: Run prototype transforms tests
         id: transforms
         if: ${{ success() || steps.datasets.conclusion == 'failure' }}
         shell: bash
-        run: exit 1
+        run: exit 0
 
       - name: Run prototype models tests
         if: ${{ success() || steps.transforms.conclusion == 'failure' }}
         id: models
         shell: bash
-        run: exit 1
+        run: exit 0
