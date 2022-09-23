@@ -231,7 +231,7 @@ def main(args):
         )
 
         def collate_fn(batch):
-            return mixupcutmix(*default_collate(batch))
+            return batch_transform(*default_collate(batch))
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
