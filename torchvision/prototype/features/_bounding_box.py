@@ -6,8 +6,7 @@ import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms import InterpolationMode  # TODO: this needs to be moved out of transforms
 
-from ._feature import _Feature
-from ._utils import FillType
+from ._feature import _Feature, FillTypeJIT
 
 
 class BoundingBoxFormat(StrEnum):
@@ -116,7 +115,7 @@ class BoundingBox(_Feature):
     def pad(
         self,
         padding: Union[int, Sequence[int]],
-        fill: FillType = None,
+        fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> BoundingBox:
         # This cast does Sequence[int] -> List[int] and is required to make mypy happy
@@ -138,7 +137,7 @@ class BoundingBox(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillType = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.rotate_bounding_box(
@@ -166,7 +165,7 @@ class BoundingBox(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: FillType = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.affine_bounding_box(
@@ -185,7 +184,7 @@ class BoundingBox(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: FillType = None,
+        fill: FillTypeJIT = None,
     ) -> BoundingBox:
         output = self._F.perspective_bounding_box(self, self.format, perspective_coeffs)
         return BoundingBox.new_like(self, output, dtype=output.dtype)
@@ -194,7 +193,7 @@ class BoundingBox(_Feature):
         self,
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: FillType = None,
+        fill: FillTypeJIT = None,
     ) -> BoundingBox:
         output = self._F.elastic_bounding_box(self, self.format, displacement)
         return BoundingBox.new_like(self, output, dtype=output.dtype)

@@ -5,22 +5,15 @@ from typing import Any, Callable, Dict, Sequence, Tuple, Type, Union
 
 import PIL.Image
 
-import torch
 from torch.utils._pytree import tree_flatten
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
+from torchvision.prototype.features._feature import FillType
 
 from torchvision.prototype.transforms.functional._meta import get_chw
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
 
 from typing_extensions import Literal
-
-
-# Type shortcuts:
-DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
-ImageType = Union[torch.Tensor, PIL.Image.Image, features.Image]
-TensorImageType = Union[torch.Tensor, features.Image]
-FillType = Union[int, float, Sequence[int], Sequence[float], None]
 
 
 def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:

@@ -6,7 +6,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
-from ._utils import ImageType, TensorImageType
+from ..features._image import ImageType, TensorImageType
 
 
 class ConvertBoundingBoxFormat(Transform):

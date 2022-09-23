@@ -12,6 +12,9 @@ from torchvision.transforms.functional import _get_perspective_coeffs
 
 from typing_extensions import Literal
 
+from ..features._feature import FillType
+from ..features._image import ImageType
+
 from ._transform import _RandomApplyTransform
 from ._utils import (
     _check_padding_arg,
@@ -20,10 +23,8 @@ from ._utils import (
     _setup_angle,
     _setup_fill_arg,
     _setup_size,
-    FillType,
     has_all,
     has_any,
-    ImageType,
     query_bounding_box,
     query_chw,
 )

@@ -10,8 +10,10 @@ from torchvision.ops import masks_to_boxes
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, InterpolationMode
 
+from ..features._image import ImageType, TensorImageType
+
 from ._transform import _RandomApplyTransform
-from ._utils import has_any, ImageType, query_chw, TensorImageType
+from ._utils import has_any, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):

@@ -9,7 +9,10 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.prototype.transforms.functional._meta import get_chw
 
-from ._utils import _isinstance, _setup_fill_arg, FillType, ImageType
+from ..features._feature import FillType
+from ..features._image import ImageType
+
+from ._utils import _isinstance, _setup_fill_arg
 
 K = TypeVar("K")
 V = TypeVar("V")

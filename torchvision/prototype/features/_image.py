@@ -3,14 +3,14 @@ from __future__ import annotations
 import warnings
 from typing import Any, cast, List, Optional, Tuple, Union
 
+import PIL.Image
 import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms.functional import InterpolationMode, to_pil_image
 from torchvision.utils import draw_bounding_boxes, make_grid
 
 from ._bounding_box import BoundingBox
-from ._feature import _Feature
-from ._utils import FillType
+from ._feature import _Feature, FillTypeJIT
 
 
 class ColorSpace(StrEnum):
@@ -177,7 +177,7 @@ class Image(_Feature):
     def pad(
         self,
         padding: Union[int, List[int]],
-        fill: FillType = None,
+        fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> Image:
         output = self._F.pad_image_tensor(self, padding, fill=fill, padding_mode=padding_mode)
@@ -188,7 +188,7 @@ class Image(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillType = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Image:
         output = self._F._geometry.rotate_image_tensor(
@@ -203,7 +203,7 @@ class Image(_Feature):
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: FillType = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Image:
         output = self._F._geometry.affine_image_tensor(
@@ -222,7 +222,7 @@ class Image(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: FillType = None,
+        fill: FillTypeJIT = None,
     ) -> Image:
         output = self._F._geometry.perspective_image_tensor(
             self, perspective_coeffs, interpolation=interpolation, fill=fill
@@ -233,7 +233,7 @@ class Image(_Feature):
         self,
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: FillType = None,
+        fill: FillTypeJIT = None,
     ) -> Image:
         output = self._F._geometry.elastic_image_tensor(self, displacement, interpolation=interpolation, fill=fill)
         return Image.new_like(self, output)
@@ -285,3 +285,11 @@ class Image(_Feature):
     def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Image:
         output = self._F.gaussian_blur_image_tensor(self, kernel_size=kernel_size, sigma=sigma)
         return Image.new_like(self, output)
+
+
+ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
+ImageTypeJIT = torch.Tensor
+LegacyImageType = Union[torch.Tensor, PIL.Image.Image]
+LegacyImageTypeJIT = torch.Tensor
+TensorImageType = Union[torch.Tensor, Image]
+TensorImageTypeJIT = torch.Tensor

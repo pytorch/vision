@@ -10,8 +10,10 @@ from torchvision.prototype.transforms import Transform
 from torchvision.transforms import functional as _F
 from typing_extensions import Literal
 
+from ..features._image import ImageType
+
 from ._transform import _RandomApplyTransform
-from ._utils import ImageType, query_chw
+from ._utils import query_chw
 
 
 class ToTensor(Transform):

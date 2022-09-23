@@ -5,8 +5,7 @@ from torchvision.prototype import features
 from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
-from ._utils import ImageType
-
+from ...features._image import ImageTypeJIT
 
 erase_image_tensor = _FT.erase
 
@@ -21,14 +20,14 @@ def erase_image_pil(
 
 
 def erase(
-    inpt: ImageType,
+    inpt: ImageTypeJIT,
     i: int,
     j: int,
     h: int,
     w: int,
     v: torch.Tensor,
     inplace: bool = False,
-) -> ImageType:
+) -> ImageTypeJIT:
     if isinstance(inpt, torch.Tensor):
         output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
         if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
