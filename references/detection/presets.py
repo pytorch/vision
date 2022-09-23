@@ -1,5 +1,7 @@
+from collections import defaultdict
+
 import torch
-from torchvision.prototype import transforms as T
+from torchvision.prototype import features, transforms as T
 
 
 class DetectionPresetTrain(T.Compose):
@@ -7,38 +9,35 @@ class DetectionPresetTrain(T.Compose):
         if data_augmentation == "hflip":
             transforms = [
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ToImageTensor(),
                 T.ConvertImageDtype(torch.float),
             ]
         elif data_augmentation == "lsj":
             transforms = [
-                T.ScaleJitter(target_size=(1024, 1024)),
-                T.FixedSizeCrop(size=(1024, 1024), fill=mean),
+                T.ScaleJitter(target_size=(1024, 1024), antialias=True),
+                T.FixedSizeCrop(size=(1024, 1024), fill=defaultdict(lambda: mean, {features.Mask: 0})),
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ToImageTensor(),
                 T.ConvertImageDtype(torch.float),
             ]
         elif data_augmentation == "multiscale":
             transforms = [
-                T.RandomShortestSize(min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333),
+                T.RandomShortestSize(
+                    min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333, antialias=True
+                ),
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ToImageTensor(),
                 T.ConvertImageDtype(torch.float),
             ]
         elif data_augmentation == "ssd":
             transforms = [
                 T.RandomPhotometricDistort(),
-                T.RandomZoomOut(fill=list(mean)),
+                T.RandomZoomOut(fill=defaultdict(lambda: mean, {features.Mask: 0})),
                 T.RandomIoUCrop(),
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ToImageTensor(),
                 T.ConvertImageDtype(torch.float),
             ]
         elif data_augmentation == "ssdlite":
             transforms = [
                 T.RandomIoUCrop(),
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ToImageTensor(),
                 T.ConvertImageDtype(torch.float),
             ]
         else:

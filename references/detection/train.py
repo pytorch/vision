@@ -36,7 +36,7 @@ from torchvision.transforms import InterpolationMode
 
 
 def copypaste_collate_fn(batch):
-    copypaste = T.SimpleCopyPaste(blending=True, resize_interpolation=InterpolationMode.BILINEAR)
+    copypaste = T.SimpleCopyPaste(blending=True, resize_interpolation=InterpolationMode.BILINEAR, antialias=True)
     return copypaste(*utils.collate_fn(batch))
 
 

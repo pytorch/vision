@@ -18,10 +18,11 @@ class ClassificationPresetTrain:
         random_erase_prob=0.0,
         center_crop=False,
     ):
-        trans = (
-            [transforms.RandomResizedCrop(crop_size, interpolation=interpolation)]
+        trans = [transforms.ToImageTensor()]
+        trans.append(
+            transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True)
             if center_crop
-            else [transforms.CenterCrop(crop_size)]
+            else transforms.CenterCrop(crop_size)
         )
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(p=hflip_prob))
@@ -37,7 +38,6 @@ class ClassificationPresetTrain:
                 trans.append(transforms.AutoAugment(policy=aa_policy, interpolation=interpolation))
         trans.extend(
             [
-                transforms.ToImageTensor(),
                 transforms.ConvertImageDtype(torch.float),
                 transforms.Normalize(mean=mean, std=std),
             ]
@@ -64,9 +64,9 @@ class ClassificationPresetEval:
 
         self.transforms = transforms.Compose(
             [
-                transforms.Resize(resize_size, interpolation=interpolation),
-                transforms.CenterCrop(crop_size),
                 transforms.ToImageTensor(),
+                transforms.Resize(resize_size, interpolation=interpolation, antialias=True),
+                transforms.CenterCrop(crop_size),
                 transforms.ConvertImageDtype(torch.float),
                 transforms.Normalize(mean=mean, std=std),
             ]

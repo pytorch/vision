@@ -7,7 +7,7 @@ from torchvision.prototype.transforms import functional as F
 class WrapIntoFeatures(transforms.Transform):
     def forward(self, sample):
         image, mask = sample
-        return image, features.Mask(F.pil_to_tensor(mask).squeeze(0), dtype=torch.int64)
+        return F.to_image_tensor(image), features.Mask(F.pil_to_tensor(mask).squeeze(0), dtype=torch.int64)
 
 
 class PadIfSmaller(transforms.Transform):

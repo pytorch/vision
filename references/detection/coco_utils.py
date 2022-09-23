@@ -7,6 +7,7 @@ import torchvision
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
 from torchvision.prototype import features, transforms as T
+from torchvision.prototype.transforms import functional as F
 
 
 def convert_coco_poly_to_mask(segmentations, height, width):
@@ -101,7 +102,7 @@ class WrapIntoFeatures:
             iscrowd=target["iscrowd"].bool().tolist(),
         )
 
-        return image, wrapped_target
+        return F.to_image_tensor(image), wrapped_target
 
 
 def _coco_remove_images_without_annotations(dataset, cat_list=None):
