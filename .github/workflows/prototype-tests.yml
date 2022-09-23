@@ -37,7 +37,7 @@ jobs:
         run: pip install --progress-bar=off scipy pycocotools h5py iopath
 
       - name: Install test requirements
-        run: pip install --progress-bar=off pytest pytest-mock
+        run: pip install --progress-bar=off pytest pytest-mock pytest-cov
 
       - name: Mark setup as complete
         id: setup
