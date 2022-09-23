@@ -124,7 +124,7 @@ class _Feature(torch.Tensor):
     # https://github.com/pytorch/pytorch/blob/e8727994eb7cdb2ab642749d6549bc497563aa06/torch/_tensor.py#L588-L593
     def resize(  # type: ignore[override]
         self,
-        size: List[int],
+        size: Union[List[int], int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: bool = False,

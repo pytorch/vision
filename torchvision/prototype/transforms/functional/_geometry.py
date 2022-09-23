@@ -92,11 +92,13 @@ vflip = vertical_flip
 
 def resize_image_tensor(
     image: torch.Tensor,
-    size: List[int],
+    size: Union[List[int], int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: bool = False,
 ) -> torch.Tensor:
+    if isinstance(size, int):
+        size = [size]
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
     extra_dims = image.shape[:-3]
@@ -127,7 +129,7 @@ def resize_image_pil(
     return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation])
 
 
-def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
+def resize_mask(mask: torch.Tensor, size: Union[List[int], int], max_size: Optional[int] = None) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -143,8 +145,10 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
 
 
 def resize_bounding_box(
-    bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int], max_size: Optional[int] = None
+    bounding_box: torch.Tensor, size: Union[List[int], int], image_size: Tuple[int, int], max_size: Optional[int] = None
 ) -> torch.Tensor:
+    if isinstance(size, int):
+        size = [size]
     old_height, old_width = image_size
     new_height, new_width = _compute_resized_output_size(image_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
@@ -153,7 +157,7 @@ def resize_bounding_box(
 
 def resize(
     inpt: features.InputTypeJIT,
-    size: List[int],
+    size: Union[List[int], int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,

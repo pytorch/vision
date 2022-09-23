@@ -141,7 +141,7 @@ class Image(_Feature):
 
     def resize(  # type: ignore[override]
         self,
-        size: List[int],
+        size: Union[List[int], int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: bool = False,
