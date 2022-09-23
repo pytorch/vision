@@ -7,11 +7,11 @@ training and evaluation scripts to quickly bootstrap research.
 
 ### CREStereo
 
-The CREStereo model was trained on a dataset mixture between CREStereo, ETH3D and the additional split from Middlebury2014.
-A ratio of 88-6-6 was used in order to train a baseline weight set. We provide multi-set variant as well.
+The CREStereo model was trained on a dataset mixture between **CREStereo**, **ETH3D** and the additional split from **Middlebury2014**.
+A ratio of **88-6-6** was used in order to train a baseline weight set. We provide multi-set variant as well.
 Both used 8 A100 GPUs and a batch size of 2 (so effective batch size is 16). The
 rest of the hyper-parameters loosely follow the recipe from https://github.com/megvii-research/CREStereo.
-The original recipe trains for 300000 updates (or steps) on the dataset mixture. We modify the learning rate
+The original recipe trains for **300000** updates (or steps) on the dataset mixture. We modify the learning rate
 schedule to one that starts decaying the weight much sooner. Throughout experiments we found that this reduces overfitting
 during evaluation time and gradient clip help stabilize the loss during a pre-mature learning rate change.
 
@@ -25,11 +25,11 @@ torchrun --nproc_per_node 8 --nnodes 1 train.py \
     --batch-size 2 \
     --lr 0.0004 \
     --lr-decay-method cosine \
-    --decay-after-steps 60000 \
+    --decay-after-steps 30000 \
     --clip-grad-norm 1.0 \
 ```
 
-We employ a multi-set fine-tuning stage where we 
+We employ a multi-set fine-tuning stage where we uniformly sample from multiple datasets. Given hat some of these datasets have extremely large images (``2048x2048`` or more) we opt for a very aggresive scale-range ``[0.2 - 0.8]`` such that as much of the original frame composition is captured inside the ``384x512`` crop.
 
 ```
 torchrun --nproc_per_node 8 --nnodes 1 train.py \
@@ -53,7 +53,7 @@ Evaluating the base weights
 torchrun --nproc_per_node 1 --nnodes 1 cascade_evaluation.py --dataset middlebury2014-train --batch-size 1 --dataset-root $dataset_root --model crestereo_base --weights CREStereo_Base_Weights.CRESTEREO_ETH_MBL_V1
 ```
 
-This should give an mae of about 0.792 on the train set of Middlebury2014. Results may vary slightly depending on the batch size and the number of GPUs. For the most accurate resuts use 1 GPU and `--batch-size 1`. The created log file should look like this, where the first key is the number of cascades and the nested key is the number of recursive iterations:
+This should give an **mae of about 0.792** on the train set of Middlebury2014. Results may vary slightly depending on the batch size and the number of GPUs. For the most accurate resuts use 1 GPU and `--batch-size 1`. The created log file should look like this, where the first key is the number of cascades and the nested key is the number of recursive iterations:
 
 ```
 Dataset: middlebury2014-train @size: [384, 512]:
@@ -127,13 +127,48 @@ Dataset: middlebury2014-train @size: [384, 512]:
 }
 ```
 
-### Concerns when training
+# Concerns when training
 
-# Disparity scaling
+We encourage users to be aware of the **aspect-ratio** and **disparity scale** they are targetting when doing any sort of training or fine-tuning. The model is highly sensitive to these two factors, as a consequence with naive multi-set fine-tuning one can achieve `0.2 mae` relatively fast. We recommend that users pay close attention to how they **balance dataset sizing** when training such networks.
 
-We encourage users to be aware of the aspect-ratio and disparity scale they are targetting when doing any sort of training or fine-tuning.
-The model is highly sensitive to these two factors, as a consequence with naive multi-set fine-tuning one can achieve `0.2 mae` relatively fast. The top row contains a sample from `Sintel` whereas the bottom row one from `Middlebury`.
+ Ideally, dataset scaling should be trated at an individual level and a thorough **EDA** of the disparity distribution in random crops at the desired training / inference size should be performed prior to any large compute investments.
 
-![Disparity](assets/Disparity%20domain%20drift.jpg)
+### Disparity scaling
 
-From left to right (`left_image`, `right_image`, `valid_mask`, `valid_mask & ground_truth`, `prediction`). Darker is further away, lighter is closer. In the case of `Sintel` which is more closely aligned to the original distribution of `CREStereo` we notice that the model accurately predicts the background scale whereas in the case of `Middlebury2014` it cannot correcly estimate the continous disparity. Notice that the frame composition is similar for both examples. The blue skybox in the `Sintel` scene behaves similarly to the `Middlebury` black background. However, because the `Middlebury` samples comes from an extremly large scene the crop size of `384x512` does not correctly capture the general training distribution.
+##### Sample A
+ The top row contains a sample from `Sintel` whereas the bottom row one from `Middlebury`.
+
+![Disparity1](assets/Disparity%20domain%20drift.jpg)
+
+From left to right (`left_image`, `right_image`, `valid_mask`, `valid_mask & ground_truth`, `prediction`). **Darker is further away, lighter is closer**. In the case of `Sintel` which is more closely aligned to the original distribution of `CREStereo` we notice that the model accurately predicts the background scale whereas in the case of `Middlebury2014` it cannot correcly estimate the continous disparity. Notice that the frame composition is similar for both examples. The blue skybox in the `Sintel` scene behaves similarly to the `Middlebury` black background. However, because the `Middlebury` samples comes from an extremly large scene the crop size of `384x512` does not correctly capture the general training distribution.
+
+
+
+
+##### Sample B
+
+The top row contains a scene from `Sceneflow` using the `Monkaa` split whilst the bottom row is a scene from `Middlebury`. This sample exhibits the same issues when it comes to **background estimation**. Given the exagerated size of the `Middlebury` samples the model **colapses the smooth background** of the sample to what it considers to be a mean background disparity value. 
+
+![Disparity2](assets/Disparity%20background%20mode%20collapse.jpg)
+
+
+For more detail on why this behaviour occurs based on the training distribution proportions you can read more about the network at: https://github.com/pytorch/vision/pull/6629#discussion_r978160493
+
+
+### Metric overfitting
+
+##### Learning is critical in the beginning
+
+We also advise users to make user of faster training schedules, as the performance gain over long periods time is marginal. Here we exhibit a difference between a faster decay schedule and later decay schedule.
+
+![Loss1](assets/Loss.jpg)
+
+In **grey** we set the lr decay to begin after `30000` steps whilst in **orange** we opt for a very late learning rate decay at around `180000` steps. Although exhibiting stronger variance, we can notice that unfreezing the learning rate earlier whilst employing `gradient-norm` out-performs the default configuration. 
+
+##### Gradient norm saves time
+
+![Loss2](assets/Gradient%20Norm%20Removal.jpg)
+
+In **grey** we keep ``gradient norm`` enabled whilst in **orange** we do not. We can notice that remvoing the gradient norm exacerbates the performance decrease in the early stages whilst also showcasing an almost complete collapse around the `60000` steps mark where we started decaying the lr for **orange**.
+
+Although both runs ahieve an improvement of about ``0.1`` mae after the lr decay start, the benefits of it are observable much faster when ``gradient norm`` is employed as the recovery period is no longer accounted for.
