@@ -282,7 +282,9 @@ class Image(_Feature):
         output = self._F.invert_image_tensor(self)
         return Image.new_like(self, output)
 
-    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Image:
+    def gaussian_blur(
+        self, kernel_size: Union[int, List[int]], sigma: Union[int, float, List[float], None] = None
+    ) -> Image:
         output = self._F.gaussian_blur_image_tensor(self, kernel_size=kernel_size, sigma=sigma)
         return Image.new_like(self, output)
 
