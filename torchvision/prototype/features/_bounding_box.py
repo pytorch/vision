@@ -86,8 +86,8 @@ class BoundingBox(_Feature):
         output = self._F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
         if isinstance(size, int):
             image_size = [size, size]
-        else:
-            image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
+        elif len(size) == 1:
+            image_size = [size[0], size[0]]
         return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
