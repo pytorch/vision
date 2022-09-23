@@ -31,7 +31,7 @@ class Mask(_Feature):
         output = self._F.crop_mask(self, top, left, height, width)
         return Mask.new_like(self, output)
 
-    def center_crop(self, output_size: List[int]) -> Mask:
+    def center_crop(self, output_size: Union[int, List[int]]) -> Mask:
         output = self._F.center_crop_mask(self, output_size=output_size)
         return Mask.new_like(self, output)
 

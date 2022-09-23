@@ -155,7 +155,7 @@ class Image(_Feature):
         output = self._F.crop_image_tensor(self, top, left, height, width)
         return Image.new_like(self, output)
 
-    def center_crop(self, output_size: List[int]) -> Image:
+    def center_crop(self, output_size: Union[int, List[int]]) -> Image:
         output = self._F.center_crop_image_tensor(self, output_size=output_size)
         return Image.new_like(self, output)
 

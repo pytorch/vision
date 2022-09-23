@@ -134,7 +134,7 @@ class _Feature(torch.Tensor):
     def crop(self, top: int, left: int, height: int, width: int) -> _Feature:
         return self
 
-    def center_crop(self, output_size: List[int]) -> _Feature:
+    def center_crop(self, output_size: Union[int, List[int]]) -> _Feature:
         return self
 
     def resized_crop(

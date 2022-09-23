@@ -985,13 +985,13 @@ def elastic(
 elastic_transform = elastic
 
 
-def _center_crop_parse_output_size(output_size: List[int]) -> List[int]:
+def _center_crop_parse_output_size(output_size: Union[int, List[int]]) -> List[int]:
     if isinstance(output_size, numbers.Number):
         return [int(output_size), int(output_size)]
     elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
         return [output_size[0], output_size[0]]
     else:
-        return list(output_size)
+        return list(output_size)  # type: ignore[arg-type]
 
 
 def _center_crop_compute_padding(crop_height: int, crop_width: int, image_height: int, image_width: int) -> List[int]:
@@ -1011,7 +1011,7 @@ def _center_crop_compute_crop_anchor(
     return crop_top, crop_left
 
 
-def center_crop_image_tensor(img: torch.Tensor, output_size: List[int]) -> torch.Tensor:
+def center_crop_image_tensor(img: torch.Tensor, output_size: Union[int, List[int]]) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     _, image_height, image_width = get_dimensions_image_tensor(img)
 
@@ -1028,7 +1028,7 @@ def center_crop_image_tensor(img: torch.Tensor, output_size: List[int]) -> torch
 
 
 @torch.jit.unused
-def center_crop_image_pil(img: PIL.Image.Image, output_size: List[int]) -> PIL.Image.Image:
+def center_crop_image_pil(img: PIL.Image.Image, output_size: Union[int, List[int]]) -> PIL.Image.Image:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     _, image_height, image_width = get_dimensions_image_pil(img)
 
@@ -1047,7 +1047,7 @@ def center_crop_image_pil(img: PIL.Image.Image, output_size: List[int]) -> PIL.I
 def center_crop_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
-    output_size: List[int],
+    output_size: Union[int, List[int]],
     image_size: Tuple[int, int],
 ) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
@@ -1055,7 +1055,7 @@ def center_crop_bounding_box(
     return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left)
 
 
-def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
+def center_crop_mask(mask: torch.Tensor, output_size: Union[int, List[int]]) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -1070,7 +1070,7 @@ def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor
     return output
 
 
-def center_crop(inpt: features.InputTypeJIT, output_size: List[int]) -> features.InputTypeJIT:
+def center_crop(inpt: features.InputTypeJIT, output_size: Union[int, List[int]]) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return center_crop_image_tensor(inpt, output_size)
     elif isinstance(inpt, features._Feature):
