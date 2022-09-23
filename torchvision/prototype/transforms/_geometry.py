@@ -67,9 +67,9 @@ class Resize(Transform):
 
 
 class CenterCrop(Transform):
-    def __init__(self, size: List[int]):
+    def __init__(self, size: Union[int, Sequence[int]]):
         super().__init__()
-        self.size = size
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.center_crop(inpt, output_size=self.size)
