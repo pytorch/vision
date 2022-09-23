@@ -494,6 +494,8 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
         )
 
     def forward(self, x: Tensor):
+        # Here is the difference, we apply norm after the attention in V2.
+        # In V1 we applied norm before the attention.
         x = x + self.stochastic_depth(self.norm1(self.attn(x)))
         x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
         return x
@@ -587,7 +589,7 @@ class SwinTransformer(nn.Module):
 
         num_features = embed_dim * 2 ** (len(depths) - 1)
         self.norm = norm_layer(num_features)
-        self.permute = Permute([0, 3, 1, 2])
+        self.permute = Permute([0, 3, 1, 2])  # B H W C -> B C H W
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.flatten = nn.Flatten(1)
         self.head = nn.Linear(num_features, num_classes)

@@ -2,12 +2,16 @@
 # https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py
 
 from functools import partial
-from typing import Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
+from .._api import WeightsEnum
+
+from .._meta import _KINETICS400_CATEGORIES
+from .._utils import _ovewrite_named_param
 from ..swin_transformer import PatchMerging, SwinTransformerBlock
 
 __all__ = ["SwinTransformer3d"]
@@ -429,3 +433,38 @@ class SwinTransformer3d(nn.Module):
         x = torch.flatten(x, 1)
         x = self.head(x)
         return x
+
+
+def _swin_transformer(
+    patch_size: List[int],
+    embed_dim: int,
+    depths: List[int],
+    num_heads: List[int],
+    window_size: List[int],
+    stochastic_depth_prob: float,
+    weights: Optional[WeightsEnum],
+    progress: bool,
+    **kwargs: Any,
+) -> SwinTransformer3d:
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+
+    model = SwinTransformer3d(
+        patch_size=patch_size,
+        embed_dim=embed_dim,
+        depths=depths,
+        num_heads=num_heads,
+        window_size=window_size,
+        stochastic_depth_prob=stochastic_depth_prob,
+        **kwargs,
+    )
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
+    return model
+
+
+_COMMON_META = {
+    "categories": _KINETICS400_CATEGORIES,
+}
