@@ -9,9 +9,6 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.prototype.transforms.functional._meta import get_chw
 
-from ..features._feature import FillType
-from ..features._image import ImageType
-
 from ._utils import _isinstance, _setup_fill_arg
 
 K = TypeVar("K")
@@ -23,7 +20,7 @@ class _AutoAugmentBase(Transform):
         self,
         *,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[FillType, Dict[Type, FillType]] = None,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
     ) -> None:
         super().__init__()
         self.interpolation = interpolation
@@ -38,7 +35,7 @@ class _AutoAugmentBase(Transform):
         self,
         sample: Any,
         unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.Mask),
-    ) -> Tuple[int, ImageType]:
+    ) -> Tuple[int, features.ImageType]:
         sample_flat, _ = tree_flatten(sample)
         images = []
         for id, inpt in enumerate(sample_flat):
@@ -62,12 +59,12 @@ class _AutoAugmentBase(Transform):
 
     def _apply_image_transform(
         self,
-        image: ImageType,
+        image: features.ImageType,
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Dict[Type, FillType],
-    ) -> ImageType:
+        fill: Dict[Type, features.FillType],
+    ) -> features.ImageType:
         fill_ = fill[type(image)]
         fill_ = F._geometry._convert_fill_arg(fill_)
 
@@ -180,7 +177,7 @@ class AutoAugment(_AutoAugmentBase):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[FillType, Dict[Type, FillType]] = None,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -340,7 +337,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[FillType, Dict[Type, FillType]] = None,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -396,7 +393,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         self,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[FillType, Dict[Type, FillType]] = None,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -456,7 +453,7 @@ class AugMix(_AutoAugmentBase):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Union[FillType, Dict[Type, FillType]] = None,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10

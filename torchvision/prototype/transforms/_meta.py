@@ -6,8 +6,6 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
-from ..features._image import ImageType, TensorImageType
-
 
 class ConvertBoundingBoxFormat(Transform):
     _transformed_types = (features.BoundingBox,)
@@ -30,7 +28,7 @@ class ConvertImageDtype(Transform):
         super().__init__()
         self.dtype = dtype
 
-    def _transform(self, inpt: TensorImageType, params: Dict[str, Any]) -> TensorImageType:
+    def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> features.TensorImageType:
         output = F.convert_image_dtype(inpt, dtype=self.dtype)
         return output if features.is_simple_tensor(inpt) else features.Image.new_like(inpt, output, dtype=self.dtype)  # type: ignore[arg-type]
 
@@ -56,7 +54,7 @@ class ConvertColorSpace(Transform):
 
         self.copy = copy
 
-    def _transform(self, inpt: ImageType, params: Dict[str, Any]) -> ImageType:
+    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
         return F.convert_color_space(
             inpt, color_space=self.color_space, old_color_space=self.old_color_space, copy=self.copy
         )

@@ -7,8 +7,6 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F
 
-from ...features._image import ImageTypeJIT, LegacyImageTypeJIT
-
 
 @torch.jit.unused
 def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
@@ -24,7 +22,7 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
     return _F.to_grayscale(inpt, num_output_channels=num_output_channels)
 
 
-def rgb_to_grayscale(inpt: LegacyImageTypeJIT, num_output_channels: int = 1) -> LegacyImageTypeJIT:
+def rgb_to_grayscale(inpt: features.LegacyImageTypeJIT, num_output_channels: int = 1) -> features.LegacyImageTypeJIT:
     old_color_space = (
         features._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
         if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image))
@@ -58,7 +56,7 @@ def to_tensor(inpt: Any) -> torch.Tensor:
     return _F.to_tensor(inpt)
 
 
-def get_image_size(inpt: ImageTypeJIT) -> List[int]:
+def get_image_size(inpt: features.ImageTypeJIT) -> List[int]:
     warnings.warn(
         "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
         "Instead, please use `get_spatial_size(...)` which returns `[h, w]` instead of `[w, h]`."

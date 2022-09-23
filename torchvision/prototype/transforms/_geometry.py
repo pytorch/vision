@@ -12,9 +12,6 @@ from torchvision.transforms.functional import _get_perspective_coeffs
 
 from typing_extensions import Literal
 
-from ..features._feature import FillType
-from ..features._image import ImageType
-
 from ._transform import _RandomApplyTransform
 from ._utils import (
     _check_padding_arg,
@@ -181,8 +178,8 @@ class FiveCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(
-        self, inpt: ImageType, params: Dict[str, Any]
-    ) -> Tuple[ImageType, ImageType, ImageType, ImageType, ImageType]:
+        self, inpt: features.ImageType, params: Dict[str, Any]
+    ) -> Tuple[features.ImageType, features.ImageType, features.ImageType, features.ImageType, features.ImageType]:
         return F.five_crop(inpt, self.size)
 
     def forward(self, *inputs: Any) -> Any:
@@ -203,7 +200,7 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _transform(self, inpt: ImageType, params: Dict[str, Any]) -> List[ImageType]:
+    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> List[features.ImageType]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
     def forward(self, *inputs: Any) -> Any:
@@ -216,7 +213,7 @@ class Pad(Transform):
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -243,7 +240,7 @@ class Pad(Transform):
 class RandomZoomOut(_RandomApplyTransform):
     def __init__(
         self,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -285,7 +282,7 @@ class RandomRotation(Transform):
         degrees: Union[numbers.Number, Sequence],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -325,7 +322,7 @@ class RandomAffine(Transform):
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[float, Sequence[float]]] = None,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -404,7 +401,7 @@ class RandomCrop(Transform):
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -494,7 +491,7 @@ class RandomPerspective(_RandomApplyTransform):
     def __init__(
         self,
         distortion_scale: float = 0.5,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         p: float = 0.5,
     ) -> None:
@@ -570,7 +567,7 @@ class ElasticTransform(Transform):
         self,
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
@@ -783,7 +780,7 @@ class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[FillType, Dict[Type, FillType]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()

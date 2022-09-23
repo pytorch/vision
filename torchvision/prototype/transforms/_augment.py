@@ -10,8 +10,6 @@ from torchvision.ops import masks_to_boxes
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, InterpolationMode
 
-from ..features._image import ImageType, TensorImageType
-
 from ._transform import _RandomApplyTransform
 from ._utils import has_any, query_chw
 
@@ -94,7 +92,7 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: ImageType, params: Dict[str, Any]) -> ImageType:
+    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params, inplace=self.inplace)
 
@@ -205,15 +203,15 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
     def _copy_paste(
         self,
-        image: TensorImageType,
+        image: features.TensorImageType,
         target: Dict[str, Any],
-        paste_image: TensorImageType,
+        paste_image: features.TensorImageType,
         paste_target: Dict[str, Any],
         random_selection: torch.Tensor,
         blending: bool,
         resize_interpolation: F.InterpolationMode,
         antialias: Optional[bool],
-    ) -> Tuple[TensorImageType, Dict[str, Any]]:
+    ) -> Tuple[features.TensorImageType, Dict[str, Any]]:
 
         paste_masks = paste_target["masks"].new_like(paste_target["masks"], paste_target["masks"][random_selection])
         paste_boxes = paste_target["boxes"].new_like(paste_target["boxes"], paste_target["boxes"][random_selection])
@@ -280,7 +278,9 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
         return image, out_target
 
-    def _extract_image_targets(self, flat_sample: List[Any]) -> Tuple[List[TensorImageType], List[Dict[str, Any]]]:
+    def _extract_image_targets(
+        self, flat_sample: List[Any]
+    ) -> Tuple[List[features.TensorImageType], List[Dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
         # with List[image], List[BoundingBox], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
@@ -309,7 +309,10 @@ class SimpleCopyPaste(_RandomApplyTransform):
         return images, targets
 
     def _insert_outputs(
-        self, flat_sample: List[Any], output_images: List[TensorImageType], output_targets: List[Dict[str, Any]]
+        self,
+        flat_sample: List[Any],
+        output_images: List[features.TensorImageType],
+        output_targets: List[Dict[str, Any]],
     ) -> None:
         c0, c1, c2, c3 = 0, 0, 0, 0
         for i, obj in enumerate(flat_sample):

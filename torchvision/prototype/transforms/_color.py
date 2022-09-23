@@ -6,8 +6,6 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
-from ..features._image import ImageType
-
 from ._transform import _RandomApplyTransform
 from ._utils import query_chw
 
@@ -112,7 +110,7 @@ class RandomPhotometricDistort(Transform):
             channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
         )
 
-    def _permute_channels(self, inpt: ImageType, permutation: torch.Tensor) -> ImageType:
+    def _permute_channels(self, inpt: features.ImageType, permutation: torch.Tensor) -> features.ImageType:
         if isinstance(inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)
 
@@ -125,7 +123,7 @@ class RandomPhotometricDistort(Transform):
 
         return output
 
-    def _transform(self, inpt: ImageType, params: Dict[str, Any]) -> ImageType:
+    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])
