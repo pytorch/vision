@@ -436,6 +436,7 @@ def affine(
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> features.InputTypeJIT:
+    # TODO: consider deprecating integers from angle and shear on the future
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return affine_image_tensor(
             inpt,

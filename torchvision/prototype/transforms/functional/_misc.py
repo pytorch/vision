@@ -61,7 +61,7 @@ def gaussian_blur_image_pil(
 def gaussian_blur(
     inpt: features.InputTypeJIT, kernel_size: Union[int, List[int]], sigma: Union[int, float, List[float], None] = None
 ) -> features.InputTypeJIT:
-    # TODO: consider deprecating integers on the future
+    # TODO: consider deprecating integers from sigma on the future
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
     elif isinstance(inpt, features._Feature):
