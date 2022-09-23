@@ -8,18 +8,28 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from .._api import WeightsEnum
-
-from .._meta import _KINETICS400_CATEGORIES
-from .._utils import _ovewrite_named_param
-from ..swin_transformer import PatchMerging, SwinTransformerBlock
-
-__all__ = ["SwinTransformer3d"]
+from ...transforms._presets import VideoClassification
 
 from ...utils import _log_api_usage_once
 
+from .._api import register_model, Weights, WeightsEnum
 
-def _get_relative_position_bias(relative_position_bias_table: torch.Tensor, window_size: List[int]):
+from .._meta import _KINETICS400_CATEGORIES
+from .._utils import _ovewrite_named_param, handle_legacy_interface
+from ..swin_transformer import PatchMerging, SwinTransformerBlock
+
+__all__ = [
+    "SwinTransformer3d",
+    "Swin3D_T_Weights",
+    "Swin3D_S_Weights",
+    "Swin3D_B_Weights",
+    "swin3d_t",
+    "swin3d_s",
+    "swin3d_b",
+]
+
+
+def _get_relative_position_bias(relative_position_bias_table: torch.Tensor, window_size: List[int]) -> Tensor:
     window_vol = window_size[0] * window_size[1] * window_size[2]
     relative_position_bias = relative_position_bias_table[
         relative_position_index[:window_vol, :window_vol].flatten()  # type: ignore[index]
@@ -29,9 +39,15 @@ def _get_relative_position_bias(relative_position_bias_table: torch.Tensor, wind
     return relative_position_bias
 
 
+torch.fx.wrap("_get_relative_position_bias")
+
+
 def _compute_pad_size_3d(size_dhw: Tuple[int, int, int], patch_size: Tuple[int, int, int]) -> Tuple[int, int, int]:
     pad_size = [(patch_size[i] - size_dhw[i] % patch_size[i]) % patch_size[i] for i in range(3)]
     return pad_size[0], pad_size[1], pad_size[2]
+
+
+torch.fx.wrap("_compute_pad_size_3d")
 
 
 def _compute_attention_mask_3d(
@@ -73,6 +89,9 @@ def _compute_attention_mask_3d(
     attn_mask = attn_mask.unsqueeze(1) - attn_mask.unsqueeze(2)
     attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
     return attn_mask
+
+
+torch.fx.wrap("_compute_attention_mask_3d")
 
 
 def shifted_window_attention_3d(
@@ -185,6 +204,9 @@ def shifted_window_attention_3d(
     return x
 
 
+torch.fx.wrap("shifted_window_attention_3d")
+
+
 class ShiftedWindowAttention3d(nn.Module):
     """
     See :func:`shifted_window_attention_3d`.
@@ -218,7 +240,7 @@ class ShiftedWindowAttention3d(nn.Module):
         self.define_relative_position_bias_table()
         self.define_relative_position_index()
 
-    def define_relative_position_bias_table(self):
+    def define_relative_position_bias_table(self) -> None:
         # define a parameter table of relative position bias
         self.relative_position_bias_table = nn.Parameter(
             torch.zeros(
@@ -228,7 +250,7 @@ class ShiftedWindowAttention3d(nn.Module):
         )  # 2*Wd-1 * 2*Wh-1 * 2*Ww-1, nH
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
-    def define_relative_position_index(self):
+    def define_relative_position_index(self) -> None:
         # get pair-wise relative position index for each token inside the window
         coords_dhw = [torch.arange(self.window_size[i]) for i in range(3)]
         coords = torch.stack(
@@ -435,7 +457,7 @@ class SwinTransformer3d(nn.Module):
         return x
 
 
-def _swin_transformer(
+def _swin_transformer3d(
     patch_size: List[int],
     embed_dim: int,
     depths: List[int],
@@ -468,3 +490,180 @@ def _swin_transformer(
 _COMMON_META = {
     "categories": _KINETICS400_CATEGORIES,
 }
+
+
+class Swin3D_T_Weights(WeightsEnum):
+    KINETICS400_V1 = Weights(
+        url="",
+        transforms=partial(
+            VideoClassification,
+        ),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification#s3d",
+            "num_params": 000,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 0,
+                    "acc@5": 0,
+                }
+            },
+        },
+    )
+    DEFAULT = KINETICS400_V1
+
+
+class Swin3D_S_Weights(WeightsEnum):
+    KINETICS400_V1 = Weights(
+        url="",
+        transforms=partial(
+            VideoClassification,
+        ),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification#s3d",
+            "num_params": 000,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 0,
+                    "acc@5": 0,
+                }
+            },
+        },
+    )
+    DEFAULT = KINETICS400_V1
+
+
+class Swin3D_B_Weights(WeightsEnum):
+    KINETICS400_V1 = Weights(
+        url="",
+        transforms=partial(
+            VideoClassification,
+        ),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification#s3d",
+            "num_params": 000,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 0,
+                    "acc@5": 0,
+                }
+            },
+        },
+    )
+    DEFAULT = KINETICS400_V1
+
+
+@register_model()
+@handle_legacy_interface(weights=("pretrained", Swin3D_T_Weights.KINETICS400_V1))
+def swin3d_t(*, weights: Optional[Swin3D_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer3d:
+    """
+    Constructs a swin_tiny architecture from
+    `Video Swin Transformer <https://arxiv.org/abs/2106.13230>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.video.Swin3D_T_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.Swin3D_T_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.swin_transformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.video.Swin3D_T_Weights
+        :members:
+    """
+    weights = Swin3D_T_Weights.verify(weights)
+
+    return _swin_transformer3d(
+        patch_size=[4, 4, 4],
+        embed_dim=96,
+        depths=[2, 2, 6, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=[8, 7, 7],
+        stochastic_depth_prob=0.2,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+@register_model()
+@handle_legacy_interface(weights=("pretrained", Swin3D_S_Weights.KINETICS400_V1))
+def swin3d_s(*, weights: Optional[Swin3D_S_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer3d:
+    """
+    Constructs a swin_small architecture from
+    `Video Swin Transformer <https://arxiv.org/abs/2106.13230>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.video.Swin3D_S_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.Swin3D_S_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.swin_transformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.video.Swin3D_S_Weights
+        :members:
+    """
+    weights = Swin3D_S_Weights.verify(weights)
+
+    return _swin_transformer3d(
+        patch_size=[4, 4, 4],
+        embed_dim=96,
+        depths=[2, 2, 18, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=[8, 7, 7],
+        stochastic_depth_prob=0.2,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+@register_model()
+@handle_legacy_interface(weights=("pretrained", Swin3D_B_Weights.KINETICS400_V1))
+def swin3d_b(*, weights: Optional[Swin3D_B_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer3d:
+    """
+    Constructs a swin_base architecture from
+    `Video Swin Transformer <https://arxiv.org/abs/2106.13230>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.video.Swin3D_B_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.Swin3D_B_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.swin_transformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.video.Swin3D_B_Weights
+        :members:
+    """
+    weights = Swin3D_B_Weights.verify(weights)
+
+    return _swin_transformer3d(
+        patch_size=[4, 4, 4],
+        embed_dim=128,
+        depths=[2, 2, 18, 2],
+        num_heads=[4, 8, 16, 32],
+        window_size=[8, 7, 7],
+        stochastic_depth_prob=0.3,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
