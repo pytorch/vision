@@ -39,6 +39,10 @@ jobs:
       - name: Install test requirements
         run: pip install --progress-bar=off pytest pytest-mock
 
+      - name: Mark setup as complete
+        id: setup
+        run: exit 0
+
       - name: Run prototype datasets tests
         id: datasets
         shell: bash
@@ -46,12 +50,12 @@ jobs:
 
       - name: Run prototype transforms tests
         id: transforms
-        if: ${{ success() || steps.datasets.conclusion == 'failure' }}
+        if: ${{ steps.setup.conclusion == 'success' }}
         shell: bash
         run: pytest --durations=20 test/test_prototype_transforms*.py
 
       - name: Run prototype models tests
-        if: ${{ success() || steps.datasets.conclusion == 'failure' || steps.transforms.conclusion == 'failure' }}
+        if: ${{ steps.setup.conclusion == 'success' }}
         id: models
         shell: bash
         run: pytest --durations=20 test/test_prototype_models*.py
