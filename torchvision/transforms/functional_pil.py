@@ -3,13 +3,14 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
-from PIL import Image, ImageOps, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 from typing_extensions import Literal
 
 try:
     import accimage
 except ImportError:
     accimage = None
+from . import _pil_constants
 
 
 @torch.jit.unused
@@ -54,7 +55,7 @@ def hflip(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
-    return img.transpose(Image.FLIP_LEFT_RIGHT)
+    return img.transpose(_pil_constants.FLIP_LEFT_RIGHT)
 
 
 @torch.jit.unused
@@ -62,7 +63,7 @@ def vflip(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
-    return img.transpose(Image.FLIP_TOP_BOTTOM)
+    return img.transpose(_pil_constants.FLIP_TOP_BOTTOM)
 
 
 @torch.jit.unused
@@ -154,7 +155,7 @@ def pad(
 
     if not isinstance(padding, (numbers.Number, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
-    if not isinstance(fill, (numbers.Number, tuple, list)):
+    if fill is not None and not isinstance(fill, (numbers.Number, tuple, list)):
         raise TypeError("Got inappropriate fill arg")
     if not isinstance(padding_mode, str):
         raise TypeError("Got inappropriate padding_mode arg")
@@ -239,46 +240,16 @@ def crop(
 @torch.jit.unused
 def resize(
     img: Image.Image,
-    size: Union[Sequence[int], int],
-    interpolation: int = Image.BILINEAR,
-    max_size: Optional[int] = None,
+    size: Union[List[int], int],
+    interpolation: int = _pil_constants.BILINEAR,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
-    if not (isinstance(size, int) or (isinstance(size, Sequence) and len(size) in (1, 2))):
+    if not (isinstance(size, list) and len(size) == 2):
         raise TypeError(f"Got inappropriate size arg: {size}")
 
-    if isinstance(size, Sequence) and len(size) == 1:
-        size = size[0]
-    if isinstance(size, int):
-        w, h = img.size
-
-        short, long = (w, h) if w <= h else (h, w)
-        new_short, new_long = size, int(size * long / short)
-
-        if max_size is not None:
-            if max_size <= size:
-                raise ValueError(
-                    f"max_size = {max_size} must be strictly greater than the requested "
-                    f"size for the smaller edge size = {size}"
-                )
-            if new_long > max_size:
-                new_short, new_long = int(max_size * new_short / new_long), max_size
-
-        new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
-
-        if (w, h) == (new_w, new_h):
-            return img
-        else:
-            return img.resize((new_w, new_h), interpolation)
-    else:
-        if max_size is not None:
-            raise ValueError(
-                "max_size should only be passed if size specifies the length of the smaller edge, "
-                "i.e. size should be an int or a sequence of length 1 in torchscript mode."
-            )
-        return img.resize(size[::-1], interpolation)
+    return img.resize(tuple(size[::-1]), interpolation)
 
 
 @torch.jit.unused
@@ -289,15 +260,15 @@ def _parse_fill(
 ) -> Dict[str, Optional[Union[float, List[float], Tuple[float, ...]]]]:
 
     # Process fill color for affine transforms
-    num_bands = len(img.getbands())
+    num_channels = get_image_num_channels(img)
     if fill is None:
         fill = 0
-    if isinstance(fill, (int, float)) and num_bands > 1:
-        fill = tuple([fill] * num_bands)
+    if isinstance(fill, (int, float)) and num_channels > 1:
+        fill = tuple([fill] * num_channels)
     if isinstance(fill, (list, tuple)):
-        if len(fill) != num_bands:
-            msg = "The number of elements in 'fill' does not match the number of bands of the image ({} != {})"
-            raise ValueError(msg.format(len(fill), num_bands))
+        if len(fill) != num_channels:
+            msg = "The number of elements in 'fill' does not match the number of channels of the image ({} != {})"
+            raise ValueError(msg.format(len(fill), num_channels))
 
         fill = tuple(fill)
 
@@ -314,8 +285,8 @@ def _parse_fill(
 def affine(
     img: Image.Image,
     matrix: List[float],
-    interpolation: int = Image.NEAREST,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    interpolation: int = _pil_constants.NEAREST,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -323,17 +294,17 @@ def affine(
 
     output_size = img.size
     opts = _parse_fill(fill, img)
-    return img.transform(output_size, Image.AFFINE, matrix, interpolation, **opts)
+    return img.transform(output_size, _pil_constants.AFFINE, matrix, interpolation, **opts)
 
 
 @torch.jit.unused
 def rotate(
     img: Image.Image,
     angle: float,
-    interpolation: int = Image.NEAREST,
+    interpolation: int = _pil_constants.NEAREST,
     expand: bool = False,
     center: Optional[Tuple[int, int]] = None,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -346,9 +317,9 @@ def rotate(
 @torch.jit.unused
 def perspective(
     img: Image.Image,
-    perspective_coeffs: float,
-    interpolation: int = Image.BICUBIC,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    perspective_coeffs: List[float],
+    interpolation: int = _pil_constants.BICUBIC,
+    fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -356,7 +327,7 @@ def perspective(
 
     opts = _parse_fill(fill, img)
 
-    return img.transform(img.size, Image.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
+    return img.transform(img.size, _pil_constants.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
 
 
 @torch.jit.unused

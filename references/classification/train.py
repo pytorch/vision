@@ -113,7 +113,12 @@ def _get_cache_path(filepath):
 def load_data(traindir, valdir, args):
     # Data loading code
     print("Loading data")
-    val_resize_size, val_crop_size, train_crop_size = args.val_resize_size, args.val_crop_size, args.train_crop_size
+    val_resize_size, val_crop_size, train_crop_size, center_crop = (
+        args.val_resize_size,
+        args.val_crop_size,
+        args.train_crop_size,
+        args.train_center_crop,
+    )
     interpolation = InterpolationMode(args.interpolation)
 
     print("Loading training data")
@@ -126,13 +131,18 @@ def load_data(traindir, valdir, args):
     else:
         auto_augment_policy = getattr(args, "auto_augment", None)
         random_erase_prob = getattr(args, "random_erase", 0.0)
+        ra_magnitude = args.ra_magnitude
+        augmix_severity = args.augmix_severity
         dataset = torchvision.datasets.ImageFolder(
             traindir,
             presets.ClassificationPresetTrain(
+                center_crop=center_crop,
                 crop_size=train_crop_size,
                 interpolation=interpolation,
                 auto_augment_policy=auto_augment_policy,
                 random_erase_prob=random_erase_prob,
+                ra_magnitude=ra_magnitude,
+                augmix_severity=augmix_severity,
             ),
         )
         if args.cache_dataset:
@@ -207,7 +217,10 @@ def main(args):
         mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
     if mixup_transforms:
         mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
-        collate_fn = lambda batch: mixupcutmix(*default_collate(batch))  # noqa: E731
+
+        def collate_fn(batch):
+            return mixupcutmix(*default_collate(batch))
+
     data_loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -221,7 +234,7 @@ def main(args):
     )
 
     print("Creating model")
-    model = torchvision.models.__dict__[args.model](weights=args.weights, num_classes=num_classes)
+    model = torchvision.models.get_model(args.model, weights=args.weights, num_classes=num_classes)
     model.to(device)
 
     if args.distributed and args.sync_bn:
@@ -233,7 +246,7 @@ def main(args):
     if args.bias_weight_decay is not None:
         custom_keys_weight_decay.append(("bias", args.bias_weight_decay))
     if args.transformer_embedding_decay is not None:
-        for key in ["class_token", "position_embedding", "relative_position_bias"]:
+        for key in ["class_token", "position_embedding", "relative_position_bias_table"]:
             custom_keys_weight_decay.append((key, args.transformer_embedding_decay))
     parameters = utils.set_weight_decay(
         model,
@@ -267,7 +280,7 @@ def main(args):
         main_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
     elif args.lr_scheduler == "cosineannealinglr":
         main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=args.epochs - args.lr_warmup_epochs
+            optimizer, T_max=args.epochs - args.lr_warmup_epochs, eta_min=args.lr_min
         )
     elif args.lr_scheduler == "exponentiallr":
         main_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=args.lr_gamma)
@@ -424,6 +437,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--lr-warmup-decay", default=0.01, type=float, help="the decay for lr")
     parser.add_argument("--lr-step-size", default=30, type=int, help="decrease lr every step-size epochs")
     parser.add_argument("--lr-gamma", default=0.1, type=float, help="decrease lr by a factor of lr-gamma")
+    parser.add_argument("--lr-min", default=0.0, type=float, help="minimum lr of lr schedule (default: 0.0)")
     parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
     parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
     parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
@@ -447,6 +461,8 @@ def get_args_parser(add_help=True):
         action="store_true",
     )
     parser.add_argument("--auto-augment", default=None, type=str, help="auto augment policy (default: None)")
+    parser.add_argument("--ra-magnitude", default=9, type=int, help="magnitude of auto augment policy")
+    parser.add_argument("--augmix-severity", default=3, type=int, help="severity of augmix policy")
     parser.add_argument("--random-erase", default=0.0, type=float, help="random erasing probability (default: 0.0)")
 
     # Mixed precision training parameters
@@ -485,13 +501,17 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
+    parser.add_argument(
+        "--train-center-crop",
+        action="store_true",
+        help="use center crop instead of random crop for training (default: False)",
+    )
     parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
     parser.add_argument("--ra-sampler", action="store_true", help="whether to use Repeated Augmentation in training")
     parser.add_argument(
         "--ra-reps", default=3, type=int, help="number of repetitions for Repeated Augmentation (default: 3)"
     )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
-
     return parser
 
 

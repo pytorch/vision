@@ -1,13 +1,26 @@
-from typing import Any, cast, TypeVar, Union, Optional, Type, Callable, Tuple, Sequence, Mapping
+from __future__ import annotations
 
+from types import ModuleType
+from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
+
+import PIL.Image
 import torch
 from torch._C import DisableTorchFunction
+from torchvision.transforms import InterpolationMode
 
 
 F = TypeVar("F", bound="_Feature")
+FillType = Union[int, float, Sequence[int], Sequence[float], None]
+FillTypeJIT = Union[int, float, List[float], None]
+
+
+def is_simple_tensor(inpt: Any) -> bool:
+    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, _Feature)
 
 
 class _Feature(torch.Tensor):
+    __F: Optional[ModuleType] = None
+
     def __new__(
         cls: Type[F],
         data: Any,
@@ -19,7 +32,7 @@ class _Feature(torch.Tensor):
         return (
             torch.as_tensor(  # type: ignore[return-value]
                 data,
-                dtype=dtype,
+                dtype=dtype,  # type: ignore[arg-type]
                 device=device,  # type: ignore[arg-type]
             )
             .as_subclass(cls)  # type: ignore[arg-type]
@@ -90,5 +103,141 @@ class _Feature(torch.Tensor):
         else:
             return output
 
-    def __repr__(self) -> str:
-        return cast(str, torch.Tensor.__repr__(self)).replace("tensor", type(self).__name__)
+    def _make_repr(self, **kwargs: Any) -> str:
+        # This is a poor man's implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.
+        # If that ever gets implemented, remove this in favor of the solution on the `torch.Tensor` class.
+        extra_repr = ", ".join(f"{key}={value}" for key, value in kwargs.items())
+        return f"{super().__repr__()[:-1]}, {extra_repr})"
+
+    @property
+    def _F(self) -> ModuleType:
+        # This implements a lazy import of the functional to get around the cyclic import. This import is deferred
+        # until the first time we need reference to the functional module and it's shared across all instances of
+        # the class. This approach avoids the DataLoader issue described at
+        # https://github.com/pytorch/vision/pull/6476#discussion_r953588621
+        if _Feature.__F is None:
+            from ..transforms import functional
+
+            _Feature.__F = functional
+        return _Feature.__F
+
+    def horizontal_flip(self) -> _Feature:
+        return self
+
+    def vertical_flip(self) -> _Feature:
+        return self
+
+    # TODO: We have to ignore override mypy error as there is torch.Tensor built-in deprecated op: Tensor.resize
+    # https://github.com/pytorch/pytorch/blob/e8727994eb7cdb2ab642749d6549bc497563aa06/torch/_tensor.py#L588-L593
+    def resize(  # type: ignore[override]
+        self,
+        size: List[int],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        max_size: Optional[int] = None,
+        antialias: bool = False,
+    ) -> _Feature:
+        return self
+
+    def crop(self, top: int, left: int, height: int, width: int) -> _Feature:
+        return self
+
+    def center_crop(self, output_size: List[int]) -> _Feature:
+        return self
+
+    def resized_crop(
+        self,
+        top: int,
+        left: int,
+        height: int,
+        width: int,
+        size: List[int],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        antialias: bool = False,
+    ) -> _Feature:
+        return self
+
+    def pad(
+        self,
+        padding: Union[int, List[int]],
+        fill: FillTypeJIT = None,
+        padding_mode: str = "constant",
+    ) -> _Feature:
+        return self
+
+    def rotate(
+        self,
+        angle: float,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        expand: bool = False,
+        fill: FillTypeJIT = None,
+        center: Optional[List[float]] = None,
+    ) -> _Feature:
+        return self
+
+    def affine(
+        self,
+        angle: float,
+        translate: List[float],
+        scale: float,
+        shear: List[float],
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: FillTypeJIT = None,
+        center: Optional[List[float]] = None,
+    ) -> _Feature:
+        return self
+
+    def perspective(
+        self,
+        perspective_coeffs: List[float],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: FillTypeJIT = None,
+    ) -> _Feature:
+        return self
+
+    def elastic(
+        self,
+        displacement: torch.Tensor,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: FillTypeJIT = None,
+    ) -> _Feature:
+        return self
+
+    def adjust_brightness(self, brightness_factor: float) -> _Feature:
+        return self
+
+    def adjust_saturation(self, saturation_factor: float) -> _Feature:
+        return self
+
+    def adjust_contrast(self, contrast_factor: float) -> _Feature:
+        return self
+
+    def adjust_sharpness(self, sharpness_factor: float) -> _Feature:
+        return self
+
+    def adjust_hue(self, hue_factor: float) -> _Feature:
+        return self
+
+    def adjust_gamma(self, gamma: float, gain: float = 1) -> _Feature:
+        return self
+
+    def posterize(self, bits: int) -> _Feature:
+        return self
+
+    def solarize(self, threshold: float) -> _Feature:
+        return self
+
+    def autocontrast(self) -> _Feature:
+        return self
+
+    def equalize(self) -> _Feature:
+        return self
+
+    def invert(self) -> _Feature:
+        return self
+
+    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> _Feature:
+        return self
+
+
+InputType = Union[torch.Tensor, PIL.Image.Image, _Feature]
+InputTypeJIT = torch.Tensor

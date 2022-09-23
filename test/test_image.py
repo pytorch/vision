@@ -8,27 +8,28 @@ import numpy as np
 import pytest
 import torch
 import torchvision.transforms.functional as F
-from common_utils import needs_cuda, assert_equal
-from PIL import Image, __version__ as PILLOW_VERSION
+from common_utils import assert_equal, needs_cuda
+from PIL import __version__ as PILLOW_VERSION, Image
 from torchvision.io.image import (
-    decode_png,
-    decode_jpeg,
-    encode_jpeg,
-    write_jpeg,
-    decode_image,
-    read_file,
-    encode_png,
-    write_png,
-    write_file,
-    ImageReadMode,
-    read_image,
     _read_png_16,
+    decode_image,
+    decode_jpeg,
+    decode_png,
+    encode_jpeg,
+    encode_png,
+    ImageReadMode,
+    read_file,
+    read_image,
+    write_file,
+    write_jpeg,
+    write_png,
 )
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
 IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, "damaged_jpeg")
+DAMAGED_PNG = os.path.join(IMAGE_ROOT, "damaged_png")
 ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
 INTERLACED_PNG = os.path.join(IMAGE_ROOT, "interlaced_png")
 IS_WINDOWS = sys.platform in ("win32", "cygwin")
@@ -168,7 +169,7 @@ def test_decode_png(img_path, pil_mode, mode):
         img_lpng = _read_png_16(img_path, mode=mode)
         assert img_lpng.dtype == torch.int32
         # PIL converts 16 bits pngs in uint8
-        img_lpng = torch.round(img_lpng / (2 ** 16 - 1) * 255).to(torch.uint8)
+        img_lpng = torch.round(img_lpng / (2**16 - 1) * 255).to(torch.uint8)
     else:
         data = read_file(img_path)
         img_lpng = decode_image(data, mode=mode)
@@ -190,6 +191,8 @@ def test_decode_png_errors():
         decode_png(torch.empty((), dtype=torch.uint8))
     with pytest.raises(RuntimeError, match="Content is not png"):
         decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
+    with pytest.raises(RuntimeError, match="Out of bound read in decode_png"):
+        decode_png(read_file(os.path.join(DAMAGED_PNG, "sigsegv.png")))
 
 
 @pytest.mark.parametrize(
@@ -421,7 +424,7 @@ def _collect_if(cond):
     return _inner
 
 
-@_collect_if(cond=IS_WINDOWS)
+@_collect_if(cond=False)
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
@@ -452,7 +455,7 @@ def test_encode_jpeg_reference(img_path):
         assert_equal(jpeg_bytes, pil_bytes)
 
 
-@_collect_if(cond=IS_WINDOWS)
+@_collect_if(cond=False)
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],

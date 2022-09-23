@@ -29,8 +29,15 @@ import torchvision.models.detection
 import torchvision.models.detection.mask_rcnn
 import utils
 from coco_utils import get_coco, get_coco_kp
-from engine import train_one_epoch, evaluate
-from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from engine import evaluate, train_one_epoch
+from group_by_aspect_ratio import create_aspect_ratio_groups, GroupedBatchSampler
+from torchvision.transforms import InterpolationMode
+from transforms import SimpleCopyPaste
+
+
+def copypaste_collate_fn(batch):
+    copypaste = SimpleCopyPaste(blending=True, resize_interpolation=InterpolationMode.BILINEAR)
+    return copypaste(*utils.collate_fn(batch))
 
 
 def get_dataset(name, image_set, transform, data_path):
@@ -132,6 +139,10 @@ def get_args_parser(add_help=True):
         action="store_true",
     )
 
+    parser.add_argument(
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
+    )
+
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
@@ -140,6 +151,13 @@ def get_args_parser(add_help=True):
 
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
+
+    # Use CopyPaste augmentation training parameter
+    parser.add_argument(
+        "--use-copypaste",
+        action="store_true",
+        help="Use CopyPaste data augmentation. Works only with data-augmentation='lsj'.",
+    )
 
     return parser
 
@@ -153,6 +171,9 @@ def main(args):
 
     device = torch.device(args.device)
 
+    if args.use_deterministic_algorithms:
+        torch.use_deterministic_algorithms(True)
+
     # Data loading code
     print("Loading data")
 
@@ -162,7 +183,7 @@ def main(args):
     print("Creating data loaders")
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test, shuffle=False)
     else:
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
@@ -173,8 +194,15 @@ def main(args):
     else:
         train_batch_sampler = torch.utils.data.BatchSampler(train_sampler, args.batch_size, drop_last=True)
 
+    train_collate_fn = utils.collate_fn
+    if args.use_copypaste:
+        if args.data_augmentation != "lsj":
+            raise RuntimeError("SimpleCopyPaste algorithm currently only supports the 'lsj' data augmentation policies")
+
+        train_collate_fn = copypaste_collate_fn
+
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_sampler=train_batch_sampler, num_workers=args.workers, collate_fn=utils.collate_fn
+        dataset, batch_sampler=train_batch_sampler, num_workers=args.workers, collate_fn=train_collate_fn
     )
 
     data_loader_test = torch.utils.data.DataLoader(
@@ -188,8 +216,8 @@ def main(args):
     if "rcnn" in args.model:
         if args.rpn_score_thresh is not None:
             kwargs["rpn_score_thresh"] = args.rpn_score_thresh
-    model = torchvision.models.detection.__dict__[args.model](
-        weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs
+    model = torchvision.models.get_model(
+        args.model, weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs
     )
     model.to(device)
     if args.distributed and args.sync_bn:
@@ -243,6 +271,7 @@ def main(args):
             scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
+        torch.backends.cudnn.deterministic = True
         evaluate(model, data_loader_test, device=device)
         return
 

@@ -32,8 +32,8 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu102", "cu113", "cu115", "rocm4.5.2", "rocm5.0"],
-                "win": ["cpu", "cu113", "cu115"],
+                "linux": ["cpu", "cu102", "cu116", "cu117", "rocm5.1.1", "rocm5.2"],
+                "win": ["cpu", "cu116", "cu117"],
                 "macos": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
@@ -122,14 +122,9 @@ def upload_doc_job(filter_branch):
 
 
 manylinux_images = {
-    "cu92": "pytorch/manylinux-cuda92",
-    "cu101": "pytorch/manylinux-cuda101",
     "cu102": "pytorch/manylinux-cuda102",
-    "cu110": "pytorch/manylinux-cuda110",
-    "cu111": "pytorch/manylinux-cuda111",
-    "cu112": "pytorch/manylinux-cuda112",
-    "cu113": "pytorch/manylinux-cuda113",
-    "cu115": "pytorch/manylinux-cuda115",
+    "cu116": "pytorch/manylinux-cuda116",
+    "cu117": "pytorch/manylinux-cuda117",
 }
 
 
@@ -270,9 +265,9 @@ def cmake_workflows(indentation=6):
         for device in device_types:
             job = {"name": f"cmake_{os_type}_{device}", "python_version": python_version}
 
-            job["cu_version"] = "cu113" if device == "gpu" else "cpu"
+            job["cu_version"] = "cu116" if device == "gpu" else "cpu"
             if device == "gpu" and os_type == "linux":
-                job["wheel_docker_image"] = "pytorch/manylinux-cuda113"
+                job["wheel_docker_image"] = "pytorch/manylinux-cuda116"
             jobs.append({f"cmake_{os_type}_{device}": job})
     return indent(indentation, jobs)
 

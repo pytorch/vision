@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+import warnings
 
 import presets
 import torch
@@ -9,6 +10,7 @@ import torchvision
 import utils
 from coco_utils import get_coco
 from torch import nn
+from torch.optim.lr_scheduler import PolynomialLR
 from torchvision.transforms import functional as F, InterpolationMode
 
 
@@ -61,6 +63,7 @@ def evaluate(model, data_loader, device, num_classes):
     confmat = utils.ConfusionMatrix(num_classes)
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test:"
+    num_processed_samples = 0
     with torch.inference_mode():
         for image, target in metric_logger.log_every(data_loader, 100, header):
             image, target = image.to(device), target.to(device)
@@ -68,8 +71,25 @@ def evaluate(model, data_loader, device, num_classes):
             output = output["out"]
 
             confmat.update(target.flatten(), output.argmax(1).flatten())
+            # FIXME need to take into account that the datasets
+            # could have been padded in distributed setup
+            num_processed_samples += image.shape[0]
 
         confmat.reduce_from_all_processes()
+
+    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+    if (
+        hasattr(data_loader.dataset, "__len__")
+        and len(data_loader.dataset) != num_processed_samples
+        and torch.distributed.get_rank() == 0
+    ):
+        # See FIXME above
+        warnings.warn(
+            f"It looks like the dataset has {len(data_loader.dataset)} samples, but {num_processed_samples} "
+            "samples were used for the validation, which might bias the results. "
+            "Try adjusting the batch size and / or the world size. "
+            "Setting the world size to 1 is always a safe bet."
+        )
 
     return confmat
 
@@ -108,12 +128,18 @@ def main(args):
 
     device = torch.device(args.device)
 
+    if args.use_deterministic_algorithms:
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True)
+    else:
+        torch.backends.cudnn.benchmark = True
+
     dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(True, args))
     dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(False, args))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test, shuffle=False)
     else:
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
@@ -131,8 +157,12 @@ def main(args):
         dataset_test, batch_size=1, sampler=test_sampler, num_workers=args.workers, collate_fn=utils.collate_fn
     )
 
-    model = torchvision.models.segmentation.__dict__[args.model](
-        weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, aux_loss=args.aux_loss
+    model = torchvision.models.get_model(
+        args.model,
+        weights=args.weights,
+        weights_backbone=args.weights_backbone,
+        num_classes=num_classes,
+        aux_loss=args.aux_loss,
     )
     model.to(device)
     if args.distributed:
@@ -155,8 +185,8 @@ def main(args):
     scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
     iters_per_epoch = len(data_loader)
-    main_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-        optimizer, lambda x: (1 - x / (iters_per_epoch * (args.epochs - args.lr_warmup_epochs))) ** 0.9
+    main_lr_scheduler = PolynomialLR(
+        optimizer, total_iters=iters_per_epoch * (args.epochs - args.lr_warmup_epochs), power=0.9
     )
 
     if args.lr_warmup_epochs > 0:
@@ -191,6 +221,9 @@ def main(args):
                 scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
+        # We disable the cudnn benchmarking because it can noticeably affect the accuracy
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
         confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
         print(confmat)
         return
@@ -260,6 +293,9 @@ def get_args_parser(add_help=True):
         dest="test_only",
         help="Only test the model",
         action="store_true",
+    )
+    parser.add_argument(
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")

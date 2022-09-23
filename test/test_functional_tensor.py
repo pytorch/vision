@@ -14,14 +14,14 @@ import torchvision.transforms.functional as F
 import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional_tensor as F_t
 from common_utils import (
-    cpu_and_gpu,
-    needs_cuda,
+    _assert_approx_equal_tensor_to_pil,
+    _assert_equal_tensor_to_pil,
     _create_data,
     _create_data_batch,
-    _assert_equal_tensor_to_pil,
-    _assert_approx_equal_tensor_to_pil,
     _test_fn_on_batch,
     assert_equal,
+    cpu_and_gpu,
+    needs_cuda,
 )
 from torchvision.transforms import InterpolationMode
 
@@ -156,7 +156,13 @@ class TestRotate:
     def test_rotate_interpolation_type(self):
         tensor, _ = _create_data(26, 26)
         # assert changed type warning
-        with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+                "Please use InterpolationMode enum."
+            ),
+        ):
             res1 = F.rotate(tensor, 45, interpolation=2)
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             assert_equal(res1, res2)
@@ -384,7 +390,13 @@ class TestAffine:
             assert_equal(res1, res2)
 
         # assert changed type warning
-        with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+                "Please use InterpolationMode enum."
+            ),
+        ):
             res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
             res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
             assert_equal(res1, res2)
@@ -504,7 +516,13 @@ def test_perspective_interpolation_warning():
     spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
     epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
     tensor = torch.randint(0, 256, (3, 26, 26))
-    with pytest.warns(UserWarning, match="Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+            "Please use InterpolationMode enum."
+        ),
+    ):
         res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=2)
         res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
         assert_equal(res1, res2)
@@ -584,7 +602,13 @@ def test_resize_asserts(device):
     tensor, pil_img = _create_data(26, 36, device=device)
 
     # assert changed type warning
-    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+            "Please use InterpolationMode enum."
+        ),
+    ):
         res1 = F.resize(tensor, size=32, interpolation=2)
 
     res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
@@ -931,24 +955,13 @@ def test_adjust_gamma(device, dtype, config, channels):
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
-@pytest.mark.parametrize(
-    "pad",
-    [
-        2,
-        [
-            3,
-        ],
-        [0, 3],
-        (3, 3),
-        [4, 2, 4, 3],
-    ],
-)
+@pytest.mark.parametrize("pad", [2, [3], [0, 3], (3, 3), [4, 2, 4, 3]])
 @pytest.mark.parametrize(
     "config",
     [
         {"padding_mode": "constant", "fill": 0},
         {"padding_mode": "constant", "fill": 10},
-        {"padding_mode": "constant", "fill": 20},
+        {"padding_mode": "constant", "fill": 20.2},
         {"padding_mode": "edge"},
         {"padding_mode": "reflect"},
         {"padding_mode": "symmetric"},
@@ -1030,25 +1043,9 @@ def test_resized_crop(device, mode):
         (F_t.adjust_contrast, (1.0,)),
         (F_t.adjust_hue, (-0.5,)),
         (F_t.adjust_saturation, (2.0,)),
-        (
-            F_t.pad,
-            (
-                [
-                    2,
-                ],
-                2,
-                "constant",
-            ),
-        ),
+        (F_t.pad, ([2], 2, "constant")),
         (F_t.resize, ([10, 11],)),
-        (
-            F_t.perspective,
-            (
-                [
-                    0.2,
-                ]
-            ),
-        ),
+        (F_t.perspective, ([0.2])),
         (F_t.gaussian_blur, ((2, 2), (0.7, 0.5))),
         (F_t.invert, ()),
         (F_t.posterize, (0,)),
@@ -1107,6 +1104,8 @@ def test_hflip(device):
         (2, 12, 3, 4),  # crop inside top-right corner
         (8, 3, 5, 6),  # crop inside bottom-left corner
         (8, 11, 4, 3),  # crop inside bottom-right corner
+        (50, 50, 10, 10),  # crop outside the image
+        (-50, -50, 10, 10),  # crop outside the image
     ],
 )
 def test_crop(device, top, left, height, width):
@@ -1353,6 +1352,53 @@ def test_ten_crop(device):
     s_tuple_transformed_batches = script_ten_crop(batch_tensors, [10, 11])
     for transformed_batch, s_transformed_batch in zip(tuple_transformed_batches, s_tuple_transformed_batches):
         assert_equal(transformed_batch, s_transformed_batch)
+
+
+def test_elastic_transform_asserts():
+    with pytest.raises(TypeError, match="Argument displacement should be a Tensor"):
+        _ = F.elastic_transform("abc", displacement=None)
+
+    with pytest.raises(TypeError, match="img should be PIL Image or Tensor"):
+        _ = F.elastic_transform("abc", displacement=torch.rand(1))
+
+    img_tensor = torch.rand(1, 3, 32, 24)
+    with pytest.raises(ValueError, match="Argument displacement shape should"):
+        _ = F.elastic_transform(img_tensor, displacement=torch.rand(1, 2))
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR, BICUBIC])
+@pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
+@pytest.mark.parametrize(
+    "fill",
+    [None, [255, 255, 255], (2.0,)],
+)
+def test_elastic_transform_consistency(device, interpolation, dt, fill):
+    script_elastic_transform = torch.jit.script(F.elastic_transform)
+    img_tensor, _ = _create_data(32, 34, device=device)
+    # As there is no PIL implementation for elastic_transform,
+    # thus we do not run tests tensor vs pillow
+
+    if dt is not None:
+        img_tensor = img_tensor.to(dt)
+
+    displacement = T.ElasticTransform.get_params([1.5, 1.5], [2.0, 2.0], [32, 34])
+    kwargs = dict(
+        displacement=displacement,
+        interpolation=interpolation,
+        fill=fill,
+    )
+
+    out_tensor1 = F.elastic_transform(img_tensor, **kwargs)
+    out_tensor2 = script_elastic_transform(img_tensor, **kwargs)
+    assert_equal(out_tensor1, out_tensor2)
+
+    batch_tensors = _create_data_batch(16, 18, num_samples=4, device=device)
+    displacement = T.ElasticTransform.get_params([1.5, 1.5], [2.0, 2.0], [16, 18])
+    kwargs["displacement"] = displacement
+    if dt is not None:
+        batch_tensors = batch_tensors.to(dt)
+    _test_fn_on_batch(batch_tensors, F.elastic_transform, **kwargs)
 
 
 if __name__ == "__main__":
