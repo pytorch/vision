@@ -414,75 +414,92 @@ class RandomCrop(Transform):
             _check_padding_mode_arg(padding_mode)
 
         self.padding = padding
+        self._parsed_padding = F._geometry._parse_pad_padding(padding) if padding else None
         self.pad_if_needed = pad_if_needed
         self.fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        _, height, width = query_chw(sample)
+        _, padded_height, padded_width = query_chw(sample)
 
         if self.padding is not None:
-            # update height, width with static padding data
-            padding = self.padding
-            if isinstance(padding, Sequence):
-                padding = list(padding)
-            pad_left, pad_right, pad_top, pad_bottom = F._geometry._parse_pad_padding(padding)
-            height += pad_top + pad_bottom
-            width += pad_left + pad_right
+            pad_left, pad_right, pad_top, pad_bottom = self._parsed_padding
+            padded_height += pad_top + pad_bottom
+            padded_width += pad_left + pad_right
+        else:
+            pad_left = pad_right = pad_top = pad_bottom = 0
 
-        output_height, output_width = self.size
-        # We have to store maybe padded image size for pad_if_needed branch in _transform
-        input_height, input_width = height, width
+        cropped_height, cropped_width = self.size
+        height_diff = padded_height - cropped_height
+        width_diff = padded_width - cropped_width
 
         if self.pad_if_needed:
-            # pad width if needed
-            if width < output_width:
-                width += 2 * (output_width - width)
-            # pad height if needed
-            if height < output_height:
-                height += 2 * (output_height - height)
+            if height_diff < 0:
+                # This is a micro optimization that avoids some duplicate computation down the line.
+                #
+                # Here, we want to pad the top and bottom by the difference of the `cropped_height` (output) and the
+                # `padded_height` (input). Since the definition of `height_diff` is inverted we check for a negative
+                # value.
+                #
+                # Since we are padding the height by exactly twice the difference, the resulting `height_diff`, if we
+                # were to compute it again after the padding, is its exact inverse:
+                #
+                # new_height_diff =   new_padded_height                                            - cropped_height
+                #                 =   old_padded_height + 2 * (cropped_height - old_padded_height) - cropped_height
+                #                 = - old_padded_height + cropped_height
+                #                 = -(old_padded_height - cropped_height)
+                #                 = - old_height_diff
+                #
+                # Without this trick, all `+=` would need to be changed to `-=` and the re-definition of `height_diff`
+                # would need to moved below the re-definition of `padded_height` and be:
+                #
+                # height_diff = padded_height - cropped_height
+                #
+                # Although this only replaces one subtraction with the unary `-` in this branch, this trick also avoids
+                # re-defining `height_diff` anywhere else.
+                height_diff = -height_diff
 
-        if height < output_height or width < output_width:
+                pad_top += height_diff
+                pad_bottom += height_diff
+                padded_height += 2 * height_diff
+
+            if width_diff < 0:
+                # Same as above by substituting 'width' for 'height'.
+                width_diff = -width_diff
+
+                pad_left += width_diff
+                pad_right += width_diff
+                padded_width += 2 * width_diff
+
+        if height_diff < 0 or width_diff < 0:
             raise ValueError(
-                f"Required crop size {(output_height, output_width)} is larger then input image size {(height, width)}"
+                f"Required crop size {(cropped_height, cropped_width)} is larger then "
+                f"{'padded ' if self.padding is not None else ''}input image size {(padded_height, cropped_width)}."
             )
 
-        if width == output_width and height == output_height:
-            return dict(top=0, left=0, height=height, width=width, input_width=input_width, input_height=input_height)
+        # We need a different order here than we have in self._parsed_padding, since this padding will be parsed again
+        # in self._transform()
+        padding = [pad_left, pad_top, pad_right, pad_bottom]
+        needs_pad = any(padding)
 
-        top = torch.randint(0, height - output_height + 1, size=(1,)).item()
-        left = torch.randint(0, width - output_width + 1, size=(1,)).item()
+        top = int(torch.randint(0, height_diff + 1, size=())) if height_diff > 0 else 0
+        left = int(torch.randint(0, width_diff + 1, size=())) if width_diff > 0 else 0
 
         return dict(
             top=top,
             left=left,
-            height=output_height,
-            width=output_width,
-            input_width=input_width,
-            input_height=input_height,
+            height=cropped_height,
+            width=cropped_width,
+            needs_pad=needs_pad,
+            padding=padding,
         )
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        # TODO: (PERF) check for speed optimization if we avoid repeated pad calls
         fill = self.fill[type(inpt)]
         fill = F._geometry._convert_fill_arg(fill)
 
-        if self.padding is not None:
-            # This cast does Sequence[int] -> List[int] and is required to make mypy happy
-            padding = self.padding
-            if not isinstance(padding, int):
-                padding = list(padding)
-
-            inpt = F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
-
-        if self.pad_if_needed:
-            input_width, input_height = params["input_width"], params["input_height"]
-            if input_width < self.size[1]:
-                padding = [self.size[1] - input_width, 0]
-                inpt = F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
-            if input_height < self.size[0]:
-                padding = [0, self.size[0] - input_height]
-                inpt = F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
+        if params["needs_pad"]:
+            inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
