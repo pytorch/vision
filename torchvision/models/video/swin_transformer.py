@@ -29,8 +29,11 @@ __all__ = [
 ]
 
 
-def _get_relative_position_bias(relative_position_bias_table: torch.Tensor, window_size: List[int]) -> Tensor:
+def _get_relative_position_bias(
+    relative_position_bias_table: torch.Tensor, relative_position_index: torch.Tensor, window_size: List[int]
+) -> Tensor:
     window_vol = window_size[0] * window_size[1] * window_size[2]
+    # In 3d case we flatten the relative_position_bias
     relative_position_bias = relative_position_bias_table[
         relative_position_index[:window_vol, :window_vol].flatten()  # type: ignore[index]
     ]
@@ -265,12 +268,13 @@ class ShiftedWindowAttention3d(nn.Module):
 
         relative_coords[:, :, 0] *= (2 * self.window_size[1] - 1) * (2 * self.window_size[2] - 1)
         relative_coords[:, :, 1] *= 2 * self.window_size[2] - 1
+        # We don't flatten the relative_position_index here in 3d case.
         relative_position_index = relative_coords.sum(-1)  # Wd*Wh*Ww, Wd*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
     def get_relative_position_bias(self) -> torch.Tensor:
         return _get_relative_position_bias(
-            self.relative_position_bias_table, self.window_size  # type: ignore[arg-type]
+            self.relative_position_bias_table, self.relative_position_index, self.window_size
         )
 
     def forward(self, x: Tensor) -> Tensor:
@@ -333,7 +337,7 @@ class PatchEmbed3d(nn.Module):
         if norm_layer is not None:
             self.norm = norm_layer(embed_dim)
         else:
-            self.norm = None
+            self.norm = nn.Identity()
 
     def forward(self, x: Tensor) -> Tensor:
         """Forward function."""
