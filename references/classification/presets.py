@@ -20,9 +20,9 @@ class ClassificationPresetTrain:
     ):
         trans = [transforms.ToImageTensor()]
         trans.append(
-            transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True)
+            transforms.CenterCrop(crop_size)
             if center_crop
-            else transforms.CenterCrop(crop_size)
+            else transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True)
         )
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(p=hflip_prob))
