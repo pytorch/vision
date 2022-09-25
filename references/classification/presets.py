@@ -18,10 +18,11 @@ class ClassificationPresetTrain:
         random_erase_prob=0.0,
         center_crop=False,
     ):
-        trans = (
-            [transforms.RandomResizedCrop(crop_size, interpolation=interpolation)]
+        trans = []
+        trans.append(
+            transforms.CenterCrop(crop_size)
             if center_crop
-            else [transforms.CenterCrop(crop_size)]
+            else transforms.RandomResizedCrop(crop_size, interpolation=interpolation)
         )
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(hflip_prob))
