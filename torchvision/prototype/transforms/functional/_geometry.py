@@ -143,7 +143,7 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
 
 
 def resize_bounding_box(
-    bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int], max_size: Optional[int] = None
+    bounding_box: torch.Tensor, image_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
 ) -> torch.Tensor:
     old_height, old_width = image_size
     new_height, new_width = _compute_resized_output_size(image_size, size=size, max_size=max_size)
@@ -673,8 +673,8 @@ def pad_mask(
 
 def pad_bounding_box(
     bounding_box: torch.Tensor,
-    padding: Union[int, List[int]],
     format: features.BoundingBoxFormat,
+    padding: Union[int, List[int]],
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     if padding_mode not in ["constant"]:
@@ -1043,8 +1043,8 @@ def center_crop_image_pil(img: PIL.Image.Image, output_size: List[int]) -> PIL.I
 def center_crop_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
-    output_size: List[int],
     image_size: Tuple[int, int],
+    output_size: List[int],
 ) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *image_size)
@@ -1113,7 +1113,7 @@ def resized_crop_bounding_box(
     size: List[int],
 ) -> torch.Tensor:
     bounding_box = crop_bounding_box(bounding_box, format, top, left)
-    return resize_bounding_box(bounding_box, size, (height, width))
+    return resize_bounding_box(bounding_box, (height, width), size)
 
 
 def resized_crop_mask(
