@@ -272,10 +272,8 @@ class ShiftedWindowAttention3d(nn.Module):
         relative_position_index = relative_coords.sum(-1)  # Wd*Wh*Ww, Wd*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
-    def get_relative_position_bias(self) -> torch.Tensor:
-        return _get_relative_position_bias(
-            self.relative_position_bias_table, self.relative_position_index, self.window_size
-        )
+    def get_relative_position_bias(self, window_size: List[int]) -> torch.Tensor:
+        return _get_relative_position_bias(self.relative_position_bias_table, self.relative_position_index, window_size)
 
     def forward(self, x: Tensor) -> Tensor:
         _, t, h, w, _ = x.shape
@@ -288,7 +286,7 @@ class ShiftedWindowAttention3d(nn.Module):
                 window_size[i] = size_dhw[i]
                 shift_size[i] = 0
 
-        relative_position_bias = self.get_relative_position_bias()
+        relative_position_bias = self.get_relative_position_bias(window_size)
 
         return shifted_window_attention_3d(
             x,
@@ -585,7 +583,7 @@ def swin3d_t(*, weights: Optional[Swin3D_T_Weights] = None, progress: bool = Tru
     weights = Swin3D_T_Weights.verify(weights)
 
     return _swin_transformer3d(
-        patch_size=[4, 4, 4],
+        patch_size=[2, 4, 4],
         embed_dim=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
@@ -623,7 +621,7 @@ def swin3d_s(*, weights: Optional[Swin3D_S_Weights] = None, progress: bool = Tru
     weights = Swin3D_S_Weights.verify(weights)
 
     return _swin_transformer3d(
-        patch_size=[4, 4, 4],
+        patch_size=[2, 4, 4],
         embed_dim=96,
         depths=[2, 2, 18, 2],
         num_heads=[3, 6, 12, 24],
@@ -661,7 +659,7 @@ def swin3d_b(*, weights: Optional[Swin3D_B_Weights] = None, progress: bool = Tru
     weights = Swin3D_B_Weights.verify(weights)
 
     return _swin_transformer3d(
-        patch_size=[4, 4, 4],
+        patch_size=[2, 4, 4],
         embed_dim=128,
         depths=[2, 2, 18, 2],
         num_heads=[4, 8, 16, 32],
