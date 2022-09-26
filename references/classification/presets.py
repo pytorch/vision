@@ -16,14 +16,11 @@ class ClassificationPresetTrain:
         ra_magnitude=9,
         augmix_severity=3,
         random_erase_prob=0.0,
-        center_crop=False,
     ):
-        trans = [transforms.ToImageTensor()]
-        trans.append(
-            transforms.CenterCrop(crop_size)
-            if center_crop
-            else transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True)
-        )
+        trans = [
+            transforms.ToImageTensor(),
+            transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True),
+        ]
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(p=hflip_prob))
         if auto_augment_policy is not None:
