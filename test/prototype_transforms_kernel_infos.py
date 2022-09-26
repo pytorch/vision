@@ -78,6 +78,18 @@ def pil_reference_wrapper(pil_kernel):
     return wrapper
 
 
+def get_sizes(image_size):
+    height, width = image_size
+    length = max(image_size)
+    # yield length
+    yield [length]
+    yield (length,)
+    new_height = int(height * 0.75)
+    new_width = int(width * 1.25)
+    yield [new_height, new_width]
+    yield height, width
+
+
 KERNEL_INFOS = []
 
 
@@ -127,15 +139,6 @@ KERNEL_INFOS.extend(
 )
 
 
-def _get_resize_sizes(image_size):
-    height, width = image_size
-    length = max(image_size)
-    # yield length
-    yield [length]
-    yield height, width
-    yield int(height * 0.75), int(width * 1.25)
-
-
 def sample_inputs_resize_image_tensor():
     for image_loader, interpolation in itertools.product(
         make_image_loaders(dtypes=[torch.float32]),
@@ -144,7 +147,7 @@ def sample_inputs_resize_image_tensor():
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        for size in _get_resize_sizes(image_loader.image_size):
+        for size in get_sizes(image_loader.image_size):
             yield ArgsKwargs(image_loader, size=size, interpolation=interpolation)
 
 
@@ -167,7 +170,7 @@ def reference_inputs_resize_image_tensor():
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        for size in _get_resize_sizes(image_loader.image_size):
+        for size in get_sizes(image_loader.image_size):
             yield ArgsKwargs(
                 image_loader,
                 size=size,
@@ -182,13 +185,13 @@ def reference_inputs_resize_image_tensor():
 
 def sample_inputs_resize_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders(formats=[features.BoundingBoxFormat.XYXY]):
-        for size in _get_resize_sizes(bounding_box_loader.image_size):
+        for size in get_sizes(bounding_box_loader.image_size):
             yield ArgsKwargs(bounding_box_loader, size=size, image_size=bounding_box_loader.image_size)
 
 
 def sample_inputs_resize_mask():
     for mask_loader in make_mask_loaders(dtypes=[torch.uint8]):
-        for size in _get_resize_sizes(mask_loader.shape[-2:]):
+        for size in get_sizes(mask_loader.shape[-2:]):
             yield ArgsKwargs(mask_loader, size=size)
 
 
@@ -199,7 +202,7 @@ def reference_resize_mask(*args, **kwargs):
 
 def reference_inputs_resize_mask():
     for mask_loader in make_mask_loaders(extra_dims=[()], num_objects=[1]):
-        for size in _get_resize_sizes(mask_loader.shape[-2:]):
+        for size in get_sizes(mask_loader.shape[-2:]):
             yield ArgsKwargs(mask_loader, size=size)
 
 
