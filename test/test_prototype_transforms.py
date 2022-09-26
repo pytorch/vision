@@ -132,7 +132,7 @@ class TestSmoke:
         transform(input_copy)
 
         # Check if we raise an error if sample contains bbox or mask or label
-        err_msg = "does not support bounding boxes, masks and plain labels"
+        err_msg = "does not support PIL images, bounding boxes, masks and plain labels"
         input_copy = dict(input)
         for unsup_data in [
             make_label(),

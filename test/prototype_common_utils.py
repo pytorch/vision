@@ -69,7 +69,8 @@ class PILImagePair(TensorLikePair):
 
     def _process_inputs(self, actual, expected, *, id, allow_subclasses):
         actual, expected = [
-            to_image_tensor(input) if not isinstance(input, torch.Tensor) else input for input in [actual, expected]
+            to_image_tensor(input) if not isinstance(input, torch.Tensor) else features.Image(input)
+            for input in [actual, expected]
         ]
         # This broadcast is needed, because `features.Mask`'s can have a 2D shape, but converting the equivalent PIL
         # image to a tensor adds a singleton leading dimension.
