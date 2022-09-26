@@ -7,6 +7,7 @@
 
 set -e
 
+
 this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # Avoid error: "fatal: unsafe repository"
 git config --global --add safe.directory '*'
