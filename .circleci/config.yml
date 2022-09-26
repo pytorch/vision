@@ -223,7 +223,7 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "pytorch/manylinux-cuda102"
+      default: ""
     conda_docker_image:
       description: "Conda only: what docker image to use"
       type: string
@@ -724,7 +724,7 @@ jobs:
   unittest_linux_cpu:
     <<: *binary_common
     docker:
-      - image: "pytorch/manylinux-cuda102"
+      - image: "pytorch/manylinux-cpu"
     resource_class: 2xlarge+
     steps:
       - checkout
@@ -941,7 +941,7 @@ jobs:
   cmake_linux_cpu:
     <<: *binary_common
     docker:
-      - image: "pytorch/manylinux-cuda102"
+      - image: "pytorch/manylinux-cpu"
     resource_class: 2xlarge+
     steps:
       - checkout_merge
@@ -1105,7 +1105,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_linux_wheel_py3.7_cpu
           python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cuda102
           cu_version: cu102
@@ -1139,7 +1139,7 @@ workflows:
           cu_version: cpu
           name: binary_linux_wheel_py3.8_cpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cuda102
           cu_version: cu102
@@ -1173,7 +1173,7 @@ workflows:
           cu_version: cpu
           name: binary_linux_wheel_py3.9_cpu
           python_version: '3.9'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cuda102
           cu_version: cu102
@@ -1207,7 +1207,7 @@ workflows:
           cu_version: cpu
           name: binary_linux_wheel_py3.10_cpu
           python_version: '3.10'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cuda102
           cu_version: cu102
@@ -1241,25 +1241,25 @@ workflows:
           cu_version: cpu
           name: binary_macos_wheel_py3.7_cpu
           python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_macos_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
           name: binary_macos_wheel_py3.8_cpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_macos_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
           name: binary_macos_wheel_py3.9_cpu
           python_version: '3.9'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_macos_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
           name: binary_macos_wheel_py3.10_cpu
           python_version: '3.10'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_win_wheel:
           cu_version: cpu
           filters:
@@ -1363,7 +1363,7 @@ workflows:
           cu_version: cpu
           name: binary_linux_conda_py3.7_cpu
           python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_linux_conda:
           conda_docker_image: pytorch/conda-builder:cuda102
           cu_version: cu102
@@ -1387,7 +1387,7 @@ workflows:
           cu_version: cpu
           name: binary_linux_conda_py3.8_cpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_linux_conda:
           conda_docker_image: pytorch/conda-builder:cuda102
           cu_version: cu102
@@ -1411,7 +1411,7 @@ workflows:
           cu_version: cpu
           name: binary_linux_conda_py3.9_cpu
           python_version: '3.9'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_linux_conda:
           conda_docker_image: pytorch/conda-builder:cuda102
           cu_version: cu102
@@ -1435,7 +1435,7 @@ workflows:
           cu_version: cpu
           name: binary_linux_conda_py3.10_cpu
           python_version: '3.10'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_linux_conda:
           conda_docker_image: pytorch/conda-builder:cuda102
           cu_version: cu102
@@ -1459,25 +1459,25 @@ workflows:
           cu_version: cpu
           name: binary_macos_conda_py3.7_cpu
           python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_macos_conda:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
           name: binary_macos_conda_py3.8_cpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_macos_conda:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
           name: binary_macos_conda_py3.9_cpu
           python_version: '3.9'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_macos_conda:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
           name: binary_macos_conda_py3.10_cpu
           python_version: '3.10'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_win_conda:
           cu_version: cpu
           filters:
@@ -1801,7 +1801,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_linux_wheel_py3.7_cpu
           python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -1931,7 +1931,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_linux_wheel_py3.8_cpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -2061,7 +2061,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_linux_wheel_py3.9_cpu
           python_version: '3.9'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -2191,7 +2191,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_linux_wheel_py3.10_cpu
           python_version: '3.10'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -2321,7 +2321,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_macos_wheel_py3.7_cpu
           python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -2343,7 +2343,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_macos_wheel_py3.8_cpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -2365,7 +2365,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_macos_wheel_py3.9_cpu
           python_version: '3.9'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -2387,7 +2387,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_macos_wheel_py3.10_cpu
           python_version: '3.10'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -2649,7 +2649,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_linux_conda_py3.7_cpu
           python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_conda_upload:
           context: org-member
           filters:
@@ -2733,7 +2733,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_linux_conda_py3.8_cpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_conda_upload:
           context: org-member
           filters:
@@ -2817,7 +2817,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_linux_conda_py3.9_cpu
           python_version: '3.9'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_conda_upload:
           context: org-member
           filters:
@@ -2901,7 +2901,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_linux_conda_py3.10_cpu
           python_version: '3.10'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_conda_upload:
           context: org-member
           filters:
@@ -2985,7 +2985,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_macos_conda_py3.7_cpu
           python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_conda_upload:
           context: org-member
           filters:
@@ -3006,7 +3006,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_macos_conda_py3.8_cpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_conda_upload:
           context: org-member
           filters:
@@ -3027,7 +3027,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_macos_conda_py3.9_cpu
           python_version: '3.9'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_conda_upload:
           context: org-member
           filters:
@@ -3048,7 +3048,7 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: nightly_binary_macos_conda_py3.10_cpu
           python_version: '3.10'
-          wheel_docker_image: pytorch/manylinux-cuda102
+          wheel_docker_image: pytorch/manylinux-cpu
       - binary_conda_upload:
           context: org-member
           filters:
