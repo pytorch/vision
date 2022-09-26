@@ -83,19 +83,19 @@ class BoundingBox(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> BoundingBox:
-        output = self._F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
-        image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
-        return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
+        output, image_size = self._F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
+        return BoundingBox.new_like(self, output, image_size=image_size)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
-        output = self._F.crop_bounding_box(self, self.format, top, left)
-        return BoundingBox.new_like(self, output, image_size=(height, width))
+        output, image_size = self._F.crop_bounding_box(
+            self, self.format, top=top, left=left, height=height, width=width
+        )
+        return BoundingBox.new_like(self, output, image_size=image_size)
 
     def center_crop(self, output_size: List[int]) -> BoundingBox:
-        output = self._F.center_crop_bounding_box(
+        output, image_size = self._F.center_crop_bounding_box(
             self, format=self.format, output_size=output_size, image_size=self.image_size
         )
-        image_size = (output_size[0], output_size[0]) if len(output_size) == 1 else (output_size[0], output_size[1])
         return BoundingBox.new_like(self, output, image_size=image_size)
 
     def resized_crop(
@@ -118,19 +118,10 @@ class BoundingBox(_Feature):
         fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> BoundingBox:
-        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
-        if not isinstance(padding, int):
-            padding = list(padding)
-
-        output = self._F.pad_bounding_box(self, padding, format=self.format, padding_mode=padding_mode)
-
-        # Update output image size:
-        left, right, top, bottom = self._F._geometry._parse_pad_padding(padding)
-        height, width = self.image_size
-        height += top + bottom
-        width += left + right
-
-        return BoundingBox.new_like(self, output, image_size=(height, width))
+        output, image_size = self._F.pad_bounding_box(
+            self, padding, format=self.format, image_size=self.image_size, padding_mode=padding_mode
+        )
+        return BoundingBox.new_like(self, output, image_size=image_size)
 
     def rotate(
         self,
@@ -140,23 +131,10 @@ class BoundingBox(_Feature):
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
-        output = self._F.rotate_bounding_box(
+        output, image_size = self._F.rotate_bounding_box(
             self, format=self.format, image_size=self.image_size, angle=angle, expand=expand, center=center
         )
-        image_size = self.image_size
-        if expand:
-            # The way we recompute image_size is not optimal due to redundant computations of
-            # - rotation matrix (_get_inverse_affine_matrix)
-            # - points dot matrix (_compute_affine_output_size)
-            # Alternatively, we could return new image size by self._F.rotate_bounding_box
-            height, width = image_size
-            rotation_matrix = self._F._geometry._get_inverse_affine_matrix(
-                [0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0]
-            )
-            new_width, new_height = self._F._geometry._FT._compute_affine_output_size(rotation_matrix, width, height)
-            image_size = (new_height, new_width)
-
-        return BoundingBox.new_like(self, output, dtype=output.dtype, image_size=image_size)
+        return BoundingBox.new_like(self, output, image_size=image_size)
 
     def affine(
         self,
