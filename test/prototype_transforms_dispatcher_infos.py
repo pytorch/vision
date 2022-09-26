@@ -11,6 +11,14 @@ __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
 KERNEL_SAMPLE_INPUTS_FN_MAP = {info.kernel: info.sample_inputs_fn for info in KERNEL_INFOS}
 
 
+def skip_integer_size_jit(name="size"):
+    return Skip(
+        "test_scripted_smoke",
+        condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs[name], int),
+        reason="Integer size is not supported when scripting.",
+    )
+
+
 @dataclasses.dataclass
 class DispatcherInfo:
     dispatcher: Callable
@@ -51,11 +59,7 @@ DISPATCHER_INFOS = [
             features.Mask: F.resize_mask,
         },
         skips=[
-            Skip(
-                "test_scripted_smoke",
-                condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                reason="Integer size is not supported when scripting ten_crop_image_tensor.",
-            ),
+            skip_integer_size_jit(),
         ],
     ),
     DispatcherInfo(
@@ -129,6 +133,9 @@ DISPATCHER_INFOS = [
             features.BoundingBox: F.center_crop_bounding_box,
             features.Mask: F.center_crop_mask,
         },
+        skips=[
+            skip_integer_size_jit(),
+        ],
     ),
     DispatcherInfo(
         F.gaussian_blur,
@@ -214,11 +221,7 @@ DISPATCHER_INFOS = [
             features.Image: F.five_crop_image_tensor,
         },
         skips=[
-            Skip(
-                "test_scripted_smoke",
-                condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                reason="Integer size is not supported when scripting five_crop_image_tensor.",
-            ),
+            skip_integer_size_jit(),
         ],
     ),
     DispatcherInfo(
@@ -227,11 +230,7 @@ DISPATCHER_INFOS = [
             features.Image: F.ten_crop_image_tensor,
         },
         skips=[
-            Skip(
-                "test_scripted_smoke",
-                condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                reason="Integer size is not supported when scripting ten_crop_image_tensor.",
-            ),
+            skip_integer_size_jit(),
         ],
     ),
     DispatcherInfo(

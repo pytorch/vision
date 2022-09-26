@@ -78,16 +78,12 @@ def pil_reference_wrapper(pil_kernel):
     return wrapper
 
 
-def get_sizes(image_size):
-    height, width = image_size
-    length = max(image_size)
-    # yield length
-    yield [length]
-    yield (length,)
-    new_height = int(height * 0.75)
-    new_width = int(width * 1.25)
-    yield [new_height, new_width]
-    yield height, width
+def skip_integer_size_jit(name="size"):
+    return Skip(
+        "test_scripted_vs_eager",
+        condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs[name], int),
+        reason="Integer size is not supported when scripting.",
+    )
 
 
 KERNEL_INFOS = []
@@ -139,6 +135,19 @@ KERNEL_INFOS.extend(
 )
 
 
+def _get_resize_sizes(image_size):
+    height, width = image_size
+    length = max(image_size)
+    # FIXME: enable me when the kernels are fixed
+    # yield length
+    yield [length]
+    yield (length,)
+    new_height = int(height * 0.75)
+    new_width = int(width * 1.25)
+    yield [new_height, new_width]
+    yield height, width
+
+
 def sample_inputs_resize_image_tensor():
     for image_loader, interpolation in itertools.product(
         make_image_loaders(dtypes=[torch.float32]),
@@ -147,7 +156,7 @@ def sample_inputs_resize_image_tensor():
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        for size in get_sizes(image_loader.image_size):
+        for size in _get_resize_sizes(image_loader.image_size):
             yield ArgsKwargs(image_loader, size=size, interpolation=interpolation)
 
 
@@ -170,7 +179,7 @@ def reference_inputs_resize_image_tensor():
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        for size in get_sizes(image_loader.image_size):
+        for size in _get_resize_sizes(image_loader.image_size):
             yield ArgsKwargs(
                 image_loader,
                 size=size,
@@ -185,13 +194,13 @@ def reference_inputs_resize_image_tensor():
 
 def sample_inputs_resize_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders(formats=[features.BoundingBoxFormat.XYXY]):
-        for size in get_sizes(bounding_box_loader.image_size):
+        for size in _get_resize_sizes(bounding_box_loader.image_size):
             yield ArgsKwargs(bounding_box_loader, size=size, image_size=bounding_box_loader.image_size)
 
 
 def sample_inputs_resize_mask():
     for mask_loader in make_mask_loaders(dtypes=[torch.uint8]):
-        for size in get_sizes(mask_loader.shape[-2:]):
+        for size in _get_resize_sizes(mask_loader.shape[-2:]):
             yield ArgsKwargs(mask_loader, size=size)
 
 
@@ -202,7 +211,7 @@ def reference_resize_mask(*args, **kwargs):
 
 def reference_inputs_resize_mask():
     for mask_loader in make_mask_loaders(extra_dims=[()], num_objects=[1]):
-        for size in get_sizes(mask_loader.shape[-2:]):
+        for size in _get_resize_sizes(mask_loader.shape[-2:]):
             yield ArgsKwargs(mask_loader, size=size)
 
 
@@ -215,22 +224,14 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             skips=[
-                Skip(
-                    "test_scripted_vs_eager",
-                    condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                    reason="Integer size is not supported when scripting resize_image_tensor.",
-                ),
+                skip_integer_size_jit(),
             ],
         ),
         KernelInfo(
             F.resize_bounding_box,
             sample_inputs_fn=sample_inputs_resize_bounding_box,
             skips=[
-                Skip(
-                    "test_scripted_vs_eager",
-                    condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                    reason="Integer size is not supported when scripting resize_image_tensor.",
-                ),
+                skip_integer_size_jit(),
             ],
         ),
         KernelInfo(
@@ -240,11 +241,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             skips=[
-                Skip(
-                    "test_scripted_vs_eager",
-                    condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                    reason="Integer size is not supported when scripting resize_image_tensor.",
-                ),
+                skip_integer_size_jit(),
             ],
         ),
     ]
@@ -982,7 +979,7 @@ KERNEL_INFOS.extend(
 
 
 _CENTER_CROP_IMAGE_SIZES = [(16, 16), (7, 33), (31, 9)]
-_CENTER_CROP_OUTPUT_SIZES = [[4, 3], [42, 70], [4]]
+_CENTER_CROP_OUTPUT_SIZES = [[4, 3], [42, 70], [4], 3, (5, 2), (6,)]
 
 
 def sample_inputs_center_crop_image_tensor():
@@ -1031,10 +1028,16 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            skips=[
+                skip_integer_size_jit("output_size"),
+            ],
         ),
         KernelInfo(
             F.center_crop_bounding_box,
             sample_inputs_fn=sample_inputs_center_crop_bounding_box,
+            skips=[
+                skip_integer_size_jit("output_size"),
+            ],
         ),
         KernelInfo(
             F.center_crop_mask,
@@ -1042,6 +1045,9 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            skips=[
+                skip_integer_size_jit("output_size"),
+            ],
         ),
     ]
 )
@@ -1477,11 +1483,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
             skips=[
-                Skip(
-                    "test_scripted_vs_eager",
-                    condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                    reason="Integer size is not supported when scripting five_crop_image_tensor.",
-                ),
+                skip_integer_size_jit(),
                 Skip("test_batched_vs_single", reason="Custom batching needed for five_crop_image_tensor."),
                 Skip("test_no_inplace", reason="Output of five_crop_image_tensor is not a tensor."),
                 Skip("test_dtype_and_device_consistency", reason="Output of five_crop_image_tensor is not a tensor."),
@@ -1494,11 +1496,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
             skips=[
-                Skip(
-                    "test_scripted_vs_eager",
-                    condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                    reason="Integer size is not supported when scripting ten_crop_image_tensor.",
-                ),
+                skip_integer_size_jit(),
                 Skip("test_batched_vs_single", reason="Custom batching needed for ten_crop_image_tensor."),
                 Skip("test_no_inplace", reason="Output of ten_crop_image_tensor is not a tensor."),
                 Skip("test_dtype_and_device_consistency", reason="Output of ten_crop_image_tensor is not a tensor."),
