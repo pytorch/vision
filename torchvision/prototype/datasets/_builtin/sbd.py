@@ -103,8 +103,11 @@ class SBD(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
             drop_none=True,
         )
-        if self._split == "train_noval":
-            split_dp = extra_split_dp
+        split_dp, to_be_closed_dp = (
+            (extra_split_dp, split_dp) if self._split == "train_noval" else (split_dp, extra_split_dp)
+        )
+        for _, file in to_be_closed_dp:
+            file.close()
 
         split_dp = Filter(split_dp, path_comparator("name", f"{self._split}.txt"))
         split_dp = LineReader(split_dp, decode=True)
