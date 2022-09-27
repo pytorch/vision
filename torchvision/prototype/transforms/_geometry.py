@@ -431,51 +431,23 @@ class RandomCrop(Transform):
         cropped_height, cropped_width = self.size
 
         if self.pad_if_needed:
-            height_diff = cropped_height - padded_height
-            if height_diff > 0:
-                # This is a micro optimization that avoids some duplicate computation down the line.
-                #
-                # Here, we want to pad the top and bottom by the difference of the `cropped_height` (output) and the
-                # `padded_height` (input). Since the definition of `height_diff` is inverted we check for a negative
-                # value.
-                #
-                # Since we are padding the height by exactly twice the difference, the resulting `height_diff`, if we
-                # were to compute it again after the padding, is its exact inverse:
-                #
-                # new_height_diff =   new_padded_height                                            - cropped_height
-                #                 =   old_padded_height + 2 * (cropped_height - old_padded_height) - cropped_height
-                #                 = - old_padded_height + cropped_height
-                #                 = -(old_padded_height - cropped_height)
-                #                 = - old_height_diff
-                #
-                # Without this trick, all `+=` would need to be changed to `-=` and the re-definition of `height_diff`
-                # would need to moved below the re-definition of `padded_height` and be:
-                #
-                # height_diff = padded_height - cropped_height
-                #
-                # Although this only replaces one subtraction with the unary `-` in this branch, this trick also avoids
-                # re-defining `height_diff` anywhere else.
-                pad_top += height_diff
-                pad_bottom += height_diff
-                padded_height += 2 * height_diff
-            else:
-                height_diff = padded_height - cropped_height
+            if padded_height < cropped_height:
+                diff = cropped_height - padded_height
 
-            width_diff = cropped_width - padded_width
-            if width_diff > 0:
-                # Same as above by substituting 'width' for 'height'.
-                pad_left += width_diff
-                pad_right += width_diff
-                padded_width += 2 * width_diff
-            else:
-                width_diff = padded_width - cropped_width
-        else:
-            height_diff = padded_height - cropped_height
-            width_diff = padded_width - cropped_width
+                pad_top += diff
+                pad_bottom += diff
+                padded_height += 2 * diff
 
-        if height_diff < 0 or width_diff < 0:
+            if padded_width < cropped_width:
+                diff = cropped_width - padded_width
+
+                pad_left += diff
+                pad_right += diff
+                padded_width += 2 * diff
+
+        if padded_height < cropped_height or padded_width < cropped_width:
             raise ValueError(
-                f"Required crop size {(cropped_height, cropped_width)} is larger then "
+                f"Required crop size {(cropped_height, cropped_width)} is larger then the "
                 f"{'padded ' if self.padding is not None else ''}input image size {(padded_height, cropped_width)}."
             )
 
@@ -484,8 +456,12 @@ class RandomCrop(Transform):
         padding = [pad_left, pad_top, pad_right, pad_bottom]
         needs_pad = any(padding)
 
-        top = int(torch.randint(0, height_diff + 1, size=())) if height_diff > 0 else 0
-        left = int(torch.randint(0, width_diff + 1, size=())) if width_diff > 0 else 0
+        top = (
+            int(torch.randint(0, padded_height - cropped_height + 1, size=())) if padded_height > cropped_height else 0
+        )
+        left = (
+            int(torch.randint(0, padded_width - cropped_width + 1, size=())) if padded_width > cropped_width > 0 else 0
+        )
 
         return dict(
             top=top,
