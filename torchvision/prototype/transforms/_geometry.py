@@ -476,7 +476,7 @@ class RandomCrop(Transform):
         if height_diff < 0 or width_diff < 0:
             raise ValueError(
                 f"Required crop size {(cropped_height, cropped_width)} is larger then "
-                f"{'padded ' if self.padding is not None else ''}input image size {(padded_height, cropped_width)}."
+                f"{'padded ' if self.padding is not None else ''}input image size {(padded_height, padded_width)}."
             )
 
         # We need a different order here than we have in self._parsed_padding, since this padding will be parsed again
