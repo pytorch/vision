@@ -206,7 +206,7 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[D
 
                 if not pretrained_positional:
                     warnings.warn(
-                        f"The parameter '{pretrained_param}' is deprecated since 0.13 and will be removed in 0.15, "
+                        f"The parameter '{pretrained_param}' is deprecated since 0.13 and will be removed in the future, "
                         f"please use '{weights_param}' instead."
                     )
 
