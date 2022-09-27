@@ -22,7 +22,7 @@ assert_samples_equal = functools.partial(
 
 
 def extract_datapipes(dp):
-    return get_all_graph_pipes(traverse(dp, only_datapipe=True))
+    return get_all_graph_pipes(traverse(dp))
 
 
 @pytest.fixture(autouse=True)
@@ -42,6 +42,12 @@ def test_coverage():
         )
 
 
+# FIXME: This decorator only applies to `test_data_loader`, but we can't put it there because the class-wide fail on
+#  warnings would take higher priority.
+#  Although we are not using `traverse(..., only_datapipe=...)` in `test_data_loader` directly, the `DataLoader` does.
+#  This will emit the warning, which in turn will fail the test if we don't ignore it. There is a push to fix this in
+#  https://github.com/pytorch/pytorch/pull/85667.
+@pytest.mark.filterwarnings("ignore:`only_datapipe` is deprecated:FutureWarning")
 @pytest.mark.filterwarnings("error")
 class TestCommon:
     @pytest.mark.parametrize("name", datasets.list_datasets())
@@ -101,12 +107,11 @@ class TestCommon:
 
         next(iter(dataset.map(transforms.Identity())))
 
-    @pytest.mark.parametrize("only_datapipe", [False, True])
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_traversable(self, dataset_mock, config, only_datapipe):
+    def test_traversable(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
 
-        traverse(dataset, only_datapipe=only_datapipe)
+        traverse(dataset)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_serializable(self, dataset_mock, config):
