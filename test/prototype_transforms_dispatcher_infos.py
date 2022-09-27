@@ -147,7 +147,7 @@ DISPATCHER_INFOS = [
             features.Mask: F.center_crop_mask,
         },
         skips=[
-            skip_integer_size_jit(),
+            skip_integer_size_jit("output_size"),
         ],
     ),
     DispatcherInfo(
