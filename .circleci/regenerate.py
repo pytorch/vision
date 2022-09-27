@@ -130,7 +130,7 @@ manylinux_images = {
 
 def get_manylinux_image(cu_version):
     if cu_version == "cpu":
-        return "pytorch/manylinux-cuda102"
+        return "pytorch/manylinux-cpu"
     elif cu_version.startswith("cu"):
         cu_suffix = cu_version[len("cu") :]
         return f"pytorch/manylinux-cuda{cu_suffix}"
