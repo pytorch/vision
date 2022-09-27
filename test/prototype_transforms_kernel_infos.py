@@ -73,9 +73,7 @@ class KernelInfo:
 
     def get_marks(self, test_id, args_kwargs):
         return [
-            conditional_mark.mark
-            for conditional_mark in self._test_marks_map.get(test_id, [])
-            if conditional_mark.condition(args_kwargs)
+            test_mark.mark for test_mark in self._test_marks_map.get(test_id, []) if test_mark.condition(args_kwargs)
         ]
 
 

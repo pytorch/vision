@@ -41,7 +41,7 @@ def make_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None, n
         elif len(parts) == 2:
             test_class_name, test_function_name = parts
         else:
-            raise pytest.UsageError()
+            raise pytest.UsageError("Unable to parse the test class and test name from test function")
         test_id = (test_class_name, test_function_name)
 
         argnames = ("info", "args_kwargs")

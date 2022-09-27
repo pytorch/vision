@@ -17,9 +17,6 @@ KERNEL_SAMPLE_INPUTS_FN_MAP = {info.kernel: info.sample_inputs_fn for info in KE
 class DispatcherInfo:
     dispatcher: Callable
     kernels: Dict[Type, Callable]
-    skips: Sequence = dataclasses.field(default_factory=list)
-    _skips_map: Dict = dataclasses.field(default=None, init=False)
-
     test_marks: Sequence[TestMark] = dataclasses.field(default_factory=list)
     _test_marks_map: Dict[str, List[TestMark]] = dataclasses.field(default=None, init=False)
 
@@ -31,9 +28,7 @@ class DispatcherInfo:
 
     def get_marks(self, test_id, args_kwargs):
         return [
-            conditional_mark.mark
-            for conditional_mark in self._test_marks_map.get(test_id, [])
-            if conditional_mark.condition(args_kwargs)
+            test_mark.mark for test_mark in self._test_marks_map.get(test_id, []) if test_mark.condition(args_kwargs)
         ]
 
     def sample_inputs(self, *types):
