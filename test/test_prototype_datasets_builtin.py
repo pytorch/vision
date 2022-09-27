@@ -42,12 +42,6 @@ def test_coverage():
         )
 
 
-# FIXME: This decorator only applies to `test_data_loader`, but we can't put it there because the class-wide fail on
-#  warnings would take higher priority.
-#  Although we are not using `traverse_dps(...)` in `test_data_loader` directly, the `DataLoader` does.
-#  This will emit the warning, which in turn will fail the test if we don't ignore it. There is a push to fix this in
-#  https://github.com/pytorch/pytorch/pull/85667.
-@pytest.mark.filterwarnings("ignore:`only_datapipe` is deprecated:FutureWarning")
 @pytest.mark.filterwarnings("error")
 class TestCommon:
     @pytest.mark.parametrize("name", datasets.list_datasets())
