@@ -1,9 +1,11 @@
 import dataclasses
-from typing import Callable, Dict, Sequence, Type
+
+from collections import defaultdict
+from typing import Callable, Dict, List, Sequence, Type
 
 import pytest
 import torchvision.prototype.transforms.functional as F
-from prototype_transforms_kernel_infos import KERNEL_INFOS, Skip
+from prototype_transforms_kernel_infos import KERNEL_INFOS, TestMark
 from torchvision.prototype import features
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
@@ -15,11 +17,24 @@ KERNEL_SAMPLE_INPUTS_FN_MAP = {info.kernel: info.sample_inputs_fn for info in KE
 class DispatcherInfo:
     dispatcher: Callable
     kernels: Dict[Type, Callable]
-    skips: Sequence[Skip] = dataclasses.field(default_factory=list)
-    _skips_map: Dict[str, Skip] = dataclasses.field(default=None, init=False)
+    skips: Sequence = dataclasses.field(default_factory=list)
+    _skips_map: Dict = dataclasses.field(default=None, init=False)
+
+    test_marks: Sequence[TestMark] = dataclasses.field(default_factory=list)
+    _test_marks_map: Dict[str, List[TestMark]] = dataclasses.field(default=None, init=False)
 
     def __post_init__(self):
-        self._skips_map = {skip.test_name: skip for skip in self.skips}
+        test_marks_map = defaultdict(list)
+        for test_mark in self.test_marks:
+            test_marks_map[test_mark.test_id].append(test_mark)
+        self._test_marks_map = dict(test_marks_map)
+
+    def get_marks(self, test_id, args_kwargs):
+        return [
+            conditional_mark.mark
+            for conditional_mark in self._test_marks_map.get(test_id, [])
+            if conditional_mark.condition(args_kwargs)
+        ]
 
     def sample_inputs(self, *types):
         for type in types or self.kernels.keys():
@@ -27,11 +42,6 @@ class DispatcherInfo:
                 raise pytest.UsageError(f"There is no kernel registered for type {type.__name__}")
 
             yield from KERNEL_SAMPLE_INPUTS_FN_MAP[self.kernels[type]]()
-
-    def maybe_skip(self, *, test_name, args_kwargs, device):
-        skip = self._skips_map.get(test_name)
-        if skip and skip.condition(args_kwargs, device):
-            pytest.skip(skip.reason)
 
 
 DISPATCHER_INFOS = [
@@ -206,12 +216,12 @@ DISPATCHER_INFOS = [
         kernels={
             features.Image: F.five_crop_image_tensor,
         },
-        skips=[
-            Skip(
-                "test_scripted_smoke",
-                condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                reason="Integer size is not supported when scripting five_crop_image_tensor.",
-            ),
+        test_marks=[
+            TestMark(
+                ("TestDispatchers", "test_scripted_smoke"),
+                pytest.mark.xfail(reason="Integer size is not supported when scripting five_crop."),
+                condition=lambda args_kwargs: isinstance(args_kwargs.kwargs["size"], int),
+            )
         ],
     ),
     DispatcherInfo(
@@ -219,12 +229,12 @@ DISPATCHER_INFOS = [
         kernels={
             features.Image: F.ten_crop_image_tensor,
         },
-        skips=[
-            Skip(
-                "test_scripted_smoke",
-                condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                reason="Integer size is not supported when scripting ten_crop_image_tensor.",
-            ),
+        test_marks=[
+            TestMark(
+                ("TestDispatchers", "test_scripted_smoke"),
+                pytest.mark.xfail(reason="Integer size is not supported when scripting ten_crop."),
+                condition=lambda args_kwargs: isinstance(args_kwargs.kwargs["size"], int),
+            )
         ],
     ),
     DispatcherInfo(
