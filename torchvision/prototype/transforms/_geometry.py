@@ -494,10 +494,10 @@ class RandomCrop(Transform):
         )
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
-
         if params["needs_pad"]:
+            fill = self.fill[type(inpt)]
+            fill = F._geometry._convert_fill_arg(fill)
+
             inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
