@@ -269,6 +269,16 @@ _AFFINE_KWARGS = combinations_grid(
 )
 
 
+def _diversify_affine_kwargs_types(affine_kwargs):
+    angle = affine_kwargs["angle"]
+    for diverse_angle in [int(angle), float(angle)]:
+        yield dict(affine_kwargs, angle=diverse_angle)
+
+    shear = affine_kwargs["shear"]
+    for diverse_shear in [tuple(shear), list(shear), int(shear[0]), float(shear[0])]:
+        yield dict(affine_kwargs, shear=diverse_shear)
+
+
 def sample_inputs_affine_image_tensor():
     for image_loader, interpolation_mode, center in itertools.product(
         make_image_loaders(sizes=["random"], dtypes=[torch.float32]),
@@ -287,6 +297,11 @@ def sample_inputs_affine_image_tensor():
                 **_AFFINE_KWARGS[0],
             )
 
+    for image_loader, affine_kwargs in itertools.product(
+        make_image_loaders(sizes=["random"], dtypes=[torch.float32]), _diversify_affine_kwargs_types(_AFFINE_KWARGS[0])
+    ):
+        yield ArgsKwargs(image_loader, **affine_kwargs)
+
 
 def reference_inputs_affine_image_tensor():
     for image_loader, affine_kwargs in itertools.product(make_image_loaders(extra_dims=[()]), _AFFINE_KWARGS):
@@ -304,6 +319,16 @@ def sample_inputs_affine_bounding_box():
             format=bounding_box_loader.format,
             image_size=bounding_box_loader.image_size,
             **_AFFINE_KWARGS[0],
+        )
+
+    for bounding_box_loader, affine_kwargs in itertools.product(
+        make_bounding_box_loaders(), _diversify_affine_kwargs_types(_AFFINE_KWARGS[0])
+    ):
+        yield ArgsKwargs(
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            image_size=bounding_box_loader.image_size,
+            **affine_kwargs,
         )
 
 
@@ -393,6 +418,11 @@ def sample_inputs_affine_image_mask():
     ):
         yield ArgsKwargs(mask_loader, center=center, **_AFFINE_KWARGS[0])
 
+    for mask_loader, affine_kwargs in itertools.product(
+        make_mask_loaders(sizes=["random"], dtypes=[torch.uint8]), _diversify_affine_kwargs_types(_AFFINE_KWARGS[0])
+    ):
+        yield ArgsKwargs(mask_loader, **affine_kwargs)
+
 
 @pil_reference_wrapper
 def reference_affine_mask(*args, **kwargs):
@@ -414,6 +444,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.affine_image_pil),
             reference_inputs_fn=reference_inputs_affine_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            skips=[skip_python_scalar_arg_jit("shear", reason="Scalar shear is not supported by JIT")],
         ),
         KernelInfo(
             F.affine_bounding_box,
@@ -421,6 +452,7 @@ KERNEL_INFOS.extend(
             reference_fn=reference_affine_bounding_box,
             reference_inputs_fn=reference_inputs_affine_bounding_box,
             closeness_kwargs=dict(atol=1, rtol=0),
+            skips=[skip_python_scalar_arg_jit("shear", reason="Scalar shear is not supported by JIT")],
         ),
         KernelInfo(
             F.affine_mask,
@@ -428,6 +460,7 @@ KERNEL_INFOS.extend(
             reference_fn=reference_affine_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            skips=[skip_python_scalar_arg_jit("shear", reason="Scalar shear is not supported by JIT")],
         ),
     ]
 )

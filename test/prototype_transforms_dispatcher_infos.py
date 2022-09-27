@@ -81,6 +81,7 @@ DISPATCHER_INFOS = [
             features.BoundingBox: F.affine_bounding_box,
             features.Mask: F.affine_mask,
         },
+        skips=[skip_python_scalar_arg_jit("shear", reason="Scalar shear is not supported by JIT")],
     ),
     DispatcherInfo(
         F.vertical_flip,
