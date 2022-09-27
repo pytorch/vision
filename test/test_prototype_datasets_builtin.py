@@ -119,6 +119,10 @@ class TestCommon:
     def _collate_fn(self, batch):
         return batch
 
+    # FIXME: Although we are not using `traverse(..., only_datapipe=...)` here directly, the `DataLoader` does. This
+    #  will emit the warning, which in turn will fail the test if we don't ignore it. There is a push to fix this in
+    #  https://github.com/pytorch/pytorch/pull/85667.
+    @pytest.mark.filterwarnings("ignore:`only_datapipe` is deprecated:FutureWarning")
     @pytest.mark.parametrize("num_workers", [0, 1])
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_data_loader(self, dataset_mock, config, num_workers):
