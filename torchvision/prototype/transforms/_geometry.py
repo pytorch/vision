@@ -429,11 +429,10 @@ class RandomCrop(Transform):
             pad_left = pad_right = pad_top = pad_bottom = 0
 
         cropped_height, cropped_width = self.size
-        height_diff = padded_height - cropped_height
-        width_diff = padded_width - cropped_width
 
         if self.pad_if_needed:
-            if height_diff < 0:
+            height_diff = cropped_height - padded_height
+            if height_diff > 0:
                 # This is a micro optimization that avoids some duplicate computation down the line.
                 #
                 # Here, we want to pad the top and bottom by the difference of the `cropped_height` (output) and the
@@ -456,19 +455,23 @@ class RandomCrop(Transform):
                 #
                 # Although this only replaces one subtraction with the unary `-` in this branch, this trick also avoids
                 # re-defining `height_diff` anywhere else.
-                height_diff = -height_diff
-
                 pad_top += height_diff
                 pad_bottom += height_diff
                 padded_height += 2 * height_diff
+            else:
+                height_diff = padded_height - cropped_height
 
-            if width_diff < 0:
+            width_diff = cropped_width - padded_width
+            if width_diff > 0:
                 # Same as above by substituting 'width' for 'height'.
-                width_diff = -width_diff
-
                 pad_left += width_diff
                 pad_right += width_diff
                 padded_width += 2 * width_diff
+            else:
+                width_diff = padded_width - cropped_width
+        else:
+            height_diff = padded_height - cropped_height
+            width_diff = padded_width - cropped_width
 
         if height_diff < 0 or width_diff < 0:
             raise ValueError(
