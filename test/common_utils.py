@@ -205,12 +205,8 @@ def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
 
 
 def cache(fn):
-    """Similar to :func:`functools.cache` (Python >= 3.8) or :func:`functools.lru_cache` with infinite buffer size,
-    but also caches exceptions.
-
-    .. warning::
-
-        Only use this on deterministic functions.
+    """Similar to :func:`functools.cache` (Python >= 3.8) or :func:`functools.lru_cache` with infinite cache size,
+    but this also caches exceptions.
     """
     sentinel = object()
     out_cache = {}
@@ -238,11 +234,3 @@ def cache(fn):
         return out
 
     return wrapper
-
-
-@cache
-def script(fn):
-    try:
-        return torch.jit.script(fn)
-    except Exception as error:
-        raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
