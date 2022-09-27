@@ -413,8 +413,7 @@ class RandomCrop(Transform):
                 _check_padding_arg(padding)
             _check_padding_mode_arg(padding_mode)
 
-        self.padding = padding
-        self._parsed_padding = F._geometry._parse_pad_padding(padding) if padding else None  # type: ignore[arg-type]
+        self.padding = F._geometry._parse_pad_padding(padding) if padding else None  # type: ignore[arg-type]
         self.pad_if_needed = pad_if_needed
         self.fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
@@ -422,8 +421,8 @@ class RandomCrop(Transform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         _, padded_height, padded_width = query_chw(sample)
 
-        if self._parsed_padding is not None:
-            pad_left, pad_right, pad_top, pad_bottom = self._parsed_padding
+        if self.padding is not None:
+            pad_left, pad_right, pad_top, pad_bottom = self.padding
             padded_height += pad_top + pad_bottom
             padded_width += pad_left + pad_right
         else:
