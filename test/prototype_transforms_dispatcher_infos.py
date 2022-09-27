@@ -1,5 +1,6 @@
 import dataclasses
-from typing import Callable, Dict, Sequence, Type
+from collections import defaultdict
+from typing import Callable, Dict, List, Sequence, Type
 
 import pytest
 import torchvision.prototype.transforms.functional as F
@@ -11,12 +12,16 @@ __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
 KERNEL_SAMPLE_INPUTS_FN_MAP = {info.kernel: info.sample_inputs_fn for info in KERNEL_INFOS}
 
 
-def skip_integer_size_jit(name="size"):
+def skip_python_scalar_arg_jit(name, *, reason="Python scalar int or float is not supported when scripting"):
     return Skip(
         "test_scripted_smoke",
-        condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs[name], int),
-        reason="Integer size is not supported when scripting.",
+        condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs[name], (int, float)),
+        reason=reason,
     )
+
+
+def skip_integer_size_jit(name="size"):
+    return skip_python_scalar_arg_jit(name, reason="Integer size is not supported when scripting.")
 
 
 @dataclasses.dataclass
@@ -24,10 +29,13 @@ class DispatcherInfo:
     dispatcher: Callable
     kernels: Dict[Type, Callable]
     skips: Sequence[Skip] = dataclasses.field(default_factory=list)
-    _skips_map: Dict[str, Skip] = dataclasses.field(default=None, init=False)
+    _skips_map: Dict[str, List[Skip]] = dataclasses.field(default=None, init=False)
 
     def __post_init__(self):
-        self._skips_map = {skip.test_name: skip for skip in self.skips}
+        skips_map = defaultdict(list)
+        for skip in self.skips:
+            skips_map[skip.test_name].append(skip)
+        self._skips_map = dict(skips_map)
 
     def sample_inputs(self, *types):
         for type in types or self.kernels.keys():
@@ -37,9 +45,13 @@ class DispatcherInfo:
             yield from KERNEL_SAMPLE_INPUTS_FN_MAP[self.kernels[type]]()
 
     def maybe_skip(self, *, test_name, args_kwargs, device):
-        skip = self._skips_map.get(test_name)
-        if skip and skip.condition(args_kwargs, device):
-            pytest.skip(skip.reason)
+        skips = self._skips_map.get(test_name)
+        if not skips:
+            return
+
+        for skip in skips:
+            if skip.condition(args_kwargs, device):
+                pytest.skip(skip.reason)
 
 
 DISPATCHER_INFOS = [
@@ -142,6 +154,10 @@ DISPATCHER_INFOS = [
         kernels={
             features.Image: F.gaussian_blur_image_tensor,
         },
+        skips=[
+            skip_python_scalar_arg_jit("kernel_size"),
+            skip_python_scalar_arg_jit("sigma"),
+        ],
     ),
     DispatcherInfo(
         F.equalize,

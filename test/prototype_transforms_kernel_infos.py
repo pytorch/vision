@@ -2,7 +2,8 @@ import dataclasses
 import functools
 import itertools
 import math
-from typing import Any, Callable, Dict, Iterable, Optional, Sequence
+from collections import defaultdict
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
 
 import numpy as np
 import pytest
@@ -44,17 +45,25 @@ class KernelInfo:
     # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
     closeness_kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
     skips: Sequence[Skip] = dataclasses.field(default_factory=list)
-    _skips_map: Dict[str, Skip] = dataclasses.field(default=None, init=False)
+    _skips_map: Dict[str, List[Skip]] = dataclasses.field(default=None, init=False)
 
     def __post_init__(self):
         self.kernel_name = self.kernel_name or self.kernel.__name__
         self.reference_inputs_fn = self.reference_inputs_fn or self.sample_inputs_fn
-        self._skips_map = {skip.test_name: skip for skip in self.skips}
+
+        skips_map = defaultdict(list)
+        for skip in self.skips:
+            skips_map[skip.test_name].append(skip)
+        self._skips_map = dict(skips_map)
 
     def maybe_skip(self, *, test_name, args_kwargs, device):
-        skip = self._skips_map.get(test_name)
-        if skip and skip.condition(args_kwargs, device):
-            pytest.skip(skip.reason)
+        skips = self._skips_map.get(test_name)
+        if not skips:
+            return
+
+        for skip in skips:
+            if skip.condition(args_kwargs, device):
+                pytest.skip(skip.reason)
 
 
 DEFAULT_IMAGE_CLOSENESS_KWARGS = dict(
@@ -78,12 +87,16 @@ def pil_reference_wrapper(pil_kernel):
     return wrapper
 
 
-def skip_integer_size_jit(name="size"):
+def skip_python_scalar_arg_jit(name, *, reason="Python scalar int or float is not supported when scripting"):
     return Skip(
         "test_scripted_vs_eager",
-        condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs[name], int),
-        reason="Integer size is not supported when scripting.",
+        condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs[name], (int, float)),
+        reason=reason,
     )
+
+
+def skip_integer_size_jit(name="size"):
+    return skip_python_scalar_arg_jit(name, reason="Integer size is not supported when scripting.")
 
 
 KERNEL_INFOS = []
@@ -1061,8 +1074,8 @@ def sample_inputs_gaussian_blur_image_tensor():
             extra_dims=[(), (4,)],
         ),
         combinations_grid(
-            kernel_size=[(3, 3)],
-            sigma=[None, (3.0, 3.0)],
+            kernel_size=[(3, 3), [3, 3], 5],
+            sigma=[None, (3.0, 3.0), [2.0, 2.0], 4.0, [1.5], (3.14,)],
         ),
     ):
         yield ArgsKwargs(image_loader, **params)
@@ -1073,6 +1086,10 @@ KERNEL_INFOS.append(
         F.gaussian_blur_image_tensor,
         sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        skips=[
+            skip_python_scalar_arg_jit("kernel_size"),
+            skip_python_scalar_arg_jit("sigma"),
+        ],
     )
 )
 
