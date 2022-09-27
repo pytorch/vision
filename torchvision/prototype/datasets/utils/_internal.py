@@ -72,7 +72,7 @@ def _getattr_closure(obj: Any, *, attrs: Sequence[str]) -> Any:
     return obj
 
 
-def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> D:
+def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> D:  # type: ignore[type-var]
     return cast(D, _getattr_closure(path, attrs=name.split(".")))
 
 
