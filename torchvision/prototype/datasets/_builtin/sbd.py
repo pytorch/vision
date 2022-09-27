@@ -62,7 +62,7 @@ class SBD(Dataset):
                     sha256="0b2068f7a359d2907431803e1cd63bf6162da37d7d503b589d3b08c6fd0c2432",
                 )
             )
-        return resources
+        return resources  # type: ignore[return-value]
 
     def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
         path = pathlib.Path(data[0])
