@@ -245,6 +245,7 @@ def cifar100():
 
 
 def voc():
+    # TODO: Also test the "2007-test" key
     return itertools.chain(
         *[
             collect_download_configs(
@@ -252,7 +253,7 @@ def voc():
                 name=f"VOC, {year}",
                 file="voc",
             )
-            for year in ("2007", "2007-test", "2008", "2009", "2010", "2011", "2012")
+            for year in ("2007", "2008", "2009", "2010", "2011", "2012")
         ]
     )
 
