@@ -52,15 +52,17 @@ class DispatcherInfo:
                 raise pytest.UsageError(f"There is no kernel registered for type {feature_type.__name__}")
 
             sample_inputs = self.kernel_infos[feature_type].sample_inputs_fn()
+
             if not filter_metadata:
                 yield from sample_inputs
-            else:
-                for args_kwargs in sample_inputs:
-                    for attribute in feature_type.__annotations__.keys():
-                        if attribute in args_kwargs.kwargs:
-                            del args_kwargs.kwargs[attribute]
+                return
 
-                    yield args_kwargs
+            for args_kwargs in sample_inputs:
+                for attribute in feature_type.__annotations__.keys():
+                    if attribute in args_kwargs.kwargs:
+                        del args_kwargs.kwargs[attribute]
+
+                yield args_kwargs
 
 
 def xfail_python_scalar_arg_jit(name, *, reason=None):
@@ -68,7 +70,7 @@ def xfail_python_scalar_arg_jit(name, *, reason=None):
     return TestMark(
         ("TestDispatchers", "test_scripted_smoke"),
         pytest.mark.xfail(reason=reason),
-        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs[name], (int, float)),
+        condition=lambda args_kwargs: isinstance(args_kwargs[name], (int, float)),
     )
 
 

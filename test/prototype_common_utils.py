@@ -169,6 +169,17 @@ class ArgsKwargs:
         yield self.args
         yield self.kwargs
 
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            return self.args[item]
+        elif isinstance(item, str):
+            return self.kwargs[item]
+        else:
+            raise pytest.UsageError(
+                "`ArgsKwargs` can be accessed by an integer to access the `args` and by a string to access the "
+                f"`kwargs`, but got {item!r} with {type(item).__name__} instead."
+            )
+
     def load(self, device="cpu"):
         args = tuple(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self.args)
         kwargs = {

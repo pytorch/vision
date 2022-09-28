@@ -103,7 +103,7 @@ def xfail_python_scalar_arg_jit(name, *, reason=None):
     return TestMark(
         ("TestKernels", "test_scripted_vs_eager"),
         pytest.mark.xfail(reason=reason),
-        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs[name], (int, float)),
+        condition=lambda args_kwargs: isinstance(args_kwargs[name], (int, float)),
     )
 
 
