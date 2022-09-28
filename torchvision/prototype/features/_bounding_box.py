@@ -78,7 +78,7 @@ class BoundingBox(_Feature):
 
     def resize(  # type: ignore[override]
         self,
-        size: Union[int, List[int]],
+        size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: bool = False,
@@ -93,7 +93,7 @@ class BoundingBox(_Feature):
         output = self._F.crop_bounding_box(self, self.format, top, left)
         return BoundingBox.new_like(self, output, image_size=(height, width))
 
-    def center_crop(self, output_size: Union[int, List[int]]) -> BoundingBox:
+    def center_crop(self, output_size: List[int]) -> BoundingBox:
         output = self._F.center_crop_bounding_box(
             self, format=self.format, output_size=output_size, image_size=self.image_size
         )
@@ -167,7 +167,7 @@ class BoundingBox(_Feature):
         angle: Union[int, float],
         translate: List[float],
         scale: float,
-        shear: Union[int, float, List[float]],
+        shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,

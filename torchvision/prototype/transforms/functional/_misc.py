@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional
 
 import PIL.Image
 import torch
@@ -21,8 +21,9 @@ def normalize(
 
 
 def gaussian_blur_image_tensor(
-    img: torch.Tensor, kernel_size: Union[int, List[int]], sigma: Union[int, float, List[float], None] = None
+    img: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> torch.Tensor:
+    # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
     if len(kernel_size) != 2:
@@ -51,7 +52,7 @@ def gaussian_blur_image_tensor(
 
 @torch.jit.unused
 def gaussian_blur_image_pil(
-    img: PIL.Image.Image, kernel_size: Union[int, List[int]], sigma: Union[int, float, List[float], None] = None
+    img: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> PIL.Image.Image:
     t_img = pil_to_tensor(img)
     output = gaussian_blur_image_tensor(t_img, kernel_size=kernel_size, sigma=sigma)
@@ -59,9 +60,8 @@ def gaussian_blur_image_pil(
 
 
 def gaussian_blur(
-    inpt: features.InputTypeJIT, kernel_size: Union[int, List[int]], sigma: Union[int, float, List[float], None] = None
+    inpt: features.InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> features.InputTypeJIT:
-    # TODO: consider deprecating integers from sigma on the future
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
     elif isinstance(inpt, features._Feature):

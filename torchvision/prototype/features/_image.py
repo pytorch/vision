@@ -141,7 +141,7 @@ class Image(_Feature):
 
     def resize(  # type: ignore[override]
         self,
-        size: Union[int, List[int]],
+        size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: bool = False,
@@ -155,7 +155,7 @@ class Image(_Feature):
         output = self._F.crop_image_tensor(self, top, left, height, width)
         return Image.new_like(self, output)
 
-    def center_crop(self, output_size: Union[int, List[int]]) -> Image:
+    def center_crop(self, output_size: List[int]) -> Image:
         output = self._F.center_crop_image_tensor(self, output_size=output_size)
         return Image.new_like(self, output)
 
@@ -201,7 +201,7 @@ class Image(_Feature):
         angle: Union[int, float],
         translate: List[float],
         scale: float,
-        shear: Union[int, float, List[float]],
+        shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
@@ -282,9 +282,7 @@ class Image(_Feature):
         output = self._F.invert_image_tensor(self)
         return Image.new_like(self, output)
 
-    def gaussian_blur(
-        self, kernel_size: Union[int, List[int]], sigma: Union[int, float, List[float], None] = None
-    ) -> Image:
+    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Image:
         output = self._F.gaussian_blur_image_tensor(self, kernel_size=kernel_size, sigma=sigma)
         return Image.new_like(self, output)
 

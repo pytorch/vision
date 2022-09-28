@@ -124,7 +124,7 @@ class _Feature(torch.Tensor):
     # https://github.com/pytorch/pytorch/blob/e8727994eb7cdb2ab642749d6549bc497563aa06/torch/_tensor.py#L588-L593
     def resize(  # type: ignore[override]
         self,
-        size: Union[int, List[int]],
+        size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: bool = False,
@@ -134,7 +134,7 @@ class _Feature(torch.Tensor):
     def crop(self, top: int, left: int, height: int, width: int) -> _Feature:
         return self
 
-    def center_crop(self, output_size: Union[int, List[int]]) -> _Feature:
+    def center_crop(self, output_size: List[int]) -> _Feature:
         return self
 
     def resized_crop(
@@ -172,7 +172,7 @@ class _Feature(torch.Tensor):
         angle: Union[int, float],
         translate: List[float],
         scale: float,
-        shear: Union[int, float, List[float]],
+        shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
@@ -228,9 +228,7 @@ class _Feature(torch.Tensor):
     def invert(self) -> _Feature:
         return self
 
-    def gaussian_blur(
-        self, kernel_size: Union[int, List[int]], sigma: Union[int, float, List[float], None] = None
-    ) -> _Feature:
+    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> _Feature:
         return self
 
 

@@ -92,7 +92,7 @@ vflip = vertical_flip
 
 def resize_image_tensor(
     image: torch.Tensor,
-    size: Union[int, List[int]],
+    size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: bool = False,
@@ -129,7 +129,7 @@ def resize_image_pil(
     return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation])
 
 
-def resize_mask(mask: torch.Tensor, size: Union[int, List[int]], max_size: Optional[int] = None) -> torch.Tensor:
+def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -145,7 +145,7 @@ def resize_mask(mask: torch.Tensor, size: Union[int, List[int]], max_size: Optio
 
 
 def resize_bounding_box(
-    bounding_box: torch.Tensor, size: Union[int, List[int]], image_size: Tuple[int, int], max_size: Optional[int] = None
+    bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int], max_size: Optional[int] = None
 ) -> torch.Tensor:
     if isinstance(size, int):
         size = [size]
@@ -157,7 +157,7 @@ def resize_bounding_box(
 
 def resize(
     inpt: features.InputTypeJIT,
-    size: Union[int, List[int]],
+    size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,
@@ -178,7 +178,7 @@ def _affine_parse_args(
     angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: Union[int, float, List[float]],
+    shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     center: Optional[List[float]] = None,
 ) -> Tuple[float, List[float], List[float], Optional[List[float]]]:
@@ -229,7 +229,7 @@ def affine_image_tensor(
     angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: Union[int, float, List[float]],
+    shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
@@ -261,7 +261,7 @@ def affine_image_pil(
     angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: Union[int, float, List[float]],
+    shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
@@ -285,7 +285,7 @@ def _affine_bounding_box_xyxy(
     angle: Union[int, float],
     translate: Optional[List[float]] = None,
     scale: Optional[float] = None,
-    shear: Optional[Union[int, float, List[float]]] = None,
+    shear: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
     expand: bool = False,
 ) -> torch.Tensor:
@@ -363,7 +363,7 @@ def affine_bounding_box(
     angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: Union[int, float, List[float]],
+    shear: List[float],
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     original_shape = bounding_box.shape
@@ -385,7 +385,7 @@ def affine_mask(
     angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: Union[int, float, List[float]],
+    shear: List[float],
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
@@ -431,7 +431,7 @@ def affine(
     angle: Union[int, float],
     translate: List[float],
     scale: float,
-    shear: Union[int, float, List[float]],
+    shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
@@ -991,7 +991,7 @@ def elastic(
 elastic_transform = elastic
 
 
-def _center_crop_parse_output_size(output_size: Union[int, List[int]]) -> List[int]:
+def _center_crop_parse_output_size(output_size: List[int]) -> List[int]:
     if isinstance(output_size, numbers.Number):
         return [int(output_size), int(output_size)]
     elif isinstance(output_size, (tuple, list)):
@@ -1020,7 +1020,7 @@ def _center_crop_compute_crop_anchor(
     return crop_top, crop_left
 
 
-def center_crop_image_tensor(img: torch.Tensor, output_size: Union[int, List[int]]) -> torch.Tensor:
+def center_crop_image_tensor(img: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     _, image_height, image_width = get_dimensions_image_tensor(img)
 
@@ -1037,7 +1037,7 @@ def center_crop_image_tensor(img: torch.Tensor, output_size: Union[int, List[int
 
 
 @torch.jit.unused
-def center_crop_image_pil(img: PIL.Image.Image, output_size: Union[int, List[int]]) -> PIL.Image.Image:
+def center_crop_image_pil(img: PIL.Image.Image, output_size: List[int]) -> PIL.Image.Image:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     _, image_height, image_width = get_dimensions_image_pil(img)
 
@@ -1056,7 +1056,7 @@ def center_crop_image_pil(img: PIL.Image.Image, output_size: Union[int, List[int
 def center_crop_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
-    output_size: Union[int, List[int]],
+    output_size: List[int],
     image_size: Tuple[int, int],
 ) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
@@ -1064,7 +1064,7 @@ def center_crop_bounding_box(
     return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left)
 
 
-def center_crop_mask(mask: torch.Tensor, output_size: Union[int, List[int]]) -> torch.Tensor:
+def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
@@ -1079,7 +1079,7 @@ def center_crop_mask(mask: torch.Tensor, output_size: Union[int, List[int]]) -> 
     return output
 
 
-def center_crop(inpt: features.InputTypeJIT, output_size: Union[int, List[int]]) -> features.InputTypeJIT:
+def center_crop(inpt: features.InputTypeJIT, output_size: List[int]) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return center_crop_image_tensor(inpt, output_size)
     elif isinstance(inpt, features._Feature):
@@ -1163,7 +1163,7 @@ def resized_crop(
         return resized_crop_image_pil(inpt, top, left, height, width, size=size, interpolation=interpolation)
 
 
-def _parse_five_crop_size(size: Union[int, List[int]]) -> List[int]:
+def _parse_five_crop_size(size: List[int]) -> List[int]:
     if isinstance(size, numbers.Number):
         size = [int(size), int(size)]
     elif isinstance(size, (tuple, list)):
@@ -1181,7 +1181,7 @@ def _parse_five_crop_size(size: Union[int, List[int]]) -> List[int]:
 
 
 def five_crop_image_tensor(
-    img: torch.Tensor, size: Union[int, List[int]]
+    img: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     crop_height, crop_width = _parse_five_crop_size(size)
     _, image_height, image_width = get_dimensions_image_tensor(img)
@@ -1201,7 +1201,7 @@ def five_crop_image_tensor(
 
 @torch.jit.unused
 def five_crop_image_pil(
-    img: PIL.Image.Image, size: Union[int, List[int]]
+    img: PIL.Image.Image, size: List[int]
 ) -> Tuple[PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]:
     crop_height, crop_width = _parse_five_crop_size(size)
     _, image_height, image_width = get_dimensions_image_pil(img)
@@ -1220,7 +1220,7 @@ def five_crop_image_pil(
 
 
 def five_crop(
-    inpt: features.ImageTypeJIT, size: Union[int, List[int]]
+    inpt: features.ImageTypeJIT, size: List[int]
 ) -> Tuple[
     features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT
 ]:
@@ -1234,9 +1234,7 @@ def five_crop(
         return five_crop_image_pil(inpt, size)
 
 
-def ten_crop_image_tensor(
-    img: torch.Tensor, size: Union[int, List[int]], vertical_flip: bool = False
-) -> List[torch.Tensor]:
+def ten_crop_image_tensor(img: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
     tl, tr, bl, br, center = five_crop_image_tensor(img, size)
 
     if vertical_flip:
@@ -1250,9 +1248,7 @@ def ten_crop_image_tensor(
 
 
 @torch.jit.unused
-def ten_crop_image_pil(
-    img: PIL.Image.Image, size: Union[int, List[int]], vertical_flip: bool = False
-) -> List[PIL.Image.Image]:
+def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: bool = False) -> List[PIL.Image.Image]:
     tl, tr, bl, br, center = five_crop_image_pil(img, size)
 
     if vertical_flip:
@@ -1265,9 +1261,7 @@ def ten_crop_image_pil(
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
 
-def ten_crop(
-    inpt: features.ImageTypeJIT, size: Union[int, List[int]], vertical_flip: bool = False
-) -> List[features.ImageTypeJIT]:
+def ten_crop(inpt: features.ImageTypeJIT, size: List[int], vertical_flip: bool = False) -> List[features.ImageTypeJIT]:
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
         if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
