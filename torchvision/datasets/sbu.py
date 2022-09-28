@@ -22,7 +22,7 @@ class SBU(VisionDataset):
             downloaded again.
     """
 
-    url = "http://www.cs.virginia.edu/~vicente/sbucaptions/SBUCaptionedPhotoDataset.tar.gz"
+    url = "https://www.cs.rice.edu/~vo9/sbucaptions/SBUCaptionedPhotoDataset.tar.gz"
     filename = "SBUCaptionedPhotoDataset.tar.gz"
     md5_checksum = "9aec147b3488753cf758b4d493422285"
 

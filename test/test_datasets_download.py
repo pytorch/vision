@@ -447,6 +447,7 @@ def make_parametrize_kwargs(download_configs):
             omniglot(),
             phototour(),
             sbdataset(),
+            sbu(),
             semeion(),
             stl10(),
             svhn(),
@@ -470,7 +471,6 @@ def test_url_is_accessible(url, md5):
     **make_parametrize_kwargs(
         itertools.chain(
             places365(),  # https://github.com/pytorch/vision/issues/6268
-            sbu(),  # https://github.com/pytorch/vision/issues/6390
         )
     )
 )
