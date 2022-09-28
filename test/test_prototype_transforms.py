@@ -799,7 +799,7 @@ class TestGaussianBlur:
         with pytest.raises(ValueError, match="Kernel size value should be an odd and positive number"):
             transforms.GaussianBlur(4)
 
-        with pytest.raises(TypeError, match="sigma should be a single float or a list/tuple with length 2"):
+        with pytest.raises(TypeError, match="sigma should be a single int or float or a list/tuple with length 2 floats."):
             transforms.GaussianBlur(3, sigma=[1, 2, 3])
 
         with pytest.raises(ValueError, match="If sigma is a single number, it must be positive"):
@@ -833,7 +833,7 @@ class TestGaussianBlur:
         if isinstance(sigma, (tuple, list)):
             assert transform.sigma == sigma
         else:
-            assert transform.sigma == (sigma, sigma)
+            assert transform.sigma == [sigma, sigma]
 
         fn = mocker.patch("torchvision.prototype.transforms.functional.gaussian_blur")
         inpt = mocker.MagicMock(spec=features.Image)
