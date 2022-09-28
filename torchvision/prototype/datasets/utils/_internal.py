@@ -2,7 +2,7 @@ import csv
 import functools
 import pathlib
 import pickle
-from typing import Any, BinaryIO, Callable, cast, Dict, IO, Iterator, List, Sequence, Sized, Tuple, TypeVar, Union
+from typing import Any, BinaryIO, Callable, Dict, IO, Iterator, List, Sequence, Sized, Tuple, TypeVar, Union
 
 import torch
 import torch.distributed as dist
@@ -72,8 +72,8 @@ def _getattr_closure(obj: Any, *, attrs: Sequence[str]) -> Any:
     return obj
 
 
-def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> D:
-    return cast(D, _getattr_closure(path, attrs=name.split(".")))
+def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> Any:
+    return _getattr_closure(path, attrs=name.split("."))
 
 
 def _path_accessor_closure(data: Tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:
