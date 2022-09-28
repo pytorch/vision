@@ -33,7 +33,6 @@ printf "Installing PyTorch with %s\n" "${cudatoolkit}"
 if [ "${os}" == "MacOSX" ]; then
     conda install -y -c "pytorch-${UPLOAD_CHANNEL}" "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}"
 else
-    printf "conda install -y pytorch ${cudatoolkit} -c pytorch-${UPLOAD_CHANNEL} -c nvidia"
     conda install -y  pytorch "${cudatoolkit}" -c "pytorch-${UPLOAD_CHANNEL}" -c nvidia
 fi
 
