@@ -218,8 +218,11 @@ def _affine_parse_args(
     if len(shear) != 2:
         raise ValueError(f"Shear should be a sequence containing two values. Got {shear}")
 
-    if center is not None and not isinstance(center, (list, tuple)):
-        raise TypeError("Argument center should be a sequence")
+    if center is not None:
+        if not isinstance(center, (list, tuple)):
+            raise TypeError("Argument center should be a sequence")
+        else:
+            center = [float(c) for c in center]
 
     return angle, translate, shear, center
 
