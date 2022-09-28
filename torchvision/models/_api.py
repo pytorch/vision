@@ -112,10 +112,7 @@ def get_weight(name: str) -> WeightsEnum:
     return weights_enum.from_str(value_name)
 
 
-W = TypeVar("W", bound=WeightsEnum)
-
-
-def get_model_weights(name: Union[Callable, str]) -> W:
+def get_model_weights(name: Union[Callable, str]) -> WeightsEnum:
     """
     Retuns the weights enum class associated to the given model.
 
@@ -125,10 +122,10 @@ def get_model_weights(name: Union[Callable, str]) -> W:
         name (callable or str): The model builder function or the name under which it is registered.
 
     Returns:
-        weights_enum (W): The weights enum class associated with the model.
+        weights_enum (WeightsEnum): The weights enum class associated with the model.
     """
     model = get_model_builder(name) if isinstance(name, str) else name
-    return cast(W, _get_enum_from_fn(model))
+    return _get_enum_from_fn(model)
 
 
 def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
@@ -199,7 +196,7 @@ def list_models(module: Optional[ModuleType] = None) -> List[str]:
     return sorted(models)
 
 
-def get_model_builder(name: str) -> Callable[..., M]:
+def get_model_builder(name: str) -> Callable[..., nn.Module]:
     """
     Gets the model name and returns the model builder method.
 
@@ -219,7 +216,7 @@ def get_model_builder(name: str) -> Callable[..., M]:
     return fn
 
 
-def get_model(name: str, **config: Any) -> M:
+def get_model(name: str, **config: Any) -> nn.Module:
     """
     Gets the model name and configuration and returns an instantiated model.
 

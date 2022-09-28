@@ -113,11 +113,10 @@ def _get_cache_path(filepath):
 def load_data(traindir, valdir, args):
     # Data loading code
     print("Loading data")
-    val_resize_size, val_crop_size, train_crop_size, center_crop = (
+    val_resize_size, val_crop_size, train_crop_size = (
         args.val_resize_size,
         args.val_crop_size,
         args.train_crop_size,
-        args.train_center_crop,
     )
     interpolation = InterpolationMode(args.interpolation)
 
@@ -136,7 +135,6 @@ def load_data(traindir, valdir, args):
         dataset = torchvision.datasets.ImageFolder(
             traindir,
             presets.ClassificationPresetTrain(
-                center_crop=center_crop,
                 crop_size=train_crop_size,
                 interpolation=interpolation,
                 auto_augment_policy=auto_augment_policy,
@@ -500,11 +498,6 @@ def get_args_parser(add_help=True):
     )
     parser.add_argument(
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
-    )
-    parser.add_argument(
-        "--train-center-crop",
-        action="store_true",
-        help="use center crop instead of random crop for training (default: False)",
     )
     parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
     parser.add_argument("--ra-sampler", action="store_true", help="whether to use Repeated Augmentation in training")
