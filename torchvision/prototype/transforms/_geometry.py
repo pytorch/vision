@@ -447,8 +447,8 @@ class RandomCrop(Transform):
 
         if padded_height < cropped_height or padded_width < cropped_width:
             raise ValueError(
-                f"Required crop size {(cropped_height, cropped_width)} is larger then the "
-                f"{'padded ' if self.padding is not None else ''}input image size {(padded_height, cropped_width)}."
+                f"Required crop size {(cropped_height, cropped_width)} is larger than "
+                f"{'padded ' if self.padding is not None else ''}input image size {(padded_height, padded_width)}."
             )
 
         # We need a different order here than we have in self.padding since this padding will be parsed again in `F.pad`
