@@ -436,6 +436,16 @@ def reference_inputs_resize_mask():
         yield ArgsKwargs(mask_loader, **affine_kwargs)
 
 
+# FIXME: @datumbox, remove this as soon as you have fixed the behavior in https://github.com/pytorch/vision/pull/6636
+def skip_scalar_shears(*test_names):
+    for test_name in test_names:
+        yield Skip(
+            test_name,
+            condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["shear"], (int, float)),
+            reason="The kernel is broken for a scalar `shear`",
+        )
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -452,7 +462,14 @@ KERNEL_INFOS.extend(
             reference_fn=reference_affine_bounding_box,
             reference_inputs_fn=reference_inputs_affine_bounding_box,
             closeness_kwargs=dict(atol=1, rtol=0),
-            skips=[skip_python_scalar_arg_jit("shear", reason="Scalar shear is not supported by JIT")],
+            skips=[
+                skip_python_scalar_arg_jit("shear", reason="Scalar shear is not supported by JIT"),
+                *skip_scalar_shears(
+                    "test_batched_vs_single",
+                    "test_no_inplace",
+                    "test_dtype_and_device_consistency",
+                ),
+            ],
         ),
         KernelInfo(
             F.affine_mask,
