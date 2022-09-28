@@ -23,6 +23,7 @@ def normalize(
 def gaussian_blur_image_tensor(
     img: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> torch.Tensor:
+    # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
     if len(kernel_size) != 2:
