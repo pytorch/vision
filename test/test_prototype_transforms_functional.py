@@ -1,4 +1,3 @@
-import functools
 import math
 import os
 
@@ -27,7 +26,7 @@ def script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
-def make_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None, name_fn=lambda info: str(info)):
+def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None):
     if condition is None:
 
         def condition(info):
@@ -41,7 +40,7 @@ def make_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None, n
         elif len(parts) == 2:
             test_class_name, test_function_name = parts
         else:
-            raise pytest.UsageError("Unable to parse the test class and test name from test function")
+            raise pytest.UsageError("Unable to parse the test class name and test function name from test function")
         test_id = (test_class_name, test_function_name)
 
         argnames = ("info", "args_kwargs")
@@ -51,7 +50,6 @@ def make_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None, n
                 continue
 
             args_kwargs = list(args_kwargs_fn(info))
-            name = name_fn(info)
             idx_field_len = len(str(len(args_kwargs)))
 
             for idx, args_kwargs_ in enumerate(args_kwargs):
@@ -60,7 +58,7 @@ def make_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None, n
                         info,
                         args_kwargs_,
                         marks=info.get_marks(test_id, args_kwargs_),
-                        id=f"{name}-{idx:0{idx_field_len}}",
+                        id=f"{info.id}-{idx:0{idx_field_len}}",
                     )
                 )
 
@@ -70,14 +68,11 @@ def make_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None, n
 
 
 class TestKernels:
-    make_kernel_args_kwargs_parametrization = functools.partial(
-        make_args_kwargs_parametrization, name_fn=lambda info: info.kernel_name
-    )
-    sample_inputs = kernel_sample_inputs = make_kernel_args_kwargs_parametrization(
+    sample_inputs = make_info_args_kwargs_parametrization(
         KERNEL_INFOS,
         args_kwargs_fn=lambda kernel_info: kernel_info.sample_inputs_fn(),
     )
-    reference_inputs = make_kernel_args_kwargs_parametrization(
+    reference_inputs = make_info_args_kwargs_parametrization(
         KERNEL_INFOS,
         args_kwargs_fn=lambda info: info.reference_inputs_fn(),
         condition=lambda info: info.reference_fn is not None,
@@ -207,10 +202,7 @@ def spy_on(mocker):
 
 
 class TestDispatchers:
-    make_dispatcher_args_kwargs_parametrization = functools.partial(
-        make_args_kwargs_parametrization, name_fn=lambda info: info.dispatcher.__name__
-    )
-    image_sample_inputs = kernel_sample_inputs = make_dispatcher_args_kwargs_parametrization(
+    image_sample_inputs = make_info_args_kwargs_parametrization(
         DISPATCHER_INFOS,
         args_kwargs_fn=lambda info: info.sample_inputs(features.Image),
         condition=lambda info: features.Image in info.kernels,
@@ -250,13 +242,13 @@ class TestDispatchers:
         image_simple_tensor = torch.Tensor(image_feature)
 
         kernel_info = info.kernel_infos[features.Image]
-        spy = spy_on(kernel_info.kernel, module=info.dispatcher.__module__, name=kernel_info.kernel_name)
+        spy = spy_on(kernel_info.kernel, module=info.dispatcher.__module__, name=kernel_info.id)
 
         info.dispatcher(image_simple_tensor, *other_args, **kwargs)
 
         spy.assert_called_once()
 
-    @make_dispatcher_args_kwargs_parametrization(
+    @make_info_args_kwargs_parametrization(
         DISPATCHER_INFOS,
         args_kwargs_fn=lambda info: info.sample_inputs(features.Image),
         condition=lambda info: info.pil_kernel_info is not None,
@@ -270,22 +262,23 @@ class TestDispatchers:
         image_pil = F.to_image_pil(image_feature)
 
         pil_kernel_info = info.pil_kernel_info
-        spy = spy_on(pil_kernel_info.kernel, module=info.dispatcher.__module__, name=pil_kernel_info.kernel_name)
+        spy = spy_on(pil_kernel_info.kernel, module=info.dispatcher.__module__, name=pil_kernel_info.id)
 
         info.dispatcher(image_pil, *other_args, **kwargs)
 
         spy.assert_called_once()
 
-    @make_dispatcher_args_kwargs_parametrization(
+    @make_info_args_kwargs_parametrization(
         DISPATCHER_INFOS,
         args_kwargs_fn=lambda info: info.sample_inputs(),
     )
     def test_dispatch_feature(self, info, args_kwargs, spy_on):
         (feature, *other_args), kwargs = args_kwargs.load()
 
-        method = getattr(feature, info.method_name)
+        method_name = info.id
+        method = getattr(feature, method_name)
         feature_type = type(feature)
-        spy = spy_on(method, module=feature_type.__module__, name=f"{feature_type.__name__}.{info.method_name}")
+        spy = spy_on(method, module=feature_type.__module__, name=f"{feature_type.__name__}.{method_name}")
 
         info.dispatcher(feature, *other_args, **kwargs)
 
