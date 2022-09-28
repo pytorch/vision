@@ -1,19 +1,32 @@
 from __future__ import annotations
 
+import contextlib
+
 import functools
 from collections import defaultdict
-from typing import Any, Callable, cast, Dict, Optional, Tuple, Type
+from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
-from torch.utils._pytree import _get_node_type, LeafSpec, SUPPORTED_NODES, tree_flatten, tree_unflatten
+from torch.utils._pytree import (
+    _get_node_type,
+    LeafSpec,
+    PyTree,
+    SUPPORTED_NODES,
+    tree_flatten,
+    tree_unflatten,
+    TreeSpec,
+)
+from torch.utils.data import Dataset
 
 from torchvision import datasets
 from torchvision.prototype import features
 from torchvision.transforms import functional as F
 
+T = TypeVar("T")
 
-def tree_flatten_to_spec(pytree, spec):
+
+def tree_flatten_to_spec(pytree: PyTree, spec: TreeSpec) -> List[Any]:
     if isinstance(spec, LeafSpec):
         return [pytree]
 
@@ -28,87 +41,125 @@ def tree_flatten_to_spec(pytree, spec):
     return flat
 
 
-# FIXME: make this a proper dataset
-class DatasetFeatureWrapper:
-    __wrappers_fns__: Dict[
-        Type[datasets.VisionDataset],
-        Callable[[datasets.VisionDataset, bool, Dict[Type[features._Feature], Optional[torch.dtype]]], Any],
-    ] = {}
+class VisionDatasetFeatureWrapper(Dataset):
+    _wrappers_fns: Dict[Type[datasets.VisionDataset], PyTree] = {}
 
-    def __init__(self, dataset, wrappers):
-        self.__dataset__ = dataset
-        self.__wrappers__ = wrappers
+    def __init__(self, dataset: datasets.VisionDataset, wrappers: PyTree) -> None:
+        self.vision_dataset = dataset
+        self.sample_wrappers = wrappers
 
-    # FIXME: re-route everything to __dataset__ besides __getitem__
+        # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply the
+        # transforms
+        self.transform, dataset.transform = dataset.transform, None
+        self.target_transform, dataset.target_transform = dataset.target_transform, None
+        self.transforms, dataset.transforms = dataset.transforms, None
+
+    def __getattr__(self, item: str) -> Any:
+        with contextlib.suppress(AttributeError):
+            return object.__getattribute__(self, item)
+
+        return getattr(self.vision_dataset, item)
 
     def __getitem__(self, idx: int) -> Any:
-        # Do we wrap before or after the transforms? -> most likely after
-        sample = self.__dataset__[idx]
+        # This gets us the raw sample since we disabled the transforms for the underlying dataset in the constructor
+        # of this class
+        sample = self.vision_dataset[idx]
 
-        wrappers_flat, spec = tree_flatten(self.__wrappers__)
+        wrappers_flat, spec = tree_flatten(self.sample_wrappers)
+        # We cannot use `tree_flatten` directly, because the spec of `self.sample_wrappers` and `sample` might differ.
+        # For example, for `COCODetection` the target is a list of dicts. To be able to wrap this into a dict of lists,
+        # we need to have access to the whole list, but `tree_flatten` would also flatten it.
         sample_flat = tree_flatten_to_spec(sample, spec)
-
         wrapped_sample_flat = [wrapper(item) for item, wrapper in zip(sample_flat, wrappers_flat)]
+        sample = tree_unflatten(wrapped_sample_flat, spec)
 
-        return tree_unflatten(wrapped_sample_flat, spec)
+        # We don't need to care about `transform` and `target_transform` here since `VisionDataset` joins them into a
+        # `transforms` internally:
+        # https://github.com/pytorch/vision/blob/2d92728341bbd3dc1e0f1e86c6a436049bbb3403/torchvision/datasets/vision.py#L52-L54
+        if self.transforms is not None:
+            sample = self.transforms(*sample)
+
+        return sample
+
+    def __len__(self) -> int:
+        return len(self.vision_dataset)
 
     @classmethod
-    def __register_wrappers_fn__(cls, dataset_type: Type[datasets.VisionDataset]):
-        def foo(wrappers_fn):
-            cls.__wrappers_fns__[dataset_type] = wrappers_fn
+    def _register_wrappers_fn(cls, dataset_type: Type[datasets.VisionDataset]) -> Callable[[PyTree], PyTree]:
+        def register(wrappers_fn: PyTree) -> PyTree:
+            cls._wrappers_fns[dataset_type] = wrappers_fn
             return wrappers_fn
 
-        return foo
+        return register
 
     @classmethod
     def from_torchvision_dataset(
-        cls, dataset: datasets.VisionDataset, *, keep_pil_image: bool = False, dtypes=None
-    ) -> DatasetFeatureWrapper:
-        dtypes = defaultdict(lambda: None, dtypes or dict())
-        wrappers_fn = cls.__wrappers_fns__[type(dataset)]
-        wrappers = wrappers_fn(dataset, keep_pil_image, dtypes)
+        cls,
+        dataset: datasets.VisionDataset,
+        *,
+        keep_pil_image: bool = False,
+        bounding_box_format: Optional[features.BoundingBoxFormat] = None,
+        dtypes: Optional[Dict[Type[features._Feature], Optional[torch.dtype]]] = None,
+    ) -> VisionDatasetFeatureWrapper:
+        dtypes: Dict[Type[features._Feature], Optional[torch.dtype]] = {
+            features.Image: torch.uint8,
+            features.Label: torch.int64,
+            features.Mask: torch.uint8,
+            features.BoundingBox: torch.float32,
+            features.GenericFeature: None,
+            **(dtypes or dict()),
+        }
+        wrappers_fn = cls._wrappers_fns[type(dataset)]
+        wrappers = wrappers_fn(dataset, keep_pil_image, bounding_box_format, dtypes)
         return cls(dataset, wrappers)
 
 
-def identity_wrapper(obj):
+def identity_wrapper(obj: T) -> T:
     return obj
 
 
-def generic_feature_wrapper(data):
+def generic_feature_wrapper(data: Any) -> features.GenericFeature:
     return features.GenericFeature(data)
 
 
-def wrap_image(image, *, keep_pil_image, dtype):
-    assert isinstance(image, PIL.Image.Image)
-    if keep_pil_image:
-        return image
-
+def wrap_image(image: PIL.Image.Image, *, dtype: Optional[torch.dtype]) -> features.Image:
     image = F.pil_to_tensor(image)
-    image = F.convert_image_dtype(image, dtype=dtype)
+    if dtype is not None:
+        image = F.convert_image_dtype(image, dtype=dtype)
     return features.Image(image)
 
 
-def make_image_wrapper(*, keep_pil_image, dtypes):
-    return functools.partial(wrap_image, keep_pil_image=keep_pil_image, dtype=dtypes[features.Image])
+def make_image_wrapper(
+    *, keep_pil_image: bool, dtypes: Dict[Type[features._Feature], Optional[torch.dtype]]
+) -> Callable[[PIL.Image.Image], Union[PIL.Image.Image, features.Image]]:
+    if keep_pil_image:
+        return identity_wrapper
+
+    return functools.partial(wrap_image, dtype=dtypes[features.Image])
 
 
-def wrap_label(label, *, categories, dtype):
+def wrap_label(label: Any, *, categories: Optional[Sequence[str]], dtype: Optional[torch.dtype]) -> features.Label:
     return features.Label(label, categories=categories, dtype=dtype)
 
 
-def make_label_wrapper(*, categories, dtypes):
+def make_label_wrapper(
+    *, categories: Optional[Sequence[str]], dtypes: Dict[Type[features._Feature], Optional[torch.dtype]]
+) -> Callable[[Any], features.Label]:
     return functools.partial(wrap_label, categories=categories, dtype=dtypes[features.Label])
 
 
-def wrap_segmentation_mask(segmentation_mask, *, dtype):
+def wrap_segmentation_mask(segmentation_mask: PIL.Image.Image, *, dtype: Optional[torch.dtype]) -> features.Mask:
     assert isinstance(segmentation_mask, PIL.Image.Image)
 
     segmentation_mask = F.pil_to_tensor(segmentation_mask)
-    segmentation_mask = F.convert_image_dtype(segmentation_mask, dtype=dtype)
+    if dtype is not None:
+        segmentation_mask = F.convert_image_dtype(segmentation_mask, dtype=dtype)
     return features.Mask(segmentation_mask.squeeze(0))
 
 
-def make_segmentation_mask_wrapper(*, dtypes):
+def make_segmentation_mask_wrapper(
+    *, dtypes: Dict[Type[features._Feature], Optional[torch.dtype]]
+) -> Callable[[Any], features.Mask]:
     return functools.partial(wrap_segmentation_mask, dtype=dtypes[features.Mask])
 
 
@@ -124,7 +175,12 @@ CATEGORIES_GETTER = defaultdict(
 )
 
 
-def classification_wrappers(dataset, keep_pil_image, dtypes):
+def classification_wrappers(
+    dataset: datasets.VisionDataset,
+    keep_pil_image: bool,
+    bounding_box_format: Optional[features.BoundingBoxFormat],
+    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+) -> Any:
     return (
         make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes),
         make_label_wrapper(categories=CATEGORIES_GETTER[type(dataset)](dataset), dtypes=dtypes),
@@ -139,10 +195,15 @@ for dataset_type in [
     datasets.MNIST,
     datasets.FashionMNIST,
 ]:
-    DatasetFeatureWrapper.__register_wrappers_fn__(dataset_type)(classification_wrappers)
+    VisionDatasetFeatureWrapper._register_wrappers_fn(dataset_type)(classification_wrappers)
 
 
-def segmentation_wrappers(dataset, keep_pil_image, dtypes):
+def segmentation_wrappers(
+    dataset: datasets.VisionDataset,
+    keep_pil_image: bool,
+    bounding_box_format: Optional[features.BoundingBoxFormat],
+    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+) -> Any:
     return (
         make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes),
         make_segmentation_mask_wrapper(dtypes=dtypes),
@@ -152,11 +213,16 @@ def segmentation_wrappers(dataset, keep_pil_image, dtypes):
 for dataset_type in [
     datasets.VOCSegmentation,
 ]:
-    DatasetFeatureWrapper.__register_wrappers_fn__(dataset_type)(classification_wrappers)
+    VisionDatasetFeatureWrapper._register_wrappers_fn(dataset_type)(segmentation_wrappers)
 
 
-@DatasetFeatureWrapper.__register_wrappers_fn__(datasets.Caltech101)
-def caltech101_dectection_wrappers(dataset, keep_pil_image, dtypes):
+@VisionDatasetFeatureWrapper._register_wrappers_fn(datasets.Caltech101)
+def caltech101_dectection_wrappers(
+    dataset: datasets.Caltech101,
+    keep_pil_image: bool,
+    bounding_box_format: Optional[features.BoundingBoxFormat],
+    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+) -> Any:
     target_type_wrapper_map = {
         "category": make_label_wrapper(categories=dataset.categories, dtypes=dtypes),
         "annotation": features.GenericFeature,
@@ -167,8 +233,13 @@ def caltech101_dectection_wrappers(dataset, keep_pil_image, dtypes):
     )
 
 
-@DatasetFeatureWrapper.__register_wrappers_fn__(datasets.CocoDetection)
-def coco_dectection_wrappers(dataset, keep_pil_image, dtypes):
+@VisionDatasetFeatureWrapper._register_wrappers_fn(datasets.CocoDetection)
+def coco_dectection_wrappers(
+    dataset: datasets.CocoDetection,
+    keep_pil_image: bool,
+    bounding_box_format: Optional[features.BoundingBoxFormat],
+    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+) -> Any:
     idx_to_category = {idx: cat["name"] for idx, cat in dataset.coco.cats.items()}
     idx_to_category[0] = "__background__"
     for idx in set(range(91)) - idx_to_category.keys():
@@ -186,13 +257,14 @@ def coco_dectection_wrappers(dataset, keep_pil_image, dtypes):
         )
         return torch.from_numpy(mask.decode(segmentation)).to(torch.bool)
 
-    def sample_wrapper(sample):
+    def sample_wrapper(sample: Tuple[PIL.Image, List[Dict[str, Any]]]) -> Tuple[features.Image, Dict[str, Any]]:
         image, target = sample
 
         _, height, width = F.get_dimensions(image)
         image_size = height, width
 
-        wrapped_image = wrap_image(image, keep_pil_image=keep_pil_image, dtype=dtypes[features.Image])
+        image_wrapper = make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes)
+        wrapped_image = image_wrapper(image)
 
         batched_target = defaultdict(list)
         for object in target:
@@ -218,19 +290,31 @@ def coco_dectection_wrappers(dataset, keep_pil_image, dtypes):
             ),
             labels=features.Label(batched_target.pop("category_id"), categories=categories),
         )
+        if bounding_box_format is not None:
+            wrapped_target["bbox"] = cast(features.BoundingBox, wrapped_target["bbox"]).to_format(bounding_box_format)
 
         return wrapped_image, wrapped_target
 
     return sample_wrapper
 
 
-@DatasetFeatureWrapper.__register_wrappers_fn__(datasets.CocoCaptions)
-def coco_captions_wrappers(dataset, keep_pil_image, dtypes):
+@VisionDatasetFeatureWrapper._register_wrappers_fn(datasets.CocoCaptions)
+def coco_captions_wrappers(
+    dataset: datasets.CocoCaptions,
+    keep_pil_image: bool,
+    bounding_box_format: Optional[features.BoundingBoxFormat],
+    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+) -> Any:
     return make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes), identity_wrapper
 
 
-@DatasetFeatureWrapper.__register_wrappers_fn__(datasets.VOCDetection)
-def voc_detection_wrappers(dataset, keep_pil_image, dtypes):
+@VisionDatasetFeatureWrapper._register_wrappers_fn(datasets.VOCDetection)
+def voc_detection_wrappers(
+    dataset: datasets.VOCDetection,
+    keep_pil_image: bool,
+    bounding_box_format: Optional[features.BoundingBoxFormat],
+    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+) -> Any:
     categories = [
         "__background__",
         "aeroplane",
@@ -256,7 +340,7 @@ def voc_detection_wrappers(dataset, keep_pil_image, dtypes):
     ]
     categories_to_idx = dict(zip(categories, range(len(categories))))
 
-    def target_wrapper(target):
+    def target_wrapper(target: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
         batched_object = defaultdict(list)
         for object in target["annotation"]["object"]:
             for key, value in object.items():
@@ -269,12 +353,16 @@ def voc_detection_wrappers(dataset, keep_pil_image, dtypes):
                     [int(bndbox[part]) for part in ("xmin", "ymin", "xmax", "ymax")]
                     for bndbox in batched_object["bndbox"]
                 ],
-                format="xyxy",
+                format=features.BoundingBoxFormat.XYXY,
                 image_size=cast(
                     Tuple[int, int], tuple(int(target["annotation"]["size"][dim]) for dim in ("height", "width"))
                 ),
             ),
         )
+        if bounding_box_format is not None:
+            wrapped_object["bndbox"] = cast(features.BoundingBox, wrapped_object["bndbox"]).to_format(
+                bounding_box_format
+            )
         wrapped_object["labels"] = features.Label(
             [categories_to_idx[category] for category in batched_object["name"]],
             categories=categories,
@@ -287,9 +375,14 @@ def voc_detection_wrappers(dataset, keep_pil_image, dtypes):
     return make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes), target_wrapper
 
 
-@DatasetFeatureWrapper.__register_wrappers_fn__(datasets.SBDataset)
-def sbd_wrappers(dataset, keep_pil_image, dtypes):
+@VisionDatasetFeatureWrapper._register_wrappers_fn(datasets.SBDataset)
+def sbd_wrappers(
+    dataset: datasets.SBDataset,
+    keep_pil_image: bool,
+    bounding_box_format: Optional[features.BoundingBoxFormat],
+    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+) -> Any:
     return {
         "boundaries": (make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes), generic_feature_wrapper),
-        "segmentation": segmentation_wrappers(dataset, keep_pil_image, dtypes),
+        "segmentation": segmentation_wrappers(dataset, keep_pil_image, bounding_box_format, dtypes),
     }[dataset.mode]

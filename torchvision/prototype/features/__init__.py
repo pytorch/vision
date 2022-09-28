@@ -15,4 +15,4 @@ from ._image import (
 from ._label import Label, OneHotLabel
 from ._mask import Mask
 
-from ._dataset_wrapper import DatasetFeatureWrapper  # usort: skip
+from ._dataset_wrapper import VisionDatasetFeatureWrapper  # usort: skip
