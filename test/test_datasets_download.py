@@ -245,6 +245,7 @@ def cifar100():
 
 
 def voc():
+    # TODO: Also test the "2007-test" key
     return itertools.chain(
         *[
             collect_download_configs(
@@ -252,7 +253,7 @@ def voc():
                 name=f"VOC, {year}",
                 file="voc",
             )
-            for year in ("2007", "2007-test", "2008", "2009", "2010", "2011", "2012")
+            for year in ("2007", "2008", "2009", "2010", "2011", "2012")
         ]
     )
 
@@ -447,6 +448,7 @@ def make_parametrize_kwargs(download_configs):
             omniglot(),
             phototour(),
             sbdataset(),
+            sbu(),
             semeion(),
             stl10(),
             svhn(),
@@ -470,7 +472,6 @@ def test_url_is_accessible(url, md5):
     **make_parametrize_kwargs(
         itertools.chain(
             places365(),  # https://github.com/pytorch/vision/issues/6268
-            sbu(),  # https://github.com/pytorch/vision/issues/6390
         )
     )
 )
