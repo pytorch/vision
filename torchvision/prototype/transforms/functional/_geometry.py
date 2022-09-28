@@ -279,26 +279,33 @@ def _affine_bounding_box_xyxy(
     bounding_box: torch.Tensor,
     image_size: Tuple[int, int],
     angle: float,
-    translate: List[float],
-    scale: float,
-    shear: List[float],
+    translate: Optional[List[float]] = None,
+    scale: Optional[float] = None,
+    shear: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
     expand: bool = False,
 ) -> torch.Tensor:
-    # This is just a dummy value to avoid raising an error in `_affine_parse_args` although we don't have an
-    # interpolation mode for bounding boxes.
-    interpolation = InterpolationMode.NEAREST
-    angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
-
-    if center is None:
-        height, width = image_size
-        center = [width * 0.5, height * 0.5]
-
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
     device = bounding_box.device
 
+    if translate is None:
+        translate = [0.0, 0.0]
+
+    if scale is None:
+        scale = 1.0
+
+    if shear is None:
+        shear = [0.0, 0.0]
+
+    if center is None:
+        height, width = image_size
+        center_f = [width * 0.5, height * 0.5]
+    else:
+        center_f = [float(c) for c in center]
+
+    translate_f = [float(t) for t in translate]
     affine_matrix = torch.tensor(
-        _get_inverse_affine_matrix(center, angle, translate, scale, shear, inverted=False),
+        _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear, inverted=False),
         dtype=dtype,
         device=device,
     ).view(2, 3)
@@ -521,16 +528,7 @@ def rotate_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
-    out_bboxes = _affine_bounding_box_xyxy(
-        bounding_box,
-        image_size,
-        angle=-angle,
-        translate=[0.0, 0.0],
-        scale=1.0,
-        shear=[0.0, 0.0],
-        center=center,
-        expand=expand,
-    )
+    out_bboxes = _affine_bounding_box_xyxy(bounding_box, image_size, angle=-angle, center=center, expand=expand)
 
     return convert_format_bounding_box(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
