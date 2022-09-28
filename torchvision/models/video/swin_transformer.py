@@ -29,6 +29,21 @@ __all__ = [
 ]
 
 
+def _get_window_and_shift_size(
+    self, shift_size: List[int], size_dhw: List[int], window_size: List[int]
+) -> Tuple[List[int], List[int]]:
+    for i in range(3):
+        if size_dhw[i] <= window_size[i]:
+            # In this case, window_size will adapt to the input size, and no need to shift
+            window_size[i] = size_dhw[i]
+            shift_size[i] = 0
+
+    return window_size, shift_size
+
+
+torch.fx.wrap("_get_window_and_shift_size")
+
+
 def _get_relative_position_bias(
     relative_position_bias_table: torch.Tensor, relative_position_index: torch.Tensor, window_size: List[int]
 ) -> Tensor:
@@ -280,11 +295,7 @@ class ShiftedWindowAttention3d(nn.Module):
         size_dhw = (t, h, w)
         window_size, shift_size = self.window_size.copy(), self.shift_size.copy()
         # Handle case where window_size is larger than the input tensor
-        for i in range(3):
-            if size_dhw[i] <= window_size[i]:
-                # In this case, window_size will adapt to the input size, and no need to shift
-                window_size[i] = size_dhw[i]
-                shift_size[i] = 0
+        window_size, shift_size = _get_window_and_shift_size(shift_size, size_dhw, window_size)
 
         relative_position_bias = self.get_relative_position_bias(window_size)
 
