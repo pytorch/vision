@@ -620,11 +620,7 @@ class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
     )
 
     def inject_fake_data(self, tmpdir, config):
-        year, is_test_set = (
-            ("2007", True)
-            if config["year"] == "2007-test" or config["image_set"] == "test"
-            else (config["year"], False)
-        )
+        year, is_test_set = config["year"], config["image_set"] == "test"
         image_set = config["image_set"]
 
         base_dir = pathlib.Path(tmpdir)
@@ -962,25 +958,6 @@ class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
                 lambda _: f"{datasets_utils.create_random_string(11, digits)}.mp4",
                 num_videos_per_class,
             )
-        return num_videos_per_class * len(classes)
-
-
-class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
-    DATASET_CLASS = datasets.Kinetics400
-
-    def inject_fake_data(self, tmpdir, config):
-        classes = ("Abseiling", "Zumba")
-        num_videos_per_class = 2
-
-        digits = string.ascii_letters + string.digits + "-_"
-        for cls in classes:
-            datasets_utils.create_video_folder(
-                tmpdir,
-                cls,
-                lambda _: f"{datasets_utils.create_random_string(11, digits)}.avi",
-                num_videos_per_class,
-            )
-
         return num_videos_per_class * len(classes)
 
 
