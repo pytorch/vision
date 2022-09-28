@@ -799,7 +799,9 @@ class TestGaussianBlur:
         with pytest.raises(ValueError, match="Kernel size value should be an odd and positive number"):
             transforms.GaussianBlur(4)
 
-        with pytest.raises(TypeError, match="sigma should be a single int or float or a list/tuple with length 2 floats."):
+        with pytest.raises(
+            TypeError, match="sigma should be a single int or float or a list/tuple with length 2 floats."
+        ):
             transforms.GaussianBlur(3, sigma=[1, 2, 3])
 
         with pytest.raises(ValueError, match="If sigma is a single number, it must be positive"):
