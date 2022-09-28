@@ -90,6 +90,27 @@ hflip = horizontal_flip
 vflip = vertical_flip
 
 
+# Code taken and adapted (removed unsupported continue keyword such JIT scripting is working)
+# from pytorch/torch/_prims_common/__init__.py
+def is_channels_last_contiguous_2d(a: torch.Tensor) -> bool:
+    if a.ndim != 4:
+        return False
+
+    expected_stride = 1
+    for idx in (1, 3, 2, 0):
+
+        length = a.shape[idx]
+        if length > 1:
+
+            stride = a.stride()[idx]
+            if stride != expected_stride:
+                return False
+
+            expected_stride *= length
+
+    return True
+
+
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
@@ -104,12 +125,30 @@ def resize_image_tensor(
     extra_dims = image.shape[:-3]
 
     if image.numel() > 0:
+        image = image.view(-1, num_channels, old_height, old_width)
+
+        # This is a perf hack to avoid slow channels_last upsample code path
+        # Related issue: https://github.com/pytorch/pytorch/issues/83840
+        # We are transforming (N, 1, H, W) into (N, 2, H, W) to force to take channels_first path
+        do_perf_hack = False
+        if (
+            image.is_contiguous()
+            and is_channels_last_contiguous_2d(image)
+            and interpolation == InterpolationMode.NEAREST
+        ):
+            do_perf_hack = True
+            shape = (image.shape[0], 2, image.shape[2], image.shape[3])
+            image = image.expand(shape)
+
         image = _FT.resize(
-            image.view(-1, num_channels, old_height, old_width),
+            image,
             size=[new_height, new_width],
             interpolation=interpolation.value,
             antialias=antialias,
         )
+
+        if do_perf_hack:
+            image = image[:, 0, ...]
 
     return image.view(extra_dims + (num_channels, new_height, new_width))
 

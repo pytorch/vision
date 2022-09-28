@@ -466,17 +466,7 @@ def resize(
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
-    # This is a perf hack to avoid <pytorch-issue>
-    # We are transforming (1, 1, H, W) into (1, 2, H, W) to force to take channels_first path
-    do_perf_hack = False
-    if img.is_contiguous() and img.is_contiguous(memory_format=torch.channels_last) and interpolation == "nearest":
-        do_perf_hack = True
-        img = img.expand(1, 2, *img.shape[-2:])
-
     img = interpolate(img, size=size, mode=interpolation, align_corners=align_corners, antialias=antialias)
-
-    if do_perf_hack:
-        img = img[:, 0, ...]
 
     if interpolation == "bicubic" and out_dtype == torch.uint8:
         img = img.clamp(min=0, max=255)
