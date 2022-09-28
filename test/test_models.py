@@ -231,6 +231,7 @@ autocast_flaky_numerics = (
     "maskrcnn_resnet50_fpn",
     "maskrcnn_resnet50_fpn_v2",
     "keypointrcnn_resnet50_fpn",
+    "fasterrcnn_resnet50_fpn",  # See: https://github.com/pytorch/vision/issues/6655
 )
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
