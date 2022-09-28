@@ -289,7 +289,9 @@ def _affine_bounding_box_xyxy(
     center: Optional[List[float]] = None,
     expand: bool = False,
 ) -> torch.Tensor:
-    angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, InterpolationMode.NEAREST, center)
+    angle, translate, shear, center = _affine_parse_args(
+        angle, translate, scale, shear, InterpolationMode.NEAREST, center
+    )
 
     if center is None:
         height, width = image_size
