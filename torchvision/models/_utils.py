@@ -250,7 +250,7 @@ def _ovewrite_value_param(param: str, actual: Optional[V], expected: V) -> V:
 class _ModelURLs(dict):
     def __getitem__(self, item):
         warnings.warn(
-            "Accessing the model URLs via the internal dictionary of the module is deprecated since 0.13 and will "
-            "be removed in 0.15. Please access them via the appropriate Weights Enum instead."
+            "Accessing the model URLs via the internal dictionary of the module is deprecated since 0.13 and may "
+            "be removed in the future. Please access them via the appropriate Weights Enum instead."
         )
         return super().__getitem__(item)
