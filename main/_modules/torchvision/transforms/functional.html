@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+a069199 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+089c573 ) &#x25BC</a>
     </div>
     
 
@@ -1380,7 +1380,6 @@
     <span class="n">expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">resample</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Rotate the image by angle.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
@@ -1406,11 +1405,6 @@
 <span class="sd">            .. note::</span>
 <span class="sd">                In torchscript mode single int/float value is not supported, please use a sequence</span>
 <span class="sd">                of length 1: ``[value, ]``.</span>
-<span class="sd">        resample (int, optional):</span>
-<span class="sd">            .. warning::</span>
-<span class="sd">                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``</span>
-<span class="sd">                instead.</span>
-
 <span class="sd">    Returns:</span>
 <span class="sd">        PIL Image or Tensor: Rotated image.</span>
 
@@ -1419,12 +1413,6 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">rotate</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;The parameter &#39;resample&#39; is deprecated since 0.12 and will be removed 0.14. &quot;</span>
-            <span class="s2">&quot;Please use &#39;interpolation&#39; instead.&quot;</span>
-        <span class="p">)</span>
-        <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">resample</span><span class="p">)</span>
 
     <span class="c1"># Backward compatibility with integer value</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
@@ -1467,8 +1455,6 @@
     <span class="n">shear</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">resample</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">fillcolor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Apply affine transformation on the image keeping image center invariant.</span>
@@ -1494,13 +1480,6 @@
 <span class="sd">            .. note::</span>
 <span class="sd">                In torchscript mode single int/float value is not supported, please use a sequence</span>
 <span class="sd">                of length 1: ``[value, ]``.</span>
-<span class="sd">        fillcolor (sequence or number, optional):</span>
-<span class="sd">            .. warning::</span>
-<span class="sd">                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.</span>
-<span class="sd">        resample (int, optional):</span>
-<span class="sd">            .. warning::</span>
-<span class="sd">                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``</span>
-<span class="sd">                instead.</span>
 <span class="sd">        center (sequence, optional): Optional center of rotation. Origin is the upper left corner.</span>
 <span class="sd">            Default is the center of the image.</span>
 
@@ -1509,12 +1488,6 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">affine</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;The parameter &#39;resample&#39; is deprecated since 0.12 and will be removed in 0.14. &quot;</span>
-            <span class="s2">&quot;Please use &#39;interpolation&#39; instead.&quot;</span>
-        <span class="p">)</span>
-        <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">resample</span><span class="p">)</span>
 
     <span class="c1"># Backward compatibility with integer value</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
@@ -1523,13 +1496,6 @@
             <span class="s2">&quot;Please use InterpolationMode enum.&quot;</span>
         <span class="p">)</span>
         <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">fillcolor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;The parameter &#39;fillcolor&#39; is deprecated since 0.12 and will be removed in 0.14. &quot;</span>
-            <span class="s2">&quot;Please use &#39;fill&#39; instead.&quot;</span>
-        <span class="p">)</span>
-        <span class="n">fill</span> <span class="o">=</span> <span class="n">fillcolor</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument angle should be int or float&quot;</span><span class="p">)</span>
