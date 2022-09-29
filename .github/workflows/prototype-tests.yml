@@ -11,6 +11,7 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macos-latest
+          - [self-hosted, linux.4xlarge.nvidia.gpu]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
