@@ -632,7 +632,7 @@ def test_correctness_pad_bounding_box(device, padding):
         bboxes_format = bboxes.format
         bboxes_image_size = bboxes.image_size
 
-        output_boxes = F.pad_bounding_box(bboxes, padding, format=bboxes_format)
+        output_boxes = F.pad_bounding_box(bboxes, format=bboxes_format, padding=padding)
 
         if bboxes.ndim < 2 or bboxes.shape[0] == 0:
             bboxes = [bboxes]
@@ -781,7 +781,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         bboxes_format = bboxes.format
         bboxes_image_size = bboxes.image_size
 
-        output_boxes = F.center_crop_bounding_box(bboxes, bboxes_format, output_size, bboxes_image_size)
+        output_boxes = F.center_crop_bounding_box(bboxes, bboxes_format, bboxes_image_size, output_size)
 
         if bboxes.ndim < 2:
             bboxes = [bboxes]

@@ -21,7 +21,7 @@ def normalize(
 
 
 def gaussian_blur_image_tensor(
-    img: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
+    image: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> torch.Tensor:
     # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
@@ -47,16 +47,16 @@ def gaussian_blur_image_tensor(
         if s <= 0.0:
             raise ValueError(f"sigma should have positive values. Got {sigma}")
 
-    return _FT.gaussian_blur(img, kernel_size, sigma)
+    return _FT.gaussian_blur(image, kernel_size, sigma)
 
 
 @torch.jit.unused
 def gaussian_blur_image_pil(
-    img: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
+    image: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> PIL.Image.Image:
-    t_img = pil_to_tensor(img)
+    t_img = pil_to_tensor(image)
     output = gaussian_blur_image_tensor(t_img, kernel_size=kernel_size, sigma=sigma)
-    return to_pil_image(output, mode=img.mode)
+    return to_pil_image(output, mode=image.mode)
 
 
 def gaussian_blur(
