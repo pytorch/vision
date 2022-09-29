@@ -1051,7 +1051,6 @@ def rotate(
     expand: bool = False,
     center: Optional[List[int]] = None,
     fill: Optional[List[float]] = None,
-    resample: Optional[int] = None,
 ) -> Tensor:
     """Rotate the image by angle.
     If the image is torch Tensor, it is expected
@@ -1077,11 +1076,6 @@ def rotate(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
-        resample (int, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
-                instead.
-
     Returns:
         PIL Image or Tensor: Rotated image.
 
@@ -1090,12 +1084,6 @@ def rotate(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(rotate)
-    if resample is not None:
-        warnings.warn(
-            "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
-            "Please use 'interpolation' instead."
-        )
-        interpolation = _interpolation_modes_from_int(resample)
 
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
@@ -1138,8 +1126,6 @@ def affine(
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
-    resample: Optional[int] = None,
-    fillcolor: Optional[List[float]] = None,
     center: Optional[List[int]] = None,
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
@@ -1165,13 +1151,6 @@ def affine(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
-        fillcolor (sequence or number, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.
-        resample (int, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
-                instead.
         center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
 
@@ -1180,12 +1159,6 @@ def affine(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(affine)
-    if resample is not None:
-        warnings.warn(
-            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
-            "Please use 'interpolation' instead."
-        )
-        interpolation = _interpolation_modes_from_int(resample)
 
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
@@ -1194,13 +1167,6 @@ def affine(
             "Please use InterpolationMode enum."
         )
         interpolation = _interpolation_modes_from_int(interpolation)
-
-    if fillcolor is not None:
-        warnings.warn(
-            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
-            "Please use 'fill' instead."
-        )
-        fill = fillcolor
 
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")

@@ -231,9 +231,8 @@ autocast_flaky_numerics = (
     "maskrcnn_resnet50_fpn",
     "maskrcnn_resnet50_fpn_v2",
     "keypointrcnn_resnet50_fpn",
+    "fasterrcnn_resnet50_fpn",  # See: https://github.com/pytorch/vision/issues/6655
 )
-
-autocast_custom_prec = {"fasterrcnn_resnet50_fpn": 0.012} if platform.system() == "Windows" else {}
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
 # rounding errors in different platforms. For this reason the input/output consistency
@@ -741,7 +740,7 @@ def test_detection_model(model_fn, dev):
     out = model(model_input)
     assert model_input[0] is x
 
-    def check_out(out, prec=0.01):
+    def check_out(out):
         assert len(out) == 1
 
         def compact(tensor):
@@ -770,6 +769,7 @@ def test_detection_model(model_fn, dev):
             return {"mean": mean, "std": std}
 
         output = map_nested_tensor_object(out, tensor_map_fn=compact)
+        prec = 0.01
         try:
             # We first try to assert the entire output if possible. This is not
             # only the best way to assert results but also handles the cases
@@ -802,7 +802,7 @@ def test_detection_model(model_fn, dev):
             out = model(model_input)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
-                full_validation &= check_out(out, autocast_custom_prec.get(model_name, 0.01))
+                full_validation &= check_out(out)
 
     if not full_validation:
         msg = (
