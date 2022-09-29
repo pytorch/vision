@@ -212,7 +212,7 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[D
 
                 msg = (
                     f"Arguments other than a weight enum or `None` for '{weights_param}' are deprecated since 0.13 and "
-                    f"will be removed in 0.15. "
+                    f"may be removed in the future. "
                     f"The current behavior is equivalent to passing `{weights_param}={default_weights_arg}`."
                 )
                 if pretrained_arg:
