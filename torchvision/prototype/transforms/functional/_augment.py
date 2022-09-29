@@ -17,15 +17,21 @@ def erase_image_pil(
     return to_pil_image(output, mode=image.mode)
 
 
+def erase_video(
+    video: torch.Tensor, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
+) -> torch.Tensor:
+    return erase_image_tensor(video, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+
+
 def erase(
-    inpt: features.ImageTypeJIT,
+    inpt: features.InputTypeJIT,
     i: int,
     j: int,
     h: int,
     w: int,
     v: torch.Tensor,
     inplace: bool = False,
-) -> features.ImageTypeJIT:
+) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor):
         output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
         if not torch.jit.is_scripting() and isinstance(inpt, features.Image):

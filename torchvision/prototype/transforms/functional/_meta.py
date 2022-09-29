@@ -207,6 +207,14 @@ def convert_color_space_image_pil(
     return image.convert(new_mode)
 
 
+def convert_color_space_video(
+    video: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
+) -> torch.Tensor:
+    return convert_color_space_image_tensor(
+        video, old_color_space=old_color_space, new_color_space=new_color_space, copy=copy
+    )
+
+
 def convert_color_space(
     inpt: features.ImageTypeJIT,
     color_space: ColorSpace,
@@ -222,7 +230,7 @@ def convert_color_space(
         return convert_color_space_image_tensor(
             inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
         )
-    elif isinstance(inpt, features.Image):
+    elif isinstance(inpt, (features.Image, features.Video)):
         return inpt.to_color_space(color_space, copy=copy)
     else:
         return cast(features.ImageTypeJIT, convert_color_space_image_pil(inpt, color_space, copy=copy))

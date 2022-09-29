@@ -9,15 +9,19 @@ from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 normalize_image_tensor = _FT.normalize
 
 
+def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
+    return normalize_image_tensor(video, mean, std, inplace=inplace)
+
+
 def normalize(
     inpt: features.TensorImageTypeJIT, mean: List[float], std: List[float], inplace: bool = False
 ) -> torch.Tensor:
     if not isinstance(inpt, torch.Tensor):
         raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
-    else:
-        # Image instance after normalization is not Image anymore due to unknown data range
-        # Thus we return Tensor for input Image
-        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
+
+    # Image or video instance after normalization is not Image or Video anymore due to unknown data range. Thus, we
+    # return Tensor.
+    return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
 
 
 def gaussian_blur_image_tensor(
@@ -57,6 +61,12 @@ def gaussian_blur_image_pil(
     t_img = pil_to_tensor(image)
     output = gaussian_blur_image_tensor(t_img, kernel_size=kernel_size, sigma=sigma)
     return to_pil_image(output, mode=image.mode)
+
+
+def gaussian_blur_video(
+    video: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
+) -> torch.Tensor:
+    return gaussian_blur_image_tensor(video, kernel_size, sigma)
 
 
 def gaussian_blur(

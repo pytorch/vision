@@ -6,6 +6,10 @@ adjust_brightness_image_tensor = _FT.adjust_brightness
 adjust_brightness_image_pil = _FP.adjust_brightness
 
 
+def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> torch.Tensor:
+    return adjust_brightness_image_tensor(video, brightness_factor=brightness_factor)
+
+
 def adjust_brightness(inpt: features.InputTypeJIT, brightness_factor: float) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return adjust_brightness_image_tensor(inpt, brightness_factor=brightness_factor)
@@ -17,6 +21,10 @@ def adjust_brightness(inpt: features.InputTypeJIT, brightness_factor: float) -> 
 
 adjust_saturation_image_tensor = _FT.adjust_saturation
 adjust_saturation_image_pil = _FP.adjust_saturation
+
+
+def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> torch.Tensor:
+    return adjust_saturation_image_tensor(video, saturation_factor=saturation_factor)
 
 
 def adjust_saturation(inpt: features.InputTypeJIT, saturation_factor: float) -> features.InputTypeJIT:
@@ -32,6 +40,10 @@ adjust_contrast_image_tensor = _FT.adjust_contrast
 adjust_contrast_image_pil = _FP.adjust_contrast
 
 
+def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.Tensor:
+    return adjust_contrast_image_tensor(video, contrast_factor=contrast_factor)
+
+
 def adjust_contrast(inpt: features.InputTypeJIT, contrast_factor: float) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return adjust_contrast_image_tensor(inpt, contrast_factor=contrast_factor)
@@ -43,6 +55,10 @@ def adjust_contrast(inpt: features.InputTypeJIT, contrast_factor: float) -> feat
 
 adjust_sharpness_image_tensor = _FT.adjust_sharpness
 adjust_sharpness_image_pil = _FP.adjust_sharpness
+
+
+def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
+    return adjust_sharpness_image_tensor(video, sharpness_factor=sharpness_factor)
 
 
 def adjust_sharpness(inpt: features.InputTypeJIT, sharpness_factor: float) -> features.InputTypeJIT:
@@ -58,6 +74,10 @@ adjust_hue_image_tensor = _FT.adjust_hue
 adjust_hue_image_pil = _FP.adjust_hue
 
 
+def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
+    return adjust_hue_image_tensor(video, hue_factor=hue_factor)
+
+
 def adjust_hue(inpt: features.InputTypeJIT, hue_factor: float) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return adjust_hue_image_tensor(inpt, hue_factor=hue_factor)
@@ -69,6 +89,10 @@ def adjust_hue(inpt: features.InputTypeJIT, hue_factor: float) -> features.Input
 
 adjust_gamma_image_tensor = _FT.adjust_gamma
 adjust_gamma_image_pil = _FP.adjust_gamma
+
+
+def adjust_gamma_video(video: torch.Tensor, gamma: float, gain: float = 1) -> torch.Tensor:
+    return adjust_gamma_image_tensor(video, gamma=gamma, gain=gain)
 
 
 def adjust_gamma(inpt: features.InputTypeJIT, gamma: float, gain: float = 1) -> features.InputTypeJIT:
@@ -84,6 +108,10 @@ posterize_image_tensor = _FT.posterize
 posterize_image_pil = _FP.posterize
 
 
+def posterize_video(video: torch.Tensor, bits: int) -> torch.Tensor:
+    return posterize_image_tensor(video, bits=bits)
+
+
 def posterize(inpt: features.InputTypeJIT, bits: int) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return posterize_image_tensor(inpt, bits=bits)
@@ -95,6 +123,10 @@ def posterize(inpt: features.InputTypeJIT, bits: int) -> features.InputTypeJIT:
 
 solarize_image_tensor = _FT.solarize
 solarize_image_pil = _FP.solarize
+
+
+def solarize_video(video: torch.Tensor, threshold: float) -> torch.Tensor:
+    return solarize_image_tensor(video, threshold=threshold)
 
 
 def solarize(inpt: features.InputTypeJIT, threshold: float) -> features.InputTypeJIT:
@@ -110,6 +142,10 @@ autocontrast_image_tensor = _FT.autocontrast
 autocontrast_image_pil = _FP.autocontrast
 
 
+def autocontrast_video(video: torch.Tensor) -> torch.Tensor:
+    return autocontrast_image_tensor(video)
+
+
 def autocontrast(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return autocontrast_image_tensor(inpt)
@@ -123,6 +159,10 @@ equalize_image_tensor = _FT.equalize
 equalize_image_pil = _FP.equalize
 
 
+def equalize_video(video: torch.Tensor) -> torch.Tensor:
+    return equalize_image_tensor(video)
+
+
 def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return equalize_image_tensor(inpt)
@@ -134,6 +174,10 @@ def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
 
 invert_image_tensor = _FT.invert
 invert_image_pil = _FP.invert
+
+
+def invert_video(video: torch.Tensor) -> torch.Tensor:
+    return invert_image_tensor(video)
 
 
 def invert(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
