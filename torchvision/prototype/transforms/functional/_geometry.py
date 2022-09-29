@@ -97,6 +97,8 @@ def resize_image_tensor(
     max_size: Optional[int] = None,
     antialias: bool = False,
 ) -> torch.Tensor:
+    if isinstance(size, int):
+        size = [size]
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
     extra_dims = image.shape[:-3]
@@ -145,6 +147,8 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
 def resize_bounding_box(
     bounding_box: torch.Tensor, image_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
 ) -> torch.Tensor:
+    if isinstance(size, int):
+        size = [size]
     old_height, old_width = image_size
     new_height, new_width = _compute_resized_output_size(image_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
@@ -171,7 +175,7 @@ def resize(
 
 
 def _affine_parse_args(
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -214,15 +218,18 @@ def _affine_parse_args(
     if len(shear) != 2:
         raise ValueError(f"Shear should be a sequence containing two values. Got {shear}")
 
-    if center is not None and not isinstance(center, (list, tuple)):
-        raise TypeError("Argument center should be a sequence")
+    if center is not None:
+        if not isinstance(center, (list, tuple)):
+            raise TypeError("Argument center should be a sequence")
+        else:
+            center = [float(c) for c in center]
 
     return angle, translate, shear, center
 
 
 def affine_image_tensor(
     image: torch.Tensor,
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -254,7 +261,7 @@ def affine_image_tensor(
 @torch.jit.unused
 def affine_image_pil(
     image: PIL.Image.Image,
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -278,34 +285,26 @@ def affine_image_pil(
 def _affine_bounding_box_xyxy(
     bounding_box: torch.Tensor,
     image_size: Tuple[int, int],
-    angle: float,
-    translate: Optional[List[float]] = None,
-    scale: Optional[float] = None,
-    shear: Optional[List[float]] = None,
+    angle: Union[int, float],
+    translate: List[float],
+    scale: float,
+    shear: List[float],
     center: Optional[List[float]] = None,
     expand: bool = False,
 ) -> torch.Tensor:
-    dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
-    device = bounding_box.device
-
-    if translate is None:
-        translate = [0.0, 0.0]
-
-    if scale is None:
-        scale = 1.0
-
-    if shear is None:
-        shear = [0.0, 0.0]
+    angle, translate, shear, center = _affine_parse_args(
+        angle, translate, scale, shear, InterpolationMode.NEAREST, center
+    )
 
     if center is None:
         height, width = image_size
-        center_f = [width * 0.5, height * 0.5]
-    else:
-        center_f = [float(c) for c in center]
+        center = [width * 0.5, height * 0.5]
 
-    translate_f = [float(t) for t in translate]
+    dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
+    device = bounding_box.device
+
     affine_matrix = torch.tensor(
-        _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear, inverted=False),
+        _get_inverse_affine_matrix(center, angle, translate, scale, shear, inverted=False),
         dtype=dtype,
         device=device,
     ).view(2, 3)
@@ -351,7 +350,7 @@ def affine_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
     image_size: Tuple[int, int],
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -373,7 +372,7 @@ def affine_bounding_box(
 
 def affine_mask(
     mask: torch.Tensor,
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -419,7 +418,7 @@ def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
 
 def affine(
     inpt: features.InputTypeJIT,
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -427,6 +426,7 @@ def affine(
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> features.InputTypeJIT:
+    # TODO: consider deprecating integers from angle and shear on the future
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return affine_image_tensor(
             inpt,
@@ -528,7 +528,16 @@ def rotate_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
-    out_bboxes = _affine_bounding_box_xyxy(bounding_box, image_size, angle=-angle, center=center, expand=expand)
+    out_bboxes = _affine_bounding_box_xyxy(
+        bounding_box,
+        image_size,
+        angle=-angle,
+        translate=[0.0, 0.0],
+        scale=1.0,
+        shear=[0.0, 0.0],
+        center=center,
+        expand=expand,
+    )
 
     return convert_format_bounding_box(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False

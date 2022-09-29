@@ -84,6 +84,8 @@ class BoundingBox(_Feature):
         antialias: bool = False,
     ) -> BoundingBox:
         output = self._F.resize_bounding_box(self, image_size=self.image_size, size=size, max_size=max_size)
+        if isinstance(size, int):
+            size = [size]
         image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
         return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
 
@@ -95,6 +97,8 @@ class BoundingBox(_Feature):
         output = self._F.center_crop_bounding_box(
             self, format=self.format, image_size=self.image_size, output_size=output_size
         )
+        if isinstance(output_size, int):
+            output_size = [output_size]
         image_size = (output_size[0], output_size[0]) if len(output_size) == 1 else (output_size[0], output_size[1])
         return BoundingBox.new_like(self, output, image_size=image_size)
 
@@ -160,7 +164,7 @@ class BoundingBox(_Feature):
 
     def affine(
         self,
-        angle: float,
+        angle: Union[int, float],
         translate: List[float],
         scale: float,
         shear: List[float],
