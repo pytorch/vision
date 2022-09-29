@@ -11,7 +11,13 @@ import torch.testing
 import torchvision.ops
 import torchvision.prototype.transforms.functional as F
 from datasets_utils import combinations_grid
-from prototype_common_utils import ArgsKwargs, make_bounding_box_loaders, make_image_loaders, make_mask_loaders
+from prototype_common_utils import (
+    ArgsKwargs,
+    make_bounding_box_loaders,
+    make_image_loaders,
+    make_mask_loaders,
+    make_video_loaders,
+)
 from torchvision.prototype import features
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
@@ -126,6 +132,11 @@ def sample_inputs_horizontal_flip_mask():
         yield ArgsKwargs(image_loader)
 
 
+def sample_inputs_horizontal_flip_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"], dtypes=[torch.float32]):
+        yield ArgsKwargs(video_loader)
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -143,6 +154,10 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.horizontal_flip_mask,
             sample_inputs_fn=sample_inputs_horizontal_flip_mask,
+        ),
+        KernelInfo(
+            F.horizontal_flip_video,
+            sample_inputs_fn=sample_inputs_horizontal_flip_video,
         ),
     ]
 )
