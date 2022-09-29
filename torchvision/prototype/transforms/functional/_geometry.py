@@ -147,8 +147,6 @@ def resize_image_tensor(
             # Code is copied from _FT.resize
             # This is due to the fact that we need to apply the hack on casted image and not before
             # Otherwise, image will be copied while cast to float and interpolate will work on twice more data
-            _assert_image_tensor(image)
-
             image, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(image, [torch.float32, torch.float64])
 
             shape = (image.shape[0], 2, image.shape[2], image.shape[3])
