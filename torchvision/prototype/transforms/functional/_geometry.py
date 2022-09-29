@@ -543,10 +543,8 @@ def rotate_bounding_box(
     )
 
     if expand:
-        # The way we recompute image_size is not optimal due to redundant computations of
-        # - rotation matrix (_get_inverse_affine_matrix)
-        # - points dot matrix (_compute_affine_output_size)
-        # Alternatively, we could return new image size by self._F.rotate_bounding_box
+        # TODO: Move this computation inside of `_affine_bounding_box_xyxy` to avoid computing the rotation and points
+        #  matrix twice
         height, width = image_size
         rotation_matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0])
         new_width, new_height = _FT._compute_affine_output_size(rotation_matrix, width, height)
