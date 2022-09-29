@@ -127,7 +127,7 @@ def resize_image_pil(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
-    size = _compute_resized_output_size(image.size[::-1], size=size, max_size=max_size)
+    size = _compute_resized_output_size(image.size[::-1], size=size, max_size=max_size)  # type: ignore[arg-type]
     return _FP.resize(image, size, interpolation=pil_modes_mapping[interpolation])
 
 
