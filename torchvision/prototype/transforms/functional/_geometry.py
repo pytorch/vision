@@ -15,7 +15,6 @@ from torchvision.transforms.functional import (
     to_pil_image,
 )
 from torchvision.transforms.functional_tensor import (
-    _assert_image_tensor,
     _cast_squeeze_in,
     _cast_squeeze_out,
     _parse_pad_padding,
@@ -96,30 +95,6 @@ hflip = horizontal_flip
 vflip = vertical_flip
 
 
-# Code taken and adapted (removed unsupported continue keyword such JIT scripting is working)
-# from pytorch/torch/_prims_common/__init__.py
-def is_channels_last_contiguous_2d(a: torch.Tensor) -> bool:
-    if not torch.jit.is_scripting():
-        return a.is_contiguous(memory_format=torch.channels_last)
-    else:
-        if a.ndim != 4:
-            return False
-
-        expected_stride = 1
-        for idx in (1, 3, 2, 0):
-
-            length = a.shape[idx]
-            if length > 1:
-
-                stride = a.stride()[idx]
-                if stride != expected_stride:
-                    return False
-
-                expected_stride *= length
-
-        return True
-
-
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
@@ -139,12 +114,8 @@ def resize_image_tensor(
         # This is a perf hack to avoid slow channels_last upsample code path
         # Related issue: https://github.com/pytorch/pytorch/issues/83840
         # We are transforming (N, 1, H, W) into (N, 2, H, W) to force to take channels_first path
-        if (
-            image.is_contiguous()
-            and is_channels_last_contiguous_2d(image)
-            and interpolation == InterpolationMode.NEAREST
-        ):
-            # Code is copied from _FT.resize
+        if image.shape[1] == 1 and interpolation == InterpolationMode.NEAREST:
+            # Below code is copied from _FT.resize
             # This is due to the fact that we need to apply the hack on casted image and not before
             # Otherwise, image will be copied while cast to float and interpolate will work on twice more data
             image, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(image, [torch.float32, torch.float64])
