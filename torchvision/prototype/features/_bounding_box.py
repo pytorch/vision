@@ -83,7 +83,7 @@ class BoundingBox(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> BoundingBox:
-        output, image_size = self._F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
+        output, image_size = self._F.resize_bounding_box(self, image_size=self.image_size, size=size, max_size=max_size)
         return BoundingBox.new_like(self, output, image_size=image_size)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
@@ -94,7 +94,7 @@ class BoundingBox(_Feature):
 
     def center_crop(self, output_size: List[int]) -> BoundingBox:
         output, image_size = self._F.center_crop_bounding_box(
-            self, format=self.format, output_size=output_size, image_size=self.image_size
+            self, format=self.format, image_size=self.image_size, output_size=output_size
         )
         return BoundingBox.new_like(self, output, image_size=image_size)
 
@@ -108,9 +108,8 @@ class BoundingBox(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = False,
     ) -> BoundingBox:
-        output = self._F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
-        image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
-        return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
+        output, image_size = self._F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
+        return BoundingBox.new_like(self, output, image_size=image_size)
 
     def pad(
         self,
@@ -119,7 +118,7 @@ class BoundingBox(_Feature):
         padding_mode: str = "constant",
     ) -> BoundingBox:
         output, image_size = self._F.pad_bounding_box(
-            self, padding, format=self.format, image_size=self.image_size, padding_mode=padding_mode
+            self, format=self.format, image_size=self.image_size, padding=padding, padding_mode=padding_mode
         )
         return BoundingBox.new_like(self, output, image_size=image_size)
 
@@ -138,7 +137,7 @@ class BoundingBox(_Feature):
 
     def affine(
         self,
-        angle: float,
+        angle: Union[int, float],
         translate: List[float],
         scale: float,
         shear: List[float],

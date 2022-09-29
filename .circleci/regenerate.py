@@ -32,7 +32,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu102", "cu116", "cu117", "rocm5.1.1", "rocm5.2"],
+                "linux": ["cpu", "cu116", "cu117", "rocm5.1.1", "rocm5.2"],
                 "win": ["cpu", "cu116", "cu117"],
                 "macos": ["cpu"],
             }
@@ -122,7 +122,6 @@ def upload_doc_job(filter_branch):
 
 
 manylinux_images = {
-    "cu102": "pytorch/manylinux-cuda102",
     "cu116": "pytorch/manylinux-cuda116",
     "cu117": "pytorch/manylinux-cuda117",
 }
@@ -130,7 +129,7 @@ manylinux_images = {
 
 def get_manylinux_image(cu_version):
     if cu_version == "cpu":
-        return "pytorch/manylinux-cuda102"
+        return "pytorch/manylinux-cpu"
     elif cu_version.startswith("cu"):
         cu_suffix = cu_version[len("cu") :]
         return f"pytorch/manylinux-cuda{cu_suffix}"
@@ -247,7 +246,7 @@ def unittest_workflows(indentation=6):
                 if device_type == "gpu":
                     if python_version != "3.8":
                         job["filters"] = gen_filter_branch_tree("main", "nightly")
-                    job["cu_version"] = "cu102"
+                    job["cu_version"] = "cu116"
                 else:
                     job["cu_version"] = "cpu"
 

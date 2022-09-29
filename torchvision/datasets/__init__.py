@@ -31,7 +31,7 @@ from .gtsrb import GTSRB
 from .hmdb51 import HMDB51
 from .imagenet import ImageNet
 from .inaturalist import INaturalist
-from .kinetics import Kinetics, Kinetics400
+from .kinetics import Kinetics
 from .kitti import Kitti
 from .lfw import LFWPairs, LFWPeople
 from .lsun import LSUN, LSUNClass
@@ -92,7 +92,6 @@ __all__ = (
     "SBDataset",
     "VisionDataset",
     "USPS",
-    "Kinetics400",
     "Kinetics",
     "HMDB51",
     "UCF101",
