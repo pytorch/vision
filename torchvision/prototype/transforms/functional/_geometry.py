@@ -14,7 +14,13 @@ from torchvision.transforms.functional import (
     pil_to_tensor,
     to_pil_image,
 )
-from torchvision.transforms.functional_tensor import _parse_pad_padding
+from torchvision.transforms.functional_tensor import (
+    _assert_image_tensor,
+    _cast_squeeze_in,
+    _cast_squeeze_out,
+    _parse_pad_padding,
+    interpolate,
+)
 
 from ._meta import convert_format_bounding_box, get_dimensions_image_pil, get_dimensions_image_tensor
 
@@ -93,22 +99,25 @@ vflip = vertical_flip
 # Code taken and adapted (removed unsupported continue keyword such JIT scripting is working)
 # from pytorch/torch/_prims_common/__init__.py
 def is_channels_last_contiguous_2d(a: torch.Tensor) -> bool:
-    if a.ndim != 4:
-        return False
+    if not torch.jit.is_scripting():
+        return a.is_contiguous(memory_format=torch.channels_last)
+    else:
+        if a.ndim != 4:
+            return False
 
-    expected_stride = 1
-    for idx in (1, 3, 2, 0):
+        expected_stride = 1
+        for idx in (1, 3, 2, 0):
 
-        length = a.shape[idx]
-        if length > 1:
+            length = a.shape[idx]
+            if length > 1:
 
-            stride = a.stride()[idx]
-            if stride != expected_stride:
-                return False
+                stride = a.stride()[idx]
+                if stride != expected_stride:
+                    return False
 
-            expected_stride *= length
+                expected_stride *= length
 
-    return True
+        return True
 
 
 def resize_image_tensor(
@@ -130,25 +139,35 @@ def resize_image_tensor(
         # This is a perf hack to avoid slow channels_last upsample code path
         # Related issue: https://github.com/pytorch/pytorch/issues/83840
         # We are transforming (N, 1, H, W) into (N, 2, H, W) to force to take channels_first path
-        do_perf_hack = False
         if (
             image.is_contiguous()
             and is_channels_last_contiguous_2d(image)
             and interpolation == InterpolationMode.NEAREST
         ):
-            do_perf_hack = True
+            # Code is copied from _FT.resize
+            # This is due to the fact that we need to apply the hack on casted image and not before
+            # Otherwise, image will be copied while cast to float and interpolate will work on twice more data
+            _assert_image_tensor(image)
+
+            image, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(image, [torch.float32, torch.float64])
+
             shape = (image.shape[0], 2, image.shape[2], image.shape[3])
             image = image.expand(shape)
 
-        image = _FT.resize(
-            image,
-            size=[new_height, new_width],
-            interpolation=interpolation.value,
-            antialias=antialias,
-        )
+            image = interpolate(
+                image, size=[new_height, new_width], mode=interpolation.value, align_corners=None, antialias=False
+            )
 
-        if do_perf_hack:
             image = image[:, 0, ...]
+            image = _cast_squeeze_out(image, need_cast=need_cast, need_squeeze=need_squeeze, out_dtype=out_dtype)
+
+        else:
+            image = _FT.resize(
+                image,
+                size=[new_height, new_width],
+                interpolation=interpolation.value,
+                antialias=antialias,
+            )
 
     return image.view(extra_dims + (num_channels, new_height, new_width))
 
