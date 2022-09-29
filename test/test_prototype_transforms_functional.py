@@ -101,6 +101,7 @@ class TestKernels:
             # type all kernels should also work without differentiating between the two. Thus, we go with 2 here as
             # common ground.
             features.Mask: 2,
+            features.Video: 4,
         }.get(feature_type)
         if data_dims is None:
             raise pytest.UsageError(
