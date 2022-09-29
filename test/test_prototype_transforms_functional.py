@@ -128,9 +128,9 @@ class TestKernels:
             pytest.skip("The input has a degenerate shape.")
 
         input_version = input._version
-        output = info.kernel(input, *other_args, **kwargs)
+        info.kernel(input, *other_args, **kwargs)
 
-        assert output is not input or output._version == input_version
+        assert input._version == input_version
 
     @sample_inputs
     @needs_cuda
