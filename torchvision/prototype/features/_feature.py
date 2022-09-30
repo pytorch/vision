@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import Any, Callable, cast, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
-from torch._C import _TensorBase, DisableTorchFunction
+from torch._C import DisableTorchFunction
 from torchvision.transforms import InterpolationMode
+
 
 F = TypeVar("F", bound="_Feature")
 FillType = Union[int, float, Sequence[int], Sequence[float], None]
@@ -28,13 +29,14 @@ class _Feature(torch.Tensor):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> F:
-        return cast(
-            F,
-            torch.Tensor._make_subclass(
-                cast(_TensorBase, cls),
-                torch.as_tensor(data, dtype=dtype, device=device),  # type: ignore[arg-type]
-                requires_grad,
-            ),
+        return (
+            torch.as_tensor(  # type: ignore[return-value]
+                data,
+                dtype=dtype,  # type: ignore[arg-type]
+                device=device,  # type: ignore[arg-type]
+            )
+            .as_subclass(cls)  # type: ignore[arg-type]
+            .requires_grad_(requires_grad)
         )
 
     @classmethod
@@ -60,6 +62,7 @@ class _Feature(torch.Tensor):
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone,
         torch.Tensor.to,
+        torch.Tensor.requires_grad_,
     }
 
     @classmethod
@@ -87,33 +90,42 @@ class _Feature(torch.Tensor):
         For these reasons, the automatic output wrapping is turned off for most operators. The only exceptions are
         listed in :attr:`~_Feature._NO_WRAPPING_EXCEPTIONS`
         """
+        # Since super().__torch_function__ has no hook to prevent the coercing of the output into the input type, we
+        # need to reimplement the functionality.
+
+        if not all(issubclass(cls, t) for t in types):
+            return NotImplemented
+
         with DisableTorchFunction():
             output = func(*args, **kwargs or dict())
 
-        # Only inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
-        # will return an already wrapped output. Since none of the exceptions for the wrapping is an inplace `func`,
-        # we unwrap and return here.
-        if isinstance(output, cls):
-            return output.as_subclass(torch.Tensor)
-        # There are two reasons we want to return the output without wrapping it:
-        # 1. The `func` is not one of the exceptions. This implicitly also excludes wrapping of outputs of `func`'s
-        #    that don't return a tensor in the first place, e.g. `.numpy()`, `.tolist()`, or `.max(dim=...)`.
-        # 2. The primary operand, i.e. `args[0]`, is the `_Feature`. The __torch_function__ protocol will invoke this
-        #    method on all types involved in the computation by walking the MRO upwards. For example,
-        #    `torch.Tensor(...).to(features.Image(...))` will invoke `features.Image.__torch_function__` first and
-        #    without this guard the original simple tensor would either be wrapped or we fail trying to do so.
-        elif func not in cls._NO_WRAPPING_EXCEPTIONS or not isinstance(args[0], cls):
-            return output
-        elif func is torch.Tensor.clone:
-            return cls.new_like(args[0], output)
-        elif func is torch.Tensor.to:
-            return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
-        else:
-            # This only acts as safety and will only be hit if we added a bug in the if / elif abomination above.
-            raise RuntimeError(
-                f"It looks like {func} is configured to wrap its output into a {cls}, "
-                f"but no strategy to do so was specified."
-            )
+            # There are two reasons we want to return the output without wrapping it:
+            # 1. The `func` is not one of the exceptions. This implicitly also excludes wrapping of outputs of `func`'s
+            #    that don't return a tensor in the first place, e.g. `.numpy()`, `.tolist()`, or `.max(dim=...)`.
+            # 2. The primary operand, i.e. `args[0]`, is the `_Feature`. The __torch_function__ protocol will invoke
+            #    this method on all types involved in the computation by walking the MRO upwards. For example,
+            #    `torch.Tensor(...).to(features.Image(...))` will invoke `features.Image.__torch_function__` first and
+            #    without this guard the original simple tensor would either be wrapped or we fail trying to do so.
+            if func not in cls._NO_WRAPPING_EXCEPTIONS or not isinstance(args[0], cls):
+                # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
+                # will retain the input type. Thus, we need to unwrap here.
+                return output.as_subclass(torch.Tensor) if isinstance(output, cls) else output
+
+            if func is torch.Tensor.clone:
+                return cls.new_like(args[0], output)
+            elif func is torch.Tensor.to:
+                return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
+            elif func is torch.Tensor.requires_grad_:
+                # We don't need to wrap here since `Tensor.requires_grad_` is an inplace operation and thus retains the
+                # type automatically
+                return output
+            else:
+                # This only acts as safety and will only be hit if added a function to
+                # `_Feature._NO_WRAPPING_EXCEPTIONS`, but forgot to handle it
+                raise RuntimeError(
+                    f"It looks like {func} is configured to wrap its output into a {cls}, "
+                    f"but no strategy to do so was specified."
+                )
 
     def _make_repr(self, **kwargs: Any) -> str:
         # This is a poor man's implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.
