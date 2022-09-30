@@ -31,7 +31,7 @@ __all__ = [
 
 def _get_window_and_shift_size(
     self, shift_size: List[int], size_dhw: List[int], window_size: List[int]
-) -> Tuple[List[int], List[int]]:
+) -> Tuple[List[int], List[int]]:  # type: ignore[index]
     for i in range(3):
         if size_dhw[i] <= window_size[i]:
             # In this case, window_size will adapt to the input size, and no need to shift
