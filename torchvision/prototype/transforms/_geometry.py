@@ -456,11 +456,10 @@ class RandomCrop(Transform):
         padding = [pad_left, pad_top, pad_right, pad_bottom]
         needs_pad = any(padding)
 
-        if padded_height > cropped_height or padded_width > cropped_width:
-            top = int(torch.randint(0, padded_height - cropped_height + 1, size=()))
-            left = int(torch.randint(0, padded_width - cropped_width + 1, size=()))
-        else:
-            top = left = 0
+        top = (
+            int(torch.randint(0, padded_height - cropped_height + 1, size=())) if padded_height > cropped_height else 0
+        )
+        left = int(torch.randint(0, padded_width - cropped_width + 1, size=())) if padded_width > cropped_width else 0
 
         return dict(
             top=top,
