@@ -19,6 +19,7 @@ from ._utils import (
     _check_sequence_input,
     _setup_angle,
     _setup_fill_arg,
+    _setup_float_or_seq,
     _setup_size,
     has_all,
     has_any,
@@ -67,9 +68,9 @@ class Resize(Transform):
 
 
 class CenterCrop(Transform):
-    def __init__(self, size: List[int]):
+    def __init__(self, size: Union[int, Sequence[int]]):
         super().__init__()
-        self.size = size
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.center_crop(inpt, output_size=self.size)
@@ -320,7 +321,7 @@ class RandomAffine(Transform):
         degrees: Union[numbers.Number, Sequence],
         translate: Optional[Sequence[float]] = None,
         scale: Optional[Sequence[float]] = None,
-        shear: Optional[Union[float, Sequence[float]]] = None,
+        shear: Optional[Union[int, float, Sequence[float]]] = None,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
         center: Optional[List[float]] = None,
@@ -536,23 +537,6 @@ class RandomPerspective(_RandomApplyTransform):
             fill=fill,
             interpolation=self.interpolation,
         )
-
-
-def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size: int = 2) -> Sequence[float]:
-    if not isinstance(arg, (float, Sequence)):
-        raise TypeError(f"{name} should be float or a sequence of floats. Got {type(arg)}")
-    if isinstance(arg, Sequence) and len(arg) != req_size:
-        raise ValueError(f"If {name} is a sequence its length should be one of {req_size}. Got {len(arg)}")
-    if isinstance(arg, Sequence):
-        for element in arg:
-            if not isinstance(element, float):
-                raise ValueError(f"{name} should be a sequence of floats. Got {type(element)}")
-
-    if isinstance(arg, float):
-        arg = [float(arg), float(arg)]
-    if isinstance(arg, (list, tuple)) and len(arg) == 1:
-        arg = [arg[0], arg[0]]
-    return arg
 
 
 class ElasticTransform(Transform):

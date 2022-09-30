@@ -16,6 +16,23 @@ from torchvision.transforms.transforms import _check_sequence_input, _setup_angl
 from typing_extensions import Literal
 
 
+def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size: int = 2) -> Sequence[float]:
+    if not isinstance(arg, (float, Sequence)):
+        raise TypeError(f"{name} should be float or a sequence of floats. Got {type(arg)}")
+    if isinstance(arg, Sequence) and len(arg) != req_size:
+        raise ValueError(f"If {name} is a sequence its length should be one of {req_size}. Got {len(arg)}")
+    if isinstance(arg, Sequence):
+        for element in arg:
+            if not isinstance(element, float):
+                raise ValueError(f"{name} should be a sequence of floats. Got {type(element)}")
+
+    if isinstance(arg, float):
+        arg = [float(arg), float(arg)]
+    if isinstance(arg, (list, tuple)) and len(arg) == 1:
+        arg = [arg[0], arg[0]]
+    return arg
+
+
 def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
     if isinstance(fill, dict):
         for key, value in fill.items():
