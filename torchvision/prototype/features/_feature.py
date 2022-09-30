@@ -110,7 +110,9 @@ class _Feature(torch.Tensor):
             if func not in cls._NO_WRAPPING_EXCEPTIONS or not isinstance(args[0], cls):
                 # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
                 # will retain the input type. Thus, we need to unwrap here.
-                return output.as_subclass(torch.Tensor) if isinstance(output, cls) else output
+                if isinstance(output, cls):
+                    output = output.as_subclass(torch.Tensor)  # type: ignore[arg-type]
+                return output
 
             if func is torch.Tensor.clone:
                 return cls.new_like(args[0], output)
