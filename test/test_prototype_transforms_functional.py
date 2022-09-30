@@ -907,15 +907,15 @@ def test_correctness_gaussian_blur_image_tensor(device, image_size, dt, ksize, s
     torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
 
 
-def test_midlevel_normalize_output_type():
+def test_normalize_output_type():
     inpt = torch.rand(1, 3, 32, 32)
     output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
-    assert isinstance(output, torch.Tensor)
+    assert type(output) is torch.Tensor
     torch.testing.assert_close(inpt - 0.5, output)
 
     inpt = make_image(color_space=features.ColorSpace.RGB)
     output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
-    assert isinstance(output, torch.Tensor)
+    assert type(output) is torch.Tensor
     torch.testing.assert_close(inpt - 0.5, output)
 
 
