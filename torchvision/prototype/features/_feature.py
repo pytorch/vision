@@ -102,14 +102,15 @@ class _Feature(torch.Tensor):
         with DisableTorchFunction():
             output = func(*args, **kwargs or dict())
 
+            wrapper = cls._NO_WRAPPING_EXCEPTIONS.get(func)
             # Apart from `func` needing to be an exception, we also require the primary operand, i.e. `args[0]`, to be
             # an instance of the class that `__torch_function__` was invoked on. The __torch_function__ protocol will
             # invoke this method on *all* types involved in the computation by walking the MRO upwards. For example,
             # `torch.Tensor(...).to(features.Image(...))` will invoke `features.Image.__torch_function__` with
             # `args = (torch.Tensor(), features.Image())` first. Without this guard, the original `torch.Tensor` would
             # be wrapped into a `features.Image`.
-            if func in cls._NO_WRAPPING_EXCEPTIONS and isinstance(args[0], cls):
-                return cls._NO_WRAPPING_EXCEPTIONS[func](cls, args[0], output)  # type: ignore[no-any-return]
+            if wrapper and isinstance(args[0], cls):
+                return wrapper(cls, args[0], output)  # type: ignore[no-any-return]
 
             # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
             # will retain the input type. Thus, we need to unwrap here.
