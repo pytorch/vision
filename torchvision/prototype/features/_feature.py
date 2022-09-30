@@ -56,6 +56,12 @@ class _Feature(torch.Tensor):
             **kwargs,
         )
 
+    # Optimization to avoid creating this set in every call of `__torch_function__`
+    _NO_WRAPPING_EXCEPTIONS = {
+        torch.Tensor.clone,
+        torch.Tensor.to,
+    }
+
     @classmethod
     def __torch_function__(
         cls,
@@ -71,37 +77,43 @@ class _Feature(torch.Tensor):
         ``__torch_function__`` method. If one is found, it is invoked with the operator as ``func`` as well as the
         ``args`` and ``kwargs`` of the original call.
 
-        The default behavior of :class:`~torch.Tensor`'s is to retain a custom tensor type. For the :class:`Feature`
+        The default behavior of :class:`~torch.Tensor`'s is to retain a custom tensor type. For the :class:`_Feature`
         use case, this has two downsides:
 
         1. Since some :class:`Feature`'s require metadata to be constructed, the default wrapping, i.e.
            ``return cls(func(*args, **kwargs))``, will fail for them.
         2. For most operations, there is no way of knowing if the input type is still valid for the output.
 
-        For these reasons, the automatic output wrapping is turned off for most operators.
-
-        Exceptions to this are:
-
-        - :func:`torch.clone`
-        - :meth:`torch.Tensor.to`
+        For these reasons, the automatic output wrapping is turned off for most operators. The only exceptions are
+        listed in :attr:`~_Feature._NO_WRAPPING_EXCEPTIONS`
         """
-        kwargs = kwargs or dict()
         with DisableTorchFunction():
-            output = func(*args, **kwargs)
+            output = func(*args, **kwargs or dict())
 
-        # The __torch_function__ protocol will invoke this method on all types involved in the computation by walking
-        # the MRO upwards. For example, `torch.Tensor(...).to(features.Image(...))` will invoke
-        # `features.Image.__torch_function__` first. The check below makes sure that we do not try to wrap in such a
-        # case.
-        if not isinstance(args[0], cls):
+        # Only inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
+        # will return an already wrapped output. Since none of the exceptions for the wrapping is an inplace `func`,
+        # we unwrap and return here.
+        if isinstance(output, cls):
+            return output.as_subclass(torch.Tensor)
+        # There are two reasons we want to return the output without wrapping it:
+        # 1. The `func` is not one of the exceptions. This implicitly also excludes wrapping of outputs of `func`'s
+        #    that don't return a tensor in the first place, e.g. `.numpy()`, `.tolist()`, or `.max(dim=...)`.
+        # 2. The primary operand, i.e. `args[0]`, is the `_Feature`. The __torch_function__ protocol will invoke this
+        #    method on all types involved in the computation by walking the MRO upwards. For example,
+        #    `torch.Tensor(...).to(features.Image(...))` will invoke `features.Image.__torch_function__` first and
+        #    without this guard the original simple tensor would either be wrapped or we fail trying to do so.
+        elif func not in cls._NO_WRAPPING_EXCEPTIONS or not isinstance(args[0], cls):
             return output
-
-        if func is torch.Tensor.clone:
+        elif func is torch.Tensor.clone:
             return cls.new_like(args[0], output)
         elif func is torch.Tensor.to:
             return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
         else:
-            return output
+            # This only acts as safety and will only be hit if we added a bug in the if / elif abomination above.
+            raise RuntimeError(
+                f"It looks like {func} is configured to wrap its output into a {cls}, "
+                f"but no strategy to do so was specified."
+            )
 
     def _make_repr(self, **kwargs: Any) -> str:
         # This is a poor man's implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.
