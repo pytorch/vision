@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import Any, Callable, cast, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
-from torch._C import _TensorBase, DisableTorchFunction
+from torch._C import DisableTorchFunction
 from torchvision.transforms import InterpolationMode
+
 
 F = TypeVar("F", bound="_Feature")
 FillType = Union[int, float, Sequence[int], Sequence[float], None]
@@ -28,13 +29,14 @@ class _Feature(torch.Tensor):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> F:
-        return cast(
-            F,
-            torch.Tensor._make_subclass(
-                cast(_TensorBase, cls),
-                torch.as_tensor(data, dtype=dtype, device=device),  # type: ignore[arg-type]
-                requires_grad,
-            ),
+        return (
+            torch.as_tensor(  # type: ignore[return-value]
+                data,
+                dtype=dtype,  # type: ignore[arg-type]
+                device=device,  # type: ignore[arg-type]
+            )
+            .as_subclass(cls)  # type: ignore[arg-type]
+            .requires_grad_(requires_grad)
         )
 
     @classmethod
@@ -82,12 +84,17 @@ class _Feature(torch.Tensor):
 
         Exceptions to this are:
 
-        - :func:`torch.clone`
+        - :meth:`torch.Tensor.clone`
         - :meth:`torch.Tensor.to`
         """
-        kwargs = kwargs or dict()
+        # Since super().__torch_function__ has no hook to prevent the coercing of the output into the input type, we
+        # need to reimplement the functionality.
+
+        if not all(issubclass(cls, t) for t in types):
+            return NotImplemented
+
         with DisableTorchFunction():
-            output = func(*args, **kwargs)
+            output = func(*args, **kwargs or dict())
 
         # The __torch_function__ protocol will invoke this method on all types involved in the computation by walking
         # the MRO upwards. For example, `torch.Tensor(...).to(features.Image(...))` will invoke
