@@ -38,7 +38,7 @@ def _get_image(input_shape, real_image, device):
 
         original_width, original_height = img.size
 
-        #make the image square
+        # make the image square
         img = img.crop((0, 0, original_width, original_width))
         img = img.resize(input_shape[1:3])
 
