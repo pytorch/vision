@@ -58,11 +58,14 @@ class _Feature(torch.Tensor):
             **kwargs,
         )
 
-    # Optimization to avoid creating this set in every call of `__torch_function__`
     _NO_WRAPPING_EXCEPTIONS = {
-        torch.Tensor.clone,
-        torch.Tensor.to,
-        torch.Tensor.requires_grad_,
+        torch.Tensor.clone: lambda cls, input, output: cls.new_like(input, output),
+        torch.Tensor.to: lambda cls, input, output: cls.new_like(
+            input, output, dtype=output.dtype, device=output.device
+        ),
+        # We don't need to wrap the output of `Tensor.requires_grad_`, since it is an inplace operation and thus
+        # retains the type automatically
+        torch.Tensor.requires_grad_: lambda cls, input, output: output,
     }
 
     @classmethod
@@ -99,36 +102,21 @@ class _Feature(torch.Tensor):
         with DisableTorchFunction():
             output = func(*args, **kwargs or dict())
 
-            # There are two reasons we want to return the output without wrapping it:
-            # 1. The `func` is not one of the exceptions. This implicitly also excludes wrapping of outputs of `func`'s
-            #    that don't return a tensor in the first place, e.g. `.numpy()`, `.tolist()`, or `.max(dim=...)`.
-            # 2. The primary operand, i.e. `args[0]`, is not a `_Feature`. The __torch_function__ protocol will invoke
-            #    this method on all types involved in the computation by walking the MRO upwards. For example,
-            #    `torch.Tensor(...).to(features.Image(...))` will invoke `features.Image.__torch_function__` with
-            #    `args = (torch.Tensor(), features.Image())`. Without this guard the original plain tensor would either
-            #    be wrapped or we fail trying to do so.
-            if func not in cls._NO_WRAPPING_EXCEPTIONS or not isinstance(args[0], cls):
-                # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
-                # will retain the input type. Thus, we need to unwrap here.
-                if isinstance(output, cls):
-                    output = output.as_subclass(torch.Tensor)  # type: ignore[arg-type]
-                return output
+            # Apart from `func` needing to be an exception, we also require the primary operand, i.e. `args[0]`, to be
+            # an instance of the class that `__torch_function__` was invoked on. The __torch_function__ protocol will
+            # invoke this method on *all* types involved in the computation by walking the MRO upwards. For example,
+            # `torch.Tensor(...).to(features.Image(...))` will invoke `features.Image.__torch_function__` with
+            # `args = (torch.Tensor(), features.Image())` first. Without this guard, the original `torch.Tensor` would
+            # be wrapped into a `features.Image`.
+            if func in cls._NO_WRAPPING_EXCEPTIONS and isinstance(args[0], cls):
+                return cls._NO_WRAPPING_EXCEPTIONS[func](cls, args[0], output)  # type: ignore[no-any-return]
 
-            if func is torch.Tensor.clone:
-                return cls.new_like(args[0], output)
-            elif func is torch.Tensor.to:
-                return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
-            elif func is torch.Tensor.requires_grad_:
-                # We don't need to wrap here since `Tensor.requires_grad_` is an inplace operation and thus retains the
-                # type automatically
-                return output
-            else:
-                # This only acts as safety and will only be hit if added a function to
-                # `_Feature._NO_WRAPPING_EXCEPTIONS`, but forgot to handle it
-                raise RuntimeError(
-                    f"It looks like {func} is configured to wrap its output into a {cls}, "
-                    f"but no strategy to do so was specified."
-                )
+            # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
+            # will retain the input type. Thus, we need to unwrap here.
+            if isinstance(output, cls):
+                return output.as_subclass(torch.Tensor)  # type: ignore[arg-type]
+
+            return output
 
     def _make_repr(self, **kwargs: Any) -> str:
         # This is a poor man's implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.

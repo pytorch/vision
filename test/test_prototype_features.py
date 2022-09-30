@@ -95,8 +95,8 @@ def test_inplace_op_no_wrapping():
 
     output = label.add_(0)
 
-    assert type(label) is features.Label
     assert type(output) is torch.Tensor
+    assert type(label) is features.Label
 
 
 def test_new_like():
