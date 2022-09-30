@@ -10,11 +10,11 @@ erase_image_tensor = _FT.erase
 
 @torch.jit.unused
 def erase_image_pil(
-    img: PIL.Image.Image, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
+    image: PIL.Image.Image, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
 ) -> PIL.Image.Image:
-    t_img = pil_to_tensor(img)
+    t_img = pil_to_tensor(image)
     output = erase_image_tensor(t_img, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-    return to_pil_image(output, mode=img.mode)
+    return to_pil_image(output, mode=image.mode)
 
 
 def erase(

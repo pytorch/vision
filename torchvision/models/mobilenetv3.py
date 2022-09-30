@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Callable, List, Optional, Sequence
 
@@ -20,21 +19,6 @@ __all__ = [
     "mobilenet_v3_large",
     "mobilenet_v3_small",
 ]
-
-
-class SqueezeExcitation(SElayer):
-    """DEPRECATED"""
-
-    def __init__(self, input_channels: int, squeeze_factor: int = 4):
-        squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
-        super().__init__(input_channels, squeeze_channels, scale_activation=nn.Hardsigmoid)
-        self.relu = self.activation
-        delattr(self, "activation")
-        warnings.warn(
-            "This SqueezeExcitation class is deprecated since 0.12 and will be removed in 0.14. "
-            "Use torchvision.ops.SqueezeExcitation instead.",
-            FutureWarning,
-        )
 
 
 class InvertedResidualConfig:

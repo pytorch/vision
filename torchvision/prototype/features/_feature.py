@@ -96,6 +96,13 @@ class _Feature(torch.Tensor):
         with DisableTorchFunction():
             output = func(*args, **kwargs or dict())
 
+        # The __torch_function__ protocol will invoke this method on all types involved in the computation by walking
+        # the MRO upwards. For example, `torch.Tensor(...).to(features.Image(...))` will invoke
+        # `features.Image.__torch_function__` first. The check below makes sure that we do not try to wrap in such a
+        # case.
+        if not isinstance(args[0], cls):
+            return output
+
         if func is torch.Tensor.clone:
             return cls.new_like(args[0], output)
         elif func is torch.Tensor.to:
@@ -176,7 +183,7 @@ class _Feature(torch.Tensor):
 
     def affine(
         self,
-        angle: float,
+        angle: Union[int, float],
         translate: List[float],
         scale: float,
         shear: List[float],
