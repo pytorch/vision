@@ -102,10 +102,11 @@ class _Feature(torch.Tensor):
             # There are two reasons we want to return the output without wrapping it:
             # 1. The `func` is not one of the exceptions. This implicitly also excludes wrapping of outputs of `func`'s
             #    that don't return a tensor in the first place, e.g. `.numpy()`, `.tolist()`, or `.max(dim=...)`.
-            # 2. The primary operand, i.e. `args[0]`, is the `_Feature`. The __torch_function__ protocol will invoke
+            # 2. The primary operand, i.e. `args[0]`, is not a `_Feature`. The __torch_function__ protocol will invoke
             #    this method on all types involved in the computation by walking the MRO upwards. For example,
-            #    `torch.Tensor(...).to(features.Image(...))` will invoke `features.Image.__torch_function__` first and
-            #    without this guard the original simple tensor would either be wrapped or we fail trying to do so.
+            #    `torch.Tensor(...).to(features.Image(...))` will invoke `features.Image.__torch_function__` with
+            #    `args = (torch.Tensor(), features.Image())`. Without this guard the original plain tensor would either
+            #    be wrapped or we fail trying to do so.
             if func not in cls._NO_WRAPPING_EXCEPTIONS or not isinstance(args[0], cls):
                 # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
                 # will retain the input type. Thus, we need to unwrap here.

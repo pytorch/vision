@@ -49,6 +49,19 @@ def test_clone_wrapping():
     assert label_clone.categories is label.categories
 
 
+def test_requires_grad__wrapping():
+    tensor = torch.tensor([0, 1, 0], dtype=torch.float32)
+    label = features.Label(tensor, categories=["foo", "bar"])
+
+    assert not label.requires_grad
+
+    label_requires_grad = label.requires_grad_(True)
+
+    assert type(label_requires_grad) is features.Label
+    assert label.requires_grad
+    assert label_requires_grad.requires_grad
+
+
 def test_other_op_no_wrapping():
     tensor = torch.tensor([0, 1, 0], dtype=torch.int64)
     label = features.Label(tensor, categories=["foo", "bar"])
@@ -82,7 +95,8 @@ def test_inplace_op_no_wrapping():
 
     output = label.add_(0)
 
-    assert type(output) is not features.Label
+    assert type(label) is features.Label
+    assert type(output) is torch.Tensor
 
 
 def test_new_like():
