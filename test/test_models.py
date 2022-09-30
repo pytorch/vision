@@ -254,7 +254,6 @@ autocast_flaky_numerics = (
     "maskrcnn_resnet50_fpn",
     "maskrcnn_resnet50_fpn_v2",
     "keypointrcnn_resnet50_fpn",
-    "fasterrcnn_resnet50_fpn",  # See: https://github.com/pytorch/vision/issues/6655
 )
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
@@ -664,11 +663,11 @@ def test_classification_model(model_fn, dev):
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
+    real_image = kwargs.pop("real_image", False)
 
     model = model_fn(**kwargs)
     model.eval().to(device=dev)
-    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-    x = torch.rand(input_shape).to(device=dev)
+    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=1e-3)
     assert out.shape[-1] == num_classes
