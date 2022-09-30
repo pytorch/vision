@@ -16,9 +16,9 @@ import torch.fx
 import torch.nn as nn
 from _utils_internal import get_relative_path
 from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
+from PIL import Image
 from torchvision import models, transforms
 from torchvision.models import get_model_builder, list_models
-from PIL import Image
 
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
