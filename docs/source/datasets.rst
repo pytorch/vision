@@ -147,6 +147,7 @@ Video classification
 
     HMDB51
     Kinetics
+    Kinetics400
     UCF101
 
 
