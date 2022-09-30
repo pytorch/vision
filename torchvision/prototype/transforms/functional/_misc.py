@@ -17,7 +17,7 @@ def normalize(
     else:
         # Image instance after normalization is not Image anymore due to unknown data range
         # Thus we return Tensor for input Image
-        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
+        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace).as_subclass(torch.Tensor)
 
 
 def gaussian_blur_image_tensor(
