@@ -12,12 +12,17 @@ normalize_image_tensor = _FT.normalize
 def normalize(
     inpt: features.TensorImageTypeJIT, mean: List[float], std: List[float], inplace: bool = False
 ) -> torch.Tensor:
-    if not isinstance(inpt, torch.Tensor):
-        raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
+    if torch.jit.is_scripting():
+        correct_type = isinstance(inpt, torch.Tensor)
     else:
-        # Image instance after normalization is not Image anymore due to unknown data range
-        # Thus we return Tensor for input Image
-        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
+        correct_type = features.is_simple_tensor(inpt) or isinstance(inpt, features.Image)
+        inpt = inpt.as_subclass(torch.Tensor)  # type: ignore[arg-type]
+    if not correct_type:
+        raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
+
+    # Image instance after normalization is not Image anymore due to unknown data range
+    # Thus we return Tensor for input Image
+    return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
 
 
 def gaussian_blur_image_tensor(

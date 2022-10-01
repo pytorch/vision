@@ -937,8 +937,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
         mean = mean.view(-1, 1, 1)
     if std.ndim == 1:
         std = std.view(-1, 1, 1)
-    tensor.sub_(mean).div_(std)
-    return tensor
+    return tensor.sub_(mean).div_(std)
 
 
 def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:
