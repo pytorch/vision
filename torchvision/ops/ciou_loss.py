@@ -72,5 +72,7 @@ def complete_box_iou_loss(
     elif reduction == "sum":
         loss = loss.sum()
     else:
-        raise ValueError(f"Invalid Value for arg 'reduction': '{reduction} \n Supported reduction modes: 'none', 'mean', 'sum'")
+        raise ValueError(
+            f"Invalid Value for arg 'reduction': '{reduction} \n Supported reduction modes: 'none', 'mean', 'sum'"
+        )
     return loss

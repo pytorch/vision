@@ -36,7 +36,9 @@ def sigmoid_focal_loss(
     # Check reduction option
     modes = ["none", "mean", "sum"]
     if reduction not in modes:
-        raise ValueError(f"Invalid Value for arg 'reduction': '{reduction} \n Supported reduction modes: 'none', 'mean', 'sum'")
+        raise ValueError(
+            f"Invalid Value for arg 'reduction': '{reduction} \n Supported reduction modes: 'none', 'mean', 'sum'"
+        )
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(sigmoid_focal_loss)
