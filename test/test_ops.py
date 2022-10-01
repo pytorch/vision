@@ -1568,10 +1568,15 @@ class TestFocalLoss:
         torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
     
     # Raise ValueError for anonymous reduction mode
-    def test_reduction_mode(self, dtype=torch.float32, device=cpu_and_gpu(), reduction="xyz"):
-        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_reduction_mode(self, device, dtype, reduction="xyz"):
+        if device == "cpu" and dtype is torch.half:
+            pytest.skip("Currently torch.half is not fully supported on cpu")  
+        torch.random.manual_seed(0)      
+        inputs, targets = self._generate_diverse_input_target_pair(device=device, dtype=dtype)
         with pytest.raises(ValueError, match="Invalid"):
-            ops.sigmoid_focal_loss(inputs, targets, reduction) == ValueError
+            ops.sigmoid_focal_loss(inputs, targets, 0.25, 2, reduction) == ValueError
 
 
 
