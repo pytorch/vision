@@ -1367,6 +1367,8 @@ def assert_empty_loss(iou_fn, dtype, device):
     loss = iou_fn(box1, box2, reduction="none")
     assert loss.numel() == 0, f"{str(iou_fn)} for two empty box should be empty"
 
+def assert_reduction_mode(iou_fn, box1, box2, reduction):
+    assert iou_fn(box1, box2, reduction) == ValueError
 
 class TestGeneralizedBoxIouLoss:
     # We refer to original test: https://github.com/facebookresearch/fvcore/blob/main/tests/test_giou_loss.py
@@ -1394,6 +1396,11 @@ class TestGeneralizedBoxIouLoss:
         assert_iou_loss(ops.generalized_box_iou_loss, box1s, box2s, 2.5, device=device, reduction="sum")
         assert_iou_loss(ops.generalized_box_iou_loss, box1s, box2s, 1.25, device=device, reduction="mean")
 
+        # Test reduction value
+        # reduction value other than ["none", "mean", "sum"] should raise a ValueError
+        with pytest.raises(ValueError, match="Invalid"):
+            assert_reduction_mode(ops.generalized_box_iou_loss, box1s, box2s, reduction="xyz")
+
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_empty_inputs(self, dtype, device):
@@ -1412,6 +1419,9 @@ class TestCompleteBoxIouLoss:
         assert_iou_loss(ops.complete_box_iou_loss, box1, box4, 1.2500, device=device)
         assert_iou_loss(ops.complete_box_iou_loss, box1s, box2s, 1.2250, device=device, reduction="mean")
         assert_iou_loss(ops.complete_box_iou_loss, box1s, box2s, 2.4500, device=device, reduction="sum")
+        
+        with pytest.raises(ValueError, match="Invalid"):
+            assert_reduction_mode(ops.complete_box_iou_loss, box1s, box2s, reduction="xyz")
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
@@ -1431,6 +1441,9 @@ class TestDistanceBoxIouLoss:
         assert_iou_loss(ops.distance_box_iou_loss, box1, box4, 1.2500, device=device)
         assert_iou_loss(ops.distance_box_iou_loss, box1s, box2s, 1.2250, device=device, reduction="mean")
         assert_iou_loss(ops.distance_box_iou_loss, box1s, box2s, 2.4500, device=device, reduction="sum")
+        
+        with pytest.raises(ValueError, match="Invalid"):
+            assert_reduction_mode(ops.distance_box_iou_loss, box1s, box2s, reduction="xyz")
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
@@ -1553,6 +1566,15 @@ class TestFocalLoss:
 
         tol = 1e-3 if dtype is torch.half else 1e-5
         torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
+    
+    # Raise ValueError for anonymous reduction mode
+    def test_reduction_mode(self, dtype=torch.float32, device=cpu_and_gpu(), reduction="xyz"):
+        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+        with pytest.raises(ValueError, match="Invalid"):
+            ops.sigmoid_focal_loss(inputs, targets, reduction) == ValueError
+
+
+
 
 
 class TestMasksToBoxes:
