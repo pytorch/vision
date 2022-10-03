@@ -50,6 +50,9 @@ class _Feature(torch.Tensor):
         requires_grad: Optional[bool] = None,
         **kwargs: Any,
     ) -> F:
+        # Quick fix: Feature -> Tensor => won't go to __torch_function__
+        other = other.as_subclass(torch.Tensor)
+
         return cls(
             data,
             dtype=dtype if dtype is not None else other.dtype,
@@ -136,6 +139,28 @@ class _Feature(torch.Tensor):
 
             _Feature.__F = functional
         return _Feature.__F
+
+    # Add properties for common attributes like shape, dtype, device, ndim etc
+    # this way we return the result without passing into __torch_function__
+    @property
+    def shape(self):
+        return self.as_subclass(torch.Tensor).shape
+
+    @property
+    def ndim(self):
+        return self.as_subclass(torch.Tensor).ndim
+
+    @property
+    def device(self):
+        return self.as_subclass(torch.Tensor).device
+
+    @property
+    def dtype(self):
+        return self.as_subclass(torch.Tensor).dtype
+
+    @property
+    def requires_grad(self):
+        return self.as_subclass(torch.Tensor).requires_grad
 
     def horizontal_flip(self) -> _Feature:
         return self
