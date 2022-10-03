@@ -1,14 +1,6 @@
-import functools
-
 import pytest
 import torch
-from prototype_common_utils import (
-    make_bounding_box,
-    make_detection_mask,
-    make_image,
-    make_label,
-    make_segmentation_mask,
-)
+from prototype_common_utils import make_image, make_label, make_segmentation_mask
 from torch.utils.data import DataLoader
 from torchvision.prototype import features
 
@@ -168,29 +160,3 @@ class TestVisionCollate:
         ]
 
         self.check_collation(dataset, expected_batch)
-
-    def test_detection(self):
-        dataset = []
-        for _ in range(4):
-            image = make_image()
-            image_size = image.image_size
-
-            num_objects = int(torch.randint(1, 11, ()))
-
-            target = dict(
-                boxes=make_bounding_box(
-                    extra_dims=(num_objects,), format=features.BoundingBoxFormat.XYXY, image_size=image_size
-                ),
-                labels=make_label(extra_dims=(num_objects,)),
-                masks=make_detection_mask(size=image_size, num_objects=num_objects),
-            )
-
-            dataset.append((image, target))
-
-        expected_batch = list(zip(*dataset))
-
-        self.check_collation(
-            dataset,
-            expected_batch,
-            collate_fn=functools.partial(features.vision_collate, detection_task=True),
-        )
