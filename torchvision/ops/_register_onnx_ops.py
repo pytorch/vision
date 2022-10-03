@@ -10,8 +10,8 @@ base_onnx_opset_version = _onnx_opset_version_11
 
 def _register_custom_op():
     from torch.onnx.symbolic_helper import parse_args
-    from torch.onnx.symbolic_opset9 import _cast_Long
     from torch.onnx.symbolic_opset11 import select, squeeze, unsqueeze
+    from torch.onnx.symbolic_opset9 import _cast_Long
 
     @parse_args("v", "v", "f")
     def symbolic_multi_label_nms(g, boxes, scores, iou_threshold):

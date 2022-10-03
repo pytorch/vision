@@ -1,6 +1,6 @@
 import io
 from collections import OrderedDict
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 import pytest
 import torch
