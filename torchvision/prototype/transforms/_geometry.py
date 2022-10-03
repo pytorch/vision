@@ -456,12 +456,19 @@ class RandomCrop(Transform):
         padding = [pad_left, pad_top, pad_right, pad_bottom]
         needs_pad = any(padding)
 
-        top = (
-            int(torch.randint(0, padded_height - cropped_height + 1, size=())) if padded_height > cropped_height else 0
+        needs_vert_crop, top = (
+            (True, int(torch.randint(0, padded_height - cropped_height + 1, size=())))
+            if padded_height > cropped_height
+            else (False, 0)
         )
-        left = int(torch.randint(0, padded_width - cropped_width + 1, size=())) if padded_width > cropped_width else 0
+        needs_horz_crop, left = (
+            (True, int(torch.randint(0, padded_width - cropped_width + 1, size=())))
+            if padded_width > cropped_width
+            else (False, 0)
+        )
 
         return dict(
+            needs_crop=needs_vert_crop or needs_horz_crop,
             top=top,
             left=left,
             height=cropped_height,
@@ -477,7 +484,10 @@ class RandomCrop(Transform):
 
             inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
-        return F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
+        if params["needs_crop"]:
+            inpt = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
+
+        return inpt
 
 
 class RandomPerspective(_RandomApplyTransform):
