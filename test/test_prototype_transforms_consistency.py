@@ -966,7 +966,7 @@ class PadIfSmaller(prototype_transforms.Transform):
 
 class TestRefSegTransforms:
     def make_datapoints(self, supports_pil=True, image_dtype=torch.uint8):
-        size = (256, 640)
+        size = (256, 460)
         num_categories = 21
 
         conv_fns = []
