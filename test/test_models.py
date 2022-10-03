@@ -30,6 +30,19 @@ def list_model_fns(module):
 
 
 def _get_image(input_shape, real_image, device):
+    """This routine loads a real or random image based on `real_image` argument.
+    Currently, the real image is utilized for the following list of models:
+    - `retinanet_resnet50_fpn`,
+    - `retinanet_resnet50_fpn_v2`,
+    - `keypointrcnn_resnet50_fpn`,
+    - `fasterrcnn_resnet50_fpn`,
+    - `fasterrcnn_resnet50_fpn_v2`,
+    - `fcos_resnet50_fpn`,
+    - `maskrcnn_resnet50_fpn`,
+    - `maskrcnn_resnet50_fpn_v2`,
+    in `test_classification_model` and `test_detection_mode`.
+    To do so, a keyword argument `real_image` was added to the abovelisted models in `_model_params`
+    """
     if real_image:
         GRACE_HOPPER = get_relative_path(
             os.path.dirname(os.path.realpath(__file__)), "test", "assets", "encode_jpeg", "grace_hopper_517x606.jpg"
