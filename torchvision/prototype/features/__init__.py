@@ -13,3 +13,5 @@ from ._image import (
 )
 from ._label import Label, OneHotLabel
 from ._mask import Mask
+
+from ._collate import vision_collate  # usort: skip
