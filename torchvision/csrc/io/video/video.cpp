@@ -156,7 +156,7 @@ void Video::_getDecoderParams(
 
 } // _get decoder params
 
-Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
+void Video::_init(std::string stream, int64_t numThreads) {
   C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.video.video.Video");
   // set number of threads global
   numThreads_ = numThreads;
@@ -172,13 +172,6 @@ Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
       true, // read all streams
       numThreads_ // global number of Threads for decoding
   );
-
-  std::string logMessage, logType;
-
-  // TODO: add read from memory option
-  params.uri = videoPath;
-  logType = "file";
-  logMessage = videoPath;
 
   // locals
   std::vector<double> audioFPS, videoFPS;
@@ -232,7 +225,18 @@ Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
         << "Stream index set to " << std::get<1>(current_stream)
         << ". If you encounter trouble, consider switching it to automatic stream discovery. \n";
   }
-} // video
+} // Video::Init
+
+
+Video::Video(torch::Tensor videoData, std::string stream, int64_t numThreads) {
+  callback = MemoryBuffer::getCallback(videoData.data_ptr<uint8_t>(), videoData.size(0));
+  Video::_init(stream, numThreads);
+}
+  
+Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
+  params.uri = videoPath;
+  Video::_init(stream, numThreads);
+}
 
 bool Video::setCurrentStream(std::string stream = "video") {
   if ((!stream.empty()) && (_parseStream(stream) != current_stream)) {

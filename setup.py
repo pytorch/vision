@@ -351,8 +351,8 @@ def get_extensions():
     # FIXME: causes crash. See the following GitHub issues for more details.
     # FIXME: https://github.com/pytorch/pytorch/issues/65000
     # FIXME: https://github.com/pytorch/vision/issues/3367
-    if sys.platform != "linux" or (sys.version_info.major == 3 and sys.version_info.minor == 9):
-        has_ffmpeg = False
+    # if sys.platform != "linux" or (sys.version_info.major == 3 and sys.version_info.minor == 9):
+    #   has_ffmpeg = False
     if has_ffmpeg:
         try:
             # This is to check if ffmpeg is installed properly.
