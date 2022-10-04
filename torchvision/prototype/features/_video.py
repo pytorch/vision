@@ -50,6 +50,7 @@ class Video(_Feature):
             other, data, color_space=color_space if color_space is not None else other.color_space, **kwargs
         )
 
+    # TODO: rename this (and all instances of this term to spatial size)
     @property
     def image_size(self) -> Tuple[int, int]:
         return cast(Tuple[int, int], tuple(self.shape[-2:]))
