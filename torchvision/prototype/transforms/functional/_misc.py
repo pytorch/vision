@@ -16,11 +16,16 @@ def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], in
 def normalize(
     inpt: features.TensorImageTypeJIT, mean: List[float], std: List[float], inplace: bool = False
 ) -> torch.Tensor:
-    if not isinstance(inpt, torch.Tensor):
+    if torch.jit.is_scripting():
+        correct_type = isinstance(inpt, torch.Tensor)
+    else:
+        correct_type = features.is_simple_tensor(inpt) or isinstance(inpt, (features.Image, features.Video))
+        inpt = inpt.as_subclass(torch.Tensor)  # type: ignore[arg-type]
+    if not correct_type:
         raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
 
-    # Image or video instance after normalization is not Image or Video anymore due to unknown data range. Thus, we
-    # return Tensor.
+    # Image or Video type should not be retained after normalization due to unknown data range
+    # Thus we return Tensor for input Image
     return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
 
 
