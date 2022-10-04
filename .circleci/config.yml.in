@@ -152,15 +152,6 @@ commands:
           args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
           descr: Install torchvision <<# parameters.editable >> in editable mode <</ parameters.editable >>
 
-  install_prototype_dependencies:
-    steps:
-      - pip_install:
-          args: iopath
-          descr: Install third-party dependencies
-      - pip_install:
-          args: --pre torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu
-          descr: Install torchdata from nightly releases
-
   # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
   # This command can be used if only a selection of tests need to be run, for ad-hoc files.
   run_tests_selective:
@@ -326,7 +317,6 @@ jobs:
       - checkout
       - install_torchvision:
           editable: true
-      - install_prototype_dependencies
       - pip_install:
           args: mypy
           descr: Install Python type check utilities
