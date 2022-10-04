@@ -77,11 +77,11 @@ class Video(_Feature):
         )
 
     def horizontal_flip(self) -> Video:
-        output = self._F.horizontal_flip_Video_tensor(self)
+        output = self._F.horizontal_flip_video(self)
         return Video.new_like(self, output)
 
     def vertical_flip(self) -> Video:
-        output = self._F.vertical_flip_Video_tensor(self)
+        output = self._F.vertical_flip_video(self)
         return Video.new_like(self, output)
 
     def resize(  # type: ignore[override]
@@ -91,17 +91,15 @@ class Video(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> Video:
-        output = self._F.resize_Video_tensor(
-            self, size, interpolation=interpolation, max_size=max_size, antialias=antialias
-        )
+        output = self._F.resize_video(self, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
         return Video.new_like(self, output)
 
     def crop(self, top: int, left: int, height: int, width: int) -> Video:
-        output = self._F.crop_Video_tensor(self, top, left, height, width)
+        output = self._F.crop_video(self, top, left, height, width)
         return Video.new_like(self, output)
 
     def center_crop(self, output_size: List[int]) -> Video:
-        output = self._F.center_crop_Video_tensor(self, output_size=output_size)
+        output = self._F.center_crop_video(self, output_size=output_size)
         return Video.new_like(self, output)
 
     def resized_crop(
@@ -114,7 +112,7 @@ class Video(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = False,
     ) -> Video:
-        output = self._F.resized_crop_Video_tensor(
+        output = self._F.resized_crop_video(
             self, top, left, height, width, size=list(size), interpolation=interpolation, antialias=antialias
         )
         return Video.new_like(self, output)
@@ -125,7 +123,7 @@ class Video(_Feature):
         fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> Video:
-        output = self._F.pad_Video_tensor(self, padding, fill=fill, padding_mode=padding_mode)
+        output = self._F.pad_video(self, padding, fill=fill, padding_mode=padding_mode)
         return Video.new_like(self, output)
 
     def rotate(
@@ -136,7 +134,7 @@ class Video(_Feature):
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Video:
-        output = self._F._geometry.rotate_Video_tensor(
+        output = self._F._geometry.rotate_video(
             self, angle, interpolation=interpolation, expand=expand, fill=fill, center=center
         )
         return Video.new_like(self, output)
@@ -151,7 +149,7 @@ class Video(_Feature):
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Video:
-        output = self._F._geometry.affine_Video_tensor(
+        output = self._F._geometry.affine_video(
             self,
             angle,
             translate=translate,
@@ -169,9 +167,7 @@ class Video(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> Video:
-        output = self._F._geometry.perspective_Video_tensor(
-            self, perspective_coeffs, interpolation=interpolation, fill=fill
-        )
+        output = self._F._geometry.perspective_video(self, perspective_coeffs, interpolation=interpolation, fill=fill)
         return Video.new_like(self, output)
 
     def elastic(
@@ -180,53 +176,53 @@ class Video(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> Video:
-        output = self._F._geometry.elastic_Video_tensor(self, displacement, interpolation=interpolation, fill=fill)
+        output = self._F._geometry.elastic_video(self, displacement, interpolation=interpolation, fill=fill)
         return Video.new_like(self, output)
 
     def adjust_brightness(self, brightness_factor: float) -> Video:
-        output = self._F.adjust_brightness_Video_tensor(self, brightness_factor=brightness_factor)
+        output = self._F.adjust_brightness_video(self, brightness_factor=brightness_factor)
         return Video.new_like(self, output)
 
     def adjust_saturation(self, saturation_factor: float) -> Video:
-        output = self._F.adjust_saturation_Video_tensor(self, saturation_factor=saturation_factor)
+        output = self._F.adjust_saturation_video(self, saturation_factor=saturation_factor)
         return Video.new_like(self, output)
 
     def adjust_contrast(self, contrast_factor: float) -> Video:
-        output = self._F.adjust_contrast_Video_tensor(self, contrast_factor=contrast_factor)
+        output = self._F.adjust_contrast_video(self, contrast_factor=contrast_factor)
         return Video.new_like(self, output)
 
     def adjust_sharpness(self, sharpness_factor: float) -> Video:
-        output = self._F.adjust_sharpness_Video_tensor(self, sharpness_factor=sharpness_factor)
+        output = self._F.adjust_sharpness_video(self, sharpness_factor=sharpness_factor)
         return Video.new_like(self, output)
 
     def adjust_hue(self, hue_factor: float) -> Video:
-        output = self._F.adjust_hue_Video_tensor(self, hue_factor=hue_factor)
+        output = self._F.adjust_hue_video(self, hue_factor=hue_factor)
         return Video.new_like(self, output)
 
     def adjust_gamma(self, gamma: float, gain: float = 1) -> Video:
-        output = self._F.adjust_gamma_Video_tensor(self, gamma=gamma, gain=gain)
+        output = self._F.adjust_gamma_video(self, gamma=gamma, gain=gain)
         return Video.new_like(self, output)
 
     def posterize(self, bits: int) -> Video:
-        output = self._F.posterize_Video_tensor(self, bits=bits)
+        output = self._F.posterize_video(self, bits=bits)
         return Video.new_like(self, output)
 
     def solarize(self, threshold: float) -> Video:
-        output = self._F.solarize_Video_tensor(self, threshold=threshold)
+        output = self._F.solarize_video(self, threshold=threshold)
         return Video.new_like(self, output)
 
     def autocontrast(self) -> Video:
-        output = self._F.autocontrast_Video_tensor(self)
+        output = self._F.autocontrast_video(self)
         return Video.new_like(self, output)
 
     def equalize(self) -> Video:
-        output = self._F.equalize_Video_tensor(self)
+        output = self._F.equalize_video(self)
         return Video.new_like(self, output)
 
     def invert(self) -> Video:
-        output = self._F.invert_Video_tensor(self)
+        output = self._F.invert_video(self)
         return Video.new_like(self, output)
 
     def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Video:
-        output = self._F.gaussian_blur_Video_tensor(self, kernel_size=kernel_size, sigma=sigma)
+        output = self._F.gaussian_blur_video(self, kernel_size=kernel_size, sigma=sigma)
         return Video.new_like(self, output)
