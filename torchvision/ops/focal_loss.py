@@ -34,8 +34,7 @@ def sigmoid_focal_loss(
     # Original implementation from https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/focal_loss.py
 
     # Check reduction option
-    modes = ["none", "mean", "sum"]
-    if reduction not in modes:
+    if reduction != "none" or reduction != "mean" or reduction != "sum":
         raise ValueError(
             f"Invalid Value for arg 'reduction': '{reduction} \n Supported reduction modes: 'none', 'mean', 'sum'"
         )
