@@ -46,7 +46,7 @@ def _register_custom_op():
         if aligned:
             warnings.warn(
                 "ROIAlign with aligned=True is only supported in opset >= 16. "
-                "Please export with opset 16 or higher or use aligned=False."
+                "Please export with opset 16 or higher, or use aligned=False."
             )
         sampling_ratio = _process_sampling_ratio_for_roi_align(g, sampling_ratio)
         return g.op(
