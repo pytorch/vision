@@ -541,7 +541,7 @@ def make_video_loader(
     color_space=features.ColorSpace.RGB,
     num_frames="random",
     extra_dims=(),
-    dtype=torch.float32,
+    dtype=torch.uint8,
 ):
     size = _parse_image_size(size)
     num_frames = int(torch.randint(1, 6, ())) if num_frames == "random" else num_frames
@@ -562,7 +562,7 @@ def make_video_loaders(
     ),
     num_frames=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.float32, torch.uint8),
+    dtypes=(torch.uint8,),
 ):
     for params in combinations_grid(
         size=sizes, color_space=color_spaces, num_frames=num_frames, extra_dims=extra_dims, dtype=dtypes
