@@ -101,7 +101,7 @@ class VideoReader:
             raise RuntimeError(
                 "Not compiled with video_reader support, "
                 + "to enable video_reader support, please install "
-                + "ffmpeg (version 4.2 is currently supported) and "
+                + "ffmpeg (version 4.2 or higher is currently supported) and "
                 + "build torchvision from source."
             )
 
