@@ -787,7 +787,7 @@ class RoIHeads(nn.Module):
             mask_proposals = [p["boxes"] for p in result]
             if self.training:
                 if matched_idxs is None:
-                    raise ValueError("if in trainning, matched_idxs should not be None")
+                    raise ValueError("if in training, matched_idxs should not be None")
 
                 # during training, only focus on positive boxes
                 num_images = len(proposals)
