@@ -709,7 +709,7 @@ def sample_inputs_crop_bounding_box():
     for bounding_box_loader, params in itertools.product(
         make_bounding_box_loaders(), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]
     ):
-        yield ArgsKwargs(bounding_box_loader, format=bounding_box_loader.format, top=params["top"], left=params["left"])
+        yield ArgsKwargs(bounding_box_loader, format=bounding_box_loader.format, **params)
 
 
 def sample_inputs_crop_mask():
@@ -856,7 +856,9 @@ def sample_inputs_pad_bounding_box():
         if params["padding_mode"] != "constant":
             continue
 
-        yield ArgsKwargs(bounding_box_loader, format=bounding_box_loader.format, **params)
+        yield ArgsKwargs(
+            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.image_size, **params
+        )
 
 
 def sample_inputs_pad_mask():
@@ -1552,8 +1554,6 @@ KERNEL_INFOS.extend(
             skips=[
                 skip_integer_size_jit(),
                 Skip("test_batched_vs_single", reason="Custom batching needed for five_crop_image_tensor."),
-                Skip("test_no_inplace", reason="Output of five_crop_image_tensor is not a tensor."),
-                Skip("test_dtype_and_device_consistency", reason="Output of five_crop_image_tensor is not a tensor."),
             ],
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
@@ -1565,8 +1565,6 @@ KERNEL_INFOS.extend(
             skips=[
                 skip_integer_size_jit(),
                 Skip("test_batched_vs_single", reason="Custom batching needed for ten_crop_image_tensor."),
-                Skip("test_no_inplace", reason="Output of ten_crop_image_tensor is not a tensor."),
-                Skip("test_dtype_and_device_consistency", reason="Output of ten_crop_image_tensor is not a tensor."),
             ],
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
