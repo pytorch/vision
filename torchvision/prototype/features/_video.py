@@ -23,10 +23,8 @@ class Video(_Feature):
         requires_grad: bool = False,
     ) -> Video:
         data = torch.as_tensor(data, dtype=dtype, device=device)  # type: ignore[arg-type]
-        if data.ndim < 3:
+        if data.ndim < 4:
             raise ValueError
-        elif data.ndim == 3:
-            data = data.unsqueeze(0)
         image = super().__new__(cls, data, requires_grad=requires_grad)
 
         if color_space is None:
