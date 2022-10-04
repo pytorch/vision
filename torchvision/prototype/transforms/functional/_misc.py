@@ -14,7 +14,7 @@ def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], in
 
 
 def normalize(
-    inpt: features.TensorImageTypeJIT, mean: List[float], std: List[float], inplace: bool = False
+    inpt: features.TensorImageOrVideoTypeJIT, mean: List[float], std: List[float], inplace: bool = False
 ) -> torch.Tensor:
     if torch.jit.is_scripting():
         correct_type = isinstance(inpt, torch.Tensor)

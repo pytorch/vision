@@ -38,7 +38,7 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image, features.Video)
 
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
         super().__init__()
@@ -68,7 +68,7 @@ class LinearTransformation(Transform):
 
         return super().forward(*inputs)
 
-    def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]) -> torch.Tensor:
         # Image instance after linear transformation is not Image anymore due to unknown data range
         # Thus we will return Tensor for input Image
 
@@ -93,7 +93,7 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    _transformed_types = (features.Image, features.is_simple_tensor)
+    _transformed_types = (features.Image, features.is_simple_tensor, features.Video)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()

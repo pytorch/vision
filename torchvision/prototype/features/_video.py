@@ -7,7 +7,7 @@ import torch
 from torchvision.transforms.functional import InterpolationMode
 
 from ._feature import _Feature, FillTypeJIT
-from ._image import ColorSpace
+from ._image import ColorSpace, ImageType, ImageTypeJIT, TensorImageType, TensorImageTypeJIT
 
 
 class Video(_Feature):
@@ -225,3 +225,16 @@ class Video(_Feature):
     def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Video:
         output = self._F.gaussian_blur_video(self, kernel_size=kernel_size, sigma=sigma)
         return Video.new_like(self, output)
+
+
+VideoType = Union[torch.Tensor, Video]
+VideoTypeJIT = torch.Tensor
+LegacyVideoType = torch.Tensor
+LegacyVideoTypeJIT = torch.Tensor
+TensorVideoType = Union[torch.Tensor, Video]
+TensorVideoTypeJIT = torch.Tensor
+
+ImageOrVideoType = Union[ImageType, VideoType]
+ImageOrVideoTypeJIT = Union[ImageTypeJIT, VideoTypeJIT]
+TensorImageOrVideoType = Union[TensorImageType, TensorVideoType]
+TensorImageOrVideoTypeJIT = Union[TensorImageTypeJIT, TensorVideoTypeJIT]

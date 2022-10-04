@@ -82,7 +82,7 @@ class ColorJitter(Transform):
 
 
 class RandomPhotometricDistort(Transform):
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
 
     def __init__(
         self,
@@ -110,7 +110,7 @@ class RandomPhotometricDistort(Transform):
             channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
         )
 
-    def _permute_channels(self, inpt: features.ImageType, permutation: torch.Tensor) -> features.ImageType:
+    def _permute_channels(self, inpt: features.ImageOrVideoType, permutation: torch.Tensor) -> features.ImageType:
         if isinstance(inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)
 
@@ -123,7 +123,7 @@ class RandomPhotometricDistort(Transform):
 
         return output
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageType:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])
