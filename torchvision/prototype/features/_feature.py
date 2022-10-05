@@ -29,15 +29,14 @@ class _Feature(torch.Tensor):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> F:
-        return (
-            torch.as_tensor(  # type: ignore[return-value]
-                data,
-                dtype=dtype,  # type: ignore[arg-type]
-                device=device,  # type: ignore[arg-type]
-            )
-            .as_subclass(cls)  # type: ignore[arg-type]
-            .requires_grad_(requires_grad)
+        tensor = torch.as_tensor(  # type: ignore[return-value]
+            data,
+            dtype=dtype,  # type: ignore[arg-type]
+            device=device,  # type: ignore[arg-type]
         )
+        output = tensor.as_subclass(cls).requires_grad_(requires_grad)  # type: ignore[arg-type]
+        output._tensor = tensor
+        return output
 
     @classmethod
     def new_like(
@@ -144,28 +143,23 @@ class _Feature(torch.Tensor):
     # this way we return the result without passing into __torch_function__
     @property
     def shape(self):
-        with DisableTorchFunction():
-            return super().shape
+        return self._tensor.shape
 
     @property
     def ndim(self):
-        with DisableTorchFunction():
-            return super().ndim
+        return self._tensor.ndim
 
     @property
     def device(self):
-        with DisableTorchFunction():
-            return super().device
+        return self._tensor.device
 
     @property
     def dtype(self):
-        with DisableTorchFunction():
-            return super().dtype
+        return self._tensor.dtype
 
     @property
     def requires_grad(self):
-        with DisableTorchFunction():
-            return super().requires_grad
+        return self._tensor.requires_grad
 
     def horizontal_flip(self) -> _Feature:
         return self

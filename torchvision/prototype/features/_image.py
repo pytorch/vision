@@ -100,7 +100,11 @@ class Image(_Feature):
         # Question: Is it safe to assume data to be a tensor ?
         out = data.as_subclass(Image)
         out.color_space = color_space if color_space is not None else other.color_space
+        out._tensor = data
         return out
+        # return super().new_like(
+        #     other, data, color_space=color_space if color_space is not None else other.color_space, **kwargs
+        # )
 
     @property
     def image_size(self) -> Tuple[int, int]:
