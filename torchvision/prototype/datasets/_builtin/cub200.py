@@ -177,7 +177,10 @@ class CUB200(Dataset):
         return dict(
             prepare_ann_fn(anns_data, image.image_size),
             image=image,
-            label=Label(int(pathlib.Path(path).parent.name.rsplit(".", 1)[0]), categories=self._categories),
+            label=Label(
+                int(pathlib.Path(path).parent.name.rsplit(".", 1)[0]) - 1,
+                categories=self._categories,
+            ),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

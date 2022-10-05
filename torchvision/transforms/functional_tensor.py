@@ -137,7 +137,12 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     bottom = top + height
 
     if left < 0 or top < 0 or right > w or bottom > h:
-        padding_ltrb = [max(-left, 0), max(-top, 0), max(right - w, 0), max(bottom - h, 0)]
+        padding_ltrb = [
+            max(-left + min(0, right), 0),
+            max(-top + min(0, bottom), 0),
+            max(right - max(w, left), 0),
+            max(bottom - max(h, top), 0),
+        ]
         return pad(img[..., max(top, 0) : bottom, max(left, 0) : right], padding_ltrb, fill=0)
     return img[..., top:bottom, left:right]
 
@@ -932,8 +937,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
         mean = mean.view(-1, 1, 1)
     if std.ndim == 1:
         std = std.view(-1, 1, 1)
-    tensor.sub_(mean).div_(std)
-    return tensor
+    return tensor.sub_(mean).div_(std)
 
 
 def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:

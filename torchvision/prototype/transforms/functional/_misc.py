@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import PIL.Image
 import torch
@@ -6,28 +6,29 @@ from torchvision.prototype import features
 from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
-
-# shortcut type
-DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
-
-
 normalize_image_tensor = _FT.normalize
 
 
 def normalize(
-    inpt: Union[torch.Tensor, features.Image], mean: List[float], std: List[float], inplace: bool = False
+    inpt: features.TensorImageTypeJIT, mean: List[float], std: List[float], inplace: bool = False
 ) -> torch.Tensor:
-    if not isinstance(inpt, torch.Tensor):
-        raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
+    if torch.jit.is_scripting():
+        correct_type = isinstance(inpt, torch.Tensor)
     else:
-        # Image instance after normalization is not Image anymore due to unknown data range
-        # Thus we return Tensor for input Image
-        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
+        correct_type = features.is_simple_tensor(inpt) or isinstance(inpt, features.Image)
+        inpt = inpt.as_subclass(torch.Tensor)  # type: ignore[arg-type]
+    if not correct_type:
+        raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
+
+    # Image instance after normalization is not Image anymore due to unknown data range
+    # Thus we return Tensor for input Image
+    return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
 
 
 def gaussian_blur_image_tensor(
-    img: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
+    image: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> torch.Tensor:
+    # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
     if len(kernel_size) != 2:
@@ -51,21 +52,24 @@ def gaussian_blur_image_tensor(
         if s <= 0.0:
             raise ValueError(f"sigma should have positive values. Got {sigma}")
 
-    return _FT.gaussian_blur(img, kernel_size, sigma)
+    return _FT.gaussian_blur(image, kernel_size, sigma)
 
 
+@torch.jit.unused
 def gaussian_blur_image_pil(
-    img: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
+    image: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> PIL.Image.Image:
-    t_img = pil_to_tensor(img)
+    t_img = pil_to_tensor(image)
     output = gaussian_blur_image_tensor(t_img, kernel_size=kernel_size, sigma=sigma)
-    return to_pil_image(output, mode=img.mode)
+    return to_pil_image(output, mode=image.mode)
 
 
-def gaussian_blur(inpt: DType, kernel_size: List[int], sigma: Optional[List[float]] = None) -> DType:
-    if isinstance(inpt, features._Feature):
-        return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)
-    elif isinstance(inpt, PIL.Image.Image):
-        return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)
-    else:
+def gaussian_blur(
+    inpt: features.InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
+) -> features.InputTypeJIT:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
+    elif isinstance(inpt, features._Feature):
+        return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)
+    else:
+        return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)

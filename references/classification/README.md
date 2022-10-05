@@ -245,6 +245,14 @@ Here `$MODEL` is one of `swin_v2_t`, `swin_v2_s` or `swin_v2_b`.
 Note that `--val-resize-size` was optimized in a post-training step, see their `Weights` entry for the exact value.
 
 
+### MaxViT
+```
+torchrun --nproc_per_node=8 --n_nodes=4 train.py\
+--model $MODEL --epochs 400 --batch-size 128 --opt adamw --lr 3e-3 --weight-decay 0.05 --lr-scheduler cosineannealinglr --lr-min 1e-5 --lr-warmup-method linear  --lr-warmup-epochs 32  --label-smoothing 0.1 --mixup-alpha 0.8 --clip-grad-norm 1.0 --interpolation bicubic --auto-augment ta_wide --policy-magnitude 15 --model-ema --val-resize-size 224\
+--val-crop-size 224 --train-crop-size 224 --amp  --model-ema-steps 32 --transformer-embedding-decay 0 --sync-bn
+```
+Here `$MODEL` is `maxvit_t`.
+Note that `--val-resize-size` was not optimized in a post-training step.
 
 
 ### ShuffleNet V2
