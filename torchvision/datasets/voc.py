@@ -8,7 +8,6 @@ try:
     from defusedxml.ElementTree import parse as ET_parse
 except ImportError:
     from xml.etree.ElementTree import parse as ET_parse
-import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from PIL import Image
@@ -77,20 +76,8 @@ class _VOCBase(VisionDataset):
         transforms: Optional[Callable] = None,
     ):
         super().__init__(root, transforms, transform, target_transform)
-        if year == "2007-test":
-            if image_set == "test":
-                warnings.warn(
-                    "Accessing the test image set of the year 2007 with year='2007-test' is deprecated "
-                    "since 0.12 and will be removed in 0.14. "
-                    "Please use the combination year='2007' and image_set='test' instead."
-                )
-                year = "2007"
-            else:
-                raise ValueError(
-                    "In the test image set of the year 2007 only image_set='test' is allowed. "
-                    "For all other image sets use year='2007' instead."
-                )
-        self.year = year
+
+        self.year = verify_str_arg(year, "year", valid_values=[str(yr) for yr in range(2007, 2013)])
 
         valid_image_sets = ["train", "trainval", "val"]
         if year == "2007":

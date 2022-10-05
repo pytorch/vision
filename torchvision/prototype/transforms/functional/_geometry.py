@@ -7,14 +7,19 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 from torchvision.transforms.functional import (
-    _compute_resized_output_size,
+    _compute_resized_output_size as __compute_resized_output_size,
     _get_inverse_affine_matrix,
     InterpolationMode,
     pil_modes_mapping,
     pil_to_tensor,
     to_pil_image,
 )
-from torchvision.transforms.functional_tensor import _parse_pad_padding
+from torchvision.transforms.functional_tensor import (
+    _cast_squeeze_in,
+    _cast_squeeze_out,
+    _parse_pad_padding,
+    interpolate,
+)
 
 from ._meta import convert_format_bounding_box, get_dimensions_image_pil, get_dimensions_image_tensor
 
@@ -90,6 +95,14 @@ hflip = horizontal_flip
 vflip = vertical_flip
 
 
+def _compute_resized_output_size(
+    image_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
+) -> List[int]:
+    if isinstance(size, int):
+        size = [size]
+    return __compute_resized_output_size(image_size, size=size, max_size=max_size)
+
+
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
@@ -102,29 +115,47 @@ def resize_image_tensor(
     extra_dims = image.shape[:-3]
 
     if image.numel() > 0:
-        image = _FT.resize(
-            image.view(-1, num_channels, old_height, old_width),
-            size=[new_height, new_width],
-            interpolation=interpolation.value,
-            antialias=antialias,
-        )
+        image = image.view(-1, num_channels, old_height, old_width)
+
+        # This is a perf hack to avoid slow channels_last upsample code path
+        # Related issue: https://github.com/pytorch/pytorch/issues/83840
+        # We are transforming (N, 1, H, W) into (N, 2, H, W) to force to take channels_first path
+        if image.shape[1] == 1 and interpolation == InterpolationMode.NEAREST:
+            # Below code is copied from _FT.resize
+            # This is due to the fact that we need to apply the hack on casted image and not before
+            # Otherwise, image will be copied while cast to float and interpolate will work on twice more data
+            image, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(image, [torch.float32, torch.float64])
+
+            shape = (image.shape[0], 2, image.shape[2], image.shape[3])
+            image = image.expand(shape)
+
+            image = interpolate(
+                image, size=[new_height, new_width], mode=interpolation.value, align_corners=None, antialias=False
+            )
+
+            image = image[:, 0, ...]
+            image = _cast_squeeze_out(image, need_cast=need_cast, need_squeeze=need_squeeze, out_dtype=out_dtype)
+
+        else:
+            image = _FT.resize(
+                image,
+                size=[new_height, new_width],
+                interpolation=interpolation.value,
+                antialias=antialias,
+            )
 
     return image.view(extra_dims + (num_channels, new_height, new_width))
 
 
 @torch.jit.unused
 def resize_image_pil(
-    img: PIL.Image.Image,
+    image: PIL.Image.Image,
     size: Union[Sequence[int], int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
-    if isinstance(size, int):
-        size = [size, size]
-    # Explicitly cast size to list otherwise mypy issue: incompatible type "Sequence[int]"; expected "List[int]"
-    size: List[int] = list(size)
-    size = _compute_resized_output_size(img.size[::-1], size=size, max_size=max_size)
-    return _FP.resize(img, size, interpolation=pil_modes_mapping[interpolation])
+    size = _compute_resized_output_size(image.size[::-1], size=size, max_size=max_size)  # type: ignore[arg-type]
+    return _FP.resize(image, size, interpolation=pil_modes_mapping[interpolation])
 
 
 def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = None) -> torch.Tensor:
@@ -143,12 +174,15 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
 
 
 def resize_bounding_box(
-    bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int], max_size: Optional[int] = None
-) -> torch.Tensor:
+    bounding_box: torch.Tensor, image_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = image_size
     new_height, new_width = _compute_resized_output_size(image_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
-    return bounding_box.view(-1, 2, 2).mul(ratios).to(bounding_box.dtype).view(bounding_box.shape)
+    return (
+        bounding_box.view(-1, 2, 2).mul(ratios).to(bounding_box.dtype).view(bounding_box.shape),
+        (new_height, new_width),
+    )
 
 
 def resize(
@@ -171,7 +205,7 @@ def resize(
 
 
 def _affine_parse_args(
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -214,15 +248,18 @@ def _affine_parse_args(
     if len(shear) != 2:
         raise ValueError(f"Shear should be a sequence containing two values. Got {shear}")
 
-    if center is not None and not isinstance(center, (list, tuple)):
-        raise TypeError("Argument center should be a sequence")
+    if center is not None:
+        if not isinstance(center, (list, tuple)):
+            raise TypeError("Argument center should be a sequence")
+        else:
+            center = [float(c) for c in center]
 
     return angle, translate, shear, center
 
 
 def affine_image_tensor(
-    img: torch.Tensor,
-    angle: float,
+    image: torch.Tensor,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -230,12 +267,12 @@ def affine_image_tensor(
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    if img.numel() == 0:
-        return img
+    if image.numel() == 0:
+        return image
 
-    num_channels, height, width = img.shape[-3:]
-    extra_dims = img.shape[:-3]
-    img = img.view(-1, num_channels, height, width)
+    num_channels, height, width = image.shape[-3:]
+    extra_dims = image.shape[:-3]
+    image = image.view(-1, num_channels, height, width)
 
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
 
@@ -247,14 +284,14 @@ def affine_image_tensor(
     translate_f = [1.0 * t for t in translate]
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
 
-    output = _FT.affine(img, matrix, interpolation=interpolation.value, fill=fill)
+    output = _FT.affine(image, matrix, interpolation=interpolation.value, fill=fill)
     return output.view(extra_dims + (num_channels, height, width))
 
 
 @torch.jit.unused
 def affine_image_pil(
-    img: PIL.Image.Image,
-    angle: float,
+    image: PIL.Image.Image,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -268,44 +305,36 @@ def affine_image_pil(
     # it is visually better to estimate the center without 0.5 offset
     # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
     if center is None:
-        _, height, width = get_dimensions_image_pil(img)
+        _, height, width = get_dimensions_image_pil(image)
         center = [width * 0.5, height * 0.5]
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
 
-    return _FP.affine(img, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill)
+    return _FP.affine(image, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
 def _affine_bounding_box_xyxy(
     bounding_box: torch.Tensor,
     image_size: Tuple[int, int],
-    angle: float,
-    translate: Optional[List[float]] = None,
-    scale: Optional[float] = None,
-    shear: Optional[List[float]] = None,
+    angle: Union[int, float],
+    translate: List[float],
+    scale: float,
+    shear: List[float],
     center: Optional[List[float]] = None,
     expand: bool = False,
 ) -> torch.Tensor:
-    dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
-    device = bounding_box.device
-
-    if translate is None:
-        translate = [0.0, 0.0]
-
-    if scale is None:
-        scale = 1.0
-
-    if shear is None:
-        shear = [0.0, 0.0]
+    angle, translate, shear, center = _affine_parse_args(
+        angle, translate, scale, shear, InterpolationMode.NEAREST, center
+    )
 
     if center is None:
         height, width = image_size
-        center_f = [width * 0.5, height * 0.5]
-    else:
-        center_f = [float(c) for c in center]
+        center = [width * 0.5, height * 0.5]
 
-    translate_f = [float(t) for t in translate]
+    dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
+    device = bounding_box.device
+
     affine_matrix = torch.tensor(
-        _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear, inverted=False),
+        _get_inverse_affine_matrix(center, angle, translate, scale, shear, inverted=False),
         dtype=dtype,
         device=device,
     ).view(2, 3)
@@ -351,7 +380,7 @@ def affine_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
     image_size: Tuple[int, int],
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -373,7 +402,7 @@ def affine_bounding_box(
 
 def affine_mask(
     mask: torch.Tensor,
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -419,7 +448,7 @@ def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
 
 def affine(
     inpt: features.InputTypeJIT,
-    angle: float,
+    angle: Union[int, float],
     translate: List[float],
     scale: float,
     shear: List[float],
@@ -427,6 +456,7 @@ def affine(
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> features.InputTypeJIT:
+    # TODO: consider deprecating integers from angle and shear on the future
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return affine_image_tensor(
             inpt,
@@ -456,15 +486,15 @@ def affine(
 
 
 def rotate_image_tensor(
-    img: torch.Tensor,
+    image: torch.Tensor,
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    num_channels, height, width = img.shape[-3:]
-    extra_dims = img.shape[:-3]
+    num_channels, height, width = image.shape[-3:]
+    extra_dims = image.shape[:-3]
 
     center_f = [0.0, 0.0]
     if center is not None:
@@ -478,24 +508,24 @@ def rotate_image_tensor(
     # we need to set -angle.
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
 
-    if img.numel() > 0:
-        img = _FT.rotate(
-            img.view(-1, num_channels, height, width),
+    if image.numel() > 0:
+        image = _FT.rotate(
+            image.view(-1, num_channels, height, width),
             matrix,
             interpolation=interpolation.value,
             expand=expand,
             fill=fill,
         )
-        new_height, new_width = img.shape[-2:]
+        new_height, new_width = image.shape[-2:]
     else:
         new_width, new_height = _FT._compute_affine_output_size(matrix, width, height) if expand else (width, height)
 
-    return img.view(extra_dims + (num_channels, new_height, new_width))
+    return image.view(extra_dims + (num_channels, new_height, new_width))
 
 
 @torch.jit.unused
 def rotate_image_pil(
-    img: PIL.Image.Image,
+    image: PIL.Image.Image,
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
@@ -507,7 +537,7 @@ def rotate_image_pil(
         center = None
 
     return _FP.rotate(
-        img, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center
+        image, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center
     )
 
 
@@ -518,7 +548,7 @@ def rotate_bounding_box(
     angle: float,
     expand: bool = False,
     center: Optional[List[float]] = None,
-) -> torch.Tensor:
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     if center is not None and expand:
         warnings.warn("The provided center argument has no effect on the result if expand is True")
         center = None
@@ -528,11 +558,31 @@ def rotate_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
-    out_bboxes = _affine_bounding_box_xyxy(bounding_box, image_size, angle=-angle, center=center, expand=expand)
+    out_bboxes = _affine_bounding_box_xyxy(
+        bounding_box,
+        image_size,
+        angle=-angle,
+        translate=[0.0, 0.0],
+        scale=1.0,
+        shear=[0.0, 0.0],
+        center=center,
+        expand=expand,
+    )
 
-    return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    ).view(original_shape)
+    if expand:
+        # TODO: Move this computation inside of `_affine_bounding_box_xyxy` to avoid computing the rotation and points
+        #  matrix twice
+        height, width = image_size
+        rotation_matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+        new_width, new_height = _FT._compute_affine_output_size(rotation_matrix, width, height)
+        image_size = (new_height, new_width)
+
+    return (
+        convert_format_bounding_box(
+            out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+        ).view(original_shape),
+        image_size,
+    )
 
 
 def rotate_mask(
@@ -583,46 +633,46 @@ pad_image_pil = _FP.pad
 
 
 def pad_image_tensor(
-    img: torch.Tensor,
+    image: torch.Tensor,
     padding: Union[int, List[int]],
     fill: features.FillTypeJIT = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     if fill is None:
         # This is a JIT workaround
-        return _pad_with_scalar_fill(img, padding, fill=None, padding_mode=padding_mode)
+        return _pad_with_scalar_fill(image, padding, fill=None, padding_mode=padding_mode)
     elif isinstance(fill, (int, float)) or len(fill) == 1:
         fill_number = fill[0] if isinstance(fill, list) else fill
-        return _pad_with_scalar_fill(img, padding, fill=fill_number, padding_mode=padding_mode)
+        return _pad_with_scalar_fill(image, padding, fill=fill_number, padding_mode=padding_mode)
     else:
-        return _pad_with_vector_fill(img, padding, fill=fill, padding_mode=padding_mode)
+        return _pad_with_vector_fill(image, padding, fill=fill, padding_mode=padding_mode)
 
 
 def _pad_with_scalar_fill(
-    img: torch.Tensor,
+    image: torch.Tensor,
     padding: Union[int, List[int]],
     fill: Union[int, float, None],
     padding_mode: str = "constant",
 ) -> torch.Tensor:
-    num_channels, height, width = img.shape[-3:]
-    extra_dims = img.shape[:-3]
+    num_channels, height, width = image.shape[-3:]
+    extra_dims = image.shape[:-3]
 
-    if img.numel() > 0:
-        img = _FT.pad(
-            img=img.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
+    if image.numel() > 0:
+        image = _FT.pad(
+            img=image.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
         )
-        new_height, new_width = img.shape[-2:]
+        new_height, new_width = image.shape[-2:]
     else:
         left, right, top, bottom = _FT._parse_pad_padding(padding)
         new_height = height + top + bottom
         new_width = width + left + right
 
-    return img.view(extra_dims + (num_channels, new_height, new_width))
+    return image.view(extra_dims + (num_channels, new_height, new_width))
 
 
 # TODO: This should be removed once pytorch pad supports non-scalar padding values
 def _pad_with_vector_fill(
-    img: torch.Tensor,
+    image: torch.Tensor,
     padding: Union[int, List[int]],
     fill: List[float],
     padding_mode: str = "constant",
@@ -630,9 +680,9 @@ def _pad_with_vector_fill(
     if padding_mode != "constant":
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
-    output = _pad_with_scalar_fill(img, padding, fill=0, padding_mode="constant")
+    output = _pad_with_scalar_fill(image, padding, fill=0, padding_mode="constant")
     left, right, top, bottom = _parse_pad_padding(padding)
-    fill = torch.tensor(fill, dtype=img.dtype, device=img.device).view(-1, 1, 1)
+    fill = torch.tensor(fill, dtype=image.dtype, device=image.device).view(-1, 1, 1)
 
     if top > 0:
         output[..., :top, :] = fill
@@ -663,7 +713,7 @@ def pad_mask(
     else:
         needs_squeeze = False
 
-    output = pad_image_tensor(img=mask, padding=padding, fill=fill, padding_mode=padding_mode)
+    output = pad_image_tensor(mask, padding=padding, fill=fill, padding_mode=padding_mode)
 
     if needs_squeeze:
         output = output.squeeze(0)
@@ -673,15 +723,16 @@ def pad_mask(
 
 def pad_bounding_box(
     bounding_box: torch.Tensor,
-    padding: Union[int, List[int]],
     format: features.BoundingBoxFormat,
+    image_size: Tuple[int, int],
+    padding: Union[int, List[int]],
     padding_mode: str = "constant",
-) -> torch.Tensor:
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     if padding_mode not in ["constant"]:
         # TODO: add support of other padding modes
         raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
 
-    left, _, top, _ = _parse_pad_padding(padding)
+    left, right, top, bottom = _parse_pad_padding(padding)
 
     bounding_box = bounding_box.clone()
 
@@ -691,7 +742,12 @@ def pad_bounding_box(
     if format == features.BoundingBoxFormat.XYXY:
         bounding_box[..., 2] += left
         bounding_box[..., 3] += top
-    return bounding_box
+
+    height, width = image_size
+    height += top + bottom
+    width += left + right
+
+    return bounding_box, (height, width)
 
 
 def pad(
@@ -718,7 +774,9 @@ def crop_bounding_box(
     format: features.BoundingBoxFormat,
     top: int,
     left: int,
-) -> torch.Tensor:
+    height: int,
+    width: int,
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     )
@@ -727,8 +785,11 @@ def crop_bounding_box(
     bounding_box[..., 0::2] -= left
     bounding_box[..., 1::2] -= top
 
-    return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    return (
+        convert_format_bounding_box(
+            bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+        ),
+        (height, width),
     )
 
 
@@ -746,22 +807,22 @@ def crop(inpt: features.InputTypeJIT, top: int, left: int, height: int, width: i
 
 
 def perspective_image_tensor(
-    img: torch.Tensor,
+    image: torch.Tensor,
     perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
-    return _FT.perspective(img, perspective_coeffs, interpolation=interpolation.value, fill=fill)
+    return _FT.perspective(image, perspective_coeffs, interpolation=interpolation.value, fill=fill)
 
 
 @torch.jit.unused
 def perspective_image_pil(
-    img: PIL.Image.Image,
+    image: PIL.Image.Image,
     perspective_coeffs: List[float],
     interpolation: InterpolationMode = InterpolationMode.BICUBIC,
     fill: features.FillTypeJIT = None,
 ) -> PIL.Image.Image:
-    return _FP.perspective(img, perspective_coeffs, interpolation=pil_modes_mapping[interpolation], fill=fill)
+    return _FP.perspective(image, perspective_coeffs, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
 def perspective_bounding_box(
@@ -885,24 +946,24 @@ def perspective(
 
 
 def elastic_image_tensor(
-    img: torch.Tensor,
+    image: torch.Tensor,
     displacement: torch.Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
-    return _FT.elastic_transform(img, displacement, interpolation=interpolation.value, fill=fill)
+    return _FT.elastic_transform(image, displacement, interpolation=interpolation.value, fill=fill)
 
 
 @torch.jit.unused
 def elastic_image_pil(
-    img: PIL.Image.Image,
+    image: PIL.Image.Image,
     displacement: torch.Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
 ) -> PIL.Image.Image:
-    t_img = pil_to_tensor(img)
+    t_img = pil_to_tensor(image)
     output = elastic_image_tensor(t_img, displacement, interpolation=interpolation, fill=fill)
-    return to_pil_image(output, mode=img.mode)
+    return to_pil_image(output, mode=image.mode)
 
 
 def elastic_bounding_box(
@@ -1007,48 +1068,48 @@ def _center_crop_compute_crop_anchor(
     return crop_top, crop_left
 
 
-def center_crop_image_tensor(img: torch.Tensor, output_size: List[int]) -> torch.Tensor:
+def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    _, image_height, image_width = get_dimensions_image_tensor(img)
+    _, image_height, image_width = get_dimensions_image_tensor(image)
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-        img = pad_image_tensor(img, padding_ltrb, fill=0)
+        image = pad_image_tensor(image, padding_ltrb, fill=0)
 
-        _, image_height, image_width = get_dimensions_image_tensor(img)
+        _, image_height, image_width = get_dimensions_image_tensor(image)
         if crop_width == image_width and crop_height == image_height:
-            return img
+            return image
 
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, image_height, image_width)
-    return crop_image_tensor(img, crop_top, crop_left, crop_height, crop_width)
+    return crop_image_tensor(image, crop_top, crop_left, crop_height, crop_width)
 
 
 @torch.jit.unused
-def center_crop_image_pil(img: PIL.Image.Image, output_size: List[int]) -> PIL.Image.Image:
+def center_crop_image_pil(image: PIL.Image.Image, output_size: List[int]) -> PIL.Image.Image:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    _, image_height, image_width = get_dimensions_image_pil(img)
+    _, image_height, image_width = get_dimensions_image_pil(image)
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-        img = pad_image_pil(img, padding_ltrb, fill=0)
+        image = pad_image_pil(image, padding_ltrb, fill=0)
 
-        _, image_height, image_width = get_dimensions_image_pil(img)
+        _, image_height, image_width = get_dimensions_image_pil(image)
         if crop_width == image_width and crop_height == image_height:
-            return img
+            return image
 
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, image_height, image_width)
-    return crop_image_pil(img, crop_top, crop_left, crop_height, crop_width)
+    return crop_image_pil(image, crop_top, crop_left, crop_height, crop_width)
 
 
 def center_crop_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
-    output_size: List[int],
     image_size: Tuple[int, int],
-) -> torch.Tensor:
+    output_size: List[int],
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *image_size)
-    return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left)
+    return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left, height=crop_height, width=crop_width)
 
 
 def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
@@ -1058,7 +1119,7 @@ def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor
     else:
         needs_squeeze = False
 
-    output = center_crop_image_tensor(img=mask, output_size=output_size)
+    output = center_crop_image_tensor(image=mask, output_size=output_size)
 
     if needs_squeeze:
         output = output.squeeze(0)
@@ -1076,7 +1137,7 @@ def center_crop(inpt: features.InputTypeJIT, output_size: List[int]) -> features
 
 
 def resized_crop_image_tensor(
-    img: torch.Tensor,
+    image: torch.Tensor,
     top: int,
     left: int,
     height: int,
@@ -1085,13 +1146,13 @@ def resized_crop_image_tensor(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     antialias: bool = False,
 ) -> torch.Tensor:
-    img = crop_image_tensor(img, top, left, height, width)
-    return resize_image_tensor(img, size, interpolation=interpolation, antialias=antialias)
+    image = crop_image_tensor(image, top, left, height, width)
+    return resize_image_tensor(image, size, interpolation=interpolation, antialias=antialias)
 
 
 @torch.jit.unused
 def resized_crop_image_pil(
-    img: PIL.Image.Image,
+    image: PIL.Image.Image,
     top: int,
     left: int,
     height: int,
@@ -1099,8 +1160,8 @@ def resized_crop_image_pil(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
 ) -> PIL.Image.Image:
-    img = crop_image_pil(img, top, left, height, width)
-    return resize_image_pil(img, size, interpolation=interpolation)
+    image = crop_image_pil(image, top, left, height, width)
+    return resize_image_pil(image, size, interpolation=interpolation)
 
 
 def resized_crop_bounding_box(
@@ -1111,9 +1172,9 @@ def resized_crop_bounding_box(
     height: int,
     width: int,
     size: List[int],
-) -> torch.Tensor:
-    bounding_box = crop_bounding_box(bounding_box, format, top, left)
-    return resize_bounding_box(bounding_box, size, (height, width))
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    bounding_box, _ = crop_bounding_box(bounding_box, format, top, left, height, width)
+    return resize_bounding_box(bounding_box, (height, width), size)
 
 
 def resized_crop_mask(
@@ -1163,40 +1224,40 @@ def _parse_five_crop_size(size: List[int]) -> List[int]:
 
 
 def five_crop_image_tensor(
-    img: torch.Tensor, size: List[int]
+    image: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     crop_height, crop_width = _parse_five_crop_size(size)
-    _, image_height, image_width = get_dimensions_image_tensor(img)
+    _, image_height, image_width = get_dimensions_image_tensor(image)
 
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
         raise ValueError(msg.format(size, (image_height, image_width)))
 
-    tl = crop_image_tensor(img, 0, 0, crop_height, crop_width)
-    tr = crop_image_tensor(img, 0, image_width - crop_width, crop_height, crop_width)
-    bl = crop_image_tensor(img, image_height - crop_height, 0, crop_height, crop_width)
-    br = crop_image_tensor(img, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
-    center = center_crop_image_tensor(img, [crop_height, crop_width])
+    tl = crop_image_tensor(image, 0, 0, crop_height, crop_width)
+    tr = crop_image_tensor(image, 0, image_width - crop_width, crop_height, crop_width)
+    bl = crop_image_tensor(image, image_height - crop_height, 0, crop_height, crop_width)
+    br = crop_image_tensor(image, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
+    center = center_crop_image_tensor(image, [crop_height, crop_width])
 
     return tl, tr, bl, br, center
 
 
 @torch.jit.unused
 def five_crop_image_pil(
-    img: PIL.Image.Image, size: List[int]
+    image: PIL.Image.Image, size: List[int]
 ) -> Tuple[PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]:
     crop_height, crop_width = _parse_five_crop_size(size)
-    _, image_height, image_width = get_dimensions_image_pil(img)
+    _, image_height, image_width = get_dimensions_image_pil(image)
 
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
         raise ValueError(msg.format(size, (image_height, image_width)))
 
-    tl = crop_image_pil(img, 0, 0, crop_height, crop_width)
-    tr = crop_image_pil(img, 0, image_width - crop_width, crop_height, crop_width)
-    bl = crop_image_pil(img, image_height - crop_height, 0, crop_height, crop_width)
-    br = crop_image_pil(img, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
-    center = center_crop_image_pil(img, [crop_height, crop_width])
+    tl = crop_image_pil(image, 0, 0, crop_height, crop_width)
+    tr = crop_image_pil(image, 0, image_width - crop_width, crop_height, crop_width)
+    bl = crop_image_pil(image, image_height - crop_height, 0, crop_height, crop_width)
+    br = crop_image_pil(image, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
+    center = center_crop_image_pil(image, [crop_height, crop_width])
 
     return tl, tr, bl, br, center
 
@@ -1216,29 +1277,29 @@ def five_crop(
         return five_crop_image_pil(inpt, size)
 
 
-def ten_crop_image_tensor(img: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
-    tl, tr, bl, br, center = five_crop_image_tensor(img, size)
+def ten_crop_image_tensor(image: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
+    tl, tr, bl, br, center = five_crop_image_tensor(image, size)
 
     if vertical_flip:
-        img = vertical_flip_image_tensor(img)
+        image = vertical_flip_image_tensor(image)
     else:
-        img = horizontal_flip_image_tensor(img)
+        image = horizontal_flip_image_tensor(image)
 
-    tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_tensor(img, size)
+    tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_tensor(image, size)
 
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
 
 @torch.jit.unused
-def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: bool = False) -> List[PIL.Image.Image]:
-    tl, tr, bl, br, center = five_crop_image_pil(img, size)
+def ten_crop_image_pil(image: PIL.Image.Image, size: List[int], vertical_flip: bool = False) -> List[PIL.Image.Image]:
+    tl, tr, bl, br, center = five_crop_image_pil(image, size)
 
     if vertical_flip:
-        img = vertical_flip_image_pil(img)
+        image = vertical_flip_image_pil(image)
     else:
-        img = horizontal_flip_image_pil(img)
+        image = horizontal_flip_image_pil(image)
 
-    tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_pil(img, size)
+    tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_pil(image, size)
 
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
