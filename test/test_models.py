@@ -16,7 +16,8 @@ import torch.fx
 import torch.nn as nn
 from _utils_internal import get_relative_path
 from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
-from torchvision import models
+from PIL import Image
+from torchvision import models, transforms
 from torchvision.models import get_model_builder, list_models
 
 
@@ -26,6 +27,41 @@ SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 
 def list_model_fns(module):
     return [get_model_builder(name) for name in list_models(module)]
+
+
+def _get_image(input_shape, real_image, device):
+    """This routine loads a real or random image based on `real_image` argument.
+    Currently, the real image is utilized for the following list of models:
+    - `retinanet_resnet50_fpn`,
+    - `retinanet_resnet50_fpn_v2`,
+    - `keypointrcnn_resnet50_fpn`,
+    - `fasterrcnn_resnet50_fpn`,
+    - `fasterrcnn_resnet50_fpn_v2`,
+    - `fcos_resnet50_fpn`,
+    - `maskrcnn_resnet50_fpn`,
+    - `maskrcnn_resnet50_fpn_v2`,
+    in `test_classification_model` and `test_detection_mode`.
+    To do so, a keyword argument `real_image` was added to the abovelisted models in `_model_params`
+    """
+    if real_image:
+        GRACE_HOPPER = get_relative_path(
+            os.path.dirname(os.path.realpath(__file__)), "test", "assets", "encode_jpeg", "grace_hopper_517x606.jpg"
+        )
+        img = Image.open(GRACE_HOPPER)
+
+        original_width, original_height = img.size
+
+        # make the image square
+        img = img.crop((0, 0, original_width, original_width))
+        img = img.resize(input_shape[1:3])
+
+        convert_tensor = transforms.ToTensor()
+        image = convert_tensor(img)
+        assert tuple(image.size()) == input_shape
+        return image.to(device=device)
+
+    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+    return torch.rand(input_shape).to(device=device)
 
 
 @pytest.fixture
@@ -231,7 +267,6 @@ autocast_flaky_numerics = (
     "maskrcnn_resnet50_fpn",
     "maskrcnn_resnet50_fpn_v2",
     "keypointrcnn_resnet50_fpn",
-    "fasterrcnn_resnet50_fpn",  # See: https://github.com/pytorch/vision/issues/6655
 )
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
@@ -250,6 +285,7 @@ _model_params = {
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "retinanet_resnet50_fpn_v2": {
         "num_classes": 20,
@@ -257,6 +293,7 @@ _model_params = {
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "keypointrcnn_resnet50_fpn": {
         "num_classes": 2,
@@ -264,18 +301,21 @@ _model_params = {
         "max_size": 224,
         "box_score_thresh": 0.17,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "fasterrcnn_resnet50_fpn": {
         "num_classes": 20,
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "fasterrcnn_resnet50_fpn_v2": {
         "num_classes": 20,
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "fcos_resnet50_fpn": {
         "num_classes": 2,
@@ -283,18 +323,21 @@ _model_params = {
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "maskrcnn_resnet50_fpn": {
         "num_classes": 10,
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "maskrcnn_resnet50_fpn_v2": {
         "num_classes": 10,
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "fasterrcnn_mobilenet_v3_large_fpn": {
         "box_score_thresh": 0.02076,
@@ -633,11 +676,11 @@ def test_classification_model(model_fn, dev):
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
+    real_image = kwargs.pop("real_image", False)
 
     model = model_fn(**kwargs)
     model.eval().to(device=dev)
-    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-    x = torch.rand(input_shape).to(device=dev)
+    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=1e-3)
     assert out.shape[-1] == num_classes
@@ -731,11 +774,11 @@ def test_detection_model(model_fn, dev):
     model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
+    real_image = kwargs.pop("real_image", False)
 
     model = model_fn(**kwargs)
     model.eval().to(device=dev)
-    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-    x = torch.rand(input_shape).to(device=dev)
+    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
     model_input = [x]
     out = model(model_input)
     assert model_input[0] is x
