@@ -567,7 +567,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Union[int, float, Sequence[int], Sequence[float]],
+        fill: Dict[Type, features.FillType],
     ) -> Tuple[Any, features.BoundingBox]:
         # TODO: SolarizeAdd, Cutout, BBox_Cutout, Flip_Only_BBoxes, Cutout_Only_BBoxes
 
@@ -629,3 +629,157 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
             image = self._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
 
         return image, bboxes
+
+
+
+class AutoAugmentDetection(_AutoAugmentDetectionBase):
+    _AUGMENTATION_SPACE = {
+        "AutoContrast": (lambda num_bins, height, width: None, False),
+        "Equalize": (lambda num_bins, height, width: None, False),
+        "Posterize": (
+            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
+            .round()
+            .int(),
+            False,
+        ),
+        "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
+        "SolarizeAdd": None,  # TODO
+        "Color": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Brightness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+
+        'Cutout': None,  # TODO
+        'BBox_Cutout': None,  # TODO
+
+        "Rotate_BBox": None,  # TODO
+        'TranslateX_BBox': None,  # TODO
+        'TranslateY_BBox': None,  # TODO
+        'ShearX_BBox': None,  # TODO
+        'ShearY_BBox': None,  # TODO
+
+        "Rotate_Only_BBoxes": None,  # TODO
+        'ShearX_Only_BBoxes': None,  # TODO
+        'ShearY_Only_BBoxes': None,  # TODO
+        'TranslateX_Only_BBoxes': None,  # TODO
+        'TranslateY_Only_BBoxes': None,  # TODO
+        'Flip_Only_BBoxes': None,  # TODO
+        'Solarize_Only_BBoxes': None,  # TODO
+        'Equalize_Only_BBoxes': None,  # TODO
+        'Cutout_Only_BBoxes': None,  # TODO
+    }
+
+    def __init__(
+        self,
+        policy: str = "v0",
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
+    ) -> None:
+        super().__init__(interpolation=interpolation, fill=fill)
+        self.policy = policy
+        self._policies = self._get_policies(policy)
+
+    def _get_policies(
+        self, policy: str
+    ) -> List[List[Tuple[str, float, Optional[int]]]]:
+        if policy == "v0":
+            return [
+                [('TranslateX_BBox', 0.6, 4), ('Equalize', 0.8, 10)],
+                [('TranslateY_Only_BBoxes', 0.2, 2), ('Cutout', 0.8, 8)],
+                [('Sharpness', 0.0, 8), ('ShearX_BBox', 0.4, 0)],
+                [('ShearY_BBox', 1.0, 2), ('TranslateY_Only_BBoxes', 0.6, 6)],
+                [('Rotate_BBox', 0.6, 10), ('Color', 1.0, 6)],
+            ]
+        elif policy == "v1":
+            return [
+                [('TranslateX_BBox', 0.6, 4), ('Equalize', 0.8, 10)],
+                [('TranslateY_Only_BBoxes', 0.2, 2), ('Cutout', 0.8, 8)],
+                [('Sharpness', 0.0, 8), ('ShearX_BBox', 0.4, 0)],
+                [('ShearY_BBox', 1.0, 2), ('TranslateY_Only_BBoxes', 0.6, 6)],
+                [('Rotate_BBox', 0.6, 10), ('Color', 1.0, 6)],
+                [('Color', 0.0, 0), ('ShearX_Only_BBoxes', 0.8, 4)],
+                [('ShearY_Only_BBoxes', 0.8, 2), ('Flip_Only_BBoxes', 0.0, 10)],
+                [('Equalize', 0.6, 10), ('TranslateX_BBox', 0.2, 2)],
+                [('Color', 1.0, 10), ('TranslateY_Only_BBoxes', 0.4, 6)],
+                [('Rotate_BBox', 0.8, 10), ('Contrast', 0.0, 10)],
+                [('Cutout', 0.2, 2), ('Brightness', 0.8, 10)],
+                [('Color', 1.0, 6), ('Equalize', 1.0, 2)],
+                [('Cutout_Only_BBoxes', 0.4, 6), ('TranslateY_Only_BBoxes', 0.8, 2)],
+                [('Color', 0.2, 8), ('Rotate_BBox', 0.8, 10)],
+                [('Sharpness', 0.4, 4), ('TranslateY_Only_BBoxes', 0.0, 4)],
+                [('Sharpness', 1.0, 4), ('SolarizeAdd', 0.4, 4)],
+                [('Rotate_BBox', 1.0, 8), ('Sharpness', 0.2, 8)],
+                [('ShearY_BBox', 0.6, 10), ('Equalize_Only_BBoxes', 0.6, 8)],
+                [('ShearX_BBox', 0.2, 6), ('TranslateY_Only_BBoxes', 0.2, 10)],
+                [('SolarizeAdd', 0.6, 8), ('Brightness', 0.8, 10)],
+            ]
+        elif policy == "vtest":
+            return [
+                [('TranslateX_BBox', 1.0, 4), ('Equalize', 1.0, 10)],
+            ]
+        elif policy == "v2":
+            return [
+                [('Color', 0.0, 6), ('Cutout', 0.6, 8), ('Sharpness', 0.4, 8)],
+                [('Rotate_BBox', 0.4, 8), ('Sharpness', 0.4, 2), ('Rotate_BBox', 0.8, 10)],
+                [('TranslateY_BBox', 1.0, 8), ('AutoContrast', 0.8, 2)],
+                [('AutoContrast', 0.4, 6), ('ShearX_BBox', 0.8, 8), ('Brightness', 0.0, 10)],
+                [('SolarizeAdd', 0.2, 6), ('Contrast', 0.0, 10), ('AutoContrast', 0.6, 0)],
+                [('Cutout', 0.2, 0), ('Solarize', 0.8, 8), ('Color', 1.0, 4)],
+                [('TranslateY_BBox', 0.0, 4), ('Equalize', 0.6, 8), ('Solarize', 0.0, 10)],
+                [('TranslateY_BBox', 0.2, 2), ('ShearY_BBox', 0.8, 8), ('Rotate_BBox', 0.8, 8)],
+                [('Cutout', 0.8, 8), ('Brightness', 0.8, 8), ('Cutout', 0.2, 2)],
+                [('Color', 0.8, 4), ('TranslateY_BBox', 1.0, 6), ('Rotate_BBox', 0.6, 6)],
+                [('Rotate_BBox', 0.6, 10), ('BBox_Cutout', 1.0, 4), ('Cutout', 0.2, 8)],
+                [('Rotate_BBox', 0.0, 0), ('Equalize', 0.6, 6), ('ShearY_BBox', 0.6, 8)],
+                [('Brightness', 0.8, 8), ('AutoContrast', 0.4, 2), ('Brightness', 0.2, 2)],
+                [('TranslateY_BBox', 0.4, 8), ('Solarize', 0.4, 6), ('SolarizeAdd', 0.2, 10)],
+                [('Contrast', 1.0, 10), ('SolarizeAdd', 0.2, 8), ('Equalize', 0.2, 4)],
+            ]
+        elif policy == "v3":
+            return [
+                [('Posterize', 0.8, 2), ('TranslateX_BBox', 1.0, 8)],
+                [('BBox_Cutout', 0.2, 10), ('Sharpness', 1.0, 8)],
+                [('Rotate_BBox', 0.6, 8), ('Rotate_BBox', 0.8, 10)],
+                [('Equalize', 0.8, 10), ('AutoContrast', 0.2, 10)],
+                [('SolarizeAdd', 0.2, 2), ('TranslateY_BBox', 0.2, 8)],
+                [('Sharpness', 0.0, 2), ('Color', 0.4, 8)],
+                [('Equalize', 1.0, 8), ('TranslateY_BBox', 1.0, 8)],
+                [('Posterize', 0.6, 2), ('Rotate_BBox', 0.0, 10)],
+                [('AutoContrast', 0.6, 0), ('Rotate_BBox', 1.0, 6)],
+                [('Equalize', 0.0, 4), ('Cutout', 0.8, 10)],
+                [('Brightness', 1.0, 2), ('TranslateY_BBox', 1.0, 6)],
+                [('Contrast', 0.0, 2), ('ShearY_BBox', 0.8, 0)],
+                [('AutoContrast', 0.8, 10), ('Contrast', 0.2, 10)],
+                [('Rotate_BBox', 1.0, 10), ('Cutout', 1.0, 10)],
+                [('SolarizeAdd', 0.8, 6), ('Equalize', 0.8, 8)],
+            ]
+        else:
+            raise ValueError(f"The provided policy {policy} is not recognized.")
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+
+        id, image = self._extract_image(sample)
+        _, height, width = get_chw(image)
+
+        policy = self._policies[int(torch.randint(len(self._policies), ()))]
+
+        for transform_id, probability, magnitude_idx in policy:
+            if not torch.rand(()) <= probability:
+                continue
+
+            magnitudes_fn, signed = self._AUGMENTATION_SPACE[transform_id]
+
+            magnitudes = magnitudes_fn(10, height, width)
+            if magnitudes is not None:
+                magnitude = float(magnitudes[magnitude_idx])
+                if signed and torch.rand(()) <= 0.5:
+                    magnitude *= -1
+            else:
+                magnitude = 0.0
+
+            image = self._apply_image_transform(
+                image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+            )
+
+        return self._put_into_sample(sample, id, image)
