@@ -6,6 +6,7 @@ from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Type
 import PIL.Image
 import torch
 from torch._C import DisableTorchFunction
+from torch.types import _device, _dtype, _size
 from torchvision.transforms import InterpolationMode
 
 
@@ -29,14 +30,14 @@ class _Feature(torch.Tensor):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> F:
-        tensor = torch.as_tensor(  # type: ignore[return-value]
+        tensor = torch.as_tensor(
             data,
             dtype=dtype,  # type: ignore[arg-type]
             device=device,  # type: ignore[arg-type]
         )
         output = tensor.as_subclass(cls).requires_grad_(requires_grad)  # type: ignore[arg-type]
-        output._tensor = tensor
-        return output
+        output._tensor = tensor  # type: ignore[attr-defined]
+        return output  # type: ignore[return-value]
 
     @classmethod
     def new_like(
@@ -50,7 +51,7 @@ class _Feature(torch.Tensor):
         **kwargs: Any,
     ) -> F:
         # Quick fix: Feature -> Tensor => won't go to __torch_function__
-        other = other.as_subclass(torch.Tensor)
+        other = other.as_subclass(torch.Tensor)  # type: ignore[arg-type]
 
         return cls(
             data,
@@ -142,24 +143,24 @@ class _Feature(torch.Tensor):
     # Add properties for common attributes like shape, dtype, device, ndim etc
     # this way we return the result without passing into __torch_function__
     @property
-    def shape(self):
-        return self._tensor.shape
+    def shape(self) -> _size:  # type: ignore[override]
+        return self._tensor.shape  # type: ignore[attr-defined, no-any-return]
 
     @property
-    def ndim(self):
-        return self._tensor.ndim
+    def ndim(self) -> int:  # type: ignore[override]
+        return self._tensor.ndim  # type: ignore[attr-defined, no-any-return]
 
     @property
-    def device(self):
-        return self._tensor.device
+    def device(self, *args: Any, **kwargs: Any) -> _device:  # type: ignore[override]
+        return self._tensor.device  # type: ignore[attr-defined, no-any-return]
 
     @property
-    def dtype(self):
-        return self._tensor.dtype
+    def dtype(self) -> _dtype:  # type: ignore[override]
+        return self._tensor.dtype  # type: ignore[attr-defined, no-any-return]
 
     @property
-    def requires_grad(self):
-        return self._tensor.requires_grad
+    def requires_grad(self) -> bool:  # type: ignore[override]
+        return self._tensor.requires_grad  # type: ignore[attr-defined, no-any-return]
 
     def horizontal_flip(self) -> _Feature:
         return self

@@ -59,6 +59,18 @@ def _from_tensor_shape(shape: List[int]) -> ColorSpace:
         return ColorSpace.OTHER
 
 
+def _setup_color_space(color_space: Union[None, ColorSpace, str], shape: List[int]) -> ColorSpace:
+    if color_space is None:
+        color_space = ColorSpace.from_tensor_shape(shape)
+        if color_space == ColorSpace.OTHER:
+            warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
+        return color_space
+    elif isinstance(color_space, str):
+        return ColorSpace.from_str(color_space.upper())
+
+    raise ValueError
+
+
 class Image(_Feature):
     color_space: ColorSpace
 
@@ -78,15 +90,7 @@ class Image(_Feature):
             data = data.unsqueeze(0)
         image = super().__new__(cls, data, requires_grad=requires_grad)
 
-        if color_space is None:
-            color_space = ColorSpace.from_tensor_shape(image.shape)  # type: ignore[arg-type]
-            if color_space == ColorSpace.OTHER:
-                warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
-        elif isinstance(color_space, str):
-            color_space = ColorSpace.from_str(color_space.upper())
-        elif not isinstance(color_space, ColorSpace):
-            raise ValueError
-        image.color_space = color_space
+        image.color_space = _setup_color_space(color_space, list(image.shape))
 
         return image
 
@@ -98,13 +102,12 @@ class Image(_Feature):
         cls, other: Image, data: Any, *, color_space: Optional[Union[ColorSpace, str]] = None, **kwargs: Any
     ) -> Image:
         # Question: Is it safe to assume data to be a tensor ?
-        out = data.as_subclass(Image)
-        out.color_space = color_space if color_space is not None else other.color_space
-        out._tensor = data
+        out: Image = data.as_subclass(Image)
+        out.color_space = _setup_color_space(
+            color_space if color_space is not None else other.color_space, list(data.shape)
+        )
+        out._tensor = data  # type: ignore[attr-defined]
         return out
-        # return super().new_like(
-        #     other, data, color_space=color_space if color_space is not None else other.color_space, **kwargs
-        # )
 
     @property
     def image_size(self) -> Tuple[int, int]:
