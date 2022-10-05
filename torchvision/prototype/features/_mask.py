@@ -5,7 +5,7 @@ from typing import List, Optional, Union
 import torch
 from torchvision.transforms import InterpolationMode
 
-from ._feature import _Feature
+from ._feature import _Feature, FillTypeJIT
 
 
 class Mask(_Feature):
@@ -51,7 +51,7 @@ class Mask(_Feature):
     def pad(
         self,
         padding: Union[int, List[int]],
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> Mask:
         output = self._F.pad_mask(self, padding, padding_mode=padding_mode, fill=fill)
@@ -62,7 +62,7 @@ class Mask(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Mask:
         output = self._F.rotate_mask(self, angle, expand=expand, center=center, fill=fill)
@@ -70,12 +70,12 @@ class Mask(_Feature):
 
     def affine(
         self,
-        angle: float,
+        angle: Union[int, float],
         translate: List[float],
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Mask:
         output = self._F.affine_mask(
@@ -93,7 +93,7 @@ class Mask(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillTypeJIT = None,
     ) -> Mask:
         output = self._F.perspective_mask(self, perspective_coeffs, fill=fill)
         return Mask.new_like(self, output)
@@ -102,7 +102,7 @@ class Mask(_Feature):
         self,
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, List[float]]] = None,
+        fill: FillTypeJIT = None,
     ) -> Mask:
         output = self._F.elastic_mask(self, displacement, fill=fill)
         return Mask.new_like(self, output, dtype=output.dtype)

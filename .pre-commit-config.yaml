@@ -19,7 +19,7 @@ repos:
           - usort == 1.0.2
 
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.9.2
+    rev: 5.0.4
     hooks:
       - id: flake8
         args: [--config=setup.cfg]

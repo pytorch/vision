@@ -1,6 +1,8 @@
 import collections.abc
 import dataclasses
-from typing import Callable, Dict, Optional, Sequence, Type
+
+from collections import defaultdict
+from typing import Callable, Dict, List, Optional, Sequence, Type
 
 import pytest
 import torchvision.prototype.transforms.functional as F
@@ -22,6 +24,18 @@ class PILKernelInfo:
         self.kernel_name = self.kernel_name or self.kernel.__name__
 
 
+def skip_python_scalar_arg_jit(name, *, reason="Python scalar int or float is not supported when scripting"):
+    return Skip(
+        "test_scripted_smoke",
+        condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs[name], (int, float)),
+        reason=reason,
+    )
+
+
+def skip_integer_size_jit(name="size"):
+    return skip_python_scalar_arg_jit(name, reason="Integer size is not supported when scripting.")
+
+
 @dataclasses.dataclass
 class DispatcherInfo:
     dispatcher: Callable
@@ -30,12 +44,15 @@ class DispatcherInfo:
     pil_kernel_info: Optional[PILKernelInfo] = None
     method_name: str = dataclasses.field(default=None)
     skips: Sequence[Skip] = dataclasses.field(default_factory=list)
-    _skips_map: Dict[str, Skip] = dataclasses.field(default=None, init=False)
+    _skips_map: Dict[str, List[Skip]] = dataclasses.field(default=None, init=False)
 
     def __post_init__(self):
         self.kernel_infos = {feature_type: KERNEL_INFO_MAP[kernel] for feature_type, kernel in self.kernels.items()}
         self.method_name = self.method_name or self.dispatcher.__name__
-        self._skips_map = {skip.test_name: skip for skip in self.skips}
+        skips_map = defaultdict(list)
+        for skip in self.skips:
+            skips_map[skip.test_name].append(skip)
+        self._skips_map = dict(skips_map)
 
     def sample_inputs(self, *feature_types, filter_metadata=True):
         for feature_type in feature_types or self.kernels.keys():
@@ -54,9 +71,13 @@ class DispatcherInfo:
                     yield args_kwargs
 
     def maybe_skip(self, *, test_name, args_kwargs, device):
-        skip = self._skips_map.get(test_name)
-        if skip and skip.condition(args_kwargs, device):
-            pytest.skip(skip.reason)
+        skips = self._skips_map.get(test_name)
+        if not skips:
+            return
+
+        for skip in skips:
+            if skip.condition(args_kwargs, device):
+                pytest.skip(skip.reason)
 
 
 def fill_sequence_needs_broadcast(args_kwargs, device):
@@ -102,6 +123,9 @@ DISPATCHER_INFOS = [
             features.Mask: F.resize_mask,
         },
         pil_kernel_info=PILKernelInfo(F.resize_image_pil),
+        skips=[
+            skip_integer_size_jit(),
+        ],
     ),
     DispatcherInfo(
         F.affine,
@@ -113,6 +137,7 @@ DISPATCHER_INFOS = [
         pil_kernel_info=PILKernelInfo(F.affine_image_pil),
         skips=[
             skip_dispatch_pil_if_fill_sequence_needs_broadcast,
+            skip_python_scalar_arg_jit("shear", reason="Scalar shear is not supported by JIT"),
         ],
     ),
     DispatcherInfo(
@@ -202,6 +227,9 @@ DISPATCHER_INFOS = [
             features.Mask: F.center_crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.center_crop_image_pil),
+        skips=[
+            skip_integer_size_jit("output_size"),
+        ],
     ),
     DispatcherInfo(
         F.gaussian_blur,
@@ -209,6 +237,10 @@ DISPATCHER_INFOS = [
             features.Image: F.gaussian_blur_image_tensor,
         },
         pil_kernel_info=PILKernelInfo(F.gaussian_blur_image_pil),
+        skips=[
+            skip_python_scalar_arg_jit("kernel_size"),
+            skip_python_scalar_arg_jit("sigma"),
+        ],
     ),
     DispatcherInfo(
         F.equalize,
@@ -304,11 +336,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.five_crop_image_pil),
         skips=[
-            Skip(
-                "test_scripted_smoke",
-                condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                reason="Integer size is not supported when scripting five_crop_image_tensor.",
-            ),
+            skip_integer_size_jit(),
             skip_dispatch_feature,
         ],
     ),
@@ -319,11 +347,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.ten_crop_image_pil),
         skips=[
-            Skip(
-                "test_scripted_smoke",
-                condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["size"], int),
-                reason="Integer size is not supported when scripting ten_crop_image_tensor.",
-            ),
+            skip_integer_size_jit(),
             skip_dispatch_feature,
         ],
     ),

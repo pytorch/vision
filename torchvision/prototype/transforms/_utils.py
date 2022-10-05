@@ -1,14 +1,14 @@
 import numbers
 from collections import defaultdict
 
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, Sequence, Tuple, Type, Union
 
 import PIL.Image
 
-import torch
 from torch.utils._pytree import tree_flatten
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
+from torchvision.prototype.features._feature import FillType
 
 from torchvision.prototype.transforms.functional._meta import get_chw
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
@@ -16,12 +16,24 @@ from torchvision.transforms.transforms import _check_sequence_input, _setup_angl
 from typing_extensions import Literal
 
 
-# Type shortcuts:
-DType = Union[torch.Tensor, PIL.Image.Image, features._Feature]
-FillType = Union[int, float, Sequence[int], Sequence[float]]
+def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size: int = 2) -> Sequence[float]:
+    if not isinstance(arg, (float, Sequence)):
+        raise TypeError(f"{name} should be float or a sequence of floats. Got {type(arg)}")
+    if isinstance(arg, Sequence) and len(arg) != req_size:
+        raise ValueError(f"If {name} is a sequence its length should be one of {req_size}. Got {len(arg)}")
+    if isinstance(arg, Sequence):
+        for element in arg:
+            if not isinstance(element, float):
+                raise ValueError(f"{name} should be a sequence of floats. Got {type(element)}")
+
+    if isinstance(arg, float):
+        arg = [float(arg), float(arg)]
+    if isinstance(arg, (list, tuple)) and len(arg) == 1:
+        arg = [arg[0], arg[0]]
+    return arg
 
 
-def _check_fill_arg(fill: Optional[Union[FillType, Dict[Type, FillType]]]) -> None:
+def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
     if isinstance(fill, dict):
         for key, value in fill.items():
             # Check key for type
@@ -31,15 +43,13 @@ def _check_fill_arg(fill: Optional[Union[FillType, Dict[Type, FillType]]]) -> No
             raise TypeError("Got inappropriate fill arg")
 
 
-def _setup_fill_arg(
-    fill: Optional[Union[FillType, Dict[Type, FillType]]]
-) -> Union[Dict[Type, FillType], Dict[Type, None]]:
+def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillType]:
     _check_fill_arg(fill)
 
     if isinstance(fill, dict):
         return fill
 
-    return defaultdict(lambda: fill)  # type: ignore[return-value]
+    return defaultdict(lambda: fill)  # type: ignore[return-value, arg-type]
 
 
 def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
