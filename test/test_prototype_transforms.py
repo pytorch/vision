@@ -157,12 +157,17 @@ class TestSmoke:
                             features.ColorSpace.RGB,
                         ],
                         dtypes=[torch.uint8],
-                        extra_dims=[(4,)],
+                        **(
+                            dict(num_frames=[1, "random"], extra_dims=[()])
+                            if fn is make_videos
+                            else dict(extra_dims=[(4,)])
+                        ),
                     )
                     for fn in [
                         make_images,
                         make_vanilla_tensor_images,
                         make_pil_images,
+                        make_videos,
                     ]
                 ),
             )

@@ -31,26 +31,27 @@ class _AutoAugmentBase(Transform):
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
 
-    def _extract_image(
+    def _extract_image_like(
         self,
         sample: Any,
         unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.Mask),
     ) -> Tuple[int, features.ImageType]:
         sample_flat, _ = tree_flatten(sample)
-        images = []
+        image_likes = []
         for id, inpt in enumerate(sample_flat):
-            if _isinstance(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor)):
-                images.append((id, inpt))
+            if _isinstance(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)):
+                image_likes.append((id, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
 
-        if not images:
+        if not image_likes:
             raise TypeError("Found no image in the sample.")
-        if len(images) > 1:
+        if len(image_likes) > 1:
             raise TypeError(
-                f"Auto augment transformations are only properly defined for a single image, but found {len(images)}."
+                f"Auto augment transformations are only properly defined for a single image or video, "
+                f"but found {len(image_likes)}."
             )
-        return images[0]
+        return image_likes[0]
 
     def _put_into_sample(self, sample: Any, id: int, item: Any) -> Any:
         sample_flat, spec = tree_flatten(sample)
@@ -276,7 +277,7 @@ class AutoAugment(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        id, image = self._extract_image(sample)
+        id, image = self._extract_image_like(sample)
         _, height, width = get_chw(image)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
@@ -347,7 +348,7 @@ class RandAugment(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        id, image = self._extract_image(sample)
+        id, image = self._extract_image_like(sample)
         _, height, width = get_chw(image)
 
         for _ in range(self.num_ops):
@@ -401,7 +402,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        id, image = self._extract_image(sample)
+        id, image = self._extract_image_like(sample)
         _, height, width = get_chw(image)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
@@ -471,7 +472,7 @@ class AugMix(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        id, orig_image = self._extract_image(sample)
+        id, orig_image = self._extract_image_like(sample)
         _, height, width = get_chw(orig_image)
 
         if isinstance(orig_image, torch.Tensor):
