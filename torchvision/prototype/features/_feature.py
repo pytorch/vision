@@ -144,23 +144,28 @@ class _Feature(torch.Tensor):
     # this way we return the result without passing into __torch_function__
     @property
     def shape(self):
-        return self.as_subclass(torch.Tensor).shape
+        with DisableTorchFunction():
+            return super().shape
 
     @property
     def ndim(self):
-        return self.as_subclass(torch.Tensor).ndim
+        with DisableTorchFunction():
+            return super().ndim
 
     @property
     def device(self):
-        return self.as_subclass(torch.Tensor).device
+        with DisableTorchFunction():
+            return super().device
 
     @property
     def dtype(self):
-        return self.as_subclass(torch.Tensor).dtype
+        with DisableTorchFunction():
+            return super().dtype
 
     @property
     def requires_grad(self):
-        return self.as_subclass(torch.Tensor).requires_grad
+        with DisableTorchFunction():
+            return super().requires_grad
 
     def horizontal_flip(self) -> _Feature:
         return self
