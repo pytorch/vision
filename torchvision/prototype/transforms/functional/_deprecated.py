@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Union
+from typing import Any, List
 
 import PIL.Image
 import torch
@@ -8,6 +8,7 @@ from torchvision.prototype import features
 from torchvision.transforms import functional as _F
 
 
+@torch.jit.unused
 def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
     replacement = "convert_color_space(..., color_space=features.ColorSpace.GRAY)"
@@ -21,10 +22,12 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
     return _F.to_grayscale(inpt, num_output_channels=num_output_channels)
 
 
-def rgb_to_grayscale(
-    inpt: Union[PIL.Image.Image, torch.Tensor], num_output_channels: int = 1
-) -> Union[PIL.Image.Image, torch.Tensor]:
-    old_color_space = features.Image.guess_color_space(inpt) if features.is_simple_tensor(inpt) else None
+def rgb_to_grayscale(inpt: features.LegacyImageTypeJIT, num_output_channels: int = 1) -> features.LegacyImageTypeJIT:
+    old_color_space = (
+        features._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
+        if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image))
+        else None
+    )
 
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
     replacement = (
@@ -44,9 +47,18 @@ def rgb_to_grayscale(
     return _F.rgb_to_grayscale(inpt, num_output_channels=num_output_channels)
 
 
+@torch.jit.unused
 def to_tensor(inpt: Any) -> torch.Tensor:
     warnings.warn(
         "The function `to_tensor(...)` is deprecated and will be removed in a future release. "
         "Instead, please use `to_image_tensor(...)` followed by `convert_image_dtype(...)`."
     )
     return _F.to_tensor(inpt)
+
+
+def get_image_size(inpt: features.ImageTypeJIT) -> List[int]:
+    warnings.warn(
+        "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
+        "Instead, please use `get_spatial_size(...)` which returns `[h, w]` instead of `[w, h]`."
+    )
+    return _F.get_image_size(inpt)

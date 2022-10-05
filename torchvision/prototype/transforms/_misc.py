@@ -8,7 +8,7 @@ from torchvision.ops import remove_small_boxes
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
-from ._utils import _setup_size, has_any, query_bounding_box
+from ._utils import _setup_float_or_seq, _setup_size, has_any, query_bounding_box
 
 
 class Identity(Transform):
@@ -68,7 +68,7 @@ class LinearTransformation(Transform):
 
         return super().forward(*inputs)
 
-    def _transform(self, inpt: Union[torch.Tensor, features._Feature], params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> torch.Tensor:
         # Image instance after linear transformation is not Image anymore due to unknown data range
         # Thus we will return Tensor for input Image
 
@@ -101,7 +101,7 @@ class Normalize(Transform):
         self.std = list(std)
         self.inplace = inplace
 
-    def _transform(self, inpt: Union[torch.Tensor, features._Feature], params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> torch.Tensor:
         return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
     def forward(self, *inpts: Any) -> Any:
@@ -112,7 +112,7 @@ class Normalize(Transform):
 
 class GaussianBlur(Transform):
     def __init__(
-        self, kernel_size: Union[int, Sequence[int]], sigma: Union[float, Sequence[float]] = (0.1, 2.0)
+        self, kernel_size: Union[int, Sequence[int]], sigma: Union[int, float, Sequence[float]] = (0.1, 2.0)
     ) -> None:
         super().__init__()
         self.kernel_size = _setup_size(kernel_size, "Kernel size should be a tuple/list of two integers")
@@ -120,17 +120,17 @@ class GaussianBlur(Transform):
             if ks <= 0 or ks % 2 == 0:
                 raise ValueError("Kernel size value should be an odd and positive number.")
 
-        if isinstance(sigma, float):
+        if isinstance(sigma, (int, float)):
             if sigma <= 0:
                 raise ValueError("If sigma is a single number, it must be positive.")
-            sigma = (sigma, sigma)
+            sigma = float(sigma)
         elif isinstance(sigma, Sequence) and len(sigma) == 2:
             if not 0.0 < sigma[0] <= sigma[1]:
                 raise ValueError("sigma values should be positive and of the form (min, max).")
         else:
-            raise TypeError("sigma should be a single float or a list/tuple with length 2 floats.")
+            raise TypeError("sigma should be a single int or float or a list/tuple with length 2 floats.")
 
-        self.sigma = sigma
+        self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
@@ -150,7 +150,7 @@ class ToDtype(Lambda):
 
 
 class RemoveSmallBoundingBoxes(Transform):
-    _transformed_types = (features.BoundingBox, features.SegmentationMask, features.Label, features.OneHotLabel)
+    _transformed_types = (features.BoundingBox, features.Mask, features.Label, features.OneHotLabel)
 
     def __init__(self, min_size: float = 1.0) -> None:
         super().__init__()
@@ -163,7 +163,7 @@ class RemoveSmallBoundingBoxes(Transform):
         #  be in XYXY format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH
         #  format,we need to convert first just to afterwards compute the width and height again, although they were
         #  there in the first place for these formats.
-        bounding_box = F.convert_bounding_box_format(
+        bounding_box = F.convert_format_bounding_box(
             bounding_box, old_format=bounding_box.format, new_format=features.BoundingBoxFormat.XYXY
         )
         valid_indices = remove_small_boxes(bounding_box, min_size=self.min_size)

@@ -1,6 +1,5 @@
 import math
-import numbers
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
@@ -10,7 +9,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.prototype.transforms.functional._meta import get_chw
 
-from ._utils import _isinstance
+from ._utils import _isinstance, _setup_fill_arg
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -21,14 +20,11 @@ class _AutoAugmentBase(Transform):
         self,
         *,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
     ) -> None:
         super().__init__()
         self.interpolation = interpolation
-
-        if not isinstance(fill, (numbers.Number, tuple, list)):
-            raise TypeError("Got inappropriate fill arg")
-        self.fill = fill
+        self.fill = _setup_fill_arg(fill)
 
     def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
         keys = tuple(dct.keys())
@@ -38,8 +34,8 @@ class _AutoAugmentBase(Transform):
     def _extract_image(
         self,
         sample: Any,
-        unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask),
-    ) -> Tuple[int, Union[PIL.Image.Image, torch.Tensor, features.Image]]:
+        unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.Mask),
+    ) -> Tuple[int, features.ImageType]:
         sample_flat, _ = tree_flatten(sample)
         images = []
         for id, inpt in enumerate(sample_flat):
@@ -63,20 +59,14 @@ class _AutoAugmentBase(Transform):
 
     def _apply_image_transform(
         self,
-        image: Any,
+        image: features.ImageType,
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Union[int, float, Sequence[int], Sequence[float]],
-    ) -> Any:
-
-        # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
-        # So, we have to put fill as None if fill == 0
-        fill_: Optional[Union[int, float, Sequence[int], Sequence[float]]]
-        if isinstance(fill, int) and fill == 0:
-            fill_ = None
-        else:
-            fill_ = fill
+        fill: Dict[Type, features.FillType],
+    ) -> features.ImageType:
+        fill_ = fill[type(image)]
+        fill_ = F._geometry._convert_fill_arg(fill_)
 
         if transform_id == "Identity":
             return image
@@ -187,7 +177,7 @@ class AutoAugment(_AutoAugmentBase):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -287,7 +277,7 @@ class AutoAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         id, image = self._extract_image(sample)
-        num_channels, height, width = get_chw(image)
+        _, height, width = get_chw(image)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
@@ -347,7 +337,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -403,7 +393,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         self,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -463,7 +453,7 @@ class AugMix(_AutoAugmentBase):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Union[int, float, Sequence[int], Sequence[float]] = 0,
+        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10
@@ -487,7 +477,7 @@ class AugMix(_AutoAugmentBase):
         if isinstance(orig_image, torch.Tensor):
             image = orig_image
         else:  # isinstance(inpt, PIL.Image.Image):
-            image = F.to_image_tensor(orig_image)
+            image = F.pil_to_tensor(orig_image)
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 

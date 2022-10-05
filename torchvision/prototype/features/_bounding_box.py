@@ -6,7 +6,7 @@ import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms import InterpolationMode  # TODO: this needs to be moved out of transforms
 
-from ._feature import _Feature
+from ._feature import _Feature, FillTypeJIT
 
 
 class BoundingBoxFormat(StrEnum):
@@ -65,7 +65,7 @@ class BoundingBox(_Feature):
             format = BoundingBoxFormat.from_str(format.upper())
 
         return BoundingBox.new_like(
-            self, self._F.convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
+            self, self._F.convert_format_bounding_box(self, old_format=self.format, new_format=format), format=format
         )
 
     def horizontal_flip(self) -> BoundingBox:
@@ -83,19 +83,19 @@ class BoundingBox(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> BoundingBox:
-        output = self._F.resize_bounding_box(self, size, image_size=self.image_size, max_size=max_size)
-        image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
-        return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
+        output, image_size = self._F.resize_bounding_box(self, image_size=self.image_size, size=size, max_size=max_size)
+        return BoundingBox.new_like(self, output, image_size=image_size)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
-        output = self._F.crop_bounding_box(self, self.format, top, left)
-        return BoundingBox.new_like(self, output, image_size=(height, width))
+        output, image_size = self._F.crop_bounding_box(
+            self, self.format, top=top, left=left, height=height, width=width
+        )
+        return BoundingBox.new_like(self, output, image_size=image_size)
 
     def center_crop(self, output_size: List[int]) -> BoundingBox:
-        output = self._F.center_crop_bounding_box(
-            self, format=self.format, output_size=output_size, image_size=self.image_size
+        output, image_size = self._F.center_crop_bounding_box(
+            self, format=self.format, image_size=self.image_size, output_size=output_size
         )
-        image_size = (output_size[0], output_size[0]) if len(output_size) == 1 else (output_size[0], output_size[1])
         return BoundingBox.new_like(self, output, image_size=image_size)
 
     def resized_crop(
@@ -108,64 +108,41 @@ class BoundingBox(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = False,
     ) -> BoundingBox:
-        output = self._F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
-        image_size = (size[0], size[0]) if len(size) == 1 else (size[0], size[1])
-        return BoundingBox.new_like(self, output, image_size=image_size, dtype=output.dtype)
+        output, image_size = self._F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
+        return BoundingBox.new_like(self, output, image_size=image_size)
 
     def pad(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> BoundingBox:
-        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
-        if not isinstance(padding, int):
-            padding = list(padding)
-
-        output = self._F.pad_bounding_box(self, padding, format=self.format, padding_mode=padding_mode)
-
-        # Update output image size:
-        left, right, top, bottom = self._F._geometry._parse_pad_padding(padding)
-        height, width = self.image_size
-        height += top + bottom
-        width += left + right
-
-        return BoundingBox.new_like(self, output, image_size=(height, width))
+        output, image_size = self._F.pad_bounding_box(
+            self, format=self.format, image_size=self.image_size, padding=padding, padding_mode=padding_mode
+        )
+        return BoundingBox.new_like(self, output, image_size=image_size)
 
     def rotate(
         self,
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
-        output = self._F.rotate_bounding_box(
+        output, image_size = self._F.rotate_bounding_box(
             self, format=self.format, image_size=self.image_size, angle=angle, expand=expand, center=center
         )
-        image_size = self.image_size
-        if expand:
-            # The way we recompute image_size is not optimal due to redundant computations of
-            # - rotation matrix (_get_inverse_affine_matrix)
-            # - points dot matrix (_compute_affine_output_size)
-            # Alternatively, we could return new image size by self._F.rotate_bounding_box
-            height, width = image_size
-            rotation_matrix = self._F._geometry._get_inverse_affine_matrix(
-                [0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0]
-            )
-            new_width, new_height = self._F._geometry._FT._compute_affine_output_size(rotation_matrix, width, height)
-            image_size = (new_height, new_width)
-
-        return BoundingBox.new_like(self, output, dtype=output.dtype, image_size=image_size)
+        return BoundingBox.new_like(self, output, image_size=image_size)
 
     def affine(
         self,
-        angle: float,
+        angle: Union[int, float],
         translate: List[float],
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.affine_bounding_box(
@@ -184,7 +161,7 @@ class BoundingBox(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: FillTypeJIT = None,
     ) -> BoundingBox:
         output = self._F.perspective_bounding_box(self, self.format, perspective_coeffs)
         return BoundingBox.new_like(self, output, dtype=output.dtype)
@@ -193,7 +170,7 @@ class BoundingBox(_Feature):
         self,
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: FillTypeJIT = None,
     ) -> BoundingBox:
         output = self._F.elastic_bounding_box(self, self.format, displacement)
         return BoundingBox.new_like(self, output, dtype=output.dtype)

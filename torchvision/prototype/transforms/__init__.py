@@ -3,6 +3,7 @@ from torchvision.transforms import AutoAugmentPolicy, InterpolationMode  # usort
 from . import functional  # usort: skip
 
 from ._transform import Transform  # usort: skip
+from ._presets import StereoMatching  # usort: skip
 
 from ._augment import RandomCutmix, RandomErasing, RandomMixup, SimpleCopyPaste
 from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
@@ -28,6 +29,7 @@ from ._geometry import (
     RandomHorizontalFlip,
     RandomIoUCrop,
     RandomPerspective,
+    RandomResize,
     RandomResizedCrop,
     RandomRotation,
     RandomShortestSize,
