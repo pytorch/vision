@@ -44,6 +44,8 @@ __all__ = [
     "make_segmentation_masks",
     "make_mask_loaders",
     "make_masks",
+    "make_video",
+    "make_videos",
 ]
 
 
@@ -553,6 +555,9 @@ def make_video_loader(
     return VideoLoader(fn, shape=(*extra_dims, num_frames, *size), dtype=dtype, color_space=color_space)
 
 
+make_video = from_loader(make_video_loader)
+
+
 def make_video_loaders(
     *,
     sizes=DEFAULT_IMAGE_SIZES,
@@ -568,3 +573,6 @@ def make_video_loaders(
         size=sizes, color_space=color_spaces, num_frames=num_frames, extra_dims=extra_dims, dtype=dtypes
     ):
         yield make_video_loader(**params)
+
+
+make_videos = from_loaders(make_video_loaders)
