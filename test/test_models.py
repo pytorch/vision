@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import gc
 import operator
 import os
 import pkgutil
@@ -697,6 +698,11 @@ def test_classification_model(model_fn, dev):
 
     _check_input_backprop(model, x)
 
+    # Clearing from memory explicitly
+    del model, x, out
+    gc.collect()
+    torch.cuda.empty_cache()
+
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.segmentation))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
@@ -760,6 +766,11 @@ def test_segmentation_model(model_fn, dev):
         pytest.skip(msg)
 
     _check_input_backprop(model, x)
+
+    # Clearing from memory explicitly
+    del model, x, out
+    gc.collect()
+    torch.cuda.empty_cache()
 
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.detection))
@@ -859,6 +870,10 @@ def test_detection_model(model_fn, dev):
 
     _check_input_backprop(model, model_input)
 
+    # Clearing from memory explicitly
+    del model, x, out
+    gc.collect()
+    torch.cuda.empty_cache()
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.detection))
 def test_detection_model_validation(model_fn):
@@ -887,6 +902,11 @@ def test_detection_model_validation(model_fn):
     targets = [{"boxes": boxes}]
     with pytest.raises(AssertionError):
         model(x, targets=targets)
+
+    # Clearing from memory explicitly
+    del model, x
+    gc.collect()
+    torch.cuda.empty_cache()
 
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.video))
@@ -927,6 +947,10 @@ def test_video_model(model_fn, dev):
 
     _check_input_backprop(model, x)
 
+    # Clearing from memory explicitly
+    del model, x, out
+    gc.collect()
+    torch.cuda.empty_cache()
 
 @pytest.mark.skipif(
     not (
@@ -983,6 +1007,10 @@ def test_quantized_classification_model(model_fn):
 
         torch.ao.quantization.convert(model, inplace=True)
 
+    # Clearing from memory explicitly
+    del model, x, out
+    gc.collect()
+    torch.cuda.empty_cache()
 
 @pytest.mark.parametrize("model_fn", list_model_fns(models.detection))
 def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_loading):
@@ -995,6 +1023,10 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
 
+    # Clearing from memory explicitly
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
 
 @needs_cuda
 @pytest.mark.parametrize("model_fn", list_model_fns(models.optical_flow))
@@ -1023,6 +1055,10 @@ def test_raft(model_fn, scripted):
     # The .pkl were generated on the AWS cluter, on the CI it looks like the resuts are slightly different
     _assert_expected(flow_pred.cpu(), name=model_fn.__name__, atol=1e-2, rtol=1)
 
+    # Clearing from memory explicitly
+    del model, img1, img2, preds
+    gc.collect()
+    torch.cuda.empty_cache()
 
 if __name__ == "__main__":
     pytest.main([__file__])
