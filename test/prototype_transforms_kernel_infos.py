@@ -33,7 +33,7 @@ class KernelInfo:
     sample_inputs_fn: Callable[[], Iterable[ArgsKwargs]]
     # Defaults to `kernel.__name__`. Should be set if the function is exposed under a different name
     # TODO: This can probably be removed after roll-out since we shouldn't have any aliasing then
-    kernel_name: Optional[str] = None
+    kernel_name: str = dataclasses.field(default=None)
     # This function should mirror the kernel. It should have the same signature as the `kernel` and as such also take
     # tensors as inputs. Any conversion into another object type, e.g. PIL images or numpy arrays, should happen
     # inside the function. It should return a tensor or to be more precise an object that can be compared to a
