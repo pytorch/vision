@@ -101,7 +101,7 @@ class Normalize(Transform):
         self.std = list(std)
         self.inplace = inplace
 
-    def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]) -> torch.Tensor:
         return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
     def forward(self, *inpts: Any) -> Any:

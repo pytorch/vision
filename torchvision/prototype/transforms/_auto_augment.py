@@ -31,11 +31,11 @@ class _AutoAugmentBase(Transform):
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
 
-    def _extract_image_like(
+    def _extract_image_or_video(
         self,
         sample: Any,
         unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.Mask),
-    ) -> Tuple[int, features.ImageType]:
+    ) -> Tuple[int, features.ImageOrVideoType]:
         sample_flat, _ = tree_flatten(sample)
         image_likes = []
         for id, inpt in enumerate(sample_flat):
@@ -60,12 +60,12 @@ class _AutoAugmentBase(Transform):
 
     def _apply_image_transform(
         self,
-        image: features.ImageType,
+        image: features.ImageOrVideoType,
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
         fill: Dict[Type, features.FillType],
-    ) -> features.ImageType:
+    ) -> features.ImageOrVideoType:
         fill_ = fill[type(image)]
         fill_ = F._geometry._convert_fill_arg(fill_)
 
@@ -277,8 +277,8 @@ class AutoAugment(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        id, image = self._extract_image_like(sample)
-        _, height, width = get_chw(image)
+        id, image_or_video = self._extract_image_or_video(sample)
+        _, height, width = get_chw(image_or_video)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
@@ -296,11 +296,11 @@ class AutoAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
 
-            image = self._apply_image_transform(
-                image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+            image_or_video = self._apply_image_transform(
+                image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
-        return self._put_into_sample(sample, id, image)
+        return self._put_into_sample(sample, id, image_or_video)
 
 
 class RandAugment(_AutoAugmentBase):
@@ -348,8 +348,8 @@ class RandAugment(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        id, image = self._extract_image_like(sample)
-        _, height, width = get_chw(image)
+        id, image_or_video = self._extract_image_or_video(sample)
+        _, height, width = get_chw(image_or_video)
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
@@ -360,11 +360,11 @@ class RandAugment(_AutoAugmentBase):
                     magnitude *= -1
             else:
                 magnitude = 0.0
-            image = self._apply_image_transform(
-                image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+            image_or_video = self._apply_image_transform(
+                image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
-        return self._put_into_sample(sample, id, image)
+        return self._put_into_sample(sample, id, image_or_video)
 
 
 class TrivialAugmentWide(_AutoAugmentBase):
@@ -402,8 +402,8 @@ class TrivialAugmentWide(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        id, image = self._extract_image_like(sample)
-        _, height, width = get_chw(image)
+        id, image_or_video = self._extract_image_or_video(sample)
+        _, height, width = get_chw(image_or_video)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
@@ -415,10 +415,10 @@ class TrivialAugmentWide(_AutoAugmentBase):
         else:
             magnitude = 0.0
 
-        image = self._apply_image_transform(
-            image, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+        image_or_video = self._apply_image_transform(
+            image_or_video, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
         )
-        return self._put_into_sample(sample, id, image)
+        return self._put_into_sample(sample, id, image_or_video)
 
 
 class AugMix(_AutoAugmentBase):
@@ -472,13 +472,13 @@ class AugMix(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        id, orig_image = self._extract_image_like(sample)
-        _, height, width = get_chw(orig_image)
+        id, orig_image_or_video = self._extract_image_or_video(sample)
+        _, height, width = get_chw(orig_image_or_video)
 
-        if isinstance(orig_image, torch.Tensor):
-            image = orig_image
+        if isinstance(orig_image_or_video, torch.Tensor):
+            image = orig_image_or_video
         else:  # isinstance(inpt, PIL.Image.Image):
-            image = F.pil_to_tensor(orig_image)
+            image = F.pil_to_tensor(orig_image_or_video)
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
@@ -518,9 +518,9 @@ class AugMix(_AutoAugmentBase):
             mix.add_(combined_weights[:, i].view(batch_dims) * aug)
         mix = mix.view(orig_dims).to(dtype=image.dtype)
 
-        if isinstance(orig_image, features.Image):
-            mix = features.Image.new_like(orig_image, mix)
-        elif isinstance(orig_image, PIL.Image.Image):
+        if isinstance(orig_image_or_video, (features.Image, features.Video)):
+            mix = type(orig_image_or_video).new_like(orig_image_or_video, mix)  # type: ignore[arg-type]
+        elif isinstance(orig_image_or_video, PIL.Image.Image):
             mix = F.to_image_pil(mix)
 
         return self._put_into_sample(sample, id, mix)

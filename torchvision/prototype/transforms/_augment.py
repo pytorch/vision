@@ -92,7 +92,7 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageType:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params, inplace=self.inplace)
 
