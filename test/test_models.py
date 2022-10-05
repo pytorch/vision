@@ -875,6 +875,7 @@ def test_detection_model(model_fn, dev):
     gc.collect()
     torch.cuda.empty_cache()
 
+
 @pytest.mark.parametrize("model_fn", list_model_fns(models.detection))
 def test_detection_model_validation(model_fn):
     set_rng_seed(0)
@@ -952,6 +953,7 @@ def test_video_model(model_fn, dev):
     gc.collect()
     torch.cuda.empty_cache()
 
+
 @pytest.mark.skipif(
     not (
         "fbgemm" in torch.backends.quantized.supported_engines
@@ -1012,6 +1014,7 @@ def test_quantized_classification_model(model_fn):
     gc.collect()
     torch.cuda.empty_cache()
 
+
 @pytest.mark.parametrize("model_fn", list_model_fns(models.detection))
 def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_loading):
     model_name = model_fn.__name__
@@ -1027,6 +1030,7 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
     del model
     gc.collect()
     torch.cuda.empty_cache()
+
 
 @needs_cuda
 @pytest.mark.parametrize("model_fn", list_model_fns(models.optical_flow))
@@ -1059,6 +1063,7 @@ def test_raft(model_fn, scripted):
     del model, img1, img2, preds
     gc.collect()
     torch.cuda.empty_cache()
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
