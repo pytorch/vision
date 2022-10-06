@@ -725,7 +725,16 @@ _CROP_PARAMS = combinations_grid(top=[-8, 0, 9], left=[-8, 0, 9], height=[12, 20
 
 
 def sample_inputs_crop_image_tensor():
-    for image_loader, params in itertools.product(make_image_loaders(), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]):
+    for image_loader, params in itertools.product(
+        make_image_loaders(sizes=[(16, 17)], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]),
+        [
+            dict(top=4, left=3, height=7, width=8),
+            dict(top=-1, left=3, height=7, width=8),
+            dict(top=4, left=-1, height=7, width=8),
+            dict(top=4, left=3, height=17, width=8),
+            dict(top=4, left=3, height=7, width=18),
+        ],
+    ):
         yield ArgsKwargs(image_loader, **params)
 
 
@@ -742,8 +751,8 @@ def sample_inputs_crop_bounding_box():
 
 
 def sample_inputs_crop_mask():
-    for mask_loader, params in itertools.product(make_mask_loaders(), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]):
-        yield ArgsKwargs(mask_loader, **params)
+    for mask_loader in make_mask_loaders(sizes=[(16, 17)], num_categories=["random"], num_objects=["random"]):
+        yield ArgsKwargs(mask_loader, top=4, left=3, height=7, width=8)
 
 
 def reference_inputs_crop_mask():
