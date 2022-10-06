@@ -26,7 +26,7 @@ try:
         path_arr = env_path.split(";")
         for path in path_arr:
             if os.path.exists(path):
-                os.add_dll_directory(path)
+                os.add_dll_directory(path)  # type: ignore[attr-defined]
 
     lib_path = _get_extension_path("_C")
     torch.ops.load_library(lib_path)
