@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, cast, Dict, Optional, Union
 
 import PIL.Image
 
@@ -18,7 +18,7 @@ class ConvertBoundingBoxFormat(Transform):
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
         output = F.convert_format_bounding_box(inpt, old_format=inpt.format, new_format=params["format"])
-        return features.BoundingBox.new_like(inpt, output, format=params["format"])
+        return features.BoundingBox.wrap_like(inpt, output, format=params["format"])
 
 
 class ConvertImageDtype(Transform):
@@ -30,7 +30,9 @@ class ConvertImageDtype(Transform):
 
     def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> features.TensorImageType:
         output = F.convert_image_dtype(inpt, dtype=self.dtype)
-        return output if features.is_simple_tensor(inpt) else features.Image.new_like(inpt, output, dtype=self.dtype)  # type: ignore[arg-type]
+        return (
+            output if features.is_simple_tensor(inpt) else features.Image.wrap_like(cast(features.Image, inpt), output)
+        )
 
 
 class ConvertColorSpace(Transform):
@@ -65,4 +67,4 @@ class ClampBoundingBoxes(Transform):
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
         output = F.clamp_bounding_box(inpt, format=inpt.format, image_size=inpt.image_size)
-        return features.BoundingBox.new_like(inpt, output)
+        return features.BoundingBox.wrap_like(inpt, output)

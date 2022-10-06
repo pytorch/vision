@@ -21,48 +21,39 @@ def is_simple_tensor(inpt: Any) -> bool:
 class _Feature(torch.Tensor):
     __F: Optional[ModuleType] = None
 
-    def __new__(
-        cls: Type[F],
+    @staticmethod
+    def _to_tensor(
         data: Any,
-        *,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
-    ) -> F:
-        return (
-            torch.as_tensor(  # type: ignore[return-value]
-                data,
-                dtype=dtype,
-                device=device,
-            )
-            .as_subclass(cls)
-            .requires_grad_(requires_grad)
-        )
+    ) -> torch.Tensor:
+        return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
 
-    @classmethod
-    def new_like(
-        cls: Type[F],
-        other: F,
+    # FIXME: this is just here for BC with the prototype datasets. Some datasets use the _Feature directly to have a
+    #  a no-op input for the prototype transforms. For this use case, we can't use plain tensors, since they will be
+    #  interpreted as images. We should decide if we want a public no-op feature like `GenericFeature` or make this one
+    #  public again.
+    def __new__(
+        cls,
         data: Any,
-        *,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> F:
-        return cls(
-            data,
-            dtype=dtype if dtype is not None else other.dtype,
-            device=device if device is not None else other.device,
-            requires_grad=requires_grad if requires_grad is not None else other.requires_grad,
-            **kwargs,
-        )
+        requires_grad: bool = False,
+    ) -> _Feature:
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        return tensor.as_subclass(_Feature)
+
+    @classmethod
+    def wrap_like(cls: Type[F], other: F, tensor: torch.Tensor) -> F:
+        # FIXME: this is just here for BC with the prototype datasets. See __new__ for details. If that is resolved,
+        #  this method should be made abstract
+        # raise NotImplementedError
+        return tensor.as_subclass(cls)
 
     _NO_WRAPPING_EXCEPTIONS = {
-        torch.Tensor.clone: lambda cls, input, output: cls.new_like(input, output),
-        torch.Tensor.to: lambda cls, input, output: cls.new_like(
-            input, output, dtype=output.dtype, device=output.device
-        ),
+        torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
+        torch.Tensor.to: lambda cls, input, output: cls.wrap_like(input, output),
         # We don't need to wrap the output of `Tensor.requires_grad_`, since it is an inplace operation and thus
         # retains the type automatically
         torch.Tensor.requires_grad_: lambda cls, input, output: output,

@@ -518,7 +518,7 @@ class AugMix(_AutoAugmentBase):
         mix = mix.view(orig_dims).to(dtype=image.dtype)
 
         if isinstance(orig_image, features.Image):
-            mix = features.Image.new_like(orig_image, mix)
+            mix = features.Image.wrap_like(orig_image, mix)
         elif isinstance(orig_image, PIL.Image.Image):
             mix = F.to_image_pil(mix)
 
