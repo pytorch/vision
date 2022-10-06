@@ -3,13 +3,15 @@ import functools
 import itertools
 import math
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pytest
 import torch.testing
 import torchvision.ops
 import torchvision.prototype.transforms.functional as F
+
+from _pytest.mark.structures import MarkDecorator
 from datasets_utils import combinations_grid
 from prototype_common_utils import ArgsKwargs, make_bounding_box_loaders, make_image_loaders, make_mask_loaders
 from torchvision.prototype import features
@@ -18,11 +20,14 @@ from torchvision.transforms.functional_tensor import _max_value as get_max_value
 __all__ = ["KernelInfo", "KERNEL_INFOS"]
 
 
+TestID = Tuple[Optional[str], str]
+
+
 @dataclasses.dataclass
-class Skip:
-    test_name: str
-    reason: str
-    condition: Callable[[ArgsKwargs, str], bool] = lambda args_kwargs, device: True
+class TestMark:
+    test_id: TestID
+    mark: MarkDecorator
+    condition: Callable[[ArgsKwargs], bool] = lambda args_kwargs: True
 
 
 @dataclasses.dataclass
@@ -33,7 +38,7 @@ class KernelInfo:
     sample_inputs_fn: Callable[[], Iterable[ArgsKwargs]]
     # Defaults to `kernel.__name__`. Should be set if the function is exposed under a different name
     # TODO: This can probably be removed after roll-out since we shouldn't have any aliasing then
-    kernel_name: Optional[str] = None
+    kernel_name: str = dataclasses.field(default=None)
     # This function should mirror the kernel. It should have the same signature as the `kernel` and as such also take
     # tensors as inputs. Any conversion into another object type, e.g. PIL images or numpy arrays, should happen
     # inside the function. It should return a tensor or to be more precise an object that can be compared to a
@@ -44,26 +49,22 @@ class KernelInfo:
     reference_inputs_fn: Optional[Callable[[], Iterable[ArgsKwargs]]] = None
     # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
     closeness_kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    skips: Sequence[Skip] = dataclasses.field(default_factory=list)
-    _skips_map: Dict[str, List[Skip]] = dataclasses.field(default=None, init=False)
+    test_marks: Sequence[TestMark] = dataclasses.field(default_factory=list)
+    _test_marks_map: Dict[str, List[TestMark]] = dataclasses.field(default=None, init=False)
 
     def __post_init__(self):
         self.kernel_name = self.kernel_name or self.kernel.__name__
         self.reference_inputs_fn = self.reference_inputs_fn or self.sample_inputs_fn
 
-        skips_map = defaultdict(list)
-        for skip in self.skips:
-            skips_map[skip.test_name].append(skip)
-        self._skips_map = dict(skips_map)
+        test_marks_map = defaultdict(list)
+        for test_mark in self.test_marks:
+            test_marks_map[test_mark.test_id].append(test_mark)
+        self._test_marks_map = dict(test_marks_map)
 
-    def maybe_skip(self, *, test_name, args_kwargs, device):
-        skips = self._skips_map.get(test_name)
-        if not skips:
-            return
-
-        for skip in skips:
-            if skip.condition(args_kwargs, device):
-                pytest.skip(skip.reason)
+    def get_marks(self, test_id, args_kwargs):
+        return [
+            test_mark.mark for test_mark in self._test_marks_map.get(test_id, []) if test_mark.condition(args_kwargs)
+        ]
 
 
 DEFAULT_IMAGE_CLOSENESS_KWARGS = dict(
@@ -87,16 +88,27 @@ def pil_reference_wrapper(pil_kernel):
     return wrapper
 
 
-def skip_python_scalar_arg_jit(name, *, reason="Python scalar int or float is not supported when scripting"):
-    return Skip(
-        "test_scripted_vs_eager",
-        condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs[name], (int, float)),
-        reason=reason,
+def mark_framework_limitation(test_id, reason):
+    # The purpose of this function is to have a single entry point for skip marks that are only there, because the test
+    # framework cannot handle the kernel in general or a specific parameter combination.
+    # As development progresses, we can change the `mark.skip` to `mark.xfail` from time to time to see if the skip is
+    # still justified.
+    # We don't want to use `mark.xfail` all the time, because that actually runs the test until an error happens. Thus,
+    # we are wasting CI resources for no reason for most of the time.
+    return TestMark(test_id, pytest.mark.skip(reason=reason))
+
+
+def xfail_python_scalar_arg_jit(name, *, reason=None):
+    reason = reason or f"Python scalar int or float for `{name}` is not supported when scripting"
+    return TestMark(
+        ("TestKernels", "test_scripted_vs_eager"),
+        pytest.mark.xfail(reason=reason),
+        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs[name], (int, float)),
     )
 
 
-def skip_integer_size_jit(name="size"):
-    return skip_python_scalar_arg_jit(name, reason="Integer size is not supported when scripting.")
+def xfail_integer_size_jit(name="size"):
+    return xfail_python_scalar_arg_jit(name, reason=f"Integer `{name}` is not supported when scripting.")
 
 
 KERNEL_INFOS = []
@@ -151,8 +163,7 @@ KERNEL_INFOS.extend(
 def _get_resize_sizes(image_size):
     height, width = image_size
     length = max(image_size)
-    # FIXME: enable me when the kernels are fixed
-    # yield length
+    yield length
     yield [length]
     yield (length,)
     new_height = int(height * 0.75)
@@ -236,15 +247,15 @@ KERNEL_INFOS.extend(
             reference_fn=reference_resize_image_tensor,
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            skips=[
-                skip_integer_size_jit(),
+            test_marks=[
+                xfail_integer_size_jit(),
             ],
         ),
         KernelInfo(
             F.resize_bounding_box,
             sample_inputs_fn=sample_inputs_resize_bounding_box,
-            skips=[
-                skip_integer_size_jit(),
+            test_marks=[
+                xfail_integer_size_jit(),
             ],
         ),
         KernelInfo(
@@ -253,8 +264,8 @@ KERNEL_INFOS.extend(
             reference_fn=reference_resize_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            skips=[
-                skip_integer_size_jit(),
+            test_marks=[
+                xfail_integer_size_jit(),
             ],
         ),
     ]
@@ -436,16 +447,6 @@ def reference_inputs_resize_mask():
         yield ArgsKwargs(mask_loader, **affine_kwargs)
 
 
-# FIXME: @datumbox, remove this as soon as you have fixed the behavior in https://github.com/pytorch/vision/pull/6636
-def skip_scalar_shears(*test_names):
-    for test_name in test_names:
-        yield Skip(
-            test_name,
-            condition=lambda args_kwargs, device: isinstance(args_kwargs.kwargs["shear"], (int, float)),
-            reason="The kernel is broken for a scalar `shear`",
-        )
-
-
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -454,7 +455,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.affine_image_pil),
             reference_inputs_fn=reference_inputs_affine_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            skips=[skip_python_scalar_arg_jit("shear", reason="Scalar shear is not supported by JIT")],
+            test_marks=[xfail_python_scalar_arg_jit("shear")],
         ),
         KernelInfo(
             F.affine_bounding_box,
@@ -462,13 +463,8 @@ KERNEL_INFOS.extend(
             reference_fn=reference_affine_bounding_box,
             reference_inputs_fn=reference_inputs_affine_bounding_box,
             closeness_kwargs=dict(atol=1, rtol=0),
-            skips=[
-                skip_python_scalar_arg_jit("shear", reason="Scalar shear is not supported by JIT"),
-                *skip_scalar_shears(
-                    "test_batched_vs_single",
-                    "test_no_inplace",
-                    "test_dtype_and_device_consistency",
-                ),
+            test_marks=[
+                xfail_python_scalar_arg_jit("shear"),
             ],
         ),
         KernelInfo(
@@ -477,7 +473,7 @@ KERNEL_INFOS.extend(
             reference_fn=reference_affine_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            skips=[skip_python_scalar_arg_jit("shear", reason="Scalar shear is not supported by JIT")],
+            test_marks=[xfail_python_scalar_arg_jit("shear")],
         ),
     ]
 )
@@ -1093,15 +1089,15 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            skips=[
-                skip_integer_size_jit("output_size"),
+            test_marks=[
+                xfail_integer_size_jit("output_size"),
             ],
         ),
         KernelInfo(
             F.center_crop_bounding_box,
             sample_inputs_fn=sample_inputs_center_crop_bounding_box,
-            skips=[
-                skip_integer_size_jit("output_size"),
+            test_marks=[
+                xfail_integer_size_jit("output_size"),
             ],
         ),
         KernelInfo(
@@ -1110,8 +1106,8 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            skips=[
-                skip_integer_size_jit("output_size"),
+            test_marks=[
+                xfail_integer_size_jit("output_size"),
             ],
         ),
     ]
@@ -1138,9 +1134,9 @@ KERNEL_INFOS.append(
         F.gaussian_blur_image_tensor,
         sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-        skips=[
-            skip_python_scalar_arg_jit("kernel_size"),
-            skip_python_scalar_arg_jit("sigma"),
+        test_marks=[
+            xfail_python_scalar_arg_jit("kernel_size"),
+            xfail_python_scalar_arg_jit("sigma"),
         ],
     )
 )
@@ -1551,9 +1547,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_five_crop_image_tensor,
             reference_fn=pil_reference_wrapper(F.five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
-            skips=[
-                skip_integer_size_jit(),
-                Skip("test_batched_vs_single", reason="Custom batching needed for five_crop_image_tensor."),
+            test_marks=[
+                xfail_integer_size_jit(),
+                mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
             ],
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),
@@ -1562,9 +1558,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_ten_crop_image_tensor,
             reference_fn=pil_reference_wrapper(F.ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
-            skips=[
-                skip_integer_size_jit(),
-                Skip("test_batched_vs_single", reason="Custom batching needed for ten_crop_image_tensor."),
+            test_marks=[
+                xfail_integer_size_jit(),
+                mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
             ],
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         ),

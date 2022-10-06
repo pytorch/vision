@@ -1,3 +1,4 @@
+import functools
 import math
 import os
 
@@ -26,33 +27,60 @@ def script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
-@pytest.fixture(autouse=True)
-def maybe_skip(request):
-    # In case the test uses no parametrization or fixtures, the `callspec` attribute does not exist
-    try:
-        callspec = request.node.callspec
-    except AttributeError:
-        return
+def make_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None, name_fn=lambda info: str(info)):
+    if condition is None:
 
-    try:
-        info = callspec.params["info"]
-        args_kwargs = callspec.params["args_kwargs"]
-    except KeyError:
-        return
+        def condition(info):
+            return True
 
-    info.maybe_skip(
-        test_name=request.node.originalname, args_kwargs=args_kwargs, device=callspec.params.get("device", "cpu")
-    )
+    def decorator(test_fn):
+        parts = test_fn.__qualname__.split(".")
+        if len(parts) == 1:
+            test_class_name = None
+            test_function_name = parts[0]
+        elif len(parts) == 2:
+            test_class_name, test_function_name = parts
+        else:
+            raise pytest.UsageError("Unable to parse the test class and test name from test function")
+        test_id = (test_class_name, test_function_name)
+
+        argnames = ("info", "args_kwargs")
+        argvalues = []
+        for info in infos:
+            if not condition(info):
+                continue
+
+            args_kwargs = list(args_kwargs_fn(info))
+            name = name_fn(info)
+            idx_field_len = len(str(len(args_kwargs)))
+
+            for idx, args_kwargs_ in enumerate(args_kwargs):
+                argvalues.append(
+                    pytest.param(
+                        info,
+                        args_kwargs_,
+                        marks=info.get_marks(test_id, args_kwargs_),
+                        id=f"{name}-{idx:0{idx_field_len}}",
+                    )
+                )
+
+        return pytest.mark.parametrize(argnames, argvalues)(test_fn)
+
+    return decorator
 
 
 class TestKernels:
-    sample_inputs = pytest.mark.parametrize(
-        ("info", "args_kwargs"),
-        [
-            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-{idx}")
-            for info in KERNEL_INFOS
-            for idx, args_kwargs in enumerate(info.sample_inputs_fn())
-        ],
+    make_kernel_args_kwargs_parametrization = functools.partial(
+        make_args_kwargs_parametrization, name_fn=lambda info: info.kernel_name
+    )
+    sample_inputs = kernel_sample_inputs = make_kernel_args_kwargs_parametrization(
+        KERNEL_INFOS,
+        args_kwargs_fn=lambda kernel_info: kernel_info.sample_inputs_fn(),
+    )
+    reference_inputs = make_kernel_args_kwargs_parametrization(
+        KERNEL_INFOS,
+        args_kwargs_fn=lambda info: info.reference_inputs_fn(),
+        condition=lambda info: info.reference_fn is not None,
     )
 
     @sample_inputs
@@ -156,15 +184,7 @@ class TestKernels:
         assert output.dtype == input.dtype
         assert output.device == input.device
 
-    @pytest.mark.parametrize(
-        ("info", "args_kwargs"),
-        [
-            pytest.param(info, args_kwargs, id=f"{info.kernel_name}-{idx}")
-            for info in KERNEL_INFOS
-            for idx, args_kwargs in enumerate(info.reference_inputs_fn())
-            if info.reference_fn is not None
-        ],
-    )
+    @reference_inputs
     def test_against_reference(self, info, args_kwargs):
         args, kwargs = args_kwargs.load("cpu")
 
@@ -174,16 +194,29 @@ class TestKernels:
         assert_close(actual, expected, check_dtype=False, **info.closeness_kwargs)
 
 
+@pytest.fixture
+def spy_on(mocker):
+    def make_spy(fn, *, module=None, name=None):
+        # TODO: we can probably get rid of the non-default modules and names if we eliminate aliasing
+        module = module or fn.__module__
+        name = name or fn.__name__
+        spy = mocker.patch(f"{module}.{name}", wraps=fn)
+        return spy
+
+    return make_spy
+
+
 class TestDispatchers:
-    @pytest.mark.parametrize(
-        ("info", "args_kwargs"),
-        [
-            pytest.param(info, args_kwargs, id=f"{info.dispatcher.__name__}-{idx}")
-            for info in DISPATCHER_INFOS
-            for idx, args_kwargs in enumerate(info.sample_inputs(features.Image))
-            if features.Image in info.kernels
-        ],
+    make_dispatcher_args_kwargs_parametrization = functools.partial(
+        make_args_kwargs_parametrization, name_fn=lambda info: info.dispatcher.__name__
     )
+    image_sample_inputs = kernel_sample_inputs = make_dispatcher_args_kwargs_parametrization(
+        DISPATCHER_INFOS,
+        args_kwargs_fn=lambda info: info.sample_inputs(features.Image),
+        condition=lambda info: features.Image in info.kernels,
+    )
+
+    @image_sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_scripted_smoke(self, info, args_kwargs, device):
         dispatcher = script(info.dispatcher)
@@ -210,6 +243,53 @@ class TestDispatchers:
     )
     def test_scriptable(self, dispatcher):
         script(dispatcher)
+
+    @image_sample_inputs
+    def test_dispatch_simple_tensor(self, info, args_kwargs, spy_on):
+        (image_feature, *other_args), kwargs = args_kwargs.load()
+        image_simple_tensor = torch.Tensor(image_feature)
+
+        kernel_info = info.kernel_infos[features.Image]
+        spy = spy_on(kernel_info.kernel, module=info.dispatcher.__module__, name=kernel_info.kernel_name)
+
+        info.dispatcher(image_simple_tensor, *other_args, **kwargs)
+
+        spy.assert_called_once()
+
+    @make_dispatcher_args_kwargs_parametrization(
+        DISPATCHER_INFOS,
+        args_kwargs_fn=lambda info: info.sample_inputs(features.Image),
+        condition=lambda info: info.pil_kernel_info is not None,
+    )
+    def test_dispatch_pil(self, info, args_kwargs, spy_on):
+        (image_feature, *other_args), kwargs = args_kwargs.load()
+
+        if image_feature.ndim > 3:
+            pytest.skip("Input is batched")
+
+        image_pil = F.to_image_pil(image_feature)
+
+        pil_kernel_info = info.pil_kernel_info
+        spy = spy_on(pil_kernel_info.kernel, module=info.dispatcher.__module__, name=pil_kernel_info.kernel_name)
+
+        info.dispatcher(image_pil, *other_args, **kwargs)
+
+        spy.assert_called_once()
+
+    @make_dispatcher_args_kwargs_parametrization(
+        DISPATCHER_INFOS,
+        args_kwargs_fn=lambda info: info.sample_inputs(),
+    )
+    def test_dispatch_feature(self, info, args_kwargs, spy_on):
+        (feature, *other_args), kwargs = args_kwargs.load()
+
+        method = getattr(feature, info.method_name)
+        feature_type = type(feature)
+        spy = spy_on(method, module=feature_type.__module__, name=f"{feature_type.__name__}.{info.method_name}")
+
+        info.dispatcher(feature, *other_args, **kwargs)
+
+        spy.assert_called_once()
 
 
 @pytest.mark.parametrize(
