@@ -250,6 +250,21 @@ class ImageLoader(TensorLoader):
         self.num_channels = self.shape[-3]
 
 
+NUM_CHANNELS_MAP = {
+    features.ColorSpace.GRAY: 1,
+    features.ColorSpace.GRAY_ALPHA: 2,
+    features.ColorSpace.RGB: 3,
+    features.ColorSpace.RGB_ALPHA: 4,
+}
+
+
+def get_num_channels(color_space):
+    num_channels = NUM_CHANNELS_MAP.get(color_space)
+    if not num_channels:
+        raise pytest.UsageError(f"Can't determine the number of channels for color space {color_space}")
+    return num_channels
+
+
 def make_image_loader(
     size="random",
     *,
@@ -259,16 +274,7 @@ def make_image_loader(
     constant_alpha=True,
 ):
     size = _parse_image_size(size)
-
-    try:
-        num_channels = {
-            features.ColorSpace.GRAY: 1,
-            features.ColorSpace.GRAY_ALPHA: 2,
-            features.ColorSpace.RGB: 3,
-            features.ColorSpace.RGB_ALPHA: 4,
-        }[color_space]
-    except KeyError as error:
-        raise pytest.UsageError(f"Can't determine the number of channels for color space {color_space}") from error
+    num_channels = get_num_channels(color_space)
 
     def fn(shape, dtype, device):
         max_value = get_max_value(dtype)
@@ -550,13 +556,15 @@ def make_video_loader(
     dtype=torch.uint8,
 ):
     size = _parse_image_size(size)
-    num_frames = int(torch.randint(1, 4, ())) if num_frames == "random" else num_frames
+    num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
 
     def fn(shape, dtype, device):
         video = make_image(size=shape[-2:], color_space=color_space, extra_dims=shape[:-2], dtype=dtype, device=device)
         return features.Video(video, color_space=color_space)
 
-    return VideoLoader(fn, shape=(*extra_dims, num_frames, *size), dtype=dtype, color_space=color_space)
+    return VideoLoader(
+        fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype, color_space=color_space
+    )
 
 
 make_video = from_loader(make_video_loader)

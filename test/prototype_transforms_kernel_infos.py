@@ -171,7 +171,7 @@ def sample_inputs_horizontal_flip_mask():
 
 
 def sample_inputs_horizontal_flip_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"], dtypes=[torch.float32]):
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
         yield ArgsKwargs(video_loader)
 
 
@@ -298,8 +298,8 @@ def reference_inputs_resize_mask():
 
 
 def sample_inputs_resize_video():
-    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
-        yield ArgsKwargs(mask_loader, size=[min(mask_loader.shape[-2:]) + 1])
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, size=[min(video_loader.shape[-2:]) + 1])
 
 
 KERNEL_INFOS.extend(
@@ -522,8 +522,8 @@ def reference_inputs_resize_mask():
 
 
 def sample_inputs_affine_video():
-    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
-        yield ArgsKwargs(mask_loader, **_full_affine_params())
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, **_full_affine_params())
 
 
 KERNEL_INFOS.extend(
@@ -1364,7 +1364,7 @@ def sample_inputs_gaussian_blur_image_tensor():
 
 def sample_inputs_gaussian_blur_video():
     for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
-        yield ArgsKwargs(video_loader, kernel_size=3)
+        yield ArgsKwargs(video_loader, kernel_size=[3, 3])
 
 
 KERNEL_INFOS.extend(
@@ -1967,7 +1967,9 @@ def sample_inputs_normalize_image_tensor():
 
 def sample_inputs_normalize_video():
     mean, std = _NORMALIZE_MEANS_STDS[0]
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(
+        sizes=["random"], color_spaces=[features.ColorSpace.RGB], num_frames=["random"], dtypes=[torch.float32]
+    ):
         yield ArgsKwargs(video_loader, mean=mean, std=std)
 
 
