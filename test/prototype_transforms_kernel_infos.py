@@ -13,7 +13,14 @@ import torchvision.prototype.transforms.functional as F
 
 from _pytest.mark.structures import MarkDecorator
 from datasets_utils import combinations_grid
-from prototype_common_utils import ArgsKwargs, make_bounding_box_loaders, make_image_loaders, make_mask_loaders
+from prototype_common_utils import (
+    ArgsKwargs,
+    make_bounding_box_loaders,
+    make_image_loader,
+    make_image_loaders,
+    make_mask_loaders,
+    VALID_EXTRA_DIMS,
+)
 from torchvision.prototype import features
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
@@ -182,15 +189,33 @@ def _get_resize_sizes(image_size):
 
 
 def sample_inputs_resize_image_tensor():
+    for image_loader in make_image_loaders(
+        sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]
+    ):
+        for size in _get_resize_sizes(image_loader.image_size):
+            yield ArgsKwargs(image_loader, size=size)
+
     for image_loader, interpolation in itertools.product(
-        make_image_loaders(dtypes=[torch.float32]),
+        make_image_loaders(sizes=["random"], color_spaces=[features.ColorSpace.RGB]),
         [
             F.InterpolationMode.NEAREST,
+            F.InterpolationMode.BILINEAR,
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        for size in _get_resize_sizes(image_loader.image_size):
-            yield ArgsKwargs(image_loader, size=size, interpolation=interpolation)
+        yield ArgsKwargs(image_loader, size=[min(image_loader.image_size) + 1], interpolation=interpolation)
+
+    # We have a speed hack in place for nearest interpolation and single channel images (grayscale)
+    for image_loader in make_image_loaders(
+        sizes=["random"],
+        color_spaces=[features.ColorSpace.GRAY],
+        extra_dims=VALID_EXTRA_DIMS,
+    ):
+        yield ArgsKwargs(
+            image_loader, size=[min(image_loader.image_size) + 1], interpolation=F.InterpolationMode.NEAREST
+        )
+
+    yield ArgsKwargs(make_image_loader(size=(11, 17)), size=20, max_size=25)
 
 
 @pil_reference_wrapper
@@ -226,15 +251,14 @@ def reference_inputs_resize_image_tensor():
 
 
 def sample_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(formats=[features.BoundingBoxFormat.XYXY]):
+    for bounding_box_loader in make_bounding_box_loaders():
         for size in _get_resize_sizes(bounding_box_loader.image_size):
             yield ArgsKwargs(bounding_box_loader, size=size, image_size=bounding_box_loader.image_size)
 
 
 def sample_inputs_resize_mask():
-    for mask_loader in make_mask_loaders(dtypes=[torch.uint8]):
-        for size in _get_resize_sizes(mask_loader.shape[-2:]):
-            yield ArgsKwargs(mask_loader, size=size)
+    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
+        yield ArgsKwargs(mask_loader, size=[min(mask_loader.shape[-2:]) + 1])
 
 
 @pil_reference_wrapper
