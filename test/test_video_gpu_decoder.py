@@ -16,6 +16,7 @@ VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "
 
 @pytest.mark.skipif(_HAS_GPU_VIDEO_DECODER is False, reason="Didn't compile with support for gpu decoder")
 class TestVideoGPUDecoder:
+    torchvision.set_video_backend("cuda")
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize(
         "video_file",
@@ -30,7 +31,7 @@ class TestVideoGPUDecoder:
         ],
     )
     def test_frame_reading(self, video_file):
-        torchvision.set_video_backend("cuda")
+        # torchvision.set_video_backend("cuda")
         full_path = os.path.join(VIDEO_DIR, video_file)
         decoder = VideoReader(full_path)
         with av.open(full_path) as container:
@@ -56,7 +57,7 @@ class TestVideoGPUDecoder:
         ],
     )
     def test_seek_reading(self, keyframes, full_path, duration):
-        torchvision.set_video_backend("cuda")
+        # torchvision.set_video_backend("cuda")
         decoder = VideoReader(full_path)
         time = duration / 2
         decoder.seek(time, keyframes_only=keyframes)
@@ -82,7 +83,7 @@ class TestVideoGPUDecoder:
         ],
     )
     def test_metadata(self, video_file):
-        torchvision.set_video_backend("cuda")
+        
         full_path = os.path.join(VIDEO_DIR, video_file)
         decoder = VideoReader(full_path)
         video_metadata = decoder.get_metadata()["video"]
