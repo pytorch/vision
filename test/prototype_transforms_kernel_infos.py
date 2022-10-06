@@ -111,7 +111,7 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
     return TestMark(
         ("TestKernels", "test_scripted_vs_eager"),
         pytest.mark.xfail(reason=reason),
-        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs[name], (int, float)),
+        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), (int, float)),
     )
 
 
@@ -1229,18 +1229,21 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_gaussian_blur_image_tensor():
-    for image_loader, params in itertools.product(
-        make_image_loaders(
-            sizes=["random"],
-            # FIXME: kernel should support arbitrary batch sizes
-            extra_dims=[(), (4,)],
-        ),
-        combinations_grid(
-            kernel_size=[(3, 3), [3, 3], 5],
-            sigma=[None, (3.0, 3.0), [2.0, 2.0], 4.0, [1.5], (3.14,)],
-        ),
+    make_gaussian_blur_image_loaders = functools.partial(
+        make_image_loaders,
+        sizes=["random"],
+        color_spaces=[features.ColorSpace.RGB],
+        # FIXME: kernel should support arbitrary batch sizes
+        extra_dims=[(), (4,)],
+    )
+
+    for image_loader, kernel_size in itertools.product(make_gaussian_blur_image_loaders(), [5, (3, 3), [3, 3]]):
+        yield ArgsKwargs(image_loader, kernel_size=kernel_size)
+
+    for image_loader, sigma in itertools.product(
+        make_gaussian_blur_image_loaders(), [None, (3.0, 3.0), [2.0, 2.0], 4.0, [1.5], (3.14,)]
     ):
-        yield ArgsKwargs(image_loader, **params)
+        yield ArgsKwargs(image_loader, kernel_size=5, sigma=sigma)
 
 
 KERNEL_INFOS.append(
