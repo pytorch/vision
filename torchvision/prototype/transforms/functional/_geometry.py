@@ -330,7 +330,7 @@ def _affine_bounding_box_xyxy(
         height, width = image_size
         center_f = [width * 0.5, height * 0.5]
     else:
-        center_f = [float(x) for x in center]
+        center_f = center
 
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
     device = bounding_box.device
