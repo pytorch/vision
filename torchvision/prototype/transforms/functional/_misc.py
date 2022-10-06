@@ -16,7 +16,7 @@ def normalize(
         correct_type = isinstance(inpt, torch.Tensor)
     else:
         correct_type = features.is_simple_tensor(inpt) or isinstance(inpt, features.Image)
-        inpt = inpt.as_subclass(torch.Tensor)  # type: ignore[arg-type]
+        inpt = inpt.as_subclass(torch.Tensor)
     if not correct_type:
         raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
 
