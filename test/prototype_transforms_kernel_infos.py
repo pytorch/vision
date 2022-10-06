@@ -98,7 +98,7 @@ def mark_framework_limitation(test_id, reason):
     return TestMark(test_id, pytest.mark.skip(reason=reason))
 
 
-def xfail_python_scalar_arg_jit(name, *, reason=None):
+def xfail_jit_python_scalar_arg(name, *, reason=None):
     reason = reason or f"Python scalar int or float for `{name}` is not supported when scripting"
     return TestMark(
         ("TestKernels", "test_scripted_vs_eager"),
@@ -107,8 +107,17 @@ def xfail_python_scalar_arg_jit(name, *, reason=None):
     )
 
 
-def xfail_integer_size_jit(name="size"):
-    return xfail_python_scalar_arg_jit(name, reason=f"Integer `{name}` is not supported when scripting.")
+def xfail_jit_integer_size(name="size"):
+    return xfail_jit_python_scalar_arg(name, reason=f"Integer `{name}` is not supported when scripting.")
+
+
+def xfail_jit_tuple_instead_of_list(name, *, reason=None):
+    reason = reason or f"Passing a tuple instead of a list `{name}` is not supported when scripting"
+    return TestMark(
+        ("TestKernels", "test_scripted_vs_eager"),
+        pytest.mark.xfail(reason=reason),
+        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
+    )
 
 
 KERNEL_INFOS = []
@@ -248,14 +257,14 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_integer_size_jit(),
+                xfail_jit_integer_size(),
             ],
         ),
         KernelInfo(
             F.resize_bounding_box,
             sample_inputs_fn=sample_inputs_resize_bounding_box,
             test_marks=[
-                xfail_integer_size_jit(),
+                xfail_jit_integer_size(),
             ],
         ),
         KernelInfo(
@@ -265,7 +274,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_integer_size_jit(),
+                xfail_jit_integer_size(),
             ],
         ),
     ]
@@ -455,7 +464,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.affine_image_pil),
             reference_inputs_fn=reference_inputs_affine_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            test_marks=[xfail_python_scalar_arg_jit("shear")],
+            test_marks=[xfail_jit_python_scalar_arg("shear")],
         ),
         KernelInfo(
             F.affine_bounding_box,
@@ -464,7 +473,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_affine_bounding_box,
             closeness_kwargs=dict(atol=1, rtol=0),
             test_marks=[
-                xfail_python_scalar_arg_jit("shear"),
+                xfail_jit_python_scalar_arg("shear"),
             ],
         ),
         KernelInfo(
@@ -473,7 +482,7 @@ KERNEL_INFOS.extend(
             reference_fn=reference_affine_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            test_marks=[xfail_python_scalar_arg_jit("shear")],
+            test_marks=[xfail_jit_python_scalar_arg("shear")],
         ),
     ]
 )
@@ -829,12 +838,40 @@ _PAD_PARAMS = combinations_grid(
 
 
 def sample_inputs_pad_image_tensor():
-    for image_loader, params in itertools.product(make_image_loaders(sizes=["random"]), _PAD_PARAMS):
-        fills = [None, 128.0, 128, [12.0]]
-        if params["padding_mode"] == "constant":
-            fills.append([12.0 + c for c in range(image_loader.num_channels)])
+    make_pad_image_loaders = functools.partial(
+        make_image_loaders, sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]
+    )
+
+    for image_loader, padding in itertools.product(
+        make_pad_image_loaders(),
+        [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]],
+    ):
+        yield ArgsKwargs(image_loader, padding=padding)
+
+    for image_loader in make_pad_image_loaders():
+        fills = [None, 0.5]
+        if image_loader.num_channels > 1:
+            fills.extend(vector_fill * image_loader.num_channels for vector_fill in [(0.5,), (1,), [0.5], [1]])
         for fill in fills:
-            yield ArgsKwargs(image_loader, fill=fill, **params)
+            yield ArgsKwargs(image_loader, padding=[1], fill=fill)
+
+    for image_loader, padding_mode in itertools.product(
+        # We branch for non-constant padding and integer inputs
+        make_pad_image_loaders(dtypes=[torch.uint8]),
+        ["constant", "symmetric", "edge", "reflect"],
+    ):
+        yield ArgsKwargs(image_loader, padding=[1], padding_mode=padding_mode)
+
+    # `torch.nn.functional.pad` does not support symmetric padding, and thus we have a custom implementation. Besides
+    # negative padding, this is already handled by the inputs above.
+    for image_loader in make_pad_image_loaders():
+        yield ArgsKwargs(image_loader, padding=[-1], padding_mode="symmetric")
+
+
+# TODO: check if this is a regression since it seems that should be supported if `int` is ok
+def fill_is_list_of_ints(args_kwargs):
+    fill = args_kwargs.kwargs.get("fill")
+    return isinstance(fill, list) and any(isinstance(scalar_fill, int) for scalar_fill in fill)
 
 
 def reference_inputs_pad_image_tensor():
@@ -875,6 +912,16 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            test_marks=[
+                xfail_jit_python_scalar_arg("padding"),
+                xfail_jit_tuple_instead_of_list("padding"),
+                xfail_jit_tuple_instead_of_list("fill"),
+                TestMark(
+                    ("TestKernels", "test_scripted_vs_eager"),
+                    pytest.mark.xfail(reason="List of integers cannot be used for `fill` when scripting"),
+                    condition=fill_is_list_of_ints,
+                ),
+            ],
         ),
         KernelInfo(
             F.pad_bounding_box,
@@ -1090,14 +1137,14 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_center_crop_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_integer_size_jit("output_size"),
+                xfail_jit_integer_size("output_size"),
             ],
         ),
         KernelInfo(
             F.center_crop_bounding_box,
             sample_inputs_fn=sample_inputs_center_crop_bounding_box,
             test_marks=[
-                xfail_integer_size_jit("output_size"),
+                xfail_jit_integer_size("output_size"),
             ],
         ),
         KernelInfo(
@@ -1107,7 +1154,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_center_crop_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_integer_size_jit("output_size"),
+                xfail_jit_integer_size("output_size"),
             ],
         ),
     ]
@@ -1135,8 +1182,8 @@ KERNEL_INFOS.append(
         sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
         closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
         test_marks=[
-            xfail_python_scalar_arg_jit("kernel_size"),
-            xfail_python_scalar_arg_jit("sigma"),
+            xfail_jit_python_scalar_arg("kernel_size"),
+            xfail_jit_python_scalar_arg("sigma"),
         ],
     )
 )
@@ -1548,7 +1595,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
             test_marks=[
-                xfail_integer_size_jit(),
+                xfail_jit_integer_size(),
                 mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
             ],
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
@@ -1559,7 +1606,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
             test_marks=[
-                xfail_integer_size_jit(),
+                xfail_jit_integer_size(),
                 mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
             ],
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
