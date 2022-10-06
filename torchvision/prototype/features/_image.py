@@ -60,7 +60,9 @@ def _from_tensor_shape(shape: List[int]) -> ColorSpace:
 
 
 def _setup_color_space(color_space: Union[None, ColorSpace, str], shape: List[int]) -> ColorSpace:
-    if color_space is None:
+    if isinstance(color_space, ColorSpace):
+        return color_space
+    elif color_space is None:
         color_space = ColorSpace.from_tensor_shape(shape)
         if color_space == ColorSpace.OTHER:
             warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
@@ -68,7 +70,7 @@ def _setup_color_space(color_space: Union[None, ColorSpace, str], shape: List[in
     elif isinstance(color_space, str):
         return ColorSpace.from_str(color_space.upper())
 
-    raise ValueError
+    raise ValueError(f"Unsupported color space '{color_space}'")
 
 
 class Image(_Feature):
@@ -101,13 +103,9 @@ class Image(_Feature):
     def new_like(
         cls, other: Image, data: Any, *, color_space: Optional[Union[ColorSpace, str]] = None, **kwargs: Any
     ) -> Image:
-        # Question: Is it safe to assume data to be a tensor ?
-        out: Image = data.as_subclass(Image)
-        out.color_space = _setup_color_space(
-            color_space if color_space is not None else other.color_space, list(data.shape)
+        return super().new_like(
+            other, data, color_space=color_space if color_space is not None else other.color_space, **kwargs
         )
-        out._tensor = data  # type: ignore[attr-defined]
-        return out
 
     @property
     def image_size(self) -> Tuple[int, int]:
