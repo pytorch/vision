@@ -328,12 +328,14 @@ def _affine_bounding_box_xyxy(
 
     if center is None:
         height, width = image_size
-        center = [width * 0.5, height * 0.5]
+        center_f = [width * 0.5, height * 0.5]
+    else:
+        center_f = [float(x) for x in center]
 
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
     device = bounding_box.device
 
-    affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear, inverted=False)
+    affine_vector = _get_inverse_affine_matrix(center_f, angle, translate, scale, shear, inverted=False)
     transposed_affine_matrix = (
         torch.tensor(
             affine_vector,
@@ -377,8 +379,12 @@ def _affine_bounding_box_xyxy(
         # Translate bounding boxes
         out_bboxes[:, 0::2] = out_bboxes[:, 0::2] - tr[:, 0]
         out_bboxes[:, 1::2] = out_bboxes[:, 1::2] - tr[:, 1]
-        # Estimate meta-data for image with inverted=True
-        affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
+        # Estimate meta-data for image with inverted=True and with the original center
+        center_f = [0.0, 0.0]
+        if center is not None:
+            # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+            center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
+        affine_vector = _get_inverse_affine_matrix(center_f, angle, translate, scale, shear)
         new_width, new_height = _FT._compute_affine_output_size(affine_vector, width, height)
         image_size = (new_height, new_width)
 
