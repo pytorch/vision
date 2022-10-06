@@ -279,9 +279,9 @@ def affine_image_tensor(
     center_f = [0.0, 0.0]
     if center is not None:
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
+        center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
 
-    translate_f = [1.0 * t for t in translate]
+    translate_f = [float(t) for t in translate]
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
 
     output = _FT.affine(image, matrix, interpolation=interpolation.value, fill=fill)
@@ -367,9 +367,9 @@ def _affine_bounding_box_xyxy(
         points = torch.tensor(
             [
                 [0.0, 0.0, 1.0],
-                [0.0, 1.0 * height, 1.0],
-                [1.0 * width, 1.0 * height, 1.0],
-                [1.0 * width, 0.0, 1.0],
+                [0.0, float(height), 1.0],
+                [float(width), float(height), 1.0],
+                [float(width), 0.0, 1.0],
             ],
             dtype=dtype,
             device=device,
@@ -383,7 +383,7 @@ def _affine_bounding_box_xyxy(
         center_f = [0.0, 0.0]
         if center is not None:
             # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-            center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
+            center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
         affine_vector = _get_inverse_affine_matrix(center_f, angle, translate, scale, shear)
         new_width, new_height = _FT._compute_affine_output_size(affine_vector, width, height)
         image_size = (new_height, new_width)
@@ -517,7 +517,7 @@ def rotate_image_tensor(
             warnings.warn("The provided center argument has no effect on the result if expand is True")
         else:
             # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-            center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
+            center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
