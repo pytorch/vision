@@ -68,12 +68,35 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
     return TestMark(
         ("TestDispatchers", "test_scripted_smoke"),
         pytest.mark.xfail(reason=reason),
-        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs[name], (int, float)),
+        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), (int, float)),
     )
 
 
 def xfail_jit_integer_size(name="size"):
     return xfail_jit_python_scalar_arg(name, reason=f"Integer `{name}` is not supported when scripting.")
+
+
+def xfail_jit_tuple_instead_of_list(name, *, reason=None):
+    reason = reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting"
+    return TestMark(
+        ("TestDispatchers", "test_scripted_smoke"),
+        pytest.mark.xfail(reason=reason),
+        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
+    )
+
+
+def is_list_of_ints(args_kwargs):
+    fill = args_kwargs.kwargs.get("fill")
+    return isinstance(fill, list) and any(isinstance(scalar_fill, int) for scalar_fill in fill)
+
+
+def xfail_jit_list_of_ints(name, *, reason=None):
+    reason = reason or f"Passing a list of integers for `{name}` is not supported when scripting"
+    return TestMark(
+        ("TestDispatchers", "test_scripted_smoke"),
+        pytest.mark.xfail(reason=reason),
+        condition=is_list_of_ints,
+    )
 
 
 skip_dispatch_feature = TestMark(
@@ -137,6 +160,9 @@ DISPATCHER_INFOS = [
         test_marks=[
             xfail_dispatch_pil_if_fill_sequence_needs_broadcast,
             xfail_jit_python_scalar_arg("shear"),
+            xfail_jit_tuple_instead_of_list("fill"),
+            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
+            xfail_jit_list_of_ints("fill"),
         ],
     ),
     DispatcherInfo(
@@ -156,6 +182,11 @@ DISPATCHER_INFOS = [
             features.Mask: F.rotate_mask,
         },
         pil_kernel_info=PILKernelInfo(F.rotate_image_pil),
+        test_marks=[
+            xfail_jit_tuple_instead_of_list("fill"),
+            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
+            xfail_jit_list_of_ints("fill"),
+        ],
     ),
     DispatcherInfo(
         F.crop,
@@ -194,7 +225,12 @@ DISPATCHER_INFOS = [
                 ),
                 condition=lambda args_kwargs: fill_sequence_needs_broadcast(args_kwargs)
                 and args_kwargs.kwargs.get("padding_mode", "constant") == "constant",
-            )
+            ),
+            xfail_jit_python_scalar_arg("padding"),
+            xfail_jit_tuple_instead_of_list("padding"),
+            xfail_jit_tuple_instead_of_list("fill"),
+            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
+            xfail_jit_list_of_ints("fill"),
         ],
     ),
     DispatcherInfo(
