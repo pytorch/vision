@@ -202,3 +202,35 @@ def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
         # scriptable function test
         s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
         torch.testing.assert_close(transformed_batch, s_transformed_batch, rtol=1e-5, atol=scripted_fn_atol)
+
+
+def cache(fn):
+    """Similar to :func:`functools.cache` (Python >= 3.8) or :func:`functools.lru_cache` with infinite cache size,
+    but this also caches exceptions.
+    """
+    sentinel = object()
+    out_cache = {}
+    exc_cache = {}
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        key = args + tuple(kwargs.values())
+
+        out = out_cache.get(key, sentinel)
+        if out is not sentinel:
+            return out
+
+        exc = exc_cache.get(key, sentinel)
+        if exc is not sentinel:
+            raise exc
+
+        try:
+            out = fn(*args, **kwargs)
+        except Exception as exc:
+            exc_cache[key] = exc
+            raise exc
+
+        out_cache[key] = out
+        return out
+
+    return wrapper

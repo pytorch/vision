@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Union
+from typing import List, Optional, Union
 
 import torch
 from torchvision.transforms import InterpolationMode
 
-from ._feature import _Feature
+from ._feature import _Feature, FillTypeJIT
 
 
 class Mask(_Feature):
@@ -50,22 +50,11 @@ class Mask(_Feature):
 
     def pad(
         self,
-        padding: Union[int, Sequence[int]],
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        padding: Union[int, List[int]],
+        fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> Mask:
-        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
-        if not isinstance(padding, int):
-            padding = list(padding)
-
-        if isinstance(fill, (int, float)) or fill is None:
-            if fill is None:
-                fill = 0
-            output = self._F.pad_mask(self, padding, padding_mode=padding_mode, fill=fill)
-        else:
-            # Let's raise an error for vector fill on masks
-            raise ValueError("Non-scalar fill value is not supported")
-
+        output = self._F.pad_mask(self, padding, padding_mode=padding_mode, fill=fill)
         return Mask.new_like(self, output)
 
     def rotate(
@@ -73,20 +62,20 @@ class Mask(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Mask:
-        output = self._F.rotate_mask(self, angle, expand=expand, center=center)
+        output = self._F.rotate_mask(self, angle, expand=expand, center=center, fill=fill)
         return Mask.new_like(self, output)
 
     def affine(
         self,
-        angle: float,
+        angle: Union[int, float],
         translate: List[float],
         scale: float,
         shear: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Mask:
         output = self._F.affine_mask(
@@ -95,6 +84,7 @@ class Mask(_Feature):
             translate=translate,
             scale=scale,
             shear=shear,
+            fill=fill,
             center=center,
         )
         return Mask.new_like(self, output)
@@ -103,16 +93,16 @@ class Mask(_Feature):
         self,
         perspective_coeffs: List[float],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: FillTypeJIT = None,
     ) -> Mask:
-        output = self._F.perspective_mask(self, perspective_coeffs)
+        output = self._F.perspective_mask(self, perspective_coeffs, fill=fill)
         return Mask.new_like(self, output)
 
     def elastic(
         self,
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
+        fill: FillTypeJIT = None,
     ) -> Mask:
-        output = self._F.elastic_mask(self, displacement)
+        output = self._F.elastic_mask(self, displacement, fill=fill)
         return Mask.new_like(self, output, dtype=output.dtype)
