@@ -143,6 +143,25 @@ def xfail_jit_list_of_ints(name, *, reason=None):
     )
 
 
+def xfail_all_tests(*, reason, condition):
+    return [
+        TestMark(("TestKernels", test_name), pytest.mark.xfail(reason=reason), condition=condition)
+        for test_name in [
+            "test_scripted_vs_eager",
+            "test_batched_vs_single",
+            "test_no_inplace",
+            "test_cuda_vs_cpu",
+            "test_dtype_and_device_consistency",
+        ]
+    ]
+
+
+xfails_image_degenerate_or_multi_batch_dims = xfail_all_tests(
+    reason="See https://github.com/pytorch/vision/issues/6670 for details.",
+    condition=lambda args_kwargs: len(args_kwargs.args[0].shape) > 4 or not all(args_kwargs.args[0].shape[:-3]),
+)
+
+
 KERNEL_INFOS = []
 
 
@@ -1093,11 +1112,7 @@ _PERSPECTIVE_COEFFS = [
 
 
 def sample_inputs_perspective_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"],
-        # FIXME: kernel should support arbitrary batch sizes
-        extra_dims=[(), (4,)],
-    ):
+    for image_loader in make_image_loaders(sizes=["random"]):
         for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
             yield ArgsKwargs(image_loader, fill=fill, perspective_coeffs=_PERSPECTIVE_COEFFS[0])
 
@@ -1117,11 +1132,7 @@ def sample_inputs_perspective_bounding_box():
 
 
 def sample_inputs_perspective_mask():
-    for mask_loader in make_mask_loaders(
-        sizes=["random"],
-        # FIXME: kernel should support arbitrary batch sizes
-        extra_dims=[(), (4,)],
-    ):
+    for mask_loader in make_mask_loaders(sizes=["random"]):
         yield ArgsKwargs(mask_loader, perspective_coeffs=_PERSPECTIVE_COEFFS[0])
 
 
@@ -1145,6 +1156,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            test_marks=xfails_image_degenerate_or_multi_batch_dims,
         ),
         KernelInfo(
             F.perspective_bounding_box,
@@ -1156,6 +1168,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            test_marks=xfails_image_degenerate_or_multi_batch_dims,
         ),
         KernelInfo(
             F.perspective_video,
@@ -1170,11 +1183,7 @@ def _get_elastic_displacement(image_size):
 
 
 def sample_inputs_elastic_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"],
-        # FIXME: kernel should support arbitrary batch sizes
-        extra_dims=[(), (4,)],
-    ):
+    for image_loader in make_image_loaders(sizes=["random"]):
         displacement = _get_elastic_displacement(image_loader.image_size)
         for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
             yield ArgsKwargs(image_loader, displacement=displacement, fill=fill)
@@ -1205,11 +1214,7 @@ def sample_inputs_elastic_bounding_box():
 
 
 def sample_inputs_elastic_mask():
-    for mask_loader in make_mask_loaders(
-        sizes=["random"],
-        # FIXME: kernel should support arbitrary batch sizes
-        extra_dims=[(), (4,)],
-    ):
+    for mask_loader in make_mask_loaders(sizes=["random"]):
         displacement = _get_elastic_displacement(mask_loader.shape[-2:])
         yield ArgsKwargs(mask_loader, displacement=displacement)
 
@@ -1234,6 +1239,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            test_marks=xfails_image_degenerate_or_multi_batch_dims,
         ),
         KernelInfo(
             F.elastic_bounding_box,
@@ -1245,6 +1251,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            test_marks=xfails_image_degenerate_or_multi_batch_dims,
         ),
         KernelInfo(
             F.elastic_video,
@@ -1346,11 +1353,7 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_gaussian_blur_image_tensor():
     make_gaussian_blur_image_loaders = functools.partial(
-        make_image_loaders,
-        sizes=["random"],
-        color_spaces=[features.ColorSpace.RGB],
-        # FIXME: kernel should support arbitrary batch sizes
-        extra_dims=[(), (4,)],
+        make_image_loaders, sizes=["random"], color_spaces=[features.ColorSpace.RGB]
     )
 
     for image_loader, kernel_size in itertools.product(make_gaussian_blur_image_loaders(), [5, (3, 3), [3, 3]]):
@@ -1376,6 +1379,7 @@ KERNEL_INFOS.extend(
             test_marks=[
                 xfail_jit_python_scalar_arg("kernel_size"),
                 xfail_jit_python_scalar_arg("sigma"),
+                *xfails_image_degenerate_or_multi_batch_dims,
             ],
         ),
         KernelInfo(
@@ -1388,11 +1392,7 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_equalize_image_tensor():
     for image_loader in make_image_loaders(
-        sizes=["random"],
-        # FIXME: kernel should support arbitrary batch sizes
-        extra_dims=[(), (4,)],
-        color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB),
-        dtypes=[torch.uint8],
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
     ):
         yield ArgsKwargs(image_loader)
 
@@ -1418,6 +1418,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.equalize_image_pil),
             reference_inputs_fn=reference_inputs_equalize_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            test_marks=xfails_image_degenerate_or_multi_batch_dims,
         ),
         KernelInfo(
             F.equalize_video,
@@ -1594,8 +1595,6 @@ def sample_inputs_adjust_sharpness_image_tensor():
     for image_loader in make_image_loaders(
         sizes=["random", (2, 2)],
         color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB),
-        # FIXME: kernel should support arbitrary batch sizes
-        extra_dims=[(), (4,)],
     ):
         yield ArgsKwargs(image_loader, sharpness_factor=_ADJUST_SHARPNESS_FACTORS[0])
 
@@ -1622,6 +1621,15 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.adjust_sharpness_image_pil),
             reference_inputs_fn=reference_inputs_adjust_sharpness_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            test_marks=xfail_all_tests(
+                reason="See https://github.com/pytorch/vision/issues/6670 for details.",
+                condition=lambda args_kwargs: all(dim > 2 for dim in args_kwargs.args[0].shape[-2:])
+                and (
+                    len(args_kwargs.args[0].shape) > 4
+                    or not all(args_kwargs.args[0].shape[:-4])
+                    or args_kwargs.args[0].shape[-4:-2] == (0, 3)
+                ),
+            ),
         ),
         KernelInfo(
             F.adjust_sharpness_video,

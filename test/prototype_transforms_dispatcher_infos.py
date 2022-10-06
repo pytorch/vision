@@ -127,6 +127,23 @@ xfail_dispatch_pil_if_fill_sequence_needs_broadcast = TestMark(
 )
 
 
+def xfail_all_tests(*, reason, condition):
+    return [
+        TestMark(("TestDispatchers", test_name), pytest.mark.xfail(reason=reason), condition=condition)
+        for test_name in [
+            "test_scripted_smoke",
+            "test_dispatch_simple_tensor",
+            "test_dispatch_feature",
+        ]
+    ]
+
+
+xfails_degenerate_or_multi_batch_dims = xfail_all_tests(
+    reason="See https://github.com/pytorch/vision/issues/6670 for details.",
+    condition=lambda args_kwargs: len(args_kwargs.args[0].shape) > 4 or not all(args_kwargs.args[0].shape[:-3]),
+)
+
+
 DISPATCHER_INFOS = [
     DispatcherInfo(
         F.horizontal_flip,
@@ -243,6 +260,7 @@ DISPATCHER_INFOS = [
         pil_kernel_info=PILKernelInfo(F.perspective_image_pil),
         test_marks=[
             xfail_dispatch_pil_if_fill_sequence_needs_broadcast,
+            *xfails_degenerate_or_multi_batch_dims,
         ],
     ),
     DispatcherInfo(
@@ -253,6 +271,7 @@ DISPATCHER_INFOS = [
             features.Mask: F.elastic_mask,
         },
         pil_kernel_info=PILKernelInfo(F.elastic_image_pil),
+        test_marks=xfails_degenerate_or_multi_batch_dims,
     ),
     DispatcherInfo(
         F.center_crop,
@@ -275,6 +294,7 @@ DISPATCHER_INFOS = [
         test_marks=[
             xfail_jit_python_scalar_arg("kernel_size"),
             xfail_jit_python_scalar_arg("sigma"),
+            *xfails_degenerate_or_multi_batch_dims,
         ],
     ),
     DispatcherInfo(
@@ -283,6 +303,7 @@ DISPATCHER_INFOS = [
             features.Image: F.equalize_image_tensor,
         },
         pil_kernel_info=PILKernelInfo(F.equalize_image_pil, kernel_name="equalize_image_pil"),
+        test_marks=xfails_degenerate_or_multi_batch_dims,
     ),
     DispatcherInfo(
         F.invert,
@@ -318,6 +339,15 @@ DISPATCHER_INFOS = [
             features.Image: F.adjust_sharpness_image_tensor,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_sharpness_image_pil, kernel_name="adjust_sharpness_image_pil"),
+        test_marks=xfail_all_tests(
+            reason="See https://github.com/pytorch/vision/issues/6670 for details.",
+            condition=lambda args_kwargs: all(dim > 2 for dim in args_kwargs.args[0].shape[-2:])
+            and (
+                len(args_kwargs.args[0].shape) > 4
+                or not all(args_kwargs.args[0].shape[:-4])
+                or args_kwargs.args[0].shape[-4:-2] == (0, 3)
+            ),
+        ),
     ),
     DispatcherInfo(
         F.erase,
