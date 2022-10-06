@@ -12,6 +12,7 @@ import torchvision.ops
 import torchvision.prototype.transforms.functional as F
 
 from _pytest.mark.structures import MarkDecorator
+from common_utils import cycle_over
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
@@ -547,15 +548,21 @@ KERNEL_INFOS.append(
 
 
 def sample_inputs_convert_color_space_image_tensor():
-    color_spaces = set(features.ColorSpace) - {features.ColorSpace.OTHER}
-    for image_loader in make_image_loaders(sizes=["random"], color_spaces=color_spaces, constant_alpha=True):
-        old_color_space = image_loader.color_space
-        for params in combinations_grid(new_color_space=color_spaces - {old_color_space}, copy=(True, False)):
-            yield ArgsKwargs(image_loader, old_color_space=old_color_space, **params)
+    color_spaces = list(set(features.ColorSpace) - {features.ColorSpace.OTHER})
+
+    for old_color_space, new_color_space in cycle_over(color_spaces):
+        for image_loader in make_image_loaders(sizes=["random"], color_spaces=[old_color_space], constant_alpha=True):
+            yield ArgsKwargs(image_loader, old_color_space=old_color_space, new_color_space=new_color_space)
+
+    for color_space in color_spaces:
+        for image_loader in make_image_loaders(
+            sizes=["random"], color_spaces=[color_space], dtypes=[torch.float32], constant_alpha=True
+        ):
+            yield ArgsKwargs(image_loader, old_color_space=color_space, new_color_space=color_space, copy=False)
 
 
 @pil_reference_wrapper
-def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space, copy):
+def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space, copy=True):
     color_space_pil = features.ColorSpace.from_pil_mode(image_pil.mode)
     if color_space_pil != old_color_space:
         raise pytest.UsageError(
