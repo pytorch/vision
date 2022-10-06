@@ -58,7 +58,25 @@ adjust_sharpness_image_pil = _FP.adjust_sharpness
 
 
 def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
-    return adjust_sharpness_image_tensor(video, sharpness_factor=sharpness_factor)
+    # TODO: this is a temporary workaround until the image kernel supports arbitrary batch sizes. Remove this when
+    #  https://github.com/pytorch/vision/issues/6670 is resolved.
+    if video.numel() == 0:
+        return video
+
+    shape = video.shape
+
+    if video.ndim > 4:
+        video = video.view((-1,) + shape[-3:])
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    output = adjust_sharpness_image_tensor(video, sharpness_factor=sharpness_factor)
+
+    if needs_unsquash:
+        output = output.view(shape)
+
+    return output
 
 
 def adjust_sharpness(inpt: features.InputTypeJIT, sharpness_factor: float) -> features.InputTypeJIT:
@@ -160,7 +178,25 @@ equalize_image_pil = _FP.equalize
 
 
 def equalize_video(video: torch.Tensor) -> torch.Tensor:
-    return equalize_image_tensor(video)
+    # TODO: this is a temporary workaround until the image kernel supports arbitrary batch sizes. Remove this when
+    #  https://github.com/pytorch/vision/issues/6670 is resolved.
+    if video.numel() == 0:
+        return video
+
+    shape = video.shape
+
+    if video.ndim > 4:
+        video = video.view((-1,) + shape[-3:])
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    output = equalize_image_tensor(video)
+
+    if needs_unsquash:
+        output = output.view(shape)
+
+    return output
 
 
 def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
