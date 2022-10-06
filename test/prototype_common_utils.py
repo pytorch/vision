@@ -550,7 +550,7 @@ def make_video_loader(
     dtype=torch.uint8,
 ):
     size = _parse_image_size(size)
-    num_frames = int(torch.randint(1, 6, ())) if num_frames == "random" else num_frames
+    num_frames = int(torch.randint(1, 4, ())) if num_frames == "random" else num_frames
 
     def fn(shape, dtype, device):
         video = make_image(size=shape[-2:], color_space=color_space, extra_dims=shape[:-2], dtype=dtype, device=device)

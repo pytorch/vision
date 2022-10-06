@@ -297,6 +297,11 @@ def reference_inputs_resize_mask():
             yield ArgsKwargs(mask_loader, size=size)
 
 
+def sample_inputs_resize_video():
+    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
+        yield ArgsKwargs(mask_loader, size=[min(mask_loader.shape[-2:]) + 1])
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -325,6 +330,10 @@ KERNEL_INFOS.extend(
             test_marks=[
                 xfail_jit_integer_size(),
             ],
+        ),
+        KernelInfo(
+            F.resize_video,
+            sample_inputs_fn=sample_inputs_resize_video,
         ),
     ]
 )
@@ -495,7 +504,7 @@ def reference_inputs_affine_bounding_box():
         )
 
 
-def sample_inputs_affine_image_mask():
+def sample_inputs_affine_mask():
     for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
         yield ArgsKwargs(mask_loader, **_full_affine_params())
 
@@ -510,6 +519,11 @@ def reference_inputs_resize_mask():
         make_mask_loaders(extra_dims=[()], num_objects=[1]), _AFFINE_KWARGS
     ):
         yield ArgsKwargs(mask_loader, **affine_kwargs)
+
+
+def sample_inputs_affine_video():
+    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
+        yield ArgsKwargs(mask_loader, **_full_affine_params())
 
 
 KERNEL_INFOS.extend(
@@ -539,13 +553,17 @@ KERNEL_INFOS.extend(
         ),
         KernelInfo(
             F.affine_mask,
-            sample_inputs_fn=sample_inputs_affine_image_mask,
+            sample_inputs_fn=sample_inputs_affine_mask,
             reference_fn=reference_affine_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
             ],
+        ),
+        KernelInfo(
+            F.affine_video,
+            sample_inputs_fn=sample_inputs_affine_video,
         ),
     ]
 )
@@ -618,14 +636,28 @@ def reference_inputs_convert_color_space_image_tensor():
             yield args_kwargs
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.convert_color_space_image_tensor,
-        sample_inputs_fn=sample_inputs_convert_color_space_image_tensor,
-        reference_fn=reference_convert_color_space_image_tensor,
-        reference_inputs_fn=reference_inputs_convert_color_space_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    ),
+def sample_inputs_convert_color_space_video():
+    color_spaces = [features.ColorSpace.GRAY, features.ColorSpace.RGB]
+
+    for old_color_space, new_color_space in cycle_over(color_spaces):
+        for video_loader in make_video_loaders(sizes=["random"], color_spaces=[old_color_space], num_frames=["random"]):
+            yield ArgsKwargs(video_loader, old_color_space=old_color_space, new_color_space=new_color_space)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.convert_color_space_image_tensor,
+            sample_inputs_fn=sample_inputs_convert_color_space_image_tensor,
+            reference_fn=reference_convert_color_space_image_tensor,
+            reference_inputs_fn=reference_inputs_convert_color_space_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.convert_color_space_video,
+            sample_inputs_fn=sample_inputs_convert_color_space_video,
+        ),
+    ]
 )
 
 
@@ -653,6 +685,11 @@ def sample_inputs_vertical_flip_mask():
         yield ArgsKwargs(image_loader)
 
 
+def sample_inputs_vertical_flip_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader)
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -670,6 +707,10 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.vertical_flip_mask,
             sample_inputs_fn=sample_inputs_vertical_flip_mask,
+        ),
+        KernelInfo(
+            F.vertical_flip_video,
+            sample_inputs_fn=sample_inputs_vertical_flip_video,
         ),
     ]
 )
@@ -734,6 +775,11 @@ def reference_inputs_rotate_mask():
         yield ArgsKwargs(mask_loader, angle=angle)
 
 
+def sample_inputs_rotate_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, angle=15.0)
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -758,6 +804,10 @@ KERNEL_INFOS.extend(
             reference_fn=reference_rotate_mask,
             reference_inputs_fn=reference_inputs_rotate_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.rotate_video,
+            sample_inputs_fn=sample_inputs_rotate_video,
         ),
     ]
 )
@@ -801,6 +851,11 @@ def reference_inputs_crop_mask():
         yield ArgsKwargs(mask_loader, **params)
 
 
+def sample_inputs_crop_video():
+    for video_loader in make_video_loaders(sizes=[(16, 17)], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, top=4, left=3, height=7, width=8)
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -821,6 +876,10 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.crop_image_pil),
             reference_inputs_fn=reference_inputs_crop_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.crop_video,
+            sample_inputs_fn=sample_inputs_crop_video,
         ),
     ]
 )
@@ -882,6 +941,11 @@ def reference_inputs_resized_crop_mask():
         yield ArgsKwargs(mask_loader, **params)
 
 
+def sample_inputs_resized_crop_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, **_RESIZED_CROP_PARAMS[0])
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -901,6 +965,10 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.resized_crop_image_pil),
             reference_inputs_fn=reference_inputs_resized_crop_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.resized_crop_video,
+            sample_inputs_fn=sample_inputs_resized_crop_video,
         ),
     ]
 )
@@ -975,6 +1043,11 @@ def reference_inputs_pad_mask():
         yield ArgsKwargs(image_loader, fill=fill, **params)
 
 
+def sample_inputs_pad_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, padding=[1])
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -1005,6 +1078,10 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.pad_video,
+            sample_inputs_fn=sample_inputs_pad_video,
         ),
     ]
 )
@@ -1055,6 +1132,11 @@ def reference_inputs_perspective_mask():
         yield ArgsKwargs(mask_loader, perspective_coeffs=perspective_coeffs)
 
 
+def sample_inputs_perspective_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, perspective_coeffs=_PERSPECTIVE_COEFFS[0])
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -1074,6 +1156,10 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.perspective_video,
+            sample_inputs_fn=sample_inputs_perspective_video,
         ),
     ]
 )
@@ -1134,6 +1220,12 @@ def reference_inputs_elastic_mask():
         yield ArgsKwargs(mask_loader, displacement=displacement)
 
 
+def sample_inputs_elastic_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        displacement = _get_elastic_displacement(video_loader.shape[-2:])
+        yield ArgsKwargs(video_loader, displacement=displacement)
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -1153,6 +1245,10 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.elastic_video,
+            sample_inputs_fn=sample_inputs_elastic_video,
         ),
     ]
 )
@@ -1205,6 +1301,12 @@ def reference_inputs_center_crop_mask():
         yield ArgsKwargs(mask_loader, output_size=output_size)
 
 
+def sample_inputs_center_crop_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        height, width = video_loader.shape[-2:]
+        yield ArgsKwargs(video_loader, output_size=(height // 2, width // 2))
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -1234,6 +1336,10 @@ KERNEL_INFOS.extend(
                 xfail_jit_integer_size("output_size"),
             ],
         ),
+        KernelInfo(
+            F.center_crop_video,
+            sample_inputs_fn=sample_inputs_center_crop_video,
+        ),
     ]
 )
 
@@ -1256,16 +1362,27 @@ def sample_inputs_gaussian_blur_image_tensor():
         yield ArgsKwargs(image_loader, kernel_size=5, sigma=sigma)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.gaussian_blur_image_tensor,
-        sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-        test_marks=[
-            xfail_jit_python_scalar_arg("kernel_size"),
-            xfail_jit_python_scalar_arg("sigma"),
-        ],
-    )
+def sample_inputs_gaussian_blur_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, kernel_size=3)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.gaussian_blur_image_tensor,
+            sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            test_marks=[
+                xfail_jit_python_scalar_arg("kernel_size"),
+                xfail_jit_python_scalar_arg("sigma"),
+            ],
+        ),
+        KernelInfo(
+            F.gaussian_blur_video,
+            sample_inputs_fn=sample_inputs_gaussian_blur_video,
+        ),
+    ]
 )
 
 
@@ -1287,15 +1404,26 @@ def reference_inputs_equalize_image_tensor():
         yield ArgsKwargs(image_loader)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.equalize_image_tensor,
-        kernel_name="equalize_image_tensor",
-        sample_inputs_fn=sample_inputs_equalize_image_tensor,
-        reference_fn=pil_reference_wrapper(F.equalize_image_pil),
-        reference_inputs_fn=reference_inputs_equalize_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_equalize_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.equalize_image_tensor,
+            kernel_name="equalize_image_tensor",
+            sample_inputs_fn=sample_inputs_equalize_image_tensor,
+            reference_fn=pil_reference_wrapper(F.equalize_image_pil),
+            reference_inputs_fn=reference_inputs_equalize_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.equalize_video,
+            sample_inputs_fn=sample_inputs_equalize_video,
+        ),
+    ]
 )
 
 
@@ -1313,15 +1441,26 @@ def reference_inputs_invert_image_tensor():
         yield ArgsKwargs(image_loader)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.invert_image_tensor,
-        kernel_name="invert_image_tensor",
-        sample_inputs_fn=sample_inputs_invert_image_tensor,
-        reference_fn=pil_reference_wrapper(F.invert_image_pil),
-        reference_inputs_fn=reference_inputs_invert_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_invert_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.invert_image_tensor,
+            kernel_name="invert_image_tensor",
+            sample_inputs_fn=sample_inputs_invert_image_tensor,
+            reference_fn=pil_reference_wrapper(F.invert_image_pil),
+            reference_inputs_fn=reference_inputs_invert_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.invert_video,
+            sample_inputs_fn=sample_inputs_invert_video,
+        ),
+    ]
 )
 
 
@@ -1345,15 +1484,26 @@ def reference_inputs_posterize_image_tensor():
         yield ArgsKwargs(image_loader, bits=bits)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.posterize_image_tensor,
-        kernel_name="posterize_image_tensor",
-        sample_inputs_fn=sample_inputs_posterize_image_tensor,
-        reference_fn=pil_reference_wrapper(F.posterize_image_pil),
-        reference_inputs_fn=reference_inputs_posterize_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_posterize_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, bits=_POSTERIZE_BITS[0])
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.posterize_image_tensor,
+            kernel_name="posterize_image_tensor",
+            sample_inputs_fn=sample_inputs_posterize_image_tensor,
+            reference_fn=pil_reference_wrapper(F.posterize_image_pil),
+            reference_inputs_fn=reference_inputs_posterize_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.posterize_video,
+            sample_inputs_fn=sample_inputs_posterize_video,
+        ),
+    ]
 )
 
 
@@ -1378,15 +1528,26 @@ def reference_inputs_solarize_image_tensor():
             yield ArgsKwargs(image_loader, threshold=threshold)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.solarize_image_tensor,
-        kernel_name="solarize_image_tensor",
-        sample_inputs_fn=sample_inputs_solarize_image_tensor,
-        reference_fn=pil_reference_wrapper(F.solarize_image_pil),
-        reference_inputs_fn=reference_inputs_solarize_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_solarize_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, threshold=next(_get_solarize_thresholds(video_loader.dtype)))
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.solarize_image_tensor,
+            kernel_name="solarize_image_tensor",
+            sample_inputs_fn=sample_inputs_solarize_image_tensor,
+            reference_fn=pil_reference_wrapper(F.solarize_image_pil),
+            reference_inputs_fn=reference_inputs_solarize_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.solarize_video,
+            sample_inputs_fn=sample_inputs_solarize_video,
+        ),
+    ]
 )
 
 
@@ -1404,15 +1565,26 @@ def reference_inputs_autocontrast_image_tensor():
         yield ArgsKwargs(image_loader)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.autocontrast_image_tensor,
-        kernel_name="autocontrast_image_tensor",
-        sample_inputs_fn=sample_inputs_autocontrast_image_tensor,
-        reference_fn=pil_reference_wrapper(F.autocontrast_image_pil),
-        reference_inputs_fn=reference_inputs_autocontrast_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_autocontrast_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.autocontrast_image_tensor,
+            kernel_name="autocontrast_image_tensor",
+            sample_inputs_fn=sample_inputs_autocontrast_image_tensor,
+            reference_fn=pil_reference_wrapper(F.autocontrast_image_pil),
+            reference_inputs_fn=reference_inputs_autocontrast_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.autocontrast_video,
+            sample_inputs_fn=sample_inputs_autocontrast_video,
+        ),
+    ]
 )
 
 _ADJUST_SHARPNESS_FACTORS = [0.1, 0.5]
@@ -1436,15 +1608,26 @@ def reference_inputs_adjust_sharpness_image_tensor():
         yield ArgsKwargs(image_loader, sharpness_factor=sharpness_factor)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.adjust_sharpness_image_tensor,
-        kernel_name="adjust_sharpness_image_tensor",
-        sample_inputs_fn=sample_inputs_adjust_sharpness_image_tensor,
-        reference_fn=pil_reference_wrapper(F.adjust_sharpness_image_pil),
-        reference_inputs_fn=reference_inputs_adjust_sharpness_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_adjust_sharpness_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, sharpness_factor=_ADJUST_SHARPNESS_FACTORS[0])
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.adjust_sharpness_image_tensor,
+            kernel_name="adjust_sharpness_image_tensor",
+            sample_inputs_fn=sample_inputs_adjust_sharpness_image_tensor,
+            reference_fn=pil_reference_wrapper(F.adjust_sharpness_image_pil),
+            reference_inputs_fn=reference_inputs_adjust_sharpness_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.adjust_sharpness_video,
+            sample_inputs_fn=sample_inputs_adjust_sharpness_video,
+        ),
+    ]
 )
 
 
@@ -1456,12 +1639,26 @@ def sample_inputs_erase_image_tensor():
         yield ArgsKwargs(image_loader, i=1, j=2, h=h, w=w, v=v)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.erase_image_tensor,
-        kernel_name="erase_image_tensor",
-        sample_inputs_fn=sample_inputs_erase_image_tensor,
-    )
+def sample_inputs_erase_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        # FIXME: make the parameters more diverse
+        h, w = 6, 7
+        v = torch.rand(video_loader.num_channels, h, w)
+        yield ArgsKwargs(video_loader, i=1, j=2, h=h, w=w, v=v)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.erase_image_tensor,
+            kernel_name="erase_image_tensor",
+            sample_inputs_fn=sample_inputs_erase_image_tensor,
+        ),
+        KernelInfo(
+            F.erase_video,
+            sample_inputs_fn=sample_inputs_erase_video,
+        ),
+    ]
 )
 
 _ADJUST_BRIGHTNESS_FACTORS = [0.1, 0.5]
@@ -1482,15 +1679,26 @@ def reference_inputs_adjust_brightness_image_tensor():
         yield ArgsKwargs(image_loader, brightness_factor=brightness_factor)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.adjust_brightness_image_tensor,
-        kernel_name="adjust_brightness_image_tensor",
-        sample_inputs_fn=sample_inputs_adjust_brightness_image_tensor,
-        reference_fn=pil_reference_wrapper(F.adjust_brightness_image_pil),
-        reference_inputs_fn=reference_inputs_adjust_brightness_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_adjust_brightness_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, brightness_factor=_ADJUST_BRIGHTNESS_FACTORS[0])
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.adjust_brightness_image_tensor,
+            kernel_name="adjust_brightness_image_tensor",
+            sample_inputs_fn=sample_inputs_adjust_brightness_image_tensor,
+            reference_fn=pil_reference_wrapper(F.adjust_brightness_image_pil),
+            reference_inputs_fn=reference_inputs_adjust_brightness_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.adjust_brightness_video,
+            sample_inputs_fn=sample_inputs_adjust_brightness_video,
+        ),
+    ]
 )
 
 
@@ -1512,15 +1720,26 @@ def reference_inputs_adjust_contrast_image_tensor():
         yield ArgsKwargs(image_loader, contrast_factor=contrast_factor)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.adjust_contrast_image_tensor,
-        kernel_name="adjust_contrast_image_tensor",
-        sample_inputs_fn=sample_inputs_adjust_contrast_image_tensor,
-        reference_fn=pil_reference_wrapper(F.adjust_contrast_image_pil),
-        reference_inputs_fn=reference_inputs_adjust_contrast_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_adjust_contrast_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, contrast_factor=_ADJUST_CONTRAST_FACTORS[0])
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.adjust_contrast_image_tensor,
+            kernel_name="adjust_contrast_image_tensor",
+            sample_inputs_fn=sample_inputs_adjust_contrast_image_tensor,
+            reference_fn=pil_reference_wrapper(F.adjust_contrast_image_pil),
+            reference_inputs_fn=reference_inputs_adjust_contrast_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.adjust_contrast_video,
+            sample_inputs_fn=sample_inputs_adjust_contrast_video,
+        ),
+    ]
 )
 
 _ADJUST_GAMMA_GAMMAS_GAINS = [
@@ -1545,15 +1764,27 @@ def reference_inputs_adjust_gamma_image_tensor():
         yield ArgsKwargs(image_loader, gamma=gamma, gain=gain)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.adjust_gamma_image_tensor,
-        kernel_name="adjust_gamma_image_tensor",
-        sample_inputs_fn=sample_inputs_adjust_gamma_image_tensor,
-        reference_fn=pil_reference_wrapper(F.adjust_gamma_image_pil),
-        reference_inputs_fn=reference_inputs_adjust_gamma_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_adjust_gamma_video():
+    gamma, gain = _ADJUST_GAMMA_GAMMAS_GAINS[0]
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, gamma=gamma, gain=gain)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.adjust_gamma_image_tensor,
+            kernel_name="adjust_gamma_image_tensor",
+            sample_inputs_fn=sample_inputs_adjust_gamma_image_tensor,
+            reference_fn=pil_reference_wrapper(F.adjust_gamma_image_pil),
+            reference_inputs_fn=reference_inputs_adjust_gamma_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.adjust_gamma_video,
+            sample_inputs_fn=sample_inputs_adjust_gamma_video,
+        ),
+    ]
 )
 
 
@@ -1575,15 +1806,26 @@ def reference_inputs_adjust_hue_image_tensor():
         yield ArgsKwargs(image_loader, hue_factor=hue_factor)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.adjust_hue_image_tensor,
-        kernel_name="adjust_hue_image_tensor",
-        sample_inputs_fn=sample_inputs_adjust_hue_image_tensor,
-        reference_fn=pil_reference_wrapper(F.adjust_hue_image_pil),
-        reference_inputs_fn=reference_inputs_adjust_hue_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_adjust_hue_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, hue_factor=_ADJUST_HUE_FACTORS[0])
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.adjust_hue_image_tensor,
+            kernel_name="adjust_hue_image_tensor",
+            sample_inputs_fn=sample_inputs_adjust_hue_image_tensor,
+            reference_fn=pil_reference_wrapper(F.adjust_hue_image_pil),
+            reference_inputs_fn=reference_inputs_adjust_hue_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.adjust_hue_video,
+            sample_inputs_fn=sample_inputs_adjust_hue_video,
+        ),
+    ]
 )
 
 _ADJUST_SATURATION_FACTORS = [0.1, 0.5]
@@ -1604,15 +1846,26 @@ def reference_inputs_adjust_saturation_image_tensor():
         yield ArgsKwargs(image_loader, saturation_factor=saturation_factor)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.adjust_saturation_image_tensor,
-        kernel_name="adjust_saturation_image_tensor",
-        sample_inputs_fn=sample_inputs_adjust_saturation_image_tensor,
-        reference_fn=pil_reference_wrapper(F.adjust_saturation_image_pil),
-        reference_inputs_fn=reference_inputs_adjust_saturation_image_tensor,
-        closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-    )
+def sample_inputs_adjust_saturation_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, saturation_factor=_ADJUST_SATURATION_FACTORS[0])
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.adjust_saturation_image_tensor,
+            kernel_name="adjust_saturation_image_tensor",
+            sample_inputs_fn=sample_inputs_adjust_saturation_image_tensor,
+            reference_fn=pil_reference_wrapper(F.adjust_saturation_image_pil),
+            reference_inputs_fn=reference_inputs_adjust_saturation_image_tensor,
+            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.adjust_saturation_video,
+            sample_inputs_fn=sample_inputs_adjust_saturation_video,
+        ),
+    ]
 )
 
 
@@ -1712,10 +1965,22 @@ def sample_inputs_normalize_image_tensor():
         yield ArgsKwargs(image_loader, mean=mean, std=std)
 
 
-KERNEL_INFOS.append(
-    KernelInfo(
-        F.normalize_image_tensor,
-        kernel_name="normalize_image_tensor",
-        sample_inputs_fn=sample_inputs_normalize_image_tensor,
-    )
+def sample_inputs_normalize_video():
+    mean, std = _NORMALIZE_MEANS_STDS[0]
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader, mean=mean, std=std)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.normalize_image_tensor,
+            kernel_name="normalize_image_tensor",
+            sample_inputs_fn=sample_inputs_normalize_image_tensor,
+        ),
+        KernelInfo(
+            F.normalize_video,
+            sample_inputs_fn=sample_inputs_normalize_video,
+        ),
+    ]
 )
