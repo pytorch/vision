@@ -774,11 +774,8 @@ def gaussian_noise(img: Tensor, mean: float, sigma: float) -> Tensor:
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [dtype])
     # add the gaussian noise with the given mean and sigma.
-    normalize_img = img / 255.0
     noise = sigma * torch.randn_like(img) + mean
-    img = normalize_img + noise
-    img = torch.clip(img, 0, 1)
-    img = img * 255.0
+    img = img + noise
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
