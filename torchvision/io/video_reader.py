@@ -243,5 +243,5 @@ class VideoReader:
             stream_id = 0 if len(stream.split(":")) == 1 else int(stream.split(":")[1])
             self.pyav_stream = {stream_type: stream_id}
             self._c = self.container.decode(**self.pyav_stream)
-            return
+            return True
         return self._c.set_current_stream(stream)
