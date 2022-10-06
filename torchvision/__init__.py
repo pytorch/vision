@@ -1,6 +1,6 @@
-from modulefinder import Module
 import os
 import warnings
+from modulefinder import Module
 
 import torch
 from torchvision import datasets, io, models, ops, transforms, utils
@@ -77,11 +77,11 @@ def set_video_backend(backend):
     if backend not in ["pyav", "video_reader", "cuda"]:
         raise ValueError("Invalid video backend '%s'. Options are 'pyav', 'video_reader' and 'cuda'" % backend)
     if backend == "video_reader" and not io._HAS_VIDEO_OPT:
-        #TODO: better messages
+        # TODO: better messages
         message = "video_reader video backend is not available. Please compile torchvision from source and try again"
         raise RuntimeError(message)
     elif backend == "cuda" and not _HAS_GPU_VIDEO_DECODER:
-        #TODO: better messages
+        # TODO: better messages
         message = "cuda video backend is not available."
         raise RuntimeError(message)
     else:
