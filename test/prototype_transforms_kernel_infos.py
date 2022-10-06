@@ -338,13 +338,6 @@ def _diversify_affine_kwargs_types(affine_kwargs):
         yield dict(affine_kwargs, shear=diverse_shear)
 
 
-# angle int or float
-# translate int and float len 2
-# scale
-# shear int or float and seq of len 1 and 2
-# center None, and seq of len 2 float or int
-
-
 def _full_affine_params(**partial_params):
     partial_params.setdefault("angle", 0.0)
     partial_params.setdefault("translate", [0.0, 0.0])
@@ -675,25 +668,30 @@ _ROTATE_ANGLES = [-87, 15, 90]
 
 
 def sample_inputs_rotate_image_tensor():
-    for image_loader, params in itertools.product(
-        make_image_loaders(sizes=["random"], dtypes=[torch.float32]),
-        combinations_grid(
-            interpolation=[F.InterpolationMode.NEAREST, F.InterpolationMode.BILINEAR],
-            expand=[True, False],
-            center=[None, (0, 0)],
-        ),
-    ):
-        if params["center"] is not None and params["expand"]:
-            # Otherwise this will emit a warning and ignore center anyway
-            continue
+    make_rotate_image_loaders = functools.partial(
+        make_image_loaders, sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]
+    )
 
-        for fill in [None, 0.5, [0.5] * image_loader.num_channels]:
-            yield ArgsKwargs(
-                image_loader,
-                angle=_ROTATE_ANGLES[0],
-                fill=fill,
-                **params,
-            )
+    for image_loader in make_rotate_image_loaders():
+        yield ArgsKwargs(image_loader, angle=15.0, expand=True)
+
+    for image_loader, center in itertools.product(
+        make_rotate_image_loaders(), [None, [1.0, 0.5], [1, 2], (1.0, 0.5), (1, 2)]
+    ):
+        yield ArgsKwargs(image_loader, angle=15.0, center=center)
+
+    for image_loader in make_rotate_image_loaders():
+        fills = [None, 0.5]
+        if image_loader.num_channels > 1:
+            fills.extend(vector_fill * image_loader.num_channels for vector_fill in [(0.5,), (1,), [0.5], [1]])
+        for fill in fills:
+            yield ArgsKwargs(image_loader, angle=15.0, fill=fill)
+
+    for image_loader, interpolation in itertools.product(
+        make_rotate_image_loaders(),
+        [F.InterpolationMode.NEAREST, F.InterpolationMode.BILINEAR],
+    ):
+        yield ArgsKwargs(image_loader, angle=15.0, fill=0)
 
 
 def reference_inputs_rotate_image_tensor():
@@ -712,22 +710,8 @@ def sample_inputs_rotate_bounding_box():
 
 
 def sample_inputs_rotate_mask():
-    for image_loader, params in itertools.product(
-        make_image_loaders(sizes=["random"], dtypes=[torch.uint8]),
-        combinations_grid(
-            expand=[True, False],
-            center=[None, (0, 0)],
-        ),
-    ):
-        if params["center"] is not None and params["expand"]:
-            # Otherwise this will emit a warning and ignore center anyway
-            continue
-
-        yield ArgsKwargs(
-            image_loader,
-            angle=_ROTATE_ANGLES[0],
-            **params,
-        )
+    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
+        yield ArgsKwargs(mask_loader, angle=15.0)
 
 
 @pil_reference_wrapper
@@ -748,6 +732,11 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.rotate_image_pil),
             reference_inputs_fn=reference_inputs_rotate_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            test_marks=[
+                xfail_jit_tuple_instead_of_list("fill"),
+                # TODO: check if this is a regression since it seems that should be supported if `int` is ok
+                xfail_jit_list_of_ints("fill"),
+            ],
         ),
         KernelInfo(
             F.rotate_bounding_box,
