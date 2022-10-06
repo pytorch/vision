@@ -12,9 +12,11 @@ get_dimensions_image_pil = _FP.get_dimensions
 
 # TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
 def get_chw(image: features.ImageOrVideoTypeJIT) -> Tuple[int, int, int]:
-    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
+    if isinstance(image, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+    ):
         channels, height, width = get_dimensions_image_tensor(image)
-    elif isinstance(image, features.Image):
+    elif isinstance(image, (features.Image, features.Video)):
         channels = image.num_channels
         height, width = image.image_size
     else:  # isinstance(image, PIL.Image.Image)

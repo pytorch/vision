@@ -24,18 +24,18 @@ def erase_video(
 
 
 def erase(
-    inpt: features.InputTypeJIT,
+    inpt: features.ImageOrVideoTypeJIT,
     i: int,
     j: int,
     h: int,
     w: int,
     v: torch.Tensor,
     inplace: bool = False,
-) -> features.InputTypeJIT:
+) -> features.ImageOrVideoTypeJIT:
     if isinstance(inpt, torch.Tensor):
         output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-        if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output)
+        if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
+            output = type(inpt).new_like(inpt, output)  # type: ignore[arg-type]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return erase_image_pil(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
