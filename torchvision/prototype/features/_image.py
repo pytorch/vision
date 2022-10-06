@@ -71,7 +71,7 @@ class Image(_Feature):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> Image:
-        data = torch.as_tensor(data, dtype=dtype, device=device)  # type: ignore[arg-type]
+        data = torch.as_tensor(data, dtype=dtype, device=device)
         if data.ndim < 2:
             raise ValueError
         elif data.ndim == 2:
