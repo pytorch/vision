@@ -885,18 +885,21 @@ def reference_inputs_pad_image_tensor():
 
 
 def sample_inputs_pad_bounding_box():
-    for bounding_box_loader, params in itertools.product(make_bounding_box_loaders(), _PAD_PARAMS):
-        if params["padding_mode"] != "constant":
-            continue
-
+    for bounding_box_loader, padding in itertools.product(
+        make_bounding_box_loaders(), [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
+    ):
         yield ArgsKwargs(
-            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.image_size, **params
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            image_size=bounding_box_loader.image_size,
+            padding=padding,
+            padding_mode="constant",
         )
 
 
 def sample_inputs_pad_mask():
-    for image_loader, fill, params in itertools.product(make_mask_loaders(sizes=["random"]), [None, 127], _PAD_PARAMS):
-        yield ArgsKwargs(image_loader, fill=fill, **params)
+    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
+        yield ArgsKwargs(mask_loader, padding=[1])
 
 
 def reference_inputs_pad_mask():
@@ -926,6 +929,10 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.pad_bounding_box,
             sample_inputs_fn=sample_inputs_pad_bounding_box,
+            test_marks=[
+                xfail_jit_python_scalar_arg("padding"),
+                xfail_jit_tuple_instead_of_list("padding"),
+            ],
         ),
         KernelInfo(
             F.pad_mask,
