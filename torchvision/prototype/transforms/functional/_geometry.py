@@ -334,11 +334,15 @@ def _affine_bounding_box_xyxy(
     device = bounding_box.device
 
     affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear, inverted=False)
-    transposed_affine_matrix = torch.tensor(
-        affine_vector,
-        dtype=dtype,
-        device=device,
-    ).view(2, 3).T
+    transposed_affine_matrix = (
+        torch.tensor(
+            affine_vector,
+            dtype=dtype,
+            device=device,
+        )
+        .view(2, 3)
+        .T
+    )
     # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
     # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
     # Single point structure is similar to
