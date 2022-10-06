@@ -207,7 +207,7 @@ class VideoReader:
             (dict): dictionary containing duration and frame rate for every stream
         """
         if self.backend == "pyav":
-            metadata = {} # type:  Dict[str, Any]
+            metadata = {}  # type:  Dict[str, Any]
             for stream in self.container.streams:
                 if stream.type not in metadata:
                     metadata[stream.type] = {"fps": [], "duration": []}
@@ -238,4 +238,10 @@ class VideoReader:
         """
         if self.backend == "cuda":
             warnings.warn("GPU decoding only works with video stream.")
+        if self.backend == "pyav":
+            stream_type = stream.split(":")[0]
+            stream_id = 0 if len(stream.split(":")) == 1 else int(stream.split(":")[1])
+            self.pyav_stream = {stream_type: stream_id}
+            self._c = self.container.decode(**self.pyav_stream)
+            return
         return self._c.set_current_stream(stream)
