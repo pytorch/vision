@@ -1601,7 +1601,9 @@ def _get_five_ten_crop_image_size(size):
 
 def sample_inputs_five_crop_image_tensor():
     for size in _FIVE_TEN_CROP_SIZES:
-        for image_loader in make_image_loaders(sizes=[_get_five_ten_crop_image_size(size)]):
+        for image_loader in make_image_loaders(
+            sizes=[_get_five_ten_crop_image_size(size)], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]
+        ):
             yield ArgsKwargs(image_loader, size=size)
 
 
@@ -1613,7 +1615,9 @@ def reference_inputs_five_crop_image_tensor():
 
 def sample_inputs_ten_crop_image_tensor():
     for size, vertical_flip in itertools.product(_FIVE_TEN_CROP_SIZES, [False, True]):
-        for image_loader in make_image_loaders(sizes=[_get_five_ten_crop_image_size(size)]):
+        for image_loader in make_image_loaders(
+            sizes=[_get_five_ten_crop_image_size(size)], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]
+        ):
             yield ArgsKwargs(image_loader, size=size, vertical_flip=vertical_flip)
 
 
