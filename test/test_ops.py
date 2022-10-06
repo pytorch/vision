@@ -1394,6 +1394,11 @@ class TestGeneralizedBoxIouLoss:
         assert_iou_loss(ops.generalized_box_iou_loss, box1s, box2s, 2.5, device=device, reduction="sum")
         assert_iou_loss(ops.generalized_box_iou_loss, box1s, box2s, 1.25, device=device, reduction="mean")
 
+        # Test reduction value
+        # reduction value other than ["none", "mean", "sum"] should raise a ValueError
+        with pytest.raises(ValueError, match="Invalid"):
+            ops.generalized_box_iou_loss(box1s, box2s, reduction="xyz")
+
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_empty_inputs(self, dtype, device):
@@ -1413,6 +1418,9 @@ class TestCompleteBoxIouLoss:
         assert_iou_loss(ops.complete_box_iou_loss, box1s, box2s, 1.2250, device=device, reduction="mean")
         assert_iou_loss(ops.complete_box_iou_loss, box1s, box2s, 2.4500, device=device, reduction="sum")
 
+        with pytest.raises(ValueError, match="Invalid"):
+            ops.complete_box_iou_loss(box1s, box2s, reduction="xyz")
+
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_empty_inputs(self, dtype, device):
@@ -1431,6 +1439,9 @@ class TestDistanceBoxIouLoss:
         assert_iou_loss(ops.distance_box_iou_loss, box1, box4, 1.2500, device=device)
         assert_iou_loss(ops.distance_box_iou_loss, box1s, box2s, 1.2250, device=device, reduction="mean")
         assert_iou_loss(ops.distance_box_iou_loss, box1s, box2s, 2.4500, device=device, reduction="sum")
+
+        with pytest.raises(ValueError, match="Invalid"):
+            ops.distance_box_iou_loss(box1s, box2s, reduction="xyz")
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
@@ -1553,6 +1564,17 @@ class TestFocalLoss:
 
         tol = 1e-3 if dtype is torch.half else 1e-5
         torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
+
+    # Raise ValueError for anonymous reduction mode
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_reduction_mode(self, device, dtype, reduction="xyz"):
+        if device == "cpu" and dtype is torch.half:
+            pytest.skip("Currently torch.half is not fully supported on cpu")
+        torch.random.manual_seed(0)
+        inputs, targets = self._generate_diverse_input_target_pair(device=device, dtype=dtype)
+        with pytest.raises(ValueError, match="Invalid"):
+            ops.sigmoid_focal_loss(inputs, targets, 0.25, 2, reduction)
 
 
 class TestMasksToBoxes:

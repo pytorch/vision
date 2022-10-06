@@ -198,6 +198,7 @@ class VideoClips:
             _video_max_dimension=self._video_max_dimension,
             _audio_samples=self._audio_samples,
             _audio_channels=self._audio_channels,
+            output_format=self.output_format,
         )
 
     @staticmethod
