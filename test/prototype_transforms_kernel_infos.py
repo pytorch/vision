@@ -1123,7 +1123,13 @@ _CENTER_CROP_OUTPUT_SIZES = [[4, 3], [42, 70], [4], 3, (5, 2), (6,)]
 
 def sample_inputs_center_crop_image_tensor():
     for image_loader, output_size in itertools.product(
-        make_image_loaders(sizes=_CENTER_CROP_IMAGE_SIZES), _CENTER_CROP_OUTPUT_SIZES
+        make_image_loaders(sizes=[(16, 17)], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]),
+        [
+            # valid `output_size` types for which cropping is applied to both dimensions
+            *[5, (4,), (2, 3), [6], [3, 2]],
+            # `output_size`'s for which at least one dimension needs to be padded
+            *[[4, 18], [17, 5], [17, 18]],
+        ],
     ):
         yield ArgsKwargs(image_loader, output_size=output_size)
 
@@ -1146,10 +1152,9 @@ def sample_inputs_center_crop_bounding_box():
 
 
 def sample_inputs_center_crop_mask():
-    for mask_loader, output_size in itertools.product(
-        make_mask_loaders(sizes=_CENTER_CROP_IMAGE_SIZES), _CENTER_CROP_OUTPUT_SIZES
-    ):
-        yield ArgsKwargs(mask_loader, output_size=output_size)
+    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
+        height, width = mask_loader.shape[-2:]
+        yield ArgsKwargs(mask_loader, output_size=(height // 2, width // 2))
 
 
 def reference_inputs_center_crop_mask():
