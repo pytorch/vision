@@ -1370,7 +1370,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
     return output
 
 
-def gaussian_noise(img: Tensor, mean: float, sigma: Optional[List[float]]) -> Tensor:
+def gaussian_noise(img: Tensor, mean: float, sigma: List[float]) -> Tensor:
     """Performs Gaussian blurring on the image by given kernel.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -1378,9 +1378,8 @@ def gaussian_noise(img: Tensor, mean: float, sigma: Optional[List[float]]) -> Te
     Args:
         img (PIL Image or Tensor): Image to be blurred
         mean (float): Mean of the desired noise corruption.
-        sigma (sequence of floats or float, optional): Gaussian noise standard deviation. Can be a
-            sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
-            same sigma in both X/Y directions.
+        sigma (sequence of floats or float): Gaussian noise standard deviation. Can be a
+            sequence of floats like ``(sigma_x, sigma_y)`` or a single float.
 
             .. note::
                 In torchscript mode sigma as single float is
