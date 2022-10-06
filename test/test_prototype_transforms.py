@@ -715,30 +715,38 @@ class TestRandomCrop:
 
         if padding is not None:
             if isinstance(padding, int):
-                h += 2 * padding
-                w += 2 * padding
+                pad_top = pad_bottom = pad_left = pad_right = padding
             elif isinstance(padding, list) and len(padding) == 2:
-                w += 2 * padding[0]
-                h += 2 * padding[1]
+                pad_left = pad_right = padding[0]
+                pad_top = pad_bottom = padding[1]
             elif isinstance(padding, list) and len(padding) == 4:
-                w += padding[0] + padding[2]
-                h += padding[1] + padding[3]
+                pad_left, pad_top, pad_right, pad_bottom = padding
 
-        expected_input_width = w
-        expected_input_height = h
+            h += pad_top + pad_bottom
+            w += pad_left + pad_right
+        else:
+            pad_left = pad_right = pad_top = pad_bottom = 0
 
         if pad_if_needed:
             if w < size[1]:
-                w += 2 * (size[1] - w)
+                diff = size[1] - w
+                pad_left += diff
+                pad_right += diff
+                w += 2 * diff
             if h < size[0]:
-                h += 2 * (size[0] - h)
+                diff = size[0] - h
+                pad_top += diff
+                pad_bottom += diff
+                h += 2 * diff
+
+        padding = [pad_left, pad_top, pad_right, pad_bottom]
 
         assert 0 <= params["top"] <= h - size[0] + 1
         assert 0 <= params["left"] <= w - size[1] + 1
         assert params["height"] == size[0]
         assert params["width"] == size[1]
-        assert params["input_width"] == expected_input_width
-        assert params["input_height"] == expected_input_height
+        assert params["needs_pad"] is any(padding)
+        assert params["padding"] == padding
 
     @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
     @pytest.mark.parametrize("pad_if_needed", [False, True])
