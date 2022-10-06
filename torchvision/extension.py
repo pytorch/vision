@@ -16,7 +16,7 @@ def _has_ops():
 
 
 try:
-    # On Windows Python-3.8+ has `os.add_dll_directory` call,
+    # On Windows Python-3.8.x has `os.add_dll_directory` call,
     # which is called to configure dll search path.
     # To find cuda related dlls we need to make sure the
     # conda environment/bin path is configured Please take a look:
