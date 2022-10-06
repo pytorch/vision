@@ -120,11 +120,25 @@ def xfail_jit_integer_size(name="size"):
 
 
 def xfail_jit_tuple_instead_of_list(name, *, reason=None):
-    reason = reason or f"Passing a tuple instead of a list `{name}` is not supported when scripting"
+    reason = reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting"
     return TestMark(
         ("TestKernels", "test_scripted_vs_eager"),
         pytest.mark.xfail(reason=reason),
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
+    )
+
+
+def is_list_of_ints(args_kwargs):
+    fill = args_kwargs.kwargs.get("fill")
+    return isinstance(fill, list) and any(isinstance(scalar_fill, int) for scalar_fill in fill)
+
+
+def xfail_jit_list_of_ints(name, *, reason=None):
+    reason = reason or f"Passing a list of integers for `{name}` is not supported when scripting"
+    return TestMark(
+        ("TestKernels", "test_scripted_vs_eager"),
+        pytest.mark.xfail(reason=reason),
+        condition=is_list_of_ints,
     )
 
 
@@ -324,28 +338,58 @@ def _diversify_affine_kwargs_types(affine_kwargs):
         yield dict(affine_kwargs, shear=diverse_shear)
 
 
+# angle int or float
+# translate int and float len 2
+# scale
+# shear int or float and seq of len 1 and 2
+# center None, and seq of len 2 float or int
+
+
+def _full_affine_params(**partial_params):
+    partial_params.setdefault("angle", 0.0)
+    partial_params.setdefault("translate", [0.0, 0.0])
+    partial_params.setdefault("scale", 1.0)
+    partial_params.setdefault("shear", [0.0, 0.0])
+    partial_params.setdefault("center", None)
+    return partial_params
+
+
+_DIVERSE_AFFINE_PARAMS = [
+    _full_affine_params(**{name: arg})
+    for name, args in [
+        ("angle", [1.0, 2]),
+        ("translate", [[1.0, 0.5], [1, 2], (1.0, 0.5), (1, 2)]),
+        ("scale", [0.5]),
+        ("shear", [1.0, 2, [1.0], [2], (1.0,), (2,), [1.0, 0.5], [1, 2], (1.0, 0.5), (1, 2)]),
+        ("center", [None, [1.0, 0.5], [1, 2], (1.0, 0.5), (1, 2)]),
+    ]
+    for arg in args
+]
+
+
 def sample_inputs_affine_image_tensor():
-    for image_loader, interpolation_mode, center in itertools.product(
-        make_image_loaders(sizes=["random"], dtypes=[torch.float32]),
+    make_affine_image_loaders = functools.partial(
+        make_image_loaders, sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]
+    )
+
+    for image_loader, affine_params in itertools.product(make_affine_image_loaders(), _DIVERSE_AFFINE_PARAMS):
+        yield ArgsKwargs(image_loader, **affine_params)
+
+    for image_loader in make_affine_image_loaders():
+        fills = [None, 0.5]
+        if image_loader.num_channels > 1:
+            fills.extend(vector_fill * image_loader.num_channels for vector_fill in [(0.5,), (1,), [0.5], [1]])
+        for fill in fills:
+            yield ArgsKwargs(image_loader, **_full_affine_params(), fill=fill)
+
+    for image_loader, interpolation in itertools.product(
+        make_affine_image_loaders(),
         [
             F.InterpolationMode.NEAREST,
             F.InterpolationMode.BILINEAR,
         ],
-        [None, (0, 0)],
     ):
-        for fill in [None, 128.0, 128, [12.0], [0.5] * image_loader.num_channels]:
-            yield ArgsKwargs(
-                image_loader,
-                interpolation=interpolation_mode,
-                center=center,
-                fill=fill,
-                **_AFFINE_KWARGS[0],
-            )
-
-    for image_loader, affine_kwargs in itertools.product(
-        make_image_loaders(sizes=["random"], dtypes=[torch.float32]), _diversify_affine_kwargs_types(_AFFINE_KWARGS[0])
-    ):
-        yield ArgsKwargs(image_loader, **affine_kwargs)
+        yield ArgsKwargs(image_loader, **_full_affine_params(), fill=0)
 
 
 def reference_inputs_affine_image_tensor():
@@ -358,22 +402,14 @@ def reference_inputs_affine_image_tensor():
 
 
 def sample_inputs_affine_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders():
-        yield ArgsKwargs(
-            bounding_box_loader,
-            format=bounding_box_loader.format,
-            image_size=bounding_box_loader.image_size,
-            **_AFFINE_KWARGS[0],
-        )
-
-    for bounding_box_loader, affine_kwargs in itertools.product(
-        make_bounding_box_loaders(), _diversify_affine_kwargs_types(_AFFINE_KWARGS[0])
+    for bounding_box_loader, affine_params in itertools.product(
+        make_bounding_box_loaders(formats=[features.BoundingBoxFormat.XYXY]), _DIVERSE_AFFINE_PARAMS
     ):
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
             image_size=bounding_box_loader.image_size,
-            **affine_kwargs,
+            **affine_params,
         )
 
 
@@ -457,16 +493,8 @@ def reference_inputs_affine_bounding_box():
 
 
 def sample_inputs_affine_image_mask():
-    for mask_loader, center in itertools.product(
-        make_mask_loaders(sizes=["random"], dtypes=[torch.uint8]),
-        [None, (0, 0)],
-    ):
-        yield ArgsKwargs(mask_loader, center=center, **_AFFINE_KWARGS[0])
-
-    for mask_loader, affine_kwargs in itertools.product(
-        make_mask_loaders(sizes=["random"], dtypes=[torch.uint8]), _diversify_affine_kwargs_types(_AFFINE_KWARGS[0])
-    ):
-        yield ArgsKwargs(mask_loader, **affine_kwargs)
+    for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
+        yield ArgsKwargs(mask_loader, **_full_affine_params())
 
 
 @pil_reference_wrapper
@@ -489,7 +517,12 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.affine_image_pil),
             reference_inputs_fn=reference_inputs_affine_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            test_marks=[xfail_jit_python_scalar_arg("shear")],
+            test_marks=[
+                xfail_jit_python_scalar_arg("shear"),
+                xfail_jit_tuple_instead_of_list("fill"),
+                # TODO: check if this is a regression since it seems that should be supported if `int` is ok
+                xfail_jit_list_of_ints("fill"),
+            ],
         ),
         KernelInfo(
             F.affine_bounding_box,
@@ -507,7 +540,9 @@ KERNEL_INFOS.extend(
             reference_fn=reference_affine_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            test_marks=[xfail_jit_python_scalar_arg("shear")],
+            test_marks=[
+                xfail_jit_python_scalar_arg("shear"),
+            ],
         ),
     ]
 )
@@ -908,12 +943,6 @@ def sample_inputs_pad_image_tensor():
         yield ArgsKwargs(image_loader, padding=[-1], padding_mode="symmetric")
 
 
-# TODO: check if this is a regression since it seems that should be supported if `int` is ok
-def fill_is_list_of_ints(args_kwargs):
-    fill = args_kwargs.kwargs.get("fill")
-    return isinstance(fill, list) and any(isinstance(scalar_fill, int) for scalar_fill in fill)
-
-
 def reference_inputs_pad_image_tensor():
     for image_loader, params in itertools.product(make_image_loaders(extra_dims=[()]), _PAD_PARAMS):
         # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
@@ -959,11 +988,8 @@ KERNEL_INFOS.extend(
                 xfail_jit_python_scalar_arg("padding"),
                 xfail_jit_tuple_instead_of_list("padding"),
                 xfail_jit_tuple_instead_of_list("fill"),
-                TestMark(
-                    ("TestKernels", "test_scripted_vs_eager"),
-                    pytest.mark.xfail(reason="List of integers cannot be used for `fill` when scripting"),
-                    condition=fill_is_list_of_ints,
-                ),
+                # TODO: check if this is a regression since it seems that should be supported if `int` is ok
+                xfail_jit_list_of_ints("fill"),
             ],
         ),
         KernelInfo(
