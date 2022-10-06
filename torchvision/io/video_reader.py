@@ -112,7 +112,6 @@ class VideoReader:
         from .. import get_video_backend
 
         self.backend = get_video_backend()
-        print("Initiated the backend", self.backend)
         if self.backend == "cuda":
             device = torch.device("cuda")
             self._c = torch.classes.torchvision.GPUDecoder(path, device)
@@ -150,7 +149,7 @@ class VideoReader:
             frame = self._c.next()
             if frame.numel() == 0:
                 raise StopIteration
-            return {"data": frame}
+            return {"data": frame, "pts": None}
         elif self.backend == "video_reader":
             frame, pts = self._c.next()
         else:
@@ -238,5 +237,5 @@ class VideoReader:
             (bool): True on succes, False otherwise
         """
         if self.backend == "cuda":
-            print("GPU decoding only works with video stream.")
+            warnings.warn("GPU decoding only works with video stream.")
         return self._c.set_current_stream(stream)
