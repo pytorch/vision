@@ -377,7 +377,8 @@ def _affine_bounding_box_xyxy(
         # Translate bounding boxes
         out_bboxes[:, 0::2] = out_bboxes[:, 0::2] - tr[:, 0]
         out_bboxes[:, 1::2] = out_bboxes[:, 1::2] - tr[:, 1]
-        # Estimate meta-data for image
+        # Estimate meta-data for image with inverted=True
+        affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
         new_width, new_height = _FT._compute_affine_output_size(affine_vector, width, height)
         image_size = (new_height, new_width)
 
