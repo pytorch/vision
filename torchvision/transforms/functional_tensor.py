@@ -755,12 +755,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
     kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
     kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(
-        img,
-        [
-            kernel.dtype,
-        ],
-    )
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype])
 
     # padding = (left, right, top, bottom)
     padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
