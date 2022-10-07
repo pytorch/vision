@@ -6,38 +6,37 @@ from torchvision.prototype import features
 from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
+
 get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-# TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
-def get_chw(image: features.ImageOrVideoTypeJIT) -> Tuple[int, int, int]:
+def get_dimensions(image: features.ImageOrVideoTypeJIT) -> List[int]:
     if isinstance(image, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
     ):
-        channels, height, width = get_dimensions_image_tensor(image)
+        return get_dimensions_image_tensor(image)
     elif isinstance(image, (features.Image, features.Video)):
         channels = image.num_channels
         height, width = image.image_size
-    else:  # isinstance(image, PIL.Image.Image)
-        channels, height, width = get_dimensions_image_pil(image)
-    return channels, height, width
+        return [channels, height, width]
+    else:
+        return get_dimensions_image_pil(image)
 
 
-# The three functions below are here for BC. Whether we want to have two different kernels and how they and the
-# compound version should be named is still under discussion: https://github.com/pytorch/vision/issues/6491
-# Given that these kernels should also support boxes, masks, and videos, it is unlikely that there name will stay.
-# They will either be deprecated or simply aliased to the new kernels if we have reached consensus about the issue
-# detailed above.
-
-
-def get_dimensions(image: features.ImageOrVideoTypeJIT) -> List[int]:
-    return list(get_chw(image))
+get_num_channels_image_tensor = _FT.get_image_num_channels
+get_num_channels_image_pil = _FP.get_image_num_channels
 
 
 def get_num_channels(image: features.ImageOrVideoTypeJIT) -> int:
-    num_channels, *_ = get_chw(image)
-    return num_channels
+    if isinstance(image, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+    ):
+        return _FT.get_image_num_channels(image)
+    elif isinstance(image, (features.Image, features.Video)):
+        return image.num_channels
+    else:
+        return _FP.get_image_num_channels(image)
 
 
 # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
@@ -45,9 +44,28 @@ def get_num_channels(image: features.ImageOrVideoTypeJIT) -> int:
 get_image_num_channels = get_num_channels
 
 
-def get_spatial_size(image: features.ImageOrVideoTypeJIT) -> List[int]:
-    _, *size = get_chw(image)
-    return size
+def get_spatial_size_image_tensor(image: torch.Tensor) -> List[int]:
+    width, height = _FT.get_image_size(image)
+    return [height, width]
+
+
+@torch.jit.unused
+def get_spatial_size_image_pil(image: PIL.Image.Image) -> List[int]:
+    width, height = _FP.get_image_size(image)
+    return [height, width]
+
+
+def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+        return get_spatial_size_image_tensor(inpt)
+    elif isinstance(inpt, features._Feature):
+        image_size = getattr(inpt, "image_size", None)
+        if image_size is not None:
+            return list(image_size)
+        else:
+            raise ValueError(f"Type {inpt.__class__} doesn't have spatial size.")
+    else:
+        return get_spatial_size_image_pil(inpt)
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
