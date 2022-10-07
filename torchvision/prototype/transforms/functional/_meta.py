@@ -11,10 +11,12 @@ get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-def get_dimensions(image: features.ImageTypeJIT) -> List[int]:
-    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
+def get_dimensions(image: features.ImageOrVideoTypeJIT) -> List[int]:
+    if isinstance(image, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+    ):
         return get_dimensions_image_tensor(image)
-    elif isinstance(image, features.Image):
+    elif isinstance(image, (features.Image, features.Video)):
         channels = image.num_channels
         height, width = image.image_size
         return [channels, height, width]
@@ -26,14 +28,15 @@ get_num_channels_image_tensor = _FT.get_image_num_channels
 get_num_channels_image_pil = _FP.get_image_num_channels
 
 
-def get_num_channels(image: features.ImageTypeJIT) -> int:
-    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
-        channels = _FT.get_image_num_channels(image)
-    elif isinstance(image, features.Image):
-        channels = image.num_channels
+def get_num_channels(image: features.ImageOrVideoTypeJIT) -> int:
+    if isinstance(image, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+    ):
+        return _FT.get_image_num_channels(image)
+    elif isinstance(image, (features.Image, features.Video)):
+        return image.num_channels
     else:
-        channels = _FP.get_image_num_channels(image)
-    return channels
+        return _FP.get_image_num_channels(image)
 
 
 # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
@@ -63,6 +66,7 @@ def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
             raise ValueError(f"Type {inpt.__class__} doesn't have spatial size.")
     else:
         return get_spatial_size_image_pil(inpt)
+
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
@@ -224,13 +228,23 @@ def convert_color_space_image_pil(
     return image.convert(new_mode)
 
 
+def convert_color_space_video(
+    video: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
+) -> torch.Tensor:
+    return convert_color_space_image_tensor(
+        video, old_color_space=old_color_space, new_color_space=new_color_space, copy=copy
+    )
+
+
 def convert_color_space(
-    inpt: features.ImageTypeJIT,
+    inpt: features.ImageOrVideoTypeJIT,
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
     copy: bool = True,
-) -> features.ImageTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image)):
+) -> features.ImageOrVideoTypeJIT:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+    ):
         if old_color_space is None:
             raise RuntimeError(
                 "In order to convert the color space of simple tensor images, "
@@ -239,7 +253,7 @@ def convert_color_space(
         return convert_color_space_image_tensor(
             inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
         )
-    elif isinstance(inpt, features.Image):
+    elif isinstance(inpt, (features.Image, features.Video)):
         return inpt.to_color_space(color_space, copy=copy)
     else:
-        return cast(features.ImageTypeJIT, convert_color_space_image_pil(inpt, color_space, copy=copy))
+        return cast(features.ImageOrVideoTypeJIT, convert_color_space_image_pil(inpt, color_space, copy=copy))

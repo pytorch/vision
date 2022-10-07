@@ -27,7 +27,9 @@ class EncodedData(_Feature):
 
     @classmethod
     def from_file(cls: Type[D], file: BinaryIO, **kwargs: Any) -> D:
-        return cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder), **kwargs)
+        encoded_data = cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder), **kwargs)
+        file.close()
+        return encoded_data
 
     @classmethod
     def from_path(cls: Type[D], path: Union[str, os.PathLike], **kwargs: Any) -> D:

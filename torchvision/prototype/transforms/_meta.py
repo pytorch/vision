@@ -34,7 +34,7 @@ class ConvertImageDtype(Transform):
 
 
 class ConvertColorSpace(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image, features.Video)
 
     def __init__(
         self,
@@ -54,7 +54,7 @@ class ConvertColorSpace(Transform):
 
         self.copy = copy
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
         return F.convert_color_space(
             inpt, color_space=self.color_space, old_color_space=self.old_color_space, copy=self.copy
         )

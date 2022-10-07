@@ -15,7 +15,7 @@ from ._utils import has_any, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
-    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image, features.Video)
 
     def __init__(
         self,
@@ -92,7 +92,7 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params, inplace=self.inplace)
 
