@@ -7,7 +7,7 @@ import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype import features
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
-from torchvision.prototype.transforms.functional._meta import get_chw
+from torchvision.prototype.transforms.functional._meta import get_spatial_size
 
 from ._utils import _isinstance, _setup_fill_arg
 
@@ -277,7 +277,7 @@ class AutoAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         id, image = self._extract_image(sample)
-        _, height, width = get_chw(image)
+        height, width = get_spatial_size(image)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
@@ -348,7 +348,7 @@ class RandAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         id, image = self._extract_image(sample)
-        _, height, width = get_chw(image)
+        height, width = get_spatial_size(image)
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
@@ -402,7 +402,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         id, image = self._extract_image(sample)
-        _, height, width = get_chw(image)
+        height, width = get_spatial_size(image)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
@@ -472,7 +472,7 @@ class AugMix(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         id, orig_image = self._extract_image(sample)
-        _, height, width = get_chw(orig_image)
+        height, width = get_spatial_size(orig_image)
 
         if isinstance(orig_image, torch.Tensor):
             image = orig_image

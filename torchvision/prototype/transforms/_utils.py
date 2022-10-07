@@ -10,7 +10,7 @@ from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
 from torchvision.prototype.features._feature import FillType
 
-from torchvision.prototype.transforms.functional._meta import get_chw
+from torchvision.prototype.transforms.functional._meta import get_dimensions
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
 
 from typing_extensions import Literal
@@ -80,7 +80,7 @@ def query_bounding_box(sample: Any) -> features.BoundingBox:
 def query_chw(sample: Any) -> Tuple[int, int, int]:
     flat_sample, _ = tree_flatten(sample)
     chws = {
-        get_chw(item)
+        get_dimensions(item)
         for item in flat_sample
         if isinstance(item, (features.Image, PIL.Image.Image)) or features.is_simple_tensor(item)
     }

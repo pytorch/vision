@@ -10,18 +10,6 @@ get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-# TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
-def get_chw(image: features.ImageTypeJIT) -> Tuple[int, int, int]:
-    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
-        channels, height, width = get_dimensions_image_tensor(image)
-    elif isinstance(image, features.Image):
-        channels = image.num_channels
-        height, width = image.image_size
-    else:  # isinstance(image, PIL.Image.Image)
-        channels, height, width = get_dimensions_image_pil(image)
-    return channels, height, width
-
-
 # The three functions below are here for BC. Whether we want to have two different kernels and how they and the
 # compound version should be named is still under discussion: https://github.com/pytorch/vision/issues/6491
 # Given that these kernels should also support boxes, masks, and videos, it is unlikely that there name will stay.
