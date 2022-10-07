@@ -1,7 +1,7 @@
 import numbers
 from collections import defaultdict
 
-from typing import Any, Callable, Dict, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, Union
 
 import PIL.Image
 
@@ -77,7 +77,7 @@ def query_bounding_box(sample: Any) -> features.BoundingBox:
     return bounding_boxes.pop()
 
 
-def query_chw(sample: Any) -> Tuple[int, int, int]:
+def query_chw(sample: Any) -> List[int]:
     flat_sample, _ = tree_flatten(sample)
     chws = {
         get_dimensions(item)
