@@ -472,9 +472,8 @@ class AugMix(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-
-        id, image_or_video = self._extract_image_or_video(sample)
-        height, width = get_spatial_size(image_or_video)
+        id, orig_image_or_video = self._extract_image_or_video(sample)
+        height, width = get_spatial_size(orig_image_or_video)
 
         if isinstance(orig_image_or_video, torch.Tensor):
             image_or_video = orig_image_or_video
