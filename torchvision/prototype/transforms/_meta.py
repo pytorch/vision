@@ -1,4 +1,4 @@
-from typing import Any, cast, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import PIL.Image
 
@@ -31,7 +31,9 @@ class ConvertImageDtype(Transform):
     def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> features.TensorImageType:
         output = F.convert_image_dtype(inpt, dtype=self.dtype)
         return (
-            output if features.is_simple_tensor(inpt) else features.Image.wrap_like(cast(features.Image, inpt), output)
+            output
+            if features.is_simple_tensor(inpt)
+            else features.Image.wrap_like(inpt, output)  # type: ignore[arg-type]
         )
 
 
