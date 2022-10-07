@@ -1,4 +1,4 @@
-from typing import cast, List, Optional, Tuple
+from typing import cast, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -52,13 +52,17 @@ def get_spatial_size_image_pil(image: PIL.Image.Image) -> List[int]:
     return [height, width]
 
 
-def get_spatial_size(image: features.ImageTypeJIT) -> List[int]:
-    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
-        return get_spatial_size_image_tensor(image)
-    elif isinstance(image, features.Image):
-        return list(image.image_size)
+def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+        return get_spatial_size_image_tensor(inpt)
+    elif isinstance(inpt, features._Feature):
+        image_size = getattr(inpt, "image_size", None)
+        if image_size is not None:
+            return list(image_size)
+        else:
+            raise ValueError(f"Type {inpt.__class__} doesn't have spatial size.")
     else:
-        return get_spatial_size_image_pil(image)
+        return get_spatial_size_image_pil(inpt)
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
