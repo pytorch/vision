@@ -99,14 +99,14 @@ def test_inplace_op_no_wrapping():
     assert type(label) is features.Label
 
 
-def test_new_like():
+def test_wrap_like():
     tensor = torch.tensor([0, 1, 0], dtype=torch.int64)
     label = features.Label(tensor, categories=["foo", "bar"])
 
     # any operation besides .to() and .clone() will do here
     output = label * 2
 
-    label_new = features.Label.new_like(label, output)
+    label_new = features.Label.wrap_like(label, output)
 
     assert type(label_new) is features.Label
     assert label_new.data_ptr() == output.data_ptr()

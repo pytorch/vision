@@ -171,4 +171,4 @@ class RemoveSmallBoundingBoxes(Transform):
         return dict(valid_indices=valid_indices)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return inpt.new_like(inpt, inpt[params["valid_indices"]])
+        return inpt.wrap_like(inpt, inpt[params["valid_indices"]])
