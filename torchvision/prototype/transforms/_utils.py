@@ -1,7 +1,7 @@
 import numbers
 from collections import defaultdict
 
-from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, Sequence, Tuple, Type, Union
 
 import PIL.Image
 
@@ -77,10 +77,10 @@ def query_bounding_box(sample: Any) -> features.BoundingBox:
     return bounding_boxes.pop()
 
 
-def query_chw(sample: Any) -> List[int]:
+def query_chw(sample: Any) -> Tuple[int, int, int]:
     flat_sample, _ = tree_flatten(sample)
     chws = {
-        get_dimensions(item)
+        tuple(get_dimensions(item))
         for item in flat_sample
         if isinstance(item, (features.Image, PIL.Image.Image, features.Video)) or features.is_simple_tensor(item)
     }
@@ -88,7 +88,8 @@ def query_chw(sample: Any) -> List[int]:
         raise TypeError("No image or video was found in the sample")
     elif len(chws) > 1:
         raise ValueError(f"Found multiple CxHxW dimensions in the sample: {sequence_to_str(sorted(chws))}")
-    return chws.pop()
+    c, h, w = chws.pop()
+    return c, h, w
 
 
 def _isinstance(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]) -> bool:

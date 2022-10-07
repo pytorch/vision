@@ -68,7 +68,6 @@ def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
         return get_spatial_size_image_pil(inpt)
 
 
-
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
     xyxy = xywh.clone()
     xyxy[..., 2:] += xyxy[..., :2]
