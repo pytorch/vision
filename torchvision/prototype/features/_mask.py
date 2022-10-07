@@ -9,7 +9,6 @@ from ._feature import _Feature, FillTypeJIT
 
 
 class Mask(_Feature):
-
     @property
     def image_size(self) -> Tuple[int, int]:
         return cast(Tuple[int, int], tuple(self.shape[-2:]))
