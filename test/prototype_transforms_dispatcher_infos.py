@@ -63,17 +63,40 @@ class DispatcherInfo:
                     yield args_kwargs
 
 
-def xfail_python_scalar_arg_jit(name, *, reason=None):
+def xfail_jit_python_scalar_arg(name, *, reason=None):
     reason = reason or f"Python scalar int or float for `{name}` is not supported when scripting"
     return TestMark(
         ("TestDispatchers", "test_scripted_smoke"),
         pytest.mark.xfail(reason=reason),
-        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs[name], (int, float)),
+        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), (int, float)),
     )
 
 
-def xfail_integer_size_jit(name="size"):
-    return xfail_python_scalar_arg_jit(name, reason=f"Integer `{name}` is not supported when scripting.")
+def xfail_jit_integer_size(name="size"):
+    return xfail_jit_python_scalar_arg(name, reason=f"Integer `{name}` is not supported when scripting.")
+
+
+def xfail_jit_tuple_instead_of_list(name, *, reason=None):
+    reason = reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting"
+    return TestMark(
+        ("TestDispatchers", "test_scripted_smoke"),
+        pytest.mark.xfail(reason=reason),
+        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
+    )
+
+
+def is_list_of_ints(args_kwargs):
+    fill = args_kwargs.kwargs.get("fill")
+    return isinstance(fill, list) and any(isinstance(scalar_fill, int) for scalar_fill in fill)
+
+
+def xfail_jit_list_of_ints(name, *, reason=None):
+    reason = reason or f"Passing a list of integers for `{name}` is not supported when scripting"
+    return TestMark(
+        ("TestDispatchers", "test_scripted_smoke"),
+        pytest.mark.xfail(reason=reason),
+        condition=is_list_of_ints,
+    )
 
 
 skip_dispatch_feature = TestMark(
@@ -123,7 +146,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.resize_image_pil),
         test_marks=[
-            xfail_integer_size_jit(),
+            xfail_jit_integer_size(),
         ],
     ),
     DispatcherInfo(
@@ -136,7 +159,10 @@ DISPATCHER_INFOS = [
         pil_kernel_info=PILKernelInfo(F.affine_image_pil),
         test_marks=[
             xfail_dispatch_pil_if_fill_sequence_needs_broadcast,
-            xfail_python_scalar_arg_jit("shear"),
+            xfail_jit_python_scalar_arg("shear"),
+            xfail_jit_tuple_instead_of_list("fill"),
+            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
+            xfail_jit_list_of_ints("fill"),
         ],
     ),
     DispatcherInfo(
@@ -156,6 +182,11 @@ DISPATCHER_INFOS = [
             features.Mask: F.rotate_mask,
         },
         pil_kernel_info=PILKernelInfo(F.rotate_image_pil),
+        test_marks=[
+            xfail_jit_tuple_instead_of_list("fill"),
+            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
+            xfail_jit_list_of_ints("fill"),
+        ],
     ),
     DispatcherInfo(
         F.crop,
@@ -194,7 +225,12 @@ DISPATCHER_INFOS = [
                 ),
                 condition=lambda args_kwargs: fill_sequence_needs_broadcast(args_kwargs)
                 and args_kwargs.kwargs.get("padding_mode", "constant") == "constant",
-            )
+            ),
+            xfail_jit_python_scalar_arg("padding"),
+            xfail_jit_tuple_instead_of_list("padding"),
+            xfail_jit_tuple_instead_of_list("fill"),
+            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
+            xfail_jit_list_of_ints("fill"),
         ],
     ),
     DispatcherInfo(
@@ -227,7 +263,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.center_crop_image_pil),
         test_marks=[
-            xfail_integer_size_jit("output_size"),
+            xfail_jit_integer_size("output_size"),
         ],
     ),
     DispatcherInfo(
@@ -237,8 +273,8 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.gaussian_blur_image_pil),
         test_marks=[
-            xfail_python_scalar_arg_jit("kernel_size"),
-            xfail_python_scalar_arg_jit("sigma"),
+            xfail_jit_python_scalar_arg("kernel_size"),
+            xfail_jit_python_scalar_arg("sigma"),
         ],
     ),
     DispatcherInfo(
@@ -335,7 +371,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.five_crop_image_pil),
         test_marks=[
-            xfail_integer_size_jit(),
+            xfail_jit_integer_size(),
             skip_dispatch_feature,
         ],
     ),
@@ -345,7 +381,7 @@ DISPATCHER_INFOS = [
             features.Image: F.ten_crop_image_tensor,
         },
         test_marks=[
-            xfail_integer_size_jit(),
+            xfail_jit_integer_size(),
             skip_dispatch_feature,
         ],
         pil_kernel_info=PILKernelInfo(F.ten_crop_image_pil),
