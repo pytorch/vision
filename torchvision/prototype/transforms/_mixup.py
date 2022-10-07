@@ -1,3 +1,4 @@
 # TODO: Consturct a Mixup transform
 
-class
+class _Mixup:
+    pass
