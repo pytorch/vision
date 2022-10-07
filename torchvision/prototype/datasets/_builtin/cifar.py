@@ -62,7 +62,9 @@ class _CifarBase(Dataset):
 
     def _unpickle(self, data: Tuple[str, io.BytesIO]) -> Dict[str, Any]:
         _, file = data
-        return cast(Dict[str, Any], pickle.load(file, encoding="latin1"))
+        content = cast(Dict[str, Any], pickle.load(file, encoding="latin1"))
+        file.close()
+        return content
 
     def _prepare_sample(self, data: Tuple[np.ndarray, int]) -> Dict[str, Any]:
         image_array, category_idx = data

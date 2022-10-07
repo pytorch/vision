@@ -855,8 +855,10 @@ class FixedSizeCrop(Transform):
         return inpt
 
     def forward(self, *inputs: Any) -> Any:
-        if not has_any(inputs, PIL.Image.Image, features.Image, features.is_simple_tensor):
-            raise TypeError(f"{type(self).__name__}() requires input sample to contain an tensor or PIL image.")
+        if not has_any(inputs, PIL.Image.Image, features.Image, features.is_simple_tensor, features.Video):
+            raise TypeError(
+                f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
+            )
 
         if has_any(inputs, features.BoundingBox) and not has_any(inputs, features.Label, features.OneHotLabel):
             raise TypeError(

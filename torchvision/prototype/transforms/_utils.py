@@ -82,10 +82,10 @@ def query_chw(sample: Any) -> Tuple[int, int, int]:
     chws = {
         get_chw(item)
         for item in flat_sample
-        if isinstance(item, (features.Image, PIL.Image.Image)) or features.is_simple_tensor(item)
+        if isinstance(item, (features.Image, PIL.Image.Image, features.Video)) or features.is_simple_tensor(item)
     }
     if not chws:
-        raise TypeError("No image was found in the sample")
+        raise TypeError("No image or video was found in the sample")
     elif len(chws) > 1:
         raise ValueError(f"Found multiple CxHxW dimensions in the sample: {sequence_to_str(sorted(chws))}")
     return chws.pop()
