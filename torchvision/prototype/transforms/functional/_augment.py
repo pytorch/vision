@@ -20,6 +20,7 @@ def erase_image_pil(
 def erase_video(
     video: torch.Tensor, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
 ) -> torch.Tensor:
+    # TODO: Not actally used by the dispatcher. Should we remove kernels that are just redirects?
     return erase_image_tensor(video, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
 
 
