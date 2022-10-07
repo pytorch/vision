@@ -57,6 +57,8 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
             for _ in range(stop - start):
                 yield read(dtype=dtype, count=count).reshape(shape)
 
+            file.close()
+
 
 class _MNISTBase(Dataset):
     _URL_BASE: Union[str, Sequence[str]]

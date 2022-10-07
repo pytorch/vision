@@ -97,6 +97,8 @@ class CLEVR(Dataset):
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
         else:
+            for _, file in scenes_dp:
+                file.close()
             dp = Mapper(images_dp, self._add_empty_anns)
 
         return Mapper(dp, self._prepare_sample)
