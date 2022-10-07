@@ -52,7 +52,6 @@ class _Feature(torch.Tensor):
     ) -> F:
         # Quick fix: Feature -> Tensor => won't go to __torch_function__
         other = other.as_subclass(torch.Tensor)  # type: ignore[arg-type]
-
         return cls(
             data,
             dtype=dtype if dtype is not None else other.dtype,

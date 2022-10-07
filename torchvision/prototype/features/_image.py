@@ -103,9 +103,25 @@ class Image(_Feature):
     def new_like(
         cls, other: Image, data: Any, *, color_space: Optional[Union[ColorSpace, str]] = None, **kwargs: Any
     ) -> Image:
-        return super().new_like(
-            other, data, color_space=color_space if color_space is not None else other.color_space, **kwargs
-        )
+        # Question: Is it safe to assume data to be a tensor ?
+        out = data.as_subclass(Image)
+        out.color_space = color_space if color_space is not None else other.color_space
+        out._tensor = data  # type: ignore[attr-defined]
+        return out
+
+    @classmethod
+    def _wrap(tensor, color_space=None):
+        image = tensor.as_subclass(Image)  # type: ignore[arg-type]
+        image.color_space = _setup_color_space(color_space, list(image.shape))
+        return image
+
+    # @classmethod
+    # def new_like(
+    #     cls, other: Image, data: Any, *, color_space: Optional[Union[ColorSpace, str]] = None, **kwargs: Any
+    # ) -> Image:
+    #     return super().new_like(
+    #         other, data, color_space=color_space if color_space is not None else other.color_space, **kwargs
+    #     )
 
     @property
     def image_size(self) -> Tuple[int, int]:
