@@ -7,7 +7,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 from torchvision.transforms.functional import (
-    _compute_resized_output_size,
+    _compute_resized_output_size as __compute_resized_output_size,
     _get_inverse_affine_matrix,
     InterpolationMode,
     pil_modes_mapping,
@@ -95,6 +95,14 @@ hflip = horizontal_flip
 vflip = vertical_flip
 
 
+def _compute_resized_output_size(
+    image_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
+) -> List[int]:
+    if isinstance(size, int):
+        size = [size]
+    return __compute_resized_output_size(image_size, size=size, max_size=max_size)
+
+
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
@@ -102,8 +110,6 @@ def resize_image_tensor(
     max_size: Optional[int] = None,
     antialias: bool = False,
 ) -> torch.Tensor:
-    if isinstance(size, int):
-        size = [size]
     num_channels, old_height, old_width = get_dimensions_image_tensor(image)
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
     extra_dims = image.shape[:-3]
@@ -148,11 +154,7 @@ def resize_image_pil(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
-    if isinstance(size, int):
-        size = [size, size]
-    # Explicitly cast size to list otherwise mypy issue: incompatible type "Sequence[int]"; expected "List[int]"
-    size: List[int] = list(size)
-    size = _compute_resized_output_size(image.size[::-1], size=size, max_size=max_size)
+    size = _compute_resized_output_size(image.size[::-1], size=size, max_size=max_size)  # type: ignore[arg-type]
     return _FP.resize(image, size, interpolation=pil_modes_mapping[interpolation])
 
 
@@ -173,13 +175,14 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
 
 def resize_bounding_box(
     bounding_box: torch.Tensor, image_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
-) -> torch.Tensor:
-    if isinstance(size, int):
-        size = [size]
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = image_size
     new_height, new_width = _compute_resized_output_size(image_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
-    return bounding_box.view(-1, 2, 2).mul(ratios).to(bounding_box.dtype).view(bounding_box.shape)
+    return (
+        bounding_box.view(-1, 2, 2).mul(ratios).to(bounding_box.dtype).view(bounding_box.shape),
+        (new_height, new_width),
+    )
 
 
 def resize(
@@ -545,7 +548,7 @@ def rotate_bounding_box(
     angle: float,
     expand: bool = False,
     center: Optional[List[float]] = None,
-) -> torch.Tensor:
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     if center is not None and expand:
         warnings.warn("The provided center argument has no effect on the result if expand is True")
         center = None
@@ -566,9 +569,20 @@ def rotate_bounding_box(
         expand=expand,
     )
 
-    return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    ).view(original_shape)
+    if expand:
+        # TODO: Move this computation inside of `_affine_bounding_box_xyxy` to avoid computing the rotation and points
+        #  matrix twice
+        height, width = image_size
+        rotation_matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+        new_width, new_height = _FT._compute_affine_output_size(rotation_matrix, width, height)
+        image_size = (new_height, new_width)
+
+    return (
+        convert_format_bounding_box(
+            out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+        ).view(original_shape),
+        image_size,
+    )
 
 
 def rotate_mask(
@@ -710,14 +724,15 @@ def pad_mask(
 def pad_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
+    image_size: Tuple[int, int],
     padding: Union[int, List[int]],
     padding_mode: str = "constant",
-) -> torch.Tensor:
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     if padding_mode not in ["constant"]:
         # TODO: add support of other padding modes
         raise ValueError(f"Padding mode '{padding_mode}' is not supported with bounding boxes")
 
-    left, _, top, _ = _parse_pad_padding(padding)
+    left, right, top, bottom = _parse_pad_padding(padding)
 
     bounding_box = bounding_box.clone()
 
@@ -727,7 +742,12 @@ def pad_bounding_box(
     if format == features.BoundingBoxFormat.XYXY:
         bounding_box[..., 2] += left
         bounding_box[..., 3] += top
-    return bounding_box
+
+    height, width = image_size
+    height += top + bottom
+    width += left + right
+
+    return bounding_box, (height, width)
 
 
 def pad(
@@ -754,7 +774,9 @@ def crop_bounding_box(
     format: features.BoundingBoxFormat,
     top: int,
     left: int,
-) -> torch.Tensor:
+    height: int,
+    width: int,
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     )
@@ -763,8 +785,11 @@ def crop_bounding_box(
     bounding_box[..., 0::2] -= left
     bounding_box[..., 1::2] -= top
 
-    return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    return (
+        convert_format_bounding_box(
+            bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+        ),
+        (height, width),
     )
 
 
@@ -1081,10 +1106,10 @@ def center_crop_bounding_box(
     format: features.BoundingBoxFormat,
     image_size: Tuple[int, int],
     output_size: List[int],
-) -> torch.Tensor:
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *image_size)
-    return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left)
+    return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left, height=crop_height, width=crop_width)
 
 
 def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
@@ -1147,8 +1172,8 @@ def resized_crop_bounding_box(
     height: int,
     width: int,
     size: List[int],
-) -> torch.Tensor:
-    bounding_box = crop_bounding_box(bounding_box, format, top, left)
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    bounding_box, _ = crop_bounding_box(bounding_box, format, top, left, height, width)
     return resize_bounding_box(bounding_box, (height, width), size)
 
 
