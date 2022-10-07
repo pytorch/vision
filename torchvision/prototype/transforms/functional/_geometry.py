@@ -1405,6 +1405,12 @@ def five_crop_image_pil(
     return tl, tr, bl, br, center
 
 
+def five_crop_video(
+    video: torch.Tensor, size: List[int]
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    return five_crop_image_tensor(video, size)
+
+
 def five_crop(
     inpt: features.ImageOrVideoTypeJIT, size: List[int]
 ) -> Tuple[
@@ -1414,7 +1420,7 @@ def five_crop(
     features.ImageOrVideoTypeJIT,
     features.ImageOrVideoTypeJIT,
 ]:
-    # TODO: consider breaking BC here to return List[features.ImageTypeJIT] to align this op with `ten_crop`
+    # TODO: consider breaking BC here to return List[features.ImageOrVideoTypeJIT] to align this op with `ten_crop`
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
@@ -1449,6 +1455,10 @@ def ten_crop_image_pil(image: PIL.Image.Image, size: List[int], vertical_flip: b
     tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_pil(image, size)
 
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
+
+
+def ten_crop_video(video: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
+    return ten_crop_image_tensor(video, size, vertical_flip=vertical_flip)
 
 
 def ten_crop(
