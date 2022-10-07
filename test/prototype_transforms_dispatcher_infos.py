@@ -303,7 +303,6 @@ DISPATCHER_INFOS = [
             features.Image: F.equalize_image_tensor,
         },
         pil_kernel_info=PILKernelInfo(F.equalize_image_pil, kernel_name="equalize_image_pil"),
-        test_marks=xfails_degenerate_or_multi_batch_dims,
     ),
     DispatcherInfo(
         F.invert,

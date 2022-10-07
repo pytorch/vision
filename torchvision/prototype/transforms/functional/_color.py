@@ -173,30 +173,29 @@ def autocontrast(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
         return autocontrast_image_pil(inpt)
 
 
-equalize_image_tensor = _FT.equalize
+def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
+    _FT._assert_image_tensor(image)
+
+    if image.dtype != torch.uint8:
+        raise TypeError(f"Only torch.uint8 image tensors are supported, but found {image.dtype}")
+
+    _FT._assert_channels(image, [1, 3])
+
+    if image.numel() == 0:
+        return image
+    elif image.ndim == 2:
+        return _FT._scale_channel(image)
+    else:
+        shape = image.shape
+        channels = image.view((-1,) + shape[-2:]).unbind()
+        return torch.stack([_FT._scale_channel(channel) for channel in channels]).view(shape)
+
+
 equalize_image_pil = _FP.equalize
 
 
 def equalize_video(video: torch.Tensor) -> torch.Tensor:
-    # TODO: this is a temporary workaround until the image kernel supports arbitrary batch sizes. Remove this when
-    #  https://github.com/pytorch/vision/issues/6670 is resolved.
-    if video.numel() == 0:
-        return video
-
-    shape = video.shape
-
-    if video.ndim > 4:
-        video = video.view((-1,) + shape[-3:])
-        needs_unsquash = True
-    else:
-        needs_unsquash = False
-
-    output = equalize_image_tensor(video)
-
-    if needs_unsquash:
-        output = output.view(shape)
-
-    return output
+    return equalize_image_tensor(video)
 
 
 def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:

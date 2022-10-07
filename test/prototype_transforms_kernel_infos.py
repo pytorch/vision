@@ -1418,7 +1418,6 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.equalize_image_pil),
             reference_inputs_fn=reference_inputs_equalize_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            test_marks=xfails_image_degenerate_or_multi_batch_dims,
         ),
         KernelInfo(
             F.equalize_video,
