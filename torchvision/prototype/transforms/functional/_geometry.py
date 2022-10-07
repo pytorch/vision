@@ -47,6 +47,10 @@ def horizontal_flip_bounding_box(
     ).view(shape)
 
 
+def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
+    return horizontal_flip_image_tensor(video)
+
+
 def horizontal_flip(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return horizontal_flip_image_tensor(inpt)
@@ -78,6 +82,10 @@ def vertical_flip_bounding_box(
     return convert_format_bounding_box(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
+
+
+def vertical_flip_video(video: torch.Tensor) -> torch.Tensor:
+    return vertical_flip_image_tensor(video)
 
 
 def vertical_flip(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
@@ -183,6 +191,16 @@ def resize_bounding_box(
         bounding_box.view(-1, 2, 2).mul(ratios).to(bounding_box.dtype).view(bounding_box.shape),
         (new_height, new_width),
     )
+
+
+def resize_video(
+    video: torch.Tensor,
+    size: List[int],
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    max_size: Optional[int] = None,
+    antialias: bool = False,
+) -> torch.Tensor:
+    return resize_image_tensor(video, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
 
 def resize(
@@ -441,6 +459,28 @@ def affine_mask(
     return output
 
 
+def affine_video(
+    video: torch.Tensor,
+    angle: Union[int, float],
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    fill: features.FillTypeJIT = None,
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return affine_image_tensor(
+        video,
+        angle=angle,
+        translate=translate,
+        scale=scale,
+        shear=shear,
+        interpolation=interpolation,
+        fill=fill,
+        center=center,
+    )
+
+
 def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
     # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
     # So, we can't reassign fill to 0
@@ -614,6 +654,17 @@ def rotate_mask(
     return output
 
 
+def rotate_video(
+    video: torch.Tensor,
+    angle: float,
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    expand: bool = False,
+    fill: features.FillTypeJIT = None,
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return rotate_image_tensor(video, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
+
+
 def rotate(
     inpt: features.InputTypeJIT,
     angle: float,
@@ -751,6 +802,15 @@ def pad_bounding_box(
     return bounding_box, (height, width)
 
 
+def pad_video(
+    video: torch.Tensor,
+    padding: Union[int, List[int]],
+    fill: features.FillTypeJIT = None,
+    padding_mode: str = "constant",
+) -> torch.Tensor:
+    return pad_image_tensor(video, padding, fill=fill, padding_mode=padding_mode)
+
+
 def pad(
     inpt: features.InputTypeJIT,
     padding: Union[int, List[int]],
@@ -796,6 +856,10 @@ def crop_bounding_box(
 
 def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
     return crop_image_tensor(mask, top, left, height, width)
+
+
+def crop_video(video: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
+    return crop_image_tensor(video, top, left, height, width)
 
 
 def crop(inpt: features.InputTypeJIT, top: int, left: int, height: int, width: int) -> features.InputTypeJIT:
@@ -932,6 +996,33 @@ def perspective_mask(
     return output
 
 
+def perspective_video(
+    video: torch.Tensor,
+    perspective_coeffs: List[float],
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    fill: features.FillTypeJIT = None,
+) -> torch.Tensor:
+    # TODO: this is a temporary workaround until the image kernel supports arbitrary batch sizes. Remove this when
+    #  https://github.com/pytorch/vision/issues/6670 is resolved.
+    if video.numel() == 0:
+        return video
+
+    shape = video.shape
+
+    if video.ndim > 4:
+        video = video.view((-1,) + shape[-3:])
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    output = perspective_image_tensor(video, perspective_coeffs, interpolation=interpolation, fill=fill)
+
+    if needs_unsquash:
+        output = output.view(shape)
+
+    return output
+
+
 def perspective(
     inpt: features.InputTypeJIT,
     perspective_coeffs: List[float],
@@ -1022,6 +1113,33 @@ def elastic_mask(
 
     if needs_squeeze:
         output = output.squeeze(0)
+
+    return output
+
+
+def elastic_video(
+    video: torch.Tensor,
+    displacement: torch.Tensor,
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    fill: features.FillTypeJIT = None,
+) -> torch.Tensor:
+    # TODO: this is a temporary workaround until the image kernel supports arbitrary batch sizes. Remove this when
+    #  https://github.com/pytorch/vision/issues/6670 is resolved.
+    if video.numel() == 0:
+        return video
+
+    shape = video.shape
+
+    if video.ndim > 4:
+        video = video.view((-1,) + shape[-3:])
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    output = elastic_image_tensor(video, displacement, interpolation=interpolation, fill=fill)
+
+    if needs_unsquash:
+        output = output.view(shape)
 
     return output
 
@@ -1128,6 +1246,10 @@ def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor
     return output
 
 
+def center_crop_video(video: torch.Tensor, output_size: List[int]) -> torch.Tensor:
+    return center_crop_image_tensor(video, output_size)
+
+
 def center_crop(inpt: features.InputTypeJIT, output_size: List[int]) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return center_crop_image_tensor(inpt, output_size)
@@ -1188,6 +1310,21 @@ def resized_crop_mask(
 ) -> torch.Tensor:
     mask = crop_mask(mask, top, left, height, width)
     return resize_mask(mask, size)
+
+
+def resized_crop_video(
+    video: torch.Tensor,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    antialias: bool = False,
+) -> torch.Tensor:
+    return resized_crop_image_tensor(
+        video, top, left, height, width, antialias=antialias, size=size, interpolation=interpolation
+    )
 
 
 def resized_crop(

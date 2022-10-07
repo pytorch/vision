@@ -9,18 +9,22 @@ from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 normalize_image_tensor = _FT.normalize
 
 
+def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
+    return normalize_image_tensor(video, mean, std, inplace=inplace)
+
+
 def normalize(
-    inpt: features.TensorImageTypeJIT, mean: List[float], std: List[float], inplace: bool = False
+    inpt: features.TensorImageOrVideoTypeJIT, mean: List[float], std: List[float], inplace: bool = False
 ) -> torch.Tensor:
     if torch.jit.is_scripting():
         correct_type = isinstance(inpt, torch.Tensor)
     else:
-        correct_type = features.is_simple_tensor(inpt) or isinstance(inpt, features.Image)
+        correct_type = features.is_simple_tensor(inpt) or isinstance(inpt, (features.Image, features.Video))
         inpt = inpt.as_subclass(torch.Tensor)
     if not correct_type:
         raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
 
-    # Image instance after normalization is not Image anymore due to unknown data range
+    # Image or Video type should not be retained after normalization due to unknown data range
     # Thus we return Tensor for input Image
     return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
 
@@ -62,6 +66,30 @@ def gaussian_blur_image_pil(
     t_img = pil_to_tensor(image)
     output = gaussian_blur_image_tensor(t_img, kernel_size=kernel_size, sigma=sigma)
     return to_pil_image(output, mode=image.mode)
+
+
+def gaussian_blur_video(
+    video: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
+) -> torch.Tensor:
+    # TODO: this is a temporary workaround until the image kernel supports arbitrary batch sizes. Remove this when
+    #  https://github.com/pytorch/vision/issues/6670 is resolved.
+    if video.numel() == 0:
+        return video
+
+    shape = video.shape
+
+    if video.ndim > 4:
+        video = video.view((-1,) + shape[-3:])
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    output = gaussian_blur_image_tensor(video, kernel_size, sigma)
+
+    if needs_unsquash:
+        output = output.view(shape)
+
+    return output
 
 
 def gaussian_blur(
