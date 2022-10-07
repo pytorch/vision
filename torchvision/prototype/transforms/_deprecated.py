@@ -29,7 +29,7 @@ class ToTensor(Transform):
 
 
 class Grayscale(Transform):
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
 
     def __init__(self, num_output_channels: Literal[1, 3] = 1) -> None:
         deprecation_msg = (
@@ -60,7 +60,7 @@ class Grayscale(Transform):
 
 
 class RandomGrayscale(_RandomApplyTransform):
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
 
     def __init__(self, p: float = 0.1) -> None:
         warnings.warn(

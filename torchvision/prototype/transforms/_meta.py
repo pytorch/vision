@@ -22,15 +22,15 @@ class ConvertBoundingBoxFormat(Transform):
 
 
 class ConvertImageDtype(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image, features.Video)
 
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.dtype = dtype
 
-    def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> features.TensorImageType:
+    def _transform(self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]) -> features.TensorImageOrVideoType:
         output = F.convert_image_dtype(inpt, dtype=self.dtype)
-        return output if features.is_simple_tensor(inpt) else features.Image.new_like(inpt, output, dtype=self.dtype)  # type: ignore[arg-type]
+        return output if features.is_simple_tensor(inpt) else type(inpt).new_like(inpt, output, dtype=self.dtype)  # type: ignore[arg-type]
 
 
 class ConvertColorSpace(Transform):
