@@ -30,12 +30,28 @@ def get_chw(image: features.ImageTypeJIT) -> Tuple[int, int, int]:
 
 
 def get_dimensions(image: features.ImageTypeJIT) -> List[int]:
-    return list(get_chw(image))
+    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
+        return get_dimensions_image_tensor(image)
+    elif isinstance(image, features.Image):
+        channels = image.num_channels
+        height, width = image.image_size
+        return [channels, height, width]
+    else:
+        return get_dimensions_image_pil(image)
+
+
+get_num_channels_image_tensor = _FT.get_image_num_channels
+get_num_channels_image_pil = _FP.get_image_num_channels
 
 
 def get_num_channels(image: features.ImageTypeJIT) -> int:
-    num_channels, *_ = get_chw(image)
-    return num_channels
+    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
+        channels = _FT.get_image_num_channels(image)
+    elif isinstance(image, features.Image):
+        channels = image.num_channels
+    else:
+        channels = _FP.get_image_num_channels(image)
+    return channels
 
 
 # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
@@ -43,9 +59,24 @@ def get_num_channels(image: features.ImageTypeJIT) -> int:
 get_image_num_channels = get_num_channels
 
 
+def get_spatial_size_image_tensor(image: torch.Tensor) -> List[int]:
+    width, height = _FT.get_image_size(image)
+    return [height, width]
+
+
+@torch.jit.unused
+def get_spatial_size_image_pil(image: PIL.Image.Image) -> List[int]:
+    width, height = _FP.get_image_size(image)
+    return [height, width]
+
+
 def get_spatial_size(image: features.ImageTypeJIT) -> List[int]:
-    _, *size = get_chw(image)
-    return size
+    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
+        return get_spatial_size_image_tensor(image)
+    elif isinstance(image, features.Image):
+        return list(image.image_size)
+    else:
+        return get_spatial_size_image_pil(image)
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:

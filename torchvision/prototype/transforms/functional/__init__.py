@@ -7,9 +7,15 @@ from ._meta import (
     convert_color_space_image_tensor,
     convert_color_space_image_pil,
     convert_color_space,
+    get_dimensions_image_tensor,
+    get_dimensions_image_pil,
     get_dimensions,
     get_image_num_channels,
+    get_num_channels_image_tensor,
+    get_num_channels_image_pil,
     get_num_channels,
+    get_spatial_size_image_tensor,
+    get_spatial_size_image_pil,
     get_spatial_size,
 )  # usort: skip
 
