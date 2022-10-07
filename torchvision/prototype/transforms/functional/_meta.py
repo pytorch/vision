@@ -55,6 +55,10 @@ def get_spatial_size_image_pil(image: PIL.Image.Image) -> List[int]:
     return [height, width]
 
 
+# TODO: Should we have get_spatial_size_video here? How about masks/bbox etc? What is the criterion for deciding when
+# a kernel will be created?
+
+
 def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return get_spatial_size_image_tensor(inpt)
@@ -246,7 +250,7 @@ def convert_color_space(
     ):
         if old_color_space is None:
             raise RuntimeError(
-                "In order to convert the color space of simple tensor images, "
+                "In order to convert the color space of simple tensors, "
                 "the `old_color_space=...` parameter needs to be passed."
             )
         return convert_color_space_image_tensor(
