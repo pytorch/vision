@@ -2,6 +2,8 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
+from ._meta import get_dimensions_image_tensor
+
 adjust_brightness_image_tensor = _FT.adjust_brightness
 adjust_brightness_image_pil = _FP.adjust_brightness
 
@@ -54,20 +56,20 @@ def adjust_contrast(inpt: features.InputTypeJIT, contrast_factor: float) -> feat
 
 
 def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
+    num_channels, height, width = get_dimensions_image_tensor(image)
+    if num_channels not in (1, 3):
+        raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {num_channels}")
+
     if sharpness_factor < 0:
         raise ValueError(f"sharpness_factor ({sharpness_factor}) is not non-negative.")
 
-    _FT._assert_image_tensor(image)
-
-    _FT._assert_channels(image, [1, 3])
-
-    if image.numel() == 0 or any(dim <= 2 for dim in image.shape[-2:]):
+    if image.numel() == 0 or height <= 2 or width <= 2:
         return image
 
     shape = image.shape
 
     if image.ndim > 4:
-        image = image.view((-1,) + shape[-3:])
+        image = image.view(-1, num_channels, height, width)
         needs_unsquash = True
     else:
         needs_unsquash = False
@@ -182,21 +184,25 @@ def autocontrast(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
 
 
 def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
-    _FT._assert_image_tensor(image)
-
     if image.dtype != torch.uint8:
         raise TypeError(f"Only torch.uint8 image tensors are supported, but found {image.dtype}")
 
-    _FT._assert_channels(image, [1, 3])
+    num_channels, height, width = get_dimensions_image_tensor(image)
+    if num_channels not in (1, 3):
+        raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {num_channels}")
 
     if image.numel() == 0:
         return image
     elif image.ndim == 2:
         return _FT._scale_channel(image)
     else:
-        shape = image.shape
-        channels = image.view((-1,) + shape[-2:]).unbind()
-        return torch.stack([_FT._scale_channel(channel) for channel in channels]).view(shape)
+        return torch.stack(
+            [
+                # TODO: when merging transforms v1 and v2, we can inline this function call
+                _FT._equalize_single_image(single_image)
+                for single_image in image.view(-1, num_channels, height, width)
+            ]
+        ).view(image.shape)
 
 
 equalize_image_pil = _FP.equalize
