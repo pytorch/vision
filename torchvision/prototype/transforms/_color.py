@@ -119,7 +119,8 @@ class RandomPhotometricDistort(Transform):
         output = inpt[..., permutation, :, :]
 
         if isinstance(inpt, (features.Image, features.Video)):
-            output = type(inpt).new_like(inpt, output, color_space=features.ColorSpace.OTHER)  # type: ignore[arg-type]
+            output = type(inpt).wrap_like(inpt, output, color_space=features.ColorSpace.OTHER)  # type: ignore[arg-type]
+
         elif isinstance(inpt, PIL.Image.Image):
             output = F.to_image_pil(output)
 
