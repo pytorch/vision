@@ -180,7 +180,13 @@ class FiveCrop(Transform):
 
     def _transform(
         self, inpt: features.ImageOrVideoType, params: Dict[str, Any]
-    ) -> Tuple[features.ImageOrVideoType, features.ImageOrVideoType, features.ImageOrVideoType, features.ImageOrVideoType, features.ImageOrVideoType]:
+    ) -> Tuple[
+        features.ImageOrVideoType,
+        features.ImageOrVideoType,
+        features.ImageOrVideoType,
+        features.ImageOrVideoType,
+        features.ImageOrVideoType,
+    ]:
         return F.five_crop(inpt, self.size)
 
     def forward(self, *inputs: Any) -> Any:

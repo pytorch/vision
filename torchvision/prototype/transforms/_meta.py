@@ -28,12 +28,12 @@ class ConvertImageDtype(Transform):
         super().__init__()
         self.dtype = dtype
 
-    def _transform(self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]) -> features.TensorImageOrVideoType:
+    def _transform(
+        self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]
+    ) -> features.TensorImageOrVideoType:
         output = F.convert_image_dtype(inpt, dtype=self.dtype)
         return (
-            output
-            if features.is_simple_tensor(inpt)
-            else type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
+            output if features.is_simple_tensor(inpt) else type(inpt).wrap_like(inpt, output)  # type: ignore[attr-defined]
         )
 
 

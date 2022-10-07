@@ -1403,13 +1403,17 @@ def five_crop_image_pil(
 def five_crop(
     inpt: features.ImageOrVideoTypeJIT, size: List[int]
 ) -> Tuple[
-    features.ImageOrVideoTypeJIT, features.ImageOrVideoTypeJIT, features.ImageOrVideoTypeJIT, features.ImageOrVideoTypeJIT, features.ImageOrVideoTypeJIT
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
 ]:
     # TODO: consider breaking BC here to return List[features.ImageTypeJIT] to align this op with `ten_crop`
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
-            output = tuple(type(inpt).wrap_like(inpt, item) for item in output)  # type: ignore[assignment]
+            output = tuple(type(inpt).wrap_like(inpt, item) for item in output)  # type: ignore[assignment,arg-type]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return five_crop_image_pil(inpt, size)
@@ -1442,11 +1446,13 @@ def ten_crop_image_pil(image: PIL.Image.Image, size: List[int], vertical_flip: b
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
 
-def ten_crop(inpt: features.ImageOrVideoTypeJIT, size: List[int], vertical_flip: bool = False) -> List[features.ImageOrVideoTypeJIT]:
+def ten_crop(
+    inpt: features.ImageOrVideoTypeJIT, size: List[int], vertical_flip: bool = False
+) -> List[features.ImageOrVideoTypeJIT]:
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
-            output = [type(inpt).wrap_like(inpt, item) for item in output]
+            output = [type(inpt).wrap_like(inpt, item) for item in output]  # type: ignore[arg-type]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)
