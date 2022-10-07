@@ -338,15 +338,6 @@ DISPATCHER_INFOS = [
             features.Image: F.adjust_sharpness_image_tensor,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_sharpness_image_pil, kernel_name="adjust_sharpness_image_pil"),
-        test_marks=xfail_all_tests(
-            reason="See https://github.com/pytorch/vision/issues/6670 for details.",
-            condition=lambda args_kwargs: all(dim > 2 for dim in args_kwargs.args[0].shape[-2:])
-            and (
-                len(args_kwargs.args[0].shape) > 4
-                or not all(args_kwargs.args[0].shape[:-4])
-                or args_kwargs.args[0].shape[-4:-2] == (0, 3)
-            ),
-        ),
     ),
     DispatcherInfo(
         F.erase,

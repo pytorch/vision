@@ -53,30 +53,38 @@ def adjust_contrast(inpt: features.InputTypeJIT, contrast_factor: float) -> feat
         return adjust_contrast_image_pil(inpt, contrast_factor=contrast_factor)
 
 
-adjust_sharpness_image_tensor = _FT.adjust_sharpness
-adjust_sharpness_image_pil = _FP.adjust_sharpness
+def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
+    if sharpness_factor < 0:
+        raise ValueError(f"sharpness_factor ({sharpness_factor}) is not non-negative.")
 
+    _FT._assert_image_tensor(image)
 
-def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
-    # TODO: this is a temporary workaround until the image kernel supports arbitrary batch sizes. Remove this when
-    #  https://github.com/pytorch/vision/issues/6670 is resolved.
-    if video.numel() == 0:
-        return video
+    _FT._assert_channels(image, [1, 3])
 
-    shape = video.shape
+    if image.numel() == 0 or any(dim <= 2 for dim in image.shape[-2:]):
+        return image
 
-    if video.ndim > 4:
-        video = video.view((-1,) + shape[-3:])
+    shape = image.shape
+
+    if image.ndim > 4:
+        image = image.view((-1,) + shape[-3:])
         needs_unsquash = True
     else:
         needs_unsquash = False
 
-    output = adjust_sharpness_image_tensor(video, sharpness_factor=sharpness_factor)
+    output = _FT._blend(image, _FT._blurred_degenerate_image(image), sharpness_factor)
 
     if needs_unsquash:
         output = output.view(shape)
 
     return output
+
+
+adjust_sharpness_image_pil = _FP.adjust_sharpness
+
+
+def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
+    return adjust_sharpness_image_tensor(video, sharpness_factor=sharpness_factor)
 
 
 def adjust_sharpness(inpt: features.InputTypeJIT, sharpness_factor: float) -> features.InputTypeJIT:
