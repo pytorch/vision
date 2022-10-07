@@ -1,6 +1,6 @@
 import io
 from collections import OrderedDict
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import pytest
 import torch
@@ -11,7 +11,7 @@ from torchvision.models.detection.image_list import ImageList
 from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.rpn import AnchorGenerator, RegionProposalNetwork, RPNHead
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
-from torchvision.ops._register_onnx_ops import _onnx_opset_version
+from torchvision.ops import _register_onnx_ops
 
 # In environments without onnxruntime we prefer to
 # invoke all tests in the repo and have this one skipped rather than fail.
@@ -32,7 +32,11 @@ class TestONNXExporter:
         dynamic_axes=None,
         output_names=None,
         input_names=None,
+        opset_version: Optional[int] = None,
     ):
+        if opset_version is None:
+            opset_version = _register_onnx_ops.base_onnx_opset_version
+
         model.eval()
 
         onnx_io = io.BytesIO()
@@ -46,10 +50,11 @@ class TestONNXExporter:
             torch_onnx_input,
             onnx_io,
             do_constant_folding=do_constant_folding,
-            opset_version=_onnx_opset_version,
+            opset_version=opset_version,
             dynamic_axes=dynamic_axes,
             input_names=input_names,
             output_names=output_names,
+            verbose=True,
         )
         # validate the exported model with onnx runtime
         for test_inputs in inputs_list:
@@ -140,39 +145,39 @@ class TestONNXExporter:
         model = ops.RoIAlign((5, 5), 1, -1)
         self.run_model(model, [(x, single_roi)])
 
-    @pytest.mark.skip(reason="ROIAlign with aligned=True is not supported in ONNX, but will be supported in opset 16.")
     def test_roi_align_aligned(self):
+        supported_onnx_version = _register_onnx_ops._onnx_opset_version_16
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 1.5, 1.5, 3, 3]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 0.5, 3, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1.8, 2, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
         model = ops.RoIAlign((2, 2), 2.5, 0, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
         model = ops.RoIAlign((2, 2), 2.5, -1, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
-    @pytest.mark.skip(reason="Issue in exporting ROIAlign with aligned = True for malformed boxes")
     def test_roi_align_malformed_boxes(self):
+        supported_onnx_version = _register_onnx_ops._onnx_opset_version_16
         x = torch.randn(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 2, 0.3, 1.5, 1.5]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 1, aligned=True)
-        self.run_model(model, [(x, single_roi)])
+        self.run_model(model, [(x, single_roi)], opset_version=supported_onnx_version)
 
     def test_roi_pool(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
