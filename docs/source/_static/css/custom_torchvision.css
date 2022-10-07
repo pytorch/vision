@@ -21,3 +21,15 @@ article.pytorch-article .reference.download.internal, article.pytorch-article .s
 .table-weights p {
     margin-bottom: 0.2rem !important;
 }
+
+/* Fix for Sphinx gallery 0.11
+See https://github.com/sphinx-gallery/sphinx-gallery/issues/990
+*/
+article.pytorch-article .sphx-glr-thumbnails .sphx-glr-thumbcontainer {
+    width: unset;
+    margin-right: 0;
+    margin-left: 0;
+}
+article.pytorch-article div.section div.wy-table-responsive tbody td {
+    width: 50%;
+}
