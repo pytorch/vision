@@ -155,12 +155,12 @@ class FiveCrop(Transform):
     """
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[Tuple[features.Image, ...], features.Label]):
-        ...         images, labels = sample
-        ...         batch_size = len(images)
-        ...         images = features.Image.wrap_like(images[0], torch.stack(images))
+        ...     def forward(self, sample: Tuple[Tuple[Union[features.Image, features.Video], ...], features.Label]):
+        ...         images_or_videos, labels = sample
+        ...         batch_size = len(images_or_videos)
+        ...         images_or_videos = features.Image.wrap_like(images_or_videos[0], torch.stack(images_or_videos))
         ...         labels = features.Label.wrap_like(labels, labels.repeat(batch_size))
-        ...         return images, labels
+        ...         return images_or_videos, labels
         ...
         >>> image = features.Image(torch.rand(3, 256, 256))
         >>> label = features.Label(0)
@@ -201,7 +201,7 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> List[features.ImageType]:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> List[features.ImageOrVideoType]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
     def forward(self, *inputs: Any) -> Any:
