@@ -882,7 +882,23 @@ def perspective_image_tensor(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
-    return _FT.perspective(image, perspective_coeffs, interpolation=interpolation.value, fill=fill)
+    if image.numel() == 0:
+        return image
+
+    shape = image.shape
+
+    if image.ndim > 4:
+        image = image.view((-1,) + shape[-3:])
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    output = _FT.perspective(image, perspective_coeffs, interpolation=interpolation.value, fill=fill)
+
+    if needs_unsquash:
+        output = output.view(shape)
+
+    return output
 
 
 @torch.jit.unused
@@ -1007,39 +1023,7 @@ def perspective_video(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
-    # TODO: this is a temporary workaround until the image kernel supports arbitrary batch sizes. Remove this when
-    #  https://github.com/pytorch/vision/issues/6670 is resolved.
-    if video.numel() == 0:
-        return video
-
-    shape = video.shape
-
-    if video.ndim > 4:
-        video = video.view((-1,) + shape[-3:])
-        needs_unsquash = True
-    else:
-        needs_unsquash = False
-
-    output = perspective_image_tensor(video, perspective_coeffs, interpolation=interpolation, fill=fill)
-
-    if needs_unsquash:
-        output = output.view(shape)
-
-    return output
-
-
-def perspective(
-    inpt: features.InputTypeJIT,
-    perspective_coeffs: List[float],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: features.FillTypeJIT = None,
-) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
-    elif isinstance(inpt, features._Feature):
-        return inpt.perspective(perspective_coeffs, interpolation=interpolation, fill=fill)
-    else:
-        return perspective_image_pil(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
+    return perspective_image_tensor(video, perspective_coeffs, interpolation=interpolation, fill=fill)
 
 
 def elastic_image_tensor(
@@ -1048,7 +1032,23 @@ def elastic_image_tensor(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
-    return _FT.elastic_transform(image, displacement, interpolation=interpolation.value, fill=fill)
+    if image.numel() == 0:
+        return image
+
+    shape = image.shape
+
+    if image.ndim > 4:
+        image = image.view((-1,) + shape[-3:])
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    output = _FT.elastic_transform(image, displacement, interpolation=interpolation.value, fill=fill)
+
+    if needs_unsquash:
+        output = output.view(shape)
+
+    return output
 
 
 @torch.jit.unused
@@ -1128,25 +1128,7 @@ def elastic_video(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
-    # TODO: this is a temporary workaround until the image kernel supports arbitrary batch sizes. Remove this when
-    #  https://github.com/pytorch/vision/issues/6670 is resolved.
-    if video.numel() == 0:
-        return video
-
-    shape = video.shape
-
-    if video.ndim > 4:
-        video = video.view((-1,) + shape[-3:])
-        needs_unsquash = True
-    else:
-        needs_unsquash = False
-
-    output = elastic_image_tensor(video, displacement, interpolation=interpolation, fill=fill)
-
-    if needs_unsquash:
-        output = output.view(shape)
-
-    return output
+    return elastic_image_tensor(video, displacement, interpolation=interpolation, fill=fill)
 
 
 def elastic(
