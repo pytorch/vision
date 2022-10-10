@@ -14,12 +14,7 @@ from torchvision.transforms.functional import (
     pil_to_tensor,
     to_pil_image,
 )
-from torchvision.transforms.functional_tensor import (
-    _cast_squeeze_in,
-    _cast_squeeze_out,
-    _parse_pad_padding,
-    interpolate,
-)
+from torchvision.transforms.functional_tensor import _parse_pad_padding
 
 from ._meta import (
     convert_format_bounding_box,
