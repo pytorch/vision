@@ -21,7 +21,6 @@ from prototype_common_utils import (
     make_image_loaders,
     make_mask_loaders,
     make_video_loaders,
-    VALID_EXTRA_DIMS,
 )
 from torchvision.prototype import features
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
