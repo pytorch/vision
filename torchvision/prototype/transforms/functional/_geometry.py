@@ -1420,7 +1420,7 @@ def five_crop(
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
-            tmp = (inpt.wrap_like(inpt, item) for item in output)  # type: ignore[arg-type]
+            tmp = tuple(inpt.wrap_like(inpt, item) for item in output)  # type: ignore[arg-type]
             output = tmp  # type: ignore[assignment]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
