@@ -138,12 +138,6 @@ def xfail_all_tests(*, reason, condition):
     ]
 
 
-xfails_degenerate_or_multi_batch_dims = xfail_all_tests(
-    reason="See https://github.com/pytorch/vision/issues/6670 for details.",
-    condition=lambda args_kwargs: len(args_kwargs.args[0].shape) > 4 or not all(args_kwargs.args[0].shape[:-3]),
-)
-
-
 DISPATCHER_INFOS = [
     DispatcherInfo(
         F.horizontal_flip,
@@ -260,7 +254,6 @@ DISPATCHER_INFOS = [
         pil_kernel_info=PILKernelInfo(F.perspective_image_pil),
         test_marks=[
             xfail_dispatch_pil_if_fill_sequence_needs_broadcast,
-            *xfails_degenerate_or_multi_batch_dims,
         ],
     ),
     DispatcherInfo(
@@ -271,7 +264,6 @@ DISPATCHER_INFOS = [
             features.Mask: F.elastic_mask,
         },
         pil_kernel_info=PILKernelInfo(F.elastic_image_pil),
-        test_marks=xfails_degenerate_or_multi_batch_dims,
     ),
     DispatcherInfo(
         F.center_crop,
@@ -294,7 +286,6 @@ DISPATCHER_INFOS = [
         test_marks=[
             xfail_jit_python_scalar_arg("kernel_size"),
             xfail_jit_python_scalar_arg("sigma"),
-            *xfails_degenerate_or_multi_batch_dims,
         ],
     ),
     DispatcherInfo(

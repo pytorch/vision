@@ -56,7 +56,23 @@ def gaussian_blur_image_tensor(
         if s <= 0.0:
             raise ValueError(f"sigma should have positive values. Got {sigma}")
 
-    return _FT.gaussian_blur(image, kernel_size, sigma)
+    if image.numel() == 0:
+        return image
+
+    shape = image.shape
+
+    if image.ndim > 4:
+        image = image.view((-1,) + shape[-3:])
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    output = _FT.gaussian_blur(image, kernel_size, sigma)
+
+    if needs_unsquash:
+        output = output.view(shape)
+
+    return output
 
 
 @torch.jit.unused
@@ -71,25 +87,7 @@ def gaussian_blur_image_pil(
 def gaussian_blur_video(
     video: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> torch.Tensor:
-    # TODO: this is a temporary workaround until the image kernel supports arbitrary batch sizes. Remove this when
-    #  https://github.com/pytorch/vision/issues/6670 is resolved.
-    if video.numel() == 0:
-        return video
-
-    shape = video.shape
-
-    if video.ndim > 4:
-        video = video.view((-1,) + shape[-3:])
-        needs_unsquash = True
-    else:
-        needs_unsquash = False
-
-    output = gaussian_blur_image_tensor(video, kernel_size, sigma)
-
-    if needs_unsquash:
-        output = output.view(shape)
-
-    return output
+    return gaussian_blur_image_tensor(video, kernel_size, sigma)
 
 
 def gaussian_blur(
