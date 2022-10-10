@@ -84,7 +84,9 @@ class BoundingBox(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> BoundingBox:
-        output, spatial_size = self._F.resize_bounding_box(self, spatial_size=self.spatial_size, size=size, max_size=max_size)
+        output, spatial_size = self._F.resize_bounding_box(
+            self, spatial_size=self.spatial_size, size=size, max_size=max_size
+        )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:

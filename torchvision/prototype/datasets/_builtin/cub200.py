@@ -149,7 +149,9 @@ class CUB200(Dataset):
         path = pathlib.Path(data[0])
         return path.with_suffix(".jpg").name, data
 
-    def _2010_prepare_ann(self, data: Tuple[str, Tuple[str, BinaryIO]], spatial_size: Tuple[int, int]) -> Dict[str, Any]:
+    def _2010_prepare_ann(
+        self, data: Tuple[str, Tuple[str, BinaryIO]], spatial_size: Tuple[int, int]
+    ) -> Dict[str, Any]:
         _, (path, buffer) = data
         content = read_mat(buffer)
         return dict(

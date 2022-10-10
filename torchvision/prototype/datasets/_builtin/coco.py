@@ -97,7 +97,9 @@ class Coco(Dataset):
         )
         return [images, meta]
 
-    def _segmentation_to_mask(self, segmentation: Any, *, is_crowd: bool, spatial_size: Tuple[int, int]) -> torch.Tensor:
+    def _segmentation_to_mask(
+        self, segmentation: Any, *, is_crowd: bool, spatial_size: Tuple[int, int]
+    ) -> torch.Tensor:
         from pycocotools import mask
 
         if is_crowd:
@@ -115,7 +117,9 @@ class Coco(Dataset):
             segmentations=_Feature(
                 torch.stack(
                     [
-                        self._segmentation_to_mask(ann["segmentation"], is_crowd=ann["iscrowd"], spatial_size=spatial_size)
+                        self._segmentation_to_mask(
+                            ann["segmentation"], is_crowd=ann["iscrowd"], spatial_size=spatial_size
+                        )
                         for ann in anns
                     ]
                 )
