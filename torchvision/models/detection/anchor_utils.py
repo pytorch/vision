@@ -52,23 +52,23 @@ class AnchorGenerator(nn.Module):
         ]
 
     # TODO: https://github.com/pytorch/pytorch/issues/26792
-    # For every (aspect_ratios, scales) combination, output a zero-centered anchor with those values.
-    # (scales, aspect_ratios) are usually an element of zip(self.scales, self.aspect_ratios)
+    # For every (aspect_ratios, sizes) combination, output a zero-centered anchor with those values.
+    # (sizes, aspect_ratios) are usually an element of zip(self.sizes, self.aspect_ratios)
     # This method assumes aspect ratio = height / width for an anchor.
     def generate_anchors(
         self,
-        scales: List[int],
+        sizes: List[int],
         aspect_ratios: List[float],
         dtype: torch.dtype = torch.float32,
         device: torch.device = torch.device("cpu"),
     ):
-        scales = torch.as_tensor(scales, dtype=dtype, device=device)
+        sizes = torch.as_tensor(sizes, dtype=dtype, device=device)
         aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)
         w_ratios = 1 / h_ratios
 
-        ws = (w_ratios[:, None] * scales[None, :]).view(-1)
-        hs = (h_ratios[:, None] * scales[None, :]).view(-1)
+        ws = (w_ratios[:, None] * sizes[None, :]).view(-1)
+        hs = (h_ratios[:, None] * sizes[None, :]).view(-1)
 
         base_anchors = torch.stack([-ws, -hs, ws, hs], dim=1) / 2
         return base_anchors.round()
