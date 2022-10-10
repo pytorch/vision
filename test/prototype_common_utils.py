@@ -3,6 +3,7 @@
 import collections.abc
 import dataclasses
 import functools
+from collections import defaultdict
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 import PIL.Image
@@ -47,6 +48,9 @@ __all__ = [
     "make_masks",
     "make_video",
     "make_videos",
+    "TestMark",
+    "mark_framework_limitation",
+    "InfoBase",
 ]
 
 
@@ -588,3 +592,52 @@ def make_video_loaders(
 
 
 make_videos = from_loaders(make_video_loaders)
+
+
+class TestMark:
+    def __init__(
+        self,
+        # Tuple of test class name and test function name that identifies the test the mark is applied to. If there is
+        # no test class, i.e. a standalone test function, use `None`.
+        test_id,
+        # `pytest.mark.*` to apply, e.g. `pytest.mark.skip` or `pytest.mark.xfail`
+        mark,
+        *,
+        # Callable, that will be passed an `ArgsKwargs` and should return a boolean to indicate if the mark will be
+        # applied. If omitted, defaults to always apply.
+        condition=None,
+    ):
+        self.test_id = test_id
+        self.mark = mark
+        self.condition = condition or (lambda args_kwargs: True)
+
+
+def mark_framework_limitation(test_id, reason):
+    # The purpose of this function is to have a single entry point for skip marks that are only there, because the test
+    # framework cannot handle the kernel in general or a specific parameter combination.
+    # As development progresses, we can change the `mark.skip` to `mark.xfail` from time to time to see if the skip is
+    # still justified.
+    # We don't want to use `mark.xfail` all the time, because that actually runs the test until an error happens. Thus,
+    # we are wasting CI resources for no reason for most of the time
+    return TestMark(test_id, pytest.mark.skip(reason=reason))
+
+
+class InfoBase:
+    def __init__(self, *, id, test_marks=None, closeness_kwargs=None):
+        # Identifier if the info that shows up the parametrization.
+        self.id = id
+        # Test markers that will be (conditionally) applied to an `ArgsKwargs` parametrization.
+        # See the `TestMark` class for details
+        self.test_marks = test_marks or []
+        # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
+        self.closeness_kwargs = closeness_kwargs or dict()
+
+        test_marks_map = defaultdict(list)
+        for test_mark in self.test_marks:
+            test_marks_map[test_mark.test_id].append(test_mark)
+        self._test_marks_map = dict(test_marks_map)
+
+    def get_marks(self, test_id, args_kwargs):
+        return [
+            test_mark.mark for test_mark in self._test_marks_map.get(test_id, []) if test_mark.condition(args_kwargs)
+        ]
