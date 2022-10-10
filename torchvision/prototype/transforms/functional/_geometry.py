@@ -123,6 +123,8 @@ def resize_image_tensor(
     extra_dims = image.shape[:-3]
 
     if image.numel() > 0:
+        image = image.view(-1, num_channels, old_height, old_width)
+
         image = _FT.resize(
             image,
             size=[new_height, new_width],
