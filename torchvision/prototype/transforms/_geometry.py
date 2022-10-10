@@ -24,7 +24,7 @@ from ._utils import (
     has_all,
     has_any,
     query_bounding_box,
-    query_chw,
+    query_hw,
 )
 
 
@@ -105,10 +105,7 @@ class RandomResizedCrop(Transform):
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        # vfdev-5: techically, this op can work on bboxes/segm masks only inputs without image in samples
-        # What if we have multiple images/bboxes/masks of different sizes ?
-        # TODO: let's support bbox or mask in samples without image
-        _, height, width = query_chw(sample)
+        height, width = query_hw(sample)
         area = height * width
 
         log_ratio = self._log_ratio
@@ -263,7 +260,7 @@ class RandomZoomOut(_RandomApplyTransform):
             raise ValueError(f"Invalid canvas side range provided {side_range}.")
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        _, orig_h, orig_w = query_chw(sample)
+        orig_h, orig_w = query_hw(sample)
 
         r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
         canvas_width = int(orig_w * r)
@@ -362,10 +359,7 @@ class RandomAffine(Transform):
         self.center = center
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-
-        # Get image size
-        # TODO: make it work with bboxes and segm masks
-        _, height, width = query_chw(sample)
+        height, width = query_hw(sample)
 
         angle = float(torch.empty(1).uniform_(float(self.degrees[0]), float(self.degrees[1])).item())
         if self.translate is not None:
@@ -427,7 +421,7 @@ class RandomCrop(Transform):
         self.padding_mode = padding_mode
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        _, padded_height, padded_width = query_chw(sample)
+        padded_height, padded_width = query_hw(sample)
 
         if self.padding is not None:
             pad_left, pad_right, pad_top, pad_bottom = self.padding
@@ -515,9 +509,7 @@ class RandomPerspective(_RandomApplyTransform):
         self.fill = _setup_fill_arg(fill)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        # Get image size
-        # TODO: make it work with bboxes and segm masks
-        _, height, width = query_chw(sample)
+        height, width = query_hw(sample)
 
         distortion_scale = self.distortion_scale
 
@@ -571,9 +563,7 @@ class ElasticTransform(Transform):
         self.fill = _setup_fill_arg(fill)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        # Get image size
-        # TODO: make it work with bboxes and segm masks
-        _, *size = query_chw(sample)
+        size = list(query_hw(sample))
 
         dx = torch.rand([1, 1] + size) * 2 - 1
         if self.sigma[0] > 0.0:
@@ -628,7 +618,7 @@ class RandomIoUCrop(Transform):
         self.trials = trials
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        _, orig_h, orig_w = query_chw(sample)
+        orig_h, orig_w = query_hw(sample)
         bboxes = query_bounding_box(sample)
 
         while True:
@@ -727,7 +717,7 @@ class ScaleJitter(Transform):
         self.antialias = antialias
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        _, orig_height, orig_width = query_chw(sample)
+        orig_height, orig_width = query_hw(sample)
 
         scale = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
         r = min(self.target_size[1] / orig_height, self.target_size[0] / orig_width) * scale
@@ -755,7 +745,7 @@ class RandomShortestSize(Transform):
         self.antialias = antialias
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        _, orig_height, orig_width = query_chw(sample)
+        orig_height, orig_width = query_hw(sample)
 
         min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
         r = min(min_size / min(orig_height, orig_width), self.max_size / max(orig_height, orig_width))
@@ -786,7 +776,7 @@ class FixedSizeCrop(Transform):
         self.padding_mode = padding_mode
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        _, height, width = query_chw(sample)
+        height, width = query_hw(sample)
         new_height = min(height, self.crop_height)
         new_width = min(width, self.crop_width)
 

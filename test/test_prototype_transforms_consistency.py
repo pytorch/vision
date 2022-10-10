@@ -24,7 +24,7 @@ from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
 from torchvision.prototype.transforms import functional as F
-from torchvision.prototype.transforms._utils import query_chw
+from torchvision.prototype.transforms._utils import query_hw
 from torchvision.prototype.transforms.functional import to_image_pil
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])
@@ -949,7 +949,7 @@ class PadIfSmaller(prototype_transforms.Transform):
         self.fill = prototype_transforms._geometry._setup_fill_arg(fill)
 
     def _get_params(self, sample):
-        _, height, width = query_chw(sample)
+        height, width = query_hw(sample)
         padding = [0, 0, max(self.size - width, 0), max(self.size - height, 0)]
         needs_padding = any(padding)
         return dict(padding=padding, needs_padding=needs_padding)
