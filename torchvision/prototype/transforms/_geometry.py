@@ -158,7 +158,8 @@ class FiveCrop(Transform):
         ...     def forward(self, sample: Tuple[Tuple[Union[features.Image, features.Video], ...], features.Label]):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
-        ...         images_or_videos = features.Image.wrap_like(images_or_videos[0], torch.stack(images_or_videos))
+        ...         image_or_video = images_or_videos[0]
+        ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
         ...         labels = features.Label.wrap_like(labels, labels.repeat(batch_size))
         ...         return images_or_videos, labels
         ...
