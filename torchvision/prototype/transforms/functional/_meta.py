@@ -28,6 +28,10 @@ get_num_channels_image_tensor = _FT.get_image_num_channels
 get_num_channels_image_pil = _FP.get_image_num_channels
 
 
+def get_num_channels_video(video: torch.Tensor) -> int:
+    return get_num_channels_image_tensor(video)
+
+
 def get_num_channels(image: features.ImageOrVideoTypeJIT) -> int:
     if isinstance(image, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
@@ -55,8 +59,17 @@ def get_spatial_size_image_pil(image: PIL.Image.Image) -> List[int]:
     return [height, width]
 
 
-# TODO: Should we have get_spatial_size_video here? How about masks/bbox etc? What is the criterion for deciding when
-# a kernel will be created?
+def get_spatial_size_video(video: torch.Tensor) -> List[int]:
+    return get_spatial_size_image_tensor(video)
+
+
+def get_spatial_size_mask(mask: torch.Tensor) -> List[int]:
+    return get_spatial_size_image_tensor(mask)
+
+
+@torch.jit.unused
+def get_spatial_size_bounding_box(bounding_box: features.BoundingBox) -> List[int]:
+    return list(bounding_box.spatial_size)
 
 
 def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
