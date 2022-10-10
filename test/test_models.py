@@ -44,9 +44,11 @@ def _get_image(input_shape, real_image, device):
     To do so, a keyword argument `real_image` was added to the abovelisted models in `_model_params`
     """
     if real_image:
-        GRACE_HOPPER = get_relative_path(
-            os.path.dirname(os.path.realpath(__file__)), "test", "assets", "encode_jpeg", "grace_hopper_517x606.jpg"
+        # TODO: Maybe unify file discovery logic with test_image.py
+        GRACE_HOPPER = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "assets", "encode_jpeg", "grace_hopper_517x606.jpg"
         )
+
         img = Image.open(GRACE_HOPPER)
 
         original_width, original_height = img.size
