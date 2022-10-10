@@ -14,12 +14,7 @@ from torchvision.transforms.functional import (
     pil_to_tensor,
     to_pil_image,
 )
-from torchvision.transforms.functional_tensor import (
-    _cast_squeeze_in,
-    _cast_squeeze_out,
-    _parse_pad_padding,
-    interpolate,
-)
+from torchvision.transforms.functional_tensor import _parse_pad_padding
 
 from ._meta import (
     convert_format_bounding_box,
@@ -130,32 +125,12 @@ def resize_image_tensor(
     if image.numel() > 0:
         image = image.view(-1, num_channels, old_height, old_width)
 
-        # This is a perf hack to avoid slow channels_last upsample code path
-        # Related issue: https://github.com/pytorch/pytorch/issues/83840
-        # We are transforming (N, 1, H, W) into (N, 2, H, W) to force to take channels_first path
-        if image.shape[1] == 1 and interpolation == InterpolationMode.NEAREST:
-            # Below code is copied from _FT.resize
-            # This is due to the fact that we need to apply the hack on casted image and not before
-            # Otherwise, image will be copied while cast to float and interpolate will work on twice more data
-            image, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(image, [torch.float32, torch.float64])
-
-            shape = (image.shape[0], 2, image.shape[2], image.shape[3])
-            image = image.expand(shape)
-
-            image = interpolate(
-                image, size=[new_height, new_width], mode=interpolation.value, align_corners=None, antialias=False
-            )
-
-            image = image[:, 0, ...]
-            image = _cast_squeeze_out(image, need_cast=need_cast, need_squeeze=need_squeeze, out_dtype=out_dtype)
-
-        else:
-            image = _FT.resize(
-                image,
-                size=[new_height, new_width],
-                interpolation=interpolation.value,
-                antialias=antialias,
-            )
+        image = _FT.resize(
+            image,
+            size=[new_height, new_width],
+            interpolation=interpolation.value,
+            antialias=antialias,
+        )
 
     return image.view(extra_dims + (num_channels, new_height, new_width))
 
@@ -1401,16 +1376,27 @@ def five_crop_image_pil(
     return tl, tr, bl, br, center
 
 
+def five_crop_video(
+    video: torch.Tensor, size: List[int]
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    return five_crop_image_tensor(video, size)
+
+
 def five_crop(
-    inpt: features.ImageTypeJIT, size: List[int]
+    inpt: features.ImageOrVideoTypeJIT, size: List[int]
 ) -> Tuple[
-    features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
 ]:
-    # TODO: consider breaking BC here to return List[features.ImageTypeJIT] to align this op with `ten_crop`
+    # TODO: consider breaking BC here to return List[features.ImageOrVideoTypeJIT] to align this op with `ten_crop`
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
-        if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
-            output = tuple(features.Image.wrap_like(inpt, item) for item in output)  # type: ignore[assignment]
+        if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
+            tmp = tuple(inpt.wrap_like(inpt, item) for item in output)  # type: ignore[arg-type]
+            output = tmp  # type: ignore[assignment]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return five_crop_image_pil(inpt, size)
@@ -1443,11 +1429,17 @@ def ten_crop_image_pil(image: PIL.Image.Image, size: List[int], vertical_flip: b
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
 
-def ten_crop(inpt: features.ImageTypeJIT, size: List[int], vertical_flip: bool = False) -> List[features.ImageTypeJIT]:
+def ten_crop_video(video: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
+    return ten_crop_image_tensor(video, size, vertical_flip=vertical_flip)
+
+
+def ten_crop(
+    inpt: features.ImageOrVideoTypeJIT, size: List[int], vertical_flip: bool = False
+) -> List[features.ImageOrVideoTypeJIT]:
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
-        if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
-            output = [features.Image.wrap_like(inpt, item) for item in output]
+        if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
+            output = [inpt.wrap_like(inpt, item) for item in output]  # type: ignore[arg-type]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)

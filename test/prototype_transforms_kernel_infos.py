@@ -1,27 +1,24 @@
-import dataclasses
 import functools
 import itertools
 import math
-from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pytest
 import torch.testing
 import torchvision.ops
 import torchvision.prototype.transforms.functional as F
-
-from _pytest.mark.structures import MarkDecorator
 from common_utils import cycle_over
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
+    InfoBase,
     make_bounding_box_loaders,
     make_image_loader,
     make_image_loaders,
     make_mask_loaders,
     make_video_loaders,
-    VALID_EXTRA_DIMS,
+    mark_framework_limitation,
+    TestMark,
 )
 from torchvision.prototype import features
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
@@ -29,51 +26,35 @@ from torchvision.transforms.functional_tensor import _max_value as get_max_value
 __all__ = ["KernelInfo", "KERNEL_INFOS"]
 
 
-TestID = Tuple[Optional[str], str]
-
-
-@dataclasses.dataclass
-class TestMark:
-    test_id: TestID
-    mark: MarkDecorator
-    condition: Callable[[ArgsKwargs], bool] = lambda args_kwargs: True
-
-
-@dataclasses.dataclass
-class KernelInfo:
-    kernel: Callable
-    # Most common tests use these inputs to check the kernel. As such it should cover all valid code paths, but should
-    # not include extensive parameter combinations to keep to overall test count moderate.
-    sample_inputs_fn: Callable[[], Iterable[ArgsKwargs]]
-    # Defaults to `kernel.__name__`. Should be set if the function is exposed under a different name
-    # TODO: This can probably be removed after roll-out since we shouldn't have any aliasing then
-    kernel_name: str = dataclasses.field(default=None)
-    # This function should mirror the kernel. It should have the same signature as the `kernel` and as such also take
-    # tensors as inputs. Any conversion into another object type, e.g. PIL images or numpy arrays, should happen
-    # inside the function. It should return a tensor or to be more precise an object that can be compared to a
-    # tensor by `assert_close`. If omitted, no reference test will be performed.
-    reference_fn: Optional[Callable] = None
-    # These inputs are only used for the reference tests and thus can be comprehensive with regard to the parameter
-    # values to be tested. If not specified, `sample_inputs_fn` will be used.
-    reference_inputs_fn: Optional[Callable[[], Iterable[ArgsKwargs]]] = None
-    # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
-    closeness_kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    test_marks: Sequence[TestMark] = dataclasses.field(default_factory=list)
-    _test_marks_map: Dict[str, List[TestMark]] = dataclasses.field(default=None, init=False)
-
-    def __post_init__(self):
-        self.kernel_name = self.kernel_name or self.kernel.__name__
-        self.reference_inputs_fn = self.reference_inputs_fn or self.sample_inputs_fn
-
-        test_marks_map = defaultdict(list)
-        for test_mark in self.test_marks:
-            test_marks_map[test_mark.test_id].append(test_mark)
-        self._test_marks_map = dict(test_marks_map)
-
-    def get_marks(self, test_id, args_kwargs):
-        return [
-            test_mark.mark for test_mark in self._test_marks_map.get(test_id, []) if test_mark.condition(args_kwargs)
-        ]
+class KernelInfo(InfoBase):
+    def __init__(
+        self,
+        kernel,
+        *,
+        # Defaults to `kernel.__name__`. Should be set if the function is exposed under a different name
+        # TODO: This can probably be removed after roll-out since we shouldn't have any aliasing then
+        kernel_name=None,
+        # Most common tests use these inputs to check the kernel. As such it should cover all valid code paths, but
+        # should not include extensive parameter combinations to keep to overall test count moderate.
+        sample_inputs_fn,
+        # This function should mirror the kernel. It should have the same signature as the `kernel` and as such also
+        # take tensors as inputs. Any conversion into another object type, e.g. PIL images or numpy arrays, should
+        # happen inside the function. It should return a tensor or to be more precise an object that can be compared to
+        # a tensor by `assert_close`. If omitted, no reference test will be performed.
+        reference_fn=None,
+        # These inputs are only used for the reference tests and thus can be comprehensive with regard to the parameter
+        # values to be tested. If not specified, `sample_inputs_fn` will be used.
+        reference_inputs_fn=None,
+        # See InfoBase
+        test_marks=None,
+        # See InfoBase
+        closeness_kwargs=None,
+    ):
+        super().__init__(id=kernel_name or kernel.__name__, test_marks=test_marks, closeness_kwargs=closeness_kwargs)
+        self.kernel = kernel
+        self.sample_inputs_fn = sample_inputs_fn
+        self.reference_fn = reference_fn
+        self.reference_inputs_fn = reference_inputs_fn
 
 
 DEFAULT_IMAGE_CLOSENESS_KWARGS = dict(
@@ -95,16 +76,6 @@ def pil_reference_wrapper(pil_kernel):
         return pil_kernel(F.to_image_pil(image_tensor), *other_args, **kwargs)
 
     return wrapper
-
-
-def mark_framework_limitation(test_id, reason):
-    # The purpose of this function is to have a single entry point for skip marks that are only there, because the test
-    # framework cannot handle the kernel in general or a specific parameter combination.
-    # As development progresses, we can change the `mark.skip` to `mark.xfail` from time to time to see if the skip is
-    # still justified.
-    # We don't want to use `mark.xfail` all the time, because that actually runs the test until an error happens. Thus,
-    # we are wasting CI resources for no reason for most of the time.
-    return TestMark(test_id, pytest.mark.skip(reason=reason))
 
 
 def xfail_jit_python_scalar_arg(name, *, reason=None):
@@ -242,16 +213,6 @@ def sample_inputs_resize_image_tensor():
         ],
     ):
         yield ArgsKwargs(image_loader, size=[min(image_loader.image_size) + 1], interpolation=interpolation)
-
-    # We have a speed hack in place for nearest interpolation and single channel images (grayscale)
-    for image_loader in make_image_loaders(
-        sizes=["random"],
-        color_spaces=[features.ColorSpace.GRAY],
-        extra_dims=VALID_EXTRA_DIMS,
-    ):
-        yield ArgsKwargs(
-            image_loader, size=[min(image_loader.image_size) + 1], interpolation=F.InterpolationMode.NEAREST
-        )
 
     yield ArgsKwargs(make_image_loader(size=(11, 17)), size=20, max_size=25)
 

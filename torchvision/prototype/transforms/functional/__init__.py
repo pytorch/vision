@@ -96,6 +96,7 @@ from ._geometry import (
     five_crop,
     five_crop_image_pil,
     five_crop_image_tensor,
+    five_crop_video,
     hflip,  # TODO: Consider moving all pure alias definitions at the bottom of the file
     horizontal_flip,
     horizontal_flip_bounding_box,
@@ -136,6 +137,7 @@ from ._geometry import (
     ten_crop,
     ten_crop_image_pil,
     ten_crop_image_tensor,
+    ten_crop_video,
     vertical_flip,
     vertical_flip_bounding_box,
     vertical_flip_image_pil,
