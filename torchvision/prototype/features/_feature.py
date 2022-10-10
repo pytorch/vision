@@ -43,14 +43,18 @@ class _Feature(torch.Tensor):
         requires_grad: bool = False,
     ) -> _Feature:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return tensor.as_subclass(_Feature)
+        output = tensor.as_subclass(_Feature)
+        output._tensor = tensor
+        return output
 
     @classmethod
     def wrap_like(cls: Type[F], other: F, tensor: torch.Tensor) -> F:
         # FIXME: this is just here for BC with the prototype datasets. See __new__ for details. If that is resolved,
         #  this method should be made abstract
         # raise NotImplementedError
-        return tensor.as_subclass(cls)
+        output = tensor.as_subclass(cls)
+        output._tensor = tensor
+        return output
 
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),

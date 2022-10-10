@@ -18,6 +18,7 @@ class _LabelBase(_Feature):
     def _wrap(cls: Type[L], tensor: torch.Tensor, *, categories: Optional[Sequence[str]]) -> L:
         label_base = tensor.as_subclass(cls)
         label_base.categories = categories
+        label_base._tensor = tensor
         return label_base
 
     def __new__(

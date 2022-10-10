@@ -59,20 +59,6 @@ def _from_tensor_shape(shape: List[int]) -> ColorSpace:
         return ColorSpace.OTHER
 
 
-def _setup_color_space(color_space: Union[None, ColorSpace, str], shape: List[int]) -> ColorSpace:
-    if isinstance(color_space, ColorSpace):
-        return color_space
-    elif color_space is None:
-        color_space = ColorSpace.from_tensor_shape(shape)
-        if color_space == ColorSpace.OTHER:
-            warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
-        return color_space
-    elif isinstance(color_space, str):
-        return ColorSpace.from_str(color_space.upper())
-
-    raise ValueError(f"Unsupported color space '{color_space}'")
-
-
 class Image(_Feature):
     color_space: ColorSpace
 
@@ -80,6 +66,7 @@ class Image(_Feature):
     def _wrap(cls, tensor: torch.Tensor, *, color_space: ColorSpace) -> Image:
         image = tensor.as_subclass(cls)
         image.color_space = color_space
+        image._tensor = tensor
         return image
 
     def __new__(

@@ -11,7 +11,9 @@ from ._feature import _Feature, FillTypeJIT
 class Mask(_Feature):
     @classmethod
     def _wrap(cls, tensor: torch.Tensor) -> Mask:
-        return tensor.as_subclass(cls)
+        output = tensor.as_subclass(cls)
+        output._tensor = tensor
+        return output
 
     def __new__(
         cls,
