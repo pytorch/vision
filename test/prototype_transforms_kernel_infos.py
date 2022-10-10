@@ -145,7 +145,7 @@ def sample_inputs_horizontal_flip_bounding_box():
         formats=[features.BoundingBoxFormat.XYXY], dtypes=[torch.float32]
     ):
         yield ArgsKwargs(
-            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.image_size
+            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.spatial_size
         )
 
 
@@ -201,7 +201,7 @@ def sample_inputs_resize_image_tensor():
     for image_loader in make_image_loaders(
         sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]
     ):
-        for size in _get_resize_sizes(image_loader.image_size):
+        for size in _get_resize_sizes(image_loader.spatial_size):
             yield ArgsKwargs(image_loader, size=size)
 
     for image_loader, interpolation in itertools.product(
@@ -212,7 +212,7 @@ def sample_inputs_resize_image_tensor():
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        yield ArgsKwargs(image_loader, size=[min(image_loader.image_size) + 1], interpolation=interpolation)
+        yield ArgsKwargs(image_loader, size=[min(image_loader.spatial_size) + 1], interpolation=interpolation)
 
     yield ArgsKwargs(make_image_loader(size=(11, 17)), size=20, max_size=25)
 
@@ -236,7 +236,7 @@ def reference_inputs_resize_image_tensor():
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        for size in _get_resize_sizes(image_loader.image_size):
+        for size in _get_resize_sizes(image_loader.spatial_size):
             yield ArgsKwargs(
                 image_loader,
                 size=size,
@@ -251,8 +251,8 @@ def reference_inputs_resize_image_tensor():
 
 def sample_inputs_resize_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
-        for size in _get_resize_sizes(bounding_box_loader.image_size):
-            yield ArgsKwargs(bounding_box_loader, size=size, image_size=bounding_box_loader.image_size)
+        for size in _get_resize_sizes(bounding_box_loader.spatial_size):
+            yield ArgsKwargs(bounding_box_loader, size=size, image_size=bounding_box_loader.spatial_size)
 
 
 def sample_inputs_resize_mask():
@@ -394,7 +394,7 @@ def sample_inputs_affine_bounding_box():
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
-            image_size=bounding_box_loader.image_size,
+            image_size=bounding_box_loader.spatial_size,
             **affine_params,
         )
 
@@ -473,7 +473,7 @@ def reference_inputs_affine_bounding_box():
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
-            image_size=bounding_box_loader.image_size,
+            image_size=bounding_box_loader.spatial_size,
             **affine_kwargs,
         )
 
@@ -650,7 +650,7 @@ def sample_inputs_vertical_flip_bounding_box():
         formats=[features.BoundingBoxFormat.XYXY], dtypes=[torch.float32]
     ):
         yield ArgsKwargs(
-            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.image_size
+            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.spatial_size
         )
 
 
@@ -729,7 +729,7 @@ def sample_inputs_rotate_bounding_box():
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
-            image_size=bounding_box_loader.image_size,
+            image_size=bounding_box_loader.spatial_size,
             angle=_ROTATE_ANGLES[0],
         )
 
@@ -1001,7 +1001,7 @@ def sample_inputs_pad_bounding_box():
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
-            image_size=bounding_box_loader.image_size,
+            image_size=bounding_box_loader.spatial_size,
             padding=padding,
             padding_mode="constant",
         )
@@ -1137,7 +1137,7 @@ def _get_elastic_displacement(image_size):
 
 def sample_inputs_elastic_image_tensor():
     for image_loader in make_image_loaders(sizes=["random"]):
-        displacement = _get_elastic_displacement(image_loader.image_size)
+        displacement = _get_elastic_displacement(image_loader.spatial_size)
         for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
             yield ArgsKwargs(image_loader, displacement=displacement, fill=fill)
 
@@ -1151,14 +1151,14 @@ def reference_inputs_elastic_image_tensor():
             F.InterpolationMode.BICUBIC,
         ],
     ):
-        displacement = _get_elastic_displacement(image_loader.image_size)
+        displacement = _get_elastic_displacement(image_loader.spatial_size)
         for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
             yield ArgsKwargs(image_loader, interpolation=interpolation, displacement=displacement, fill=fill)
 
 
 def sample_inputs_elastic_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
-        displacement = _get_elastic_displacement(bounding_box_loader.image_size)
+        displacement = _get_elastic_displacement(bounding_box_loader.spatial_size)
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
@@ -1241,7 +1241,7 @@ def sample_inputs_center_crop_bounding_box():
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
-            image_size=bounding_box_loader.image_size,
+            image_size=bounding_box_loader.spatial_size,
             output_size=output_size,
         )
 
@@ -1820,7 +1820,7 @@ KERNEL_INFOS.extend(
 def sample_inputs_clamp_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         yield ArgsKwargs(
-            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.image_size
+            bounding_box_loader, format=bounding_box_loader.format, image_size=bounding_box_loader.spatial_size
         )
 
 

@@ -690,7 +690,7 @@ class RandomIoUCrop(Transform):
 
         if isinstance(output, features.BoundingBox):
             bboxes = output[is_within_crop_area]
-            bboxes = F.clamp_bounding_box(bboxes, output.format, output.image_size)
+            bboxes = F.clamp_bounding_box(bboxes, output.format, output.spatial_size)
             output = features.BoundingBox.wrap_like(output, bboxes)
         elif isinstance(output, features.Mask):
             # apply is_within_crop_area if mask is one-hot encoded
@@ -811,7 +811,7 @@ class FixedSizeCrop(Transform):
             bounding_boxes = features.BoundingBox.wrap_like(
                 bounding_boxes,
                 F.clamp_bounding_box(
-                    bounding_boxes, format=bounding_boxes.format, image_size=bounding_boxes.image_size
+                    bounding_boxes, format=bounding_boxes.format, spatial_size=bounding_boxes.spatial_size
                 ),
             )
             height_and_width = bounding_boxes.to_format(features.BoundingBoxFormat.XYWH)[..., 2:]
@@ -851,7 +851,7 @@ class FixedSizeCrop(Transform):
             elif isinstance(inpt, features.BoundingBox):
                 inpt = features.BoundingBox.wrap_like(
                     inpt,
-                    F.clamp_bounding_box(inpt[params["is_valid"]], format=inpt.format, image_size=inpt.image_size),
+                    F.clamp_bounding_box(inpt[params["is_valid"]], format=inpt.format, spatial_size=inpt.spatial_size),
                 )
 
         if params["needs_pad"]:

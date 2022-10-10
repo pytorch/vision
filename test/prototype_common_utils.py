@@ -350,7 +350,7 @@ def make_bounding_box_loader(*, extra_dims=(), format, image_size="random", dtyp
 
         if any(dim == 0 for dim in extra_dims):
             return features.BoundingBox(
-                torch.empty(*extra_dims, 4, dtype=dtype, device=device), format=format, image_size=image_size
+                torch.empty(*extra_dims, 4, dtype=dtype, device=device), format=format, spatial_size=image_size
             )
 
         height, width = image_size
@@ -375,7 +375,7 @@ def make_bounding_box_loader(*, extra_dims=(), format, image_size="random", dtyp
             parts = (cx, cy, w, h)
 
         return features.BoundingBox(
-            torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, image_size=image_size
+            torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=image_size
         )
 
     return BoundingBoxLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, image_size=image_size)
