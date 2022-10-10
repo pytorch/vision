@@ -75,14 +75,10 @@ def get_spatial_size_bounding_box(bounding_box: features.BoundingBox) -> List[in
 def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return get_spatial_size_image_tensor(inpt)
-    elif isinstance(inpt, features._Feature):
-        spatial_size = getattr(inpt, "spatial_size", None)
-        if spatial_size is not None:
-            return list(spatial_size)
-        else:
-            raise ValueError(f"Type {inpt.__class__} doesn't have spatial size.")
+    elif isinstance(inpt, (features.Image, features.Video, features.BoundingBox, features.Mask)):
+        return list(inpt.spatial_size)
     else:
-        return get_spatial_size_image_pil(inpt)
+        return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
