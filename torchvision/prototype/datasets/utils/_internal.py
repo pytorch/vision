@@ -8,7 +8,6 @@ import torch
 import torch.distributed as dist
 import torch.utils.data
 from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
-from torchdata.datapipes.utils import StreamWrapper
 from torchvision.prototype.utils._internal import fromfile
 
 
@@ -40,10 +39,9 @@ def read_mat(buffer: BinaryIO, **kwargs: Any) -> Any:
     except ImportError as error:
         raise ModuleNotFoundError("Package `scipy` is required to be installed to read .mat files.") from error
 
-    if isinstance(buffer, StreamWrapper):
-        buffer = buffer.file_obj
-
-    return sio.loadmat(buffer, **kwargs)
+    data = sio.loadmat(buffer, **kwargs)
+    buffer.close()
+    return data
 
 
 class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):

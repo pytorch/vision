@@ -33,6 +33,8 @@ class PCAMH5Reader(IterDataPipe[Tuple[str, io.IOBase]]):
                     data = data[self.key]
                 yield from data
 
+            handle.close()
+
 
 _Resource = namedtuple("_Resource", ("file_name", "gdrive_id", "sha256"))
 

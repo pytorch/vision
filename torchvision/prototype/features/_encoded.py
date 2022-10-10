@@ -14,6 +14,10 @@ D = TypeVar("D", bound="EncodedData")
 
 
 class EncodedData(_Feature):
+    @classmethod
+    def _wrap(cls: Type[D], tensor: torch.Tensor) -> D:
+        return tensor.as_subclass(cls)
+
     def __new__(
         cls,
         data: Any,
@@ -22,12 +26,19 @@ class EncodedData(_Feature):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> EncodedData:
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         # TODO: warn / bail out if we encounter a tensor with shape other than (N,) or with dtype other than uint8?
-        return super().__new__(cls, data, dtype=dtype, device=device, requires_grad=requires_grad)
+        return cls._wrap(tensor)
+
+    @classmethod
+    def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
+        return cls._wrap(tensor)
 
     @classmethod
     def from_file(cls: Type[D], file: BinaryIO, **kwargs: Any) -> D:
-        return cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder), **kwargs)
+        encoded_data = cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder), **kwargs)
+        file.close()
+        return encoded_data
 
     @classmethod
     def from_path(cls: Type[D], path: Union[str, os.PathLike], **kwargs: Any) -> D:
