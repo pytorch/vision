@@ -140,6 +140,7 @@ class GaussianBlur(Transform):
         return F.gaussian_blur(inpt, self.kernel_size, **params)
 
 
+# TODO: Enhance as described at https://github.com/pytorch/vision/issues/6697
 class ToDtype(Lambda):
     def __init__(self, dtype: torch.dtype, *types: Type) -> None:
         self.dtype = dtype
