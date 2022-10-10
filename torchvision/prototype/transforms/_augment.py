@@ -137,10 +137,10 @@ class RandomMixup(_BaseMixupCutmix):
             if inpt.ndim < expected_ndim:
                 raise ValueError("The transform expects a batched input")
             output = inpt.clone()
-            output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))  # type: ignore[arg-type]
+            output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))
 
             if isinstance(inpt, (features.Image, features.Video)):
-                output = type(inpt).wrap_like(inpt, output)
+                output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
         elif isinstance(inpt, features.OneHotLabel):
@@ -181,7 +181,7 @@ class RandomCutmix(_BaseMixupCutmix):
             x1, y1, x2, y2 = box
             rolled = inpt.roll(1, 0)
             output = inpt.clone()
-            output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]  # type: ignore[arg-type]
+            output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
 
             if isinstance(inpt, (features.Image, features.Video)):
                 output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
