@@ -1026,6 +1026,20 @@ def perspective_video(
     return perspective_image_tensor(video, perspective_coeffs, interpolation=interpolation, fill=fill)
 
 
+def perspective(
+    inpt: features.InputTypeJIT,
+    perspective_coeffs: List[float],
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    fill: features.FillTypeJIT = None,
+) -> features.InputTypeJIT:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+        return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
+    elif isinstance(inpt, features._Feature):
+        return inpt.perspective(perspective_coeffs, interpolation=interpolation, fill=fill)
+    else:
+        return perspective_image_pil(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
+
+
 def elastic_image_tensor(
     image: torch.Tensor,
     displacement: torch.Tensor,
