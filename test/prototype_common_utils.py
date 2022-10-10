@@ -28,6 +28,7 @@ __all__ = [
     "assert_close",
     "assert_equal",
     "ArgsKwargs",
+    "VALID_EXTRA_DIMS",
     "make_image_loaders",
     "make_image",
     "make_images",
@@ -44,6 +45,8 @@ __all__ = [
     "make_segmentation_masks",
     "make_mask_loaders",
     "make_masks",
+    "make_video",
+    "make_videos",
 ]
 
 
@@ -201,22 +204,27 @@ def _parse_image_size(size, *, name="size"):
         )
 
 
-DEFAULT_EXTRA_DIMS = ((), (0,), (4,), (2, 3), (5, 0), (0, 5))
+VALID_EXTRA_DIMS = ((), (4,), (2, 3))
+DEGENERATE_BATCH_DIMS = ((0,), (5, 0), (0, 5))
+
+DEFAULT_EXTRA_DIMS = (*VALID_EXTRA_DIMS, *DEGENERATE_BATCH_DIMS)
 
 
 def from_loader(loader_fn):
     def wrapper(*args, **kwargs):
+        device = kwargs.pop("device", "cpu")
         loader = loader_fn(*args, **kwargs)
-        return loader.load(kwargs.get("device", "cpu"))
+        return loader.load(device)
 
     return wrapper
 
 
 def from_loaders(loaders_fn):
     def wrapper(*args, **kwargs):
+        device = kwargs.pop("device", "cpu")
         loaders = loaders_fn(*args, **kwargs)
         for loader in loaders:
-            yield loader.load(kwargs.get("device", "cpu"))
+            yield loader.load(device)
 
     return wrapper
 
@@ -242,6 +250,21 @@ class ImageLoader(TensorLoader):
         self.num_channels = self.shape[-3]
 
 
+NUM_CHANNELS_MAP = {
+    features.ColorSpace.GRAY: 1,
+    features.ColorSpace.GRAY_ALPHA: 2,
+    features.ColorSpace.RGB: 3,
+    features.ColorSpace.RGB_ALPHA: 4,
+}
+
+
+def get_num_channels(color_space):
+    num_channels = NUM_CHANNELS_MAP.get(color_space)
+    if not num_channels:
+        raise pytest.UsageError(f"Can't determine the number of channels for color space {color_space}")
+    return num_channels
+
+
 def make_image_loader(
     size="random",
     *,
@@ -251,16 +274,7 @@ def make_image_loader(
     constant_alpha=True,
 ):
     size = _parse_image_size(size)
-
-    try:
-        num_channels = {
-            features.ColorSpace.GRAY: 1,
-            features.ColorSpace.GRAY_ALPHA: 2,
-            features.ColorSpace.RGB: 3,
-            features.ColorSpace.RGB_ALPHA: 4,
-        }[color_space]
-    except KeyError as error:
-        raise pytest.UsageError(f"Can't determine the number of channels for color space {color_space}") from error
+    num_channels = get_num_channels(color_space)
 
     def fn(shape, dtype, device):
         max_value = get_max_value(dtype)
@@ -527,3 +541,50 @@ def make_mask_loaders(
 
 
 make_masks = from_loaders(make_mask_loaders)
+
+
+class VideoLoader(ImageLoader):
+    pass
+
+
+def make_video_loader(
+    size="random",
+    *,
+    color_space=features.ColorSpace.RGB,
+    num_frames="random",
+    extra_dims=(),
+    dtype=torch.uint8,
+):
+    size = _parse_image_size(size)
+    num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
+
+    def fn(shape, dtype, device):
+        video = make_image(size=shape[-2:], color_space=color_space, extra_dims=shape[:-3], dtype=dtype, device=device)
+        return features.Video(video, color_space=color_space)
+
+    return VideoLoader(
+        fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype, color_space=color_space
+    )
+
+
+make_video = from_loader(make_video_loader)
+
+
+def make_video_loaders(
+    *,
+    sizes=DEFAULT_IMAGE_SIZES,
+    color_spaces=(
+        features.ColorSpace.GRAY,
+        features.ColorSpace.RGB,
+    ),
+    num_frames=(1, 0, "random"),
+    extra_dims=DEFAULT_EXTRA_DIMS,
+    dtypes=(torch.uint8,),
+):
+    for params in combinations_grid(
+        size=sizes, color_space=color_spaces, num_frames=num_frames, extra_dims=extra_dims, dtype=dtypes
+    ):
+        yield make_video_loader(**params)
+
+
+make_videos = from_loaders(make_video_loaders)

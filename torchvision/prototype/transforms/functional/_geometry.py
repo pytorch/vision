@@ -21,7 +21,12 @@ from torchvision.transforms.functional_tensor import (
     interpolate,
 )
 
-from ._meta import convert_format_bounding_box, get_dimensions_image_pil, get_dimensions_image_tensor
+from ._meta import (
+    convert_format_bounding_box,
+    get_dimensions_image_tensor,
+    get_spatial_size_image_pil,
+    get_spatial_size_image_tensor,
+)
 
 horizontal_flip_image_tensor = _FT.hflip
 horizontal_flip_image_pil = _FP.hflip
@@ -45,6 +50,10 @@ def horizontal_flip_bounding_box(
     return convert_format_bounding_box(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
+
+
+def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
+    return horizontal_flip_image_tensor(video)
 
 
 def horizontal_flip(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
@@ -78,6 +87,10 @@ def vertical_flip_bounding_box(
     return convert_format_bounding_box(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
+
+
+def vertical_flip_video(video: torch.Tensor) -> torch.Tensor:
+    return vertical_flip_image_tensor(video)
 
 
 def vertical_flip(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
@@ -185,6 +198,16 @@ def resize_bounding_box(
     )
 
 
+def resize_video(
+    video: torch.Tensor,
+    size: List[int],
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    max_size: Optional[int] = None,
+    antialias: bool = False,
+) -> torch.Tensor:
+    return resize_image_tensor(video, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
+
+
 def resize(
     inpt: features.InputTypeJIT,
     size: List[int],
@@ -279,9 +302,9 @@ def affine_image_tensor(
     center_f = [0.0, 0.0]
     if center is not None:
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
+        center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
 
-    translate_f = [1.0 * t for t in translate]
+    translate_f = [float(t) for t in translate]
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
 
     output = _FT.affine(image, matrix, interpolation=interpolation.value, fill=fill)
@@ -305,7 +328,7 @@ def affine_image_pil(
     # it is visually better to estimate the center without 0.5 offset
     # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
     if center is None:
-        _, height, width = get_dimensions_image_pil(image)
+        height, width = get_spatial_size_image_pil(image)
         center = [width * 0.5, height * 0.5]
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
 
@@ -321,7 +344,7 @@ def _affine_bounding_box_xyxy(
     shear: List[float],
     center: Optional[List[float]] = None,
     expand: bool = False,
-) -> torch.Tensor:
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     angle, translate, shear, center = _affine_parse_args(
         angle, translate, scale, shear, InterpolationMode.NEAREST, center
     )
@@ -333,11 +356,16 @@ def _affine_bounding_box_xyxy(
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
     device = bounding_box.device
 
-    affine_matrix = torch.tensor(
-        _get_inverse_affine_matrix(center, angle, translate, scale, shear, inverted=False),
-        dtype=dtype,
-        device=device,
-    ).view(2, 3)
+    affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear, inverted=False)
+    transposed_affine_matrix = (
+        torch.tensor(
+            affine_vector,
+            dtype=dtype,
+            device=device,
+        )
+        .view(2, 3)
+        .T
+    )
     # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
     # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
     # Single point structure is similar to
@@ -345,7 +373,7 @@ def _affine_bounding_box_xyxy(
     points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].view(-1, 2)
     points = torch.cat([points, torch.ones(points.shape[0], 1, device=points.device)], dim=-1)
     # 2) Now let's transform the points using affine matrix
-    transformed_points = torch.matmul(points, affine_matrix.T)
+    transformed_points = torch.matmul(points, transposed_affine_matrix)
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
     transformed_points = transformed_points.view(-1, 4, 2)
@@ -360,20 +388,24 @@ def _affine_bounding_box_xyxy(
         points = torch.tensor(
             [
                 [0.0, 0.0, 1.0],
-                [0.0, 1.0 * height, 1.0],
-                [1.0 * width, 1.0 * height, 1.0],
-                [1.0 * width, 0.0, 1.0],
+                [0.0, float(height), 1.0],
+                [float(width), float(height), 1.0],
+                [float(width), 0.0, 1.0],
             ],
             dtype=dtype,
             device=device,
         )
-        new_points = torch.matmul(points, affine_matrix.T)
+        new_points = torch.matmul(points, transposed_affine_matrix)
         tr, _ = torch.min(new_points, dim=0, keepdim=True)
         # Translate bounding boxes
         out_bboxes[:, 0::2] = out_bboxes[:, 0::2] - tr[:, 0]
         out_bboxes[:, 1::2] = out_bboxes[:, 1::2] - tr[:, 1]
+        # Estimate meta-data for image with inverted=True and with center=[0,0]
+        affine_vector = _get_inverse_affine_matrix([0.0, 0.0], angle, translate, scale, shear)
+        new_width, new_height = _FT._compute_affine_output_size(affine_vector, width, height)
+        image_size = (new_height, new_width)
 
-    return out_bboxes.to(bounding_box.dtype)
+    return out_bboxes.to(bounding_box.dtype), image_size
 
 
 def affine_bounding_box(
@@ -391,7 +423,7 @@ def affine_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
-    out_bboxes = _affine_bounding_box_xyxy(bounding_box, image_size, angle, translate, scale, shear, center)
+    out_bboxes, _ = _affine_bounding_box_xyxy(bounding_box, image_size, angle, translate, scale, shear, center)
 
     # out_bboxes should be of shape [N boxes, 4]
 
@@ -430,6 +462,28 @@ def affine_mask(
         output = output.squeeze(0)
 
     return output
+
+
+def affine_video(
+    video: torch.Tensor,
+    angle: Union[int, float],
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    fill: features.FillTypeJIT = None,
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return affine_image_tensor(
+        video,
+        angle=angle,
+        translate=translate,
+        scale=scale,
+        shear=shear,
+        interpolation=interpolation,
+        fill=fill,
+        center=center,
+    )
 
 
 def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
@@ -502,7 +556,7 @@ def rotate_image_tensor(
             warnings.warn("The provided center argument has no effect on the result if expand is True")
         else:
             # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-            center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
+            center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
@@ -558,7 +612,7 @@ def rotate_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
-    out_bboxes = _affine_bounding_box_xyxy(
+    out_bboxes, image_size = _affine_bounding_box_xyxy(
         bounding_box,
         image_size,
         angle=-angle,
@@ -568,14 +622,6 @@ def rotate_bounding_box(
         center=center,
         expand=expand,
     )
-
-    if expand:
-        # TODO: Move this computation inside of `_affine_bounding_box_xyxy` to avoid computing the rotation and points
-        #  matrix twice
-        height, width = image_size
-        rotation_matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, [0.0, 0.0], 1.0, [0.0, 0.0])
-        new_width, new_height = _FT._compute_affine_output_size(rotation_matrix, width, height)
-        image_size = (new_height, new_width)
 
     return (
         convert_format_bounding_box(
@@ -611,6 +657,17 @@ def rotate_mask(
         output = output.squeeze(0)
 
     return output
+
+
+def rotate_video(
+    video: torch.Tensor,
+    angle: float,
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    expand: bool = False,
+    fill: features.FillTypeJIT = None,
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return rotate_image_tensor(video, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
 
 def rotate(
@@ -750,6 +807,15 @@ def pad_bounding_box(
     return bounding_box, (height, width)
 
 
+def pad_video(
+    video: torch.Tensor,
+    padding: Union[int, List[int]],
+    fill: features.FillTypeJIT = None,
+    padding_mode: str = "constant",
+) -> torch.Tensor:
+    return pad_image_tensor(video, padding, fill=fill, padding_mode=padding_mode)
+
+
 def pad(
     inpt: features.InputTypeJIT,
     padding: Union[int, List[int]],
@@ -797,6 +863,10 @@ def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) 
     return crop_image_tensor(mask, top, left, height, width)
 
 
+def crop_video(video: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
+    return crop_image_tensor(video, top, left, height, width)
+
+
 def crop(inpt: features.InputTypeJIT, top: int, left: int, height: int, width: int) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return crop_image_tensor(inpt, top, left, height, width)
@@ -812,7 +882,23 @@ def perspective_image_tensor(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
-    return _FT.perspective(image, perspective_coeffs, interpolation=interpolation.value, fill=fill)
+    if image.numel() == 0:
+        return image
+
+    shape = image.shape
+
+    if image.ndim > 4:
+        image = image.view((-1,) + shape[-3:])
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    output = _FT.perspective(image, perspective_coeffs, interpolation=interpolation.value, fill=fill)
+
+    if needs_unsquash:
+        output = output.view(shape)
+
+    return output
 
 
 @torch.jit.unused
@@ -931,6 +1017,15 @@ def perspective_mask(
     return output
 
 
+def perspective_video(
+    video: torch.Tensor,
+    perspective_coeffs: List[float],
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    fill: features.FillTypeJIT = None,
+) -> torch.Tensor:
+    return perspective_image_tensor(video, perspective_coeffs, interpolation=interpolation, fill=fill)
+
+
 def perspective(
     inpt: features.InputTypeJIT,
     perspective_coeffs: List[float],
@@ -951,7 +1046,23 @@ def elastic_image_tensor(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
-    return _FT.elastic_transform(image, displacement, interpolation=interpolation.value, fill=fill)
+    if image.numel() == 0:
+        return image
+
+    shape = image.shape
+
+    if image.ndim > 4:
+        image = image.view((-1,) + shape[-3:])
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    output = _FT.elastic_transform(image, displacement, interpolation=interpolation.value, fill=fill)
+
+    if needs_unsquash:
+        output = output.view(shape)
+
+    return output
 
 
 @torch.jit.unused
@@ -1025,6 +1136,15 @@ def elastic_mask(
     return output
 
 
+def elastic_video(
+    video: torch.Tensor,
+    displacement: torch.Tensor,
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    fill: features.FillTypeJIT = None,
+) -> torch.Tensor:
+    return elastic_image_tensor(video, displacement, interpolation=interpolation, fill=fill)
+
+
 def elastic(
     inpt: features.InputTypeJIT,
     displacement: torch.Tensor,
@@ -1070,13 +1190,13 @@ def _center_crop_compute_crop_anchor(
 
 def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    _, image_height, image_width = get_dimensions_image_tensor(image)
+    image_height, image_width = get_spatial_size_image_tensor(image)
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
         image = pad_image_tensor(image, padding_ltrb, fill=0)
 
-        _, image_height, image_width = get_dimensions_image_tensor(image)
+        image_height, image_width = get_spatial_size_image_tensor(image)
         if crop_width == image_width and crop_height == image_height:
             return image
 
@@ -1087,13 +1207,13 @@ def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> tor
 @torch.jit.unused
 def center_crop_image_pil(image: PIL.Image.Image, output_size: List[int]) -> PIL.Image.Image:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    _, image_height, image_width = get_dimensions_image_pil(image)
+    image_height, image_width = get_spatial_size_image_pil(image)
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
         image = pad_image_pil(image, padding_ltrb, fill=0)
 
-        _, image_height, image_width = get_dimensions_image_pil(image)
+        image_height, image_width = get_spatial_size_image_pil(image)
         if crop_width == image_width and crop_height == image_height:
             return image
 
@@ -1125,6 +1245,10 @@ def center_crop_mask(mask: torch.Tensor, output_size: List[int]) -> torch.Tensor
         output = output.squeeze(0)
 
     return output
+
+
+def center_crop_video(video: torch.Tensor, output_size: List[int]) -> torch.Tensor:
+    return center_crop_image_tensor(video, output_size)
 
 
 def center_crop(inpt: features.InputTypeJIT, output_size: List[int]) -> features.InputTypeJIT:
@@ -1189,6 +1313,21 @@ def resized_crop_mask(
     return resize_mask(mask, size)
 
 
+def resized_crop_video(
+    video: torch.Tensor,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    antialias: bool = False,
+) -> torch.Tensor:
+    return resized_crop_image_tensor(
+        video, top, left, height, width, antialias=antialias, size=size, interpolation=interpolation
+    )
+
+
 def resized_crop(
     inpt: features.InputTypeJIT,
     top: int,
@@ -1227,7 +1366,7 @@ def five_crop_image_tensor(
     image: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     crop_height, crop_width = _parse_five_crop_size(size)
-    _, image_height, image_width = get_dimensions_image_tensor(image)
+    image_height, image_width = get_spatial_size_image_tensor(image)
 
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
@@ -1247,7 +1386,7 @@ def five_crop_image_pil(
     image: PIL.Image.Image, size: List[int]
 ) -> Tuple[PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]:
     crop_height, crop_width = _parse_five_crop_size(size)
-    _, image_height, image_width = get_dimensions_image_pil(image)
+    image_height, image_width = get_spatial_size_image_pil(image)
 
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
@@ -1271,7 +1410,7 @@ def five_crop(
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
         if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
-            output = tuple(features.Image.new_like(inpt, item) for item in output)  # type: ignore[assignment]
+            output = tuple(features.Image.wrap_like(inpt, item) for item in output)  # type: ignore[assignment]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return five_crop_image_pil(inpt, size)
@@ -1308,7 +1447,7 @@ def ten_crop(inpt: features.ImageTypeJIT, size: List[int], vertical_flip: bool =
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
         if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
-            output = [features.Image.new_like(inpt, item) for item in output]
+            output = [features.Image.wrap_like(inpt, item) for item in output]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)

@@ -158,8 +158,8 @@ class FiveCrop(Transform):
         ...     def forward(self, sample: Tuple[Tuple[features.Image, ...], features.Label]):
         ...         images, labels = sample
         ...         batch_size = len(images)
-        ...         images = features.Image.new_like(images[0], torch.stack(images))
-        ...         labels = features.Label.new_like(labels, labels.repeat(batch_size))
+        ...         images = features.Image.wrap_like(images[0], torch.stack(images))
+        ...         labels = features.Label.wrap_like(labels, labels.repeat(batch_size))
         ...         return images, labels
         ...
         >>> image = features.Image(torch.rand(3, 256, 256))
@@ -677,18 +677,18 @@ class RandomIoUCrop(Transform):
         is_within_crop_area = params["is_within_crop_area"]
 
         if isinstance(inpt, (features.Label, features.OneHotLabel)):
-            return inpt.new_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
+            return inpt.wrap_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
         if isinstance(output, features.BoundingBox):
             bboxes = output[is_within_crop_area]
             bboxes = F.clamp_bounding_box(bboxes, output.format, output.image_size)
-            output = features.BoundingBox.new_like(output, bboxes)
+            output = features.BoundingBox.wrap_like(output, bboxes)
         elif isinstance(output, features.Mask):
             # apply is_within_crop_area if mask is one-hot encoded
             masks = output[is_within_crop_area]
-            output = features.Mask.new_like(output, masks)
+            output = features.Mask.wrap_like(output, masks)
 
         return output
 
@@ -801,7 +801,7 @@ class FixedSizeCrop(Transform):
             bounding_boxes = cast(
                 features.BoundingBox, F.crop(bounding_boxes, top=top, left=left, height=new_height, width=new_width)
             )
-            bounding_boxes = features.BoundingBox.new_like(
+            bounding_boxes = features.BoundingBox.wrap_like(
                 bounding_boxes,
                 F.clamp_bounding_box(
                     bounding_boxes, format=bounding_boxes.format, image_size=bounding_boxes.image_size
@@ -840,9 +840,9 @@ class FixedSizeCrop(Transform):
 
         if params["is_valid"] is not None:
             if isinstance(inpt, (features.Label, features.OneHotLabel, features.Mask)):
-                inpt = inpt.new_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
+                inpt = inpt.wrap_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
             elif isinstance(inpt, features.BoundingBox):
-                inpt = features.BoundingBox.new_like(
+                inpt = features.BoundingBox.wrap_like(
                     inpt,
                     F.clamp_bounding_box(inpt[params["is_valid"]], format=inpt.format, image_size=inpt.image_size),
                 )
@@ -855,8 +855,10 @@ class FixedSizeCrop(Transform):
         return inpt
 
     def forward(self, *inputs: Any) -> Any:
-        if not has_any(inputs, PIL.Image.Image, features.Image, features.is_simple_tensor):
-            raise TypeError(f"{type(self).__name__}() requires input sample to contain an tensor or PIL image.")
+        if not has_any(inputs, PIL.Image.Image, features.Image, features.is_simple_tensor, features.Video):
+            raise TypeError(
+                f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
+            )
 
         if has_any(inputs, features.BoundingBox) and not has_any(inputs, features.Label, features.OneHotLabel):
             raise TypeError(
