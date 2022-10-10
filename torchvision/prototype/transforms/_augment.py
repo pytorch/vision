@@ -119,7 +119,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
         if inpt.ndim != 2:
             raise ValueError("Need a batch of one hot labels")
         output = inpt.clone()
-        output = output.flip(0).mul_(1.0 - lam).add_(output.mul_(lam))
+        output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))
         return features.OneHotLabel.wrap_like(inpt, output)
 
 
@@ -134,7 +134,7 @@ class RandomMixup(_BaseMixupCutmix):
             if inpt.ndim != expected_dim:
                 raise ValueError("The transform expects a batched input")
             output = inpt.clone()
-            output = output.flip(0).mul_(1.0 - lam).add_(output.mul_(lam))
+            output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))
 
             if isinstance(inpt, (features.Image, features.Video)):
                 output = type(inpt).wrap_like(inpt, output)
@@ -176,9 +176,9 @@ class RandomCutmix(_BaseMixupCutmix):
             if inpt.ndim != expected_dim:
                 raise ValueError("The transform expects a batched input")
             x1, y1, x2, y2 = box
-            flipped = inpt.flip(0)
+            rolled = inpt.roll(1, 0)
             output = inpt.clone()
-            output[..., y1:y2, x1:x2] = flipped[..., y1:y2, x1:x2]
+            output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
 
             if isinstance(inpt, (features.Image, features.Video)):
                 output = inpt.wrap_like(inpt, output)
