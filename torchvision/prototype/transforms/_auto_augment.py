@@ -521,7 +521,7 @@ class AugMix(_AutoAugmentBase):
         mix = mix.view(orig_dims).to(dtype=image_or_video.dtype)
 
         if isinstance(orig_image_or_video, (features.Image, features.Video)):
-            mix = type(orig_image_or_video).wrap_like(orig_image_or_video, mix)  # type: ignore[arg-type]
+            mix = orig_image_or_video.wrap_like(orig_image_or_video, mix)  # type: ignore[arg-type]
         elif isinstance(orig_image_or_video, PIL.Image.Image):
             mix = F.to_image_pil(mix)
 

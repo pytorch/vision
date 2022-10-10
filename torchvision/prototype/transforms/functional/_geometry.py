@@ -1424,8 +1424,7 @@ def five_crop(
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
-            cls = type(inpt)
-            output = tuple(cls.wrap_like(inpt, item) for item in output)  # type: ignore[assignment,arg-type]
+            output = (inpt.wrap_like(inpt, item) for item in output)  # type: ignore[arg-type]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return five_crop_image_pil(inpt, size)
@@ -1468,8 +1467,7 @@ def ten_crop(
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
-            cls = type(inpt)
-            output = [cls.wrap_like(inpt, item) for item in output]  # type: ignore[arg-type]
+            output = [inpt.wrap_like(inpt, item) for item in output]  # type: ignore[arg-type]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)
