@@ -483,7 +483,8 @@ class AugMix(_AutoAugmentBase):
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
         orig_dims = list(image_or_video.shape)
-        batch = image_or_video.view([1] * max(4 - image_or_video.ndim, 0) + orig_dims)
+        expected_dim = 5 if isinstance(orig_image_or_video, features.Video) else 4
+        batch = image_or_video.view([1] * max(expected_dim - image_or_video.ndim, 0) + orig_dims)
         batch_dims = [batch.size(0)] + [1] * (batch.ndim - 1)
 
         # Sample the beta weights for combining the original and augmented image or video. To get Beta, we use a
