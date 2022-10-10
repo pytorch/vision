@@ -27,7 +27,8 @@ def rgb_to_grayscale(
 ) -> Union[features.LegacyImageTypeJIT, features.LegacyVideoTypeJIT]:
     old_color_space = (
         features._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
-        if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image))
+        if isinstance(inpt, torch.Tensor)
+        and (torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video)))
         else None
     )
 
