@@ -112,9 +112,12 @@ class TestSmoke:
             (
                 transform,
                 [
-                    dict(image=image, one_hot_label=one_hot_label)
-                    for image, one_hot_label in itertools.product(
-                        make_images(extra_dims=BATCH_EXTRA_DIMS, dtypes=[torch.float]),
+                    dict(inpt=inpt, one_hot_label=one_hot_label)
+                    for inpt, one_hot_label in itertools.product(
+                        itertools.chain(
+                            make_images(extra_dims=BATCH_EXTRA_DIMS, dtypes=[torch.float]),
+                            make_videos(extra_dims=BATCH_EXTRA_DIMS, dtypes=[torch.float]),
+                        ),
                         make_one_hot_labels(extra_dims=BATCH_EXTRA_DIMS, dtypes=[torch.float]),
                     )
                 ],
