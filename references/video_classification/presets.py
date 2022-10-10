@@ -1,5 +1,5 @@
 import torch
-from torchvision.transforms import transforms
+from torchvision.prototype import transforms
 from transforms import ConvertBCHWtoCBHW
 
 
@@ -19,7 +19,13 @@ class VideoClassificationPresetTrain:
         ]
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(hflip_prob))
-        trans.extend([transforms.Normalize(mean=mean, std=std), transforms.RandomCrop(crop_size), ConvertBCHWtoCBHW()])
+        trans.extend(
+            [
+                transforms.Normalize(mean=mean, std=std),
+                transforms.RandomCrop(crop_size),
+                ConvertBCHWtoCBHW(),
+            ]
+        )
         self.transforms = transforms.Compose(trans)
 
     def __call__(self, x):

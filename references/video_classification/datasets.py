@@ -1,13 +1,17 @@
 from typing import Tuple
 
-import torchvision
-from torch import Tensor
+import torch
+from torchvision import datasets
+from torchvision.prototype import features
 
 
-class KineticsWithVideoId(torchvision.datasets.Kinetics):
-    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor, int]:
+class KineticsWithVideoId(datasets.Kinetics):
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, features.Label, int]:
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
         label = self.samples[video_idx][1]
+
+        video = features.Video(video)
+        label = features.Label(label, categories=self.classes)
 
         if self.transform is not None:
             video = self.transform(video)
