@@ -151,10 +151,6 @@ class _Feature(torch.Tensor):
     def dtype(self) -> _dtype:  # type: ignore[override]
         return self._tensor.dtype  # type: ignore[attr-defined, no-any-return]
 
-    @property
-    def requires_grad(self) -> bool:  # type: ignore[override]
-        return self._tensor.requires_grad  # type: ignore[attr-defined, no-any-return]
-
     def horizontal_flip(self) -> _Feature:
         return self
 
