@@ -559,7 +559,7 @@ class TestRandomRotation:
 
     @pytest.mark.parametrize("angle", [34, -87])
     @pytest.mark.parametrize("expand", [False, True])
-    def test_boundingbox_image_size(self, angle, expand):
+    def test_boundingbox_spatial_size(self, angle, expand):
         # Specific test for BoundingBox.rotate
         bbox = features.BoundingBox(
             torch.tensor([1, 2, 3, 4]), format=features.BoundingBoxFormat.XYXY, spatial_size=(32, 32)
@@ -1281,7 +1281,7 @@ class TestRandomIoUCrop:
         transform = transforms.RandomIoUCrop()
 
         image = features.Image(torch.rand(3, 32, 24))
-        bboxes = make_bounding_box(format="XYXY", image_size=(32, 24), extra_dims=(6,))
+        bboxes = make_bounding_box(format="XYXY", spatial_size=(32, 24), extra_dims=(6,))
         label = features.Label(torch.randint(0, 10, size=(6,)))
         ohe_label = features.OneHotLabel(torch.zeros(6, 10).scatter_(1, label.unsqueeze(1), 1))
         masks = make_detection_mask((32, 24), num_objects=6)
@@ -1329,12 +1329,12 @@ class TestRandomIoUCrop:
 
 class TestScaleJitter:
     def test__get_params(self, mocker):
-        image_size = (24, 32)
+        spatial_size = (24, 32)
         target_size = (16, 12)
         scale_range = (0.5, 1.5)
 
         transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
-        sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
+        sample = mocker.MagicMock(spec=features.Image, num_channels=3, spatial_size=spatial_size)
 
         n_samples = 5
         for _ in range(n_samples):
@@ -1347,11 +1347,11 @@ class TestScaleJitter:
             assert isinstance(size, tuple) and len(size) == 2
             height, width = size
 
-            r_min = min(target_size[1] / image_size[0], target_size[0] / image_size[1]) * scale_range[0]
-            r_max = min(target_size[1] / image_size[0], target_size[0] / image_size[1]) * scale_range[1]
+            r_min = min(target_size[1] / spatial_size[0], target_size[0] / spatial_size[1]) * scale_range[0]
+            r_max = min(target_size[1] / spatial_size[0], target_size[0] / spatial_size[1]) * scale_range[1]
 
-            assert int(image_size[0] * r_min) <= height <= int(image_size[0] * r_max)
-            assert int(image_size[1] * r_min) <= width <= int(image_size[1] * r_max)
+            assert int(spatial_size[0] * r_min) <= height <= int(spatial_size[0] * r_max)
+            assert int(spatial_size[1] * r_min) <= width <= int(spatial_size[1] * r_max)
 
     def test__transform(self, mocker):
         interpolation_sentinel = mocker.MagicMock()
@@ -1379,13 +1379,13 @@ class TestScaleJitter:
 
 class TestRandomShortestSize:
     def test__get_params(self, mocker):
-        image_size = (3, 10)
+        spatial_size = (3, 10)
         min_size = [5, 9]
         max_size = 20
 
         transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size)
 
-        sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
+        sample = mocker.MagicMock(spec=features.Image, num_channels=3, spatial_size=spatial_size)
         params = transform._get_params(sample)
 
         assert "size" in params
@@ -1550,14 +1550,14 @@ class TestFixedSizeCrop:
     def test__get_params(self, mocker):
         crop_size = (7, 7)
         batch_shape = (10,)
-        image_size = (11, 5)
+        spatial_size = (11, 5)
 
         transform = transforms.FixedSizeCrop(size=crop_size)
 
         sample = dict(
-            image=make_image(size=image_size, color_space=features.ColorSpace.RGB),
+            image=make_image(size=spatial_size, color_space=features.ColorSpace.RGB),
             bounding_boxes=make_bounding_box(
-                format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=batch_shape
+                format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=batch_shape
             ),
         )
         params = transform._get_params(sample)
@@ -1638,7 +1638,7 @@ class TestFixedSizeCrop:
 
     def test__transform_culling(self, mocker):
         batch_size = 10
-        image_size = (10, 10)
+        spatial_size = (10, 10)
 
         is_valid = torch.randint(0, 2, (batch_size,), dtype=torch.bool)
         mocker.patch(
@@ -1647,17 +1647,17 @@ class TestFixedSizeCrop:
                 needs_crop=True,
                 top=0,
                 left=0,
-                height=image_size[0],
-                width=image_size[1],
+                height=spatial_size[0],
+                width=spatial_size[1],
                 is_valid=is_valid,
                 needs_pad=False,
             ),
         )
 
         bounding_boxes = make_bounding_box(
-            format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
+            format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(batch_size,)
         )
-        masks = make_detection_mask(size=image_size, extra_dims=(batch_size,))
+        masks = make_detection_mask(size=spatial_size, extra_dims=(batch_size,))
         labels = make_label(extra_dims=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
@@ -1678,7 +1678,7 @@ class TestFixedSizeCrop:
 
     def test__transform_bounding_box_clamping(self, mocker):
         batch_size = 3
-        image_size = (10, 10)
+        spatial_size = (10, 10)
 
         mocker.patch(
             "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
@@ -1686,15 +1686,15 @@ class TestFixedSizeCrop:
                 needs_crop=True,
                 top=0,
                 left=0,
-                height=image_size[0],
-                width=image_size[1],
+                height=spatial_size[0],
+                width=spatial_size[1],
                 is_valid=torch.full((batch_size,), fill_value=True),
                 needs_pad=False,
             ),
         )
 
         bounding_box = make_bounding_box(
-            format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
+            format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(batch_size,)
         )
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_box")
 
