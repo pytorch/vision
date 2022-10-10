@@ -2,13 +2,12 @@ import csv
 import functools
 import pathlib
 import pickle
-from typing import Any, BinaryIO, Callable, cast, Dict, IO, Iterator, List, Sequence, Sized, Tuple, TypeVar, Union
+from typing import Any, BinaryIO, Callable, Dict, IO, Iterator, List, Sequence, Sized, Tuple, TypeVar, Union
 
 import torch
 import torch.distributed as dist
 import torch.utils.data
 from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
-from torchdata.datapipes.utils import StreamWrapper
 from torchvision.prototype.utils._internal import fromfile
 
 
@@ -40,10 +39,9 @@ def read_mat(buffer: BinaryIO, **kwargs: Any) -> Any:
     except ImportError as error:
         raise ModuleNotFoundError("Package `scipy` is required to be installed to read .mat files.") from error
 
-    if isinstance(buffer, StreamWrapper):
-        buffer = buffer.file_obj
-
-    return sio.loadmat(buffer, **kwargs)
+    data = sio.loadmat(buffer, **kwargs)
+    buffer.close()
+    return data
 
 
 class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
@@ -72,8 +70,8 @@ def _getattr_closure(obj: Any, *, attrs: Sequence[str]) -> Any:
     return obj
 
 
-def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> D:
-    return cast(D, _getattr_closure(path, attrs=name.split(".")))
+def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> Any:
+    return _getattr_closure(path, attrs=name.split("."))
 
 
 def _path_accessor_closure(data: Tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:

@@ -1289,26 +1289,14 @@ class RandomRotation(torch.nn.Module):
             Default is the center of the image.
         fill (sequence or number): Pixel fill value for the area outside the rotated
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
-        resample (int, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
-                instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
-    def __init__(
-        self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=0, resample=None
-    ):
+    def __init__(self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=0):
         super().__init__()
         _log_api_usage_once(self)
-        if resample is not None:
-            warnings.warn(
-                "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
-                "Please use 'interpolation' instead."
-            )
-            interpolation = _interpolation_modes_from_int(resample)
 
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
@@ -1325,7 +1313,7 @@ class RandomRotation(torch.nn.Module):
 
         self.center = center
 
-        self.resample = self.interpolation = interpolation
+        self.interpolation = interpolation
         self.expand = expand
 
         if fill is None:
@@ -1362,7 +1350,7 @@ class RandomRotation(torch.nn.Module):
                 fill = [float(f) for f in fill]
         angle = self.get_params(self.degrees)
 
-        return F.rotate(img, angle, self.resample, self.expand, self.center, fill)
+        return F.rotate(img, angle, self.interpolation, self.expand, self.center, fill)
 
     def __repr__(self) -> str:
         interpolate_str = self.interpolation.value
@@ -1405,13 +1393,6 @@ class RandomAffine(torch.nn.Module):
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         fill (sequence or number): Pixel fill value for the area outside the transformed
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
-        fillcolor (sequence or number, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.
-        resample (int, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
-                instead.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
 
@@ -1427,18 +1408,10 @@ class RandomAffine(torch.nn.Module):
         shear=None,
         interpolation=InterpolationMode.NEAREST,
         fill=0,
-        fillcolor=None,
-        resample=None,
         center=None,
     ):
         super().__init__()
         _log_api_usage_once(self)
-        if resample is not None:
-            warnings.warn(
-                "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
-                "Please use 'interpolation' instead."
-            )
-            interpolation = _interpolation_modes_from_int(resample)
 
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
@@ -1447,13 +1420,6 @@ class RandomAffine(torch.nn.Module):
                 "Please use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
-
-        if fillcolor is not None:
-            warnings.warn(
-                "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
-                "Please use 'fill' instead."
-            )
-            fill = fillcolor
 
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
 
@@ -1476,14 +1442,14 @@ class RandomAffine(torch.nn.Module):
         else:
             self.shear = shear
 
-        self.resample = self.interpolation = interpolation
+        self.interpolation = interpolation
 
         if fill is None:
             fill = 0
         elif not isinstance(fill, (Sequence, numbers.Number)):
             raise TypeError("Fill should be either a sequence or a number.")
 
-        self.fillcolor = self.fill = fill
+        self.fill = fill
 
         if center is not None:
             _check_sequence_input(center, "center", req_sizes=(2,))

@@ -10,10 +10,27 @@ from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
 from torchvision.prototype.features._feature import FillType
 
-from torchvision.prototype.transforms.functional._meta import get_chw
+from torchvision.prototype.transforms.functional._meta import get_dimensions
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
 
 from typing_extensions import Literal
+
+
+def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size: int = 2) -> Sequence[float]:
+    if not isinstance(arg, (float, Sequence)):
+        raise TypeError(f"{name} should be float or a sequence of floats. Got {type(arg)}")
+    if isinstance(arg, Sequence) and len(arg) != req_size:
+        raise ValueError(f"If {name} is a sequence its length should be one of {req_size}. Got {len(arg)}")
+    if isinstance(arg, Sequence):
+        for element in arg:
+            if not isinstance(element, float):
+                raise ValueError(f"{name} should be a sequence of floats. Got {type(element)}")
+
+    if isinstance(arg, float):
+        arg = [float(arg), float(arg)]
+    if isinstance(arg, (list, tuple)) and len(arg) == 1:
+        arg = [arg[0], arg[0]]
+    return arg
 
 
 def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
@@ -63,15 +80,16 @@ def query_bounding_box(sample: Any) -> features.BoundingBox:
 def query_chw(sample: Any) -> Tuple[int, int, int]:
     flat_sample, _ = tree_flatten(sample)
     chws = {
-        get_chw(item)
+        tuple(get_dimensions(item))
         for item in flat_sample
-        if isinstance(item, (features.Image, PIL.Image.Image)) or features.is_simple_tensor(item)
+        if isinstance(item, (features.Image, PIL.Image.Image, features.Video)) or features.is_simple_tensor(item)
     }
     if not chws:
-        raise TypeError("No image was found in the sample")
+        raise TypeError("No image or video was found in the sample")
     elif len(chws) > 1:
         raise ValueError(f"Found multiple CxHxW dimensions in the sample: {sequence_to_str(sorted(chws))}")
-    return chws.pop()
+    c, h, w = chws.pop()
+    return c, h, w
 
 
 def _isinstance(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]) -> bool:

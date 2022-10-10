@@ -8,6 +8,7 @@ import pytest
 import torch
 from common_utils import assert_equal, cpu_and_gpu
 from prototype_common_utils import (
+    DEFAULT_EXTRA_DIMS,
     make_bounding_box,
     make_bounding_boxes,
     make_detection_mask,
@@ -17,10 +18,13 @@ from prototype_common_utils import (
     make_masks,
     make_one_hot_labels,
     make_segmentation_mask,
+    make_videos,
 )
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features, transforms
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
+
+BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
 
 
 def make_vanilla_tensor_images(*args, **kwargs):
@@ -65,6 +69,7 @@ def parametrize_from_transforms(*transforms):
             make_vanilla_tensor_images,
             make_pil_images,
             make_masks,
+            make_videos,
         ]:
             inputs = list(creation_fn())
             try:
@@ -107,13 +112,11 @@ class TestSmoke:
             (
                 transform,
                 [
-                    dict(
-                        image=features.Image.new_like(image, image.unsqueeze(0), dtype=torch.float),
-                        one_hot_label=features.OneHotLabel.new_like(
-                            one_hot_label, one_hot_label.unsqueeze(0), dtype=torch.float
-                        ),
+                    dict(image=image, one_hot_label=one_hot_label)
+                    for image, one_hot_label in itertools.product(
+                        make_images(extra_dims=BATCH_EXTRA_DIMS, dtypes=[torch.float]),
+                        make_one_hot_labels(extra_dims=BATCH_EXTRA_DIMS, dtypes=[torch.float]),
                     )
-                    for image, one_hot_label in itertools.product(make_images(), make_one_hot_labels())
                 ],
             )
             for transform in [
@@ -155,12 +158,14 @@ class TestSmoke:
                             features.ColorSpace.RGB,
                         ],
                         dtypes=[torch.uint8],
-                        extra_dims=[(4,)],
+                        extra_dims=[(), (4,)],
+                        **(dict(num_frames=["random"]) if fn is make_videos else dict()),
                     )
                     for fn in [
                         make_images,
                         make_vanilla_tensor_images,
                         make_pil_images,
+                        make_videos,
                     ]
                 ),
             )
@@ -184,6 +189,7 @@ class TestSmoke:
                     for fn in [
                         make_images,
                         make_vanilla_tensor_images,
+                        make_videos,
                     ]
                 ),
             ),
@@ -200,6 +206,7 @@ class TestSmoke:
                     make_images(extra_dims=[(4,)]),
                     make_vanilla_tensor_images(),
                     make_pil_images(),
+                    make_videos(extra_dims=[()]),
                 ),
             )
         ]
@@ -218,6 +225,7 @@ class TestSmoke:
                             make_images,
                             make_vanilla_tensor_images,
                             make_pil_images,
+                            make_videos,
                         )
                     ]
                 ),
@@ -293,7 +301,7 @@ class TestRandomHorizontalFlip:
         actual = transform(input)
 
         expected_image_tensor = torch.tensor([5, 0, 10, 5]) if p == 1.0 else input
-        expected = features.BoundingBox.new_like(input, data=expected_image_tensor)
+        expected = features.BoundingBox.wrap_like(input, expected_image_tensor)
         assert_equal(expected, actual)
         assert actual.format == expected.format
         assert actual.image_size == expected.image_size
@@ -346,7 +354,7 @@ class TestRandomVerticalFlip:
         actual = transform(input)
 
         expected_image_tensor = torch.tensor([0, 5, 5, 10]) if p == 1.0 else input
-        expected = features.BoundingBox.new_like(input, data=expected_image_tensor)
+        expected = features.BoundingBox.wrap_like(input, expected_image_tensor)
         assert_equal(expected, actual)
         assert actual.format == expected.format
         assert actual.image_size == expected.image_size
@@ -715,30 +723,38 @@ class TestRandomCrop:
 
         if padding is not None:
             if isinstance(padding, int):
-                h += 2 * padding
-                w += 2 * padding
+                pad_top = pad_bottom = pad_left = pad_right = padding
             elif isinstance(padding, list) and len(padding) == 2:
-                w += 2 * padding[0]
-                h += 2 * padding[1]
+                pad_left = pad_right = padding[0]
+                pad_top = pad_bottom = padding[1]
             elif isinstance(padding, list) and len(padding) == 4:
-                w += padding[0] + padding[2]
-                h += padding[1] + padding[3]
+                pad_left, pad_top, pad_right, pad_bottom = padding
 
-        expected_input_width = w
-        expected_input_height = h
+            h += pad_top + pad_bottom
+            w += pad_left + pad_right
+        else:
+            pad_left = pad_right = pad_top = pad_bottom = 0
 
         if pad_if_needed:
             if w < size[1]:
-                w += 2 * (size[1] - w)
+                diff = size[1] - w
+                pad_left += diff
+                pad_right += diff
+                w += 2 * diff
             if h < size[0]:
-                h += 2 * (size[0] - h)
+                diff = size[0] - h
+                pad_top += diff
+                pad_bottom += diff
+                h += 2 * diff
+
+        padding = [pad_left, pad_top, pad_right, pad_bottom]
 
         assert 0 <= params["top"] <= h - size[0] + 1
         assert 0 <= params["left"] <= w - size[1] + 1
         assert params["height"] == size[0]
         assert params["width"] == size[1]
-        assert params["input_width"] == expected_input_width
-        assert params["input_height"] == expected_input_height
+        assert params["needs_pad"] is any(padding)
+        assert params["padding"] == padding
 
     @pytest.mark.parametrize("padding", [None, 1, [2, 3], [1, 2, 3, 4]])
     @pytest.mark.parametrize("pad_if_needed", [False, True])
@@ -799,7 +815,9 @@ class TestGaussianBlur:
         with pytest.raises(ValueError, match="Kernel size value should be an odd and positive number"):
             transforms.GaussianBlur(4)
 
-        with pytest.raises(TypeError, match="sigma should be a single float or a list/tuple with length 2"):
+        with pytest.raises(
+            TypeError, match="sigma should be a single int or float or a list/tuple with length 2 floats."
+        ):
             transforms.GaussianBlur(3, sigma=[1, 2, 3])
 
         with pytest.raises(ValueError, match="If sigma is a single number, it must be positive"):
@@ -833,7 +851,7 @@ class TestGaussianBlur:
         if isinstance(sigma, (tuple, list)):
             assert transform.sigma == sigma
         else:
-            assert transform.sigma == (sigma, sigma)
+            assert transform.sigma == [sigma, sigma]
 
         fn = mocker.patch("torchvision.prototype.transforms.functional.gaussian_blur")
         inpt = mocker.MagicMock(spec=features.Image)

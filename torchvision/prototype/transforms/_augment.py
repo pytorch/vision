@@ -15,7 +15,7 @@ from ._utils import has_any, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
-    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image, features.Video)
 
     def __init__(
         self,
@@ -92,7 +92,7 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params, inplace=self.inplace)
 
@@ -119,7 +119,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
             raise ValueError("Need a batch of one hot labels")
         output = inpt.clone()
         output = output.roll(1, -2).mul_(1 - lam).add_(output.mul_(lam))
-        return features.OneHotLabel.new_like(inpt, output)
+        return features.OneHotLabel.wrap_like(inpt, output)
 
 
 class RandomMixup(_BaseMixupCutmix):
@@ -135,7 +135,7 @@ class RandomMixup(_BaseMixupCutmix):
             output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
 
             if isinstance(inpt, features.Image):
-                output = features.Image.new_like(inpt, output)
+                output = features.Image.wrap_like(inpt, output)
 
             return output
         elif isinstance(inpt, features.OneHotLabel):
@@ -178,7 +178,7 @@ class RandomCutmix(_BaseMixupCutmix):
             output[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
 
             if isinstance(inpt, features.Image):
-                output = features.Image.new_like(inpt, output)
+                output = features.Image.wrap_like(inpt, output)
 
             return output
         elif isinstance(inpt, features.OneHotLabel):
@@ -213,9 +213,11 @@ class SimpleCopyPaste(_RandomApplyTransform):
         antialias: Optional[bool],
     ) -> Tuple[features.TensorImageType, Dict[str, Any]]:
 
-        paste_masks = paste_target["masks"].new_like(paste_target["masks"], paste_target["masks"][random_selection])
-        paste_boxes = paste_target["boxes"].new_like(paste_target["boxes"], paste_target["boxes"][random_selection])
-        paste_labels = paste_target["labels"].new_like(paste_target["labels"], paste_target["labels"][random_selection])
+        paste_masks = paste_target["masks"].wrap_like(paste_target["masks"], paste_target["masks"][random_selection])
+        paste_boxes = paste_target["boxes"].wrap_like(paste_target["boxes"], paste_target["boxes"][random_selection])
+        paste_labels = paste_target["labels"].wrap_like(
+            paste_target["labels"], paste_target["labels"][random_selection]
+        )
 
         masks = target["masks"]
 
@@ -317,7 +319,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         c0, c1, c2, c3 = 0, 0, 0, 0
         for i, obj in enumerate(flat_sample):
             if isinstance(obj, features.Image):
-                flat_sample[i] = features.Image.new_like(obj, output_images[c0])
+                flat_sample[i] = features.Image.wrap_like(obj, output_images[c0])
                 c0 += 1
             elif isinstance(obj, PIL.Image.Image):
                 flat_sample[i] = F.to_image_pil(output_images[c0])
@@ -326,13 +328,13 @@ class SimpleCopyPaste(_RandomApplyTransform):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
             elif isinstance(obj, features.BoundingBox):
-                flat_sample[i] = features.BoundingBox.new_like(obj, output_targets[c1]["boxes"])
+                flat_sample[i] = features.BoundingBox.wrap_like(obj, output_targets[c1]["boxes"])
                 c1 += 1
             elif isinstance(obj, features.Mask):
-                flat_sample[i] = features.Mask.new_like(obj, output_targets[c2]["masks"])
+                flat_sample[i] = features.Mask.wrap_like(obj, output_targets[c2]["masks"])
                 c2 += 1
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
-                flat_sample[i] = obj.new_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
+                flat_sample[i] = obj.wrap_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:

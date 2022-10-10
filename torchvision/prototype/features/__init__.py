@@ -13,3 +13,4 @@ from ._image import (
 )
 from ._label import Label, OneHotLabel
 from ._mask import Mask
+from ._video import ImageOrVideoType, ImageOrVideoTypeJIT, TensorImageOrVideoType, TensorImageOrVideoTypeJIT, Video
