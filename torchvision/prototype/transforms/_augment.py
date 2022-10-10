@@ -107,7 +107,10 @@ class _BaseMixupCutmix(_RandomApplyTransform):
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
     def forward(self, *inputs: Any) -> Any:
-        if not (has_any(inputs, features.Image, features.Video, features.is_simple_tensor) and has_any(inputs, features.OneHotLabel)):
+        if not (
+            has_any(inputs, features.Image, features.Video, features.is_simple_tensor)
+            and has_any(inputs, features.OneHotLabel)
+        ):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
         if has_any(inputs, PIL.Image.Image, features.BoundingBox, features.Mask, features.Label):
             raise TypeError(
@@ -116,7 +119,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
         return super().forward(*inputs)
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
-        if inpt.ndim != 2:
+        if inpt.ndim < 2:
             raise ValueError("Need a batch of one hot labels")
         output = inpt.clone()
         output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))
@@ -130,11 +133,11 @@ class RandomMixup(_BaseMixupCutmix):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
         if isinstance(inpt, (features.Image, features.Video)) or features.is_simple_tensor(inpt):
-            expected_dim = 5 if isinstance(inpt, features.Video) else 4
-            if inpt.ndim != expected_dim:
+            expected_ndim = 5 if isinstance(inpt, features.Video) else 4
+            if inpt.ndim < expected_ndim:
                 raise ValueError("The transform expects a batched input")
             output = inpt.clone()
-            output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))
+            output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))  # type: ignore[arg-type]
 
             if isinstance(inpt, (features.Image, features.Video)):
                 output = type(inpt).wrap_like(inpt, output)
@@ -172,16 +175,16 @@ class RandomCutmix(_BaseMixupCutmix):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, (features.Image, features.Video)) or features.is_simple_tensor(inpt):
             box = params["box"]
-            expected_dim = 5 if isinstance(inpt, features.Video) else 4
-            if inpt.ndim != expected_dim:
+            expected_ndim = 5 if isinstance(inpt, features.Video) else 4
+            if inpt.ndim < expected_ndim:
                 raise ValueError("The transform expects a batched input")
             x1, y1, x2, y2 = box
             rolled = inpt.roll(1, 0)
             output = inpt.clone()
-            output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
+            output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]  # type: ignore[arg-type]
 
             if isinstance(inpt, (features.Image, features.Video)):
-                output = inpt.wrap_like(inpt, output)
+                output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
         elif isinstance(inpt, features.OneHotLabel):
