@@ -22,18 +22,18 @@ class ConvertBoundingBoxFormat(Transform):
 
 
 class ConvertImageDtype(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image, features.Video)
 
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.dtype = dtype
 
-    def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> features.TensorImageType:
+    def _transform(
+        self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]
+    ) -> features.TensorImageOrVideoType:
         output = F.convert_image_dtype(inpt, dtype=self.dtype)
         return (
-            output
-            if features.is_simple_tensor(inpt)
-            else features.Image.wrap_like(inpt, output)  # type: ignore[arg-type]
+            output if features.is_simple_tensor(inpt) else type(inpt).wrap_like(inpt, output)  # type: ignore[attr-defined]
         )
 
 
@@ -68,5 +68,5 @@ class ClampBoundingBoxes(Transform):
     _transformed_types = (features.BoundingBox,)
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
-        output = F.clamp_bounding_box(inpt, format=inpt.format, image_size=inpt.image_size)
+        output = F.clamp_bounding_box(inpt, format=inpt.format, spatial_size=inpt.spatial_size)
         return features.BoundingBox.wrap_like(inpt, output)
