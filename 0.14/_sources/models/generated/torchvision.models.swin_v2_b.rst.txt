@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models
+
+
+swin_v2_b
+=========
+
+.. autofunction:: swin_v2_b

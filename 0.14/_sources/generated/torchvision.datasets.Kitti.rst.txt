@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+Kitti
+=====
+
+.. autoclass:: Kitti
+    :members:
+        __getitem__,
+        
+    :special-members:

@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models
+
+
+mnasnet1_3
+==========
+
+.. autofunction:: mnasnet1_3
