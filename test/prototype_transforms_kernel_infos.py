@@ -222,7 +222,7 @@ def sample_inputs_resize_image_tensor():
         extra_dims=VALID_EXTRA_DIMS,
     ):
         yield ArgsKwargs(
-            image_loader, size=[min(image_loader.image_size) + 1], interpolation=F.InterpolationMode.NEAREST
+            image_loader, size=[min(image_loader.spatial_size) + 1], interpolation=F.InterpolationMode.NEAREST
         )
 
     yield ArgsKwargs(make_image_loader(size=(11, 17)), size=20, max_size=25)
