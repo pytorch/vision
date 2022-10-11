@@ -219,12 +219,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     elif image.ndim == 2:
         return _scale_channel(image)
     else:
-        return torch.stack(
-            [
-                _scale_channel(x)
-                for x in image.view(-1, height, width)
-            ]
-        ).view(image.shape)
+        return torch.stack([_scale_channel(x) for x in image.view(-1, height, width)]).view(image.shape)
 
 
 equalize_image_pil = _FP.equalize
