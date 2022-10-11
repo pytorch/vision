@@ -11,7 +11,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, InterpolationMode
 
 from ._transform import _RandomApplyTransform
-from ._utils import has_any, query_chw, query_hw
+from ._utils import has_any, query_chw, query_spatial_size
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -153,7 +153,7 @@ class RandomCutmix(_BaseMixupCutmix):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
-        H, W = query_hw(sample)
+        H, W = query_spatial_size(sample)
 
         r_x = torch.randint(W, ())
         r_y = torch.randint(H, ())

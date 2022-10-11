@@ -98,19 +98,19 @@ def query_chw(sample: Any) -> Tuple[int, int, int]:
     return c, h, w
 
 
-def query_hw(sample: Any) -> Tuple[int, int]:
+def query_spatial_size(sample: Any) -> Tuple[int, int]:
     flat_sample, _ = tree_flatten(sample)
-    hws = {
+    sizes = {
         tuple(get_spatial_size(item))
         for item in flat_sample
         if isinstance(item, (features.Image, PIL.Image.Image, features.Video, features.Mask, features.BoundingBox))
         or features.is_simple_tensor(item)
     }
-    if not hws:
+    if not sizes:
         raise TypeError("No image, video, mask or bounding box was found in the sample")
-    elif len(hws) > 1:
-        raise ValueError(f"Found multiple HxW dimensions in the sample: {sequence_to_str(sorted(hws))}")
-    h, w = hws.pop()
+    elif len(sizes) > 1:
+        raise ValueError(f"Found multiple HxW dimensions in the sample: {sequence_to_str(sorted(sizes))}")
+    h, w = sizes.pop()
     return h, w
 
 
