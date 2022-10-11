@@ -598,29 +598,34 @@ class Mosaic(nn.Module):
     Mosaic Transform
     """
 
-    def __init__(self, min_frac: float = 0.25, max_frac: float = 0.75, size_limit=10) -> None:
+    def __init__(self, min_frac: float = 0.25, max_frac: float = 0.75, size_limit: int = 10) -> None:
         super().__init__()
         self.min_frac = min_frac
         self.max_frac = max_frac
         self.size_limit = size_limit
 
-    def forward(self, images, boxes, labels):
+    def forward(
+        self, images: torch.Tensor, boxes: List[List[List[torch.Tensor]]], labels: List[List[List[torch.Tensor]]]
+    ):
         """
-        images : torch.Tensor channels first image tensor;
-        boxes: bounding boxes in xyxy format.
-        labels: labels corresponding to the bounding boxes.
-
+        images (torch.Tensor) : Image Tensor of B*4*C*H*W
+        boxes (List[List[List[torch.Tensor]]]) : Bounding boxes in xyxy format.
+        labels (List[List[torch.Tensor]])  : labels corresponding to the bounding boxes.
         """
 
         # implementation  is heavily inspired from this colab notebook : https://colab.research.google.com/drive/1YWb7a_3bHqG30SoIxU5S4lHKktkRseyY?usp=sharing#scrollTo=yHsYf3Z3bujO
-        sy, sx = images.shape[-2:]
 
+        if images.ndim != 5:
+            raise ValueError(f"Image tensor should be 5 dimensional, got {images.ndim}")
+        if images.shape[1] != 4:
+            raise ValueError(f"First dimension of image tensor should be of size 4, got {images.shape[1]}")
+
+        sy, sx = images.shape[-2:]
+        B = images.shape[0]
         num_channels = images.shape[-3]
 
         xc = torch.randint(int(sx * self.min_frac), int(sx * self.max_frac), size=(1,))
         yc = torch.randint(int(sy * self.min_frac), int(sy * self.max_frac), size=(1,))
-
-        mosaic_image = torch.zeros((num_channels, sy, sx), dtype=images.dtype)
 
         x0a0, y0a0, x1a0, y1a0 = 0, 0, xc, yc
         x0b0, y0b0, x1b0, y1b0 = sx - xc, sy - yc, sx, sy
@@ -634,11 +639,14 @@ class Mosaic(nn.Module):
         x0a3, y0a3, x1a3, y1a3 = xc, yc, sx, sy
         x0b3, y0b3, x1b3, y1b3 = 0, 0, sx - xc, sy - yc
 
-        mosaic_image[..., y0a0:y1a0, x0a0:x1a0] = images[0][..., y0b0:y1b0, x0b0:x1b0]
-        mosaic_image[..., y0a1:y1a1, x0a1:x1a1] = images[1][..., y0b1:y1b1, x0b1:x1b1]
-        mosaic_image[..., y0a2:y1a2, x0a2:x1a2] = images[2][..., y0b2:y1b2, x0b2:x1b2]
-        mosaic_image[..., y0a3:y1a3, x0a3:x1a3] = images[3][..., y0b3:y1b3, x0b3:x1b3]
+        mosaic_image = torch.zeros((B, num_channels, sy, sx), dtype=images.dtype)
 
+        mosaic_image[..., y0a0:y1a0, x0a0:x1a0] = images[:, 0][..., y0b0:y1b0, x0b0:x1b0]
+        mosaic_image[..., y0a1:y1a1, x0a1:x1a1] = images[:, 1][..., y0b1:y1b1, x0b1:x1b1]
+        mosaic_image[..., y0a2:y1a2, x0a2:x1a2] = images[:, 2][..., y0b2:y1b2, x0b2:x1b2]
+        mosaic_image[..., y0a3:y1a3, x0a3:x1a3] = images[:, 3][..., y0b3:y1b3, x0b3:x1b3]
+
+        # calculating offsets for the bounding boxes;
         offset_y0 = y0a0 - y0b0
         offset_x0 = x0a0 - x0b0
 
@@ -650,29 +658,37 @@ class Mosaic(nn.Module):
 
         offset_y3 = y0a3 - y0b3
         offset_x3 = x0a3 - x0b3
+        mosaic_boxes = []
+        mosaic_labels = []
 
-        boxes[0][..., 0:4:2] += offset_x0
-        boxes[0][..., 1:4:2] += offset_y0
+        for i in range(B):
+            boxes[i][0][:, 0:4:2] += offset_x0
+            boxes[i][0][:, 1:4:2] += offset_y0
 
-        boxes[1][..., 0:4:2] += offset_x1
-        boxes[1][..., 1:4:2] += offset_y1
+            boxes[i][1][:, 0:4:2] += offset_x1
+            boxes[i][1][:, 1:4:2] += offset_y1
 
-        boxes[2][..., 0:4:2] += offset_x2
-        boxes[2][..., 1:4:2] += offset_y2
+            boxes[i][2][:, 0:4:2] += offset_x2
+            boxes[i][2][:, 1:4:2] += offset_y2
 
-        boxes[3][..., 0:4:2] += offset_x3
-        boxes[3][..., 1:4:2] += offset_y3
+            boxes[i][3][:, 0:4:2] += offset_x3
+            boxes[i][3][:, 1:4:2] += offset_y3
 
-        mosaic_boxes = torch.vstack(boxes)
-        mosaic_labels = torch.vstack(labels)
+            temp_box = torch.vstack(boxes[i])
+            temp_label = torch.vstack(labels[i])
 
-        mosaic_boxes[..., 0::2] = torch.clip(mosaic_boxes[..., 0::2], 0, sx)
-        mosaic_boxes[..., 1::2] = torch.clip(mosaic_boxes[..., 1::2], 0, sy)
+            temp_box[..., 0::2] = torch.clip(temp_box[..., 0::2], 0, sx)
+            temp_box[..., 1::2] = torch.clip(temp_box[..., 1::2], 0, sy)
 
-        w = mosaic_boxes[..., 2] - mosaic_boxes[..., 0]
-        h = mosaic_boxes[..., 3] - mosaic_boxes[..., 1]
+            w_ = temp_box[..., 2] - temp_box[..., 0]
+            h_ = temp_box[..., 3] - temp_box[..., 1]
 
-        mask = (w >= self.size_limit) & (h >= self.size_limit)
-        mosaic_boxes = mosaic_boxes[mask]
-        mosaic_labels = mosaic_labels[mask]
+            mask_ = (w_ > self.size_limit) & (h_ > self.size_limit)
+
+            temp_box = temp_box[mask_]
+            temp_label = temp_label[mask_]
+
+            mosaic_boxes.append(temp_box)
+            mosaic_labels.append(temp_label)
+
         return mosaic_image, mosaic_boxes, mosaic_labels
