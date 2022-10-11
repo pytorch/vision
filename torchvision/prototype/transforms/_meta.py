@@ -68,5 +68,5 @@ class ClampBoundingBoxes(Transform):
     _transformed_types = (features.BoundingBox,)
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
-        output = F.clamp_bounding_box(inpt, format=inpt.format, image_size=inpt.image_size)
+        output = F.clamp_bounding_box(inpt, format=inpt.format, spatial_size=inpt.spatial_size)
         return features.BoundingBox.wrap_like(inpt, output)

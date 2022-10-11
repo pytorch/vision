@@ -33,7 +33,7 @@ class Mask(_Feature):
         return cls._wrap(tensor)
 
     @property
-    def image_size(self) -> Tuple[int, int]:
+    def spatial_size(self) -> Tuple[int, int]:
         return cast(Tuple[int, int], tuple(self.shape[-2:]))
 
     def horizontal_flip(self) -> Mask:
