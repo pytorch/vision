@@ -81,6 +81,19 @@ def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
         return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
 
 
+def get_num_frames_video(video: torch.Tensor) -> int:
+    return video.shape[-4]
+
+
+def get_num_frames(inpt: features.VideoTypeJIT) -> int:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Video)):
+        return get_num_frames_video(inpt)
+    elif isinstance(inpt, features.Video):
+        return inpt.num_frames
+    else:
+        raise TypeError(f"The video should be a Tensor. Got {type(inpt)}")
+
+
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
     xyxy = xywh.clone()
     xyxy[..., 2:] += xyxy[..., :2]
