@@ -377,8 +377,12 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - run: packaging/build_wheel.sh
-        no_output_timeout: 30m
+      - run:
+          name: Build conda packages
+          no_output_timeout: 30m
+          command: |
+              set -ex
+              packaging/build_wheel.sh
       - store_artifacts:
           path: dist
       - persist_to_workspace:
@@ -394,8 +398,12 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - run: packaging/build_conda.sh
-        no_output_timeout: 30m
+      - run:
+          name: Build conda packages
+          no_output_timeout: 30m
+          command: |
+              set -ex
+              packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
       - persist_to_workspace:
