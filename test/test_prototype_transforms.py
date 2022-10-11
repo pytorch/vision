@@ -298,7 +298,7 @@ class TestRandomHorizontalFlip:
         assert_equal(features.Mask(expected), actual)
 
     def test_features_bounding_box(self, p):
-        input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
+        input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
         transform = transforms.RandomHorizontalFlip(p=p)
 
         actual = transform(input)
@@ -307,7 +307,7 @@ class TestRandomHorizontalFlip:
         expected = features.BoundingBox.wrap_like(input, expected_image_tensor)
         assert_equal(expected, actual)
         assert actual.format == expected.format
-        assert actual.image_size == expected.image_size
+        assert actual.spatial_size == expected.spatial_size
 
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
@@ -351,7 +351,7 @@ class TestRandomVerticalFlip:
         assert_equal(features.Mask(expected), actual)
 
     def test_features_bounding_box(self, p):
-        input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
+        input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
         transform = transforms.RandomVerticalFlip(p=p)
 
         actual = transform(input)
@@ -360,7 +360,7 @@ class TestRandomVerticalFlip:
         expected = features.BoundingBox.wrap_like(input, expected_image_tensor)
         assert_equal(expected, actual)
         assert actual.format == expected.format
-        assert actual.image_size == expected.image_size
+        assert actual.spatial_size == expected.spatial_size
 
 
 class TestPad:
@@ -435,7 +435,7 @@ class TestRandomZoomOut:
         transform = transforms.RandomZoomOut(fill=fill, side_range=side_range)
 
         image = mocker.MagicMock(spec=features.Image)
-        h, w = image.image_size = (24, 32)
+        h, w = image.spatial_size = (24, 32)
 
         params = transform._get_params(image)
 
@@ -450,7 +450,7 @@ class TestRandomZoomOut:
     def test__transform(self, fill, side_range, mocker):
         inpt = mocker.MagicMock(spec=features.Image)
         inpt.num_channels = 3
-        inpt.image_size = (24, 32)
+        inpt.spatial_size = (24, 32)
 
         transform = transforms.RandomZoomOut(fill=fill, side_range=side_range, p=1)
 
@@ -559,17 +559,17 @@ class TestRandomRotation:
 
     @pytest.mark.parametrize("angle", [34, -87])
     @pytest.mark.parametrize("expand", [False, True])
-    def test_boundingbox_image_size(self, angle, expand):
+    def test_boundingbox_spatial_size(self, angle, expand):
         # Specific test for BoundingBox.rotate
         bbox = features.BoundingBox(
-            torch.tensor([1, 2, 3, 4]), format=features.BoundingBoxFormat.XYXY, image_size=(32, 32)
+            torch.tensor([1, 2, 3, 4]), format=features.BoundingBoxFormat.XYXY, spatial_size=(32, 32)
         )
         img = features.Image(torch.rand(1, 3, 32, 32))
 
         out_img = img.rotate(angle, expand=expand)
         out_bbox = bbox.rotate(angle, expand=expand)
 
-        assert out_img.image_size == out_bbox.image_size
+        assert out_img.spatial_size == out_bbox.spatial_size
 
 
 class TestRandomAffine:
@@ -619,8 +619,8 @@ class TestRandomAffine:
     def test__get_params(self, degrees, translate, scale, shear, mocker):
         image = mocker.MagicMock(spec=features.Image)
         image.num_channels = 3
-        image.image_size = (24, 32)
-        h, w = image.image_size
+        image.spatial_size = (24, 32)
+        h, w = image.spatial_size
 
         transform = transforms.RandomAffine(degrees, translate=translate, scale=scale, shear=shear)
         params = transform._get_params(image)
@@ -682,7 +682,7 @@ class TestRandomAffine:
         fn = mocker.patch("torchvision.prototype.transforms.functional.affine")
         inpt = mocker.MagicMock(spec=features.Image)
         inpt.num_channels = 3
-        inpt.image_size = (24, 32)
+        inpt.spatial_size = (24, 32)
 
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
@@ -718,8 +718,8 @@ class TestRandomCrop:
     def test__get_params(self, padding, pad_if_needed, size, mocker):
         image = mocker.MagicMock(spec=features.Image)
         image.num_channels = 3
-        image.image_size = (24, 32)
-        h, w = image.image_size
+        image.spatial_size = (24, 32)
+        h, w = image.spatial_size
 
         transform = transforms.RandomCrop(size, padding=padding, pad_if_needed=pad_if_needed)
         params = transform._get_params(image)
@@ -771,19 +771,19 @@ class TestRandomCrop:
 
         inpt = mocker.MagicMock(spec=features.Image)
         inpt.num_channels = 3
-        inpt.image_size = (32, 32)
+        inpt.spatial_size = (32, 32)
 
         expected = mocker.MagicMock(spec=features.Image)
         expected.num_channels = 3
         if isinstance(padding, int):
-            expected.image_size = (inpt.image_size[0] + padding, inpt.image_size[1] + padding)
+            expected.spatial_size = (inpt.spatial_size[0] + padding, inpt.spatial_size[1] + padding)
         elif isinstance(padding, list):
-            expected.image_size = (
-                inpt.image_size[0] + sum(padding[0::2]),
-                inpt.image_size[1] + sum(padding[1::2]),
+            expected.spatial_size = (
+                inpt.spatial_size[0] + sum(padding[0::2]),
+                inpt.spatial_size[1] + sum(padding[1::2]),
             )
         else:
-            expected.image_size = inpt.image_size
+            expected.spatial_size = inpt.spatial_size
         _ = mocker.patch("torchvision.prototype.transforms.functional.pad", return_value=expected)
         fn_crop = mocker.patch("torchvision.prototype.transforms.functional.crop")
 
@@ -859,7 +859,7 @@ class TestGaussianBlur:
         fn = mocker.patch("torchvision.prototype.transforms.functional.gaussian_blur")
         inpt = mocker.MagicMock(spec=features.Image)
         inpt.num_channels = 3
-        inpt.image_size = (24, 32)
+        inpt.spatial_size = (24, 32)
 
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
@@ -910,11 +910,11 @@ class TestRandomPerspective:
         transform = transforms.RandomPerspective(dscale)
         image = mocker.MagicMock(spec=features.Image)
         image.num_channels = 3
-        image.image_size = (24, 32)
+        image.spatial_size = (24, 32)
 
         params = transform._get_params(image)
 
-        h, w = image.image_size
+        h, w = image.spatial_size
         assert "perspective_coeffs" in params
         assert len(params["perspective_coeffs"]) == 8
 
@@ -927,7 +927,7 @@ class TestRandomPerspective:
         fn = mocker.patch("torchvision.prototype.transforms.functional.perspective")
         inpt = mocker.MagicMock(spec=features.Image)
         inpt.num_channels = 3
-        inpt.image_size = (24, 32)
+        inpt.spatial_size = (24, 32)
         # vfdev-5, Feature Request: let's store params as Transform attribute
         # This could be also helpful for users
         # Otherwise, we can mock transform._get_params
@@ -971,11 +971,11 @@ class TestElasticTransform:
         transform = transforms.ElasticTransform(alpha, sigma)
         image = mocker.MagicMock(spec=features.Image)
         image.num_channels = 3
-        image.image_size = (24, 32)
+        image.spatial_size = (24, 32)
 
         params = transform._get_params(image)
 
-        h, w = image.image_size
+        h, w = image.spatial_size
         displacement = params["displacement"]
         assert displacement.shape == (1, h, w, 2)
         assert (-alpha / w <= displacement[0, ..., 0]).all() and (displacement[0, ..., 0] <= alpha / w).all()
@@ -1001,7 +1001,7 @@ class TestElasticTransform:
         fn = mocker.patch("torchvision.prototype.transforms.functional.elastic")
         inpt = mocker.MagicMock(spec=features.Image)
         inpt.num_channels = 3
-        inpt.image_size = (24, 32)
+        inpt.spatial_size = (24, 32)
 
         # Let's mock transform._get_params to control the output:
         transform._get_params = mocker.MagicMock()
@@ -1030,7 +1030,7 @@ class TestRandomErasing:
 
         image = mocker.MagicMock(spec=features.Image)
         image.num_channels = 3
-        image.image_size = (24, 32)
+        image.spatial_size = (24, 32)
 
         transform = transforms.RandomErasing(value=[1, 2, 3, 4])
 
@@ -1041,7 +1041,7 @@ class TestRandomErasing:
     def test__get_params(self, value, mocker):
         image = mocker.MagicMock(spec=features.Image)
         image.num_channels = 3
-        image.image_size = (24, 32)
+        image.spatial_size = (24, 32)
 
         transform = transforms.RandomErasing(value=value)
         params = transform._get_params(image)
@@ -1057,8 +1057,8 @@ class TestRandomErasing:
         elif isinstance(value, (list, tuple)):
             assert v.shape == (image.num_channels, 1, 1)
 
-        assert 0 <= i <= image.image_size[0] - h
-        assert 0 <= j <= image.image_size[1] - w
+        assert 0 <= i <= image.spatial_size[0] - h
+        assert 0 <= j <= image.spatial_size[1] - w
 
     @pytest.mark.parametrize("p", [0, 1])
     def test__transform(self, mocker, p):
@@ -1222,11 +1222,11 @@ class TestRandomIoUCrop:
     def test__get_params(self, device, options, mocker):
         image = mocker.MagicMock(spec=features.Image)
         image.num_channels = 3
-        image.image_size = (24, 32)
+        image.spatial_size = (24, 32)
         bboxes = features.BoundingBox(
             torch.tensor([[1, 1, 10, 10], [20, 20, 23, 23], [1, 20, 10, 23], [20, 1, 23, 10]]),
             format="XYXY",
-            image_size=image.image_size,
+            spatial_size=image.spatial_size,
             device=device,
         )
         sample = [image, bboxes]
@@ -1245,8 +1245,8 @@ class TestRandomIoUCrop:
             assert len(params["is_within_crop_area"]) > 0
             assert params["is_within_crop_area"].dtype == torch.bool
 
-            orig_h = image.image_size[0]
-            orig_w = image.image_size[1]
+            orig_h = image.spatial_size[0]
+            orig_w = image.spatial_size[1]
             assert int(transform.min_scale * orig_h) <= params["height"] <= int(transform.max_scale * orig_h)
             assert int(transform.min_scale * orig_w) <= params["width"] <= int(transform.max_scale * orig_w)
 
@@ -1261,7 +1261,7 @@ class TestRandomIoUCrop:
     def test__transform_empty_params(self, mocker):
         transform = transforms.RandomIoUCrop(sampler_options=[2.0])
         image = features.Image(torch.rand(1, 3, 4, 4))
-        bboxes = features.BoundingBox(torch.tensor([[1, 1, 2, 2]]), format="XYXY", image_size=(4, 4))
+        bboxes = features.BoundingBox(torch.tensor([[1, 1, 2, 2]]), format="XYXY", spatial_size=(4, 4))
         label = features.Label(torch.tensor([1]))
         sample = [image, bboxes, label]
         # Let's mock transform._get_params to control the output:
@@ -1281,7 +1281,7 @@ class TestRandomIoUCrop:
         transform = transforms.RandomIoUCrop()
 
         image = features.Image(torch.rand(3, 32, 24))
-        bboxes = make_bounding_box(format="XYXY", image_size=(32, 24), extra_dims=(6,))
+        bboxes = make_bounding_box(format="XYXY", spatial_size=(32, 24), extra_dims=(6,))
         label = features.Label(torch.randint(0, 10, size=(6,)))
         ohe_label = features.OneHotLabel(torch.zeros(6, 10).scatter_(1, label.unsqueeze(1), 1))
         masks = make_detection_mask((32, 24), num_objects=6)
@@ -1329,12 +1329,12 @@ class TestRandomIoUCrop:
 
 class TestScaleJitter:
     def test__get_params(self, mocker):
-        image_size = (24, 32)
+        spatial_size = (24, 32)
         target_size = (16, 12)
         scale_range = (0.5, 1.5)
 
         transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
-        sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
+        sample = mocker.MagicMock(spec=features.Image, num_channels=3, spatial_size=spatial_size)
 
         n_samples = 5
         for _ in range(n_samples):
@@ -1347,11 +1347,11 @@ class TestScaleJitter:
             assert isinstance(size, tuple) and len(size) == 2
             height, width = size
 
-            r_min = min(target_size[1] / image_size[0], target_size[0] / image_size[1]) * scale_range[0]
-            r_max = min(target_size[1] / image_size[0], target_size[0] / image_size[1]) * scale_range[1]
+            r_min = min(target_size[1] / spatial_size[0], target_size[0] / spatial_size[1]) * scale_range[0]
+            r_max = min(target_size[1] / spatial_size[0], target_size[0] / spatial_size[1]) * scale_range[1]
 
-            assert int(image_size[0] * r_min) <= height <= int(image_size[0] * r_max)
-            assert int(image_size[1] * r_min) <= width <= int(image_size[1] * r_max)
+            assert int(spatial_size[0] * r_min) <= height <= int(spatial_size[0] * r_max)
+            assert int(spatial_size[1] * r_min) <= width <= int(spatial_size[1] * r_max)
 
     def test__transform(self, mocker):
         interpolation_sentinel = mocker.MagicMock()
@@ -1379,13 +1379,13 @@ class TestScaleJitter:
 
 class TestRandomShortestSize:
     def test__get_params(self, mocker):
-        image_size = (3, 10)
+        spatial_size = (3, 10)
         min_size = [5, 9]
         max_size = 20
 
         transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size)
 
-        sample = mocker.MagicMock(spec=features.Image, num_channels=3, image_size=image_size)
+        sample = mocker.MagicMock(spec=features.Image, num_channels=3, spatial_size=spatial_size)
         params = transform._get_params(sample)
 
         assert "size" in params
@@ -1504,7 +1504,7 @@ class TestSimpleCopyPaste:
             labels = torch.nn.functional.one_hot(labels, num_classes=5)
         target = {
             "boxes": features.BoundingBox(
-                torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", image_size=(32, 32)
+                torch.tensor([[2.0, 3.0, 8.0, 9.0], [20.0, 20.0, 30.0, 30.0]]), format="XYXY", spatial_size=(32, 32)
             ),
             "masks": features.Mask(masks),
             "labels": label_type(labels),
@@ -1519,7 +1519,7 @@ class TestSimpleCopyPaste:
             paste_labels = torch.nn.functional.one_hot(paste_labels, num_classes=5)
         paste_target = {
             "boxes": features.BoundingBox(
-                torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", image_size=(32, 32)
+                torch.tensor([[12.0, 13.0, 19.0, 18.0], [1.0, 15.0, 8.0, 19.0]]), format="XYXY", spatial_size=(32, 32)
             ),
             "masks": features.Mask(paste_masks),
             "labels": label_type(paste_labels),
@@ -1550,14 +1550,14 @@ class TestFixedSizeCrop:
     def test__get_params(self, mocker):
         crop_size = (7, 7)
         batch_shape = (10,)
-        image_size = (11, 5)
+        spatial_size = (11, 5)
 
         transform = transforms.FixedSizeCrop(size=crop_size)
 
         sample = dict(
-            image=make_image(size=image_size, color_space=features.ColorSpace.RGB),
+            image=make_image(size=spatial_size, color_space=features.ColorSpace.RGB),
             bounding_boxes=make_bounding_box(
-                format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=batch_shape
+                format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=batch_shape
             ),
         )
         params = transform._get_params(sample)
@@ -1638,7 +1638,7 @@ class TestFixedSizeCrop:
 
     def test__transform_culling(self, mocker):
         batch_size = 10
-        image_size = (10, 10)
+        spatial_size = (10, 10)
 
         is_valid = torch.randint(0, 2, (batch_size,), dtype=torch.bool)
         mocker.patch(
@@ -1647,17 +1647,17 @@ class TestFixedSizeCrop:
                 needs_crop=True,
                 top=0,
                 left=0,
-                height=image_size[0],
-                width=image_size[1],
+                height=spatial_size[0],
+                width=spatial_size[1],
                 is_valid=is_valid,
                 needs_pad=False,
             ),
         )
 
         bounding_boxes = make_bounding_box(
-            format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
+            format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(batch_size,)
         )
-        masks = make_detection_mask(size=image_size, extra_dims=(batch_size,))
+        masks = make_detection_mask(size=spatial_size, extra_dims=(batch_size,))
         labels = make_label(extra_dims=(batch_size,))
 
         transform = transforms.FixedSizeCrop((-1, -1))
@@ -1678,7 +1678,7 @@ class TestFixedSizeCrop:
 
     def test__transform_bounding_box_clamping(self, mocker):
         batch_size = 3
-        image_size = (10, 10)
+        spatial_size = (10, 10)
 
         mocker.patch(
             "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
@@ -1686,15 +1686,15 @@ class TestFixedSizeCrop:
                 needs_crop=True,
                 top=0,
                 left=0,
-                height=image_size[0],
-                width=image_size[1],
+                height=spatial_size[0],
+                width=spatial_size[1],
                 is_valid=torch.full((batch_size,), fill_value=True),
                 needs_pad=False,
             ),
         )
 
         bounding_box = make_bounding_box(
-            format=features.BoundingBoxFormat.XYXY, image_size=image_size, extra_dims=(batch_size,)
+            format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=(batch_size,)
         )
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_box")
 

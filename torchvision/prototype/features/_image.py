@@ -105,7 +105,7 @@ class Image(_Feature):
         return self._make_repr(color_space=self.color_space)
 
     @property
-    def image_size(self) -> Tuple[int, int]:
+    def spatial_size(self) -> Tuple[int, int]:
         return cast(Tuple[int, int], tuple(self.shape[-2:]))
 
     @property
