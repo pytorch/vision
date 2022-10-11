@@ -1,6 +1,14 @@
 import torch
 import torch.nn as nn
 
+from torchvision.prototype import features
+
+
+class WrapIntoFeatures(torch.nn.Module):
+    def forward(self, sample):
+        video, _, target, id = sample
+        return features.Video(video), features.Label(target), id
+
 
 class ConvertBCHWtoCBHW(nn.Module):
     """Convert tensor from (B, C, H, W) to (C, B, H, W)"""
