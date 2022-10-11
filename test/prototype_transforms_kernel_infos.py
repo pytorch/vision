@@ -49,7 +49,7 @@ class KernelInfo(InfoBase):
         test_marks=None,
         # See InfoBase
         closeness_kwargs=None,
-        seed=None
+        seed=None,
     ):
         super().__init__(id=kernel_name or kernel.__name__, test_marks=test_marks, closeness_kwargs=closeness_kwargs)
         self.kernel = kernel
