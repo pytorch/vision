@@ -11,12 +11,18 @@ from ._meta import (
     get_dimensions_image_tensor,
     get_dimensions_image_pil,
     get_dimensions,
+    get_num_frames_video,
+    get_num_frames,
     get_image_num_channels,
     get_num_channels_image_tensor,
     get_num_channels_image_pil,
+    get_num_channels_video,
     get_num_channels,
+    get_spatial_size_bounding_box,
     get_spatial_size_image_tensor,
     get_spatial_size_image_pil,
+    get_spatial_size_mask,
+    get_spatial_size_video,
     get_spatial_size,
 )  # usort: skip
 

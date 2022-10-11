@@ -108,7 +108,7 @@ class VOC(Dataset):
                     for instance in instances
                 ],
                 format="xyxy",
-                image_size=cast(Tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
+                spatial_size=cast(Tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
             ),
             labels=Label(
                 [self._categories.index(instance["name"]) for instance in instances], categories=self._categories

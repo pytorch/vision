@@ -144,7 +144,7 @@ class CelebA(Dataset):
             bounding_box=BoundingBox(
                 [int(bounding_box[key]) for key in ("x_1", "y_1", "width", "height")],
                 format="xywh",
-                image_size=image.image_size,
+                spatial_size=image.spatial_size,
             ),
             landmarks={
                 landmark: _Feature((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
