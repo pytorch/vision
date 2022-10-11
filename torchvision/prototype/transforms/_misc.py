@@ -38,7 +38,7 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image, features.Video)
 
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
         super().__init__()
@@ -68,7 +68,7 @@ class LinearTransformation(Transform):
 
         return super().forward(*inputs)
 
-    def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]) -> torch.Tensor:
         # Image instance after linear transformation is not Image anymore due to unknown data range
         # Thus we will return Tensor for input Image
 
@@ -93,7 +93,7 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    _transformed_types = (features.Image, features.is_simple_tensor)
+    _transformed_types = (features.Image, features.is_simple_tensor, features.Video)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()
@@ -101,7 +101,7 @@ class Normalize(Transform):
         self.std = list(std)
         self.inplace = inplace
 
-    def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]) -> torch.Tensor:
         return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
     def forward(self, *inpts: Any) -> Any:
@@ -140,6 +140,7 @@ class GaussianBlur(Transform):
         return F.gaussian_blur(inpt, self.kernel_size, **params)
 
 
+# TODO: Enhance as described at https://github.com/pytorch/vision/issues/6697
 class ToDtype(Lambda):
     def __init__(self, dtype: torch.dtype, *types: Type) -> None:
         self.dtype = dtype
@@ -171,4 +172,4 @@ class RemoveSmallBoundingBoxes(Transform):
         return dict(valid_indices=valid_indices)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return inpt.new_like(inpt, inpt[params["valid_indices"]])
+        return inpt.wrap_like(inpt, inpt[params["valid_indices"]])

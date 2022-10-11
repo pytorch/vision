@@ -3,6 +3,7 @@
 import collections.abc
 import dataclasses
 import functools
+from collections import defaultdict
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 import PIL.Image
@@ -45,6 +46,11 @@ __all__ = [
     "make_segmentation_masks",
     "make_mask_loaders",
     "make_masks",
+    "make_video",
+    "make_videos",
+    "TestMark",
+    "mark_framework_limitation",
+    "InfoBase",
 ]
 
 
@@ -178,13 +184,18 @@ class ArgsKwargs:
         return args, kwargs
 
 
-DEFAULT_SQUARE_IMAGE_SIZE = 15
-DEFAULT_LANDSCAPE_IMAGE_SIZE = (7, 33)
-DEFAULT_PORTRAIT_IMAGE_SIZE = (31, 9)
-DEFAULT_IMAGE_SIZES = (DEFAULT_LANDSCAPE_IMAGE_SIZE, DEFAULT_PORTRAIT_IMAGE_SIZE, DEFAULT_SQUARE_IMAGE_SIZE, "random")
+DEFAULT_SQUARE_SPATIAL_SIZE = 15
+DEFAULT_LANDSCAPE_SPATIAL_SIZE = (7, 33)
+DEFAULT_PORTRAIT_SPATIAL_SIZE = (31, 9)
+DEFAULT_SPATIAL_SIZES = (
+    DEFAULT_LANDSCAPE_SPATIAL_SIZE,
+    DEFAULT_PORTRAIT_SPATIAL_SIZE,
+    DEFAULT_SQUARE_SPATIAL_SIZE,
+    "random",
+)
 
 
-def _parse_image_size(size, *, name="size"):
+def _parse_spatial_size(size, *, name="size"):
     if size == "random":
         return tuple(torch.randint(15, 33, (2,)).tolist())
     elif isinstance(size, int) and size > 0:
@@ -210,17 +221,19 @@ DEFAULT_EXTRA_DIMS = (*VALID_EXTRA_DIMS, *DEGENERATE_BATCH_DIMS)
 
 def from_loader(loader_fn):
     def wrapper(*args, **kwargs):
+        device = kwargs.pop("device", "cpu")
         loader = loader_fn(*args, **kwargs)
-        return loader.load(kwargs.get("device", "cpu"))
+        return loader.load(device)
 
     return wrapper
 
 
 def from_loaders(loaders_fn):
     def wrapper(*args, **kwargs):
+        device = kwargs.pop("device", "cpu")
         loaders = loaders_fn(*args, **kwargs)
         for loader in loaders:
-            yield loader.load(kwargs.get("device", "cpu"))
+            yield loader.load(device)
 
     return wrapper
 
@@ -238,12 +251,27 @@ class TensorLoader:
 @dataclasses.dataclass
 class ImageLoader(TensorLoader):
     color_space: features.ColorSpace
-    image_size: Tuple[int, int] = dataclasses.field(init=False)
+    spatial_size: Tuple[int, int] = dataclasses.field(init=False)
     num_channels: int = dataclasses.field(init=False)
 
     def __post_init__(self):
-        self.image_size = self.shape[-2:]
+        self.spatial_size = self.shape[-2:]
         self.num_channels = self.shape[-3]
+
+
+NUM_CHANNELS_MAP = {
+    features.ColorSpace.GRAY: 1,
+    features.ColorSpace.GRAY_ALPHA: 2,
+    features.ColorSpace.RGB: 3,
+    features.ColorSpace.RGB_ALPHA: 4,
+}
+
+
+def get_num_channels(color_space):
+    num_channels = NUM_CHANNELS_MAP.get(color_space)
+    if not num_channels:
+        raise pytest.UsageError(f"Can't determine the number of channels for color space {color_space}")
+    return num_channels
 
 
 def make_image_loader(
@@ -254,17 +282,8 @@ def make_image_loader(
     dtype=torch.float32,
     constant_alpha=True,
 ):
-    size = _parse_image_size(size)
-
-    try:
-        num_channels = {
-            features.ColorSpace.GRAY: 1,
-            features.ColorSpace.GRAY_ALPHA: 2,
-            features.ColorSpace.RGB: 3,
-            features.ColorSpace.RGB_ALPHA: 4,
-        }[color_space]
-    except KeyError as error:
-        raise pytest.UsageError(f"Can't determine the number of channels for color space {color_space}") from error
+    size = _parse_spatial_size(size)
+    num_channels = get_num_channels(color_space)
 
     def fn(shape, dtype, device):
         max_value = get_max_value(dtype)
@@ -281,7 +300,7 @@ make_image = from_loader(make_image_loader)
 
 def make_image_loaders(
     *,
-    sizes=DEFAULT_IMAGE_SIZES,
+    sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
         features.ColorSpace.GRAY,
         features.ColorSpace.GRAY_ALPHA,
@@ -302,7 +321,7 @@ make_images = from_loaders(make_image_loaders)
 @dataclasses.dataclass
 class BoundingBoxLoader(TensorLoader):
     format: features.BoundingBoxFormat
-    image_size: Tuple[int, int]
+    spatial_size: Tuple[int, int]
 
 
 def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
@@ -317,7 +336,7 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
     ).reshape(low.shape)
 
 
-def make_bounding_box_loader(*, extra_dims=(), format, image_size="random", dtype=torch.float32):
+def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dtype=torch.float32):
     if isinstance(format, str):
         format = features.BoundingBoxFormat[format]
     if format not in {
@@ -327,7 +346,7 @@ def make_bounding_box_loader(*, extra_dims=(), format, image_size="random", dtyp
     }:
         raise pytest.UsageError(f"Can't make bounding box in format {format}")
 
-    image_size = _parse_image_size(image_size, name="image_size")
+    spatial_size = _parse_spatial_size(spatial_size, name="spatial_size")
 
     def fn(shape, dtype, device):
         *extra_dims, num_coordinates = shape
@@ -336,10 +355,10 @@ def make_bounding_box_loader(*, extra_dims=(), format, image_size="random", dtyp
 
         if any(dim == 0 for dim in extra_dims):
             return features.BoundingBox(
-                torch.empty(*extra_dims, 4, dtype=dtype, device=device), format=format, image_size=image_size
+                torch.empty(*extra_dims, 4, dtype=dtype, device=device), format=format, spatial_size=spatial_size
             )
 
-        height, width = image_size
+        height, width = spatial_size
 
         if format == features.BoundingBoxFormat.XYXY:
             x1 = torch.randint(0, width // 2, extra_dims)
@@ -361,10 +380,10 @@ def make_bounding_box_loader(*, extra_dims=(), format, image_size="random", dtyp
             parts = (cx, cy, w, h)
 
         return features.BoundingBox(
-            torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, image_size=image_size
+            torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=spatial_size
         )
 
-    return BoundingBoxLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, image_size=image_size)
+    return BoundingBoxLoader(fn, shape=(*extra_dims, 4), dtype=dtype, format=format, spatial_size=spatial_size)
 
 
 make_bounding_box = from_loader(make_bounding_box_loader)
@@ -374,11 +393,11 @@ def make_bounding_box_loaders(
     *,
     extra_dims=DEFAULT_EXTRA_DIMS,
     formats=tuple(features.BoundingBoxFormat),
-    image_size="random",
+    spatial_size="random",
     dtypes=(torch.float32, torch.int64),
 ):
     for params in combinations_grid(extra_dims=extra_dims, format=formats, dtype=dtypes):
-        yield make_bounding_box_loader(**params, image_size=image_size)
+        yield make_bounding_box_loader(**params, spatial_size=spatial_size)
 
 
 make_bounding_boxes = from_loaders(make_bounding_box_loaders)
@@ -461,7 +480,7 @@ class MaskLoader(TensorLoader):
 
 def make_detection_mask_loader(size="random", *, num_objects="random", extra_dims=(), dtype=torch.uint8):
     # This produces "detection" masks, i.e. `(*, N, H, W)`, where `N` denotes the number of objects
-    size = _parse_image_size(size)
+    size = _parse_spatial_size(size)
     num_objects = int(torch.randint(1, 11, ())) if num_objects == "random" else num_objects
 
     def fn(shape, dtype, device):
@@ -475,7 +494,7 @@ make_detection_mask = from_loader(make_detection_mask_loader)
 
 
 def make_detection_mask_loaders(
-    sizes=DEFAULT_IMAGE_SIZES,
+    sizes=DEFAULT_SPATIAL_SIZES,
     num_objects=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8,),
@@ -489,7 +508,7 @@ make_detection_masks = from_loaders(make_detection_mask_loaders)
 
 def make_segmentation_mask_loader(size="random", *, num_categories="random", extra_dims=(), dtype=torch.uint8):
     # This produces "segmentation" masks, i.e. `(*, H, W)`, where the category is encoded in the values
-    size = _parse_image_size(size)
+    size = _parse_spatial_size(size)
     num_categories = int(torch.randint(1, 11, ())) if num_categories == "random" else num_categories
 
     def fn(shape, dtype, device):
@@ -504,7 +523,7 @@ make_segmentation_mask = from_loader(make_segmentation_mask_loader)
 
 def make_segmentation_mask_loaders(
     *,
-    sizes=DEFAULT_IMAGE_SIZES,
+    sizes=DEFAULT_SPATIAL_SIZES,
     num_categories=(1, 2, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.uint8,),
@@ -518,7 +537,7 @@ make_segmentation_masks = from_loaders(make_segmentation_mask_loaders)
 
 def make_mask_loaders(
     *,
-    sizes=DEFAULT_IMAGE_SIZES,
+    sizes=DEFAULT_SPATIAL_SIZES,
     num_objects=(1, 0, "random"),
     num_categories=(1, 2, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,
@@ -531,3 +550,99 @@ def make_mask_loaders(
 
 
 make_masks = from_loaders(make_mask_loaders)
+
+
+class VideoLoader(ImageLoader):
+    pass
+
+
+def make_video_loader(
+    size="random",
+    *,
+    color_space=features.ColorSpace.RGB,
+    num_frames="random",
+    extra_dims=(),
+    dtype=torch.uint8,
+):
+    size = _parse_spatial_size(size)
+    num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
+
+    def fn(shape, dtype, device):
+        video = make_image(size=shape[-2:], color_space=color_space, extra_dims=shape[:-3], dtype=dtype, device=device)
+        return features.Video(video, color_space=color_space)
+
+    return VideoLoader(
+        fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype, color_space=color_space
+    )
+
+
+make_video = from_loader(make_video_loader)
+
+
+def make_video_loaders(
+    *,
+    sizes=DEFAULT_SPATIAL_SIZES,
+    color_spaces=(
+        features.ColorSpace.GRAY,
+        features.ColorSpace.RGB,
+    ),
+    num_frames=(1, 0, "random"),
+    extra_dims=DEFAULT_EXTRA_DIMS,
+    dtypes=(torch.uint8,),
+):
+    for params in combinations_grid(
+        size=sizes, color_space=color_spaces, num_frames=num_frames, extra_dims=extra_dims, dtype=dtypes
+    ):
+        yield make_video_loader(**params)
+
+
+make_videos = from_loaders(make_video_loaders)
+
+
+class TestMark:
+    def __init__(
+        self,
+        # Tuple of test class name and test function name that identifies the test the mark is applied to. If there is
+        # no test class, i.e. a standalone test function, use `None`.
+        test_id,
+        # `pytest.mark.*` to apply, e.g. `pytest.mark.skip` or `pytest.mark.xfail`
+        mark,
+        *,
+        # Callable, that will be passed an `ArgsKwargs` and should return a boolean to indicate if the mark will be
+        # applied. If omitted, defaults to always apply.
+        condition=None,
+    ):
+        self.test_id = test_id
+        self.mark = mark
+        self.condition = condition or (lambda args_kwargs: True)
+
+
+def mark_framework_limitation(test_id, reason):
+    # The purpose of this function is to have a single entry point for skip marks that are only there, because the test
+    # framework cannot handle the kernel in general or a specific parameter combination.
+    # As development progresses, we can change the `mark.skip` to `mark.xfail` from time to time to see if the skip is
+    # still justified.
+    # We don't want to use `mark.xfail` all the time, because that actually runs the test until an error happens. Thus,
+    # we are wasting CI resources for no reason for most of the time
+    return TestMark(test_id, pytest.mark.skip(reason=reason))
+
+
+class InfoBase:
+    def __init__(self, *, id, test_marks=None, closeness_kwargs=None):
+        # Identifier if the info that shows up the parametrization.
+        self.id = id
+        # Test markers that will be (conditionally) applied to an `ArgsKwargs` parametrization.
+        # See the `TestMark` class for details
+        self.test_marks = test_marks or []
+        # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
+        self.closeness_kwargs = closeness_kwargs or dict()
+
+        test_marks_map = defaultdict(list)
+        for test_mark in self.test_marks:
+            test_marks_map[test_mark.test_id].append(test_mark)
+        self._test_marks_map = dict(test_marks_map)
+
+    def get_marks(self, test_id, args_kwargs):
+        return [
+            test_mark.mark for test_mark in self._test_marks_map.get(test_id, []) if test_mark.condition(args_kwargs)
+        ]

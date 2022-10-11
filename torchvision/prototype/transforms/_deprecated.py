@@ -29,7 +29,7 @@ class ToTensor(Transform):
 
 
 class Grayscale(Transform):
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
 
     def __init__(self, num_output_channels: Literal[1, 3] = 1) -> None:
         deprecation_msg = (
@@ -52,15 +52,15 @@ class Grayscale(Transform):
         super().__init__()
         self.num_output_channels = num_output_channels
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
         output = _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
-        if isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.GRAY)
+        if isinstance(inpt, (features.Image, features.Video)):
+            output = inpt.wrap_like(inpt, output, color_space=features.ColorSpace.GRAY)  # type: ignore[arg-type]
         return output
 
 
 class RandomGrayscale(_RandomApplyTransform):
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
 
     def __init__(self, p: float = 0.1) -> None:
         warnings.warn(
@@ -78,11 +78,11 @@ class RandomGrayscale(_RandomApplyTransform):
         super().__init__(p=p)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        num_input_channels, _, _ = query_chw(sample)
+        num_input_channels, *_ = query_chw(sample)
         return dict(num_input_channels=num_input_channels)
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
         output = _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
-        if isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.GRAY)
+        if isinstance(inpt, (features.Image, features.Video)):
+            output = inpt.wrap_like(inpt, output, color_space=features.ColorSpace.GRAY)  # type: ignore[arg-type]
         return output

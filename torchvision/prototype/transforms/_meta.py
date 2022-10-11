@@ -18,23 +18,27 @@ class ConvertBoundingBoxFormat(Transform):
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
         output = F.convert_format_bounding_box(inpt, old_format=inpt.format, new_format=params["format"])
-        return features.BoundingBox.new_like(inpt, output, format=params["format"])
+        return features.BoundingBox.wrap_like(inpt, output, format=params["format"])
 
 
 class ConvertImageDtype(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image, features.Video)
 
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.dtype = dtype
 
-    def _transform(self, inpt: features.TensorImageType, params: Dict[str, Any]) -> features.TensorImageType:
+    def _transform(
+        self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]
+    ) -> features.TensorImageOrVideoType:
         output = F.convert_image_dtype(inpt, dtype=self.dtype)
-        return output if features.is_simple_tensor(inpt) else features.Image.new_like(inpt, output, dtype=self.dtype)  # type: ignore[arg-type]
+        return (
+            output if features.is_simple_tensor(inpt) else type(inpt).wrap_like(inpt, output)  # type: ignore[attr-defined]
+        )
 
 
 class ConvertColorSpace(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image)
+    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image, features.Video)
 
     def __init__(
         self,
@@ -54,7 +58,7 @@ class ConvertColorSpace(Transform):
 
         self.copy = copy
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
         return F.convert_color_space(
             inpt, color_space=self.color_space, old_color_space=self.old_color_space, copy=self.copy
         )
@@ -64,5 +68,5 @@ class ClampBoundingBoxes(Transform):
     _transformed_types = (features.BoundingBox,)
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
-        output = F.clamp_bounding_box(inpt, format=inpt.format, image_size=inpt.image_size)
-        return features.BoundingBox.new_like(inpt, output)
+        output = F.clamp_bounding_box(inpt, format=inpt.format, spatial_size=inpt.spatial_size)
+        return features.BoundingBox.wrap_like(inpt, output)

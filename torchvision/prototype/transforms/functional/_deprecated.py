@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, List
+from typing import Any, List, Union
 
 import PIL.Image
 import torch
@@ -22,10 +22,13 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
     return _F.to_grayscale(inpt, num_output_channels=num_output_channels)
 
 
-def rgb_to_grayscale(inpt: features.LegacyImageTypeJIT, num_output_channels: int = 1) -> features.LegacyImageTypeJIT:
+def rgb_to_grayscale(
+    inpt: Union[features.LegacyImageTypeJIT, features.LegacyVideoTypeJIT], num_output_channels: int = 1
+) -> Union[features.LegacyImageTypeJIT, features.LegacyVideoTypeJIT]:
     old_color_space = (
         features._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
-        if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image))
+        if isinstance(inpt, torch.Tensor)
+        and (torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video)))
         else None
     )
 
@@ -56,7 +59,7 @@ def to_tensor(inpt: Any) -> torch.Tensor:
     return _F.to_tensor(inpt)
 
 
-def get_image_size(inpt: features.ImageTypeJIT) -> List[int]:
+def get_image_size(inpt: features.ImageOrVideoTypeJIT) -> List[int]:
     warnings.warn(
         "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
         "Instead, please use `get_spatial_size(...)` which returns `[h, w]` instead of `[w, h]`."

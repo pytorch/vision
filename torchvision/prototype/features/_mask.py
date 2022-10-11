@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Union
+from typing import Any, cast, List, Optional, Tuple, Union
 
 import torch
 from torchvision.transforms import InterpolationMode
@@ -9,13 +9,40 @@ from ._feature import _Feature, FillTypeJIT
 
 
 class Mask(_Feature):
+    @classmethod
+    def _wrap(cls, tensor: torch.Tensor) -> Mask:
+        return tensor.as_subclass(cls)
+
+    def __new__(
+        cls,
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: bool = False,
+    ) -> Mask:
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        return cls._wrap(tensor)
+
+    @classmethod
+    def wrap_like(
+        cls,
+        other: Mask,
+        tensor: torch.Tensor,
+    ) -> Mask:
+        return cls._wrap(tensor)
+
+    @property
+    def spatial_size(self) -> Tuple[int, int]:
+        return cast(Tuple[int, int], tuple(self.shape[-2:]))
+
     def horizontal_flip(self) -> Mask:
         output = self._F.horizontal_flip_mask(self)
-        return Mask.new_like(self, output)
+        return Mask.wrap_like(self, output)
 
     def vertical_flip(self) -> Mask:
         output = self._F.vertical_flip_mask(self)
-        return Mask.new_like(self, output)
+        return Mask.wrap_like(self, output)
 
     def resize(  # type: ignore[override]
         self,
@@ -25,15 +52,15 @@ class Mask(_Feature):
         antialias: bool = False,
     ) -> Mask:
         output = self._F.resize_mask(self, size, max_size=max_size)
-        return Mask.new_like(self, output)
+        return Mask.wrap_like(self, output)
 
     def crop(self, top: int, left: int, height: int, width: int) -> Mask:
         output = self._F.crop_mask(self, top, left, height, width)
-        return Mask.new_like(self, output)
+        return Mask.wrap_like(self, output)
 
     def center_crop(self, output_size: List[int]) -> Mask:
         output = self._F.center_crop_mask(self, output_size=output_size)
-        return Mask.new_like(self, output)
+        return Mask.wrap_like(self, output)
 
     def resized_crop(
         self,
@@ -46,7 +73,7 @@ class Mask(_Feature):
         antialias: bool = False,
     ) -> Mask:
         output = self._F.resized_crop_mask(self, top, left, height, width, size=size)
-        return Mask.new_like(self, output)
+        return Mask.wrap_like(self, output)
 
     def pad(
         self,
@@ -55,7 +82,7 @@ class Mask(_Feature):
         padding_mode: str = "constant",
     ) -> Mask:
         output = self._F.pad_mask(self, padding, padding_mode=padding_mode, fill=fill)
-        return Mask.new_like(self, output)
+        return Mask.wrap_like(self, output)
 
     def rotate(
         self,
@@ -66,7 +93,7 @@ class Mask(_Feature):
         center: Optional[List[float]] = None,
     ) -> Mask:
         output = self._F.rotate_mask(self, angle, expand=expand, center=center, fill=fill)
-        return Mask.new_like(self, output)
+        return Mask.wrap_like(self, output)
 
     def affine(
         self,
@@ -87,7 +114,7 @@ class Mask(_Feature):
             fill=fill,
             center=center,
         )
-        return Mask.new_like(self, output)
+        return Mask.wrap_like(self, output)
 
     def perspective(
         self,
@@ -96,7 +123,7 @@ class Mask(_Feature):
         fill: FillTypeJIT = None,
     ) -> Mask:
         output = self._F.perspective_mask(self, perspective_coeffs, fill=fill)
-        return Mask.new_like(self, output)
+        return Mask.wrap_like(self, output)
 
     def elastic(
         self,
@@ -105,4 +132,4 @@ class Mask(_Feature):
         fill: FillTypeJIT = None,
     ) -> Mask:
         output = self._F.elastic_mask(self, displacement, fill=fill)
-        return Mask.new_like(self, output, dtype=output.dtype)
+        return Mask.wrap_like(self, output)

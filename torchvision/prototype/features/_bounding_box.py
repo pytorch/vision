@@ -17,64 +17,65 @@ class BoundingBoxFormat(StrEnum):
 
 class BoundingBox(_Feature):
     format: BoundingBoxFormat
-    image_size: Tuple[int, int]
+    spatial_size: Tuple[int, int]
+
+    @classmethod
+    def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat, spatial_size: Tuple[int, int]) -> BoundingBox:
+        bounding_box = tensor.as_subclass(cls)
+        bounding_box.format = format
+        bounding_box.spatial_size = spatial_size
+        return bounding_box
 
     def __new__(
         cls,
         data: Any,
         *,
         format: Union[BoundingBoxFormat, str],
-        image_size: Tuple[int, int],
+        spatial_size: Tuple[int, int],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> BoundingBox:
-        bounding_box = super().__new__(cls, data, dtype=dtype, device=device, requires_grad=requires_grad)
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
 
         if isinstance(format, str):
             format = BoundingBoxFormat.from_str(format.upper())
-        bounding_box.format = format
 
-        bounding_box.image_size = image_size
-
-        return bounding_box
-
-    def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
-        return self._make_repr(format=self.format, image_size=self.image_size)
+        return cls._wrap(tensor, format=format, spatial_size=spatial_size)
 
     @classmethod
-    def new_like(
+    def wrap_like(
         cls,
         other: BoundingBox,
-        data: Any,
+        tensor: torch.Tensor,
         *,
-        format: Optional[Union[BoundingBoxFormat, str]] = None,
-        image_size: Optional[Tuple[int, int]] = None,
-        **kwargs: Any,
+        format: Optional[BoundingBoxFormat] = None,
+        spatial_size: Optional[Tuple[int, int]] = None,
     ) -> BoundingBox:
-        return super().new_like(
-            other,
-            data,
+        return cls._wrap(
+            tensor,
             format=format if format is not None else other.format,
-            image_size=image_size if image_size is not None else other.image_size,
-            **kwargs,
+            spatial_size=spatial_size if spatial_size is not None else other.spatial_size,
         )
+
+    def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
+        return self._make_repr(format=self.format, spatial_size=self.spatial_size)
 
     def to_format(self, format: Union[str, BoundingBoxFormat]) -> BoundingBox:
         if isinstance(format, str):
             format = BoundingBoxFormat.from_str(format.upper())
 
-        return BoundingBox.new_like(
+        return BoundingBox.wrap_like(
             self, self._F.convert_format_bounding_box(self, old_format=self.format, new_format=format), format=format
         )
 
     def horizontal_flip(self) -> BoundingBox:
-        output = self._F.horizontal_flip_bounding_box(self, format=self.format, image_size=self.image_size)
-        return BoundingBox.new_like(self, output)
+        output = self._F.horizontal_flip_bounding_box(self, format=self.format, spatial_size=self.spatial_size)
+        return BoundingBox.wrap_like(self, output)
 
     def vertical_flip(self) -> BoundingBox:
-        output = self._F.vertical_flip_bounding_box(self, format=self.format, image_size=self.image_size)
-        return BoundingBox.new_like(self, output)
+        output = self._F.vertical_flip_bounding_box(self, format=self.format, spatial_size=self.spatial_size)
+        return BoundingBox.wrap_like(self, output)
 
     def resize(  # type: ignore[override]
         self,
@@ -83,20 +84,22 @@ class BoundingBox(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> BoundingBox:
-        output, image_size = self._F.resize_bounding_box(self, image_size=self.image_size, size=size, max_size=max_size)
-        return BoundingBox.new_like(self, output, image_size=image_size)
+        output, spatial_size = self._F.resize_bounding_box(
+            self, spatial_size=self.spatial_size, size=size, max_size=max_size
+        )
+        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
-        output, image_size = self._F.crop_bounding_box(
+        output, spatial_size = self._F.crop_bounding_box(
             self, self.format, top=top, left=left, height=height, width=width
         )
-        return BoundingBox.new_like(self, output, image_size=image_size)
+        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
     def center_crop(self, output_size: List[int]) -> BoundingBox:
-        output, image_size = self._F.center_crop_bounding_box(
-            self, format=self.format, image_size=self.image_size, output_size=output_size
+        output, spatial_size = self._F.center_crop_bounding_box(
+            self, format=self.format, spatial_size=self.spatial_size, output_size=output_size
         )
-        return BoundingBox.new_like(self, output, image_size=image_size)
+        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
     def resized_crop(
         self,
@@ -108,8 +111,8 @@ class BoundingBox(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = False,
     ) -> BoundingBox:
-        output, image_size = self._F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
-        return BoundingBox.new_like(self, output, image_size=image_size)
+        output, spatial_size = self._F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
+        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
     def pad(
         self,
@@ -117,10 +120,10 @@ class BoundingBox(_Feature):
         fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> BoundingBox:
-        output, image_size = self._F.pad_bounding_box(
-            self, format=self.format, image_size=self.image_size, padding=padding, padding_mode=padding_mode
+        output, spatial_size = self._F.pad_bounding_box(
+            self, format=self.format, spatial_size=self.spatial_size, padding=padding, padding_mode=padding_mode
         )
-        return BoundingBox.new_like(self, output, image_size=image_size)
+        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
     def rotate(
         self,
@@ -130,10 +133,10 @@ class BoundingBox(_Feature):
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
-        output, image_size = self._F.rotate_bounding_box(
-            self, format=self.format, image_size=self.image_size, angle=angle, expand=expand, center=center
+        output, spatial_size = self._F.rotate_bounding_box(
+            self, format=self.format, spatial_size=self.spatial_size, angle=angle, expand=expand, center=center
         )
-        return BoundingBox.new_like(self, output, image_size=image_size)
+        return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
     def affine(
         self,
@@ -148,14 +151,14 @@ class BoundingBox(_Feature):
         output = self._F.affine_bounding_box(
             self,
             self.format,
-            self.image_size,
+            self.spatial_size,
             angle,
             translate=translate,
             scale=scale,
             shear=shear,
             center=center,
         )
-        return BoundingBox.new_like(self, output, dtype=output.dtype)
+        return BoundingBox.wrap_like(self, output)
 
     def perspective(
         self,
@@ -164,7 +167,7 @@ class BoundingBox(_Feature):
         fill: FillTypeJIT = None,
     ) -> BoundingBox:
         output = self._F.perspective_bounding_box(self, self.format, perspective_coeffs)
-        return BoundingBox.new_like(self, output, dtype=output.dtype)
+        return BoundingBox.wrap_like(self, output)
 
     def elastic(
         self,
@@ -173,4 +176,4 @@ class BoundingBox(_Feature):
         fill: FillTypeJIT = None,
     ) -> BoundingBox:
         output = self._F.elastic_bounding_box(self, self.format, displacement)
-        return BoundingBox.new_like(self, output, dtype=output.dtype)
+        return BoundingBox.wrap_like(self, output)

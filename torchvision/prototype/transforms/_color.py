@@ -82,7 +82,7 @@ class ColorJitter(Transform):
 
 
 class RandomPhotometricDistort(Transform):
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
 
     def __init__(
         self,
@@ -100,7 +100,7 @@ class RandomPhotometricDistort(Transform):
         self.p = p
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        num_channels, _, _ = query_chw(sample)
+        num_channels, *_ = query_chw(sample)
         return dict(
             zip(
                 ["brightness", "contrast1", "saturation", "hue", "contrast2"],
@@ -110,20 +110,23 @@ class RandomPhotometricDistort(Transform):
             channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
         )
 
-    def _permute_channels(self, inpt: features.ImageType, permutation: torch.Tensor) -> features.ImageType:
+    def _permute_channels(
+        self, inpt: features.ImageOrVideoType, permutation: torch.Tensor
+    ) -> features.ImageOrVideoType:
         if isinstance(inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)
 
         output = inpt[..., permutation, :, :]
 
-        if isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.OTHER)
+        if isinstance(inpt, (features.Image, features.Video)):
+            output = inpt.wrap_like(inpt, output, color_space=features.ColorSpace.OTHER)  # type: ignore[arg-type]
+
         elif isinstance(inpt, PIL.Image.Image):
             output = F.to_image_pil(output)
 
         return output
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])
