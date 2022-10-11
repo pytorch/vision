@@ -214,7 +214,7 @@ class VideoReader:
                         rate_n = "fps"
                     else:
                         rate_n = "framerate"
-                    metadata[stream.type] = {rate: [], "duration": []}
+                    metadata[stream.type] = {rate_n: [], "duration": []}
 
                 rate = stream.average_rate if stream.average_rate is not None else stream.sample_rate
 
