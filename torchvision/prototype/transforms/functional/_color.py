@@ -199,6 +199,7 @@ def _scale_channel(img_chan: torch.Tensor) -> torch.Tensor:
         return img_chan
 
     lut = torch.div(torch.cumsum(hist, 0) + torch.div(step, 2, rounding_mode="floor"), step, rounding_mode="floor")
+    # Doing inplace clamp and converting lut to uint8 improves perfs
     lut.clamp_(0, 255)
     lut = lut.to(torch.uint8)
     lut = torch.nn.functional.pad(lut[:-1], [1, 0])
