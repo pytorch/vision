@@ -110,7 +110,9 @@ class Caltech101(Dataset):
             image=image,
             ann_path=ann_path,
             bounding_box=BoundingBox(
-                ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy", image_size=image.image_size
+                ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]],
+                format="xyxy",
+                spatial_size=image.spatial_size,
             ),
             contour=_Feature(ann["obj_contour"].T),
         )

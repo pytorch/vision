@@ -236,11 +236,14 @@ class TestDispatchers:
     @pytest.mark.parametrize(
         "dispatcher",
         [
+            F.clamp_bounding_box,
             F.convert_color_space,
             F.convert_image_dtype,
             F.get_dimensions,
             F.get_image_num_channels,
             F.get_image_size,
+            F.get_num_channels,
+            F.get_num_frames,
             F.get_spatial_size,
             F.rgb_to_grayscale,
         ],
@@ -345,16 +348,16 @@ def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 def test_correctness_affine_bounding_box_on_fixed_input(device):
     # Check transformation against known expected output
-    image_size = (64, 64)
+    spatial_size = (64, 64)
     # xyxy format
     in_boxes = [
         [20, 25, 35, 45],
         [50, 5, 70, 22],
-        [image_size[1] // 2 - 10, image_size[0] // 2 - 10, image_size[1] // 2 + 10, image_size[0] // 2 + 10],
+        [spatial_size[1] // 2 - 10, spatial_size[0] // 2 - 10, spatial_size[1] // 2 + 10, spatial_size[0] // 2 + 10],
         [1, 1, 5, 5],
     ]
     in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
+        in_boxes, format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, dtype=torch.float64, device=device
     )
     # Tested parameters
     angle = 63
@@ -367,9 +370,9 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
     # from albumentations.augmentations.geometric.functional import normalize_bbox, denormalize_bbox
     # expected_bboxes = []
     # for in_box in in_boxes:
-    #     n_in_box = normalize_bbox(in_box, *image_size)
-    #     n_out_box = bbox_shift_scale_rotate(n_in_box, -angle, scale, dx, dy, *image_size)
-    #     out_box = denormalize_bbox(n_out_box, *image_size)
+    #     n_in_box = normalize_bbox(in_box, *spatial_size)
+    #     n_out_box = bbox_shift_scale_rotate(n_in_box, -angle, scale, dx, dy, *spatial_size)
+    #     out_box = denormalize_bbox(n_out_box, *spatial_size)
     #     expected_bboxes.append(out_box)
     expected_bboxes = [
         (24.522435977922218, 34.375689508290854, 46.443125279998114, 54.3516575015695),
@@ -381,9 +384,9 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
     output_boxes = F.affine_bounding_box(
         in_boxes,
         in_boxes.format,
-        in_boxes.image_size,
+        in_boxes.spatial_size,
         angle,
-        (dx * image_size[1], dy * image_size[0]),
+        (dx * spatial_size[1], dy * spatial_size[0]),
         scale,
         shear=(0, 0),
     )
@@ -418,7 +421,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
         affine_matrix = _compute_affine_matrix(angle_, [0.0, 0.0], 1.0, [0.0, 0.0], center_)
         affine_matrix = affine_matrix[:2, :]
 
-        height, width = bbox.image_size
+        height, width = bbox.spatial_size
         bbox_xyxy = convert_format_bounding_box(
             bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
         )
@@ -456,7 +459,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
         out_bbox = features.BoundingBox(
             out_bbox,
             format=features.BoundingBoxFormat.XYXY,
-            image_size=(height, width),
+            spatial_size=(height, width),
             dtype=bbox.dtype,
             device=bbox.device,
         )
@@ -467,16 +470,16 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             (height, width),
         )
 
-    image_size = (32, 38)
+    spatial_size = (32, 38)
 
-    for bboxes in make_bounding_boxes(image_size=image_size, extra_dims=((4,),)):
+    for bboxes in make_bounding_boxes(spatial_size=spatial_size, extra_dims=((4,),)):
         bboxes_format = bboxes.format
-        bboxes_image_size = bboxes.image_size
+        bboxes_spatial_size = bboxes.spatial_size
 
-        output_bboxes, output_image_size = F.rotate_bounding_box(
+        output_bboxes, output_spatial_size = F.rotate_bounding_box(
             bboxes,
             bboxes_format,
-            image_size=bboxes_image_size,
+            spatial_size=bboxes_spatial_size,
             angle=angle,
             expand=expand,
             center=center,
@@ -484,38 +487,38 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
 
         center_ = center
         if center_ is None:
-            center_ = [s * 0.5 for s in bboxes_image_size[::-1]]
+            center_ = [s * 0.5 for s in bboxes_spatial_size[::-1]]
 
         if bboxes.ndim < 2:
             bboxes = [bboxes]
 
         expected_bboxes = []
         for bbox in bboxes:
-            bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
-            expected_bbox, expected_image_size = _compute_expected_bbox(bbox, -angle, expand, center_)
+            bbox = features.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
+            expected_bbox, expected_spatial_size = _compute_expected_bbox(bbox, -angle, expand, center_)
             expected_bboxes.append(expected_bbox)
         if len(expected_bboxes) > 1:
             expected_bboxes = torch.stack(expected_bboxes)
         else:
             expected_bboxes = expected_bboxes[0]
         torch.testing.assert_close(output_bboxes, expected_bboxes, atol=1, rtol=0)
-        torch.testing.assert_close(output_image_size, expected_image_size, atol=1, rtol=0)
+        torch.testing.assert_close(output_spatial_size, expected_spatial_size, atol=1, rtol=0)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("expand", [False])  # expand=True does not match D2
 def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
     # Check transformation against known expected output
-    image_size = (64, 64)
+    spatial_size = (64, 64)
     # xyxy format
     in_boxes = [
         [1, 1, 5, 5],
-        [1, image_size[0] - 6, 5, image_size[0] - 2],
-        [image_size[1] - 6, image_size[0] - 6, image_size[1] - 2, image_size[0] - 2],
-        [image_size[1] // 2 - 10, image_size[0] // 2 - 10, image_size[1] // 2 + 10, image_size[0] // 2 + 10],
+        [1, spatial_size[0] - 6, 5, spatial_size[0] - 2],
+        [spatial_size[1] - 6, spatial_size[0] - 6, spatial_size[1] - 2, spatial_size[0] - 2],
+        [spatial_size[1] // 2 - 10, spatial_size[0] // 2 - 10, spatial_size[1] // 2 + 10, spatial_size[0] // 2 + 10],
     ]
     in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
+        in_boxes, format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, dtype=torch.float64, device=device
     )
     # Tested parameters
     angle = 45
@@ -547,7 +550,7 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
     output_boxes, _ = F.rotate_bounding_box(
         in_boxes,
         in_boxes.format,
-        in_boxes.image_size,
+        in_boxes.spatial_size,
         angle,
         expand=expand,
         center=center,
@@ -605,11 +608,11 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
         [50.0, 5.0, 70.0, 22.0],
         [45.0, 46.0, 56.0, 62.0],
     ]
-    in_boxes = features.BoundingBox(in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=size, device=device)
+    in_boxes = features.BoundingBox(in_boxes, format=features.BoundingBoxFormat.XYXY, spatial_size=size, device=device)
     if format != features.BoundingBoxFormat.XYXY:
         in_boxes = convert_format_bounding_box(in_boxes, features.BoundingBoxFormat.XYXY, format)
 
-    output_boxes, output_image_size = F.crop_bounding_box(
+    output_boxes, output_spatial_size = F.crop_bounding_box(
         in_boxes,
         format,
         top,
@@ -622,7 +625,7 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
         output_boxes = convert_format_bounding_box(output_boxes, format, features.BoundingBoxFormat.XYXY)
 
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
-    torch.testing.assert_close(output_image_size, size)
+    torch.testing.assert_close(output_spatial_size, size)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -670,7 +673,7 @@ def test_correctness_resized_crop_bounding_box(device, format, top, left, height
         bbox[3] = (bbox[3] - top_) * size_[0] / height_
         return bbox
 
-    image_size = (100, 100)
+    spatial_size = (100, 100)
     # xyxy format
     in_boxes = [
         [10.0, 10.0, 20.0, 20.0],
@@ -682,18 +685,18 @@ def test_correctness_resized_crop_bounding_box(device, format, top, left, height
     expected_bboxes = torch.tensor(expected_bboxes, device=device)
 
     in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, device=device
+        in_boxes, format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, device=device
     )
     if format != features.BoundingBoxFormat.XYXY:
         in_boxes = convert_format_bounding_box(in_boxes, features.BoundingBoxFormat.XYXY, format)
 
-    output_boxes, output_image_size = F.resized_crop_bounding_box(in_boxes, format, top, left, height, width, size)
+    output_boxes, output_spatial_size = F.resized_crop_bounding_box(in_boxes, format, top, left, height, width, size)
 
     if format != features.BoundingBoxFormat.XYXY:
         output_boxes = convert_format_bounding_box(output_boxes, format, features.BoundingBoxFormat.XYXY)
 
     torch.testing.assert_close(output_boxes, expected_bboxes)
-    torch.testing.assert_close(output_image_size, size)
+    torch.testing.assert_close(output_spatial_size, size)
 
 
 def _parse_padding(padding):
@@ -730,28 +733,28 @@ def test_correctness_pad_bounding_box(device, padding):
             bbox = bbox.to(bbox_dtype)
         return bbox
 
-    def _compute_expected_image_size(bbox, padding_):
+    def _compute_expected_spatial_size(bbox, padding_):
         pad_left, pad_up, pad_right, pad_down = _parse_padding(padding_)
-        height, width = bbox.image_size
+        height, width = bbox.spatial_size
         return height + pad_up + pad_down, width + pad_left + pad_right
 
     for bboxes in make_bounding_boxes():
         bboxes = bboxes.to(device)
         bboxes_format = bboxes.format
-        bboxes_image_size = bboxes.image_size
+        bboxes_spatial_size = bboxes.spatial_size
 
-        output_boxes, output_image_size = F.pad_bounding_box(
-            bboxes, format=bboxes_format, image_size=bboxes_image_size, padding=padding
+        output_boxes, output_spatial_size = F.pad_bounding_box(
+            bboxes, format=bboxes_format, spatial_size=bboxes_spatial_size, padding=padding
         )
 
-        torch.testing.assert_close(output_image_size, _compute_expected_image_size(bboxes, padding))
+        torch.testing.assert_close(output_spatial_size, _compute_expected_spatial_size(bboxes, padding))
 
         if bboxes.ndim < 2 or bboxes.shape[0] == 0:
             bboxes = [bboxes]
 
         expected_bboxes = []
         for bbox in bboxes:
-            bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
+            bbox = features.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
             expected_bboxes.append(_compute_expected_bbox(bbox, padding))
 
         if len(expected_bboxes) > 1:
@@ -819,7 +822,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         out_bbox = features.BoundingBox(
             np.array(out_bbox),
             format=features.BoundingBoxFormat.XYXY,
-            image_size=bbox.image_size,
+            spatial_size=bbox.spatial_size,
             dtype=bbox.dtype,
             device=bbox.device,
         )
@@ -827,15 +830,15 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
 
-    image_size = (32, 38)
+    spatial_size = (32, 38)
 
     pcoeffs = _get_perspective_coeffs(startpoints, endpoints)
     inv_pcoeffs = _get_perspective_coeffs(endpoints, startpoints)
 
-    for bboxes in make_bounding_boxes(image_size=image_size, extra_dims=((4,),)):
+    for bboxes in make_bounding_boxes(spatial_size=spatial_size, extra_dims=((4,),)):
         bboxes = bboxes.to(device)
         bboxes_format = bboxes.format
-        bboxes_image_size = bboxes.image_size
+        bboxes_spatial_size = bboxes.spatial_size
 
         output_bboxes = F.perspective_bounding_box(
             bboxes,
@@ -848,7 +851,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
 
         expected_bboxes = []
         for bbox in bboxes:
-            bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
+            bbox = features.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
             expected_bboxes.append(_compute_expected_bbox(bbox, inv_pcoeffs))
         if len(expected_bboxes) > 1:
             expected_bboxes = torch.stack(expected_bboxes)
@@ -865,14 +868,14 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
 def test_correctness_center_crop_bounding_box(device, output_size):
     def _compute_expected_bbox(bbox, output_size_):
         format_ = bbox.format
-        image_size_ = bbox.image_size
+        spatial_size_ = bbox.spatial_size
         bbox = convert_format_bounding_box(bbox, format_, features.BoundingBoxFormat.XYWH)
 
         if len(output_size_) == 1:
             output_size_.append(output_size_[-1])
 
-        cy = int(round((image_size_[0] - output_size_[0]) * 0.5))
-        cx = int(round((image_size_[1] - output_size_[1]) * 0.5))
+        cy = int(round((spatial_size_[0] - output_size_[0]) * 0.5))
+        cx = int(round((spatial_size_[1] - output_size_[1]) * 0.5))
         out_bbox = [
             bbox[0].item() - cx,
             bbox[1].item() - cy,
@@ -882,7 +885,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         out_bbox = features.BoundingBox(
             out_bbox,
             format=features.BoundingBoxFormat.XYWH,
-            image_size=output_size_,
+            spatial_size=output_size_,
             dtype=bbox.dtype,
             device=bbox.device,
         )
@@ -891,10 +894,10 @@ def test_correctness_center_crop_bounding_box(device, output_size):
     for bboxes in make_bounding_boxes(extra_dims=((4,),)):
         bboxes = bboxes.to(device)
         bboxes_format = bboxes.format
-        bboxes_image_size = bboxes.image_size
+        bboxes_spatial_size = bboxes.spatial_size
 
-        output_boxes, output_image_size = F.center_crop_bounding_box(
-            bboxes, bboxes_format, bboxes_image_size, output_size
+        output_boxes, output_spatial_size = F.center_crop_bounding_box(
+            bboxes, bboxes_format, bboxes_spatial_size, output_size
         )
 
         if bboxes.ndim < 2:
@@ -902,7 +905,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
 
         expected_bboxes = []
         for bbox in bboxes:
-            bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
+            bbox = features.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
             expected_bboxes.append(_compute_expected_bbox(bbox, output_size))
 
         if len(expected_bboxes) > 1:
@@ -910,7 +913,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         else:
             expected_bboxes = expected_bboxes[0]
         torch.testing.assert_close(output_boxes, expected_bboxes)
-        torch.testing.assert_close(output_image_size, output_size)
+        torch.testing.assert_close(output_spatial_size, output_size)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -938,11 +941,11 @@ def test_correctness_center_crop_mask(device, output_size):
 
 # Copied from test/test_functional_tensor.py
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("image_size", ("small", "large"))
+@pytest.mark.parametrize("spatial_size", ("small", "large"))
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
 @pytest.mark.parametrize("ksize", [(3, 3), [3, 5], (23, 23)])
 @pytest.mark.parametrize("sigma", [[0.5, 0.5], (0.5, 0.5), (0.8, 0.8), (1.7, 1.7)])
-def test_correctness_gaussian_blur_image_tensor(device, image_size, dt, ksize, sigma):
+def test_correctness_gaussian_blur_image_tensor(device, spatial_size, dt, ksize, sigma):
     fn = F.gaussian_blur_image_tensor
 
     # true_cv2_results = {
@@ -962,7 +965,7 @@ def test_correctness_gaussian_blur_image_tensor(device, image_size, dt, ksize, s
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "gaussian_blur_opencv_results.pt")
     true_cv2_results = torch.load(p)
 
-    if image_size == "small":
+    if spatial_size == "small":
         tensor = (
             torch.from_numpy(np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))).permute(2, 0, 1).to(device)
         )
