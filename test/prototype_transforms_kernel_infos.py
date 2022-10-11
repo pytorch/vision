@@ -49,14 +49,12 @@ class KernelInfo(InfoBase):
         test_marks=None,
         # See InfoBase
         closeness_kwargs=None,
-        seed=None,
     ):
         super().__init__(id=kernel_name or kernel.__name__, test_marks=test_marks, closeness_kwargs=closeness_kwargs)
         self.kernel = kernel
         self.sample_inputs_fn = sample_inputs_fn
         self.reference_fn = reference_fn
         self.reference_inputs_fn = reference_inputs_fn
-        self.seed = seed
 
 
 DEFAULT_IMAGE_CLOSENESS_KWARGS = dict(
@@ -1306,7 +1304,7 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_gaussian_blur_image_tensor():
     make_gaussian_blur_image_loaders = functools.partial(
-        make_image_loaders, sizes=[(7, 33)], color_spaces=[features.ColorSpace.RGB]
+        make_image_loaders, sizes=["random"], color_spaces=[features.ColorSpace.RGB]
     )
 
     for image_loader, kernel_size in itertools.product(make_gaussian_blur_image_loaders(), [5, (3, 3), [3, 3]]):
@@ -1319,7 +1317,7 @@ def sample_inputs_gaussian_blur_image_tensor():
 
 
 def sample_inputs_gaussian_blur_video():
-    for video_loader in make_video_loaders(sizes=[(7, 33)], num_frames=[5]):
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
         yield ArgsKwargs(video_loader, kernel_size=[3, 3])
 
 
@@ -1333,13 +1331,10 @@ KERNEL_INFOS.extend(
                 xfail_jit_python_scalar_arg("kernel_size"),
                 xfail_jit_python_scalar_arg("sigma"),
             ],
-            seed=0,
         ),
         KernelInfo(
             F.gaussian_blur_video,
             sample_inputs_fn=sample_inputs_gaussian_blur_video,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            seed=0,
         ),
     ]
 )
