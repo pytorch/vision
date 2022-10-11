@@ -210,12 +210,16 @@ class VideoReader:
             metadata = {}  # type:  Dict[str, Any]
             for stream in self.container.streams:
                 if stream.type not in metadata:
-                    metadata[stream.type] = {"fps": [], "duration": []}
+                    if stream.type == "video":
+                        rate_n = "fps"
+                    else:
+                        rate_n = "framerate"
+                    metadata[stream.type] = {rate: [], "duration": []}
 
                 rate = stream.average_rate if stream.average_rate is not None else stream.sample_rate
 
                 metadata[stream.type]["duration"].append(float(stream.duration * stream.time_base))
-                metadata[stream.type]["fps"].append(float(rate))
+                metadata[stream.type][rate].append(float(rate))
             return metadata
         return self._c.get_metadata()
 
