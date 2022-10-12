@@ -243,7 +243,7 @@ void Video::_init(std::string stream, int64_t numThreads) {
 Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
   C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.video.video.Video");
   if (!videoPath.empty()) {
-    init_from_file(videoPath, stream, numThreads);
+    initFromFile(videoPath, stream, numThreads);
   }
 } // video
 
