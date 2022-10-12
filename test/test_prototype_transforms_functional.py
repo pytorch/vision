@@ -67,6 +67,12 @@ def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=No
     return decorator
 
 
+@pytest.fixture(autouse=True)
+def fix_rng_seed():
+    set_rng_seed(0)
+    yield
+
+
 class TestKernels:
     sample_inputs = make_info_args_kwargs_parametrization(
         KERNEL_INFOS,
@@ -81,8 +87,6 @@ class TestKernels:
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_scripted_vs_eager(self, info, args_kwargs, device):
-        if info.seed is not None:
-            set_rng_seed(info.seed)
         kernel_eager = info.kernel
         kernel_scripted = script(kernel_eager)
 
@@ -113,8 +117,6 @@ class TestKernels:
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_batched_vs_single(self, info, args_kwargs, device):
-        if info.seed is not None:
-            set_rng_seed(info.seed)
         (batched_input, *other_args), kwargs = args_kwargs.load(device)
 
         feature_type = features.Image if features.is_simple_tensor(batched_input) else type(batched_input)
@@ -150,8 +152,6 @@ class TestKernels:
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_no_inplace(self, info, args_kwargs, device):
-        if info.seed is not None:
-            set_rng_seed(info.seed)
         (input, *other_args), kwargs = args_kwargs.load(device)
 
         if input.numel() == 0:
@@ -165,8 +165,6 @@ class TestKernels:
     @sample_inputs
     @needs_cuda
     def test_cuda_vs_cpu(self, info, args_kwargs):
-        if info.seed is not None:
-            set_rng_seed(info.seed)
         (input_cpu, *other_args), kwargs = args_kwargs.load("cpu")
         input_cuda = input_cpu.to("cuda")
 
@@ -178,8 +176,6 @@ class TestKernels:
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_dtype_and_device_consistency(self, info, args_kwargs, device):
-        if info.seed is not None:
-            set_rng_seed(info.seed)
         (input, *other_args), kwargs = args_kwargs.load(device)
 
         output = info.kernel(input, *other_args, **kwargs)
@@ -192,8 +188,6 @@ class TestKernels:
 
     @reference_inputs
     def test_against_reference(self, info, args_kwargs):
-        if info.seed is not None:
-            set_rng_seed(info.seed)
         args, kwargs = args_kwargs.load("cpu")
 
         actual = info.kernel(*args, **kwargs)
