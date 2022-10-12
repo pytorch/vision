@@ -164,7 +164,7 @@ void Video::initFromFile(std::string videoPath, std::string stream, int64_t numT
 void Video::initFromMemory(torch::Tensor videoTensor, std::string stream, int64_t numThreads)
 {
   TORCH_CHECK(callback == nullptr && params.uri.empty(), "Video object can only be initialized once");
-  callback = MemoryBuffer::getCallback(videoData.data_ptr<uint8_t>(), videoData.size(0));
+  callback = MemoryBuffer::getCallback(videoTensor.data_ptr<uint8_t>(), videoTensor.size(0));
   _init(stream, numThreads);
 }
 
