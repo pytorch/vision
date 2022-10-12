@@ -51,5 +51,7 @@ jobs:
         run: |
           . ~/miniconda3/etc/profile.d/conda.sh
           set -ex
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20
+          conda run -p ${ENV_NAME} python3 -m torch.utils.collect_env
+          conda run -p ${ENV_NAME} python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
           conda env remove -p ${ENV_NAME}
