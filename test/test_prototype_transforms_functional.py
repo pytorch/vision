@@ -101,9 +101,9 @@ class TestKernels:
         actual = kernel_scripted(*args, **kwargs)
         expected = kernel_eager(*args, **kwargs)
 
-        if "07" in request.node.name:
+        if request.node.name == "test_scripted_vs_eager[cpu-gaussian_blur_video-07]":
             print(actual[(3, 0, 0, 2, 10)], expected[(3, 0, 0, 2, 10)])
-        elif "08" in request.node.name:
+        elif request.node.name == "test_scripted_vs_eager[cpu-gaussian_blur_video-08]":
             print(actual[(1, 0, 0, 0, 2, 10)], expected[(1, 0, 0, 0, 2, 10)])
 
         assert_close(actual, expected, **info.closeness_kwargs)
