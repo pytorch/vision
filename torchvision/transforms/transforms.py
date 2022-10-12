@@ -2133,9 +2133,9 @@ class ElasticTransform(torch.nn.Module):
         return F.elastic_transform(tensor, displacement, self.interpolation, self.fill)
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + "(alpha="
-        format_string += str(self.alpha) + ")"
-        format_string += ", (sigma=" + str(self.sigma) + ")"
-        format_string += ", interpolation={self.interpolation}"
-        format_string += ", fill={self.fill})"
+        format_string = self.__class__.__name__
+        format_string += f"(alpha={self.alpha}"
+        format_string += f", sigma={self.sigma}"
+        format_string += f", interpolation={self.interpolation}"
+        format_string += f", fill={self.fill})"
         return format_string
