@@ -45,3 +45,9 @@ jobs:
         if: success() || ( failure() && steps.setup.conclusion == 'success' )
         shell: bash
         run: pytest -rP test/test_prototype_transforms_functional.py::TestKernels::test_scripted_vs_eager -k gauss
+
+      - name: Upload test inputs
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-inputs
+          path: test/artifacts

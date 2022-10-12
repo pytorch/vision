@@ -86,7 +86,7 @@ class TestKernels:
 
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_scripted_vs_eager(self, info, args_kwargs, device):
+    def test_scripted_vs_eager(self, request, info, args_kwargs, device):
         kernel_eager = info.kernel
         kernel_scripted = script(kernel_eager)
 
@@ -95,6 +95,12 @@ class TestKernels:
             print(args[0].shape)
             idcs = (*[0] * (len(args[0].shape) - 2), slice(0, 5, 1), slice(0, 5, 1))
             print(args[0][idcs])
+
+            import pathlib
+
+            artifacts = pathlib.Path(__file__).parent / "artifacts"
+            artifacts.mkdir(exist_ok=True)
+            torch.save((args, kwargs), str(artifacts / f"{request.node.name}.pt"))
 
         actual = kernel_scripted(*args, **kwargs)
         expected = kernel_eager(*args, **kwargs)
