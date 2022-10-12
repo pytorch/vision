@@ -1,5 +1,6 @@
-from collections import OrderedDict
-from typing import Any, Callable, Dict, OrderedDict as OrderedDictType, Sequence, Type, Union
+import functools
+from collections import defaultdict
+from typing import Any, Callable, Dict, Sequence, Type, Union
 
 import PIL.Image
 
@@ -141,24 +142,21 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Transform):
-    def __init__(self, dtype: Union[torch.dtype, OrderedDictType[Type, torch.dtype]]) -> None:
+    _transformed_types = (torch.Tensor,)
+
+    def _default_dtype(self, dtype: torch.dtype) -> torch.dtype:
+        return dtype
+
+    def __init__(self, dtype: Union[torch.dtype, Dict[Type, torch.dtype]]) -> None:
         super().__init__()
-        if isinstance(dtype, torch.dtype):
-            dtype = OrderedDict([(torch.Tensor, dtype)])
+        if not isinstance(dtype, dict):
+            # This weird looking construct only exists, since `lambda`'s cannot be serialized by pickle.
+            # If it were possible, we could replace this with `defaultdict(lambda: dtype)`
+            dtype = defaultdict(functools.partial(self._default_dtype, dtype))
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        input_type = type(inpt)
-        if input_type in self.dtype:
-            dtype = self.dtype[input_type]
-        else:
-            for to_type, dtype in self.dtype.items():
-                if issubclass(input_type, to_type):
-                    break
-            else:
-                return inpt
-
-        return inpt.to(dtype)
+        return inpt.to(self.dtype[type(inpt)])
 
 
 class RemoveSmallBoundingBoxes(Transform):

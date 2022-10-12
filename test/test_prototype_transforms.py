@@ -1,5 +1,4 @@
 import itertools
-from collections import OrderedDict
 
 import numpy as np
 
@@ -1800,23 +1799,8 @@ class TestRandomResize:
             {torch.Tensor: torch.float64, features.Image: torch.float64, features.BoundingBox: torch.float64},
         ),
         (
-            {torch.Tensor: torch.float64},
-            {torch.Tensor: torch.float64, features.Image: torch.float64, features.BoundingBox: torch.float64},
-        ),
-        # this makes sure that plain tensors are not touched if we don't specify them
-        (
-            {features.Image: torch.float32, features.BoundingBox: torch.float64},
-            {torch.Tensor: torch.int64, features.Image: torch.float32, features.BoundingBox: torch.float64},
-        ),
-        # this makes sure the order of the dtype keys only makes a difference if no exact type match is found
-        (
-            OrderedDict([(torch.Tensor, torch.float64), (features.Image, torch.float32)]),
-            {torch.Tensor: torch.float64, features.Image: torch.float32, features.BoundingBox: torch.float64},
-        ),
-        # same as above, but relying on the insertion ordering of plain dicts
-        (
-            {torch.Tensor: torch.float64, features.Image: torch.float32},
-            {torch.Tensor: torch.float64, features.Image: torch.float32, features.BoundingBox: torch.float64},
+            {torch.Tensor: torch.int32, features.Image: torch.float32, features.BoundingBox: torch.float64},
+            {torch.Tensor: torch.int32, features.Image: torch.float32, features.BoundingBox: torch.float64},
         ),
     ],
 )
