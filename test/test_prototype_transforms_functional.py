@@ -92,10 +92,6 @@ class TestKernels:
 
         args, kwargs = args_kwargs.load(device)
         if args[0].numel() > 0:
-            print(args[0].shape)
-            idcs = (*[0] * (len(args[0].shape) - 2), slice(0, 5, 1), slice(0, 5, 1))
-            print(args[0][idcs])
-
             import pathlib
 
             artifacts = pathlib.Path(__file__).parent / "artifacts"
@@ -104,6 +100,11 @@ class TestKernels:
 
         actual = kernel_scripted(*args, **kwargs)
         expected = kernel_eager(*args, **kwargs)
+
+        if "07" in request.node.name:
+            print(actual[(3, 0, 0, 2, 10)], expected[(3, 0, 0, 2, 10)])
+        elif "08" in request.node.name:
+            print(actual[(1, 0, 0, 0, 2, 10)], expected[(1, 0, 0, 0, 2, 10)])
 
         assert_close(actual, expected, **info.closeness_kwargs)
 
