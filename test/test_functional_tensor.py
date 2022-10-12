@@ -25,7 +25,12 @@ from common_utils import (
 )
 from torchvision.transforms import InterpolationMode
 
-NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
+NEAREST, NEAREST_EXACT, BILINEAR, BICUBIC = (
+    InterpolationMode.NEAREST,
+    InterpolationMode.NEAREST_EXACT,
+    InterpolationMode.BILINEAR,
+    InterpolationMode.BICUBIC,
+)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -506,7 +511,7 @@ def test_perspective_interpolation_warning():
     ],
 )
 @pytest.mark.parametrize("max_size", [None, 34, 40, 1000])
-@pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST])
+@pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST, NEAREST_EXACT])
 def test_resize(device, dt, size, max_size, interpolation):
 
     if dt == torch.float16 and device == "cpu":
@@ -966,7 +971,7 @@ def test_pad(device, dt, pad, config):
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("mode", [NEAREST, BILINEAR, BICUBIC])
+@pytest.mark.parametrize("mode", [NEAREST, NEAREST_EXACT, BILINEAR, BICUBIC])
 def test_resized_crop(device, mode):
     # test values of F.resized_crop in several cases:
     # 1) resize to the same size, crop to the same size => should be identity
