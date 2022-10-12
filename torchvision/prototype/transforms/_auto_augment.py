@@ -35,7 +35,7 @@ class _AutoAugmentBase(Transform):
         self,
         sample: Any,
         unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.Mask),
-    ) -> Tuple[int, features.ImageOrVideoType]:
+    ) -> Tuple[int, Union[features.ImageType, features.VideoType]]:
         sample_flat, _ = tree_flatten(sample)
         image_or_videos = []
         for id, inpt in enumerate(sample_flat):
@@ -60,12 +60,12 @@ class _AutoAugmentBase(Transform):
 
     def _apply_image_or_video_transform(
         self,
-        image: features.ImageOrVideoType,
+        image: Union[features.ImageType, features.VideoType],
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
         fill: Dict[Type, features.FillType],
-    ) -> features.ImageOrVideoType:
+    ) -> Union[features.ImageType, features.VideoType]:
         fill_ = fill[type(image)]
         fill_ = F._geometry._convert_fill_arg(fill_)
 

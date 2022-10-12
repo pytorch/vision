@@ -1,4 +1,4 @@
-from typing import cast, List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -11,7 +11,7 @@ get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-def get_dimensions(image: features.ImageOrVideoTypeJIT) -> List[int]:
+def get_dimensions(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> List[int]:
     if isinstance(image, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
     ):
@@ -32,7 +32,7 @@ def get_num_channels_video(video: torch.Tensor) -> int:
     return get_num_channels_image_tensor(video)
 
 
-def get_num_channels(image: features.ImageOrVideoTypeJIT) -> int:
+def get_num_channels(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> int:
     if isinstance(image, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
     ):
@@ -262,11 +262,11 @@ def convert_color_space_video(
 
 
 def convert_color_space(
-    inpt: features.ImageOrVideoTypeJIT,
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT],
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
     copy: bool = True,
-) -> features.ImageOrVideoTypeJIT:
+) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
     ):
@@ -281,4 +281,4 @@ def convert_color_space(
     elif isinstance(inpt, (features.Image, features.Video)):
         return inpt.to_color_space(color_space, copy=copy)
     else:
-        return cast(features.ImageOrVideoTypeJIT, convert_color_space_image_pil(inpt, color_space, copy=copy))
+        return convert_color_space_image_pil(inpt, color_space, copy=copy)
