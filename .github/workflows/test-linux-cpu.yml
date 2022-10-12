@@ -14,7 +14,7 @@ jobs:
     name: "Unit-tests on Linux CPU"
     runs-on: ubuntu-latest
     container:
-      image: pytorch/manylinux-builder:cpu
+      image: pytorch/conda-builder:cpu
     strategy:
       matrix:
         py_vers: [ "3.8"]
