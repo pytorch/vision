@@ -91,20 +91,15 @@ class TestKernels:
         kernel_scripted = script(kernel_eager)
 
         args, kwargs = args_kwargs.load(device)
-        if args[0].numel() > 0:
-            import pathlib
-
-            artifacts = pathlib.Path(__file__).parent / "artifacts"
-            artifacts.mkdir(exist_ok=True)
-            torch.save((args, kwargs), str(artifacts / f"{request.node.name}.pt"))
 
         actual = kernel_scripted(*args, **kwargs)
         expected = kernel_eager(*args, **kwargs)
 
-        if request.node.name == "test_scripted_vs_eager[cpu-gaussian_blur_video-07]":
-            print(actual[(3, 0, 0, 2, 10)], expected[(3, 0, 0, 2, 10)])
-        elif request.node.name == "test_scripted_vs_eager[cpu-gaussian_blur_video-08]":
-            print(actual[(1, 0, 0, 0, 2, 10)], expected[(1, 0, 0, 0, 2, 10)])
+        import pathlib
+
+        artifacts = pathlib.Path(__file__).parent / "artifacts"
+        artifacts.mkdir(exist_ok=True)
+        torch.save((args, kwargs, actual, expected), str(artifacts / f"{request.node.name}.pt"))
 
         assert_close(actual, expected, **info.closeness_kwargs)
 
