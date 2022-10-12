@@ -91,6 +91,10 @@ class TestKernels:
         kernel_scripted = script(kernel_eager)
 
         args, kwargs = args_kwargs.load(device)
+        if args[0].numel() > 0:
+            print(args[0].shape)
+            idcs = (*[0] * (len(args[0].shape) - 2), slice(0, 5, 1), slice(0, 5, 1))
+            print(args[0][idcs])
 
         actual = kernel_scripted(*args, **kwargs)
         expected = kernel_eager(*args, **kwargs)
