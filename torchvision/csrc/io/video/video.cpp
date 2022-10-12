@@ -156,7 +156,7 @@ void Video::_getDecoderParams(
 
 } // _get decoder params
 
-Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
+Video::Video(std::string videoPath, std::string stream, int64_t numThreads, torch::Tensor) {
   C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.video.video.Video");
   // set number of threads global
   numThreads_ = numThreads;
@@ -344,7 +344,7 @@ std::tuple<torch::Tensor, double> Video::Next() {
 
 static auto registerVideo =
     torch::class_<Video>("torchvision", "Video")
-        .def(torch::init<std::string, std::string, int64_t>())
+        .def(torch::init<std::string, std::string, int64_t, torch::Tensor>())
         .def("get_current_stream", &Video::getCurrentStream)
         .def("set_current_stream", &Video::setCurrentStream)
         .def("get_metadata", &Video::getStreamMetadata)

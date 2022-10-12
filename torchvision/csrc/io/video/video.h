@@ -19,7 +19,7 @@ struct Video : torch::CustomClassHolder {
   int64_t numThreads_{0};
 
  public:
-  Video(std::string videoPath, std::string stream, int64_t numThreads);
+  Video(std::string videoPath, std::string stream, int64_t numThreads, torch::Tensor = nullptr);
   std::tuple<std::string, int64_t> getCurrentStream() const;
   c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>>
   getStreamMetadata() const;
