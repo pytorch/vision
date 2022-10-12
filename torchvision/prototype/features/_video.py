@@ -54,9 +54,8 @@ class Video(_Feature):
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(color_space=self.color_space)
 
-    # TODO: rename this (and all instances of this term to spatial size)
     @property
-    def image_size(self) -> Tuple[int, int]:
+    def spatial_size(self) -> Tuple[int, int]:
         return cast(Tuple[int, int], tuple(self.shape[-2:]))
 
     @property

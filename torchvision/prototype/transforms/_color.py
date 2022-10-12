@@ -100,7 +100,7 @@ class RandomPhotometricDistort(Transform):
         self.p = p
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        num_channels, _, _ = query_chw(sample)
+        num_channels, *_ = query_chw(sample)
         return dict(
             zip(
                 ["brightness", "contrast1", "saturation", "hue", "contrast2"],

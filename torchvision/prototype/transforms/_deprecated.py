@@ -80,7 +80,7 @@ class RandomGrayscale(_RandomApplyTransform):
         super().__init__(p=p)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        num_input_channels, _, _ = query_chw(sample)
+        num_input_channels, *_ = query_chw(sample)
         return dict(num_input_channels=num_input_channels)
 
     def _transform(
