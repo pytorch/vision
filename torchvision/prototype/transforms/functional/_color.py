@@ -183,51 +183,11 @@ def autocontrast(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
         return autocontrast_image_pil(inpt)
 
 
-def _scale_channel(img_chan: torch.Tensor) -> torch.Tensor:
-    # TODO: we should expect bincount to always be faster than histc, but this
-    # isn't always the case. Once
-    # https://github.com/pytorch/pytorch/issues/53194 is fixed, remove the if
-    # block and only use bincount.
-    if img_chan.is_cuda:
-        hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
-    else:
-        hist = torch.bincount(img_chan.view(-1), minlength=256)
-
-    nonzero_hist = hist[hist != 0]
-    step = torch.div(nonzero_hist[:-1].sum(), 255, rounding_mode="floor")
-    if step == 0:
-        return img_chan
-
-    lut = torch.div(torch.cumsum(hist, 0) + torch.div(step, 2, rounding_mode="floor"), step, rounding_mode="floor")
-    # Doing inplace clamp and converting lut to uint8 improves perfs
-    lut.clamp_(0, 255)
-    lut = lut.to(torch.uint8)
-    lut = torch.nn.functional.pad(lut[:-1], [1, 0])
-
-    return lut[img_chan.to(torch.int64)]
-
-
-def equalize_image_tensor_slow(image: torch.Tensor) -> torch.Tensor:
-    if image.dtype != torch.uint8:
-        raise TypeError(f"Only torch.uint8 image tensors are supported, but found {image.dtype}")
-
-    num_channels, height, width = get_dimensions_image_tensor(image)
-    if num_channels not in (1, 3):
-        raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {num_channels}")
-
-    if image.numel() == 0:
-        return image
-    elif image.ndim == 2:
-        return _scale_channel(image)
-    else:
-        return torch.stack([_scale_channel(x) for x in image.view(-1, height, width)]).view(image.shape)
-
-
-def _equalize_image_tensor_vec(img):
+def _equalize_image_tensor_vec(img: torch.Tensor) -> torch.Tensor:
     # input img shape should be [N, H, W]
     shape = img.shape
     # Compute image histogram:
-    flat_img = img.flatten(start_dim=1).to(torch.long) # -> [N, H * W]
+    flat_img = img.flatten(start_dim=1).to(torch.long)  # -> [N, H * W]
     hist = flat_img.new_zeros(shape[0], 256)
     hist.scatter_add_(dim=1, index=flat_img, src=flat_img.new_ones(1).expand_as(flat_img))
 
@@ -246,9 +206,7 @@ def _equalize_image_tensor_vec(img):
     # Compute batched Look-up-table:
     # Necessary to avoid an integer division by zero, which raises
     clamped_step = step.clamp(min=1)
-    chist.add_(torch.div(step, 2, rounding_mode="floor")) \
-        .div_(clamped_step, rounding_mode="floor") \
-        .clamp_(0, 255)
+    chist.add_(torch.div(step, 2, rounding_mode="floor")).div_(clamped_step, rounding_mode="floor").clamp_(0, 255)
     lut = chist.to(torch.uint8)  # [N, 256]
 
     # Pad lut with zeros
