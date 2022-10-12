@@ -55,7 +55,3 @@ class EncodedImage(EncodedData):
                 self._spatial_size = image.height, image.width
 
         return self._spatial_size
-
-
-class EncodedVideo(EncodedData):
-    pass
