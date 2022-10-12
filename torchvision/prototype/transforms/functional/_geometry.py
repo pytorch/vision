@@ -1382,24 +1382,12 @@ def five_crop_video(
     return five_crop_image_tensor(video, size)
 
 
+ImageOrVideoTypeJIT = Union[features.ImageTypeJIT, features.VideoTypeJIT]
+
+
 def five_crop(
-    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT], size: List[int]
-) -> Union[
-    Tuple[
-        features.ImageTypeJIT,
-        features.ImageTypeJIT,
-        features.ImageTypeJIT,
-        features.ImageTypeJIT,
-        features.ImageTypeJIT,
-    ],
-    Tuple[
-        features.VideoTypeJIT,
-        features.VideoTypeJIT,
-        features.VideoTypeJIT,
-        features.VideoTypeJIT,
-        features.VideoTypeJIT,
-    ],
-]:
+    inpt: ImageOrVideoTypeJIT, size: List[int]
+) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
     # TODO: consider breaking BC here to return List[features.ImageTypeJIT/VideoTypeJIT] to align this op with `ten_crop`
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
