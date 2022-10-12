@@ -1,5 +1,5 @@
-import functools
-from typing import Any, Callable, Dict, Sequence, Type, Union
+from collections import OrderedDict
+from typing import Any, Callable, Dict, OrderedDict as OrderedDictType, Sequence, Type, Union
 
 import PIL.Image
 
@@ -140,14 +140,25 @@ class GaussianBlur(Transform):
         return F.gaussian_blur(inpt, self.kernel_size, **params)
 
 
-# TODO: Enhance as described at https://github.com/pytorch/vision/issues/6697
-class ToDtype(Lambda):
-    def __init__(self, dtype: torch.dtype, *types: Type) -> None:
+class ToDtype(Transform):
+    def __init__(self, dtype: Union[torch.dtype, OrderedDictType[Type, torch.dtype]]) -> None:
+        super().__init__()
+        if isinstance(dtype, torch.dtype):
+            dtype = OrderedDict([(torch.Tensor, dtype)])
         self.dtype = dtype
-        super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *types or (torch.Tensor,))
 
-    def extra_repr(self) -> str:
-        return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        input_type = type(inpt)
+        if input_type in self.dtype:
+            dtype = self.dtype[input_type]
+        else:
+            for to_type, dtype in self.dtype.items():
+                if issubclass(input_type, to_type):
+                    break
+            else:
+                return inpt
+
+        return inpt.to(dtype)
 
 
 class RemoveSmallBoundingBoxes(Transform):

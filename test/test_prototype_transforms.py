@@ -1,4 +1,5 @@
 import itertools
+from collections import OrderedDict
 
 import numpy as np
 
@@ -1789,3 +1790,56 @@ class TestRandomResize:
         mock_resize.assert_called_with(
             inpt_sentinel, size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
         )
+
+
+@pytest.mark.parametrize(
+    ("dtype", "expected_dtypes"),
+    [
+        (
+            torch.float64,
+            {torch.Tensor: torch.float64, features.Image: torch.float64, features.BoundingBox: torch.float64},
+        ),
+        (
+            {torch.Tensor: torch.float64},
+            {torch.Tensor: torch.float64, features.Image: torch.float64, features.BoundingBox: torch.float64},
+        ),
+        # this makes sure that plain tensors are not touched if we don't specify them
+        (
+            {features.Image: torch.float32, features.BoundingBox: torch.float64},
+            {torch.Tensor: torch.int64, features.Image: torch.float32, features.BoundingBox: torch.float64},
+        ),
+        # this makes sure the order of the dtype keys only makes a difference if no exact type match is found
+        (
+            OrderedDict([(torch.Tensor, torch.float64), (features.Image, torch.float32)]),
+            {torch.Tensor: torch.float64, features.Image: torch.float32, features.BoundingBox: torch.float64},
+        ),
+        # same as above, but relying on the insertion ordering of plain dicts
+        (
+            {torch.Tensor: torch.float64, features.Image: torch.float32},
+            {torch.Tensor: torch.float64, features.Image: torch.float32, features.BoundingBox: torch.float64},
+        ),
+    ],
+)
+def test_to_dtype(dtype, expected_dtypes):
+    sample = dict(
+        plain_tensor=torch.testing.make_tensor(5, dtype=torch.int64, device="cpu"),
+        image=make_image(dtype=torch.uint8),
+        bounding_box=make_bounding_box(format=features.BoundingBoxFormat.XYXY, dtype=torch.float32),
+        str="str",
+        int=0,
+    )
+
+    transform = transforms.ToDtype(dtype)
+    transformed_sample = transform(sample)
+
+    for key, value in sample.items():
+        value_type = type(value)
+        transformed_value = transformed_sample[key]
+
+        # make sure the transformation retains the type
+        assert isinstance(transformed_value, value_type)
+
+        if isinstance(value, torch.Tensor):
+            assert transformed_value.dtype is expected_dtypes[value_type]
+        else:
+            assert transformed_value is value
