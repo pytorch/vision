@@ -124,16 +124,6 @@ class Image(_Feature):
             color_space=color_space,
         )
 
-    def show(self) -> None:
-        # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
-        #  promote this out of the prototype state
-        to_pil_image(make_grid(self.view(-1, *self.shape[-3:]))).show()
-
-    def draw_bounding_box(self, bounding_box: BoundingBox, **kwargs: Any) -> Image:
-        # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
-        #  promote this out of the prototype state
-        return Image.wrap_like(self, draw_bounding_boxes(self, bounding_box.to_format("xyxy").view(-1, 4), **kwargs))
-
     def horizontal_flip(self) -> Image:
         output = self._F.horizontal_flip_image_tensor(self)
         return Image.wrap_like(self, output)

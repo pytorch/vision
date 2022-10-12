@@ -99,7 +99,6 @@ class RandomErasing(_RandomApplyTransform):
         return inpt
 
 
-# TODO: Add support for Video: https://github.com/pytorch/vision/issues/6731
 class _BaseMixupCutmix(_RandomApplyTransform):
     def __init__(self, alpha: float, p: float = 0.5) -> None:
         super().__init__(p=p)
