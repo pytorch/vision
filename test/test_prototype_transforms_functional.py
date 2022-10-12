@@ -6,7 +6,7 @@ import PIL.Image
 import pytest
 
 import torch
-from common_utils import cache, cpu_and_gpu, needs_cuda
+from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
 from prototype_common_utils import assert_close, make_bounding_boxes, make_image
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
 from prototype_transforms_kernel_infos import KERNEL_INFOS
@@ -65,6 +65,12 @@ def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=No
         return pytest.mark.parametrize(argnames, argvalues)(test_fn)
 
     return decorator
+
+
+@pytest.fixture(autouse=True)
+def fix_rng_seed():
+    set_rng_seed(0)
+    yield
 
 
 class TestKernels:
