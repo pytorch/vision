@@ -207,7 +207,7 @@ def _scale_channel(img_chan: torch.Tensor) -> torch.Tensor:
     return lut[img_chan.to(torch.int64)]
 
 
-def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
+def equalize_image_tensor_slow(image: torch.Tensor) -> torch.Tensor:
     if image.dtype != torch.uint8:
         raise TypeError(f"Only torch.uint8 image tensors are supported, but found {image.dtype}")
 
@@ -221,6 +221,55 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
         return _scale_channel(image)
     else:
         return torch.stack([_scale_channel(x) for x in image.view(-1, height, width)]).view(image.shape)
+
+
+def _equalize_image_tensor_vec(img):
+    # input img shape should be [N, H, W]
+    shape = img.shape
+    # Compute image histogram:
+    flat_img = img.flatten(start_dim=1).to(torch.long) # -> [N, H * W]
+    hist = flat_img.new_zeros(shape[0], 256)
+    hist.scatter_add_(dim=1, index=flat_img, src=flat_img.new_ones(1).expand_as(flat_img))
+
+    # Compute image cdf
+    chist = hist.cumsum_(dim=1)
+    # Compute steps, where step per channel is nonzero_hist[:-1].sum() // 255
+    # Trick: nonzero_hist[:-1].sum() == chist[idx - 1], where idx = chist.argmax()
+    idx = chist.argmax(dim=1).sub_(1)
+    # If histogram is degenerate (hist of zero image), index is -1
+    neg_idx_mask = idx < 0
+    idx.clamp_(min=0)
+    step = chist.gather(dim=1, index=idx.unsqueeze(1))
+    step[neg_idx_mask] = 0
+    step.div_(255, rounding_mode="floor")
+
+    # Compute batched Look-up-table:
+    # Necessary to avoid an integer division by zero, which raises
+    clamped_step = step.clamp(min=1)
+    chist.add_(torch.div(step, 2, rounding_mode="floor")) \
+        .div_(clamped_step, rounding_mode="floor") \
+        .clamp_(0, 255)
+    lut = chist.to(torch.uint8)  # [N, 256]
+
+    # Pad lut with zeros
+    zeros = lut.new_zeros((1, 1)).expand(shape[0], 1)
+    lut = torch.cat([zeros, lut[:, :-1]], dim=1)
+
+    return torch.where((step == 0).unsqueeze(-1), img, lut.gather(dim=1, index=flat_img).view_as(img))
+
+
+def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
+    if image.dtype != torch.uint8:
+        raise TypeError(f"Only torch.uint8 image tensors are supported, but found {image.dtype}")
+
+    num_channels, height, width = get_dimensions_image_tensor(image)
+    if num_channels not in (1, 3):
+        raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {num_channels}")
+
+    if image.numel() == 0:
+        return image
+
+    return _equalize_image_tensor_vec(image.view(-1, height, width)).view(image.shape)
 
 
 equalize_image_pil = _FP.equalize
