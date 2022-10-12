@@ -1383,15 +1383,24 @@ def five_crop_video(
 
 
 def five_crop(
-    inpt: features.ImageOrVideoTypeJIT, size: List[int]
-) -> Tuple[
-    features.ImageOrVideoTypeJIT,
-    features.ImageOrVideoTypeJIT,
-    features.ImageOrVideoTypeJIT,
-    features.ImageOrVideoTypeJIT,
-    features.ImageOrVideoTypeJIT,
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT], size: List[int]
+) -> Union[
+    Tuple[
+        features.ImageTypeJIT,
+        features.ImageTypeJIT,
+        features.ImageTypeJIT,
+        features.ImageTypeJIT,
+        features.ImageTypeJIT,
+    ],
+    Tuple[
+        features.VideoTypeJIT,
+        features.VideoTypeJIT,
+        features.VideoTypeJIT,
+        features.VideoTypeJIT,
+        features.VideoTypeJIT,
+    ],
 ]:
-    # TODO: consider breaking BC here to return List[features.ImageOrVideoTypeJIT] to align this op with `ten_crop`
+    # TODO: consider breaking BC here to return List[features.ImageTypeJIT/VideoTypeJIT] to align this op with `ten_crop`
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
@@ -1434,8 +1443,8 @@ def ten_crop_video(video: torch.Tensor, size: List[int], vertical_flip: bool = F
 
 
 def ten_crop(
-    inpt: features.ImageOrVideoTypeJIT, size: List[int], vertical_flip: bool = False
-) -> List[features.ImageOrVideoTypeJIT]:
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT], size: List[int], vertical_flip: bool = False
+) -> Union[List[features.ImageTypeJIT], List[features.VideoTypeJIT]]:
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):

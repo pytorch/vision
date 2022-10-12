@@ -1,3 +1,5 @@
+from typing import Union
+
 import PIL.Image
 
 import torch
@@ -24,14 +26,14 @@ def erase_video(
 
 
 def erase(
-    inpt: features.ImageOrVideoTypeJIT,
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT],
     i: int,
     j: int,
     h: int,
     w: int,
     v: torch.Tensor,
     inplace: bool = False,
-) -> features.ImageOrVideoTypeJIT:
+) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
     if isinstance(inpt, torch.Tensor):
         output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):

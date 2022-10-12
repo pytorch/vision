@@ -6,10 +6,8 @@ from typing import Any, cast, List, Optional, Tuple, Union
 import PIL.Image
 import torch
 from torchvision._utils import StrEnum
-from torchvision.transforms.functional import InterpolationMode, to_pil_image
-from torchvision.utils import draw_bounding_boxes, make_grid
+from torchvision.transforms.functional import InterpolationMode
 
-from ._bounding_box import BoundingBox
 from ._feature import _Feature, FillTypeJIT
 
 

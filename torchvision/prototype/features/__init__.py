@@ -1,5 +1,5 @@
 from ._bounding_box import BoundingBox, BoundingBoxFormat
-from ._encoded import EncodedData, EncodedImage, EncodedVideo
+from ._encoded import EncodedData, EncodedImage
 from ._feature import _Feature, FillType, FillTypeJIT, InputType, InputTypeJIT, is_simple_tensor
 from ._image import (
     ColorSpace,
@@ -14,12 +14,10 @@ from ._image import (
 from ._label import Label, OneHotLabel
 from ._mask import Mask
 from ._video import (
-    ImageOrVideoType,
-    ImageOrVideoTypeJIT,
     LegacyVideoType,
     LegacyVideoTypeJIT,
-    TensorImageOrVideoType,
-    TensorImageOrVideoTypeJIT,
+    TensorVideoType,
+    TensorVideoTypeJIT,
     Video,
     VideoType,
     VideoTypeJIT,
