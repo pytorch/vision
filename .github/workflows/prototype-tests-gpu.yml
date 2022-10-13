@@ -14,9 +14,6 @@ jobs:
       image: pytorch/conda-builder:cuda116
 
     steps:
-      - name: Run nvidia-smi
-        run: nvidia-smi
-
       - name: Upgrade system packages
         run: python -m pip install --upgrade pip setuptools wheel
 
@@ -37,7 +34,7 @@ jobs:
 
       - name: Mark setup as complete
         id: setup
-        run: exit 0
+        run: python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())" && exit 0
 
       - name: Run prototype features tests
         shell: bash
