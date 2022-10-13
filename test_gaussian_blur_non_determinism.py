@@ -8,7 +8,7 @@ video = torch.testing.make_tensor(4, 5, 3, 7, 33, low=0, high=255, dtype=torch.u
 
 num_calls = 1_000_000
 num_failing = 0
-for _ in tqdm.tqdm(range(num_calls)):
+for _ in tqdm.tqdm(range(num_calls), mininterval=5):
     output = F.gaussian_blur_video(video, kernel_size=3)
     if output[3, 0, 0, 2, 10] != 150:
         num_failing += 1
