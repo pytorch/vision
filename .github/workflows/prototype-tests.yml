@@ -11,14 +11,25 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macos-latest
-          - [self-hosted, linux.4xlarge.nvidia.gpu]
+        image:
+        include:
+          - os: [self-hosted, linux.4xlarge.nvidia.gpu]
+            image: pytorch/conda-builder:cuda116
+
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
+    container:
+      image: ${{ matrix.image }}
 
     steps:
+    
+      - name: Check os value
+        run: echo "${{ matrix.os }}"
+      
       - name: Set up python
         uses: actions/setup-python@v3
+        if: ${{ matrix.os != 'self-hosted' }}
         with:
           python-version: 3.7
 
