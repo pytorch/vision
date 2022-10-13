@@ -107,7 +107,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def _check(self, sample: Any) -> None:
+    def _check_inputs(self, sample: Any) -> None:
         if not (
             has_any(sample, features.Image, features.Video, features.is_simple_tensor)
             and has_any(sample, features.OneHotLabel)

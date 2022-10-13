@@ -63,7 +63,7 @@ class LinearTransformation(Transform):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def _check(self, sample: Any) -> Any:
+    def _check_inputs(self, sample: Any) -> Any:
         if has_any(sample, PIL.Image.Image):
             raise TypeError("LinearTransformation does not work on PIL Images")
 
@@ -102,7 +102,7 @@ class Normalize(Transform):
         self.std = list(std)
         self.inplace = inplace
 
-    def _check(self, sample: Any) -> Any:
+    def _check_inputs(self, sample: Any) -> Any:
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 

@@ -23,7 +23,7 @@ class Transform(nn.Module):
         super().__init__()
         _log_api_usage_once(self)
 
-    def _check(self, sample: Any) -> None:
+    def _check_inputs(self, sample: Any) -> None:
         pass
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
@@ -35,7 +35,7 @@ class Transform(nn.Module):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        self._check(sample)
+        self._check_inputs(sample)
 
         params = self._get_params(sample)
 

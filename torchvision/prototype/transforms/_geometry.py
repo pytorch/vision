@@ -184,7 +184,7 @@ class FiveCrop(Transform):
     ) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
         return F.five_crop(inpt, self.size)
 
-    def _check(self, sample: Any) -> None:
+    def _check_inputs(self, sample: Any) -> None:
         if has_any(sample, features.BoundingBox, features.Mask):
             raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
 
@@ -201,7 +201,7 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _check(self, sample: Any) -> None:
+    def _check_inputs(self, sample: Any) -> None:
         if has_any(sample, features.BoundingBox, features.Mask):
             raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
 
@@ -614,7 +614,7 @@ class RandomIoUCrop(Transform):
         self.options = sampler_options
         self.trials = trials
 
-    def _check(self, sample: Any) -> None:
+    def _check_inputs(self, sample: Any) -> None:
         if not (
             has_all(sample, features.BoundingBox)
             and has_any(sample, PIL.Image.Image, features.Image, features.is_simple_tensor)
@@ -771,7 +771,7 @@ class FixedSizeCrop(Transform):
 
         self.padding_mode = padding_mode
 
-    def _check(self, sample: Any) -> None:
+    def _check_inputs(self, sample: Any) -> None:
         if not has_any(sample, PIL.Image.Image, features.Image, features.is_simple_tensor, features.Video):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
