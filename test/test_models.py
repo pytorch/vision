@@ -3,6 +3,7 @@ import functools
 import operator
 import os
 import pkgutil
+import platform
 import sys
 import warnings
 from collections import OrderedDict
@@ -15,8 +16,9 @@ import torch.fx
 import torch.nn as nn
 from _utils_internal import get_relative_path
 from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
-from torchvision import models
-from torchvision.models._api import find_model, list_models
+from PIL import Image
+from torchvision import models, transforms
+from torchvision.models import get_model_builder, list_models
 
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
@@ -24,7 +26,44 @@ SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 
 
 def list_model_fns(module):
-    return [find_model(name) for name in list_models(module)]
+    return [get_model_builder(name) for name in list_models(module)]
+
+
+def _get_image(input_shape, real_image, device):
+    """This routine loads a real or random image based on `real_image` argument.
+    Currently, the real image is utilized for the following list of models:
+    - `retinanet_resnet50_fpn`,
+    - `retinanet_resnet50_fpn_v2`,
+    - `keypointrcnn_resnet50_fpn`,
+    - `fasterrcnn_resnet50_fpn`,
+    - `fasterrcnn_resnet50_fpn_v2`,
+    - `fcos_resnet50_fpn`,
+    - `maskrcnn_resnet50_fpn`,
+    - `maskrcnn_resnet50_fpn_v2`,
+    in `test_classification_model` and `test_detection_mode`.
+    To do so, a keyword argument `real_image` was added to the abovelisted models in `_model_params`
+    """
+    if real_image:
+        # TODO: Maybe unify file discovery logic with test_image.py
+        GRACE_HOPPER = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "assets", "encode_jpeg", "grace_hopper_517x606.jpg"
+        )
+
+        img = Image.open(GRACE_HOPPER)
+
+        original_width, original_height = img.size
+
+        # make the image square
+        img = img.crop((0, 0, original_width, original_width))
+        img = img.resize(input_shape[1:3])
+
+        convert_tensor = transforms.ToTensor()
+        image = convert_tensor(img)
+        assert tuple(image.size()) == input_shape
+        return image.to(device=device)
+
+    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+    return torch.rand(input_shape).to(device=device)
 
 
 @pytest.fixture
@@ -113,7 +152,7 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
         expected = torch.load(expected_file)
         rtol = rtol or prec  # keeping prec param for legacy reason, but could be removed ideally
         atol = atol or prec
-        torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
+        torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False, check_device=False)
 
 
 def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
@@ -241,13 +280,14 @@ quantized_flaky_models = ("inception_v3", "resnet50")
 # The following contains configuration parameters for all models which are used by
 # the _test_*_model methods.
 _model_params = {
-    "inception_v3": {"input_shape": (1, 3, 299, 299)},
+    "inception_v3": {"input_shape": (1, 3, 299, 299), "init_weights": True},
     "retinanet_resnet50_fpn": {
         "num_classes": 20,
         "score_thresh": 0.01,
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "retinanet_resnet50_fpn_v2": {
         "num_classes": 20,
@@ -255,6 +295,7 @@ _model_params = {
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "keypointrcnn_resnet50_fpn": {
         "num_classes": 2,
@@ -262,18 +303,21 @@ _model_params = {
         "max_size": 224,
         "box_score_thresh": 0.17,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "fasterrcnn_resnet50_fpn": {
         "num_classes": 20,
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "fasterrcnn_resnet50_fpn_v2": {
         "num_classes": 20,
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "fcos_resnet50_fpn": {
         "num_classes": 2,
@@ -281,18 +325,21 @@ _model_params = {
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "maskrcnn_resnet50_fpn": {
         "num_classes": 10,
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "maskrcnn_resnet50_fpn_v2": {
         "num_classes": 10,
         "min_size": 224,
         "max_size": 224,
         "input_shape": (3, 224, 224),
+        "real_image": True,
     },
     "fasterrcnn_mobilenet_v3_large_fpn": {
         "box_score_thresh": 0.02076,
@@ -315,6 +362,7 @@ _model_params = {
     "s3d": {
         "input_shape": (1, 3, 16, 224, 224),
     },
+    "googlenet": {"init_weights": True},
 }
 # speeding up slow models:
 slow_models = [
@@ -343,11 +391,24 @@ for m in slow_models:
     _model_params[m] = {"input_shape": (1, 3, 64, 64)}
 
 
-# skip big models to reduce memory usage on CI test
+# skip big models to reduce memory usage on CI test. We can exclude combinations of (platform-system, device).
 skipped_big_models = {
-    "vit_h_14",
-    "regnet_y_128gf",
+    "vit_h_14": {("Windows", "cpu"), ("Windows", "cuda")},
+    "regnet_y_128gf": {("Windows", "cpu"), ("Windows", "cuda")},
+    "mvit_v1_b": {("Windows", "cuda"), ("Linux", "cuda")},
+    "mvit_v2_s": {("Windows", "cuda"), ("Linux", "cuda")},
 }
+
+
+def is_skippable(model_name, device):
+    if model_name not in skipped_big_models:
+        return False
+
+    platform_system = platform.system()
+    device_name = str(device).split(":")[0]
+
+    return (platform_system, device_name) in skipped_big_models[model_name]
+
 
 # The following contains configuration and expected values to be used tests that are model specific
 _model_tests_values = {
@@ -612,16 +673,16 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
-    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+    if SKIP_BIG_MODEL and is_skippable(model_name, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
+    real_image = kwargs.pop("real_image", False)
 
     model = model_fn(**kwargs)
     model.eval().to(device=dev)
-    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-    x = torch.rand(input_shape).to(device=dev)
+    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=1e-3)
     assert out.shape[-1] == num_classes
@@ -671,7 +732,9 @@ def test_segmentation_model(model_fn, dev):
             # predictions match.
             expected_file = _get_expected_file(model_name)
             expected = torch.load(expected_file)
-            torch.testing.assert_close(out.argmax(dim=1), expected.argmax(dim=1), rtol=prec, atol=prec)
+            torch.testing.assert_close(
+                out.argmax(dim=1), expected.argmax(dim=1), rtol=prec, atol=prec, check_device=False
+            )
             return False  # Partial validation performed
 
         return True  # Full validation performed
@@ -713,11 +776,11 @@ def test_detection_model(model_fn, dev):
     model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
+    real_image = kwargs.pop("real_image", False)
 
     model = model_fn(**kwargs)
     model.eval().to(device=dev)
-    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-    x = torch.rand(input_shape).to(device=dev)
+    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
     model_input = [x]
     out = model(model_input)
     assert model_input[0] is x
@@ -839,7 +902,7 @@ def test_video_model(model_fn, dev):
         "num_classes": 50,
     }
     model_name = model_fn.__name__
-    if SKIP_BIG_MODEL and model_name in skipped_big_models:
+    if SKIP_BIG_MODEL and is_skippable(model_name, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
@@ -893,7 +956,7 @@ def test_quantized_classification_model(model_fn):
     out = model(x)
 
     if model_name not in quantized_flaky_models:
-        _assert_expected(out, model_name + "_quantized", prec=2e-2)
+        _assert_expected(out.cpu(), model_name + "_quantized", prec=2e-2)
         assert out.shape[-1] == 5
         _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
         _check_fx_compatible(model, x, eager_out=out)
@@ -960,7 +1023,7 @@ def test_raft(model_fn, scripted):
     flow_pred = preds[-1]
     # Tolerance is fairly high, but there are 2 * H * W outputs to check
     # The .pkl were generated on the AWS cluter, on the CI it looks like the resuts are slightly different
-    _assert_expected(flow_pred, name=model_fn.__name__, atol=1e-2, rtol=1)
+    _assert_expected(flow_pred.cpu(), name=model_fn.__name__, atol=1e-2, rtol=1)
 
 
 if __name__ == "__main__":

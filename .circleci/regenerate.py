@@ -32,8 +32,8 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu102", "cu113", "cu116", "cu117", "rocm5.0", "rocm5.1.1"],
-                "win": ["cpu", "cu113", "cu116", "cu117"],
+                "linux": ["cpu", "cu116", "cu117", "rocm5.1.1", "rocm5.2"],
+                "win": ["cpu", "cu116", "cu117"],
                 "macos": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
@@ -122,8 +122,6 @@ def upload_doc_job(filter_branch):
 
 
 manylinux_images = {
-    "cu102": "pytorch/manylinux-cuda102",
-    "cu113": "pytorch/manylinux-cuda113",
     "cu116": "pytorch/manylinux-cuda116",
     "cu117": "pytorch/manylinux-cuda117",
 }
@@ -131,7 +129,7 @@ manylinux_images = {
 
 def get_manylinux_image(cu_version):
     if cu_version == "cpu":
-        return "pytorch/manylinux-cuda102"
+        return "pytorch/manylinux-cpu"
     elif cu_version.startswith("cu"):
         cu_suffix = cu_version[len("cu") :]
         return f"pytorch/manylinux-cuda{cu_suffix}"
@@ -248,7 +246,7 @@ def unittest_workflows(indentation=6):
                 if device_type == "gpu":
                     if python_version != "3.8":
                         job["filters"] = gen_filter_branch_tree("main", "nightly")
-                    job["cu_version"] = "cu102"
+                    job["cu_version"] = "cu116"
                 else:
                     job["cu_version"] = "cpu"
 
@@ -266,9 +264,9 @@ def cmake_workflows(indentation=6):
         for device in device_types:
             job = {"name": f"cmake_{os_type}_{device}", "python_version": python_version}
 
-            job["cu_version"] = "cu113" if device == "gpu" else "cpu"
+            job["cu_version"] = "cu116" if device == "gpu" else "cpu"
             if device == "gpu" and os_type == "linux":
-                job["wheel_docker_image"] = "pytorch/manylinux-cuda113"
+                job["wheel_docker_image"] = "pytorch/manylinux-cuda116"
             jobs.append({f"cmake_{os_type}_{device}": job})
     return indent(indentation, jobs)
 

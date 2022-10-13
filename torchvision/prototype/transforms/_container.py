@@ -1,10 +1,8 @@
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 import torch
 from torchvision.prototype.transforms import Transform
-
-from ._transform import _RandomApplyTransform
 
 
 class Compose(Transform):
@@ -20,17 +18,28 @@ class Compose(Transform):
             sample = transform(sample)
         return sample
 
-
-class RandomApply(_RandomApplyTransform):
-    def __init__(self, transform: Transform, *, p: float = 0.5) -> None:
-        super().__init__(p=p)
-        self.transform = transform
-
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self.transform(inpt)
-
     def extra_repr(self) -> str:
-        return f"p={self.p}"
+        format_string = []
+        for t in self.transforms:
+            format_string.append(f"    {t}")
+        return "\n".join(format_string)
+
+
+class RandomApply(Compose):
+    def __init__(self, transforms: Sequence[Callable], p: float = 0.5) -> None:
+        super().__init__(transforms)
+
+        if not (0.0 <= p <= 1.0):
+            raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
+        self.p = p
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+
+        if torch.rand(1) >= self.p:
+            return sample
+
+        return super().forward(sample)
 
 
 class RandomChoice(Transform):
@@ -77,7 +86,8 @@ class RandomOrder(Transform):
         self.transforms = transforms
 
     def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
         for idx in torch.randperm(len(self.transforms)):
             transform = self.transforms[idx]
-            inputs = transform(*inputs)
-        return inputs
+            sample = transform(sample)
+        return sample

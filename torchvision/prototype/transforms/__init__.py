@@ -1,9 +1,12 @@
+from torchvision.transforms import AutoAugmentPolicy, InterpolationMode  # usort: skip
+
 from . import functional  # usort: skip
 
 from ._transform import Transform  # usort: skip
+from ._presets import StereoMatching  # usort: skip
 
 from ._augment import RandomCutmix, RandomErasing, RandomMixup, SimpleCopyPaste
-from ._auto_augment import AugMix, AutoAugment, AutoAugmentPolicy, RandAugment, TrivialAugmentWide
+from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
 from ._color import (
     ColorJitter,
     RandomAdjustSharpness,
@@ -26,6 +29,7 @@ from ._geometry import (
     RandomHorizontalFlip,
     RandomIoUCrop,
     RandomPerspective,
+    RandomResize,
     RandomResizedCrop,
     RandomRotation,
     RandomShortestSize,
@@ -37,6 +41,6 @@ from ._geometry import (
 )
 from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat, ConvertColorSpace, ConvertImageDtype
 from ._misc import GaussianBlur, Identity, Lambda, LinearTransformation, Normalize, RemoveSmallBoundingBoxes, ToDtype
-from ._type_conversion import DecodeImage, LabelToOneHot, ToImagePIL, ToImageTensor
+from ._type_conversion import DecodeImage, LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
-from ._deprecated import Grayscale, RandomGrayscale, ToTensor, ToPILImage, PILToTensor  # usort: skip
+from ._deprecated import Grayscale, RandomGrayscale, ToTensor  # usort: skip

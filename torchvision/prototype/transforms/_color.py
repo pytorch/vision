@@ -1,16 +1,13 @@
 import collections.abc
-from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.transforms import functional as _F
 
 from ._transform import _RandomApplyTransform
-from ._utils import is_simple_tensor, query_chw
-
-T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
+from ._utils import query_chw
 
 
 class ColorJitter(Transform):
@@ -85,6 +82,8 @@ class ColorJitter(Transform):
 
 
 class RandomPhotometricDistort(Transform):
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
+
     def __init__(
         self,
         contrast: Tuple[float, float] = (0.5, 1.5),
@@ -101,7 +100,7 @@ class RandomPhotometricDistort(Transform):
         self.p = p
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        num_channels, _, _ = query_chw(sample)
+        num_channels, *_ = query_chw(sample)
         return dict(
             zip(
                 ["brightness", "contrast1", "saturation", "hue", "contrast2"],
@@ -111,24 +110,25 @@ class RandomPhotometricDistort(Transform):
             channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
         )
 
-    def _permute_channels(self, inpt: Any, *, permutation: torch.Tensor) -> Any:
-        if not (isinstance(inpt, (features.Image, PIL.Image.Image)) or is_simple_tensor(inpt)):
-            return inpt
-
-        image = inpt
+    def _permute_channels(
+        self, inpt: Union[features.ImageType, features.VideoType], permutation: torch.Tensor
+    ) -> Union[features.ImageType, features.VideoType]:
         if isinstance(inpt, PIL.Image.Image):
-            image = _F.pil_to_tensor(image)
+            inpt = F.pil_to_tensor(inpt)
 
-        output = image[..., permutation, :, :]
+        output = inpt[..., permutation, :, :]
 
-        if isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.OTHER)
+        if isinstance(inpt, (features.Image, features.Video)):
+            output = inpt.wrap_like(inpt, output, color_space=features.ColorSpace.OTHER)  # type: ignore[arg-type]
+
         elif isinstance(inpt, PIL.Image.Image):
-            output = _F.to_pil_image(output)
+            output = F.to_image_pil(output)
 
         return output
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(
+        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
+    ) -> Union[features.ImageType, features.VideoType]:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])

@@ -139,20 +139,6 @@ class TestRotate:
         center = (20, 22)
         _test_fn_on_batch(batch_tensors, F.rotate, angle=32, interpolation=NEAREST, expand=True, center=center)
 
-    def test_rotate_deprecation_resample(self):
-        tensor, _ = _create_data(26, 26)
-        # assert deprecation warning and non-BC
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
-                "Please use 'interpolation' instead."
-            ),
-        ):
-            res1 = F.rotate(tensor, 45, resample=2)
-            res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
-            assert_equal(res1, res2)
-
     def test_rotate_interpolation_type(self):
         tensor, _ = _create_data(26, 26)
         # assert changed type warning
@@ -377,18 +363,6 @@ class TestAffine:
     def test_warnings(self, device):
         tensor, pil_img = _create_data(26, 26, device=device)
 
-        # assert deprecation warning and non-BC
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
-                "Please use 'interpolation' instead."
-            ),
-        ):
-            res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=2)
-            res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
-            assert_equal(res1, res2)
-
         # assert changed type warning
         with pytest.warns(
             UserWarning,
@@ -400,18 +374,6 @@ class TestAffine:
             res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
             res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
             assert_equal(res1, res2)
-
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
-                "Please use 'fill' instead."
-            ),
-        ):
-            res1 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fillcolor=10)
-            res2 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fill=10)
-            # we convert the PIL images to numpy as assert_equal doesn't work on PIL images.
-            assert_equal(np.asarray(res1), np.asarray(res2))
 
 
 def _get_data_dims_and_points_for_perspective():
@@ -1104,6 +1066,8 @@ def test_hflip(device):
         (2, 12, 3, 4),  # crop inside top-right corner
         (8, 3, 5, 6),  # crop inside bottom-left corner
         (8, 11, 4, 3),  # crop inside bottom-right corner
+        (50, 50, 10, 10),  # crop outside the image
+        (-50, -50, 10, 10),  # crop outside the image
     ],
 )
 def test_crop(device, top, left, height, width):

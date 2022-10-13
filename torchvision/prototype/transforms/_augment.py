@@ -1,28 +1,29 @@
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Tuple
+from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import features
-
-from torchvision.prototype.transforms import functional as F
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor
+from torchvision.prototype.transforms import functional as F, InterpolationMode
 
 from ._transform import _RandomApplyTransform
-from ._utils import has_any, is_simple_tensor, query_chw
+from ._utils import has_any, query_chw, query_spatial_size
 
 
 class RandomErasing(_RandomApplyTransform):
+    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image, features.Video)
+
     def __init__(
         self,
         p: float = 0.5,
         scale: Tuple[float, float] = (0.02, 0.33),
         ratio: Tuple[float, float] = (0.3, 3.3),
         value: float = 0,
+        inplace: bool = False,
     ):
         super().__init__(p=p)
         if not isinstance(value, (numbers.Number, str, tuple, list)):
@@ -40,6 +41,9 @@ class RandomErasing(_RandomApplyTransform):
         self.scale = scale
         self.ratio = ratio
         self.value = value
+        self.inplace = inplace
+
+        self._log_ratio = torch.log(torch.tensor(self.ratio))
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(sample)
@@ -60,7 +64,7 @@ class RandomErasing(_RandomApplyTransform):
 
         area = img_h * img_w
 
-        log_ratio = torch.log(torch.tensor(self.ratio))
+        log_ratio = self._log_ratio
         for _ in range(10):
             erase_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
             aspect_ratio = torch.exp(
@@ -88,33 +92,38 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(
+        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
+    ) -> Union[features.ImageType, features.VideoType]:
         if params["v"] is not None:
-            inpt = F.erase(inpt, **params)
+            inpt = F.erase(inpt, **params, inplace=self.inplace)
 
         return inpt
 
 
 class _BaseMixupCutmix(_RandomApplyTransform):
-    def __init__(self, *, alpha: float, p: float = 0.5) -> None:
+    def __init__(self, alpha: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
     def _check(self, sample: Any) -> None:
-        if not (has_any(sample, features.Image, is_simple_tensor) and has_any(sample, features.OneHotLabel)):
-            raise TypeError(f"{type(self).__name__}() is only defined for tensor images and one-hot labels.")
-        if has_any(sample, features.BoundingBox, features.SegmentationMask, features.Label):
+        if not (
+            has_any(sample, features.Image, features.Video, features.is_simple_tensor)
+            and has_any(sample, features.OneHotLabel)
+        ):
+            raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
+        if has_any(sample, PIL.Image.Image, features.BoundingBox, features.Mask, features.Label):
             raise TypeError(
-                f"{type(self).__name__}() does not support bounding boxes, segmentation masks and plain labels."
+                f"{type(self).__name__}() does not support PIL images, bounding boxes, masks and plain labels."
             )
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
         if inpt.ndim < 2:
             raise ValueError("Need a batch of one hot labels")
         output = inpt.clone()
-        output = output.roll(1, -2).mul_(1 - lam).add_(output.mul_(lam))
-        return features.OneHotLabel.new_like(inpt, output)
+        output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))
+        return features.OneHotLabel.wrap_like(inpt, output)
 
 
 class RandomMixup(_BaseMixupCutmix):
@@ -123,14 +132,15 @@ class RandomMixup(_BaseMixupCutmix):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
-        if isinstance(inpt, features.Image) or is_simple_tensor(inpt):
-            if inpt.ndim < 4:
-                raise ValueError("Need a batch of images")
+        if isinstance(inpt, (features.Image, features.Video)) or features.is_simple_tensor(inpt):
+            expected_ndim = 5 if isinstance(inpt, features.Video) else 4
+            if inpt.ndim < expected_ndim:
+                raise ValueError("The transform expects a batched input")
             output = inpt.clone()
-            output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
+            output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))
 
-            if isinstance(inpt, features.Image):
-                output = features.Image.new_like(inpt, output)
+            if isinstance(inpt, (features.Image, features.Video)):
+                output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
         elif isinstance(inpt, features.OneHotLabel):
@@ -143,7 +153,7 @@ class RandomCutmix(_BaseMixupCutmix):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
-        _, H, W = query_chw(sample)
+        H, W = query_spatial_size(sample)
 
         r_x = torch.randint(W, ())
         r_y = torch.randint(H, ())
@@ -163,17 +173,18 @@ class RandomCutmix(_BaseMixupCutmix):
         return dict(box=box, lam_adjusted=lam_adjusted)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Image) or is_simple_tensor(inpt):
+        if isinstance(inpt, (features.Image, features.Video)) or features.is_simple_tensor(inpt):
             box = params["box"]
-            if inpt.ndim < 4:
-                raise ValueError("Need a batch of images")
+            expected_ndim = 5 if isinstance(inpt, features.Video) else 4
+            if inpt.ndim < expected_ndim:
+                raise ValueError("The transform expects a batched input")
             x1, y1, x2, y2 = box
-            image_rolled = inpt.roll(1, -4)
+            rolled = inpt.roll(1, 0)
             output = inpt.clone()
-            output[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
+            output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
 
-            if isinstance(inpt, features.Image):
-                output = features.Image.new_like(inpt, output)
+            if isinstance(inpt, (features.Image, features.Video)):
+                output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
         elif isinstance(inpt, features.OneHotLabel):
@@ -189,25 +200,30 @@ class SimpleCopyPaste(_RandomApplyTransform):
         p: float = 0.5,
         blending: bool = True,
         resize_interpolation: InterpolationMode = F.InterpolationMode.BILINEAR,
+        antialias: Optional[bool] = None,
     ) -> None:
         super().__init__(p=p)
         self.resize_interpolation = resize_interpolation
         self.blending = blending
+        self.antialias = antialias
 
     def _copy_paste(
         self,
-        image: Any,
+        image: features.TensorImageType,
         target: Dict[str, Any],
-        paste_image: Any,
+        paste_image: features.TensorImageType,
         paste_target: Dict[str, Any],
         random_selection: torch.Tensor,
-        blending: bool = True,
-        resize_interpolation: F.InterpolationMode = F.InterpolationMode.BILINEAR,
-    ) -> Tuple[Any, Dict[str, Any]]:
+        blending: bool,
+        resize_interpolation: F.InterpolationMode,
+        antialias: Optional[bool],
+    ) -> Tuple[features.TensorImageType, Dict[str, Any]]:
 
-        paste_masks = paste_target["masks"].new_like(paste_target["masks"], paste_target["masks"][random_selection])
-        paste_boxes = paste_target["boxes"].new_like(paste_target["boxes"], paste_target["boxes"][random_selection])
-        paste_labels = paste_target["labels"].new_like(paste_target["labels"], paste_target["labels"][random_selection])
+        paste_masks = paste_target["masks"].wrap_like(paste_target["masks"], paste_target["masks"][random_selection])
+        paste_boxes = paste_target["boxes"].wrap_like(paste_target["boxes"], paste_target["boxes"][random_selection])
+        paste_labels = paste_target["labels"].wrap_like(
+            paste_target["labels"], paste_target["labels"][random_selection]
+        )
 
         masks = target["masks"]
 
@@ -215,10 +231,10 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # This is something different to TF implementation we introduced here as
         # originally the algorithm works on equal-sized data
         # (for example, coming from LSJ data augmentations)
-        size1 = image.shape[-2:]
+        size1 = cast(List[int], image.shape[-2:])
         size2 = paste_image.shape[-2:]
         if size1 != size2:
-            paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation)
+            paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation, antialias=antialias)
             paste_masks = F.resize(paste_masks, size=size1)
             paste_boxes = F.resize(paste_boxes, size=size1)
 
@@ -248,7 +264,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # There is a similar +1 in other reference implementations:
         # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
-        boxes = F.convert_bounding_box_format(
+        boxes = F.convert_format_bounding_box(
             xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
         )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
@@ -257,7 +273,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         out_target["labels"] = torch.cat([labels, paste_labels])
 
         # Check for degenerated boxes and remove them
-        boxes = F.convert_bounding_box_format(
+        boxes = F.convert_format_bounding_box(
             out_target["boxes"], old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY
         )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
@@ -270,18 +286,20 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
         return image, out_target
 
-    def _extract_image_targets(self, flat_sample: List[Any]) -> Tuple[List[Any], List[Dict[str, Any]]]:
+    def _extract_image_targets(
+        self, flat_sample: List[Any]
+    ) -> Tuple[List[features.TensorImageType], List[Dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
-        # with List[image], List[BoundingBox], List[SegmentationMask], List[Label]
+        # with List[image], List[BoundingBox], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
-            if isinstance(obj, features.Image) or is_simple_tensor(obj):
+            if isinstance(obj, features.Image) or features.is_simple_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
-                images.append(pil_to_tensor(obj))
+                images.append(F.to_image_tensor(obj))
             elif isinstance(obj, features.BoundingBox):
                 bboxes.append(obj)
-            elif isinstance(obj, features.SegmentationMask):
+            elif isinstance(obj, features.Mask):
                 masks.append(obj)
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
                 labels.append(obj)
@@ -289,7 +307,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain equal sized list of Images, "
-                "BoundingBoxes, Segmentation Masks and Labels or OneHotLabels."
+                "BoundingBoxes, Masks and Labels or OneHotLabels."
             )
 
         targets = []
@@ -299,33 +317,34 @@ class SimpleCopyPaste(_RandomApplyTransform):
         return images, targets
 
     def _insert_outputs(
-        self, flat_sample: List[Any], output_images: List[Any], output_targets: List[Dict[str, Any]]
+        self,
+        flat_sample: List[Any],
+        output_images: List[features.TensorImageType],
+        output_targets: List[Dict[str, Any]],
     ) -> None:
         c0, c1, c2, c3 = 0, 0, 0, 0
         for i, obj in enumerate(flat_sample):
             if isinstance(obj, features.Image):
-                flat_sample[i] = features.Image.new_like(obj, output_images[c0])
+                flat_sample[i] = features.Image.wrap_like(obj, output_images[c0])
                 c0 += 1
             elif isinstance(obj, PIL.Image.Image):
                 flat_sample[i] = F.to_image_pil(output_images[c0])
                 c0 += 1
-            elif is_simple_tensor(obj):
+            elif features.is_simple_tensor(obj):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
             elif isinstance(obj, features.BoundingBox):
-                flat_sample[i] = features.BoundingBox.new_like(obj, output_targets[c1]["boxes"])
+                flat_sample[i] = features.BoundingBox.wrap_like(obj, output_targets[c1]["boxes"])
                 c1 += 1
-            elif isinstance(obj, features.SegmentationMask):
-                flat_sample[i] = features.SegmentationMask.new_like(obj, output_targets[c2]["masks"])
+            elif isinstance(obj, features.Mask):
+                flat_sample[i] = features.Mask.wrap_like(obj, output_targets[c2]["masks"])
                 c2 += 1
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
-                flat_sample[i] = obj.new_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
+                flat_sample[i] = obj.wrap_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-
-        flat_sample, spec = tree_flatten(sample)
+        flat_sample, spec = tree_flatten(inputs)
 
         images, targets = self._extract_image_targets(flat_sample)
 
@@ -359,6 +378,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
                     random_selection=random_selection,
                     blending=self.blending,
                     resize_interpolation=self.resize_interpolation,
+                    antialias=self.antialias,
                 )
             output_images.append(output_image)
             output_targets.append(output_target)

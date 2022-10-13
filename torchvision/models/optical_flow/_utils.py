@@ -19,8 +19,9 @@ def grid_sample(img: Tensor, absolute_grid: Tensor, mode: str = "bilinear", alig
     return F.grid_sample(img, normalized_grid, mode=mode, align_corners=align_corners)
 
 
-def make_coords_grid(batch_size: int, h: int, w: int):
-    coords = torch.meshgrid(torch.arange(h), torch.arange(w), indexing="ij")
+def make_coords_grid(batch_size: int, h: int, w: int, device: str = "cpu"):
+    device = torch.device(device)
+    coords = torch.meshgrid(torch.arange(h, device=device), torch.arange(w, device=device), indexing="ij")
     coords = torch.stack(coords[::-1], dim=0).float()
     return coords[None].repeat(batch_size, 1, 1, 1)
 

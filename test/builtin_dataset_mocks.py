@@ -661,15 +661,15 @@ class SBDMockData:
     _NUM_CATEGORIES = 20
 
     @classmethod
-    def _make_split_files(cls, root_map):
-        ids_map = {
-            split: [f"2008_{idx:06d}" for idx in idcs]
-            for split, idcs in (
-                ("train", [0, 1, 2]),
-                ("train_noval", [0, 2]),
-                ("val", [3]),
-            )
-        }
+    def _make_split_files(cls, root_map, *, split):
+        splits_and_idcs = [
+            ("train", [0, 1, 2]),
+            ("val", [3]),
+        ]
+        if split == "train_noval":
+            splits_and_idcs.append(("train_noval", [0, 2]))
+
+        ids_map = {split: [f"2008_{idx:06d}" for idx in idcs] for split, idcs in splits_and_idcs}
 
         for split, ids in ids_map.items():
             with open(root_map[split] / f"{split}.txt", "w") as fh:
@@ -710,12 +710,14 @@ class SBDMockData:
         return torch.randint(0, cls._NUM_CATEGORIES + 1, size=size, dtype=torch.uint8).numpy()
 
     @classmethod
-    def generate(cls, root):
+    def generate(cls, root, *, split):
         archive_folder = root / "benchmark_RELEASE"
         dataset_folder = archive_folder / "dataset"
         dataset_folder.mkdir(parents=True, exist_ok=True)
 
-        ids, num_samples_map = cls._make_split_files(defaultdict(lambda: dataset_folder, {"train_noval": root}))
+        ids, num_samples_map = cls._make_split_files(
+            defaultdict(lambda: dataset_folder, {"train_noval": root}), split=split
+        )
         sizes = cls._make_anns_folder(dataset_folder, "cls", ids)
         create_image_folder(
             dataset_folder, "img", lambda idx: f"{ids[idx]}.jpg", num_examples=len(ids), size=lambda idx: sizes[idx]
@@ -723,12 +725,12 @@ class SBDMockData:
 
         make_tar(root, "benchmark.tgz", archive_folder, compression="gz")
 
-        return num_samples_map
+        return num_samples_map[split]
 
 
 @register_mock(configs=combinations_grid(split=("train", "val", "train_noval")))
 def sbd(root, config):
-    return SBDMockData.generate(root)[config["split"]]
+    return SBDMockData.generate(root, split=config["split"])
 
 
 @register_mock(configs=[dict()])

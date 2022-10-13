@@ -1,12 +1,97 @@
-from typing import Any, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
-from torchvision.prototype.features import BoundingBoxFormat, ColorSpace, Image
+from torchvision.prototype import features
+from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
+
 
 get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
+
+
+def get_dimensions(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> List[int]:
+    if isinstance(image, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+    ):
+        return get_dimensions_image_tensor(image)
+    elif isinstance(image, (features.Image, features.Video)):
+        channels = image.num_channels
+        height, width = image.spatial_size
+        return [channels, height, width]
+    else:
+        return get_dimensions_image_pil(image)
+
+
+get_num_channels_image_tensor = _FT.get_image_num_channels
+get_num_channels_image_pil = _FP.get_image_num_channels
+
+
+def get_num_channels_video(video: torch.Tensor) -> int:
+    return get_num_channels_image_tensor(video)
+
+
+def get_num_channels(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> int:
+    if isinstance(image, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+    ):
+        return _FT.get_image_num_channels(image)
+    elif isinstance(image, (features.Image, features.Video)):
+        return image.num_channels
+    else:
+        return _FP.get_image_num_channels(image)
+
+
+# We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
+# deprecating the old names.
+get_image_num_channels = get_num_channels
+
+
+def get_spatial_size_image_tensor(image: torch.Tensor) -> List[int]:
+    width, height = _FT.get_image_size(image)
+    return [height, width]
+
+
+@torch.jit.unused
+def get_spatial_size_image_pil(image: PIL.Image.Image) -> List[int]:
+    width, height = _FP.get_image_size(image)
+    return [height, width]
+
+
+def get_spatial_size_video(video: torch.Tensor) -> List[int]:
+    return get_spatial_size_image_tensor(video)
+
+
+def get_spatial_size_mask(mask: torch.Tensor) -> List[int]:
+    return get_spatial_size_image_tensor(mask)
+
+
+@torch.jit.unused
+def get_spatial_size_bounding_box(bounding_box: features.BoundingBox) -> List[int]:
+    return list(bounding_box.spatial_size)
+
+
+def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+        return get_spatial_size_image_tensor(inpt)
+    elif isinstance(inpt, (features.Image, features.Video, features.BoundingBox, features.Mask)):
+        return list(inpt.spatial_size)
+    else:
+        return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
+
+
+def get_num_frames_video(video: torch.Tensor) -> int:
+    return video.shape[-4]
+
+
+def get_num_frames(inpt: features.VideoTypeJIT) -> int:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Video)):
+        return get_num_frames_video(inpt)
+    elif isinstance(inpt, features.Video):
+        return inpt.num_frames
+    else:
+        raise TypeError(f"The video should be a Tensor. Got {type(inpt)}")
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
@@ -27,7 +112,7 @@ def _cxcywh_to_xyxy(cxcywh: torch.Tensor) -> torch.Tensor:
     y1 = cy - 0.5 * h
     x2 = cx + 0.5 * w
     y2 = cy + 0.5 * h
-    return torch.stack((x1, y1, x2, y2), dim=-1)
+    return torch.stack((x1, y1, x2, y2), dim=-1).to(cxcywh.dtype)
 
 
 def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
@@ -36,10 +121,10 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
     cy = (y1 + y2) / 2
     w = x2 - x1
     h = y2 - y1
-    return torch.stack((cx, cy, w, h), dim=-1)
+    return torch.stack((cx, cy, w, h), dim=-1).to(xyxy.dtype)
 
 
-def convert_bounding_box_format(
+def convert_format_bounding_box(
     bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, copy: bool = True
 ) -> torch.Tensor:
     if new_format == old_format:
@@ -62,14 +147,14 @@ def convert_bounding_box_format(
 
 
 def clamp_bounding_box(
-    bounding_box: torch.Tensor, format: BoundingBoxFormat, image_size: Tuple[int, int]
+    bounding_box: torch.Tensor, format: BoundingBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
     # TODO: (PERF) Possible speed up clamping if we have different implementations for each bbox format.
     # Not sure if they yield equivalent results.
-    xyxy_boxes = convert_bounding_box_format(bounding_box, format, BoundingBoxFormat.XYXY)
-    xyxy_boxes[..., 0::2].clamp_(min=0, max=image_size[1])
-    xyxy_boxes[..., 1::2].clamp_(min=0, max=image_size[0])
-    return convert_bounding_box_format(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
+    xyxy_boxes = convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
+    xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
+    xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
+    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
 
 
 def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -152,6 +237,7 @@ _COLOR_SPACE_TO_PIL_MODE = {
 }
 
 
+@torch.jit.unused
 def convert_color_space_image_pil(
     image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
 ) -> PIL.Image.Image:
@@ -167,19 +253,32 @@ def convert_color_space_image_pil(
     return image.convert(new_mode)
 
 
+def convert_color_space_video(
+    video: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
+) -> torch.Tensor:
+    return convert_color_space_image_tensor(
+        video, old_color_space=old_color_space, new_color_space=new_color_space, copy=copy
+    )
+
+
 def convert_color_space(
-    inpt: Any, *, color_space: ColorSpace, old_color_space: Optional[ColorSpace] = None, copy: bool = True
-) -> Any:
-    if isinstance(inpt, Image):
-        return inpt.to_color_space(color_space, copy=copy)
-    elif isinstance(inpt, PIL.Image.Image):
-        return convert_color_space_image_pil(inpt, color_space, copy=copy)
-    else:
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT],
+    color_space: ColorSpace,
+    old_color_space: Optional[ColorSpace] = None,
+    copy: bool = True,
+) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+    ):
         if old_color_space is None:
             raise RuntimeError(
-                "In order to convert the color space of simple tensor images, "
+                "In order to convert the color space of simple tensors, "
                 "the `old_color_space=...` parameter needs to be passed."
             )
         return convert_color_space_image_tensor(
             inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
         )
+    elif isinstance(inpt, (features.Image, features.Video)):
+        return inpt.to_color_space(color_space, copy=copy)
+    else:
+        return convert_color_space_image_pil(inpt, color_space, copy=copy)

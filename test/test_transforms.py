@@ -1670,7 +1670,7 @@ def test_random_crop():
     assert result.size(1) == height + 1
     assert result.size(2) == width + 1
 
-    t = transforms.RandomCrop(48)
+    t = transforms.RandomCrop(33)
     img = torch.ones(3, 32, 32)
     with pytest.raises(ValueError, match=r"Required crop size .+ is larger than input image size .+"):
         t(img)
@@ -1865,17 +1865,6 @@ def test_random_rotation():
 
     # Checking if RandomRotation can be printed as string
     t.__repr__()
-
-    # assert deprecation warning and non-BC
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
-            "Please use 'interpolation' instead."
-        ),
-    ):
-        t = transforms.RandomRotation((-10, 10), resample=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
     # assert changed type warning
     with pytest.warns(
@@ -2216,27 +2205,6 @@ def test_random_affine():
 
     t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
     assert "bilinear" in t.__repr__()
-
-    # assert deprecation warning and non-BC
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
-            "Please use 'interpolation' instead."
-        ),
-    ):
-        t = transforms.RandomAffine(10, resample=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
-
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
-            "Please use 'fill' instead."
-        ),
-    ):
-        t = transforms.RandomAffine(10, fillcolor=10)
-        assert t.fill == 10
 
     # assert changed type warning
     with pytest.warns(

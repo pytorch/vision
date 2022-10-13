@@ -94,7 +94,9 @@ class VOC(Dataset):
             return None
 
     def _parse_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
-        return cast(Dict[str, Any], VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())["annotation"])
+        ann = cast(Dict[str, Any], VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())["annotation"])
+        buffer.close()
+        return ann
 
     def _prepare_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
         anns = self._parse_detection_ann(buffer)
@@ -106,7 +108,7 @@ class VOC(Dataset):
                     for instance in instances
                 ],
                 format="xyxy",
-                image_size=cast(Tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
+                spatial_size=cast(Tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
             ),
             labels=Label(
                 [self._categories.index(instance["name"]) for instance in instances], categories=self._categories
