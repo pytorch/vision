@@ -12,7 +12,7 @@ env:
 jobs:
   tests:
     name: "Unit-tests on Linux CPU"
-    runs-on: linux.2xlarge
+    runs-on: [self-hosted, linux.2xlarge]
     container:
       image: pytorch/conda-builder:cpu
     strategy:
