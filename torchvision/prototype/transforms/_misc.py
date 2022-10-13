@@ -62,11 +62,9 @@ class LinearTransformation(Transform):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def forward(self, *inputs: Any) -> Any:
-        if has_any(inputs, PIL.Image.Image):
+    def _check(self, sample: Any) -> Any:
+        if has_any(sample, PIL.Image.Image):
             raise TypeError("LinearTransformation does not work on PIL Images")
-
-        return super().forward(*inputs)
 
     def _transform(
         self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
@@ -103,15 +101,14 @@ class Normalize(Transform):
         self.std = list(std)
         self.inplace = inplace
 
+    def _check(self, sample: Any) -> Any:
+        if has_any(sample, PIL.Image.Image):
+            raise TypeError(f"{type(self).__name__}() does not support PIL images.")
+
     def _transform(
         self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
     ) -> torch.Tensor:
         return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
-
-    def forward(self, *inpts: Any) -> Any:
-        if has_any(inpts, PIL.Image.Image):
-            raise TypeError(f"{type(self).__name__}() does not support PIL images.")
-        return super().forward(*inpts)
 
 
 class GaussianBlur(Transform):
