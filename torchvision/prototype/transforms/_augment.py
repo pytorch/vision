@@ -107,17 +107,16 @@ class _BaseMixupCutmix(_RandomApplyTransform):
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def forward(self, *inputs: Any) -> Any:
+    def _check_inputs(self, sample: Any) -> None:
         if not (
-            has_any(inputs, features.Image, features.Video, features.is_simple_tensor)
-            and has_any(inputs, features.OneHotLabel)
+            has_any(sample, features.Image, features.Video, features.is_simple_tensor)
+            and has_any(sample, features.OneHotLabel)
         ):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
-        if has_any(inputs, PIL.Image.Image, features.BoundingBox, features.Mask, features.Label):
+        if has_any(sample, PIL.Image.Image, features.BoundingBox, features.Mask, features.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support PIL images, bounding boxes, masks and plain labels."
             )
-        return super().forward(*inputs)
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
         if inpt.ndim < 2:
