@@ -262,6 +262,8 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
 
 def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
+    if ratio == 1.0:
+        return img1
     ratio = float(ratio)
     bound = 1.0 if img1.is_floating_point() else 255.0
 
