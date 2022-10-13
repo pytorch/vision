@@ -92,7 +92,7 @@ class WrapIntoFeatures:
             boxes=features.BoundingBox(
                 target["boxes"],
                 format=features.BoundingBoxFormat.XYXY,
-                image_size=(image.height, image.width),
+                spatial_size=(image.height, image.width),
             ),
             # TODO: add categories
             labels=features.Label(target["labels"], categories=None),
