@@ -123,8 +123,8 @@ class TestSmoke:
                 ],
             )
             for transform in [
-                transforms.RandomMixup(alpha=1.0, p=1.0),
-                transforms.RandomCutmix(alpha=1.0, p=1.0),
+                transforms.RandomMixup(alpha=1.0),
+                transforms.RandomCutmix(alpha=1.0),
             ]
         ]
     )

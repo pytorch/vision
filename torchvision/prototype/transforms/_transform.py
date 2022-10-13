@@ -69,9 +69,22 @@ class _RandomApplyTransform(Transform):
         self.p = p
 
     def forward(self, *inputs: Any) -> Any:
+        # We need to almost duplicate `Transform.forward()` here since we always want to check the inputs, but return
+        # early afterwards in case the random check triggers. The same result could be achieved by calling
+        # `super().forward()` after the random check, but that would call `self._check_inputs` twice.
+
         sample = inputs if len(inputs) > 1 else inputs[0]
+
+        self._check_inputs(sample)
 
         if torch.rand(1) >= self.p:
             return sample
 
-        return super().forward(sample)
+        params = self._get_params(sample)
+
+        flat_inputs, spec = tree_flatten(sample)
+        flat_outputs = [
+            self._transform(inpt, params) if _isinstance(inpt, self._transformed_types) else inpt
+            for inpt in flat_inputs
+        ]
+        return tree_unflatten(flat_outputs, spec)
