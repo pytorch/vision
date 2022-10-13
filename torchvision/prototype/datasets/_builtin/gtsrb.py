@@ -78,7 +78,7 @@ class GTSRB(Dataset):
         bounding_box = BoundingBox(
             [int(csv_info[k]) for k in ("Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2")],
             format="xyxy",
-            image_size=(int(csv_info["Height"]), int(csv_info["Width"])),
+            spatial_size=(int(csv_info["Height"]), int(csv_info["Width"])),
         )
 
         return {

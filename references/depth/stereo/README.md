@@ -2,7 +2,7 @@
 
 This folder contains reference training scripts for Stereo Matching.
 They serve as a log of how to train specific models, so as to provide baseline
-training and evaluation scripts to quickly bootstrap research. 
+training and evaluation scripts to quickly bootstrap research.
 
 
 ### CREStereo
@@ -144,7 +144,7 @@ We encourage users to be aware of the **aspect-ratio** and **disparity scale** t
 ##### Sample A
  The top row contains a sample from `Sintel` whereas the bottom row one from `Middlebury`.
 
-![Disparity1](assets/Disparity%20domain%20drift.jpg)
+![Disparity1](assets/disparity-domain-drift.jpg)
 
 From left to right (`left_image`, `right_image`, `valid_mask`, `valid_mask & ground_truth`, `prediction`). **Darker is further away, lighter is closer**. In the case of `Sintel` which is more closely aligned to the original distribution of `CREStereo` we notice that the model accurately predicts the background scale whereas in the case of `Middlebury2014` it cannot correcly estimate the continous disparity. Notice that the frame composition is similar for both examples. The blue skybox in the `Sintel` scene behaves similarly to the `Middlebury` black background. However, because the `Middlebury` samples comes from an extremly large scene the crop size of `384x512` does not correctly capture the general training distribution.
 
@@ -153,9 +153,9 @@ From left to right (`left_image`, `right_image`, `valid_mask`, `valid_mask & gro
 
 ##### Sample B
 
-The top row contains a scene from `Sceneflow` using the `Monkaa` split whilst the bottom row is a scene from `Middlebury`. This sample exhibits the same issues when it comes to **background estimation**. Given the exagerated size of the `Middlebury` samples the model **colapses the smooth background** of the sample to what it considers to be a mean background disparity value. 
+The top row contains a scene from `Sceneflow` using the `Monkaa` split whilst the bottom row is a scene from `Middlebury`. This sample exhibits the same issues when it comes to **background estimation**. Given the exagerated size of the `Middlebury` samples the model **colapses the smooth background** of the sample to what it considers to be a mean background disparity value.
 
-![Disparity2](assets/Disparity%20background%20mode%20collapse.jpg)
+![Disparity2](assets/disparity-background-mode-collapse.jpg)
 
 
 For more detail on why this behaviour occurs based on the training distribution proportions you can read more about the network at: https://github.com/pytorch/vision/pull/6629#discussion_r978160493
@@ -169,11 +169,11 @@ We also advise users to make user of faster training schedules, as the performan
 
 ![Loss1](assets/Loss.jpg)
 
-In **grey** we set the lr decay to begin after `30000` steps whilst in **orange** we opt for a very late learning rate decay at around `180000` steps. Although exhibiting stronger variance, we can notice that unfreezing the learning rate earlier whilst employing `gradient-norm` out-performs the default configuration. 
+In **grey** we set the lr decay to begin after `30000` steps whilst in **orange** we opt for a very late learning rate decay at around `180000` steps. Although exhibiting stronger variance, we can notice that unfreezing the learning rate earlier whilst employing `gradient-norm` out-performs the default configuration.
 
 ##### Gradient norm saves time
 
-![Loss2](assets/Gradient%20Norm%20Removal.jpg)
+![Loss2](assets/gradient-norm-removal.jpg)
 
 In **grey** we keep ``gradient norm`` enabled whilst in **orange** we do not. We can notice that remvoing the gradient norm exacerbates the performance decrease in the early stages whilst also showcasing an almost complete collapse around the `60000` steps mark where we started decaying the lr for **orange**.
 
