@@ -148,6 +148,9 @@ class RandomResizedCrop(Transform):
         )
 
 
+ImageOrVideoTypeJIT = Union[features.ImageTypeJIT, features.VideoTypeJIT]
+
+
 class FiveCrop(Transform):
     """
     Example:
@@ -177,14 +180,8 @@ class FiveCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(
-        self, inpt: features.ImageOrVideoType, params: Dict[str, Any]
-    ) -> Tuple[
-        features.ImageOrVideoType,
-        features.ImageOrVideoType,
-        features.ImageOrVideoType,
-        features.ImageOrVideoType,
-        features.ImageOrVideoType,
-    ]:
+        self, inpt: ImageOrVideoTypeJIT, params: Dict[str, Any]
+    ) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
         return F.five_crop(inpt, self.size)
 
     def forward(self, *inputs: Any) -> Any:
@@ -205,7 +202,9 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> List[features.ImageOrVideoType]:
+    def _transform(
+        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
+    ) -> Union[List[features.ImageTypeJIT], List[features.VideoTypeJIT]]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
     def forward(self, *inputs: Any) -> Any:
