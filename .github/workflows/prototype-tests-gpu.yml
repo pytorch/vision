@@ -7,15 +7,11 @@ on:
 jobs:
   prototype:
     strategy:
-      matrix:
-        os: [self-hosted, linux.4xlarge.nvidia.gpu]
-        image: pytorch/conda-builder:cuda116
-
       fail-fast: false
 
-    runs-on: ${{ matrix.os }}
+    runs-on: [self-hosted, linux.4xlarge.nvidia.gpu]
     container:
-      image: ${{ matrix.image }}
+      image: pytorch/conda-builder:cuda116
 
     steps:
       - name: Run nvidia-smi
