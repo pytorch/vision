@@ -41,6 +41,11 @@ jobs:
         id: setup
         run: exit 0
 
+      - name: Test non-determinism
+        run: |
+          pip install tqdm
+          python test_gaussian_blur_non_determinism.py
+
       - name: Run prototype transforms tests
         if: success() || ( failure() && steps.setup.conclusion == 'success' )
         shell: bash
