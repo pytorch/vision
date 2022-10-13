@@ -5,6 +5,9 @@ from torchvision.prototype.transforms import functional as F
 
 torch.manual_seed(0)
 video = torch.testing.make_tensor(4, 5, 3, 7, 33, low=0, high=255, dtype=torch.uint8, device="cpu")
+print(video.sum())
+print(video[0, 0, 0, :3, :3])
+print(video[0, 0, 0, -3:, -3:])
 
 num_calls = 1_000_000
 num_failing = 0
