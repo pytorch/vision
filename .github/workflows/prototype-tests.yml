@@ -7,11 +7,20 @@ jobs:
   prototype:
     strategy:
       matrix:
-        os:
-          - ubuntu-latest
+        runner:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          - 9
+          - 10
       fail-fast: false
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Set up python
@@ -50,10 +59,3 @@ jobs:
         if: success() || ( failure() && steps.setup.conclusion == 'success' )
         shell: bash
         run: pytest -rP test/test_prototype_transforms_functional.py::TestKernels::test_scripted_vs_eager -k gauss
-
-      - name: Upload test inputs
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-inputs
-          path: test/artifacts
