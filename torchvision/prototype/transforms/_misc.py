@@ -1,4 +1,5 @@
 import functools
+from collections import defaultdict
 from typing import Any, Callable, Dict, Sequence, Type, Union
 
 import PIL.Image
@@ -144,14 +145,22 @@ class GaussianBlur(Transform):
         return F.gaussian_blur(inpt, self.kernel_size, **params)
 
 
-# TODO: Enhance as described at https://github.com/pytorch/vision/issues/6697
-class ToDtype(Lambda):
-    def __init__(self, dtype: torch.dtype, *types: Type) -> None:
-        self.dtype = dtype
-        super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *types or (torch.Tensor,))
+class ToDtype(Transform):
+    _transformed_types = (torch.Tensor,)
 
-    def extra_repr(self) -> str:
-        return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
+    def _default_dtype(self, dtype: torch.dtype) -> torch.dtype:
+        return dtype
+
+    def __init__(self, dtype: Union[torch.dtype, Dict[Type, torch.dtype]]) -> None:
+        super().__init__()
+        if not isinstance(dtype, dict):
+            # This weird looking construct only exists, since `lambda`'s cannot be serialized by pickle.
+            # If it were possible, we could replace this with `defaultdict(lambda: dtype)`
+            dtype = defaultdict(functools.partial(self._default_dtype, dtype))
+        self.dtype = dtype
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return inpt.to(self.dtype[type(inpt)])
 
 
 class RemoveSmallBoundingBoxes(Transform):
