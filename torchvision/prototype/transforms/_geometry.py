@@ -209,11 +209,6 @@ class TenCrop(Transform):
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
 
-def _check_fill_arg(fill: Union[int, float, Sequence[int], Sequence[float]]) -> None:
-    if not isinstance(fill, (numbers.Number, tuple, list)):
-        raise TypeError("Got inappropriate fill arg")
-
-
 class Pad(Transform):
     def __init__(
         self,
