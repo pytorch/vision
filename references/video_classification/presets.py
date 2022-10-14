@@ -20,7 +20,7 @@ class VideoClassificationPresetTrain:
     ):
         trans = [
             transforms.RandomShortestSize(
-                min_size=resize_size[0], max_size=resize_size[1], interpolation=interpolation, antialias=True
+                min_size=list(range(resize_size[0], resize_size[1] + 1)), interpolation=interpolation, antialias=True
             ),
             transforms.RandomCrop(crop_size),
         ]
