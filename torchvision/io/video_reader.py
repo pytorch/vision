@@ -99,7 +99,7 @@ class VideoReader:
             if not _HAS_GPU_VIDEO_DECODER:
                 raise RuntimeError("Not compiled with GPU decoder support.")
             self.is_cuda = True
-            self._c = torch.classes.torchvision.GPUDecoder(path, device)
+            self._c = torch.classes.torchvision.GPUDecoder(src, device)
             return
         if not _has_video_opt():
             raise RuntimeError(
