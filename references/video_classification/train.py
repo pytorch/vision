@@ -129,12 +129,6 @@ def _get_cache_path(filepath, args):
     return cache_path
 
 
-def collate_fn(batch):
-    # remove audio from the batch
-    batch = [(d[0], d[2], d[3]) for d in batch]
-    return default_collate(batch)
-
-
 def main(args):
     if args.output_dir:
         utils.mkdir(args.output_dir)
@@ -248,7 +242,7 @@ def main(args):
         train_sampler = DistributedSampler(train_sampler)
         test_sampler = DistributedSampler(test_sampler, shuffle=False)
 
-    train_collate_fn = collate_fn
+    collate_fn = None
     num_classes = len(dataset.classes)
     mixup_or_cutmix = []
     if args.mixup_alpha > 0.0:
@@ -265,7 +259,7 @@ def main(args):
             ]
         )
 
-        def train_collate_fn(batch):
+        def collate_fn(batch):
             return batch_transform(*default_collate(batch))
 
     data_loader = torch.utils.data.DataLoader(
@@ -274,7 +268,7 @@ def main(args):
         sampler=train_sampler,
         num_workers=args.workers,
         pin_memory=True,
-        collate_fn=train_collate_fn,
+        collate_fn=collate_fn,
     )
 
     data_loader_test = torch.utils.data.DataLoader(
@@ -283,7 +277,6 @@ def main(args):
         sampler=test_sampler,
         num_workers=args.workers,
         pin_memory=True,
-        collate_fn=collate_fn,
     )
 
     print("Creating model")

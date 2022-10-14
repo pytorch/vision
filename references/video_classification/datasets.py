@@ -6,8 +6,8 @@ from torchvision.prototype import features
 
 
 class KineticsWithVideoId(datasets.Kinetics):
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, features.Label, int]:
-        video, audio, info, video_idx = self.video_clips.get_clip(idx)
+    def __getitem__(self, idx):
+        video, _, info, video_idx = self.video_clips.get_clip(idx)
         label = self.samples[video_idx][1]
 
         video = features.Video(video)
@@ -16,4 +16,4 @@ class KineticsWithVideoId(datasets.Kinetics):
         if self.transform is not None:
             video = self.transform(video)
 
-        return video, audio, label, video_idx
+        return video, label, video_idx

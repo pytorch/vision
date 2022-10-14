@@ -6,7 +6,7 @@ from torchvision.prototype import features
 
 class WrapIntoFeatures(torch.nn.Module):
     def forward(self, sample):
-        video, _, target, id = sample
+        video, target, id = sample
         return features.Video(video), features.Label(target), id
 
 
