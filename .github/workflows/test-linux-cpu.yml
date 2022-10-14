@@ -48,6 +48,7 @@ jobs:
           # conda run -p ${ENV_NAME} conda install -y -c "pytorch-${CHANNEL}" -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] "${CUDATOOLKIT}"
           # conda run -p ${ENV_NAME} python3 setup.py develop
           # conda run -p ${ENV_NAME} python3 -mpip install pytest pytest-mock av
+          ${CONDA_RUN} conda install -y numpy libpng jpeg scipy
           ${CONDA_RUN} conda install -y -c "pytorch-${CHANNEL}" -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] "${CUDATOOLKIT}"
           ${CONDA_RUN} python3 setup.py develop
           ${CONDA_RUN} python3 -mpip install pytest pytest-mock av
