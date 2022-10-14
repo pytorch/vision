@@ -24,6 +24,7 @@ class BoundingBox(_Feature):
         bounding_box = tensor.as_subclass(cls)
         bounding_box.format = format
         bounding_box.spatial_size = spatial_size
+        bounding_box._tensor = tensor
         return bounding_box
 
     def __new__(
