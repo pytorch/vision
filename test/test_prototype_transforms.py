@@ -1379,10 +1379,9 @@ class TestScaleJitter:
 
 
 class TestRandomShortestSize:
-    def test__get_params(self, mocker):
+    @pytest.mark.parametrize("min_size,max_size", [([5, 9], 20), ([5, 9], None)])
+    def test__get_params(self, min_size, max_size, mocker):
         spatial_size = (3, 10)
-        min_size = [5, 9]
-        max_size = 20
 
         transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size)
 
@@ -1395,10 +1394,9 @@ class TestRandomShortestSize:
         assert isinstance(size, tuple) and len(size) == 2
 
         longer = max(size)
-        assert longer <= max_size
-
         shorter = min(size)
-        if longer == max_size:
+        if max_size is not None and longer == max_size:
+            assert longer <= max_size
             assert shorter <= max_size
         else:
             assert shorter in min_size
