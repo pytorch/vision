@@ -40,7 +40,7 @@ jobs:
           VERSION: cpu
           CUDATOOLKIT: cpuonly
         run: |
-          # . ~/miniconda3/etc/profile.d/conda.sh
+          . ~/miniconda3/etc/profile.d/conda.sh
           # Needed for JPEG library detection as setup.py detects conda presence by running `shutil.which('conda')`
           export PATH=~/miniconda3/bin:$PATH
           set -ex
