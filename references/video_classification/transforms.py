@@ -7,7 +7,7 @@ from torchvision.prototype import features
 class WrapIntoFeatures(torch.nn.Module):
     def forward(self, sample):
         video, target, id = sample
-        return features.Video(video), features.Label(target), id
+        return features.Video(video), features.Label(target), features._Feature(id)
 
 
 class ConvertBCHWtoCBHW(nn.Module):
