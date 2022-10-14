@@ -5,7 +5,6 @@ import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.prototype import features
 from torchvision.prototype.transforms._utils import _isinstance
 from torchvision.utils import _log_api_usage_once
 
