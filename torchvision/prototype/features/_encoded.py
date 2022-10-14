@@ -16,9 +16,7 @@ D = TypeVar("D", bound="EncodedData")
 class EncodedData(_Feature):
     @classmethod
     def _wrap(cls: Type[D], tensor: torch.Tensor) -> D:
-        output = tensor.as_subclass(cls)
-        output._tensor = tensor
-        return output
+        return tensor.as_subclass(cls)
 
     def __new__(
         cls,
@@ -51,13 +49,9 @@ class EncodedData(_Feature):
 class EncodedImage(EncodedData):
     # TODO: Use @functools.cached_property if we can depend on Python 3.8
     @property
-    def image_size(self) -> Tuple[int, int]:
-        if not hasattr(self, "_image_size"):
+    def spatial_size(self) -> Tuple[int, int]:
+        if not hasattr(self, "_spatial_size"):
             with PIL.Image.open(ReadOnlyTensorBuffer(self)) as image:
-                self._image_size = image.height, image.width
+                self._spatial_size = image.height, image.width
 
-        return self._image_size
-
-
-class EncodedVideo(EncodedData):
-    pass
+        return self._spatial_size

@@ -1,4 +1,4 @@
-from typing import cast, List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -11,14 +11,14 @@ get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-def get_dimensions(image: features.ImageOrVideoTypeJIT) -> List[int]:
+def get_dimensions(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> List[int]:
     if isinstance(image, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
     ):
         return get_dimensions_image_tensor(image)
     elif isinstance(image, (features.Image, features.Video)):
         channels = image.num_channels
-        height, width = image.image_size
+        height, width = image.spatial_size
         return [channels, height, width]
     else:
         return get_dimensions_image_pil(image)
@@ -28,7 +28,11 @@ get_num_channels_image_tensor = _FT.get_image_num_channels
 get_num_channels_image_pil = _FP.get_image_num_channels
 
 
-def get_num_channels(image: features.ImageOrVideoTypeJIT) -> int:
+def get_num_channels_video(video: torch.Tensor) -> int:
+    return get_num_channels_image_tensor(video)
+
+
+def get_num_channels(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> int:
     if isinstance(image, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
     ):
@@ -55,21 +59,39 @@ def get_spatial_size_image_pil(image: PIL.Image.Image) -> List[int]:
     return [height, width]
 
 
-# TODO: Should we have get_spatial_size_video here? How about masks/bbox etc? What is the criterion for deciding when
-# a kernel will be created?
+def get_spatial_size_video(video: torch.Tensor) -> List[int]:
+    return get_spatial_size_image_tensor(video)
+
+
+def get_spatial_size_mask(mask: torch.Tensor) -> List[int]:
+    return get_spatial_size_image_tensor(mask)
+
+
+@torch.jit.unused
+def get_spatial_size_bounding_box(bounding_box: features.BoundingBox) -> List[int]:
+    return list(bounding_box.spatial_size)
 
 
 def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return get_spatial_size_image_tensor(inpt)
-    elif isinstance(inpt, features._Feature):
-        image_size = getattr(inpt, "image_size", None)
-        if image_size is not None:
-            return list(image_size)
-        else:
-            raise ValueError(f"Type {inpt.__class__} doesn't have spatial size.")
+    elif isinstance(inpt, (features.Image, features.Video, features.BoundingBox, features.Mask)):
+        return list(inpt.spatial_size)
     else:
-        return get_spatial_size_image_pil(inpt)
+        return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
+
+
+def get_num_frames_video(video: torch.Tensor) -> int:
+    return video.shape[-4]
+
+
+def get_num_frames(inpt: features.VideoTypeJIT) -> int:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Video)):
+        return get_num_frames_video(inpt)
+    elif isinstance(inpt, features.Video):
+        return inpt.num_frames
+    else:
+        raise TypeError(f"The video should be a Tensor. Got {type(inpt)}")
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
@@ -125,13 +147,13 @@ def convert_format_bounding_box(
 
 
 def clamp_bounding_box(
-    bounding_box: torch.Tensor, format: BoundingBoxFormat, image_size: Tuple[int, int]
+    bounding_box: torch.Tensor, format: BoundingBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
     # TODO: (PERF) Possible speed up clamping if we have different implementations for each bbox format.
     # Not sure if they yield equivalent results.
     xyxy_boxes = convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
-    xyxy_boxes[..., 0::2].clamp_(min=0, max=image_size[1])
-    xyxy_boxes[..., 1::2].clamp_(min=0, max=image_size[0])
+    xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
+    xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
     return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
 
 
@@ -240,11 +262,11 @@ def convert_color_space_video(
 
 
 def convert_color_space(
-    inpt: features.ImageOrVideoTypeJIT,
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT],
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
     copy: bool = True,
-) -> features.ImageOrVideoTypeJIT:
+) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
     ):
@@ -259,4 +281,4 @@ def convert_color_space(
     elif isinstance(inpt, (features.Image, features.Video)):
         return inpt.to_color_space(color_space, copy=copy)
     else:
-        return cast(features.ImageOrVideoTypeJIT, convert_color_space_image_pil(inpt, color_space, copy=copy))
+        return convert_color_space_image_pil(inpt, color_space, copy=copy)

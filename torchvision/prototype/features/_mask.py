@@ -11,9 +11,7 @@ from ._feature import _Feature, FillTypeJIT
 class Mask(_Feature):
     @classmethod
     def _wrap(cls, tensor: torch.Tensor) -> Mask:
-        output = tensor.as_subclass(cls)
-        output._tensor = tensor
-        return output
+        return tensor.as_subclass(cls)
 
     def __new__(
         cls,
@@ -35,7 +33,7 @@ class Mask(_Feature):
         return cls._wrap(tensor)
 
     @property
-    def image_size(self) -> Tuple[int, int]:
+    def spatial_size(self) -> Tuple[int, int]:
         return cast(Tuple[int, int], tuple(self.shape[-2:]))
 
     def horizontal_flip(self) -> Mask:

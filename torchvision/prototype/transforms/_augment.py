@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, cast, Dict, List, Optional, Tuple
+from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -11,7 +11,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, InterpolationMode
 
 from ._transform import _RandomApplyTransform
-from ._utils import has_any, query_chw
+from ._utils import has_any, query_chw, query_spatial_size
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -45,8 +45,8 @@ class RandomErasing(_RandomApplyTransform):
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        img_c, img_h, img_w = query_chw(sample)
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        img_c, img_h, img_w = query_chw(flat_inputs)
 
         if isinstance(self.value, (int, float)):
             value = [self.value]
@@ -92,51 +92,55 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
+    def _transform(
+        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
+    ) -> Union[features.ImageType, features.VideoType]:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params, inplace=self.inplace)
 
         return inpt
 
 
-# TODO: Add support for Video: https://github.com/pytorch/vision/issues/6731
 class _BaseMixupCutmix(_RandomApplyTransform):
     def __init__(self, alpha: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def forward(self, *inputs: Any) -> Any:
-        if not (has_any(inputs, features.Image, features.is_simple_tensor) and has_any(inputs, features.OneHotLabel)):
-            raise TypeError(f"{type(self).__name__}() is only defined for tensor images and one-hot labels.")
-        if has_any(inputs, PIL.Image.Image, features.BoundingBox, features.Mask, features.Label):
+    def _check_inputs(self, flat_inputs: List[Any]) -> None:
+        if not (
+            has_any(flat_inputs, features.Image, features.Video, features.is_simple_tensor)
+            and has_any(flat_inputs, features.OneHotLabel)
+        ):
+            raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
+        if has_any(flat_inputs, PIL.Image.Image, features.BoundingBox, features.Mask, features.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support PIL images, bounding boxes, masks and plain labels."
             )
-        return super().forward(*inputs)
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
         if inpt.ndim < 2:
             raise ValueError("Need a batch of one hot labels")
         output = inpt.clone()
-        output = output.roll(1, -2).mul_(1 - lam).add_(output.mul_(lam))
+        output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))
         return features.OneHotLabel.wrap_like(inpt, output)
 
 
 class RandomMixup(_BaseMixupCutmix):
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
-        if isinstance(inpt, features.Image) or features.is_simple_tensor(inpt):
-            if inpt.ndim < 4:
-                raise ValueError("Need a batch of images")
+        if isinstance(inpt, (features.Image, features.Video)) or features.is_simple_tensor(inpt):
+            expected_ndim = 5 if isinstance(inpt, features.Video) else 4
+            if inpt.ndim < expected_ndim:
+                raise ValueError("The transform expects a batched input")
             output = inpt.clone()
-            output = output.roll(1, -4).mul_(1 - lam).add_(output.mul_(lam))
+            output = output.roll(1, 0).mul_(1.0 - lam).add_(output.mul_(lam))
 
-            if isinstance(inpt, features.Image):
-                output = features.Image.wrap_like(inpt, output)
+            if isinstance(inpt, (features.Image, features.Video)):
+                output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
         elif isinstance(inpt, features.OneHotLabel):
@@ -146,10 +150,10 @@ class RandomMixup(_BaseMixupCutmix):
 
 
 class RandomCutmix(_BaseMixupCutmix):
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
-        _, H, W = query_chw(sample)
+        H, W = query_spatial_size(flat_inputs)
 
         r_x = torch.randint(W, ())
         r_y = torch.randint(H, ())
@@ -169,17 +173,18 @@ class RandomCutmix(_BaseMixupCutmix):
         return dict(box=box, lam_adjusted=lam_adjusted)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, features.Image) or features.is_simple_tensor(inpt):
+        if isinstance(inpt, (features.Image, features.Video)) or features.is_simple_tensor(inpt):
             box = params["box"]
-            if inpt.ndim < 4:
-                raise ValueError("Need a batch of images")
+            expected_ndim = 5 if isinstance(inpt, features.Video) else 4
+            if inpt.ndim < expected_ndim:
+                raise ValueError("The transform expects a batched input")
             x1, y1, x2, y2 = box
-            image_rolled = inpt.roll(1, -4)
+            rolled = inpt.roll(1, 0)
             output = inpt.clone()
-            output[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
+            output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
 
-            if isinstance(inpt, features.Image):
-                output = features.Image.wrap_like(inpt, output)
+            if isinstance(inpt, (features.Image, features.Video)):
+                output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
         elif isinstance(inpt, features.OneHotLabel):
@@ -339,9 +344,9 @@ class SimpleCopyPaste(_RandomApplyTransform):
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:
-        flat_sample, spec = tree_flatten(inputs)
+        flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
-        images, targets = self._extract_image_targets(flat_sample)
+        images, targets = self._extract_image_targets(flat_inputs)
 
         # images = [t1, t2, ..., tN]
         # Let's define paste_images as shifted list of input images
@@ -379,6 +384,6 @@ class SimpleCopyPaste(_RandomApplyTransform):
             output_targets.append(output_target)
 
         # Insert updated images and targets into input flat_sample
-        self._insert_outputs(flat_sample, output_images, output_targets)
+        self._insert_outputs(flat_inputs, output_images, output_targets)
 
-        return tree_unflatten(flat_sample, spec)
+        return tree_unflatten(flat_inputs, spec)

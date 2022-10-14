@@ -6,10 +6,8 @@ from typing import Any, cast, List, Optional, Tuple, Union
 import PIL.Image
 import torch
 from torchvision._utils import StrEnum
-from torchvision.transforms.functional import InterpolationMode, to_pil_image
-from torchvision.utils import draw_bounding_boxes, make_grid
+from torchvision.transforms.functional import InterpolationMode
 
-from ._bounding_box import BoundingBox
 from ._feature import _Feature, FillTypeJIT
 
 
@@ -66,7 +64,6 @@ class Image(_Feature):
     def _wrap(cls, tensor: torch.Tensor, *, color_space: ColorSpace) -> Image:
         image = tensor.as_subclass(cls)
         image.color_space = color_space
-        image._tensor = tensor
         return image
 
     def __new__(
@@ -106,7 +103,7 @@ class Image(_Feature):
         return self._make_repr(color_space=self.color_space)
 
     @property
-    def image_size(self) -> Tuple[int, int]:
+    def spatial_size(self) -> Tuple[int, int]:
         return cast(Tuple[int, int], tuple(self.shape[-2:]))
 
     @property
@@ -124,16 +121,6 @@ class Image(_Feature):
             ),
             color_space=color_space,
         )
-
-    def show(self) -> None:
-        # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
-        #  promote this out of the prototype state
-        to_pil_image(make_grid(self.view(-1, *self.shape[-3:]))).show()
-
-    def draw_bounding_box(self, bounding_box: BoundingBox, **kwargs: Any) -> Image:
-        # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
-        #  promote this out of the prototype state
-        return Image.wrap_like(self, draw_bounding_boxes(self, bounding_box.to_format("xyxy").view(-1, 4), **kwargs))
 
     def horizontal_flip(self) -> Image:
         output = self._F.horizontal_flip_image_tensor(self)

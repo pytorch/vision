@@ -29,8 +29,8 @@ class ConvertImageDtype(Transform):
         self.dtype = dtype
 
     def _transform(
-        self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]
-    ) -> features.TensorImageOrVideoType:
+        self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
+    ) -> Union[features.TensorImageType, features.TensorVideoType]:
         output = F.convert_image_dtype(inpt, dtype=self.dtype)
         return (
             output if features.is_simple_tensor(inpt) else type(inpt).wrap_like(inpt, output)  # type: ignore[attr-defined]
@@ -58,7 +58,9 @@ class ConvertColorSpace(Transform):
 
         self.copy = copy
 
-    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
+    def _transform(
+        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
+    ) -> Union[features.ImageType, features.VideoType]:
         return F.convert_color_space(
             inpt, color_space=self.color_space, old_color_space=self.old_color_space, copy=self.copy
         )
@@ -68,5 +70,5 @@ class ClampBoundingBoxes(Transform):
     _transformed_types = (features.BoundingBox,)
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
-        output = F.clamp_bounding_box(inpt, format=inpt.format, image_size=inpt.image_size)
+        output = F.clamp_bounding_box(inpt, format=inpt.format, spatial_size=inpt.spatial_size)
         return features.BoundingBox.wrap_like(inpt, output)

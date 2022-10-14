@@ -44,7 +44,6 @@ class _Feature(torch.Tensor):
     ) -> _Feature:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         output = tensor.as_subclass(_Feature)
-        output._tensor = tensor
         return output
 
     @classmethod
@@ -52,9 +51,7 @@ class _Feature(torch.Tensor):
         # FIXME: this is just here for BC with the prototype datasets. See __new__ for details. If that is resolved,
         #  this method should be made abstract
         # raise NotImplementedError
-        output = tensor.as_subclass(cls)
-        output._tensor = tensor
-        return output
+        return tensor.as_subclass(cls)
 
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
@@ -137,19 +134,23 @@ class _Feature(torch.Tensor):
     # this way we return the result without passing into __torch_function__
     @property
     def shape(self) -> _size:  # type: ignore[override]
-        return self._tensor.shape  # type: ignore[attr-defined, no-any-return]
+        with DisableTorchFunction():
+            return super().shape
 
     @property
     def ndim(self) -> int:  # type: ignore[override]
-        return self._tensor.ndim  # type: ignore[attr-defined, no-any-return]
+        with DisableTorchFunction():
+            return super().ndim
 
     @property
     def device(self, *args: Any, **kwargs: Any) -> _device:  # type: ignore[override]
-        return self._tensor.device  # type: ignore[attr-defined, no-any-return]
+        with DisableTorchFunction():
+            return super().device
 
     @property
     def dtype(self) -> _dtype:  # type: ignore[override]
-        return self._tensor.dtype  # type: ignore[attr-defined, no-any-return]
+        with DisableTorchFunction():
+            return super().dtype
 
     def horizontal_flip(self) -> _Feature:
         return self
