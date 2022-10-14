@@ -72,7 +72,11 @@ class VideoReader:
 
     Args:
 
-        path (string): Path to the video file in supported format
+        src (string, bytes object, or tensor): The media source.
+            If string-type, it must be a file path supported by FFMPEG.
+            If bytes shoud be an in memory representatin of a file supported by FFMPEG.
+            If Tensor, it is interpreted internally as byte buffer.
+            It must be one-dimensional, of type ``torch.uint8``.
 
         stream (string, optional): descriptor of the required stream, followed by the stream id,
             in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
@@ -87,7 +91,7 @@ class VideoReader:
 
     """
 
-    def __init__(self, path: str, stream: str = "video", num_threads: int = 0, device: str = "cpu") -> None:
+    def __init__(self, src: str, stream: str = "video", num_threads: int = 0, device: str = "cpu") -> None:
         _log_api_usage_once(self)
         self.is_cuda = False
         device = torch.device(device)
@@ -104,8 +108,20 @@ class VideoReader:
                 + "ffmpeg (version 4.2 is currently supported) and "
                 + "build torchvision from source."
             )
-
-        self._c = torch.classes.torchvision.Video(path, stream, num_threads)
+    
+        
+        elif isinstance(src, bytes):
+            src = torch.frombuffer(src, dtype=torch.uint8)
+            
+        if isinstance(src, str):
+            self._c = torch.classes.torchvision.Video(src, stream, num_threads)
+        elif isinstance(src, torch.Tensor):
+            if self.is_cuda:
+                raise RuntimeError("GPU VideoReader cannot be initialized from Tensor or bytes object.")
+            self._c = torch.classes.torchvision.Video("", "", 0)
+            self._c.init_from_memory(src, stream, num_threads)
+        else:
+            raise ValueError("`src` must be either string, Tensor or bytes object.")
 
     def __next__(self) -> Dict[str, Any]:
         """Decodes and returns the next frame of the current stream.

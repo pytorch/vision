@@ -37,6 +37,8 @@ struct Video : torch::CustomClassHolder {
   // time in comination with any_frame settings
   double seekTS = -1;
 
+  bool initialized = false;
+  
   void _init(std::string stream, int64_t numThreads); // expects params.uri OR callback to be set
 
   void _getDecoderParams(
