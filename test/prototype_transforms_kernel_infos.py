@@ -49,14 +49,12 @@ class KernelInfo(InfoBase):
         test_marks=None,
         # See InfoBase
         closeness_kwargs=None,
-        seed=None,
     ):
         super().__init__(id=kernel_name or kernel.__name__, test_marks=test_marks, closeness_kwargs=closeness_kwargs)
         self.kernel = kernel
         self.sample_inputs_fn = sample_inputs_fn
         self.reference_fn = reference_fn
         self.reference_inputs_fn = reference_inputs_fn
-        self.seed = seed
 
 
 DEFAULT_IMAGE_CLOSENESS_KWARGS = dict(
@@ -234,6 +232,7 @@ def reference_inputs_resize_image_tensor():
         make_image_loaders(extra_dims=[()]),
         [
             F.InterpolationMode.NEAREST,
+            F.InterpolationMode.NEAREST_EXACT,
             F.InterpolationMode.BILINEAR,
             F.InterpolationMode.BICUBIC,
         ],
@@ -883,6 +882,7 @@ def reference_inputs_resized_crop_image_tensor():
         make_image_loaders(extra_dims=[()]),
         [
             F.InterpolationMode.NEAREST,
+            F.InterpolationMode.NEAREST_EXACT,
             F.InterpolationMode.BILINEAR,
             F.InterpolationMode.BICUBIC,
         ],
@@ -1333,13 +1333,10 @@ KERNEL_INFOS.extend(
                 xfail_jit_python_scalar_arg("kernel_size"),
                 xfail_jit_python_scalar_arg("sigma"),
             ],
-            seed=0,
         ),
         KernelInfo(
             F.gaussian_blur_video,
             sample_inputs_fn=sample_inputs_gaussian_blur_video,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            seed=0,
         ),
     ]
 )

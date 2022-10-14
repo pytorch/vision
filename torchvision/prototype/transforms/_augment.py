@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, cast, Dict, List, Optional, Tuple
+from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -45,8 +45,8 @@ class RandomErasing(_RandomApplyTransform):
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        img_c, img_h, img_w = query_chw(sample)
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        img_c, img_h, img_w = query_chw(flat_inputs)
 
         if isinstance(self.value, (int, float)):
             value = [self.value]
@@ -92,31 +92,31 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
+    def _transform(
+        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
+    ) -> Union[features.ImageType, features.VideoType]:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params, inplace=self.inplace)
 
         return inpt
 
 
-# TODO: Add support for Video: https://github.com/pytorch/vision/issues/6731
 class _BaseMixupCutmix(_RandomApplyTransform):
     def __init__(self, alpha: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def forward(self, *inputs: Any) -> Any:
+    def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
-            has_any(inputs, features.Image, features.Video, features.is_simple_tensor)
-            and has_any(inputs, features.OneHotLabel)
+            has_any(flat_inputs, features.Image, features.Video, features.is_simple_tensor)
+            and has_any(flat_inputs, features.OneHotLabel)
         ):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
-        if has_any(inputs, PIL.Image.Image, features.BoundingBox, features.Mask, features.Label):
+        if has_any(flat_inputs, PIL.Image.Image, features.BoundingBox, features.Mask, features.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support PIL images, bounding boxes, masks and plain labels."
             )
-        return super().forward(*inputs)
 
     def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
         if inpt.ndim < 2:
@@ -127,7 +127,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
 
 
 class RandomMixup(_BaseMixupCutmix):
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -150,10 +150,10 @@ class RandomMixup(_BaseMixupCutmix):
 
 
 class RandomCutmix(_BaseMixupCutmix):
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
-        H, W = query_spatial_size(sample)
+        H, W = query_spatial_size(flat_inputs)
 
         r_x = torch.randint(W, ())
         r_y = torch.randint(H, ())
@@ -344,9 +344,9 @@ class SimpleCopyPaste(_RandomApplyTransform):
                 c3 += 1
 
     def forward(self, *inputs: Any) -> Any:
-        flat_sample, spec = tree_flatten(inputs)
+        flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
-        images, targets = self._extract_image_targets(flat_sample)
+        images, targets = self._extract_image_targets(flat_inputs)
 
         # images = [t1, t2, ..., tN]
         # Let's define paste_images as shifted list of input images
@@ -384,6 +384,6 @@ class SimpleCopyPaste(_RandomApplyTransform):
             output_targets.append(output_target)
 
         # Insert updated images and targets into input flat_sample
-        self._insert_outputs(flat_sample, output_images, output_targets)
+        self._insert_outputs(flat_inputs, output_images, output_targets)
 
-        return tree_unflatten(flat_sample, spec)
+        return tree_unflatten(flat_inputs, spec)

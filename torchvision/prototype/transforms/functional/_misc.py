@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import PIL.Image
 import torch
@@ -14,7 +14,10 @@ def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], in
 
 
 def normalize(
-    inpt: features.TensorImageOrVideoTypeJIT, mean: List[float], std: List[float], inplace: bool = False
+    inpt: Union[features.TensorImageTypeJIT, features.TensorVideoTypeJIT],
+    mean: List[float],
+    std: List[float],
+    inplace: bool = False,
 ) -> torch.Tensor:
     if torch.jit.is_scripting():
         correct_type = isinstance(inpt, torch.Tensor)
