@@ -5,7 +5,6 @@ import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.prototype import features
 from torchvision.prototype.transforms._utils import _isinstance
 from torchvision.utils import _log_api_usage_once
 
@@ -13,11 +12,8 @@ from torchvision.utils import _log_api_usage_once
 class Transform(nn.Module):
 
     # Class attribute defining transformed types. Other types are passed-through without any transformation
-    _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (
-        features.is_simple_tensor,
-        features._Feature,
-        PIL.Image.Image,
-    )
+    # We support both Types and callables that are able to do further checks on the type of the input.
+    _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor, PIL.Image.Image)
 
     def __init__(self) -> None:
         super().__init__()
