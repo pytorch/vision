@@ -130,11 +130,14 @@ class TestVideoApi:
             vr_pts.append(vr_frame["pts"])
 
         # get vr frames = read from memory
-        with open(full_path, "rb") as f:
-            video_reader_from_mem = VideoReader(f.read(), "video")
-            for vr_frame_from_mem in video_reader_from_mem:
-                vr_frames_mem.append(vr_frame_from_mem["data"])
-                vr_pts_mem.append(vr_frame_from_mem["pts"])
+        f = open(full_path, "rb")
+        fbytes = f.read()
+        f.close()
+        video_reader_from_mem = VideoReader(fbytes, stream)
+
+        for vr_frame_from_mem in video_reader_from_mem:
+            vr_frames_mem.append(vr_frame_from_mem["data"])
+            vr_pts_mem.append(vr_frame_from_mem["pts"])
 
         # same number of frames
         assert len(vr_frames) == len(vr_frames_mem)
@@ -143,8 +146,12 @@ class TestVideoApi:
         # compare the frames and ptss
         for i in range(len(vr_frames)):
             assert vr_pts[i] == vr_pts_mem[i]
-
-            torch.equal(vr_frames[i], vr_frames_mem[i])
+            mean_delta = torch.mean(torch.abs(vr_frames[i].float() - vr_frames_mem[i].float()))
+            # on average the difference is very small and caused
+            # by decoding (around 1%)
+            # TODO: asses empirically how to set this? atm it's 1%
+            # averaged over all frames
+            assert mean_delta.item() < 2.55
 
         del vr_frames, vr_pts, vr_frames_mem, vr_pts_mem
 
