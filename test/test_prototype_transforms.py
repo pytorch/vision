@@ -1395,7 +1395,7 @@ class TestRandomShortestSize:
 
         longer = max(size)
         shorter = min(size)
-        if max_size is not None and longer == max_size:
+        if max_size is not None:
             assert longer <= max_size
             assert shorter <= max_size
         else:
