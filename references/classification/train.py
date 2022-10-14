@@ -219,7 +219,7 @@ def main(args):
             [
                 WrapIntoFeatures(),
                 transforms.LabelToOneHot(num_categories=num_classes),
-                transforms.ToDtype(torch.float, features.OneHotLabel),
+                transforms.ToDtype({features.OneHotLabel: torch.float}),
                 transforms.RandomChoice(mixup_or_cutmix),
             ]
         )
