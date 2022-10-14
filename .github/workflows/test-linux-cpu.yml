@@ -66,3 +66,4 @@ jobs:
           set -ex
           ${CONDA_RUN} python3 -m torch.utils.collect_env
           ${CONDA_RUN} python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
+          conda env remove -p ${ENV_NAME}
