@@ -64,7 +64,6 @@ class Image(_Feature):
     def _wrap(cls, tensor: torch.Tensor, *, color_space: ColorSpace) -> Image:
         image = tensor.as_subclass(cls)
         image.color_space = color_space
-        image._tensor = tensor
         return image
 
     def __new__(

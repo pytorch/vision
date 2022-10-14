@@ -44,7 +44,6 @@ class _Feature(torch.Tensor):
     ) -> _Feature:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         output = tensor.as_subclass(_Feature)
-        output._tensor = tensor
         return output
 
     @classmethod
@@ -109,9 +108,7 @@ class _Feature(torch.Tensor):
             # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
             # will retain the input type. Thus, we need to unwrap here.
             if isinstance(output, cls):
-                tensor = output.as_subclass(torch.Tensor)
-                output._tensor = tensor
-                return tensor
+                return output.as_subclass(torch.Tensor)
 
             return output
 
@@ -137,19 +134,23 @@ class _Feature(torch.Tensor):
     # this way we return the result without passing into __torch_function__
     @property
     def shape(self) -> _size:  # type: ignore[override]
-        return self._tensor.shape
+        with DisableTorchFunction():
+            return super().shape
 
     @property
     def ndim(self) -> int:  # type: ignore[override]
-        return self._tensor.ndim
+        with DisableTorchFunction():
+            return super().ndim
 
     @property
     def device(self, *args: Any, **kwargs: Any) -> _device:  # type: ignore[override]
-        return self._tensor.device
+        with DisableTorchFunction():
+            return super().device
 
     @property
     def dtype(self) -> _dtype:  # type: ignore[override]
-        return self._tensor.dtype
+        with DisableTorchFunction():
+            return super().dtype
 
     def horizontal_flip(self) -> _Feature:
         return self

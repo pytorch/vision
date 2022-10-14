@@ -17,7 +17,6 @@ class Video(_Feature):
     def _wrap(cls, tensor: torch.Tensor, *, color_space: ColorSpace) -> Video:
         video = tensor.as_subclass(cls)
         video.color_space = color_space
-        video._tensor = tensor
         return video
 
     def __new__(

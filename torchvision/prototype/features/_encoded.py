@@ -16,9 +16,7 @@ D = TypeVar("D", bound="EncodedData")
 class EncodedData(_Feature):
     @classmethod
     def _wrap(cls: Type[D], tensor: torch.Tensor) -> D:
-        output = tensor.as_subclass(cls)
-        output._tensor = tensor
-        return output
+        return tensor.as_subclass(cls)
 
     def __new__(
         cls,
