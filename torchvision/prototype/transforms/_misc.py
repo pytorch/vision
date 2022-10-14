@@ -157,7 +157,10 @@ class ToDtype(Transform):
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return inpt.to(self.dtype[type(inpt)])
+        dtype = self.dtype[type(inpt)]
+        if dtype is None:
+            return inpt
+        return inpt.to(dtype=dtype)
 
 
 class RemoveSmallBoundingBoxes(Transform):
