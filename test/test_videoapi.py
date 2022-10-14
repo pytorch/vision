@@ -57,8 +57,8 @@ class TestVideoApi:
         full_path = os.path.join(VIDEO_DIR, test_video)
         with av.open(full_path) as av_reader:
             if av_reader.streams.video:
-                av_frames, vr_frames = [], []
-                av_pts, vr_pts = [], []
+                av_frames, vr_frames, vr_frames_mem = [], [], []
+                av_pts, vr_pts, vr_pts_mem = [], [], []
                 # get av frames
                 for av_frame in av_reader.decode(av_reader.streams.video[0]):
                     av_frames.append(torch.tensor(av_frame.to_rgb().to_ndarray()).permute(2, 0, 1))
@@ -70,19 +70,31 @@ class TestVideoApi:
                     vr_frames.append(vr_frame["data"])
                     vr_pts.append(vr_frame["pts"])
 
+                # get vr frames = read from memory
+                with open(full_path, "rb") as f:
+                    video_reader_from_mem = VideoReader(f.read())
+                    for vr_frame_from_mem in video_reader_from_mem:
+                        vr_frames_mem.append(vr_frame_from_mem["data"])
+                        vr_pts_mem.append(vr_frame_from_mem["pts"])
+
                 # same number of frames
-                assert len(vr_frames) == len(av_frames)
-                assert len(vr_pts) == len(av_pts)
+                assert len(vr_frames) == len(av_frames) == len(vr_frames_mem)
+                assert len(vr_pts) == len(av_pts) == len(vr_pts_mem)
 
                 # compare the frames and ptss
                 for i in range(len(vr_frames)):
+                    assert vr_pts[i] == vr_pts_mem[i]
                     assert float(av_pts[i]) == approx(vr_pts[i], abs=0.1)
+
+                    torch.equal(vr_frames[i], vr_frames_mem[i])
+
                     mean_delta = torch.mean(torch.abs(av_frames[i].float() - vr_frames[i].float()))
                     # on average the difference is very small and caused
                     # by decoding (around 1%)
                     # TODO: asses empirically how to set this? atm it's 1%
                     # averaged over all frames
                     assert mean_delta.item() < 2.55
+
 
                 del vr_frames, av_frames, vr_pts, av_pts
 

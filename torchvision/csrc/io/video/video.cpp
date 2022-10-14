@@ -156,18 +156,24 @@ void Video::_getDecoderParams(
 
 } // _get decoder params
 
-void Video::initFromFile(std::string videoPath, std::string stream, int64_t numThreads) {
+void Video::initFromFile(
+    std::string videoPath,
+    std::string stream,
+    int64_t numThreads) {
   TORCH_CHECK(!initialized, "Video object can only be initialized once");
   initialized = true;
   params.uri = videoPath;
   _init(stream, numThreads);
 }
 
-void Video::initFromMemory(torch::Tensor videoTensor, std::string stream, int64_t numThreads)
-{
+void Video::initFromMemory(
+    torch::Tensor videoTensor,
+    std::string stream,
+    int64_t numThreads) {
   TORCH_CHECK(!initialized, "Video object can only be initialized once");
   initialized = true;
-  callback = MemoryBuffer::getCallback(videoTensor.data_ptr<uint8_t>(), videoTensor.size(0));
+  callback = MemoryBuffer::getCallback(
+      videoTensor.data_ptr<uint8_t>(), videoTensor.size(0));
   _init(stream, numThreads);
 }
 

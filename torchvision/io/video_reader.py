@@ -108,11 +108,10 @@ class VideoReader:
                 + "ffmpeg (version 4.2 is currently supported) and "
                 + "build torchvision from source."
             )
-    
-        
+
         elif isinstance(src, bytes):
             src = torch.frombuffer(src, dtype=torch.uint8)
-            
+
         if isinstance(src, str):
             self._c = torch.classes.torchvision.Video(src, stream, num_threads)
         elif isinstance(src, torch.Tensor):
