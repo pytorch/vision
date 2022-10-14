@@ -15,7 +15,7 @@ from torch.utils.data.dataloader import default_collate
 from torchvision.datasets.samplers import DistributedSampler, RandomClipSampler, UniformClipSampler
 from torchvision.prototype import features, transforms
 from torchvision.transforms.functional import InterpolationMode
-from transforms import WrapIntoFeatures
+from transforms import ConvertBCHWtoCBHW, WrapIntoFeatures
 
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):
@@ -256,6 +256,7 @@ def main(args):
                 transforms.LabelToOneHot(num_categories=num_classes),
                 transforms.ToDtype({features.OneHotLabel: torch.float, features.Video: None, features._Feature: None}),
                 transforms.RandomChoice(mixup_or_cutmix),
+                ConvertBCHWtoCBHW(),
             ]
         )
 
