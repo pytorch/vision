@@ -143,7 +143,7 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Transform):
-    _transformed_types = (features.is_simple_tensor, features._Feature)
+    _transformed_types = (torch.Tensor,)
 
     def _default_dtype(self, dtype: torch.dtype) -> torch.dtype:
         return dtype

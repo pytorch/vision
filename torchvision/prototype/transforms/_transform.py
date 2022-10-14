@@ -13,11 +13,7 @@ from torchvision.utils import _log_api_usage_once
 class Transform(nn.Module):
 
     # Class attribute defining transformed types. Other types are passed-through without any transformation
-    _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (
-        features.is_simple_tensor,
-        features._Feature,
-        PIL.Image.Image,
-    )
+    _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor, PIL.Image.Image)
 
     def __init__(self) -> None:
         super().__init__()
