@@ -143,7 +143,7 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Transform):
-    _transformed_types = (torch.Tensor,)
+    _transformed_types = (features.is_simple_tensor, features._Feature)
 
     def _default_dtype(self, dtype: torch.dtype) -> torch.dtype:
         return dtype
@@ -157,7 +157,10 @@ class ToDtype(Transform):
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return inpt.to(self.dtype[type(inpt)])
+        dtype = self.dtype.get(type(inpt))
+        if dtype is None:
+            return inpt
+        return inpt.to(dtype=dtype)
 
 
 class RemoveSmallBoundingBoxes(Transform):
