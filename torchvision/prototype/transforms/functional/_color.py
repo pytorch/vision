@@ -227,7 +227,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.numel() == 0:
         return image
 
-    return _equalize_image_tensor_vec(image.view(-1, height, width)).reshape(image.shape)
+    return _equalize_image_tensor_vec(image.reshape(-1, height, width)).reshape(image.shape)
 
 
 equalize_image_pil = _FP.equalize
