@@ -1,6 +1,5 @@
 import torch
-from torchvision.prototype import transforms
-from transforms import ConvertBCHWtoCBHW
+from torchvision.prototype import features, transforms
 
 
 class VideoClassificationPresetTrain:
@@ -44,7 +43,7 @@ class VideoClassificationPresetTrain:
         )
         if random_erase_prob > 0:
             trans.append(transforms.RandomErasing(p=random_erase_prob))
-        trans.append(ConvertBCHWtoCBHW())
+        trans.append(transforms.Permute({torch.Tensor: (1, 0, 2, 3), features.Label: None}))
 
         self.transforms = transforms.Compose(trans)
 
@@ -68,7 +67,7 @@ class VideoClassificationPresetEval:
                 transforms.CenterCrop(crop_size),
                 transforms.ConvertImageDtype(torch.float32),
                 transforms.Normalize(mean=mean, std=std),
-                ConvertBCHWtoCBHW(),
+                transforms.Permute((1, 0, 2, 3)),
             ]
         )
 

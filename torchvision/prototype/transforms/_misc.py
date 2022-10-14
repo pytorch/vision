@@ -1,6 +1,6 @@
 import functools
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import PIL.Image
 
@@ -148,7 +148,7 @@ class ToDtype(Transform):
     def _default_dtype(self, dtype: torch.dtype) -> torch.dtype:
         return dtype
 
-    def __init__(self, dtype: Union[torch.dtype, Dict[Type, torch.dtype]]) -> None:
+    def __init__(self, dtype: Union[torch.dtype, Dict[Type, Optional[torch.dtype]]]) -> None:
         super().__init__()
         if not isinstance(dtype, dict):
             # This weird looking construct only exists, since `lambda`'s cannot be serialized by pickle.
@@ -161,6 +161,29 @@ class ToDtype(Transform):
         if dtype is None:
             return inpt
         return inpt.to(dtype=dtype)
+
+
+class Permute(Transform):
+    _transformed_types = (torch.Tensor,)
+
+    def _default_dims(self, dims: Sequence[int]) -> Sequence[int]:
+        return dims
+
+    def __init__(self, dims: Union[Sequence[int], Dict[Type, Optional[Sequence[int]]]]) -> None:
+        super().__init__()
+        if not isinstance(dims, dict):
+            dims = defaultdict(functools.partial(self._default_dims, dims))
+        self.dims = dims
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        dims = self.dims[type(inpt)]
+        if dims is None:
+            return inpt
+        output = inpt.permute(dims)
+        if isinstance(inpt, features._Feature):
+            # TODO: handle properly the colour space if Image/Video
+            output = inpt.wrap_like(inpt, output)
+        return output
 
 
 class RemoveSmallBoundingBoxes(Transform):

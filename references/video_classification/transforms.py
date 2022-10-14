@@ -6,14 +6,13 @@ from torchvision.prototype import features
 
 class WrapIntoFeatures(torch.nn.Module):
     def forward(self, sample):
-        video, target, id = sample
-        video = video.transpose(-4, -3)  # convert back to (B, C, H, W)
-        return features.Video(video), features.Label(target), features._Feature(id)
+        video_cthw, target, id = sample
+        video_tchw = video_cthw.transpose(-4, -3)
+        return features.Video(video_tchw), features.Label(target), features._Feature(id)
 
 
 class ConvertBCHWtoCBHW(nn.Module):
     """Convert tensor from (B, C, H, W) to (C, B, H, W)"""
 
-    def forward(self, *inputs):
-        inputs[0].transpose_(-4, -3)
-        return inputs
+    def forward(self, vid: torch.Tensor) -> torch.Tensor:
+        return vid.permute(1, 0, 2, 3)
