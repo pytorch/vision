@@ -1,6 +1,6 @@
 import functools
 from collections import defaultdict
-from typing import Any, Callable, Dict, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import PIL.Image
 
@@ -63,11 +63,9 @@ class LinearTransformation(Transform):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def forward(self, *inputs: Any) -> Any:
-        if has_any(inputs, PIL.Image.Image):
+    def _check_inputs(self, sample: Any) -> Any:
+        if has_any(sample, PIL.Image.Image):
             raise TypeError("LinearTransformation does not work on PIL Images")
-
-        return super().forward(*inputs)
 
     def _transform(
         self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
@@ -104,15 +102,14 @@ class Normalize(Transform):
         self.std = list(std)
         self.inplace = inplace
 
+    def _check_inputs(self, sample: Any) -> Any:
+        if has_any(sample, PIL.Image.Image):
+            raise TypeError(f"{type(self).__name__}() does not support PIL images.")
+
     def _transform(
         self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
     ) -> torch.Tensor:
         return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
-
-    def forward(self, *inpts: Any) -> Any:
-        if has_any(inpts, PIL.Image.Image):
-            raise TypeError(f"{type(self).__name__}() does not support PIL images.")
-        return super().forward(*inpts)
 
 
 class GaussianBlur(Transform):
@@ -137,7 +134,7 @@ class GaussianBlur(Transform):
 
         self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
         return dict(sigma=[sigma, sigma])
 
@@ -170,8 +167,8 @@ class RemoveSmallBoundingBoxes(Transform):
         super().__init__()
         self.min_size = min_size
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        bounding_box = query_bounding_box(sample)
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        bounding_box = query_bounding_box(flat_inputs)
 
         # TODO: We can improve performance here by not using the `remove_small_boxes` function. It requires the box to
         #  be in XYXY format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH
