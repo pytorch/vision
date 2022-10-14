@@ -1,6 +1,3 @@
-from typing import Tuple
-
-import torch
 from torchvision import datasets
 from torchvision.prototype import features
 
