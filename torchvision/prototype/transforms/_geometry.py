@@ -733,7 +733,7 @@ class RandomShortestSize(Transform):
     def __init__(
         self,
         min_size: Union[List[int], Tuple[int], int],
-        max_size: int,
+        max_size: Optional[int] = None,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: Optional[bool] = None,
     ):
@@ -747,7 +747,9 @@ class RandomShortestSize(Transform):
         orig_height, orig_width = query_spatial_size(sample)
 
         min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
-        r = min(min_size / min(orig_height, orig_width), self.max_size / max(orig_height, orig_width))
+        r = min_size / min(orig_height, orig_width)
+        if self.max_size is not None:
+            r = min(r, self.max_size / max(orig_height, orig_width))
 
         new_width = int(orig_width * r)
         new_height = int(orig_height * r)
