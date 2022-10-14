@@ -254,7 +254,7 @@ def main(args):
             [
                 WrapIntoFeatures(),
                 transforms.LabelToOneHot(num_categories=num_classes),
-                transforms.ToDtype({features.OneHotLabel: torch.float, features.Video: None}),
+                transforms.ToDtype({features.OneHotLabel: torch.float, features.Video: None, features._Feature: None}),
                 transforms.RandomChoice(mixup_or_cutmix),
             ]
         )
