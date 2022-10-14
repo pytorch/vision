@@ -1,4 +1,5 @@
 name: Unit-tests on Linux CPU
+
 on:
   pull_request:
   push:
@@ -7,8 +8,10 @@ on:
       - main
       - release/*
   workflow_dispatch:
+
 env:
   CHANNEL: "nightly"
+
 jobs:
   tests:
     name: "Unit-tests on Linux CPU"
@@ -17,7 +20,7 @@ jobs:
       image: pytorch/conda-builder:cpu
     strategy:
       matrix:
-        py_vers: ["3.8"]
+        py_vers: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
       - name: Checkout repository
@@ -42,7 +45,8 @@ jobs:
           VERSION: cpu
           CUDATOOLKIT: cpuonly
         run: |
-          # Needed for JPEG library detection as setup.py detects conda presence by running `shutil.which('conda')`
+          # Needed for JPEG library detection as setup.py detects conda presence
+          # by running `shutil.which('conda')`
           export PATH=~/miniconda3/bin:$PATH
           set -ex
           ${CONDA_RUN} conda install \
