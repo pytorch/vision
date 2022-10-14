@@ -639,7 +639,7 @@ class TestContainerTransforms:
         prototype_transform = prototype_transforms.RandomApply(
             [
                 prototype_transforms.Resize(256),
-                legacy_transforms.CenterCrop(224),
+                prototype_transforms.CenterCrop(224),
             ],
             p=p,
         )

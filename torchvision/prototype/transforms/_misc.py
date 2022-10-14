@@ -1,6 +1,6 @@
 import functools
 from collections import defaultdict
-from typing import Any, Callable, Dict, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import PIL.Image
 
@@ -134,7 +134,7 @@ class GaussianBlur(Transform):
 
         self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
         return dict(sigma=[sigma, sigma])
 
@@ -167,8 +167,8 @@ class RemoveSmallBoundingBoxes(Transform):
         super().__init__()
         self.min_size = min_size
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        bounding_box = query_bounding_box(sample)
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        bounding_box = query_bounding_box(flat_inputs)
 
         # TODO: We can improve performance here by not using the `remove_small_boxes` function. It requires the box to
         #  be in XYXY format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH
