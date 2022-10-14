@@ -183,39 +183,6 @@ def autocontrast(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
         return autocontrast_image_pil(inpt)
 
 
-def _equalize_image_tensor_vec(img: torch.Tensor) -> torch.Tensor:
-    # input img shape should be [N, H, W]
-    shape = img.shape
-    # Compute image histogram:
-    flat_img = img.flatten(start_dim=1).to(torch.long)  # -> [N, H * W]
-    hist = flat_img.new_zeros(shape[0], 256)
-    hist.scatter_add_(dim=1, index=flat_img, src=flat_img.new_ones(1).expand_as(flat_img))
-
-    # Compute image cdf
-    chist = hist.cumsum_(dim=1)
-    # Compute steps, where step per channel is nonzero_hist[:-1].sum() // 255
-    # Trick: nonzero_hist[:-1].sum() == chist[idx - 1], where idx = chist.argmax()
-    idx = chist.argmax(dim=1).sub_(1)
-    # If histogram is degenerate (hist of zero image), index is -1
-    neg_idx_mask = idx < 0
-    idx.clamp_(min=0)
-    step = chist.gather(dim=1, index=idx.unsqueeze(1))
-    step[neg_idx_mask] = 0
-    step.div_(255, rounding_mode="floor")
-
-    # Compute batched Look-up-table:
-    # Necessary to avoid an integer division by zero, which raises
-    clamped_step = step.clamp(min=1)
-    chist.add_(torch.div(step, 2, rounding_mode="floor")).div_(clamped_step, rounding_mode="floor").clamp_(0, 255)
-    lut = chist.to(torch.uint8)  # [N, 256]
-
-    # Pad lut with zeros
-    zeros = lut.new_zeros((1, 1)).expand(shape[0], 1)
-    lut = torch.cat([zeros, lut[:, :-1]], dim=1)
-
-    return torch.where((step == 0).unsqueeze(-1), img, lut.gather(dim=1, index=flat_img).view_as(img))
-
-
 def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.dtype != torch.uint8:
         raise TypeError(f"Only torch.uint8 image tensors are supported, but found {image.dtype}")
@@ -227,7 +194,35 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.numel() == 0:
         return image
 
-    return _equalize_image_tensor_vec(image.view(-1, height, width)).reshape(image.shape)
+    # input image shape should be (*, H, W)
+    shape = image.shape
+    # Compute image histogram:
+    flat_image = image.flatten(start_dim=-2).to(torch.long)  # -> [*, H * W]
+    hist = flat_image.new_zeros(shape[:-2] + (256,), dtype=torch.int32)
+    hist.scatter_add_(dim=-1, index=flat_image, src=hist.new_ones(1).expand_as(flat_image))
+
+    # Compute image cdf
+    pixels = flat_image.size(-1)
+    chist = hist.cumsum(dim=-1)
+    # Compute steps, where step per channel is nonzero_hist[:-1].sum() // 255
+    # Trick: nonzero_hist[-1] == hist[chist.argmax()]
+    idx = chist.argmax(dim=-1).unsqueeze_(-1)
+    step = pixels - hist.gather(dim=-1, index=idx)
+    step.div_(255, rounding_mode="floor")
+
+    # Compute batched Look-up-table:
+    non_zero = step == 0
+    # Necessary to avoid an integer division by zero, which raises
+    clamped_step = step.clamp_(min=1)
+    chist = chist[..., :-1]
+    chist.add_(torch.div(step, 2, rounding_mode="floor")).div_(clamped_step, rounding_mode="floor").clamp_(0, 255)
+    lut = chist.to(torch.uint8)
+
+    # Pad lut with zeros
+    zeros = lut.new_zeros(1).expand(shape[:-2] + (1,))
+    lut = torch.cat([zeros, lut], dim=-1)
+
+    return torch.where(non_zero.unsqueeze_(-1), image, lut.gather(dim=-1, index=flat_image).view_as(image))
 
 
 equalize_image_pil = _FP.equalize
