@@ -232,6 +232,7 @@ def reference_inputs_resize_image_tensor():
         make_image_loaders(extra_dims=[()]),
         [
             F.InterpolationMode.NEAREST,
+            F.InterpolationMode.NEAREST_EXACT,
             F.InterpolationMode.BILINEAR,
             F.InterpolationMode.BICUBIC,
         ],
@@ -881,6 +882,7 @@ def reference_inputs_resized_crop_image_tensor():
         make_image_loaders(extra_dims=[()]),
         [
             F.InterpolationMode.NEAREST,
+            F.InterpolationMode.NEAREST_EXACT,
             F.InterpolationMode.BILINEAR,
             F.InterpolationMode.BICUBIC,
         ],
