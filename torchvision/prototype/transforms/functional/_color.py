@@ -69,7 +69,7 @@ def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) 
     shape = image.shape
 
     if image.ndim > 4:
-        image = image.view(-1, num_channels, height, width)
+        image = image.reshape(-1, num_channels, height, width)
         needs_unsquash = True
     else:
         needs_unsquash = False
@@ -77,7 +77,7 @@ def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) 
     output = _FT._blend(image, _FT._blurred_degenerate_image(image), sharpness_factor)
 
     if needs_unsquash:
-        output = output.view(shape)
+        output = output.reshape(shape)
 
     return output
 
@@ -213,7 +213,7 @@ def _equalize_image_tensor_vec(img: torch.Tensor) -> torch.Tensor:
     zeros = lut.new_zeros((1, 1)).expand(shape[0], 1)
     lut = torch.cat([zeros, lut[:, :-1]], dim=1)
 
-    return torch.where((step == 0).unsqueeze(-1), img, lut.gather(dim=1, index=flat_img).view_as(img))
+    return torch.where((step == 0).unsqueeze(-1), img, lut.gather(dim=1, index=flat_img).reshape_as(img))
 
 
 def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
