@@ -156,12 +156,6 @@ def xfail_all_tests(*, reason, condition):
     ]
 
 
-xfails_image_degenerate_or_multi_batch_dims = xfail_all_tests(
-    reason="See https://github.com/pytorch/vision/issues/6670 for details.",
-    condition=lambda args_kwargs: len(args_kwargs.args[0].shape) > 4 or not all(args_kwargs.args[0].shape[:-3]),
-)
-
-
 KERNEL_INFOS = []
 
 
@@ -1156,7 +1150,6 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            test_marks=xfails_image_degenerate_or_multi_batch_dims,
         ),
         KernelInfo(
             F.perspective_bounding_box,
@@ -1168,7 +1161,6 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            test_marks=xfails_image_degenerate_or_multi_batch_dims,
         ),
         KernelInfo(
             F.perspective_video,
@@ -1239,7 +1231,6 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            test_marks=xfails_image_degenerate_or_multi_batch_dims,
         ),
         KernelInfo(
             F.elastic_bounding_box,
@@ -1251,7 +1242,6 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
-            test_marks=xfails_image_degenerate_or_multi_batch_dims,
         ),
         KernelInfo(
             F.elastic_video,
@@ -1379,7 +1369,6 @@ KERNEL_INFOS.extend(
             test_marks=[
                 xfail_jit_python_scalar_arg("kernel_size"),
                 xfail_jit_python_scalar_arg("sigma"),
-                *xfails_image_degenerate_or_multi_batch_dims,
             ],
         ),
         KernelInfo(
