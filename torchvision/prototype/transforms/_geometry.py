@@ -155,12 +155,13 @@ class FiveCrop(Transform):
     """
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[Tuple[features.Image, ...], features.Label]):
-        ...         images, labels = sample
-        ...         batch_size = len(images)
-        ...         images = features.Image.wrap_like(images[0], torch.stack(images))
+        ...     def forward(self, sample: Tuple[Tuple[Union[features.Image, features.Video], ...], features.Label]):
+        ...         images_or_videos, labels = sample
+        ...         batch_size = len(images_or_videos)
+        ...         image_or_video = images_or_videos[0]
+        ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
         ...         labels = features.Label.wrap_like(labels, labels.repeat(batch_size))
-        ...         return images, labels
+        ...         return images_or_videos, labels
         ...
         >>> image = features.Image(torch.rand(3, 256, 256))
         >>> label = features.Label(0)
@@ -172,15 +173,21 @@ class FiveCrop(Transform):
         torch.Size([5])
     """
 
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
 
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(
-        self, inpt: features.ImageType, params: Dict[str, Any]
-    ) -> Tuple[features.ImageType, features.ImageType, features.ImageType, features.ImageType, features.ImageType]:
+        self, inpt: features.ImageOrVideoType, params: Dict[str, Any]
+    ) -> Tuple[
+        features.ImageOrVideoType,
+        features.ImageOrVideoType,
+        features.ImageOrVideoType,
+        features.ImageOrVideoType,
+        features.ImageOrVideoType,
+    ]:
         return F.five_crop(inpt, self.size)
 
     def forward(self, *inputs: Any) -> Any:
@@ -194,14 +201,14 @@ class TenCrop(Transform):
     See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
     """
 
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> List[features.ImageType]:
+    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> List[features.ImageOrVideoType]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
     def forward(self, *inputs: Any) -> Any:

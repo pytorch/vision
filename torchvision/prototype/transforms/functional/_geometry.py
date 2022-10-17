@@ -1376,16 +1376,27 @@ def five_crop_image_pil(
     return tl, tr, bl, br, center
 
 
+def five_crop_video(
+    video: torch.Tensor, size: List[int]
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    return five_crop_image_tensor(video, size)
+
+
 def five_crop(
-    inpt: features.ImageTypeJIT, size: List[int]
+    inpt: features.ImageOrVideoTypeJIT, size: List[int]
 ) -> Tuple[
-    features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT, features.ImageTypeJIT
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
+    features.ImageOrVideoTypeJIT,
 ]:
-    # TODO: consider breaking BC here to return List[features.ImageTypeJIT] to align this op with `ten_crop`
+    # TODO: consider breaking BC here to return List[features.ImageOrVideoTypeJIT] to align this op with `ten_crop`
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
-        if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
-            output = tuple(features.Image.wrap_like(inpt, item) for item in output)  # type: ignore[assignment]
+        if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
+            tmp = tuple(inpt.wrap_like(inpt, item) for item in output)  # type: ignore[arg-type]
+            output = tmp  # type: ignore[assignment]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return five_crop_image_pil(inpt, size)
@@ -1418,11 +1429,17 @@ def ten_crop_image_pil(image: PIL.Image.Image, size: List[int], vertical_flip: b
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
 
-def ten_crop(inpt: features.ImageTypeJIT, size: List[int], vertical_flip: bool = False) -> List[features.ImageTypeJIT]:
+def ten_crop_video(video: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
+    return ten_crop_image_tensor(video, size, vertical_flip=vertical_flip)
+
+
+def ten_crop(
+    inpt: features.ImageOrVideoTypeJIT, size: List[int], vertical_flip: bool = False
+) -> List[features.ImageOrVideoTypeJIT]:
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
-        if not torch.jit.is_scripting() and isinstance(inpt, features.Image):
-            output = [features.Image.wrap_like(inpt, item) for item in output]
+        if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
+            output = [inpt.wrap_like(inpt, item) for item in output]  # type: ignore[arg-type]
         return output
     else:  # isinstance(inpt, PIL.Image.Image):
         return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)
