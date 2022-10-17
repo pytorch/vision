@@ -184,10 +184,9 @@ class FiveCrop(Transform):
     ) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
         return F.five_crop(inpt, self.size)
 
-    def forward(self, *inputs: Any) -> Any:
-        if has_any(inputs, features.BoundingBox, features.Mask):
+    def _check_inputs(self, sample: Any) -> None:
+        if has_any(sample, features.BoundingBox, features.Mask):
             raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
-        return super().forward(*inputs)
 
 
 class TenCrop(Transform):
@@ -202,15 +201,14 @@ class TenCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
+    def _check_inputs(self, sample: Any) -> None:
+        if has_any(sample, features.BoundingBox, features.Mask):
+            raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
+
     def _transform(
         self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
     ) -> Union[List[features.ImageTypeJIT], List[features.VideoTypeJIT]]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
-
-    def forward(self, *inputs: Any) -> Any:
-        if has_any(inputs, features.BoundingBox, features.Mask):
-            raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
-        return super().forward(*inputs)
 
 
 class Pad(Transform):
@@ -616,6 +614,17 @@ class RandomIoUCrop(Transform):
         self.options = sampler_options
         self.trials = trials
 
+    def _check_inputs(self, sample: Any) -> None:
+        if not (
+            has_all(sample, features.BoundingBox)
+            and has_any(sample, PIL.Image.Image, features.Image, features.is_simple_tensor)
+            and has_any(sample, features.Label, features.OneHotLabel)
+        ):
+            raise TypeError(
+                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
+                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Masks."
+            )
+
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         orig_h, orig_w = query_spatial_size(sample)
         bboxes = query_bounding_box(sample)
@@ -687,18 +696,6 @@ class RandomIoUCrop(Transform):
             output = features.Mask.wrap_like(output, masks)
 
         return output
-
-    def forward(self, *inputs: Any) -> Any:
-        if not (
-            has_all(inputs, features.BoundingBox)
-            and has_any(inputs, PIL.Image.Image, features.Image, features.is_simple_tensor)
-            and has_any(inputs, features.Label, features.OneHotLabel)
-        ):
-            raise TypeError(
-                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
-                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Masks."
-            )
-        return super().forward(*inputs)
 
 
 class ScaleJitter(Transform):
@@ -773,6 +770,18 @@ class FixedSizeCrop(Transform):
         self.fill = _setup_fill_arg(fill)
 
         self.padding_mode = padding_mode
+
+    def _check_inputs(self, sample: Any) -> None:
+        if not has_any(sample, PIL.Image.Image, features.Image, features.is_simple_tensor, features.Video):
+            raise TypeError(
+                f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
+            )
+
+        if has_any(sample, features.BoundingBox) and not has_any(sample, features.Label, features.OneHotLabel):
+            raise TypeError(
+                f"If a BoundingBox is contained in the input sample, "
+                f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
+            )
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         height, width = query_spatial_size(sample)
@@ -849,20 +858,6 @@ class FixedSizeCrop(Transform):
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt
-
-    def forward(self, *inputs: Any) -> Any:
-        if not has_any(inputs, PIL.Image.Image, features.Image, features.is_simple_tensor, features.Video):
-            raise TypeError(
-                f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
-            )
-
-        if has_any(inputs, features.BoundingBox) and not has_any(inputs, features.Label, features.OneHotLabel):
-            raise TypeError(
-                f"If a BoundingBox is contained in the input sample, "
-                f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
-            )
-
-        return super().forward(*inputs)
 
 
 class RandomResize(Transform):
