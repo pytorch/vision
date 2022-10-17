@@ -3,6 +3,7 @@ from typing import List, Optional, Union
 
 import PIL.Image
 import torch
+from torch.nn.functional import conv2d, pad as torch_pad
 from torchvision.prototype import features
 from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
@@ -95,8 +96,8 @@ def gaussian_blur_image_tensor(
 
     # padding = (left, right, top, bottom)
     padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
-    output = _FT.torch_pad(image, padding, mode="reflect")
-    output = _FT.conv2d(output, kernel, groups=output.shape[-3])
+    output = torch_pad(image, padding, mode="reflect")
+    output = conv2d(output, kernel, groups=output.shape[-3])
 
     output = _FT._cast_squeeze_out(output, need_cast, need_squeeze, out_dtype)
 

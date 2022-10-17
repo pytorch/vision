@@ -308,25 +308,28 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.7, hue=0.3),
         ],
     ),
-    ConsistencyConfig(
-        prototype_transforms.ElasticTransform,
-        legacy_transforms.ElasticTransform,
-        [
-            ArgsKwargs(),
-            ArgsKwargs(alpha=20.0),
-            ArgsKwargs(alpha=(15.3, 27.2)),
-            ArgsKwargs(sigma=3.0),
-            ArgsKwargs(sigma=(2.5, 3.9)),
-            ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.BICUBIC),
-            ArgsKwargs(fill=1),
-        ],
-        # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(163, 163), (72, 333), (313, 95)]),
-        # We updated gaussian blur kernel generation with a faster and numerically more stable version
-        # This brings float32 accumulation visible in elastic transform -> we need to relax consistency tolerance
-        closeness_kwargs={"rtol": 1e-1, "atol": 1},
-    ),
+    *[
+        ConsistencyConfig(
+            prototype_transforms.ElasticTransform,
+            legacy_transforms.ElasticTransform,
+            [
+                ArgsKwargs(),
+                ArgsKwargs(alpha=20.0),
+                ArgsKwargs(alpha=(15.3, 27.2)),
+                ArgsKwargs(sigma=3.0),
+                ArgsKwargs(sigma=(2.5, 3.9)),
+                ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.NEAREST),
+                ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.BICUBIC),
+                ArgsKwargs(fill=1),
+            ],
+            # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
+            make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(163, 163), (72, 333), (313, 95)], dtypes=[dt]),
+            # We updated gaussian blur kernel generation with a faster and numerically more stable version
+            # This brings float32 accumulation visible in elastic transform -> we need to relax consistency tolerance
+            closeness_kwargs=ckw,
+        )
+        for dt, ckw in [(torch.uint8, {"rtol": 1e-1, "atol": 1}), (torch.float32, {"rtol": 1e-3, "atol": 1e-5})]
+    ],
     ConsistencyConfig(
         prototype_transforms.GaussianBlur,
         legacy_transforms.GaussianBlur,
@@ -510,7 +513,6 @@ def check_call_consistency(
         image_repr = f"[{tuple(image.shape)}, {str(image.dtype).rsplit('.')[-1]}]"
 
         image_tensor = torch.Tensor(image)
-
         try:
             torch.manual_seed(0)
             output_legacy_tensor = legacy_transform(image_tensor)
