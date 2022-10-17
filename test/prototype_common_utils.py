@@ -28,6 +28,7 @@ __all__ = [
     "assert_close",
     "assert_equal",
     "ArgsKwargs",
+    "VALID_EXTRA_DIMS",
     "make_image_loaders",
     "make_image",
     "make_images",
@@ -201,7 +202,10 @@ def _parse_image_size(size, *, name="size"):
         )
 
 
-DEFAULT_EXTRA_DIMS = ((), (0,), (4,), (2, 3), (5, 0), (0, 5))
+VALID_EXTRA_DIMS = ((), (4,), (2, 3))
+DEGENERATE_BATCH_DIMS = ((0,), (5, 0), (0, 5))
+
+DEFAULT_EXTRA_DIMS = (*VALID_EXTRA_DIMS, *DEGENERATE_BATCH_DIMS)
 
 
 def from_loader(loader_fn):
