@@ -484,7 +484,7 @@ class AugMix(_AutoAugmentBase):
 
         orig_dims = list(image_or_video.shape)
         expected_ndim = 5 if isinstance(orig_image_or_video, features.Video) else 4
-        batch = image_or_video.view([1] * max(expected_ndim - image_or_video.ndim, 0) + orig_dims)
+        batch = image_or_video.reshape([1] * max(expected_ndim - image_or_video.ndim, 0) + orig_dims)
         batch_dims = [batch.size(0)] + [1] * (batch.ndim - 1)
 
         # Sample the beta weights for combining the original and augmented image or video. To get Beta, we use a
@@ -497,9 +497,9 @@ class AugMix(_AutoAugmentBase):
         # Sample the mixing weights and combine them with the ones sampled from Beta for the augmented images or videos.
         combined_weights = self._sample_dirichlet(
             torch.tensor([self.alpha] * self.mixture_width, device=batch.device).expand(batch_dims[0], -1)
-        ) * m[:, 1].view([batch_dims[0], -1])
+        ) * m[:, 1].reshape([batch_dims[0], -1])
 
-        mix = m[:, 0].view(batch_dims) * batch
+        mix = m[:, 0].reshape(batch_dims) * batch
         for i in range(self.mixture_width):
             aug = batch
             depth = self.chain_depth if self.chain_depth > 0 else int(torch.randint(low=1, high=4, size=(1,)).item())
@@ -517,8 +517,8 @@ class AugMix(_AutoAugmentBase):
                 aug = self._apply_image_or_video_transform(
                     aug, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
                 )
-            mix.add_(combined_weights[:, i].view(batch_dims) * aug)
-        mix = mix.view(orig_dims).to(dtype=image_or_video.dtype)
+            mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
+        mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
         if isinstance(orig_image_or_video, (features.Image, features.Video)):
             mix = orig_image_or_video.wrap_like(orig_image_or_video, mix)  # type: ignore[arg-type]
