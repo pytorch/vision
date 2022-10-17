@@ -328,7 +328,7 @@ CONSISTENCY_CONFIGS = [
             # This brings float32 accumulation visible in elastic transform -> we need to relax consistency tolerance
             closeness_kwargs=ckw,
         )
-        for dt, ckw in [(torch.uint8, {"rtol": 1e-1, "atol": 1}), (torch.float32, {"rtol": 1e-3, "atol": 1e-5})]
+        for dt, ckw in [(torch.uint8, {"rtol": 1e-1, "atol": 1}), (torch.float32, {"rtol": 1e-2, "atol": 1e-3})]
     ],
     ConsistencyConfig(
         prototype_transforms.GaussianBlur,
