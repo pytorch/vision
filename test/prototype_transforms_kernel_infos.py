@@ -19,7 +19,6 @@ from prototype_common_utils import (
     make_video_loaders,
     mark_framework_limitation,
     TestMark,
-    VALID_EXTRA_DIMS,
 )
 from torchvision.prototype import features
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
@@ -214,16 +213,6 @@ def sample_inputs_resize_image_tensor():
         ],
     ):
         yield ArgsKwargs(image_loader, size=[min(image_loader.image_size) + 1], interpolation=interpolation)
-
-    # We have a speed hack in place for nearest interpolation and single channel images (grayscale)
-    for image_loader in make_image_loaders(
-        sizes=["random"],
-        color_spaces=[features.ColorSpace.GRAY],
-        extra_dims=VALID_EXTRA_DIMS,
-    ):
-        yield ArgsKwargs(
-            image_loader, size=[min(image_loader.image_size) + 1], interpolation=F.InterpolationMode.NEAREST
-        )
 
     yield ArgsKwargs(make_image_loader(size=(11, 17)), size=20, max_size=25)
 
