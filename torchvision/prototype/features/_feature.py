@@ -32,10 +32,10 @@ class _Feature(torch.Tensor):
         return (
             torch.as_tensor(  # type: ignore[return-value]
                 data,
-                dtype=dtype,  # type: ignore[arg-type]
-                device=device,  # type: ignore[arg-type]
+                dtype=dtype,
+                device=device,
             )
-            .as_subclass(cls)  # type: ignore[arg-type]
+            .as_subclass(cls)
             .requires_grad_(requires_grad)
         )
 
@@ -115,7 +115,7 @@ class _Feature(torch.Tensor):
             # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
             # will retain the input type. Thus, we need to unwrap here.
             if isinstance(output, cls):
-                return output.as_subclass(torch.Tensor)  # type: ignore[arg-type]
+                return output.as_subclass(torch.Tensor)
 
             return output
 
