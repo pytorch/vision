@@ -52,7 +52,9 @@ class Grayscale(Transform):
         super().__init__()
         self.num_output_channels = num_output_channels
 
-    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
+    def _transform(
+        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
+    ) -> Union[features.ImageType, features.VideoType]:
         output = _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
         if isinstance(inpt, (features.Image, features.Video)):
             output = inpt.wrap_like(inpt, output, color_space=features.ColorSpace.GRAY)  # type: ignore[arg-type]
@@ -81,7 +83,9 @@ class RandomGrayscale(_RandomApplyTransform):
         num_input_channels, *_ = query_chw(sample)
         return dict(num_input_channels=num_input_channels)
 
-    def _transform(self, inpt: features.ImageOrVideoType, params: Dict[str, Any]) -> features.ImageOrVideoType:
+    def _transform(
+        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
+    ) -> Union[features.ImageType, features.VideoType]:
         output = _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
         if isinstance(inpt, (features.Image, features.Video)):
             output = inpt.wrap_like(inpt, output, color_space=features.ColorSpace.GRAY)  # type: ignore[arg-type]
