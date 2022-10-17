@@ -1,6 +1,6 @@
+import functools
 import numbers
 from collections import defaultdict
-
 from typing import Any, Callable, Dict, Sequence, Tuple, Type, Union
 
 import PIL.Image
@@ -43,13 +43,19 @@ def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
             raise TypeError("Got inappropriate fill arg")
 
 
+def _default_fill(fill: FillType) -> FillType:
+    return fill
+
+
 def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillType]:
     _check_fill_arg(fill)
 
     if isinstance(fill, dict):
         return fill
 
-    return defaultdict(lambda: fill)  # type: ignore[return-value, arg-type]
+    # This weird looking construct only exists, since `lambda`'s cannot be serialized by pickle.
+    # If it were possible, we could replace this with `defaultdict(lambda: fill)`
+    return defaultdict(functools.partial(_default_fill, fill))
 
 
 def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
