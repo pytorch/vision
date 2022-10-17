@@ -1,6 +1,6 @@
 import functools
 from collections import defaultdict
-from typing import Any, Callable, Dict, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import PIL.Image
 
@@ -88,9 +88,9 @@ class LinearTransformation(Transform):
                 f"Got {inpt.device} vs {self.mean_vector.device}"
             )
 
-        flat_tensor = inpt.view(-1, n) - self.mean_vector
+        flat_tensor = inpt.reshape(-1, n) - self.mean_vector
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
-        return transformed_tensor.view(shape)
+        return transformed_tensor.reshape(shape)
 
 
 class Normalize(Transform):
@@ -134,7 +134,7 @@ class GaussianBlur(Transform):
 
         self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
         return dict(sigma=[sigma, sigma])
 
@@ -157,7 +157,10 @@ class ToDtype(Transform):
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return inpt.to(self.dtype[type(inpt)])
+        dtype = self.dtype[type(inpt)]
+        if dtype is None:
+            return inpt
+        return inpt.to(dtype=dtype)
 
 
 class RemoveSmallBoundingBoxes(Transform):
@@ -167,8 +170,8 @@ class RemoveSmallBoundingBoxes(Transform):
         super().__init__()
         self.min_size = min_size
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        bounding_box = query_bounding_box(sample)
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        bounding_box = query_bounding_box(flat_inputs)
 
         # TODO: We can improve performance here by not using the `remove_small_boxes` function. It requires the box to
         #  be in XYXY format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH

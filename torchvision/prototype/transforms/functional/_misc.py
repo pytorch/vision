@@ -82,7 +82,7 @@ def gaussian_blur_image_tensor(
     shape = image.shape
 
     if image.ndim > 4:
-        image = image.view((-1,) + shape[-3:])
+        image = image.reshape((-1,) + shape[-3:])
         needs_unsquash = True
     else:
         needs_unsquash = False
@@ -101,7 +101,7 @@ def gaussian_blur_image_tensor(
     output = _FT._cast_squeeze_out(output, need_cast, need_squeeze, out_dtype)
 
     if needs_unsquash:
-        output = output.view(shape)
+        output = output.reshape(shape)
 
     return output
 

@@ -6,6 +6,7 @@ from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Type
 import PIL.Image
 import torch
 from torch._C import DisableTorchFunction
+from torch.types import _device, _dtype, _size
 from torchvision.transforms import InterpolationMode
 
 
@@ -127,6 +128,28 @@ class _Feature(torch.Tensor):
 
             _Feature.__F = functional
         return _Feature.__F
+
+    # Add properties for common attributes like shape, dtype, device, ndim etc
+    # this way we return the result without passing into __torch_function__
+    @property
+    def shape(self) -> _size:  # type: ignore[override]
+        with DisableTorchFunction():
+            return super().shape
+
+    @property
+    def ndim(self) -> int:  # type: ignore[override]
+        with DisableTorchFunction():
+            return super().ndim
+
+    @property
+    def device(self, *args: Any, **kwargs: Any) -> _device:  # type: ignore[override]
+        with DisableTorchFunction():
+            return super().device
+
+    @property
+    def dtype(self) -> _dtype:  # type: ignore[override]
+        with DisableTorchFunction():
+            return super().dtype
 
     def horizontal_flip(self) -> _Feature:
         return self

@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import PIL.Image
@@ -79,8 +79,8 @@ class RandomGrayscale(_RandomApplyTransform):
 
         super().__init__(p=p)
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        num_input_channels, *_ = query_chw(sample)
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        num_input_channels, *_ = query_chw(flat_inputs)
         return dict(num_input_channels=num_input_channels)
 
     def _transform(
