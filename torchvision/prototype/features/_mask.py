@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import Any, cast, List, Optional, Tuple, Union
 
 import torch
 from torchvision.transforms import InterpolationMode
@@ -31,6 +31,10 @@ class Mask(_Feature):
         tensor: torch.Tensor,
     ) -> Mask:
         return cls._wrap(tensor)
+
+    @property
+    def image_size(self) -> Tuple[int, int]:
+        return cast(Tuple[int, int], tuple(self.shape[-2:]))
 
     def horizontal_flip(self) -> Mask:
         output = self._F.horizontal_flip_mask(self)

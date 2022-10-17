@@ -21,7 +21,12 @@ from torchvision.transforms.functional_tensor import (
     interpolate,
 )
 
-from ._meta import convert_format_bounding_box, get_dimensions_image_pil, get_dimensions_image_tensor
+from ._meta import (
+    convert_format_bounding_box,
+    get_dimensions_image_tensor,
+    get_spatial_size_image_pil,
+    get_spatial_size_image_tensor,
+)
 
 horizontal_flip_image_tensor = _FT.hflip
 horizontal_flip_image_pil = _FP.hflip
@@ -323,7 +328,7 @@ def affine_image_pil(
     # it is visually better to estimate the center without 0.5 offset
     # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
     if center is None:
-        _, height, width = get_dimensions_image_pil(image)
+        height, width = get_spatial_size_image_pil(image)
         center = [width * 0.5, height * 0.5]
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
 
@@ -1189,13 +1194,13 @@ def _center_crop_compute_crop_anchor(
 
 def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    _, image_height, image_width = get_dimensions_image_tensor(image)
+    image_height, image_width = get_spatial_size_image_tensor(image)
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
         image = pad_image_tensor(image, padding_ltrb, fill=0)
 
-        _, image_height, image_width = get_dimensions_image_tensor(image)
+        image_height, image_width = get_spatial_size_image_tensor(image)
         if crop_width == image_width and crop_height == image_height:
             return image
 
@@ -1206,13 +1211,13 @@ def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> tor
 @torch.jit.unused
 def center_crop_image_pil(image: PIL.Image.Image, output_size: List[int]) -> PIL.Image.Image:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    _, image_height, image_width = get_dimensions_image_pil(image)
+    image_height, image_width = get_spatial_size_image_pil(image)
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
         image = pad_image_pil(image, padding_ltrb, fill=0)
 
-        _, image_height, image_width = get_dimensions_image_pil(image)
+        image_height, image_width = get_spatial_size_image_pil(image)
         if crop_width == image_width and crop_height == image_height:
             return image
 
@@ -1365,7 +1370,7 @@ def five_crop_image_tensor(
     image: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     crop_height, crop_width = _parse_five_crop_size(size)
-    _, image_height, image_width = get_dimensions_image_tensor(image)
+    image_height, image_width = get_spatial_size_image_tensor(image)
 
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
@@ -1385,7 +1390,7 @@ def five_crop_image_pil(
     image: PIL.Image.Image, size: List[int]
 ) -> Tuple[PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]:
     crop_height, crop_width = _parse_five_crop_size(size)
-    _, image_height, image_width = get_dimensions_image_pil(image)
+    image_height, image_width = get_spatial_size_image_pil(image)
 
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
