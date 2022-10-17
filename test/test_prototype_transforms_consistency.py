@@ -575,9 +575,11 @@ def check_call_consistency(prototype_transform, legacy_transform, images=None, s
 @pytest.mark.parametrize(
     ("config", "args_kwargs"),
     [
-        pytest.param(config, args_kwargs, id=f"{config.legacy_cls.__name__}({args_kwargs})")
+        pytest.param(
+            config, args_kwargs, id=f"{config.legacy_cls.__name__}-{idx:0{len(str(len(config.args_kwargs)))}d}"
+        )
         for config in CONSISTENCY_CONFIGS
-        for args_kwargs in config.args_kwargs
+        for idx, args_kwargs in enumerate(config.args_kwargs)
     ],
 )
 def test_call_consistency(config, args_kwargs):
