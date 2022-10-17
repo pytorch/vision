@@ -130,13 +130,13 @@ class CUB200(Dataset):
         return path.with_suffix(".jpg").name
 
     def _2011_prepare_ann(
-        self, data: Tuple[str, Tuple[List[str], Tuple[str, BinaryIO]]], image_size: Tuple[int, int]
+        self, data: Tuple[str, Tuple[List[str], Tuple[str, BinaryIO]]], spatial_size: Tuple[int, int]
     ) -> Dict[str, Any]:
         _, (bounding_box_data, segmentation_data) = data
         segmentation_path, segmentation_buffer = segmentation_data
         return dict(
             bounding_box=BoundingBox(
-                [float(part) for part in bounding_box_data[1:]], format="xywh", image_size=image_size
+                [float(part) for part in bounding_box_data[1:]], format="xywh", spatial_size=spatial_size
             ),
             segmentation_path=segmentation_path,
             segmentation=EncodedImage.from_file(segmentation_buffer),
@@ -149,7 +149,9 @@ class CUB200(Dataset):
         path = pathlib.Path(data[0])
         return path.with_suffix(".jpg").name, data
 
-    def _2010_prepare_ann(self, data: Tuple[str, Tuple[str, BinaryIO]], image_size: Tuple[int, int]) -> Dict[str, Any]:
+    def _2010_prepare_ann(
+        self, data: Tuple[str, Tuple[str, BinaryIO]], spatial_size: Tuple[int, int]
+    ) -> Dict[str, Any]:
         _, (path, buffer) = data
         content = read_mat(buffer)
         return dict(
@@ -157,7 +159,7 @@ class CUB200(Dataset):
             bounding_box=BoundingBox(
                 [int(content["bbox"][coord]) for coord in ("left", "bottom", "right", "top")],
                 format="xyxy",
-                image_size=image_size,
+                spatial_size=spatial_size,
             ),
             segmentation=_Feature(content["seg"]),
         )
@@ -175,7 +177,7 @@ class CUB200(Dataset):
         image = EncodedImage.from_file(buffer)
 
         return dict(
-            prepare_ann_fn(anns_data, image.image_size),
+            prepare_ann_fn(anns_data, image.spatial_size),
             image=image,
             label=Label(
                 int(pathlib.Path(path).parent.name.rsplit(".", 1)[0]) - 1,

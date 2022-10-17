@@ -24,7 +24,7 @@ from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
 from torchvision.prototype.transforms import functional as F
-from torchvision.prototype.transforms._utils import query_chw
+from torchvision.prototype.transforms._utils import query_spatial_size
 from torchvision.prototype.transforms.functional import to_image_pil
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])
@@ -871,7 +871,7 @@ class TestRefDetTransforms:
 
         pil_image = to_image_pil(make_image(size=size, color_space=features.ColorSpace.RGB))
         target = {
-            "boxes": make_bounding_box(image_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -881,7 +881,7 @@ class TestRefDetTransforms:
 
         tensor_image = torch.Tensor(make_image(size=size, color_space=features.ColorSpace.RGB))
         target = {
-            "boxes": make_bounding_box(image_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -891,7 +891,7 @@ class TestRefDetTransforms:
 
         feature_image = make_image(size=size, color_space=features.ColorSpace.RGB)
         target = {
-            "boxes": make_bounding_box(image_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -949,7 +949,7 @@ class PadIfSmaller(prototype_transforms.Transform):
         self.fill = prototype_transforms._geometry._setup_fill_arg(fill)
 
     def _get_params(self, sample):
-        _, height, width = query_chw(sample)
+        height, width = query_spatial_size(sample)
         padding = [0, 0, max(self.size - width, 0), max(self.size - height, 0)]
         needs_padding = any(padding)
         return dict(padding=padding, needs_padding=needs_padding)
