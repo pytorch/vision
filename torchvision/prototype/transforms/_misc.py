@@ -88,9 +88,9 @@ class LinearTransformation(Transform):
                 f"Got {inpt.device} vs {self.mean_vector.device}"
             )
 
-        flat_tensor = inpt.view(-1, n) - self.mean_vector
+        flat_tensor = inpt.reshape(-1, n) - self.mean_vector
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
-        return transformed_tensor.view(shape)
+        return transformed_tensor.reshape(shape)
 
 
 class Normalize(Transform):
@@ -157,7 +157,10 @@ class ToDtype(Transform):
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return inpt.to(self.dtype[type(inpt)])
+        dtype = self.dtype[type(inpt)]
+        if dtype is None:
+            return inpt
+        return inpt.to(dtype=dtype)
 
 
 class RemoveSmallBoundingBoxes(Transform):
