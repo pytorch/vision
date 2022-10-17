@@ -17,6 +17,7 @@ from prototype_common_utils import (
     make_masks,
     make_one_hot_labels,
     make_segmentation_mask,
+    make_videos,
 )
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features, transforms
@@ -65,6 +66,7 @@ def parametrize_from_transforms(*transforms):
             make_vanilla_tensor_images,
             make_pil_images,
             make_masks,
+            make_videos,
         ]:
             inputs = list(creation_fn())
             try:
@@ -155,12 +157,14 @@ class TestSmoke:
                             features.ColorSpace.RGB,
                         ],
                         dtypes=[torch.uint8],
-                        extra_dims=[(4,)],
+                        extra_dims=[(), (4,)],
+                        **(dict(num_frames=["random"]) if fn is make_videos else dict()),
                     )
                     for fn in [
                         make_images,
                         make_vanilla_tensor_images,
                         make_pil_images,
+                        make_videos,
                     ]
                 ),
             )
@@ -184,6 +188,7 @@ class TestSmoke:
                     for fn in [
                         make_images,
                         make_vanilla_tensor_images,
+                        make_videos,
                     ]
                 ),
             ),
@@ -200,6 +205,7 @@ class TestSmoke:
                     make_images(extra_dims=[(4,)]),
                     make_vanilla_tensor_images(),
                     make_pil_images(),
+                    make_videos(extra_dims=[()]),
                 ),
             )
         ]
@@ -218,6 +224,7 @@ class TestSmoke:
                             make_images,
                             make_vanilla_tensor_images,
                             make_pil_images,
+                            make_videos,
                         )
                     ]
                 ),
