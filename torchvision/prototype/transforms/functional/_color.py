@@ -2,9 +2,32 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
-from ._meta import get_dimensions_image_tensor
+from ._meta import get_dimensions_image_tensor, get_num_channels_image_tensor
 
-adjust_brightness_image_tensor = _FT.adjust_brightness
+
+def _blend(img1: torch.Tensor, img2: torch.Tensor, ratio: float) -> torch.Tensor:
+    dtype = img1.dtype
+    fp = dtype.is_floating_point
+    bound = 1.0 if fp else 255.0
+    if not fp and img2.is_cuda:
+        img2 = img2 * (1.0 - ratio)
+    else:
+        if not fp:
+            img2 = img2.to(torch.float32)
+        img2.mul_(1.0 - ratio)
+    img2.add_(img1, alpha=ratio).clamp_(0, bound)
+    return img2 if fp else img2.to(dtype)
+
+
+def adjust_brightness_image_tensor(img: torch.Tensor, brightness_factor: float) -> torch.Tensor:
+    if brightness_factor < 0:
+        raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")
+
+    _FT._assert_channels(img, [1, 3])
+
+    return _blend(img, torch.zeros_like(img, dtype=torch.float32), brightness_factor)
+
+
 adjust_brightness_image_pil = _FP.adjust_brightness
 
 
@@ -21,7 +44,20 @@ def adjust_brightness(inpt: features.InputTypeJIT, brightness_factor: float) -> 
         return adjust_brightness_image_pil(inpt, brightness_factor=brightness_factor)
 
 
-adjust_saturation_image_tensor = _FT.adjust_saturation
+def adjust_saturation_image_tensor(img: torch.Tensor, saturation_factor: float) -> torch.Tensor:
+    if saturation_factor < 0:
+        raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
+
+    c = get_num_channels_image_tensor(img)
+    if c not in [1, 3]:
+        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+
+    if c[0] == 1:  # Match PIL behaviour
+        return img
+
+    return _blend(img, _FT.rgb_to_grayscale(img), saturation_factor)
+
+
 adjust_saturation_image_pil = _FP.adjust_saturation
 
 
@@ -38,7 +74,22 @@ def adjust_saturation(inpt: features.InputTypeJIT, saturation_factor: float) -> 
         return adjust_saturation_image_pil(inpt, saturation_factor=saturation_factor)
 
 
-adjust_contrast_image_tensor = _FT.adjust_contrast
+def adjust_contrast_image_tensor(img: torch.Tensor, contrast_factor: float) -> torch.Tensor:
+    if contrast_factor < 0:
+        raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
+
+    c = get_num_channels_image_tensor(img)
+    if c not in [1, 3]:
+        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    if c == 3:
+        mean = torch.mean(_FT.rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
+    else:
+        mean = torch.mean(img.to(dtype), dim=(-3, -2, -1), keepdim=True)
+
+    return _blend(img, mean, contrast_factor)
+
+
 adjust_contrast_image_pil = _FP.adjust_contrast
 
 
@@ -74,7 +125,7 @@ def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) 
     else:
         needs_unsquash = False
 
-    output = _FT._blend(image, _FT._blurred_degenerate_image(image), sharpness_factor)
+    output = _blend(image, _FT._blurred_degenerate_image(image), sharpness_factor)
 
     if needs_unsquash:
         output = output.reshape(shape)
