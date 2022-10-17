@@ -1,4 +1,3 @@
-import math
 import warnings
 from typing import List, Optional, Tuple, Union
 
@@ -727,10 +726,13 @@ def perspective(
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
-def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> torch.Tensor:
-    lim = (kernel_size - 1) / (2 * math.sqrt(2) * sigma)
-    x = torch.linspace(-lim, lim, steps=kernel_size)
-    kernel1d = torch.softmax(-x.pow_(2), dim=0)
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:
+    ksize_half = (kernel_size - 1) * 0.5
+
+    x = torch.linspace(-ksize_half, ksize_half, steps=kernel_size)
+    pdf = torch.exp(-0.5 * (x / sigma).pow(2))
+    kernel1d = pdf / pdf.sum()
+
     return kernel1d
 
 

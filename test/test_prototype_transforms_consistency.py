@@ -323,6 +323,9 @@ CONSISTENCY_CONFIGS = [
         ],
         # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(163, 163), (72, 333), (313, 95)]),
+        # We updated gaussian blur kernel generation with a faster and numerically more stable version
+        # This brings float32 accumulation visible in elastic transform -> we need to relax consistency tolerance
+        closeness_kwargs={"rtol": 1e-1, "atol": 1},
     ),
     ConsistencyConfig(
         prototype_transforms.GaussianBlur,
@@ -333,6 +336,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(kernel_size=3, sigma=0.7),
             ArgsKwargs(kernel_size=5, sigma=(0.3, 1.4)),
         ],
+        closeness_kwargs={"rtol": 1e-5, "atol": 1e-5},
     ),
     ConsistencyConfig(
         prototype_transforms.RandomAffine,
