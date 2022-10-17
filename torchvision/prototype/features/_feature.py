@@ -43,8 +43,7 @@ class _Feature(torch.Tensor):
         requires_grad: bool = False,
     ) -> _Feature:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        output = tensor.as_subclass(_Feature)
-        return output
+        return tensor.as_subclass(_Feature)
 
     @classmethod
     def wrap_like(cls: Type[F], other: F, tensor: torch.Tensor) -> F:
