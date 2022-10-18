@@ -71,12 +71,10 @@ class VideoReader:
         If only stream type is passed, the decoder auto-detects first stream of that type.
 
     Args:
-
-        src (string, bytes object, or tensor): The media source.
-            If string-type, it must be a file path supported by FFMPEG.
-            If bytes shoud be an in memory representatin of a file supported by FFMPEG.
-            If Tensor, it is interpreted internally as byte buffer.
-            It must be one-dimensional, of type ``torch.uint8``.
+        path (str, bytes object, or tensor):
+            .. warning:
+                This parameter was deprecated in ``0.15`` and will be removed in ``0.17``.
+                Please use ``src`` instead.
 
         stream (string, optional): descriptor of the required stream, followed by the stream id,
             in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
@@ -89,14 +87,17 @@ class VideoReader:
         device (str, optional): Device to be used for decoding. Defaults to ``"cpu"``.
             To use GPU decoding, pass ``device="cuda"``.
 
-        path (str, optional):
-            .. warning:
-                This parameter was deprecated in ``0.15`` and will be removed in ``0.17``. Please use ``src`` instead.
 
+
+        src (string, bytes object, or tensor, optional): The media source.
+            If string-type, it must be a file path supported by FFMPEG.
+            If bytes shoud be an in memory representatin of a file supported by FFMPEG.
+            If Tensor, it is interpreted internally as byte buffer.
+            It must be one-dimensional, of type ``torch.uint8``.
     """
 
     def __init__(
-        self, src: str, stream: str = "video", num_threads: int = 0, device: str = "cpu", path: Optional[str] = None
+        self, path: str, stream: str = "video", num_threads: int = 0, device: str = "cpu", src: Optional[str] = None
     ) -> None:
         _log_api_usage_once(self)
         self.is_cuda = False
