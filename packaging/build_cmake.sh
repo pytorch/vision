@@ -42,8 +42,15 @@ else
   PYTORCH_MUTEX_CONSTRAINT=''
 fi
 
+which python
+
 conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $PYTORCH_MUTEX_CONSTRAINT $MKL_CONSTRAINT numpy -c nvidia -c "pytorch-${UPLOAD_CHANNEL}"
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
+
+which python
+python --version
+
+exit 1
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     conda install -yq libpng jpeg
