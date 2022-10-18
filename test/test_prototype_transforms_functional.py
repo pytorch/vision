@@ -243,7 +243,6 @@ class TestDispatchers:
         [
             F.clamp_bounding_box,
             F.convert_color_space,
-            F.convert_image_dtype,
             F.get_dimensions,
             F.get_image_num_channels,
             F.get_image_size,
@@ -296,10 +295,9 @@ class TestDispatchers:
     def test_dispatch_feature(self, info, args_kwargs, spy_on):
         (feature, *other_args), kwargs = args_kwargs.load()
 
-        method_name = info.id
-        method = getattr(feature, method_name)
+        method = getattr(feature, info.method_name)
         feature_type = type(feature)
-        spy = spy_on(method, module=feature_type.__module__, name=f"{feature_type.__name__}.{method_name}")
+        spy = spy_on(method, module=feature_type.__module__, name=f"{feature_type.__name__}.{info.method_name}")
 
         info.dispatcher(feature, *other_args, **kwargs)
 

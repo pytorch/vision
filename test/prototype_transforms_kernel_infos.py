@@ -1943,33 +1943,48 @@ KERNEL_INFOS.extend(
 )
 
 
-def sample_inputs_convert_image_dtype():
+def sample_inputs_convert_dtype_image_tensor():
     for input_dtype, output_dtype in itertools.product(
         [torch.uint8, torch.int64, torch.float32, torch.float64], repeat=2
     ):
         if input_dtype.is_floating_point and output_dtype == torch.int64:
             continue
 
-        for image_loader in make_image_loaders(
-            sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[input_dtype]
+        for image_loader, copy_kwargs in itertools.product(
+            make_image_loaders(sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[input_dtype]),
+            [dict(copy=True), dict(copy=False)] if input_dtype == output_dtype else [dict()],
         ):
-            yield ArgsKwargs(image_loader, dtype=output_dtype)
+            yield ArgsKwargs(image_loader, dtype=output_dtype, **copy_kwargs)
 
     yield ArgsKwargs(make_image_loader(color_space=features.ColorSpace.RGB), dtype=torch.uint8)
+
+
+def sample_inputs_convert_dtype_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader)
+
+
+_convert_dtype_skip_dtype_consistency = TestMark(
+    ("TestKernels", "test_dtype_consistency"),
+    pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
+    condition=lambda args_kwargs: args_kwargs.args[0].dtype != args_kwargs.kwargs.get("dtype", torch.float32),
+)
 
 
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.convert_image_dtype,
-            sample_inputs_fn=sample_inputs_convert_image_dtype,
+            F.convert_dtype_image_tensor,
+            sample_inputs_fn=sample_inputs_convert_dtype_image_tensor,
             test_marks=[
-                TestMark(
-                    ("TestKernels", "test_dtype_consistency"),
-                    pytest.mark.skip(reason="`convert_image_dtype` converts the dtype"),
-                    condition=lambda args_kwargs: args_kwargs.args[0].dtype
-                    != args_kwargs.kwargs.get("dtype", torch.float32),
-                )
+                _convert_dtype_skip_dtype_consistency,
+            ],
+        ),
+        KernelInfo(
+            F.convert_dtype_video,
+            sample_inputs_fn=sample_inputs_convert_dtype_video,
+            test_marks=[
+                _convert_dtype_skip_dtype_consistency,
             ],
         ),
     ]
