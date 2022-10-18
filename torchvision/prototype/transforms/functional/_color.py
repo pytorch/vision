@@ -7,7 +7,7 @@ from ._meta import get_dimensions_image_tensor, get_num_channels_image_tensor
 
 def _blend(img1: torch.Tensor, img2: torch.Tensor, ratio: float) -> torch.Tensor:
     dtype = img1.dtype
-    fp = dtype.is_floating_point
+    fp = img1.is_floating_point()
     bound = 1.0 if fp else 255.0
     if not fp and img2.is_cuda:
         img2 = img2 * (1.0 - ratio)
@@ -52,10 +52,10 @@ def adjust_saturation_image_tensor(img: torch.Tensor, saturation_factor: float) 
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
 
-    if c[0] == 1:  # Match PIL behaviour
+    if c == 1:  # Match PIL behaviour
         return img
 
-    return _blend(img, _FT.rgb_to_grayscale(img), saturation_factor)
+    return _blend(img, _FT.rgb_to_grayscale(img).expand_as(img).clone(), saturation_factor)
 
 
 adjust_saturation_image_pil = _FP.adjust_saturation
@@ -87,7 +87,7 @@ def adjust_contrast_image_tensor(img: torch.Tensor, contrast_factor: float) -> t
     else:
         mean = torch.mean(img.to(dtype), dim=(-3, -2, -1), keepdim=True)
 
-    return _blend(img, mean, contrast_factor)
+    return _blend(img, mean.expand_as(img).clone(), contrast_factor)
 
 
 adjust_contrast_image_pil = _FP.adjust_contrast
