@@ -660,12 +660,16 @@ class Raft_Stereo_Base_Weights(WeightsEnum):
                     # Ratio of pixels with difference less than 3px from ground truth
                     "3px": 0.9426,
                 },
-                "Middlebury2014-val": {
-                    # Ratio of pixels with difference less than 2px from ground truth
-                    # on full, half, and quarter image resolution
-                    "full-2px": 0.8167,
-                    "half-2px": 0.8741,
-                    "quarter-2px": 9064,
+                # For middlebury, ratio of pixels with difference less than 2px from ground truth
+                # on full, half, and quarter image resolution
+                "Middlebury2014-val-full": {
+                    "2px": 0.8167,
+                },
+                "Middlebury2014-val-half": {
+                    "2px": 0.8741,
+                },
+                "Middlebury2014-val-quarter": {
+                    "2px": 0.9064,
                 },
                 "ETH3D-val": {
                     # Ratio of pixels with difference less than 1px from ground truth
