@@ -1,6 +1,7 @@
 import functools
 import itertools
 import math
+import re
 
 import numpy as np
 import pytest
@@ -172,6 +173,12 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.horizontal_flip_bounding_box,
             sample_inputs_fn=sample_inputs_horizontal_flip_bounding_box,
+            test_marks=[
+                TestMark(
+                    ("TestKernels", "test_scripted_vs_eager"),
+                    pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %72')}:UserWarning"),
+                )
+            ],
         ),
         KernelInfo(
             F.horizontal_flip_mask,
@@ -443,10 +450,10 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
         transformed_points = np.matmul(points, affine_matrix.T)
         out_bbox = torch.tensor(
             [
-                np.min(transformed_points[:, 0]),
-                np.min(transformed_points[:, 1]),
-                np.max(transformed_points[:, 0]),
-                np.max(transformed_points[:, 1]),
+                np.min(transformed_points[:, 0]).item(),
+                np.min(transformed_points[:, 1]).item(),
+                np.max(transformed_points[:, 0]).item(),
+                np.max(transformed_points[:, 1]).item(),
             ],
             dtype=bbox.dtype,
         )
