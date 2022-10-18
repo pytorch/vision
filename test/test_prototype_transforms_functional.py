@@ -1040,3 +1040,14 @@ def test_to_image_pil(inpt, mode):
     assert isinstance(output, PIL.Image.Image)
 
     assert np.asarray(inpt).sum() == np.asarray(output).sum()
+
+
+def test_equalize_image_tensor_edge_cases():
+    inpt = torch.zeros(3, 200, 200, dtype=torch.uint8)
+    output = F.equalize_image_tensor(inpt)
+    torch.testing.assert_close(inpt, output)
+
+    inpt = torch.zeros(5, 3, 200, 200, dtype=torch.uint8)
+    inpt[..., 100:, 100:] = 1
+    output = F.equalize_image_tensor(inpt)
+    assert output.unique().tolist() == [0, 255]

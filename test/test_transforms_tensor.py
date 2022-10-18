@@ -20,7 +20,12 @@ from torchvision import transforms as T
 from torchvision.transforms import functional as F, InterpolationMode
 from torchvision.transforms.autoaugment import _apply_op
 
-NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
+NEAREST, NEAREST_EXACT, BILINEAR, BICUBIC = (
+    InterpolationMode.NEAREST,
+    InterpolationMode.NEAREST_EXACT,
+    InterpolationMode.BILINEAR,
+    InterpolationMode.BICUBIC,
+)
 
 
 def _test_transform_vs_scripted(transform, s_transform, tensor, msg=None):
@@ -378,7 +383,7 @@ class TestResize:
     @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64])
     @pytest.mark.parametrize("size", [[32], [32, 32], (32, 32), [34, 35]])
     @pytest.mark.parametrize("max_size", [None, 35, 1000])
-    @pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST])
+    @pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST, NEAREST_EXACT])
     def test_resize_scripted(self, dt, size, max_size, interpolation, device):
         tensor, _ = _create_data(height=34, width=36, device=device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
@@ -402,12 +407,12 @@ class TestResize:
     @pytest.mark.parametrize("scale", [(0.7, 1.2), [0.7, 1.2]])
     @pytest.mark.parametrize("ratio", [(0.75, 1.333), [0.75, 1.333]])
     @pytest.mark.parametrize("size", [(32,), [44], [32], [32, 32], (32, 32), [44, 55]])
-    @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR, BICUBIC])
+    @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR, BICUBIC, NEAREST_EXACT])
     @pytest.mark.parametrize("antialias", [None, True, False])
     def test_resized_crop(self, scale, ratio, size, interpolation, antialias, device):
 
-        if antialias and interpolation == NEAREST:
-            pytest.skip("Can not resize if interpolation mode is NEAREST and antialias=True")
+        if antialias and interpolation in {NEAREST, NEAREST_EXACT}:
+            pytest.skip(f"Can not resize if interpolation mode is {interpolation} and antialias=True")
 
         tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
