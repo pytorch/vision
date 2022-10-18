@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator
+from typing import Any, Dict, Iterator, Optional
 
 import torch
 
@@ -89,9 +89,15 @@ class VideoReader:
         device (str, optional): Device to be used for decoding. Defaults to ``"cpu"``.
             To use GPU decoding, pass ``device="cuda"``.
 
+        path (str, optional):
+            .. warning:
+                This parameter was deprecated in ``0.15`` and will be removed in ``0.17``. Please use ``src`` instead.
+
     """
 
-    def __init__(self, src: str, stream: str = "video", num_threads: int = 0, device: str = "cpu") -> None:
+    def __init__(
+        self, src: str, stream: str = "video", num_threads: int = 0, device: str = "cpu", path: Optional[str] = None
+    ) -> None:
         _log_api_usage_once(self)
         self.is_cuda = False
         device = torch.device(device)
@@ -108,6 +114,10 @@ class VideoReader:
                 + "ffmpeg (version 4.2 is currently supported) and "
                 + "build torchvision from source."
             )
+
+        # for bc compatibility of path is provided it will override src
+        if path:
+            src = path
 
         elif isinstance(src, bytes):
             src = torch.frombuffer(src, dtype=torch.uint8)
