@@ -21,6 +21,7 @@ jobs:
     strategy:
       matrix:
         py_vers: ["3.7", "3.8", "3.9", "3.10"]
+      fail-fast: false
 
     steps:
       - name: Checkout repository
