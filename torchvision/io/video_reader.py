@@ -129,7 +129,7 @@ class VideoReader:
             if path is None:
                 raise ValueError("src cannot be empty")
             src = path
-            warnings.warn("path is deprecated ...")
+            warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
 
         elif isinstance(src, bytes):
             src = torch.frombuffer(src, dtype=torch.uint8)
