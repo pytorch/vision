@@ -122,7 +122,8 @@ def xfail_all_tests(*, reason, condition):
             "test_batched_vs_single",
             "test_no_inplace",
             "test_cuda_vs_cpu",
-            "test_dtype_and_device_consistency",
+            "test_dtype_consistency",
+            "test_device_consistency",
         ]
     ]
 
@@ -1964,7 +1965,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_convert_image_dtype,
             test_marks=[
                 TestMark(
-                    ("TestKernels", "test_dtype_and_device_consistency"),
+                    ("TestKernels", "test_dtype_consistency"),
                     pytest.mark.skip(reason="`convert_image_dtype` converts the dtype"),
                     condition=lambda args_kwargs: args_kwargs.args[0].dtype
                     != args_kwargs.kwargs.get("dtype", torch.float32),
