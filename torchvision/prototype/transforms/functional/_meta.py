@@ -293,6 +293,11 @@ def convert_dtype_image_tensor(
     return _FT.convert_image_dtype(image, dtype)
 
 
+# We changed the name to align it with the new naming scheme. Still, `convert_image_dtype` is
+# prevalent and well understood. Thus, we just alias it without deprecating the old name.
+convert_image_dtype = convert_dtype_image_tensor
+
+
 def convert_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, copy: bool = True) -> torch.Tensor:
     return convert_dtype_image_tensor(video, dtype, copy=copy)
 

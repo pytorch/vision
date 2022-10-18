@@ -35,6 +35,11 @@ class ConvertDtype(Transform):
         return F.convert_dtype(inpt, self.dtype, copy=self.copy)
 
 
+# We changed the name to align it with the new naming scheme. Still, `ConvertImageDtype` is
+# prevalent and well understood. Thus, we just alias it without deprecating the old name.
+ConvertImageDtype = ConvertDtype
+
+
 class ConvertColorSpace(Transform):
     _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image, features.Video)
 

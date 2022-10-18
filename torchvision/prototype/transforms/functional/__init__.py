@@ -8,6 +8,10 @@ from ._meta import (
     convert_color_space_image_pil,
     convert_color_space_video,
     convert_color_space,
+    convert_dtype_image_tensor,
+    convert_dtype,
+    convert_dtype_video,
+    convert_image_dtype,
     get_dimensions_image_tensor,
     get_dimensions_image_pil,
     get_dimensions,
@@ -24,9 +28,6 @@ from ._meta import (
     get_spatial_size_mask,
     get_spatial_size_video,
     get_spatial_size,
-    convert_dtype_image_tensor,
-    convert_dtype,
-    convert_dtype_video,
 )  # usort: skip
 
 from ._augment import erase, erase_image_pil, erase_image_tensor, erase_video
