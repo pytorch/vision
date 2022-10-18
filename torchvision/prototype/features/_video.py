@@ -7,7 +7,7 @@ import torch
 from torchvision.transforms.functional import InterpolationMode
 
 from ._feature import _Feature, FillTypeJIT
-from ._image import ColorSpace, ImageType, ImageTypeJIT, TensorImageType, TensorImageTypeJIT
+from ._image import ColorSpace
 
 
 class Video(_Feature):
@@ -15,9 +15,9 @@ class Video(_Feature):
 
     @classmethod
     def _wrap(cls, tensor: torch.Tensor, *, color_space: ColorSpace) -> Video:
-        image = tensor.as_subclass(cls)
-        image.color_space = color_space
-        return image
+        video = tensor.as_subclass(cls)
+        video.color_space = color_space
+        return video
 
     def __new__(
         cls,
@@ -236,9 +236,3 @@ LegacyVideoType = torch.Tensor
 LegacyVideoTypeJIT = torch.Tensor
 TensorVideoType = Union[torch.Tensor, Video]
 TensorVideoTypeJIT = torch.Tensor
-
-# TODO: decide if we should do definitions for both Images and Videos or use unions in the methods
-ImageOrVideoType = Union[ImageType, VideoType]
-ImageOrVideoTypeJIT = Union[ImageTypeJIT, VideoTypeJIT]
-TensorImageOrVideoType = Union[TensorImageType, TensorVideoType]
-TensorImageOrVideoTypeJIT = Union[TensorImageTypeJIT, TensorVideoTypeJIT]

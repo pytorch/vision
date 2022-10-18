@@ -232,6 +232,7 @@ def reference_inputs_resize_image_tensor():
         make_image_loaders(extra_dims=[()]),
         [
             F.InterpolationMode.NEAREST,
+            F.InterpolationMode.NEAREST_EXACT,
             F.InterpolationMode.BILINEAR,
             F.InterpolationMode.BICUBIC,
         ],
@@ -881,6 +882,7 @@ def reference_inputs_resized_crop_image_tensor():
         make_image_loaders(extra_dims=[()]),
         [
             F.InterpolationMode.NEAREST,
+            F.InterpolationMode.NEAREST_EXACT,
             F.InterpolationMode.BILINEAR,
             F.InterpolationMode.BICUBIC,
         ],
@@ -1304,7 +1306,7 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_gaussian_blur_image_tensor():
     make_gaussian_blur_image_loaders = functools.partial(
-        make_image_loaders, sizes=["random"], color_spaces=[features.ColorSpace.RGB]
+        make_image_loaders, sizes=[(7, 33)], color_spaces=[features.ColorSpace.RGB]
     )
 
     for image_loader, kernel_size in itertools.product(make_gaussian_blur_image_loaders(), [5, (3, 3), [3, 3]]):
@@ -1317,7 +1319,7 @@ def sample_inputs_gaussian_blur_image_tensor():
 
 
 def sample_inputs_gaussian_blur_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    for video_loader in make_video_loaders(sizes=[(7, 33)], num_frames=[5]):
         yield ArgsKwargs(video_loader, kernel_size=[3, 3])
 
 

@@ -38,13 +38,13 @@ def horizontal_flip_bounding_box(
 
     bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    ).view(-1, 4)
+    ).reshape(-1, 4)
 
     bounding_box[:, [0, 2]] = spatial_size[1] - bounding_box[:, [2, 0]]
 
     return convert_format_bounding_box(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    ).view(shape)
+    ).reshape(shape)
 
 
 def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
@@ -75,13 +75,13 @@ def vertical_flip_bounding_box(
 
     bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    ).view(-1, 4)
+    ).reshape(-1, 4)
 
     bounding_box[:, [1, 3]] = spatial_size[0] - bounding_box[:, [3, 1]]
 
     return convert_format_bounding_box(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    ).view(shape)
+    ).reshape(shape)
 
 
 def vertical_flip_video(video: torch.Tensor) -> torch.Tensor:
@@ -123,7 +123,7 @@ def resize_image_tensor(
     extra_dims = image.shape[:-3]
 
     if image.numel() > 0:
-        image = image.view(-1, num_channels, old_height, old_width)
+        image = image.reshape(-1, num_channels, old_height, old_width)
 
         image = _FT.resize(
             image,
@@ -132,7 +132,7 @@ def resize_image_tensor(
             antialias=antialias,
         )
 
-    return image.view(extra_dims + (num_channels, new_height, new_width))
+    return image.reshape(extra_dims + (num_channels, new_height, new_width))
 
 
 @torch.jit.unused
@@ -168,7 +168,7 @@ def resize_bounding_box(
     new_height, new_width = _compute_resized_output_size(spatial_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
     return (
-        bounding_box.view(-1, 2, 2).mul(ratios).to(bounding_box.dtype).view(bounding_box.shape),
+        bounding_box.reshape(-1, 2, 2).mul(ratios).to(bounding_box.dtype).reshape(bounding_box.shape),
         (new_height, new_width),
     )
 
@@ -270,7 +270,7 @@ def affine_image_tensor(
 
     num_channels, height, width = image.shape[-3:]
     extra_dims = image.shape[:-3]
-    image = image.view(-1, num_channels, height, width)
+    image = image.reshape(-1, num_channels, height, width)
 
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
 
@@ -283,7 +283,7 @@ def affine_image_tensor(
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
 
     output = _FT.affine(image, matrix, interpolation=interpolation.value, fill=fill)
-    return output.view(extra_dims + (num_channels, height, width))
+    return output.reshape(extra_dims + (num_channels, height, width))
 
 
 @torch.jit.unused
@@ -338,20 +338,20 @@ def _affine_bounding_box_xyxy(
             dtype=dtype,
             device=device,
         )
-        .view(2, 3)
+        .reshape(2, 3)
         .T
     )
     # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
     # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
     # Single point structure is similar to
     # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
-    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].view(-1, 2)
+    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
     points = torch.cat([points, torch.ones(points.shape[0], 1, device=points.device)], dim=-1)
     # 2) Now let's transform the points using affine matrix
     transformed_points = torch.matmul(points, transposed_affine_matrix)
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
-    transformed_points = transformed_points.view(-1, 4, 2)
+    transformed_points = transformed_points.reshape(-1, 4, 2)
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
@@ -396,7 +396,7 @@ def affine_bounding_box(
     original_shape = bounding_box.shape
     bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    ).view(-1, 4)
+    ).reshape(-1, 4)
 
     out_bboxes, _ = _affine_bounding_box_xyxy(bounding_box, spatial_size, angle, translate, scale, shear, center)
 
@@ -404,7 +404,7 @@ def affine_bounding_box(
 
     return convert_format_bounding_box(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    ).view(original_shape)
+    ).reshape(original_shape)
 
 
 def affine_mask(
@@ -539,7 +539,7 @@ def rotate_image_tensor(
 
     if image.numel() > 0:
         image = _FT.rotate(
-            image.view(-1, num_channels, height, width),
+            image.reshape(-1, num_channels, height, width),
             matrix,
             interpolation=interpolation.value,
             expand=expand,
@@ -549,7 +549,7 @@ def rotate_image_tensor(
     else:
         new_width, new_height = _FT._compute_affine_output_size(matrix, width, height) if expand else (width, height)
 
-    return image.view(extra_dims + (num_channels, new_height, new_width))
+    return image.reshape(extra_dims + (num_channels, new_height, new_width))
 
 
 @torch.jit.unused
@@ -585,7 +585,7 @@ def rotate_bounding_box(
     original_shape = bounding_box.shape
     bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    ).view(-1, 4)
+    ).reshape(-1, 4)
 
     out_bboxes, spatial_size = _affine_bounding_box_xyxy(
         bounding_box,
@@ -601,7 +601,7 @@ def rotate_bounding_box(
     return (
         convert_format_bounding_box(
             out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-        ).view(original_shape),
+        ).reshape(original_shape),
         spatial_size,
     )
 
@@ -691,7 +691,7 @@ def _pad_with_scalar_fill(
 
     if image.numel() > 0:
         image = _FT.pad(
-            img=image.view(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
+            img=image.reshape(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
         )
         new_height, new_width = image.shape[-2:]
     else:
@@ -699,7 +699,7 @@ def _pad_with_scalar_fill(
         new_height = height + top + bottom
         new_width = width + left + right
 
-    return image.view(extra_dims + (num_channels, new_height, new_width))
+    return image.reshape(extra_dims + (num_channels, new_height, new_width))
 
 
 # TODO: This should be removed once pytorch pad supports non-scalar padding values
@@ -714,7 +714,7 @@ def _pad_with_vector_fill(
 
     output = _pad_with_scalar_fill(image, padding, fill=0, padding_mode="constant")
     left, right, top, bottom = _parse_pad_padding(padding)
-    fill = torch.tensor(fill, dtype=image.dtype, device=image.device).view(-1, 1, 1)
+    fill = torch.tensor(fill, dtype=image.dtype, device=image.device).reshape(-1, 1, 1)
 
     if top > 0:
         output[..., :top, :] = fill
@@ -863,7 +863,7 @@ def perspective_image_tensor(
     shape = image.shape
 
     if image.ndim > 4:
-        image = image.view((-1,) + shape[-3:])
+        image = image.reshape((-1,) + shape[-3:])
         needs_unsquash = True
     else:
         needs_unsquash = False
@@ -871,7 +871,7 @@ def perspective_image_tensor(
     output = _FT.perspective(image, perspective_coeffs, interpolation=interpolation.value, fill=fill)
 
     if needs_unsquash:
-        output = output.view(shape)
+        output = output.reshape(shape)
 
     return output
 
@@ -898,7 +898,7 @@ def perspective_bounding_box(
     original_shape = bounding_box.shape
     bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    ).view(-1, 4)
+    ).reshape(-1, 4)
 
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
     device = bounding_box.device
@@ -947,7 +947,7 @@ def perspective_bounding_box(
     # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
     # Single point structure is similar to
     # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
-    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].view(-1, 2)
+    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
     points = torch.cat([points, torch.ones(points.shape[0], 1, device=points.device)], dim=-1)
     # 2) Now let's transform the points using perspective matrices
     #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
@@ -959,7 +959,7 @@ def perspective_bounding_box(
 
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
-    transformed_points = transformed_points.view(-1, 4, 2)
+    transformed_points = transformed_points.reshape(-1, 4, 2)
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
@@ -968,7 +968,7 @@ def perspective_bounding_box(
 
     return convert_format_bounding_box(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    ).view(original_shape)
+    ).reshape(original_shape)
 
 
 def perspective_mask(
@@ -1027,7 +1027,7 @@ def elastic_image_tensor(
     shape = image.shape
 
     if image.ndim > 4:
-        image = image.view((-1,) + shape[-3:])
+        image = image.reshape((-1,) + shape[-3:])
         needs_unsquash = True
     else:
         needs_unsquash = False
@@ -1035,7 +1035,7 @@ def elastic_image_tensor(
     output = _FT.elastic_transform(image, displacement, interpolation=interpolation.value, fill=fill)
 
     if needs_unsquash:
-        output = output.view(shape)
+        output = output.reshape(shape)
 
     return output
 
@@ -1063,7 +1063,7 @@ def elastic_bounding_box(
     original_shape = bounding_box.shape
     bounding_box = convert_format_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    ).view(-1, 4)
+    ).reshape(-1, 4)
 
     # Question (vfdev-5): should we rely on good displacement shape and fetch image size from it
     # Or add spatial_size arg and check displacement shape
@@ -1075,21 +1075,21 @@ def elastic_bounding_box(
     inv_grid = id_grid - displacement
 
     # Get points from bboxes
-    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].view(-1, 2)
+    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
     index_x = torch.floor(points[:, 0] + 0.5).to(dtype=torch.long)
     index_y = torch.floor(points[:, 1] + 0.5).to(dtype=torch.long)
     # Transform points:
     t_size = torch.tensor(spatial_size[::-1], device=displacement.device, dtype=displacement.dtype)
     transformed_points = (inv_grid[0, index_y, index_x, :] + 1) * 0.5 * t_size - 0.5
 
-    transformed_points = transformed_points.view(-1, 4, 2)
+    transformed_points = transformed_points.reshape(-1, 4, 2)
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     return convert_format_bounding_box(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    ).view(original_shape)
+    ).reshape(original_shape)
 
 
 def elastic_mask(
@@ -1382,16 +1382,13 @@ def five_crop_video(
     return five_crop_image_tensor(video, size)
 
 
+ImageOrVideoTypeJIT = Union[features.ImageTypeJIT, features.VideoTypeJIT]
+
+
 def five_crop(
-    inpt: features.ImageOrVideoTypeJIT, size: List[int]
-) -> Tuple[
-    features.ImageOrVideoTypeJIT,
-    features.ImageOrVideoTypeJIT,
-    features.ImageOrVideoTypeJIT,
-    features.ImageOrVideoTypeJIT,
-    features.ImageOrVideoTypeJIT,
-]:
-    # TODO: consider breaking BC here to return List[features.ImageOrVideoTypeJIT] to align this op with `ten_crop`
+    inpt: ImageOrVideoTypeJIT, size: List[int]
+) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
+    # TODO: consider breaking BC here to return List[features.ImageTypeJIT/VideoTypeJIT] to align this op with `ten_crop`
     if isinstance(inpt, torch.Tensor):
         output = five_crop_image_tensor(inpt, size)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
@@ -1434,8 +1431,8 @@ def ten_crop_video(video: torch.Tensor, size: List[int], vertical_flip: bool = F
 
 
 def ten_crop(
-    inpt: features.ImageOrVideoTypeJIT, size: List[int], vertical_flip: bool = False
-) -> List[features.ImageOrVideoTypeJIT]:
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT], size: List[int], vertical_flip: bool = False
+) -> Union[List[features.ImageTypeJIT], List[features.VideoTypeJIT]]:
     if isinstance(inpt, torch.Tensor):
         output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
         if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):

@@ -6,7 +6,7 @@ import PIL.Image
 import pytest
 
 import torch
-from common_utils import cache, cpu_and_gpu, needs_cuda
+from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
 from prototype_common_utils import assert_close, make_bounding_boxes, make_image
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
 from prototype_transforms_kernel_infos import KERNEL_INFOS
@@ -65,6 +65,12 @@ def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=No
         return pytest.mark.parametrize(argnames, argvalues)(test_fn)
 
     return decorator
+
+
+@pytest.fixture(autouse=True)
+def fix_rng_seed():
+    set_rng_seed(0)
+    yield
 
 
 class TestKernels:
@@ -1031,3 +1037,14 @@ def test_to_image_pil(inpt, mode):
     assert isinstance(output, PIL.Image.Image)
 
     assert np.asarray(inpt).sum() == np.asarray(output).sum()
+
+
+def test_equalize_image_tensor_edge_cases():
+    inpt = torch.zeros(3, 200, 200, dtype=torch.uint8)
+    output = F.equalize_image_tensor(inpt)
+    torch.testing.assert_close(inpt, output)
+
+    inpt = torch.zeros(5, 3, 200, 200, dtype=torch.uint8)
+    inpt[..., 100:, 100:] = 1
+    output = F.equalize_image_tensor(inpt)
+    assert output.unique().tolist() == [0, 255]

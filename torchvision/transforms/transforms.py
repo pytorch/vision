@@ -296,8 +296,8 @@ class Resize(torch.nn.Module):
                 In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
-            ``InterpolationMode.BICUBIC`` are supported.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         max_size (int, optional): The maximum allowed for the longer edge of
@@ -865,8 +865,8 @@ class RandomResizedCrop(torch.nn.Module):
             resizing.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
-            ``InterpolationMode.BICUBIC`` are supported.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
@@ -2133,9 +2133,9 @@ class ElasticTransform(torch.nn.Module):
         return F.elastic_transform(tensor, displacement, self.interpolation, self.fill)
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + "(alpha="
-        format_string += str(self.alpha) + ")"
-        format_string += ", (sigma=" + str(self.sigma) + ")"
-        format_string += ", interpolation={self.interpolation}"
-        format_string += ", fill={self.fill})"
+        format_string = self.__class__.__name__
+        format_string += f"(alpha={self.alpha}"
+        format_string += f", sigma={self.sigma}"
+        format_string += f", interpolation={self.interpolation}"
+        format_string += f", fill={self.fill})"
         return format_string

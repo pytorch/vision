@@ -1,5 +1,6 @@
 import functools
-from typing import Any, Callable, Dict, Sequence, Type, Union
+from collections import defaultdict
+from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import PIL.Image
 
@@ -62,13 +63,13 @@ class LinearTransformation(Transform):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def forward(self, *inputs: Any) -> Any:
-        if has_any(inputs, PIL.Image.Image):
+    def _check_inputs(self, sample: Any) -> Any:
+        if has_any(sample, PIL.Image.Image):
             raise TypeError("LinearTransformation does not work on PIL Images")
 
-        return super().forward(*inputs)
-
-    def _transform(self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(
+        self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
+    ) -> torch.Tensor:
         # Image instance after linear transformation is not Image anymore due to unknown data range
         # Thus we will return Tensor for input Image
 
@@ -87,9 +88,9 @@ class LinearTransformation(Transform):
                 f"Got {inpt.device} vs {self.mean_vector.device}"
             )
 
-        flat_tensor = inpt.view(-1, n) - self.mean_vector
+        flat_tensor = inpt.reshape(-1, n) - self.mean_vector
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
-        return transformed_tensor.view(shape)
+        return transformed_tensor.reshape(shape)
 
 
 class Normalize(Transform):
@@ -101,13 +102,14 @@ class Normalize(Transform):
         self.std = list(std)
         self.inplace = inplace
 
-    def _transform(self, inpt: features.TensorImageOrVideoType, params: Dict[str, Any]) -> torch.Tensor:
-        return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
-
-    def forward(self, *inpts: Any) -> Any:
-        if has_any(inpts, PIL.Image.Image):
+    def _check_inputs(self, sample: Any) -> Any:
+        if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
-        return super().forward(*inpts)
+
+    def _transform(
+        self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
+    ) -> torch.Tensor:
+        return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
 class GaussianBlur(Transform):
@@ -132,7 +134,7 @@ class GaussianBlur(Transform):
 
         self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
         return dict(sigma=[sigma, sigma])
 
@@ -140,14 +142,25 @@ class GaussianBlur(Transform):
         return F.gaussian_blur(inpt, self.kernel_size, **params)
 
 
-# TODO: Enhance as described at https://github.com/pytorch/vision/issues/6697
-class ToDtype(Lambda):
-    def __init__(self, dtype: torch.dtype, *types: Type) -> None:
-        self.dtype = dtype
-        super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *types or (torch.Tensor,))
+class ToDtype(Transform):
+    _transformed_types = (torch.Tensor,)
 
-    def extra_repr(self) -> str:
-        return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
+    def _default_dtype(self, dtype: torch.dtype) -> torch.dtype:
+        return dtype
+
+    def __init__(self, dtype: Union[torch.dtype, Dict[Type, torch.dtype]]) -> None:
+        super().__init__()
+        if not isinstance(dtype, dict):
+            # This weird looking construct only exists, since `lambda`'s cannot be serialized by pickle.
+            # If it were possible, we could replace this with `defaultdict(lambda: dtype)`
+            dtype = defaultdict(functools.partial(self._default_dtype, dtype))
+        self.dtype = dtype
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        dtype = self.dtype[type(inpt)]
+        if dtype is None:
+            return inpt
+        return inpt.to(dtype=dtype)
 
 
 class RemoveSmallBoundingBoxes(Transform):
@@ -157,8 +170,8 @@ class RemoveSmallBoundingBoxes(Transform):
         super().__init__()
         self.min_size = min_size
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        bounding_box = query_bounding_box(sample)
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        bounding_box = query_bounding_box(flat_inputs)
 
         # TODO: We can improve performance here by not using the `remove_small_boxes` function. It requires the box to
         #  be in XYXY format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH

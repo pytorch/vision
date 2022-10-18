@@ -1,11 +1,10 @@
 import functools
 import numbers
 from collections import defaultdict
-from typing import Any, Callable, Dict, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, Union
 
 import PIL.Image
 
-from torch.utils._pytree import tree_flatten
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
 from torchvision.prototype.features._feature import FillType
@@ -73,9 +72,8 @@ def _check_padding_mode_arg(padding_mode: Literal["constant", "edge", "reflect",
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
 
-def query_bounding_box(sample: Any) -> features.BoundingBox:
-    flat_sample, _ = tree_flatten(sample)
-    bounding_boxes = {item for item in flat_sample if isinstance(item, features.BoundingBox)}
+def query_bounding_box(flat_inputs: List[Any]) -> features.BoundingBox:
+    bounding_boxes = {inpt for inpt in flat_inputs if isinstance(inpt, features.BoundingBox)}
     if not bounding_boxes:
         raise TypeError("No bounding box was found in the sample")
     elif len(bounding_boxes) > 1:
@@ -83,12 +81,11 @@ def query_bounding_box(sample: Any) -> features.BoundingBox:
     return bounding_boxes.pop()
 
 
-def query_chw(sample: Any) -> Tuple[int, int, int]:
-    flat_sample, _ = tree_flatten(sample)
+def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
     chws = {
-        tuple(get_dimensions(item))
-        for item in flat_sample
-        if isinstance(item, (features.Image, PIL.Image.Image, features.Video)) or features.is_simple_tensor(item)
+        tuple(get_dimensions(inpt))
+        for inpt in flat_inputs
+        if isinstance(inpt, (features.Image, PIL.Image.Image, features.Video)) or features.is_simple_tensor(inpt)
     }
     if not chws:
         raise TypeError("No image or video was found in the sample")
@@ -98,13 +95,12 @@ def query_chw(sample: Any) -> Tuple[int, int, int]:
     return c, h, w
 
 
-def query_spatial_size(sample: Any) -> Tuple[int, int]:
-    flat_sample, _ = tree_flatten(sample)
+def query_spatial_size(flat_inputs: List[Any]) -> Tuple[int, int]:
     sizes = {
-        tuple(get_spatial_size(item))
-        for item in flat_sample
-        if isinstance(item, (features.Image, PIL.Image.Image, features.Video, features.Mask, features.BoundingBox))
-        or features.is_simple_tensor(item)
+        tuple(get_spatial_size(inpt))
+        for inpt in flat_inputs
+        if isinstance(inpt, (features.Image, PIL.Image.Image, features.Video, features.Mask, features.BoundingBox))
+        or features.is_simple_tensor(inpt)
     }
     if not sizes:
         raise TypeError("No image, video, mask or bounding box was found in the sample")
@@ -121,19 +117,17 @@ def _isinstance(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], boo
     return False
 
 
-def has_any(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
-    flat_sample, _ = tree_flatten(sample)
-    for obj in flat_sample:
-        if _isinstance(obj, types_or_checks):
+def has_any(flat_inputs: List[Any], *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
+    for inpt in flat_inputs:
+        if _isinstance(inpt, types_or_checks):
             return True
     return False
 
 
-def has_all(sample: Any, *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
-    flat_sample, _ = tree_flatten(sample)
+def has_all(flat_inputs: List[Any], *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
     for type_or_check in types_or_checks:
-        for obj in flat_sample:
-            if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
+        for inpt in flat_inputs:
+            if isinstance(inpt, type_or_check) if isinstance(type_or_check, type) else type_or_check(inpt):
                 break
         else:
             return False

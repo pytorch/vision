@@ -1,7 +1,9 @@
-from typing import List, Optional
+import math
+from typing import List, Optional, Union
 
 import PIL.Image
 import torch
+from torch.nn.functional import conv2d, pad as torch_pad
 from torchvision.prototype import features
 from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
@@ -14,7 +16,10 @@ def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], in
 
 
 def normalize(
-    inpt: features.TensorImageOrVideoTypeJIT, mean: List[float], std: List[float], inplace: bool = False
+    inpt: Union[features.TensorImageTypeJIT, features.TensorVideoTypeJIT],
+    mean: List[float],
+    std: List[float],
+    inplace: bool = False,
 ) -> torch.Tensor:
     if torch.jit.is_scripting():
         correct_type = isinstance(inpt, torch.Tensor)
@@ -27,6 +32,22 @@ def normalize(
     # Image or Video type should not be retained after normalization due to unknown data range
     # Thus we return Tensor for input Image
     return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
+
+
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> torch.Tensor:
+    lim = (kernel_size - 1) / (2 * math.sqrt(2) * sigma)
+    x = torch.linspace(-lim, lim, steps=kernel_size)
+    kernel1d = torch.softmax(-x.pow_(2), dim=0)
+    return kernel1d
+
+
+def _get_gaussian_kernel2d(
+    kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
+) -> torch.Tensor:
+    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0]).to(device, dtype=dtype)
+    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1]).to(device, dtype=dtype)
+    kernel2d = kernel1d_y.unsqueeze(-1) * kernel1d_x
+    return kernel2d
 
 
 def gaussian_blur_image_tensor(
@@ -62,15 +83,26 @@ def gaussian_blur_image_tensor(
     shape = image.shape
 
     if image.ndim > 4:
-        image = image.view((-1,) + shape[-3:])
+        image = image.reshape((-1,) + shape[-3:])
         needs_unsquash = True
     else:
         needs_unsquash = False
 
-    output = _FT.gaussian_blur(image, kernel_size, sigma)
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=image.device)
+    kernel = kernel.expand(image.shape[-3], 1, kernel.shape[0], kernel.shape[1])
+
+    image, need_cast, need_squeeze, out_dtype = _FT._cast_squeeze_in(image, [kernel.dtype])
+
+    # padding = (left, right, top, bottom)
+    padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
+    output = torch_pad(image, padding, mode="reflect")
+    output = conv2d(output, kernel, groups=output.shape[-3])
+
+    output = _FT._cast_squeeze_out(output, need_cast, need_squeeze, out_dtype)
 
     if needs_unsquash:
-        output = output.view(shape)
+        output = output.reshape(shape)
 
     return output
 
