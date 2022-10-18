@@ -41,5 +41,3 @@ pil_to_tensor = _F.pil_to_tensor
 # We changed the names to align them with the new naming scheme. Still, `to_pil_image` is
 # prevalent and well understood. Thus, we just alias it without deprecating the old name.
 to_pil_image = to_image_pil
-
-convert_image_dtype = _F.convert_image_dtype

@@ -24,6 +24,9 @@ from ._meta import (
     get_spatial_size_mask,
     get_spatial_size_video,
     get_spatial_size,
+    convert_dtype_image_tensor,
+    convert_dtype,
+    convert_dtype_video,
 )  # usort: skip
 
 from ._augment import erase, erase_image_pil, erase_image_tensor, erase_video
@@ -162,7 +165,6 @@ from ._misc import (
     normalize_video,
 )
 from ._type_conversion import (
-    convert_image_dtype,
     decode_image_with_pil,
     decode_video_with_av,
     pil_to_tensor,

@@ -90,7 +90,7 @@ class TestSmoke:
         transforms.RandomErasing(p=1.0),
         transforms.Resize([16, 16]),
         transforms.CenterCrop([16, 16]),
-        transforms.ConvertImageDtype(),
+        transforms.ConvertDtype(),
         transforms.RandomHorizontalFlip(),
         transforms.Pad(5),
         transforms.RandomZoomOut(),

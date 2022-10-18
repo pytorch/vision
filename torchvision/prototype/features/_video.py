@@ -78,6 +78,9 @@ class Video(_Feature):
             color_space=color_space,
         )
 
+    def to_dtype(self, dtype: torch.dtype = torch.float, copy: bool = True) -> Video:
+        return Video.wrap_like(self, self._F.convert_dtype_video(self, dtype, copy=copy))
+
     def horizontal_flip(self) -> Video:
         output = self._F.horizontal_flip_video(self)
         return Video.wrap_like(self, output)

@@ -282,3 +282,27 @@ def convert_color_space(
         return inpt.to_color_space(color_space, copy=copy)
     else:
         return convert_color_space_image_pil(inpt, color_space, copy=copy)
+
+
+def convert_dtype_image_tensor(
+    image: torch.Tensor, dtype: torch.dtype = torch.float, copy: bool = True
+) -> torch.Tensor:
+    if copy and image.dtype == dtype:
+        return image.clone()
+
+    return _FT.convert_image_dtype(image, dtype)
+
+
+def convert_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, copy: bool = True) -> torch.Tensor:
+    return convert_dtype_image_tensor(video, dtype, copy=copy)
+
+
+def convert_dtype(
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT], dtype: torch.dtype = torch.float, copy: bool = True
+) -> torch.Tensor:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+    ):
+        return convert_dtype_image_tensor(inpt, dtype, copy=copy)
+    else:  # isinstance(inpt, (features.Image, features.Video)):
+        return inpt.to_dtype(dtype, copy=copy)

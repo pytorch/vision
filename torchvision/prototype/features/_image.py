@@ -122,6 +122,9 @@ class Image(_Feature):
             color_space=color_space,
         )
 
+    def to_dtype(self, dtype: torch.dtype = torch.float, copy: bool = True) -> Image:
+        return Image.wrap_like(self, self._F.convert_dtype_image_tensor(self, dtype, copy=copy))
+
     def horizontal_flip(self) -> Image:
         output = self._F.horizontal_flip_image_tensor(self)
         return Image.wrap_like(self, output)

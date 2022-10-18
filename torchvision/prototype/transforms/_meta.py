@@ -21,20 +21,18 @@ class ConvertBoundingBoxFormat(Transform):
         return features.BoundingBox.wrap_like(inpt, output, format=params["format"])
 
 
-class ConvertImageDtype(Transform):
+class ConvertDtype(Transform):
     _transformed_types = (features.is_simple_tensor, features.Image, features.Video)
 
-    def __init__(self, dtype: torch.dtype = torch.float32) -> None:
+    def __init__(self, dtype: torch.dtype = torch.float32, copy: bool = True) -> None:
         super().__init__()
         self.dtype = dtype
+        self.copy = copy
 
     def _transform(
         self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
     ) -> Union[features.TensorImageType, features.TensorVideoType]:
-        output = F.convert_image_dtype(inpt, dtype=self.dtype)
-        return (
-            output if features.is_simple_tensor(inpt) else type(inpt).wrap_like(inpt, output)  # type: ignore[attr-defined]
-        )
+        return F.convert_dtype(inpt, self.dtype, copy=self.copy)
 
 
 class ConvertColorSpace(Transform):
