@@ -38,7 +38,7 @@ jobs:
 
       - name: Mark setup as complete
         id: setup
-        run: python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())" && exit 0
+        run: python -c "import torch; exit(not torch.cuda.is_available())"
 
       - name: Run prototype features tests
         shell: bash
