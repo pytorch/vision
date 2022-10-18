@@ -6,17 +6,11 @@ from ._meta import get_dimensions_image_tensor, get_num_channels_image_tensor
 
 
 def _blend(img1: torch.Tensor, img2: torch.Tensor, ratio: float) -> torch.Tensor:
-    dtype = img1.dtype
+    ratio = float(ratio)
     fp = img1.is_floating_point()
     bound = 1.0 if fp else 255.0
-    if not fp and img2.is_cuda:
-        img2 = img2 * (1.0 - ratio)
-    else:
-        if not fp:
-            img2 = img2.to(torch.float32)
-        img2.mul_(1.0 - ratio)
-    img2.add_(img1, alpha=ratio).clamp_(0, bound)
-    return img2 if fp else img2.to(dtype)
+    output = img1.mul(ratio).add_(img2, alpha=(1.0 - ratio)).clamp_(0, bound)
+    return output if fp else output.to(img1.dtype)
 
 
 def adjust_brightness_image_tensor(img: torch.Tensor, brightness_factor: float) -> torch.Tensor:
@@ -25,7 +19,10 @@ def adjust_brightness_image_tensor(img: torch.Tensor, brightness_factor: float) 
 
     _FT._assert_channels(img, [1, 3])
 
-    return _blend(img, torch.zeros_like(img, dtype=torch.float32), brightness_factor)
+    fp = img.is_floating_point()
+    bound = 1.0 if fp else 255.0
+    output = img.mul(brightness_factor).clamp_(0, bound)
+    return output if fp else output.to(img.dtype)
 
 
 adjust_brightness_image_pil = _FP.adjust_brightness
@@ -55,7 +52,7 @@ def adjust_saturation_image_tensor(img: torch.Tensor, saturation_factor: float) 
     if c == 1:  # Match PIL behaviour
         return img
 
-    return _blend(img, _FT.rgb_to_grayscale(img).expand_as(img).clone(), saturation_factor)
+    return _blend(img, _FT.rgb_to_grayscale(img), saturation_factor)
 
 
 adjust_saturation_image_pil = _FP.adjust_saturation
@@ -87,7 +84,7 @@ def adjust_contrast_image_tensor(img: torch.Tensor, contrast_factor: float) -> t
     else:
         mean = torch.mean(img.to(dtype), dim=(-3, -2, -1), keepdim=True)
 
-    return _blend(img, mean.expand_as(img).clone(), contrast_factor)
+    return _blend(img, mean, contrast_factor)
 
 
 adjust_contrast_image_pil = _FP.adjust_contrast
