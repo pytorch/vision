@@ -33,6 +33,8 @@ jobs:
       script: |
         export ENV_NAME=conda-env-"${{ github.run_id }}"
         export PYTHON_VERSION="${{ matrix.py_vers }}"
+        export VERSION="cpu"
+        export CUDATOOLKIT="cpuonly"
         if [[${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }} ]]; then
           export CHANNEL=test
         else
@@ -50,7 +52,7 @@ jobs:
         ${CONDA_RUN} conda install \
           --yes \
           -c "pytorch-${CHANNEL}" \
-          -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
+          -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*{VERSION}*"] \
           "${CUDATOOLKIT}"
         ${CONDA_RUN} python3 setup.py develop
         ${CONDA_RUN} python3 -m pip install pytest pytest-mock 'av<10'
