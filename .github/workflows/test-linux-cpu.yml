@@ -33,6 +33,11 @@ jobs:
       script: |
         export ENV_NAME=conda-env-"${{ github.run_id }}"
         export PYTHON_VERSION="${{ matrix.py_vers }}"
+        if [[${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }} ]]; then
+          export CHANNEL=test
+        else
+          export CHANNEL=nightly
+        fi
 
         git config --global --add safe.directory /__w/vision/vision
         # . ~/miniconda3/etc/profile.d/conda.sh
