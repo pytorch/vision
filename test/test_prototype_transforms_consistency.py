@@ -1,6 +1,7 @@
 import enum
 import inspect
 import random
+import re
 from collections import defaultdict
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
@@ -598,6 +599,7 @@ def check_call_consistency(
         for idx, args_kwargs in enumerate(config.args_kwargs)
     ],
 )
+@pytest.mark.filterwarnings("ignore")
 def test_call_consistency(config, args_kwargs):
     args, kwargs = args_kwargs
 
@@ -671,21 +673,21 @@ class TestContainerTransforms:
         check_call_consistency(prototype_transform, legacy_transform)
 
     # We can't test other values for `p` since the random parameter generation is different
-    @pytest.mark.parametrize("p", [(0, 1), (1, 0)])
-    def test_random_choice(self, p):
+    @pytest.mark.parametrize("probabilities", [(0, 1), (1, 0)])
+    def test_random_choice(self, probabilities):
         prototype_transform = prototype_transforms.RandomChoice(
             [
                 prototype_transforms.Resize(256),
                 legacy_transforms.CenterCrop(224),
             ],
-            p=p,
+            probabilities=probabilities,
         )
         legacy_transform = legacy_transforms.RandomChoice(
             [
                 legacy_transforms.Resize(256),
                 legacy_transforms.CenterCrop(224),
             ],
-            p=p,
+            p=probabilities,
         )
 
         check_call_consistency(prototype_transform, legacy_transform)
@@ -702,7 +704,8 @@ class TestToTensorTransforms:
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
 
     def test_to_tensor(self):
-        prototype_transform = prototype_transforms.ToTensor()
+        with pytest.warns(UserWarning, match=re.escape("The transform `ToTensor()` is deprecated")):
+            prototype_transform = prototype_transforms.ToTensor()
         legacy_transform = legacy_transforms.ToTensor()
 
         for image in make_images(extra_dims=[()]):
