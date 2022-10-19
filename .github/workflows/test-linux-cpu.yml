@@ -13,11 +13,7 @@ env:
   CHANNEL: "nightly"
 
 jobs:
-  tests:
-    strategy:
-      matrix:
-        py_vers: ["3.7", "3.8", "3.9", "3.10"]
-      fail-fast: false
+  setup:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -25,33 +21,37 @@ jobs:
         if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }}
         run: |
           echo "CHANNEL=test" >> "$GITHUB_ENV"
-      - id: Run Tests
-        uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
-        with:
-          runner: linux.12xlarge
-          script: |
-            ENV_NAME = conda-env-${{ github.run_id }}
-            PYTHON_VERSION = ${{ matrix.py_vers }}
+  tests:
+    strategy:
+      matrix:
+        py_vers: ["3.7", "3.8", "3.9", "3.10"]
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      runner: linux.12xlarge
+      script: |
+        ENV_NAME = conda-env-${{ github.run_id }}
+        PYTHON_VERSION = ${{ matrix.py_vers }}
 
-            git config --global --add safe.directory /__w/vision/vision
-            . ~/miniconda3/etc/profile.d/conda.sh
-            conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy
-            echo "CONDA_RUN=conda run -p ${ENV_NAME}" >> "$GITHUB_ENV"
-            
-            export PATH=~/miniconda3/bin:$PATH
-            set -ex
-            ${CONDA_RUN} conda install \
-              --yes \
-              -c "pytorch-${CHANNEL}" \
-              -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
-              "${CUDATOOLKIT}"
-            ${CONDA_RUN} python3 setup.py develop
-            ${CONDA_RUN} python3 -m pip install pytest pytest-mock 'av<10'
+        git config --global --add safe.directory /__w/vision/vision
+        . ~/miniconda3/etc/profile.d/conda.sh
+        conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy
+        echo "CONDA_RUN=conda run -p ${ENV_NAME}" >> "$GITHUB_ENV"
+        
+        export PATH=~/miniconda3/bin:$PATH
+        set -ex
+        ${CONDA_RUN} conda install \
+          --yes \
+          -c "pytorch-${CHANNEL}" \
+          -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
+          "${CUDATOOLKIT}"
+        ${CONDA_RUN} python3 setup.py develop
+        ${CONDA_RUN} python3 -m pip install pytest pytest-mock 'av<10'
 
-            . ~/miniconda3/etc/profile.d/conda.sh
-            set -ex
-            ${CONDA_RUN} python3 -m torch.utils.collect_env
-            ${CONDA_RUN} python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
+        . ~/miniconda3/etc/profile.d/conda.sh
+        set -ex
+        ${CONDA_RUN} python3 -m torch.utils.collect_env
+        ${CONDA_RUN} python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
 
     # steps:
     #   - name: Checkout repository
