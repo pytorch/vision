@@ -755,7 +755,7 @@ class TestAATransforms:
             expected_output = t_ref(inpt)
             output = t(inpt)
 
-            assert_equal(expected_output, output)
+            assert_close(expected_output, output, atol=1, rtol=0.1)
 
     @pytest.mark.parametrize(
         "inpt",
@@ -803,7 +803,7 @@ class TestAATransforms:
             expected_output = t_ref(inpt)
             output = t(inpt)
 
-            assert_equal(expected_output, output)
+            assert_close(expected_output, output, atol=1, rtol=0.1)
 
     @pytest.mark.parametrize(
         "inpt",
