@@ -2,7 +2,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
-from ._meta import get_dimensions_image_tensor, get_num_channels_image_tensor
+from ._meta import get_dimensions_image_tensor, get_num_channels_image_tensor, rgb_to_grayscale
 
 
 def _blend(img1: torch.Tensor, img2: torch.Tensor, ratio: float) -> torch.Tensor:
@@ -52,7 +52,7 @@ def adjust_saturation_image_tensor(img: torch.Tensor, saturation_factor: float) 
     if c == 1:  # Match PIL behaviour
         return img
 
-    return _blend(img, _FT.rgb_to_grayscale(img), saturation_factor)
+    return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
 
 adjust_saturation_image_pil = _FP.adjust_saturation
@@ -80,7 +80,7 @@ def adjust_contrast_image_tensor(img: torch.Tensor, contrast_factor: float) -> t
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     if c == 3:
-        mean = torch.mean(_FT.rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
+        mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
     else:
         mean = torch.mean(img.to(dtype), dim=(-3, -2, -1), keepdim=True)
 

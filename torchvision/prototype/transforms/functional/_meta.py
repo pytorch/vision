@@ -184,7 +184,31 @@ def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
     return grayscale.repeat(repeats)
 
 
-_rgb_to_gray = _FT.rgb_to_grayscale
+def rgb_to_grayscale(image: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
+    if image.ndim < 3:
+        raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {image.ndim}")
+
+    c = image.shape[-3]
+    if c not in [1, 3]:
+        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+
+    if num_output_channels not in (1, 3):
+        raise ValueError("num_output_channels should be either 1 or 3")
+
+    if c == 3:
+        r, g, b = image.unbind(dim=-3)
+        l_img = (0.2989 * r).add_(g, alpha=0.587).add_(b, alpha=0.114)
+        l_img = l_img.to(image.dtype).unsqueeze(dim=-3)
+    else:
+        l_img = image.clone()
+
+    if num_output_channels == 3:
+        return l_img.expand(image.shape)
+
+    return l_img
+
+
+_rgb_to_gray = rgb_to_grayscale
 
 
 def convert_color_space_image_tensor(
