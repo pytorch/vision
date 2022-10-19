@@ -1012,16 +1012,9 @@ def test_normalize_output_type():
 def test_to_image_tensor(inpt):
     output = F.to_image_tensor(inpt)
     assert isinstance(output, torch.Tensor)
+    assert output.shape == (3, 32, 32)
 
     assert np.asarray(inpt).sum() == output.sum().item()
-
-    if isinstance(inpt, PIL.Image.Image):
-        # we can't check this option
-        # as PIL -> numpy is always copying
-        return
-
-    inpt[0, 0, 0] = 11
-    assert output[0, 0, 0] == 11
 
 
 @pytest.mark.parametrize(
