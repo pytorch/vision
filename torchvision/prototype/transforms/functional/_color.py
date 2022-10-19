@@ -5,24 +5,24 @@ from torchvision.transforms import functional_pil as _FP, functional_tensor as _
 from ._meta import get_dimensions_image_tensor, get_num_channels_image_tensor, rgb_to_grayscale
 
 
-def _blend(img1: torch.Tensor, img2: torch.Tensor, ratio: float) -> torch.Tensor:
+def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
     ratio = float(ratio)
-    fp = img1.is_floating_point()
+    fp = image1.is_floating_point()
     bound = 1.0 if fp else 255.0
-    output = img1.mul(ratio).add_(img2, alpha=(1.0 - ratio)).clamp_(0, bound)
-    return output if fp else output.to(img1.dtype)
+    output = image1.mul(ratio).add_(image2, alpha=(1.0 - ratio)).clamp_(0, bound)
+    return output if fp else output.to(image1.dtype)
 
 
-def adjust_brightness_image_tensor(img: torch.Tensor, brightness_factor: float) -> torch.Tensor:
+def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float) -> torch.Tensor:
     if brightness_factor < 0:
         raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")
 
-    _FT._assert_channels(img, [1, 3])
+    _FT._assert_channels(image, [1, 3])
 
-    fp = img.is_floating_point()
+    fp = image.is_floating_point()
     bound = 1.0 if fp else 255.0
-    output = img.mul(brightness_factor).clamp_(0, bound)
-    return output if fp else output.to(img.dtype)
+    output = image.mul(brightness_factor).clamp_(0, bound)
+    return output if fp else output.to(image.dtype)
 
 
 adjust_brightness_image_pil = _FP.adjust_brightness
@@ -41,18 +41,18 @@ def adjust_brightness(inpt: features.InputTypeJIT, brightness_factor: float) -> 
         return adjust_brightness_image_pil(inpt, brightness_factor=brightness_factor)
 
 
-def adjust_saturation_image_tensor(img: torch.Tensor, saturation_factor: float) -> torch.Tensor:
+def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     if saturation_factor < 0:
         raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
-    c = get_num_channels_image_tensor(img)
+    c = get_num_channels_image_tensor(image)
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
 
     if c == 1:  # Match PIL behaviour
-        return img
+        return image
 
-    return _blend(img, rgb_to_grayscale(img), saturation_factor)
+    return _blend(image, rgb_to_grayscale(image), saturation_factor)
 
 
 adjust_saturation_image_pil = _FP.adjust_saturation
@@ -71,20 +71,16 @@ def adjust_saturation(inpt: features.InputTypeJIT, saturation_factor: float) -> 
         return adjust_saturation_image_pil(inpt, saturation_factor=saturation_factor)
 
 
-def adjust_contrast_image_tensor(img: torch.Tensor, contrast_factor: float) -> torch.Tensor:
+def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) -> torch.Tensor:
     if contrast_factor < 0:
         raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
 
-    c = get_num_channels_image_tensor(img)
+    c = get_num_channels_image_tensor(image)
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    if c == 3:
-        mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
-    else:
-        mean = torch.mean(img.to(dtype), dim=(-3, -2, -1), keepdim=True)
-
-    return _blend(img, mean, contrast_factor)
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    mean = torch.mean((rgb_to_grayscale(image) if c == 3 else image).to(dtype), dim=(-3, -2, -1), keepdim=True)
+    return _blend(image, mean, contrast_factor)
 
 
 adjust_contrast_image_pil = _FP.adjust_contrast
@@ -231,13 +227,13 @@ def autocontrast(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
         return autocontrast_image_pil(inpt)
 
 
-def _equalize_image_tensor_vec(img: torch.Tensor) -> torch.Tensor:
-    # input img shape should be [N, H, W]
-    shape = img.shape
+def _equalize_image_tensor_vec(image: torch.Tensor) -> torch.Tensor:
+    # input image shape should be [N, H, W]
+    shape = image.shape
     # Compute image histogram:
-    flat_img = img.flatten(start_dim=1).to(torch.long)  # -> [N, H * W]
-    hist = flat_img.new_zeros(shape[0], 256)
-    hist.scatter_add_(dim=1, index=flat_img, src=flat_img.new_ones(1).expand_as(flat_img))
+    flat_image = image.flatten(start_dim=1).to(torch.long)  # -> [N, H * W]
+    hist = flat_image.new_zeros(shape[0], 256)
+    hist.scatter_add_(dim=1, index=flat_image, src=flat_image.new_ones(1).expand_as(flat_image))
 
     # Compute image cdf
     chist = hist.cumsum_(dim=1)
@@ -261,7 +257,7 @@ def _equalize_image_tensor_vec(img: torch.Tensor) -> torch.Tensor:
     zeros = lut.new_zeros((1, 1)).expand(shape[0], 1)
     lut = torch.cat([zeros, lut[:, :-1]], dim=1)
 
-    return torch.where((step == 0).unsqueeze(-1), img, lut.gather(dim=1, index=flat_img).reshape_as(img))
+    return torch.where((step == 0).unsqueeze(-1), image, lut.gather(dim=1, index=flat_image).reshape_as(image))
 
 
 def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
