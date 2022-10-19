@@ -127,7 +127,7 @@ class VideoReader:
 
         if src == "":
             if path is None:
-                raise ValueError("src cannot be empty")
+                raise TypeError("src cannot be empty")
             src = path
             warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
 
@@ -142,7 +142,7 @@ class VideoReader:
             self._c = torch.classes.torchvision.Video("", "", 0)
             self._c.init_from_memory(src, stream, num_threads)
         else:
-            raise ValueError("`src` must be either string, Tensor or bytes object.")
+            raise TypeError("`src` must be either string, Tensor or bytes object.")
 
     def __next__(self) -> Dict[str, Any]:
         """Decodes and returns the next frame of the current stream.
