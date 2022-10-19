@@ -31,13 +31,14 @@ jobs:
     with:
       runner: linux.12xlarge
       script: |
-        ENV_NAME = conda-env-${{ github.run_id }}
-        PYTHON_VERSION = ${{ matrix.py_vers }}
+        export ENV_NAME=conda-env-"${{ github.run_id }}"
+        export PYTHON_VERSION="${{ matrix.py_vers }}"
 
         git config --global --add safe.directory /__w/vision/vision
         . ~/miniconda3/etc/profile.d/conda.sh
-        conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy
-        echo "CONDA_RUN=conda run -p ${ENV_NAME}" >> "$GITHUB_ENV"
+        conda create -yp "${ENV_NAME}" python="${PYTHON_VERSION}" numpy libpng jpeg scipy
+        # echo "CONDA_RUN=conda run -p ${ENV_NAME}" >> "$GITHUB_ENV"
+        export CONDA_RUN="conda run -p ${ENV_NAME}"
         
         export PATH=~/miniconda3/bin:$PATH
         set -ex
@@ -49,8 +50,6 @@ jobs:
         ${CONDA_RUN} python3 setup.py develop
         ${CONDA_RUN} python3 -m pip install pytest pytest-mock 'av<10'
 
-        . ~/miniconda3/etc/profile.d/conda.sh
-        set -ex
         ${CONDA_RUN} python3 -m torch.utils.collect_env
         ${CONDA_RUN} python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
 
