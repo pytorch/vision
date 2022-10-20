@@ -26,6 +26,20 @@ def script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
+def make_info_args_kwargs_params(info, *, args_kwargs_fn, test_id=None):
+    args_kwargs = list(args_kwargs_fn(info))
+    idx_field_len = len(str(len(args_kwargs)))
+    return [
+        pytest.param(
+            info,
+            args_kwargs_,
+            marks=info.get_marks(test_id, args_kwargs_) if test_id else [],
+            id=f"{info.id}-{idx:0{idx_field_len}}",
+        )
+        for idx, args_kwargs_ in enumerate(args_kwargs)
+    ]
+
+
 def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None):
     if condition is None:
 
@@ -49,18 +63,7 @@ def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=No
             if not condition(info):
                 continue
 
-            args_kwargs = list(args_kwargs_fn(info))
-            idx_field_len = len(str(len(args_kwargs)))
-
-            for idx, args_kwargs_ in enumerate(args_kwargs):
-                argvalues.append(
-                    pytest.param(
-                        info,
-                        args_kwargs_,
-                        marks=info.get_marks(test_id, args_kwargs_),
-                        id=f"{info.id}-{idx:0{idx_field_len}}",
-                    )
-                )
+            argvalues.extend(make_info_args_kwargs_params(info, args_kwargs_fn=args_kwargs_fn, test_id=test_id))
 
         return pytest.mark.parametrize(argnames, argvalues)(test_fn)
 
@@ -320,6 +323,24 @@ class TestDispatchers:
 )
 def test_alias(alias, target):
     assert alias is target
+
+
+@pytest.mark.parametrize(
+    ("info", "args_kwargs"),
+    make_info_args_kwargs_params(
+        next(info for info in KERNEL_INFOS if info.kernel is F.convert_image_dtype),
+        args_kwargs_fn=lambda info: info.sample_inputs_fn(),
+    ),
+)
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_dtype_and_device_convert_image_dtype(info, args_kwargs, device):
+    (input, *other_args), kwargs = args_kwargs.load(device)
+    dtype = other_args[0] if other_args else kwargs.get("dtype", torch.float32)
+
+    output = info.kernel(input, dtype)
+
+    assert output.dtype == dtype
+    assert output.device == input.device
 
 
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
@@ -1022,16 +1043,9 @@ def test_normalize_output_type():
 def test_to_image_tensor(inpt):
     output = F.to_image_tensor(inpt)
     assert isinstance(output, torch.Tensor)
+    assert output.shape == (3, 32, 32)
 
     assert np.asarray(inpt).sum() == output.sum().item()
-
-    if isinstance(inpt, PIL.Image.Image):
-        # we can't check this option
-        # as PIL -> numpy is always copying
-        return
-
-    inpt[0, 0, 0] = 11
-    assert output[0, 0, 0] == 11
 
 
 @pytest.mark.parametrize(

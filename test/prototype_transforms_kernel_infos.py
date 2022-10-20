@@ -1,6 +1,8 @@
+import decimal
 import functools
 import itertools
 import math
+import re
 
 import numpy as np
 import pytest
@@ -20,6 +22,7 @@ from prototype_common_utils import (
     mark_framework_limitation,
     TestMark,
 )
+from torch.utils._pytree import tree_map
 from torchvision.prototype import features
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
@@ -173,6 +176,12 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.horizontal_flip_bounding_box,
             sample_inputs_fn=sample_inputs_horizontal_flip_bounding_box,
+            test_marks=[
+                TestMark(
+                    ("TestKernels", "test_scripted_vs_eager"),
+                    pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %72')}:UserWarning"),
+                )
+            ],
         ),
         KernelInfo(
             F.horizontal_flip_mask,
@@ -444,10 +453,10 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
         transformed_points = np.matmul(points, affine_matrix.T)
         out_bbox = torch.tensor(
             [
-                np.min(transformed_points[:, 0]),
-                np.min(transformed_points[:, 1]),
-                np.max(transformed_points[:, 0]),
-                np.max(transformed_points[:, 1]),
+                np.min(transformed_points[:, 0]).item(),
+                np.min(transformed_points[:, 1]).item(),
+                np.max(transformed_points[:, 0]).item(),
+                np.max(transformed_points[:, 1]).item(),
             ],
             dtype=bbox.dtype,
         )
@@ -1948,6 +1957,7 @@ def sample_inputs_convert_dtype_image_tensor():
         [torch.uint8, torch.int64, torch.float32, torch.float64], repeat=2
     ):
         if input_dtype.is_floating_point and output_dtype == torch.int64:
+            # conversion cannot be performed safely
             continue
 
         for image_loader, copy_kwargs in itertools.product(
@@ -1956,7 +1966,65 @@ def sample_inputs_convert_dtype_image_tensor():
         ):
             yield ArgsKwargs(image_loader, dtype=output_dtype, **copy_kwargs)
 
-    yield ArgsKwargs(make_image_loader(color_space=features.ColorSpace.RGB), dtype=torch.uint8)
+
+def reference_convert_dtype_image_tensor(image, dtype=torch.float):
+    input_dtype = image.dtype
+    output_dtype = dtype
+
+    if output_dtype == input_dtype:
+        return image
+
+    def fn(value):
+        if input_dtype.is_floating_point:
+            if output_dtype.is_floating_point:
+                return value
+            else:
+                return int(decimal.Decimal(value) * torch.iinfo(output_dtype).max)
+        else:
+            input_max_value = torch.iinfo(input_dtype).max
+
+            if output_dtype.is_floating_point:
+                return float(decimal.Decimal(value) / input_max_value)
+            else:
+                output_max_value = torch.iinfo(output_dtype).max
+
+                if input_max_value > output_max_value:
+                    factor = (input_max_value + 1) // (output_max_value + 1)
+                    return value // factor
+                else:
+                    factor = (output_max_value + 1) // (input_max_value + 1)
+                    return value * factor
+
+    return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype)
+
+
+def reference_inputs_convert_dtype_image_tensor():
+    for input_dtype, output_dtype in itertools.product(
+        [
+            torch.uint8,
+            torch.int16,
+            torch.int32,
+            torch.int64,
+            torch.float16,
+            torch.float32,
+            torch.float64,
+            torch.bfloat16,
+        ],
+        repeat=2,
+    ):
+        if (input_dtype == torch.float32 and output_dtype in {torch.int32, torch.int64}) or (
+            input_dtype == torch.float64 and output_dtype == torch.int64
+        ):
+            continue
+
+        if input_dtype.is_floating_point:
+            data = [0.0, 0.5, 1.0]
+        else:
+            max_value = torch.iinfo(input_dtype).max
+            data = [0, max_value // 2, max_value]
+        image = torch.tensor(data, dtype=input_dtype)
+
+        yield ArgsKwargs(image, dtype=output_dtype)
 
 
 def sample_inputs_convert_dtype_video():
@@ -1964,28 +2032,45 @@ def sample_inputs_convert_dtype_video():
         yield ArgsKwargs(video_loader)
 
 
-_convert_dtype_skip_dtype_consistency = TestMark(
-    ("TestKernels", "test_dtype_consistency"),
-    pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
-    condition=lambda args_kwargs: args_kwargs.args[0].dtype != args_kwargs.kwargs.get("dtype", torch.float32),
-)
-
+_common_convert_dtype_marks = [
+    TestMark(
+        ("TestKernels", "test_dtype_consistency"),
+        pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
+        condition=lambda args_kwargs: args_kwargs.args[0].dtype != args_kwargs.kwargs.get("dtype", torch.float32),
+    ),
+    TestMark(
+        ("TestKernels", "test_scripted_vs_eager"),
+        pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %')}:UserWarning"),
+    ),
+]
 
 KERNEL_INFOS.extend(
     [
         KernelInfo(
             F.convert_dtype_image_tensor,
             sample_inputs_fn=sample_inputs_convert_dtype_image_tensor,
+            reference_fn=reference_convert_dtype_image_tensor,
+            reference_inputs_fn=reference_inputs_convert_dtype_image_tensor,
             test_marks=[
-                _convert_dtype_skip_dtype_consistency,
+                *_common_convert_dtype_marks,
+                TestMark(
+                    ("TestKernels", "test_against_reference"),
+                    pytest.mark.xfail(reason="Conversion overflows"),
+                    condition=lambda args_kwargs: (
+                        args_kwargs.args[0].dtype in {torch.float16, torch.bfloat16}
+                        and not args_kwargs.kwargs["dtype"].is_floating_point
+                    )
+                    or (
+                        args_kwargs.args[0].dtype in {torch.int32, torch.int64}
+                        and args_kwargs.kwargs["dtype"] == torch.float16
+                    ),
+                ),
             ],
         ),
         KernelInfo(
             F.convert_dtype_video,
             sample_inputs_fn=sample_inputs_convert_dtype_video,
-            test_marks=[
-                _convert_dtype_skip_dtype_consistency,
-            ],
+            test_marks=_common_convert_dtype_marks,
         ),
     ]
 )
