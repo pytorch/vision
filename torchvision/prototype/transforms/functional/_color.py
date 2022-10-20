@@ -2,7 +2,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
-from ._meta import get_dimensions_image_tensor
+from ._meta import get_dimensions_image_tensor, get_num_channels_image_tensor
 
 adjust_brightness_image_tensor = _FT.adjust_brightness
 adjust_brightness_image_pil = _FP.adjust_brightness
@@ -98,7 +98,79 @@ def adjust_sharpness(inpt: features.InputTypeJIT, sharpness_factor: float) -> fe
         return adjust_sharpness_image_pil(inpt, sharpness_factor=sharpness_factor)
 
 
-adjust_hue_image_tensor = _FT.adjust_hue
+def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
+    r, g, b = image.unbind(dim=-3)
+
+    # Implementation is based on https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/
+    # src/libImaging/Convert.c#L330
+    minc, maxc = torch.aminmax(image, dim=-3)
+
+    # The algorithm erases S and H channel where `maxc = minc`. This avoids NaN
+    # from happening in the results, because
+    #   + S channel has division by `maxc`, which is zero only if `maxc = minc`
+    #   + H channel has division by `(maxc - minc)`.
+    #
+    # Instead of overwriting NaN afterwards, we just prevent it from occuring so
+    # we don't need to deal with it in case we save the NaN in a buffer in
+    # backprop, if it is ever supported, but it doesn't hurt to do so.
+    eqc = maxc == minc
+
+    cr = maxc - minc
+    # Since `eqc => cr = 0`, replacing denominator with 1 when `eqc` is fine.
+    ones = torch.ones_like(maxc)
+    s = cr / torch.where(eqc, ones, maxc)
+    # Note that `eqc => maxc = minc = r = g = b`. So the following calculation
+    # of `h` would reduce to `bc - gc + 2 + rc - bc + 4 + rc - bc = 6` so it
+    # would not matter what values `rc`, `gc`, and `bc` have here, and thus
+    # replacing denominator with 1 when `eqc` is fine.
+    cr_divisor = torch.where(eqc, ones, cr)
+    rc = (maxc - r).div_(cr_divisor)
+    gc = (maxc - g).div_(cr_divisor)
+    bc = (maxc - b).div_(cr_divisor)
+
+    mask_maxc_eq_r = maxc == r
+    mask_maxc_neq_r = ~mask_maxc_eq_r
+    mask_maxc_eq_g = maxc == g
+    mask_maxc_neq_g = ~mask_maxc_eq_g
+    hr = mask_maxc_eq_r * (bc - gc)
+    hg = (mask_maxc_eq_g & mask_maxc_neq_r) * (2.0 + rc - bc)
+    hb = (mask_maxc_neq_g & mask_maxc_neq_r) * (4.0 + gc - rc)
+    h = hr + hg + hb
+    h = torch.fmod((h / 6.0 + 1.0), 1.0)
+    return torch.stack((h, s, maxc), dim=-3)
+
+
+def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Tensor:
+    if not (-0.5 <= hue_factor <= 0.5):
+        raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
+
+    if not (isinstance(image, torch.Tensor)):
+        raise TypeError("Input img should be Tensor image")
+
+    c = get_num_channels_image_tensor(image)
+
+    if c not in [1, 3]:
+        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+
+    if c == 1:  # Match PIL behaviour
+        return image
+
+    orig_dtype = image.dtype
+    if image.dtype == torch.uint8:
+        image = image.to(dtype=torch.float32) / 255.0
+
+    image = _rgb_to_hsv(image)
+    h, s, v = image.unbind(dim=-3)
+    h = (h + hue_factor) % 1.0
+    image = torch.stack((h, s, v), dim=-3)
+    image_hue_adj = _FT._hsv2rgb(image)
+
+    if orig_dtype == torch.uint8:
+        image_hue_adj = (image_hue_adj * 255.0).to(dtype=orig_dtype)
+
+    return image_hue_adj
+
+
 adjust_hue_image_pil = _FP.adjust_hue
 
 
