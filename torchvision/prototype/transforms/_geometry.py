@@ -803,6 +803,7 @@ class FixedSizeCrop(Transform):
         top = int(offset_height * r)
         left = int(offset_width * r)
 
+        bounding_boxes: Optional[torch.Tensor]
         try:
             bounding_boxes = query_bounding_box(flat_inputs)
         except ValueError:

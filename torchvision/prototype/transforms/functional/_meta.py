@@ -263,13 +263,14 @@ def convert_color_space(
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
 ) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
-    if isinstance(inpt, torch.Tensor):
-        if torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video)):
-            if old_color_space is None:
-                raise RuntimeError(
-                    "In order to convert the color space of simple tensors, "
-                    "the `old_color_space=...` parameter needs to be passed."
-                )
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+    ):
+        if old_color_space is None:
+            raise RuntimeError(
+                "In order to convert the color space of simple tensors, "
+                "the `old_color_space=...` parameter needs to be passed."
+            )
         return convert_color_space_image_tensor(inpt, old_color_space=old_color_space, new_color_space=color_space)
     elif isinstance(inpt, features.Image):
         output = convert_color_space_image_tensor(
