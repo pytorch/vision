@@ -14,6 +14,6 @@ dependencies:
   - pip:
     - future
     - scipy
-    - av != 9.1.1
+    - av !=9.1.1, <10
     - dataclasses
     - h5py

@@ -1,6 +1,7 @@
 import enum
 import inspect
 import random
+import re
 from collections import defaultdict
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
@@ -308,22 +309,28 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.7, hue=0.3),
         ],
     ),
-    ConsistencyConfig(
-        prototype_transforms.ElasticTransform,
-        legacy_transforms.ElasticTransform,
-        [
-            ArgsKwargs(),
-            ArgsKwargs(alpha=20.0),
-            ArgsKwargs(alpha=(15.3, 27.2)),
-            ArgsKwargs(sigma=3.0),
-            ArgsKwargs(sigma=(2.5, 3.9)),
-            ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.BICUBIC),
-            ArgsKwargs(fill=1),
-        ],
-        # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(163, 163), (72, 333), (313, 95)]),
-    ),
+    *[
+        ConsistencyConfig(
+            prototype_transforms.ElasticTransform,
+            legacy_transforms.ElasticTransform,
+            [
+                ArgsKwargs(),
+                ArgsKwargs(alpha=20.0),
+                ArgsKwargs(alpha=(15.3, 27.2)),
+                ArgsKwargs(sigma=3.0),
+                ArgsKwargs(sigma=(2.5, 3.9)),
+                ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.NEAREST),
+                ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.BICUBIC),
+                ArgsKwargs(fill=1),
+            ],
+            # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
+            make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(163, 163), (72, 333), (313, 95)], dtypes=[dt]),
+            # We updated gaussian blur kernel generation with a faster and numerically more stable version
+            # This brings float32 accumulation visible in elastic transform -> we need to relax consistency tolerance
+            closeness_kwargs=ckw,
+        )
+        for dt, ckw in [(torch.uint8, {"rtol": 1e-1, "atol": 1}), (torch.float32, {"rtol": 1e-2, "atol": 1e-3})]
+    ],
     ConsistencyConfig(
         prototype_transforms.GaussianBlur,
         legacy_transforms.GaussianBlur,
@@ -333,6 +340,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(kernel_size=3, sigma=0.7),
             ArgsKwargs(kernel_size=5, sigma=(0.3, 1.4)),
         ],
+        closeness_kwargs={"rtol": 1e-5, "atol": 1e-5},
     ),
     ConsistencyConfig(
         prototype_transforms.RandomAffine,
@@ -506,7 +514,6 @@ def check_call_consistency(
         image_repr = f"[{tuple(image.shape)}, {str(image.dtype).rsplit('.')[-1]}]"
 
         image_tensor = torch.Tensor(image)
-
         try:
             torch.manual_seed(0)
             output_legacy_tensor = legacy_transform(image_tensor)
@@ -592,6 +599,7 @@ def check_call_consistency(
         for idx, args_kwargs in enumerate(config.args_kwargs)
     ],
 )
+@pytest.mark.filterwarnings("ignore")
 def test_call_consistency(config, args_kwargs):
     args, kwargs = args_kwargs
 
@@ -665,21 +673,21 @@ class TestContainerTransforms:
         check_call_consistency(prototype_transform, legacy_transform)
 
     # We can't test other values for `p` since the random parameter generation is different
-    @pytest.mark.parametrize("p", [(0, 1), (1, 0)])
-    def test_random_choice(self, p):
+    @pytest.mark.parametrize("probabilities", [(0, 1), (1, 0)])
+    def test_random_choice(self, probabilities):
         prototype_transform = prototype_transforms.RandomChoice(
             [
                 prototype_transforms.Resize(256),
                 legacy_transforms.CenterCrop(224),
             ],
-            p=p,
+            probabilities=probabilities,
         )
         legacy_transform = legacy_transforms.RandomChoice(
             [
                 legacy_transforms.Resize(256),
                 legacy_transforms.CenterCrop(224),
             ],
-            p=p,
+            p=probabilities,
         )
 
         check_call_consistency(prototype_transform, legacy_transform)
@@ -696,7 +704,8 @@ class TestToTensorTransforms:
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
 
     def test_to_tensor(self):
-        prototype_transform = prototype_transforms.ToTensor()
+        with pytest.warns(UserWarning, match=re.escape("The transform `ToTensor()` is deprecated")):
+            prototype_transform = prototype_transforms.ToTensor()
         legacy_transform = legacy_transforms.ToTensor()
 
         for image in make_images(extra_dims=[()]):
