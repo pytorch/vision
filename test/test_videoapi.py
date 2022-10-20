@@ -76,8 +76,14 @@ class TestVideoApi:
 
                 # compare the frames and ptss
                 for i in range(len(vr_frames)):
-                    assert av_pts[i] == vr_pts[i]
-                    torch.test.assert_equal(av_frames[i], vr_frames[i])
+                    assert float(av_pts[i]) == approx(vr_pts[i], abs=0.1)
+
+                    mean_delta = torch.mean(torch.abs(av_frames[i].float() - vr_frames[i].float()))
+                    # on average the difference is very small and caused
+                    # by decoding (around 1%)
+                    # TODO: asses empirically how to set this? atm it's 1%
+                    # averaged over all frames
+                    assert mean_delta.item() < 2.55
 
                 del vr_frames, av_frames, vr_pts, av_pts
 
