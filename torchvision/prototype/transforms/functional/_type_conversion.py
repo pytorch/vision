@@ -43,6 +43,21 @@ pil_to_tensor = _F.pil_to_tensor
 to_pil_image = to_image_pil
 
 
+def _num_value_bits(dtype: torch.dtype) -> int:
+    if dtype == torch.uint8:
+        return 8
+    elif dtype == torch.int8:
+        return 7
+    elif dtype == torch.int16:
+        return 15
+    elif dtype == torch.int32:
+        return 31
+    elif dtype == torch.int64:
+        return 63
+    else:
+        raise TypeError(f"Number of value bits is only defined for integer dtypes, but got {dtype}.")
+
+
 def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
     if not isinstance(image, torch.Tensor):
         raise TypeError("Input img should be Tensor Image")
@@ -81,25 +96,15 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         # discrete set `{0, 1}`.
         return image.mul(max_val + 1.0 - eps).to(dtype)
     else:
-        max_input_val = float(_FT._max_value(image.dtype))
-
         # int to float
         if float_output:
-            return image.to(dtype).div_(max_input_val)
+            return image.to(dtype).div_(_FT._max_value(image.dtype))
 
         # int to int
-        # TODO: The `factor`'s below are by definition powers of 2. Instead of multiplying and dividing the inputs to
-        #  get to the desired value range, we can probably speed this up significantly with bitshifts. However, we
-        #  probably need to be careful when converting from signed to unsigned dtypes and vice versa.
-        max_output_val = float(_FT._max_value(dtype))
+        num_value_bits_input = _num_value_bits(image.dtype)
+        num_value_bits_output = _num_value_bits(dtype)
 
-        if max_input_val > max_output_val:
-            # We technically don't need to convert to `int` here, but it speeds the division
-            factor = int((max_input_val + 1) / (max_output_val + 1))
-            # We need to scale first since the output dtype cannot hold all values in the input range
-            return image.div(factor, rounding_mode="floor").to(dtype)
+        if num_value_bits_input > num_value_bits_output:
+            return image.bitwise_right_shift(num_value_bits_input - num_value_bits_output).to(dtype)
         else:
-            # We need to convert to `int` or otherwise the multiplication will turn the image into floating point. Or,
-            # to be more exact, the inplace multiplication will fail.
-            factor = int((max_output_val + 1) / (max_input_val + 1))
-            return image.to(dtype).mul_(factor)
+            return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
