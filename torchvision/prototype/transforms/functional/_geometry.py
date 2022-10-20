@@ -36,6 +36,8 @@ def horizontal_flip_bounding_box(
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
+    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
+    #  BoundingBoxFormat instead of converting back and forth
     bounding_box = (
         bounding_box.clone()
         if format == features.BoundingBoxFormat.XYXY
@@ -75,6 +77,8 @@ def vertical_flip_bounding_box(
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
+    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
+    #  BoundingBoxFormat instead of converting back and forth
     bounding_box = (
         bounding_box.clone()
         if format == features.BoundingBoxFormat.XYXY
@@ -398,6 +402,9 @@ def affine_bounding_box(
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     original_shape = bounding_box.shape
+
+    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
+    #  BoundingBoxFormat instead of converting back and forth
     bounding_box = (
         bounding_box.clone()
         if format == features.BoundingBoxFormat.XYXY
@@ -824,6 +831,8 @@ def crop_bounding_box(
     height: int,
     width: int,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
+    #  BoundingBoxFormat instead of converting back and forth
     bounding_box = (
         bounding_box.clone()
         if format == features.BoundingBoxFormat.XYXY
