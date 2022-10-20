@@ -124,21 +124,40 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
     # would not matter what values `rc`, `gc`, and `bc` have here, and thus
     # replacing denominator with 1 when `eqc` is fine.
     cr_divisor = torch.where(eqc, ones, cr)
-    rc = (maxc - r).div_(cr_divisor)
-    gc = (maxc - g).div_(cr_divisor)
-    bc = (maxc - b).div_(cr_divisor)
+    rc, gc, bc = ((maxc - image) / cr_divisor).unbind(dim=-3)
 
-    mask_maxc_eq_r = maxc == r
-    mask_maxc_neq_r = ~mask_maxc_eq_r
+    mask_maxc_neq_r = maxc != r
     mask_maxc_eq_g = maxc == g
     mask_maxc_neq_g = ~mask_maxc_eq_g
-    hr = mask_maxc_eq_r * (bc - gc)
-    hg = (mask_maxc_eq_g & mask_maxc_neq_r) * (2.0 + rc - bc)
-    hb = (mask_maxc_neq_g & mask_maxc_neq_r) * (4.0 + gc - rc)
-    h = hr + hg + hb
-    h = torch.fmod((h / 6.0 + 1.0), 1.0)
+
+    hr = (bc - gc).mul_(~mask_maxc_neq_r)
+    hg = (2.0 + rc).sub_(bc).mul_(mask_maxc_eq_g & mask_maxc_neq_r)
+    hb = (4.0 + gc).sub_(rc).mul_(mask_maxc_neq_g & mask_maxc_neq_r)
+
+    h = hr.add_(hg).add_(hb)
+    h = h.div_(6.0).add_(1.0).fmod_(1.0)
     return torch.stack((h, s, maxc), dim=-3)
 
+
+def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
+    h, s, v = img.unbind(dim=-3)
+    i = torch.floor(h * 6.0)
+    f = (h * 6.0) - i
+    i = i.to(dtype=torch.int32)
+
+    p = (v * (1.0 - s)).clamp_(0.0, 1.0)
+    q = (v * (1.0 - s * f)).clamp_(0.0, 1.0)
+    t = (v * (1.0 - s * (1.0 - f))).clamp_(0.0, 1.0)
+    i = i % 6
+
+    mask = i.unsqueeze(dim=-3) == torch.arange(6, device=i.device).view(-1, 1, 1)
+
+    a1 = torch.stack((v, q, p, p, t, v), dim=-3)
+    a2 = torch.stack((t, v, v, q, p, p), dim=-3)
+    a3 = torch.stack((p, p, t, v, v, q), dim=-3)
+    a4 = torch.stack((a1, a2, a3), dim=-4)
+
+    return torch.einsum("...ijk, ...xijk -> ...xjk", mask.to(dtype=img.dtype), a4)
 
 def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
@@ -163,7 +182,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     h, s, v = image.unbind(dim=-3)
     h = (h + hue_factor) % 1.0
     image = torch.stack((h, s, v), dim=-3)
-    image_hue_adj = _FT._hsv2rgb(image)
+    image_hue_adj = _hsv_to_rgb(image)
 
     if orig_dtype == torch.uint8:
         image_hue_adj = (image_hue_adj * 255.0).to(dtype=orig_dtype)
