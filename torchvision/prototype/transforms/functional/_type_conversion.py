@@ -91,10 +91,10 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         # Instead, we can also multiply by the maximum value plus something close to `1`. See
         # https://github.com/pytorch/vision/pull/2078#issuecomment-613524965 for details.
         eps = 1e-3
-        max_val = float(_FT._max_value(dtype))
+        max_value = float(_FT._max_value(dtype))
         # We need to scale first since the conversion would otherwise turn the input range `[0.0, 1.0]` into the
         # discrete set `{0, 1}`.
-        return image.mul(max_val + 1.0 - eps).to(dtype)
+        return image.mul(max_value + 1.0 - eps).to(dtype)
     else:
         # int to float
         if float_output:
@@ -107,4 +107,12 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         if num_value_bits_input > num_value_bits_output:
             return image.bitwise_right_shift(num_value_bits_input - num_value_bits_output).to(dtype)
         else:
-            return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
+            # The bitshift kernel is not vectorized
+            #  https://github.com/pytorch/pytorch/blob/703c19008df4700b6a522b0ae5c4b6d5ffc0906f/aten/src/ATen/native/cpu/BinaryOpsKernel.cpp#L315-L322
+            #  This results in the multiplication actually being faster.
+            # TODO: If the bitshift kernel is optimized in core, replace the computation below with
+            #  `image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)`
+            max_value_input = float(_FT._max_value(dtype))
+            max_value_output = float(_FT._max_value(image.dtype))
+            factor = int((max_value_input + 1) // (max_value_output + 1))
+            return image.to(dtype).mul_(factor)
