@@ -238,34 +238,29 @@ _COLOR_SPACE_TO_PIL_MODE = {
 
 
 @torch.jit.unused
-def convert_color_space_image_pil(
-    image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
-) -> PIL.Image.Image:
+def convert_color_space_image_pil(image: PIL.Image.Image, color_space: ColorSpace) -> PIL.Image.Image:
     old_mode = image.mode
     try:
         new_mode = _COLOR_SPACE_TO_PIL_MODE[color_space]
     except KeyError:
         raise ValueError(f"Conversion from {ColorSpace.from_pil_mode(old_mode)} to {color_space} is not supported.")
 
-    if not copy and image.mode == new_mode:
+    if image.mode == new_mode:
         return image
 
     return image.convert(new_mode)
 
 
 def convert_color_space_video(
-    video: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
+    video: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
 ) -> torch.Tensor:
-    return convert_color_space_image_tensor(
-        video, old_color_space=old_color_space, new_color_space=new_color_space, copy=copy
-    )
+    return convert_color_space_image_tensor(video, old_color_space=old_color_space, new_color_space=new_color_space)
 
 
 def convert_color_space(
     inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT],
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
-    copy: bool = True,
 ) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
@@ -275,10 +270,8 @@ def convert_color_space(
                 "In order to convert the color space of simple tensors, "
                 "the `old_color_space=...` parameter needs to be passed."
             )
-        return convert_color_space_image_tensor(
-            inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
-        )
+        return convert_color_space_image_tensor(inpt, old_color_space=old_color_space, new_color_space=color_space)
     elif isinstance(inpt, (features.Image, features.Video)):
-        return inpt.to_color_space(color_space, copy=copy)
+        return inpt.to_color_space(color_space)
     else:
-        return convert_color_space_image_pil(inpt, color_space, copy=copy)
+        return convert_color_space_image_pil(inpt, color_space)

@@ -598,11 +598,11 @@ def sample_inputs_convert_color_space_image_tensor():
         for image_loader in make_image_loaders(
             sizes=["random"], color_spaces=[color_space], dtypes=[torch.float32], constant_alpha=True
         ):
-            yield ArgsKwargs(image_loader, old_color_space=color_space, new_color_space=color_space, copy=False)
+            yield ArgsKwargs(image_loader, old_color_space=color_space, new_color_space=color_space)
 
 
 @pil_reference_wrapper
-def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space, copy=True):
+def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space):
     color_space_pil = features.ColorSpace.from_pil_mode(image_pil.mode)
     if color_space_pil != old_color_space:
         raise pytest.UsageError(
@@ -610,7 +610,7 @@ def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_c
             f"from {old_color_space} to {color_space_pil}"
         )
 
-    return F.convert_color_space_image_pil(image_pil, color_space=new_color_space, copy=copy)
+    return F.convert_color_space_image_pil(image_pil, color_space=new_color_space)
 
 
 def reference_inputs_convert_color_space_image_tensor():
