@@ -590,9 +590,7 @@ def rotate_bounding_box(
 
     original_shape = bounding_box.shape
     bounding_box = (
-        bounding_box.clone()
-        if format == features.BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
+        convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     out_bboxes, spatial_size = _affine_bounding_box_xyxy(
@@ -905,9 +903,7 @@ def perspective_bounding_box(
 
     original_shape = bounding_box.shape
     bounding_box = (
-        bounding_box.clone()
-        if format == features.BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
+        convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
@@ -1072,9 +1068,7 @@ def elastic_bounding_box(
 
     original_shape = bounding_box.shape
     bounding_box = (
-        bounding_box.clone()
-        if format == features.BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
+        convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     # Question (vfdev-5): should we rely on good displacement shape and fetch image size from it
