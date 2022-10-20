@@ -2037,7 +2037,7 @@ KERNEL_INFOS.extend(
             test_marks=[
                 TestMark(
                     ("TestKernels", "test_scripted_vs_eager"),
-                    pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %36')}:UserWarning"),
+                    pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %41')}:UserWarning"),
                 ),
                 TestMark(
                     ("TestKernels", "test_dtype_and_device_consistency"),
