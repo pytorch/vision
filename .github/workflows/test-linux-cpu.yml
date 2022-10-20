@@ -22,7 +22,6 @@ jobs:
     with:
       runner: linux.12xlarge
       repository: pytorch/vision
-      ref: main
       script: |
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
