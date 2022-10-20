@@ -270,14 +270,16 @@ def convert_color_space(
                     "In order to convert the color space of simple tensors, "
                     "the `old_color_space=...` parameter needs to be passed."
                 )
-        else:
-            old_color_space = old_color_space or inpt.color_space
-
-        output = convert_color_space_image_tensor(inpt, old_color_space=old_color_space, new_color_space=color_space)
-
-        if not torch.jit.is_scripting():
-            output = type(inpt).wrap_like(inpt, output, color_space=color_space)
-
-        return output
+        return convert_color_space_image_tensor(inpt, old_color_space=old_color_space, new_color_space=color_space)
+    elif isinstance(inpt, features.Image):
+        output = convert_color_space_image_tensor(
+            inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
+        )
+        return features.Image.wrap_like(inpt, output, color_space=color_space)
+    elif isinstance(inpt, features.Video):
+        output = convert_color_space_video(
+            inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
+        )
+        return features.Video.wrap_like(inpt, output, color_space=color_space)
     else:
         return convert_color_space_image_pil(inpt, color_space)
