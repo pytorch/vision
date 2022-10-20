@@ -13,11 +13,6 @@ env:
   CHANNEL: "nightly"
 
 jobs:
-  setup:
-    runs-on: linux.12xlarge
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
   tests:
     strategy:
       matrix:
@@ -26,37 +21,38 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       runner: linux.12xlarge
+      repository: pytorch/vision
+      ref: main
       script: |
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
 
         # Set up Environment Variables
-        export ENV_NAME=conda-env-"${{ github.run_id }}"
         export PYTHON_VERSION="${{ matrix.py_vers }}"
         export VERSION="cpu"
         export CUDATOOLKIT="cpuonly"
 
         # Set CHANNEL
-        if [[${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }} ]]; then
+        if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
           export CHANNEL=test
         else
           export CHANNEL=nightly
         fi
 
         # Create Conda Env
-        conda create -yp "${ENV_NAME}" python="${PYTHON_VERSION}" numpy libpng jpeg scipy
-        export CONDA_RUN="conda run -p ${ENV_NAME}"
+        conda create -yp ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy
+        conda activate ci_env
         
         # Install PyTorch, Torchvision, and testing libraries
         set -ex
-        ${CONDA_RUN} conda install \
+        conda install \
           --yes \
           -c "pytorch-${CHANNEL}" \
           -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
           "${CUDATOOLKIT}"
-        ${CONDA_RUN} python3 setup.py develop
-        ${CONDA_RUN} python3 -m pip install pytest pytest-mock 'av<10'
+        python3 setup.py develop
+        python3 -m pip install pytest pytest-mock 'av<10'
 
         # Run Tests
-        ${CONDA_RUN} python3 -m torch.utils.collect_env
-        ${CONDA_RUN} python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
+        python3 -m torch.utils.collect_env
+        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
