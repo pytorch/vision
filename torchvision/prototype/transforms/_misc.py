@@ -173,14 +173,13 @@ class PermuteDimensions(Transform):
             dims = defaultdict(functools.partial(_default_arg, dims))
         self.dims = dims
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(
+        self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
+    ) -> torch.Tensor:
         dims = self.dims[type(inpt)]
         if dims is None:
-            return inpt
-        output = inpt.permute(dims)
-        if isinstance(inpt, (features.Image, features.Video)):
-            output = inpt.wrap_like(inpt, output)
-        return output
+            return inpt.as_subclass(torch.Tensor)
+        return inpt.permute(*dims)
 
 
 class TransposeDimensions(Transform):
@@ -192,15 +191,13 @@ class TransposeDimensions(Transform):
             dims = defaultdict(functools.partial(_default_arg, dims))
         self.dims = dims
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(
+        self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
+    ) -> torch.Tensor:
         dims = self.dims[type(inpt)]
         if dims is None:
-            return inpt
-        dim0, dim1 = dims
-        output = inpt.transpose(dim0, dim1)
-        if isinstance(inpt, (features.Image, features.Video)):
-            output = inpt.wrap_like(inpt, output)
-        return output
+            return inpt.as_subclass(torch.Tensor)
+        return inpt.transpose(*dims)
 
 
 class RemoveSmallBoundingBoxes(Transform):
