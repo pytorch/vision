@@ -437,7 +437,7 @@ class TestRandomZoomOut:
         image = mocker.MagicMock(spec=features.Image)
         h, w = image.spatial_size = (24, 32)
 
-        params = transform._get_params(image)
+        params = transform._get_params([image])
 
         assert len(params["padding"]) == 4
         assert 0 <= params["padding"][0] <= (side_range[1] - 1) * w
@@ -462,7 +462,7 @@ class TestRandomZoomOut:
         _ = transform(inpt)
         torch.manual_seed(12)
         torch.rand(1)  # random apply changes random state
-        params = transform._get_params(inpt)
+        params = transform._get_params([inpt])
 
         fill = transforms.functional._geometry._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, fill=fill)
@@ -623,7 +623,7 @@ class TestRandomAffine:
         h, w = image.spatial_size
 
         transform = transforms.RandomAffine(degrees, translate=translate, scale=scale, shear=shear)
-        params = transform._get_params(image)
+        params = transform._get_params([image])
 
         if not isinstance(degrees, (list, tuple)):
             assert -degrees <= params["angle"] <= degrees
@@ -690,7 +690,7 @@ class TestRandomAffine:
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
-        params = transform._get_params(inpt)
+        params = transform._get_params([inpt])
 
         fill = transforms.functional._geometry._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, interpolation=interpolation, fill=fill, center=center)
@@ -722,7 +722,7 @@ class TestRandomCrop:
         h, w = image.spatial_size
 
         transform = transforms.RandomCrop(size, padding=padding, pad_if_needed=pad_if_needed)
-        params = transform._get_params(image)
+        params = transform._get_params([image])
 
         if padding is not None:
             if isinstance(padding, int):
@@ -793,7 +793,7 @@ class TestRandomCrop:
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
-        params = transform._get_params(inpt)
+        params = transform._get_params([inpt])
         if padding is None and not pad_if_needed:
             fn_crop.assert_called_once_with(
                 inpt, top=params["top"], left=params["left"], height=output_size[0], width=output_size[1]
@@ -832,7 +832,7 @@ class TestGaussianBlur:
     @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0]])
     def test__get_params(self, sigma):
         transform = transforms.GaussianBlur(3, sigma=sigma)
-        params = transform._get_params(None)
+        params = transform._get_params([])
 
         if isinstance(sigma, float):
             assert params["sigma"][0] == params["sigma"][1] == 10
@@ -867,7 +867,7 @@ class TestGaussianBlur:
         torch.manual_seed(12)
         _ = transform(inpt)
         torch.manual_seed(12)
-        params = transform._get_params(inpt)
+        params = transform._get_params([inpt])
 
         fn.assert_called_once_with(inpt, kernel_size, **params)
 
@@ -912,7 +912,7 @@ class TestRandomPerspective:
         image.num_channels = 3
         image.spatial_size = (24, 32)
 
-        params = transform._get_params(image)
+        params = transform._get_params([image])
 
         h, w = image.spatial_size
         assert "perspective_coeffs" in params
@@ -935,7 +935,7 @@ class TestRandomPerspective:
         _ = transform(inpt)
         torch.manual_seed(12)
         torch.rand(1)  # random apply changes random state
-        params = transform._get_params(inpt)
+        params = transform._get_params([inpt])
 
         fill = transforms.functional._geometry._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, fill=fill, interpolation=interpolation)
@@ -973,7 +973,7 @@ class TestElasticTransform:
         image.num_channels = 3
         image.spatial_size = (24, 32)
 
-        params = transform._get_params(image)
+        params = transform._get_params([image])
 
         h, w = image.spatial_size
         displacement = params["displacement"]
@@ -1006,7 +1006,7 @@ class TestElasticTransform:
         # Let's mock transform._get_params to control the output:
         transform._get_params = mocker.MagicMock()
         _ = transform(inpt)
-        params = transform._get_params(inpt)
+        params = transform._get_params([inpt])
         fill = transforms.functional._geometry._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, fill=fill, interpolation=interpolation)
 
@@ -1035,7 +1035,7 @@ class TestRandomErasing:
         transform = transforms.RandomErasing(value=[1, 2, 3, 4])
 
         with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value"):
-            transform._get_params(image)
+            transform._get_params([image])
 
     @pytest.mark.parametrize("value", [5.0, [1, 2, 3], "random"])
     def test__get_params(self, value, mocker):
@@ -1044,7 +1044,7 @@ class TestRandomErasing:
         image.spatial_size = (24, 32)
 
         transform = transforms.RandomErasing(value=value)
-        params = transform._get_params(image)
+        params = transform._get_params([image])
 
         v = params["v"]
         h, w = params["h"], params["w"]
@@ -1197,6 +1197,7 @@ class TestContainers:
         [
             [transforms.Pad(2), transforms.RandomCrop(28)],
             [lambda x: 2.0 * x, transforms.Pad(2), transforms.RandomCrop(28)],
+            [transforms.Pad(2), lambda x: 2.0 * x, transforms.RandomCrop(28)],
         ],
     )
     def test_ctor(self, transform_cls, trfms):
@@ -1339,7 +1340,7 @@ class TestScaleJitter:
         n_samples = 5
         for _ in range(n_samples):
 
-            params = transform._get_params(sample)
+            params = transform._get_params([sample])
 
             assert "size" in params
             size = params["size"]
@@ -1378,15 +1379,14 @@ class TestScaleJitter:
 
 
 class TestRandomShortestSize:
-    def test__get_params(self, mocker):
+    @pytest.mark.parametrize("min_size,max_size", [([5, 9], 20), ([5, 9], None)])
+    def test__get_params(self, min_size, max_size, mocker):
         spatial_size = (3, 10)
-        min_size = [5, 9]
-        max_size = 20
 
         transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size)
 
         sample = mocker.MagicMock(spec=features.Image, num_channels=3, spatial_size=spatial_size)
-        params = transform._get_params(sample)
+        params = transform._get_params([sample])
 
         assert "size" in params
         size = params["size"]
@@ -1394,10 +1394,9 @@ class TestRandomShortestSize:
         assert isinstance(size, tuple) and len(size) == 2
 
         longer = max(size)
-        assert longer <= max_size
-
         shorter = min(size)
-        if longer == max_size:
+        if max_size is not None:
+            assert longer <= max_size
             assert shorter <= max_size
         else:
             assert shorter in min_size
@@ -1554,13 +1553,13 @@ class TestFixedSizeCrop:
 
         transform = transforms.FixedSizeCrop(size=crop_size)
 
-        sample = dict(
-            image=make_image(size=spatial_size, color_space=features.ColorSpace.RGB),
-            bounding_boxes=make_bounding_box(
+        flat_inputs = [
+            make_image(size=spatial_size, color_space=features.ColorSpace.RGB),
+            make_bounding_box(
                 format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=batch_shape
             ),
-        )
-        params = transform._get_params(sample)
+        ]
+        params = transform._get_params(flat_inputs)
 
         assert params["needs_crop"]
         assert params["height"] <= crop_size[0]
@@ -1759,7 +1758,7 @@ class TestRandomResize:
         transform = transforms.RandomResize(min_size=min_size, max_size=max_size)
 
         for _ in range(10):
-            params = transform._get_params(None)
+            params = transform._get_params([])
 
             assert isinstance(params["size"], list) and len(params["size"]) == 1
             size = params["size"][0]
@@ -1789,3 +1788,41 @@ class TestRandomResize:
         mock_resize.assert_called_with(
             inpt_sentinel, size_sentinel, interpolation=interpolation_sentinel, antialias=antialias_sentinel
         )
+
+
+@pytest.mark.parametrize(
+    ("dtype", "expected_dtypes"),
+    [
+        (
+            torch.float64,
+            {torch.Tensor: torch.float64, features.Image: torch.float64, features.BoundingBox: torch.float64},
+        ),
+        (
+            {torch.Tensor: torch.int32, features.Image: torch.float32, features.BoundingBox: torch.float64},
+            {torch.Tensor: torch.int32, features.Image: torch.float32, features.BoundingBox: torch.float64},
+        ),
+    ],
+)
+def test_to_dtype(dtype, expected_dtypes):
+    sample = dict(
+        plain_tensor=torch.testing.make_tensor(5, dtype=torch.int64, device="cpu"),
+        image=make_image(dtype=torch.uint8),
+        bounding_box=make_bounding_box(format=features.BoundingBoxFormat.XYXY, dtype=torch.float32),
+        str="str",
+        int=0,
+    )
+
+    transform = transforms.ToDtype(dtype)
+    transformed_sample = transform(sample)
+
+    for key, value in sample.items():
+        value_type = type(value)
+        transformed_value = transformed_sample[key]
+
+        # make sure the transformation retains the type
+        assert isinstance(transformed_value, value_type)
+
+        if isinstance(value, torch.Tensor):
+            assert transformed_value.dtype is expected_dtypes[value_type]
+        else:
+            assert transformed_value is value

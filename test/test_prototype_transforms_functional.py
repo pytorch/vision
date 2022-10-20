@@ -1012,16 +1012,9 @@ def test_normalize_output_type():
 def test_to_image_tensor(inpt):
     output = F.to_image_tensor(inpt)
     assert isinstance(output, torch.Tensor)
+    assert output.shape == (3, 32, 32)
 
     assert np.asarray(inpt).sum() == output.sum().item()
-
-    if isinstance(inpt, PIL.Image.Image):
-        # we can't check this option
-        # as PIL -> numpy is always copying
-        return
-
-    inpt[0, 0, 0] = 11
-    assert output[0, 0, 0] == 11
 
 
 @pytest.mark.parametrize(
@@ -1037,3 +1030,14 @@ def test_to_image_pil(inpt, mode):
     assert isinstance(output, PIL.Image.Image)
 
     assert np.asarray(inpt).sum() == np.asarray(output).sum()
+
+
+def test_equalize_image_tensor_edge_cases():
+    inpt = torch.zeros(3, 200, 200, dtype=torch.uint8)
+    output = F.equalize_image_tensor(inpt)
+    torch.testing.assert_close(inpt, output)
+
+    inpt = torch.zeros(5, 3, 200, 200, dtype=torch.uint8)
+    inpt[..., 100:, 100:] = 1
+    output = F.equalize_image_tensor(inpt)
+    assert output.unique().tolist() == [0, 255]
