@@ -66,15 +66,23 @@ class BoundingBox(_Feature):
             format = BoundingBoxFormat.from_str(format.upper())
 
         return BoundingBox.wrap_like(
-            self, self._F.convert_format_bounding_box(self, old_format=self.format, new_format=format), format=format
+            self,
+            self._F.convert_format_bounding_box(
+                self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), old_format=self.format, new_format=format
+            ),
+            format=format,
         )
 
     def horizontal_flip(self) -> BoundingBox:
-        output = self._F.horizontal_flip_bounding_box(self, format=self.format, spatial_size=self.spatial_size)
+        output = self._F.horizontal_flip_bounding_box(
+            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
+        )
         return BoundingBox.wrap_like(self, output)
 
     def vertical_flip(self) -> BoundingBox:
-        output = self._F.vertical_flip_bounding_box(self, format=self.format, spatial_size=self.spatial_size)
+        output = self._F.vertical_flip_bounding_box(
+            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
+        )
         return BoundingBox.wrap_like(self, output)
 
     def resize(  # type: ignore[override]
@@ -85,19 +93,19 @@ class BoundingBox(_Feature):
         antialias: bool = False,
     ) -> BoundingBox:
         output, spatial_size = self._F.resize_bounding_box(
-            self, spatial_size=self.spatial_size, size=size, max_size=max_size
+            self.as_subclass(torch.Tensor), spatial_size=self.spatial_size, size=size, max_size=max_size
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
     def crop(self, top: int, left: int, height: int, width: int) -> BoundingBox:
         output, spatial_size = self._F.crop_bounding_box(
-            self, self.format, top=top, left=left, height=height, width=width
+            self.as_subclass(torch.Tensor), self.format, top=top, left=left, height=height, width=width
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
     def center_crop(self, output_size: List[int]) -> BoundingBox:
         output, spatial_size = self._F.center_crop_bounding_box(
-            self, format=self.format, spatial_size=self.spatial_size, output_size=output_size
+            self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size, output_size=output_size
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
@@ -111,7 +119,9 @@ class BoundingBox(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = False,
     ) -> BoundingBox:
-        output, spatial_size = self._F.resized_crop_bounding_box(self, self.format, top, left, height, width, size=size)
+        output, spatial_size = self._F.resized_crop_bounding_box(
+            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), self.format, top, left, height, width, size=size
+        )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
     def pad(
@@ -121,7 +131,11 @@ class BoundingBox(_Feature):
         padding_mode: str = "constant",
     ) -> BoundingBox:
         output, spatial_size = self._F.pad_bounding_box(
-            self, format=self.format, spatial_size=self.spatial_size, padding=padding, padding_mode=padding_mode
+            self.as_subclass(torch.Tensor),
+            format=self.format,
+            spatial_size=self.spatial_size,
+            padding=padding,
+            padding_mode=padding_mode,
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
@@ -134,7 +148,12 @@ class BoundingBox(_Feature):
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         output, spatial_size = self._F.rotate_bounding_box(
-            self, format=self.format, spatial_size=self.spatial_size, angle=angle, expand=expand, center=center
+            self.as_subclass(torch.Tensor),
+            format=self.format,
+            spatial_size=self.spatial_size,
+            angle=angle,
+            expand=expand,
+            center=center,
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
@@ -149,7 +168,7 @@ class BoundingBox(_Feature):
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.affine_bounding_box(
-            self,
+            self.as_subclass(torch.Tensor),
             self.format,
             self.spatial_size,
             angle,
@@ -166,7 +185,9 @@ class BoundingBox(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> BoundingBox:
-        output = self._F.perspective_bounding_box(self, self.format, perspective_coeffs)
+        output = self._F.perspective_bounding_box(
+            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), self.format, perspective_coeffs
+        )
         return BoundingBox.wrap_like(self, output)
 
     def elastic(
@@ -175,5 +196,7 @@ class BoundingBox(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> BoundingBox:
-        output = self._F.elastic_bounding_box(self, self.format, displacement)
+        output = self._F.elastic_bounding_box(
+            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), self.format, displacement
+        )
         return BoundingBox.wrap_like(self, output)
