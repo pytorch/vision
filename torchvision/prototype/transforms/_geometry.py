@@ -809,16 +809,14 @@ class FixedSizeCrop(Transform):
             bounding_boxes = None
 
         if needs_crop and bounding_boxes is not None:
-            bounding_boxes = cast(
-                features.BoundingBox, F.crop(bounding_boxes, top=top, left=left, height=new_height, width=new_width)
+            format = bounding_boxes.format
+            bounding_boxes, spatial_size = F.crop_bounding_box(
+                bounding_boxes, format=format, top=top, left=left, height=new_height, width=new_width
             )
-            bounding_boxes = features.BoundingBox.wrap_like(
-                bounding_boxes,
-                F.clamp_bounding_box(
-                    bounding_boxes, format=bounding_boxes.format, spatial_size=bounding_boxes.spatial_size
-                ),
-            )
-            height_and_width = bounding_boxes.to_format(features.BoundingBoxFormat.XYWH)[..., 2:]
+            bounding_boxes = F.clamp_bounding_box(bounding_boxes, format=format, spatial_size=spatial_size)
+            height_and_width = F.convert_format_bounding_box(
+                bounding_boxes, old_format=format, new_format=features.BoundingBoxFormat.XYWH
+            )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
         else:
             is_valid = None

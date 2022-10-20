@@ -110,18 +110,6 @@ class Image(_Feature):
     def num_channels(self) -> int:
         return self.shape[-3]
 
-    def to_color_space(self, color_space: Union[str, ColorSpace]) -> Image:
-        if isinstance(color_space, str):
-            color_space = ColorSpace.from_str(color_space.upper())
-
-        return Image.wrap_like(
-            self,
-            self._F.convert_color_space_image_tensor(
-                self, old_color_space=self.color_space, new_color_space=color_space
-            ),
-            color_space=color_space,
-        )
-
     def horizontal_flip(self) -> Image:
         output = self._F.horizontal_flip_image_tensor(self)
         return Image.wrap_like(self, output)
