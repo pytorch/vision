@@ -459,9 +459,7 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
             ],
             dtype=bbox.dtype,
         )
-        return F.convert_format_bounding_box(
-            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-        )
+        return F.convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format)
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
@@ -554,17 +552,12 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_convert_format_bounding_box():
-    formats = set(features.BoundingBoxFormat)
-    for bounding_box_loader in make_bounding_box_loaders(formats=formats):
-        old_format = bounding_box_loader.format
-        for params in combinations_grid(new_format=formats - {old_format}, copy=(True, False)):
-            yield ArgsKwargs(bounding_box_loader, old_format=old_format, **params)
+    formats = list(features.BoundingBoxFormat)
+    for bounding_box_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
+        yield ArgsKwargs(bounding_box_loader, old_format=bounding_box_loader.format, new_format=new_format)
 
 
-def reference_convert_format_bounding_box(bounding_box, old_format, new_format, copy):
-    if not copy:
-        raise pytest.UsageError("Reference for `convert_format_bounding_box` only supports `copy=True`")
-
+def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
     return torchvision.ops.box_convert(
         bounding_box, in_fmt=old_format.kernel_name.lower(), out_fmt=new_format.kernel_name.lower()
     )
@@ -572,8 +565,7 @@ def reference_convert_format_bounding_box(bounding_box, old_format, new_format, 
 
 def reference_inputs_convert_format_bounding_box():
     for args_kwargs in sample_inputs_convert_color_space_image_tensor():
-        (image_loader, *other_args), kwargs = args_kwargs
-        if len(image_loader.shape) == 2 and kwargs.setdefault("copy", True):
+        if len(args_kwargs.args[0].shape) == 2:
             yield args_kwargs
 
 

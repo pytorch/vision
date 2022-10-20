@@ -125,13 +125,10 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
 
 
 def convert_format_bounding_box(
-    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, copy: bool = True
+    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat
 ) -> torch.Tensor:
     if new_format == old_format:
-        if copy:
-            return bounding_box.clone()
-        else:
-            return bounding_box
+        return bounding_box
 
     if old_format == BoundingBoxFormat.XYWH:
         bounding_box = _xywh_to_xyxy(bounding_box)
@@ -149,12 +146,16 @@ def convert_format_bounding_box(
 def clamp_bounding_box(
     bounding_box: torch.Tensor, format: BoundingBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
-    # TODO: (PERF) Possible speed up clamping if we have different implementations for each bbox format.
-    # Not sure if they yield equivalent results.
-    xyxy_boxes = convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
+    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
+    #  BoundingBoxFormat instead of converting back and forth
+    xyxy_boxes = (
+        bounding_box.clone()
+        if format == BoundingBoxFormat.XYXY
+        else convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
+    )
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
-    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
+    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format)
 
 
 def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
