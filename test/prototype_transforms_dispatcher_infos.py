@@ -416,4 +416,14 @@ DISPATCHER_INFOS = [
             skip_dispatch_feature,
         ],
     ),
+    DispatcherInfo(
+        F.convert_dtype,
+        kernels={
+            features.Image: F.convert_dtype_image_tensor,
+            features.Video: F.convert_dtype_video,
+        },
+        test_marks=[
+            skip_dispatch_feature,
+        ],
+    ),
 ]
