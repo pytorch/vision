@@ -37,11 +37,11 @@ class Mask(_Feature):
         return cast(Tuple[int, int], tuple(self.shape[-2:]))
 
     def horizontal_flip(self) -> Mask:
-        output = self._F.horizontal_flip_mask(self)
+        output = self._F.horizontal_flip_mask(self.as_subclass(torch.Tensor))
         return Mask.wrap_like(self, output)
 
     def vertical_flip(self) -> Mask:
-        output = self._F.vertical_flip_mask(self)
+        output = self._F.vertical_flip_mask(self.as_subclass(torch.Tensor))
         return Mask.wrap_like(self, output)
 
     def resize(  # type: ignore[override]
@@ -51,15 +51,15 @@ class Mask(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> Mask:
-        output = self._F.resize_mask(self, size, max_size=max_size)
+        output = self._F.resize_mask(self.as_subclass(torch.Tensor), size, max_size=max_size)
         return Mask.wrap_like(self, output)
 
     def crop(self, top: int, left: int, height: int, width: int) -> Mask:
-        output = self._F.crop_mask(self, top, left, height, width)
+        output = self._F.crop_mask(self.as_subclass(torch.Tensor), top, left, height, width)
         return Mask.wrap_like(self, output)
 
     def center_crop(self, output_size: List[int]) -> Mask:
-        output = self._F.center_crop_mask(self, output_size=output_size)
+        output = self._F.center_crop_mask(self.as_subclass(torch.Tensor), output_size=output_size)
         return Mask.wrap_like(self, output)
 
     def resized_crop(
@@ -72,7 +72,7 @@ class Mask(_Feature):
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         antialias: bool = False,
     ) -> Mask:
-        output = self._F.resized_crop_mask(self, top, left, height, width, size=size)
+        output = self._F.resized_crop_mask(self.as_subclass(torch.Tensor), top, left, height, width, size=size)
         return Mask.wrap_like(self, output)
 
     def pad(
@@ -81,7 +81,7 @@ class Mask(_Feature):
         fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> Mask:
-        output = self._F.pad_mask(self, padding, padding_mode=padding_mode, fill=fill)
+        output = self._F.pad_mask(self.as_subclass(torch.Tensor), padding, padding_mode=padding_mode, fill=fill)
         return Mask.wrap_like(self, output)
 
     def rotate(
@@ -92,7 +92,7 @@ class Mask(_Feature):
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Mask:
-        output = self._F.rotate_mask(self, angle, expand=expand, center=center, fill=fill)
+        output = self._F.rotate_mask(self.as_subclass(torch.Tensor), angle, expand=expand, center=center, fill=fill)
         return Mask.wrap_like(self, output)
 
     def affine(
@@ -106,7 +106,7 @@ class Mask(_Feature):
         center: Optional[List[float]] = None,
     ) -> Mask:
         output = self._F.affine_mask(
-            self,
+            self.as_subclass(torch.Tensor),
             angle,
             translate=translate,
             scale=scale,
@@ -122,7 +122,7 @@ class Mask(_Feature):
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
     ) -> Mask:
-        output = self._F.perspective_mask(self, perspective_coeffs, fill=fill)
+        output = self._F.perspective_mask(self.as_subclass(torch.Tensor), perspective_coeffs, fill=fill)
         return Mask.wrap_like(self, output)
 
     def elastic(
@@ -131,5 +131,5 @@ class Mask(_Feature):
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
     ) -> Mask:
-        output = self._F.elastic_mask(self, displacement, fill=fill)
+        output = self._F.elastic_mask(self.as_subclass(torch.Tensor), displacement, fill=fill)
         return Mask.wrap_like(self, output)
