@@ -36,14 +36,18 @@ def horizontal_flip_bounding_box(
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
-    bounding_box = convert_format_bounding_box(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
+    #  BoundingBoxFormat instead of converting back and forth
+    bounding_box = (
+        bounding_box.clone()
+        if format == features.BoundingBoxFormat.XYXY
+        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     bounding_box[:, [0, 2]] = spatial_size[1] - bounding_box[:, [2, 0]]
 
     return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
     ).reshape(shape)
 
 
@@ -73,14 +77,18 @@ def vertical_flip_bounding_box(
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
-    bounding_box = convert_format_bounding_box(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
+    #  BoundingBoxFormat instead of converting back and forth
+    bounding_box = (
+        bounding_box.clone()
+        if format == features.BoundingBoxFormat.XYXY
+        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     bounding_box[:, [1, 3]] = spatial_size[0] - bounding_box[:, [3, 1]]
 
     return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
     ).reshape(shape)
 
 
@@ -394,8 +402,9 @@ def affine_bounding_box(
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     original_shape = bounding_box.shape
-    bounding_box = convert_format_bounding_box(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+
+    bounding_box = (
+        convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     out_bboxes, _ = _affine_bounding_box_xyxy(bounding_box, spatial_size, angle, translate, scale, shear, center)
@@ -403,7 +412,7 @@ def affine_bounding_box(
     # out_bboxes should be of shape [N boxes, 4]
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format
     ).reshape(original_shape)
 
 
@@ -583,8 +592,8 @@ def rotate_bounding_box(
         center = None
 
     original_shape = bounding_box.shape
-    bounding_box = convert_format_bounding_box(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    bounding_box = (
+        convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     out_bboxes, spatial_size = _affine_bounding_box_xyxy(
@@ -599,9 +608,9 @@ def rotate_bounding_box(
     )
 
     return (
-        convert_format_bounding_box(
-            out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-        ).reshape(original_shape),
+        convert_format_bounding_box(out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format).reshape(
+            original_shape
+        ),
         spatial_size,
     )
 
@@ -818,8 +827,12 @@ def crop_bounding_box(
     height: int,
     width: int,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
-    bounding_box = convert_format_bounding_box(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
+    #  BoundingBoxFormat instead of converting back and forth
+    bounding_box = (
+        bounding_box.clone()
+        if format == features.BoundingBoxFormat.XYXY
+        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     )
 
     # Crop or implicit pad if left and/or top have negative values:
@@ -827,9 +840,7 @@ def crop_bounding_box(
     bounding_box[..., 1::2] -= top
 
     return (
-        convert_format_bounding_box(
-            bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-        ),
+        convert_format_bounding_box(bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format),
         (height, width),
     )
 
@@ -896,8 +907,8 @@ def perspective_bounding_box(
         raise ValueError("Argument perspective_coeffs should have 8 float values")
 
     original_shape = bounding_box.shape
-    bounding_box = convert_format_bounding_box(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    bounding_box = (
+        convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
@@ -967,7 +978,7 @@ def perspective_bounding_box(
     # out_bboxes should be of shape [N boxes, 4]
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format
     ).reshape(original_shape)
 
 
@@ -1061,8 +1072,8 @@ def elastic_bounding_box(
     displacement = displacement.to(bounding_box.device)
 
     original_shape = bounding_box.shape
-    bounding_box = convert_format_bounding_box(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    bounding_box = (
+        convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     # Question (vfdev-5): should we rely on good displacement shape and fetch image size from it
@@ -1088,7 +1099,7 @@ def elastic_bounding_box(
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format
     ).reshape(original_shape)
 
 
