@@ -119,7 +119,7 @@ class TestVideoApi:
 
     @pytest.mark.parametrize("stream", ["video", "audio"])
     @pytest.mark.parametrize("test_video", test_videos.keys())
-    @pytest.mark.parametrize("backend", ["video_reader"])
+    @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
     def test_frame_reading_mem_vs_file(self, test_video, stream, backend):
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)

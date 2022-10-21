@@ -1,3 +1,4 @@
+import io
 import warnings
 
 from typing import Any, Dict, Iterator, Optional
@@ -136,10 +137,12 @@ class VideoReader:
                 src = path
                 warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
         elif isinstance(src, bytes):
-            if self.backend in ["cuda", "pyav"]:
+            if self.backend in ["cuda"]:
                 raise RuntimeError(
                     "VideoReader cannot be initialized from bytes object when using cuda or pyav backend."
                 )
+            elif self.backend == "pyav":
+                src = io.BytesIO(src)
             else:
                 src = torch.frombuffer(src, dtype=torch.uint8)
         elif isinstance(src, torch.Tensor):
