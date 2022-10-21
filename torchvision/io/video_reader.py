@@ -1,4 +1,5 @@
-from typing import Any, Dict, Iterator
+import warnings
+from typing import Any, Dict, Iterator, Optional
 
 import torch
 
@@ -71,8 +72,13 @@ class VideoReader:
         If only stream type is passed, the decoder auto-detects first stream of that type.
 
     Args:
+        src (string, bytes object, or tensor): The media source.
+            If string-type, it must be a file path supported by FFMPEG.
+            If bytes shoud be an in memory representatin of a file supported by FFMPEG.
+            If Tensor, it is interpreted internally as byte buffer.
+            It must be one-dimensional, of type ``torch.uint8``.
 
-        path (string): Path to the video file in supported format
+
 
         stream (string, optional): descriptor of the required stream, followed by the stream id,
             in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
@@ -85,9 +91,23 @@ class VideoReader:
         device (str, optional): Device to be used for decoding. Defaults to ``"cpu"``.
             To use GPU decoding, pass ``device="cuda"``.
 
+        path (str, optional):
+            .. warning:
+                This parameter was deprecated in ``0.15`` and will be removed in ``0.17``.
+                Please use ``src`` instead.
+
+
+
     """
 
-    def __init__(self, path: str, stream: str = "video", num_threads: int = 0, device: str = "cpu") -> None:
+    def __init__(
+        self,
+        src: str = "",
+        stream: str = "video",
+        num_threads: int = 0,
+        device: str = "cpu",
+        path: Optional[str] = None,
+    ) -> None:
         _log_api_usage_once(self)
         self.is_cuda = False
         device = torch.device(device)
@@ -95,7 +115,7 @@ class VideoReader:
             if not _HAS_GPU_VIDEO_DECODER:
                 raise RuntimeError("Not compiled with GPU decoder support.")
             self.is_cuda = True
-            self._c = torch.classes.torchvision.GPUDecoder(path, device)
+            self._c = torch.classes.torchvision.GPUDecoder(src, device)
             return
         if not _has_video_opt():
             raise RuntimeError(
@@ -105,7 +125,24 @@ class VideoReader:
                 + "build torchvision from source."
             )
 
-        self._c = torch.classes.torchvision.Video(path, stream, num_threads)
+        if src == "":
+            if path is None:
+                raise TypeError("src cannot be empty")
+            src = path
+            warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
+
+        elif isinstance(src, bytes):
+            src = torch.frombuffer(src, dtype=torch.uint8)
+
+        if isinstance(src, str):
+            self._c = torch.classes.torchvision.Video(src, stream, num_threads)
+        elif isinstance(src, torch.Tensor):
+            if self.is_cuda:
+                raise RuntimeError("GPU VideoReader cannot be initialized from Tensor or bytes object.")
+            self._c = torch.classes.torchvision.Video("", "", 0)
+            self._c.init_from_memory(src, stream, num_threads)
+        else:
+            raise TypeError("`src` must be either string, Tensor or bytes object.")
 
     def __next__(self) -> Dict[str, Any]:
         """Decodes and returns the next frame of the current stream.
