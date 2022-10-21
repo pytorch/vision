@@ -43,7 +43,7 @@ class VideoClassificationPresetTrain:
         )
         if random_erase_prob > 0:
             trans.append(transforms.RandomErasing(p=random_erase_prob))
-        trans.append(transforms.Permute({torch.Tensor: (1, 0, 2, 3), features.Label: None}))
+        trans.append(transforms.TransposeDimensions((-3, -4)))
 
         self.transforms = transforms.Compose(trans)
 
@@ -67,7 +67,7 @@ class VideoClassificationPresetEval:
                 transforms.CenterCrop(crop_size),
                 transforms.ConvertImageDtype(torch.float32),
                 transforms.Normalize(mean=mean, std=std),
-                transforms.Permute((1, 0, 2, 3)),
+                transforms.TransposeDimensions((-3, -4)),
             ]
         )
 

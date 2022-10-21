@@ -256,9 +256,7 @@ def main(args):
                 transforms.LabelToOneHot(num_categories=num_classes),
                 transforms.ToDtype({features.OneHotLabel: torch.float, features.Video: None, features._Feature: None}),
                 transforms.RandomChoice(mixup_or_cutmix),
-                transforms.Permute(
-                    {features.Video: (0, 2, 1, 3, 4), features.OneHotLabel: None, features._Feature: None}
-                ),
+                transforms.TransposeDimensions((-3, -4)),
             ]
         )
 
