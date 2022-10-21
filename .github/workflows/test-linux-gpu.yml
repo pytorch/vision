@@ -21,11 +21,11 @@ jobs:
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
-      runner: linux.4xlarge.nvidia.gpu
+      runner: linux.8xlarge.nvidia.gpu
       repository: pytorch/vision
       gpu-arch-type: cuda
       gpu-arch-version: ${{ matrix.cuda_arch_version }}
-      timeout: 60
+      timeout: 120
       script: |
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
