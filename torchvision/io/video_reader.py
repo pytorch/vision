@@ -1,5 +1,6 @@
 import warnings
-from typing import Any, Dict, Iterator
+
+from typing import Any, Dict, Iterator, Optional
 
 import torch
 
@@ -94,8 +95,13 @@ class VideoReader:
         If only stream type is passed, the decoder auto-detects first stream of that type.
 
     Args:
+        src (string, bytes object, or tensor): The media source.
+            If string-type, it must be a file path supported by FFMPEG.
+            If bytes shoud be an in memory representatin of a file supported by FFMPEG.
+            If Tensor, it is interpreted internally as byte buffer.
+            It must be one-dimensional, of type ``torch.uint8``.
 
-        path (string): Path to the video file in supported format
+
 
         stream (string, optional): descriptor of the required stream, followed by the stream id,
             in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
@@ -105,23 +111,52 @@ class VideoReader:
             Default value (0) enables multithreading with codec-dependent heuristic. The performance
             will depend on the version of FFMPEG codecs supported.
 
+
+        path (str, optional):
+            .. warning:
+                This parameter was deprecated in ``0.15`` and will be removed in ``0.17``.
+                Please use ``src`` instead.
     """
 
-    def __init__(self, path: str, stream: str = "video", num_threads: int = 0) -> None:
+    def __init__(
+        self,
+        src: str = "",
+        stream: str = "video",
+        num_threads: int = 0,
+        path: Optional[str] = None,
+    ) -> None:
         _log_api_usage_once(self)
         from .. import get_video_backend
-
+        
         self.backend = get_video_backend()
+        if src == "":
+            if path is None:
+                raise TypeError("src cannot be empty")
+            src = path
+            warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
+        elif isinstance(src, bytes):
+            if self.backenin ["cuda", "pyav"]:
+                raise RuntimeError("GPU VideoReader cannot be initialized from Tensor or bytes object.")
+            src = torch.frombuffer(src, dtype=torch.uint8)
+        elif isinstance(src, torch.Tensor):
+            if self.backenin ["cuda", "pyav"]:
+                raise RuntimeError("GPU VideoReader cannot be initialized from Tensor or bytes object.")
+        else:
+            raise TypeError("`src` must be either string, Tensor or bytes object.")
+   
         if self.backend == "cuda":
             device = torch.device("cuda")
-            self._c = torch.classes.torchvision.GPUDecoder(path, device)
-            return
+            self._c = torch.classes.torchvision.GPUDecoder(src, device)
 
         elif self.backend == "video_reader":
-            self._c = torch.classes.torchvision.Video(path, stream, num_threads)
+            if isinstance(src, str):
+                self._c = torch.classes.torchvision.Video(src, stream, num_threads)
+            else isinstance(src, torch.Tensor):
+                self._c = torch.classes.torchvision.Video("", "", 0)
+                self._c.init_from_memory(src, stream, num_threads)
 
         elif self.backend == "pyav":
-            self.container = av.open(path, metadata_errors="ignore")
+            self.container = av.open(src, metadata_errors="ignore")
             # TODO: load metadata
             stream_type = stream.split(":")[0]
             stream_id = 0 if len(stream.split(":")) == 1 else int(stream.split(":")[1])
