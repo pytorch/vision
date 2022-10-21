@@ -478,9 +478,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             device=bbox.device,
         )
         return (
-            convert_format_bounding_box(
-                out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
-            ),
+            convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format),
             (height, width),
         )
 
@@ -733,14 +731,16 @@ def test_correctness_pad_bounding_box(device, padding):
 
         bbox_format = bbox.format
         bbox_dtype = bbox.dtype
-        bbox = convert_format_bounding_box(bbox, old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY)
+        bbox = (
+            bbox.clone()
+            if bbox_format == features.BoundingBoxFormat.XYXY
+            else convert_format_bounding_box(bbox, bbox_format, features.BoundingBoxFormat.XYXY)
+        )
 
         bbox[0::2] += pad_left
         bbox[1::2] += pad_up
 
-        bbox = convert_format_bounding_box(
-            bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
-        )
+        bbox = convert_format_bounding_box(bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format)
         if bbox.dtype != bbox_dtype:
             # Temporary cast to original dtype
             # e.g. float32 -> int
@@ -840,9 +840,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_format_bounding_box(
-            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
-        )
+        return convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format)
 
     spatial_size = (32, 38)
 
@@ -903,7 +901,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_format_bounding_box(out_bbox, features.BoundingBoxFormat.XYWH, format_, copy=False)
+        return convert_format_bounding_box(out_bbox, features.BoundingBoxFormat.XYWH, format_)
 
     for bboxes in make_bounding_boxes(extra_dims=((4,),)):
         bboxes = bboxes.to(device)
