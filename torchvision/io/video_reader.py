@@ -1,4 +1,3 @@
-import io
 import warnings
 
 from typing import Any, Dict, Iterator, Optional
