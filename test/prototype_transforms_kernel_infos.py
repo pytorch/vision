@@ -1,3 +1,4 @@
+import decimal
 import functools
 import itertools
 import math
@@ -12,6 +13,8 @@ from common_utils import cycle_over
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
+    get_num_channels,
+    ImageLoader,
     InfoBase,
     make_bounding_box_loaders,
     make_image_loader,
@@ -21,6 +24,7 @@ from prototype_common_utils import (
     mark_framework_limitation,
     TestMark,
 )
+from torch.utils._pytree import tree_map
 from torchvision.prototype import features
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
@@ -1357,9 +1361,43 @@ def sample_inputs_equalize_image_tensor():
 
 
 def reference_inputs_equalize_image_tensor():
-    for image_loader in make_image_loaders(
-        extra_dims=[()], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+    # We are not using `make_image_loaders` here since that uniformly samples the values over the whole value range.
+    # Since the whole point of this kernel is to transform an arbitrary distribution of values into a uniform one,
+    # the information gain is low if we already provide something really close to the expected value.
+    spatial_size = (256, 256)
+    for fn, color_space in itertools.product(
+        [
+            *[
+                lambda shape, dtype, device, low=low, high=high: torch.randint(
+                    low, high, shape, dtype=dtype, device=device
+                )
+                for low, high in [
+                    (0, 1),
+                    (255, 256),
+                    (0, 64),
+                    (64, 192),
+                    (192, 256),
+                ]
+            ],
+            *[
+                lambda shape, dtype, device, alpha=alpha, beta=beta: torch.distributions.Beta(alpha, beta)
+                .sample(shape)
+                .mul_(255)
+                .round_()
+                .to(dtype=dtype, device=device)
+                for alpha, beta in [
+                    (0.5, 0.5),
+                    (2, 2),
+                    (2, 5),
+                    (5, 2),
+                ]
+            ],
+        ],
+        [features.ColorSpace.GRAY, features.ColorSpace.RGB],
     ):
+        image_loader = ImageLoader(
+            fn, shape=(get_num_channels(color_space), *spatial_size), dtype=torch.uint8, color_space=color_space
+        )
         yield ArgsKwargs(image_loader)
 
 
@@ -1944,6 +1982,122 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.normalize_video,
             sample_inputs_fn=sample_inputs_normalize_video,
+        ),
+    ]
+)
+
+
+def sample_inputs_convert_image_dtype():
+    for input_dtype, output_dtype in itertools.product(
+        [torch.uint8, torch.int64, torch.float32, torch.float64], repeat=2
+    ):
+        if input_dtype.is_floating_point and output_dtype == torch.int64:
+            # conversion cannot be performed safely
+            continue
+
+        for image_loader in make_image_loaders(
+            sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[input_dtype]
+        ):
+            yield ArgsKwargs(image_loader, dtype=output_dtype)
+
+    yield ArgsKwargs(make_image_loader(color_space=features.ColorSpace.RGB), dtype=torch.uint8)
+
+
+def reference_convert_image_dtype(image, dtype=torch.float):
+    input_dtype = image.dtype
+    output_dtype = dtype
+
+    if output_dtype == input_dtype:
+        return image
+
+    def fn(value):
+        if input_dtype.is_floating_point:
+            if output_dtype.is_floating_point:
+                return value
+            else:
+                return int(decimal.Decimal(value) * torch.iinfo(output_dtype).max)
+        else:
+            input_max_value = torch.iinfo(input_dtype).max
+
+            if output_dtype.is_floating_point:
+                return float(decimal.Decimal(value) / input_max_value)
+            else:
+                output_max_value = torch.iinfo(output_dtype).max
+
+                if input_max_value > output_max_value:
+                    factor = (input_max_value + 1) // (output_max_value + 1)
+                    return value // factor
+                else:
+                    factor = (output_max_value + 1) // (input_max_value + 1)
+                    return value * factor
+
+    return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype)
+
+
+def reference_inputs_convert_image_dtype():
+    for input_dtype, output_dtype in itertools.product(
+        [
+            torch.uint8,
+            torch.int16,
+            torch.int32,
+            torch.int64,
+            torch.float16,
+            torch.float32,
+            torch.float64,
+            torch.bfloat16,
+        ],
+        repeat=2,
+    ):
+        if (input_dtype == torch.float32 and output_dtype in {torch.int32, torch.int64}) or (
+            input_dtype == torch.float64 and output_dtype == torch.int64
+        ):
+            continue
+
+        if input_dtype.is_floating_point:
+            data = [0.0, 0.5, 1.0]
+        else:
+            max_value = torch.iinfo(input_dtype).max
+            data = [0, max_value // 2, max_value]
+        image = torch.tensor(data, dtype=input_dtype)
+
+        yield ArgsKwargs(image, dtype=output_dtype)
+
+
+KERNEL_INFOS.extend(
+    [
+        KernelInfo(
+            F.convert_image_dtype,
+            sample_inputs_fn=sample_inputs_convert_image_dtype,
+            reference_fn=reference_convert_image_dtype,
+            reference_inputs_fn=reference_inputs_convert_image_dtype,
+            test_marks=[
+                TestMark(
+                    ("TestKernels", "test_scripted_vs_eager"),
+                    pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %41')}:UserWarning"),
+                ),
+                TestMark(
+                    ("TestKernels", "test_dtype_and_device_consistency"),
+                    pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
+                    condition=lambda args_kwargs: args_kwargs.args[0].dtype
+                    != args_kwargs.kwargs.get("dtype", torch.float32),
+                ),
+                TestMark(
+                    ("TestKernels", "test_against_reference"),
+                    pytest.mark.xfail(reason="Conversion overflows"),
+                    condition=lambda args_kwargs: (
+                        args_kwargs.args[0].dtype in {torch.float16, torch.bfloat16}
+                        and not args_kwargs.kwargs["dtype"].is_floating_point
+                    )
+                    or (
+                        args_kwargs.args[0].dtype in {torch.float16, torch.bfloat16}
+                        and args_kwargs.kwargs["dtype"] == torch.int64
+                    )
+                    or (
+                        args_kwargs.args[0].dtype in {torch.int32, torch.int64}
+                        and args_kwargs.kwargs["dtype"] == torch.float16
+                    ),
+                ),
+            ],
         ),
     ]
 )
