@@ -46,9 +46,10 @@ from ._misc import (
     Lambda,
     LinearTransformation,
     Normalize,
-    Permute,
+    PermuteDimensions,
     RemoveSmallBoundingBoxes,
     ToDtype,
+    TransposeDimensions,
 )
 from ._type_conversion import DecodeImage, LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
