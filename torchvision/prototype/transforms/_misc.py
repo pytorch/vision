@@ -1,6 +1,4 @@
-import functools
-from collections import defaultdict
-from typing import Any, Callable, Dict, List, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 
@@ -9,7 +7,7 @@ from torchvision.ops import remove_small_boxes
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
-from ._utils import _setup_float_or_seq, _setup_size, has_any, query_bounding_box
+from ._utils import _get_defaultdict, _setup_float_or_seq, _setup_size, has_any, query_bounding_box
 
 
 class Identity(Transform):
@@ -145,15 +143,10 @@ class GaussianBlur(Transform):
 class ToDtype(Transform):
     _transformed_types = (torch.Tensor,)
 
-    def _default_dtype(self, dtype: torch.dtype) -> torch.dtype:
-        return dtype
-
-    def __init__(self, dtype: Union[torch.dtype, Dict[Type, torch.dtype]]) -> None:
+    def __init__(self, dtype: Union[torch.dtype, Dict[Type, Optional[torch.dtype]]]) -> None:
         super().__init__()
         if not isinstance(dtype, dict):
-            # This weird looking construct only exists, since `lambda`'s cannot be serialized by pickle.
-            # If it were possible, we could replace this with `defaultdict(lambda: dtype)`
-            dtype = defaultdict(functools.partial(self._default_dtype, dtype))
+            dtype = _get_defaultdict(dtype)
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -161,6 +154,42 @@ class ToDtype(Transform):
         if dtype is None:
             return inpt
         return inpt.to(dtype=dtype)
+
+
+class PermuteDimensions(Transform):
+    _transformed_types = (features.is_simple_tensor, features.Image, features.Video)
+
+    def __init__(self, dims: Union[Sequence[int], Dict[Type, Optional[Sequence[int]]]]) -> None:
+        super().__init__()
+        if not isinstance(dims, dict):
+            dims = _get_defaultdict(dims)
+        self.dims = dims
+
+    def _transform(
+        self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
+    ) -> torch.Tensor:
+        dims = self.dims[type(inpt)]
+        if dims is None:
+            return inpt.as_subclass(torch.Tensor)
+        return inpt.permute(*dims)
+
+
+class TransposeDimensions(Transform):
+    _transformed_types = (features.is_simple_tensor, features.Image, features.Video)
+
+    def __init__(self, dims: Union[Tuple[int, int], Dict[Type, Optional[Tuple[int, int]]]]) -> None:
+        super().__init__()
+        if not isinstance(dims, dict):
+            dims = _get_defaultdict(dims)
+        self.dims = dims
+
+    def _transform(
+        self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
+    ) -> torch.Tensor:
+        dims = self.dims[type(inpt)]
+        if dims is None:
+            return inpt.as_subclass(torch.Tensor)
+        return inpt.transpose(*dims)
 
 
 class RemoveSmallBoundingBoxes(Transform):
