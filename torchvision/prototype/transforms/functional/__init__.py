@@ -172,3 +172,4 @@ from ._type_conversion import (
 )
 
 from ._deprecated import get_image_size, rgb_to_grayscale, to_grayscale, to_tensor  # usort: skip
+from ._temporal import uniform_temporal_subsample_video, uniform_temporal_subsample  # usort: skip
