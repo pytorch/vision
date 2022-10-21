@@ -13,6 +13,8 @@ from common_utils import cycle_over
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
+    get_num_channels,
+    ImageLoader,
     InfoBase,
     make_bounding_box_loaders,
     make_image_loader,
@@ -1359,9 +1361,43 @@ def sample_inputs_equalize_image_tensor():
 
 
 def reference_inputs_equalize_image_tensor():
-    for image_loader in make_image_loaders(
-        extra_dims=[()], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+    # We are not using `make_image_loaders` here since that uniformly samples the values over the whole value range.
+    # Since the whole point of this kernel is to transform an arbitrary distribution of values into a uniform one,
+    # the information gain is low if we already provide something really close to the expected value.
+    spatial_size = (256, 256)
+    for fn, color_space in itertools.product(
+        [
+            *[
+                lambda shape, dtype, device, low=low, high=high: torch.randint(
+                    low, high, shape, dtype=dtype, device=device
+                )
+                for low, high in [
+                    (0, 1),
+                    (255, 256),
+                    (0, 64),
+                    (64, 192),
+                    (192, 256),
+                ]
+            ],
+            *[
+                lambda shape, dtype, device, alpha=alpha, beta=beta: torch.distributions.Beta(alpha, beta)
+                .sample(shape)
+                .mul_(255)
+                .round_()
+                .to(dtype=dtype, device=device)
+                for alpha, beta in [
+                    (0.5, 0.5),
+                    (2, 2),
+                    (2, 5),
+                    (5, 2),
+                ]
+            ],
+        ],
+        [features.ColorSpace.GRAY, features.ColorSpace.RGB],
     ):
+        image_loader = ImageLoader(
+            fn, shape=(get_num_channels(color_space), *spatial_size), dtype=torch.uint8, color_space=color_space
+        )
         yield ArgsKwargs(image_loader)
 
 
