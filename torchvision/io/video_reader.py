@@ -127,23 +127,24 @@ class VideoReader:
     ) -> None:
         _log_api_usage_once(self)
         from .. import get_video_backend
-        
+
         self.backend = get_video_backend()
-        if src == "":
-            if path is None:
-                raise TypeError("src cannot be empty")
-            src = path
-            warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
+        if isinstance(src, str):
+            if src == "":
+                if path is None:
+                    raise TypeError("src cannot be empty")
+                src = path
+                warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
         elif isinstance(src, bytes):
-            if self.backenin ["cuda", "pyav"]:
+            if self.backend in ["cuda", "pyav"]:
                 raise RuntimeError("GPU VideoReader cannot be initialized from Tensor or bytes object.")
             src = torch.frombuffer(src, dtype=torch.uint8)
         elif isinstance(src, torch.Tensor):
-            if self.backenin ["cuda", "pyav"]:
+            if self.backend in ["cuda", "pyav"]:
                 raise RuntimeError("GPU VideoReader cannot be initialized from Tensor or bytes object.")
         else:
             raise TypeError("`src` must be either string, Tensor or bytes object.")
-   
+
         if self.backend == "cuda":
             device = torch.device("cuda")
             self._c = torch.classes.torchvision.GPUDecoder(src, device)
@@ -151,7 +152,7 @@ class VideoReader:
         elif self.backend == "video_reader":
             if isinstance(src, str):
                 self._c = torch.classes.torchvision.Video(src, stream, num_threads)
-            else isinstance(src, torch.Tensor):
+            elif isinstance(src, torch.Tensor):
                 self._c = torch.classes.torchvision.Video("", "", 0)
                 self._c.init_from_memory(src, stream, num_threads)
 
