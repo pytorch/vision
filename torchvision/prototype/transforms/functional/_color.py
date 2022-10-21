@@ -227,7 +227,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
 
     image = _rgb_to_hsv(image)
     h, s, v = image.unbind(dim=-3)
-    h = (h + hue_factor).remainder_(1.0)
+    h.add_(hue_factor).remainder_(1.0)
     image = torch.stack((h, s, v), dim=-3)
     image_hue_adj = _hsv_to_rgb(image)
 
