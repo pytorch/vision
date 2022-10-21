@@ -816,12 +816,7 @@ def _blurred_degenerate_image(img: Tensor) -> Tensor:
     kernel /= kernel.sum()
     kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    result_tmp, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(
-        img,
-        [
-            kernel.dtype,
-        ],
-    )
+    result_tmp, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype])
     result_tmp = conv2d(result_tmp, kernel, groups=result_tmp.shape[-3])
     result_tmp = _cast_squeeze_out(result_tmp, need_cast, need_squeeze, out_dtype)
 
