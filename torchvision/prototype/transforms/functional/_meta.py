@@ -184,7 +184,11 @@ def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
     return grayscale.repeat(repeats)
 
 
-_rgb_to_gray = _FT.rgb_to_grayscale
+def _rgb_to_gray(image: torch.Tensor) -> torch.Tensor:
+    r, g, b = image.unbind(dim=-3)
+    l_img = (0.2989 * r).add_(g, alpha=0.587).add_(b, alpha=0.114)
+    l_img = l_img.to(image.dtype).unsqueeze(dim=-3)
+    return l_img
 
 
 def convert_color_space_image_tensor(
