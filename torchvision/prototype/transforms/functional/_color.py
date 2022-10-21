@@ -221,6 +221,10 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     if c == 1:  # Match PIL behaviour
         return image
 
+    if image.numel() == 0:
+        # exit earlier on empty images
+        return image
+
     orig_dtype = image.dtype
     if image.dtype == torch.uint8:
         image = image / 255.0
