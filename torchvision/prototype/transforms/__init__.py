@@ -40,7 +40,17 @@ from ._geometry import (
     TenCrop,
 )
 from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat, ConvertColorSpace, ConvertDtype, ConvertImageDtype
-from ._misc import GaussianBlur, Identity, Lambda, LinearTransformation, Normalize, RemoveSmallBoundingBoxes, ToDtype
+from ._misc import (
+    GaussianBlur,
+    Identity,
+    Lambda,
+    LinearTransformation,
+    Normalize,
+    PermuteDimensions,
+    RemoveSmallBoundingBoxes,
+    ToDtype,
+    TransposeDimensions,
+)
 from ._type_conversion import DecodeImage, LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
 from ._deprecated import Grayscale, RandomGrayscale, ToTensor  # usort: skip

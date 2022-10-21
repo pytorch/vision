@@ -31,8 +31,6 @@ class DispatcherInfo(InfoBase):
         *,
         # Dictionary of types that map to the kernel the dispatcher dispatches to.
         kernels,
-        # Name of the corresponding method on the features. If omitted, defaults to the dispatcher name
-        method_name=None,
         # If omitted, no PIL dispatch test will be performed.
         pil_kernel_info=None,
         # See InfoBase
@@ -43,7 +41,6 @@ class DispatcherInfo(InfoBase):
         super().__init__(id=dispatcher.__name__, test_marks=test_marks, closeness_kwargs=closeness_kwargs)
         self.dispatcher = dispatcher
         self.kernels = kernels
-        self.method_name = method_name or self.id
         self.pil_kernel_info = pil_kernel_info
 
         kernel_infos = {}
@@ -425,6 +422,8 @@ DISPATCHER_INFOS = [
             features.Image: F.convert_dtype_image_tensor,
             features.Video: F.convert_dtype_video,
         },
-        method_name="to_dtype",
+        test_marks=[
+            skip_dispatch_feature,
+        ],
     ),
 ]

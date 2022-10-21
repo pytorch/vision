@@ -13,6 +13,8 @@ from common_utils import cycle_over
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
+    get_num_channels,
+    ImageLoader,
     InfoBase,
     make_bounding_box_loaders,
     make_image_loader,
@@ -460,9 +462,7 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
             ],
             dtype=bbox.dtype,
         )
-        return F.convert_format_bounding_box(
-            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-        )
+        return F.convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format)
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
@@ -555,17 +555,12 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_convert_format_bounding_box():
-    formats = set(features.BoundingBoxFormat)
-    for bounding_box_loader in make_bounding_box_loaders(formats=formats):
-        old_format = bounding_box_loader.format
-        for params in combinations_grid(new_format=formats - {old_format}, copy=(True, False)):
-            yield ArgsKwargs(bounding_box_loader, old_format=old_format, **params)
+    formats = list(features.BoundingBoxFormat)
+    for bounding_box_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
+        yield ArgsKwargs(bounding_box_loader, old_format=bounding_box_loader.format, new_format=new_format)
 
 
-def reference_convert_format_bounding_box(bounding_box, old_format, new_format, copy):
-    if not copy:
-        raise pytest.UsageError("Reference for `convert_format_bounding_box` only supports `copy=True`")
-
+def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
     return torchvision.ops.box_convert(
         bounding_box, in_fmt=old_format.kernel_name.lower(), out_fmt=new_format.kernel_name.lower()
     )
@@ -573,8 +568,7 @@ def reference_convert_format_bounding_box(bounding_box, old_format, new_format, 
 
 def reference_inputs_convert_format_bounding_box():
     for args_kwargs in sample_inputs_convert_color_space_image_tensor():
-        (image_loader, *other_args), kwargs = args_kwargs
-        if len(image_loader.shape) == 2 and kwargs.setdefault("copy", True):
+        if len(args_kwargs.args[0].shape) == 2:
             yield args_kwargs
 
 
@@ -599,11 +593,11 @@ def sample_inputs_convert_color_space_image_tensor():
         for image_loader in make_image_loaders(
             sizes=["random"], color_spaces=[color_space], dtypes=[torch.float32], constant_alpha=True
         ):
-            yield ArgsKwargs(image_loader, old_color_space=color_space, new_color_space=color_space, copy=False)
+            yield ArgsKwargs(image_loader, old_color_space=color_space, new_color_space=color_space)
 
 
 @pil_reference_wrapper
-def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space, copy=True):
+def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space):
     color_space_pil = features.ColorSpace.from_pil_mode(image_pil.mode)
     if color_space_pil != old_color_space:
         raise pytest.UsageError(
@@ -611,7 +605,7 @@ def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_c
             f"from {old_color_space} to {color_space_pil}"
         )
 
-    return F.convert_color_space_image_pil(image_pil, color_space=new_color_space, copy=copy)
+    return F.convert_color_space_image_pil(image_pil, color_space=new_color_space)
 
 
 def reference_inputs_convert_color_space_image_tensor():
@@ -1360,9 +1354,43 @@ def sample_inputs_equalize_image_tensor():
 
 
 def reference_inputs_equalize_image_tensor():
-    for image_loader in make_image_loaders(
-        extra_dims=[()], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+    # We are not using `make_image_loaders` here since that uniformly samples the values over the whole value range.
+    # Since the whole point of this kernel is to transform an arbitrary distribution of values into a uniform one,
+    # the information gain is low if we already provide something really close to the expected value.
+    spatial_size = (256, 256)
+    for fn, color_space in itertools.product(
+        [
+            *[
+                lambda shape, dtype, device, low=low, high=high: torch.randint(
+                    low, high, shape, dtype=dtype, device=device
+                )
+                for low, high in [
+                    (0, 1),
+                    (255, 256),
+                    (0, 64),
+                    (64, 192),
+                    (192, 256),
+                ]
+            ],
+            *[
+                lambda shape, dtype, device, alpha=alpha, beta=beta: torch.distributions.Beta(alpha, beta)
+                .sample(shape)
+                .mul_(255)
+                .round_()
+                .to(dtype=dtype, device=device)
+                for alpha, beta in [
+                    (0.5, 0.5),
+                    (2, 2),
+                    (2, 5),
+                    (5, 2),
+                ]
+            ],
+        ],
+        [features.ColorSpace.GRAY, features.ColorSpace.RGB],
     ):
+        image_loader = ImageLoader(
+            fn, shape=(get_num_channels(color_space), *spatial_size), dtype=torch.uint8, color_space=color_space
+        )
         yield ArgsKwargs(image_loader)
 
 
@@ -1960,11 +1988,10 @@ def sample_inputs_convert_dtype_image_tensor():
             # conversion cannot be performed safely
             continue
 
-        for image_loader, copy_kwargs in itertools.product(
-            make_image_loaders(sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[input_dtype]),
-            [dict(copy=True), dict(copy=False)] if input_dtype == output_dtype else [dict()],
+        for image_loader in make_image_loaders(
+            sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[input_dtype]
         ):
-            yield ArgsKwargs(image_loader, dtype=output_dtype, **copy_kwargs)
+            yield ArgsKwargs(image_loader, dtype=output_dtype)
 
 
 def reference_convert_dtype_image_tensor(image, dtype=torch.float):
