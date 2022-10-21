@@ -174,10 +174,7 @@ class TestKernels:
         output_cpu = info.kernel(input_cpu, *other_args, **kwargs)
         output_cuda = info.kernel(input_cuda, *other_args, **kwargs)
 
-        try:
-            assert_close(output_cuda, output_cpu, check_device=False, **info.closeness_kwargs)
-        except AssertionError:
-            pytest.xfail("CUDA vs CPU tolerance issue to be fixed")
+        assert_close(output_cuda, output_cpu, check_device=False, **info.closeness_kwargs)
 
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
