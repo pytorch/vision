@@ -117,6 +117,9 @@ class TestVideoApi:
                     # we assure that there is never more than 1% difference in signal
                     assert max_delta.item() < 0.001
 
+    @pytest.mark.skipif(
+        torchvision.get_video_backend() in ["cuda", "pyav"], reason="read from memory not available in PyAv and GPU"
+    )
     @pytest.mark.parametrize("stream", ["video", "audio"])
     @pytest.mark.parametrize("test_video", test_videos.keys())
     def test_frame_reading_mem_vs_file(self, test_video, stream):
