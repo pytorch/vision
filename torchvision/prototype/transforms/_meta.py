@@ -31,7 +31,9 @@ class ConvertImageDtype(Transform):
     def _transform(
         self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
     ) -> Union[features.TensorImageType, features.TensorVideoType]:
-        output = F.convert_image_dtype(inpt, dtype=self.dtype)
+        # TODO: the `inpt.as_subclass(torch.Tensor)` call can be removed as soon as we have a proper dispatcher that
+        #  handles this. See https://github.com/pytorch/vision/pull/6783 for details.
+        output = F.convert_image_dtype(inpt.as_subclass(torch.Tensor), dtype=self.dtype)
         return (
             output if features.is_simple_tensor(inpt) else type(inpt).wrap_like(inpt, output)  # type: ignore[attr-defined]
         )
@@ -70,5 +72,7 @@ class ClampBoundingBoxes(Transform):
     _transformed_types = (features.BoundingBox,)
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
-        output = F.clamp_bounding_box(inpt, format=inpt.format, spatial_size=inpt.spatial_size)
+        output = F.clamp_bounding_box(
+            inpt.as_subclass(torch.Tensor), format=inpt.format, spatial_size=inpt.spatial_size
+        )
         return features.BoundingBox.wrap_like(inpt, output)

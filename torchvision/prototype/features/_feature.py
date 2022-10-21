@@ -92,6 +92,7 @@ class _Feature(torch.Tensor):
             return NotImplemented
 
         with DisableTorchFunction():
+            raise Exception(str(func), str(args), str(kwargs))
             output = func(*args, **kwargs or dict())
 
             wrapper = cls._NO_WRAPPING_EXCEPTIONS.get(func)
