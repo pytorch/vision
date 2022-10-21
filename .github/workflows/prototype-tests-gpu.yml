@@ -1,0 +1,80 @@
+# prototype-tests.yml adapted for self-hosted with gpu
+name: tests-gpu
+
+on:
+  pull_request:
+
+jobs:
+  prototype:
+    strategy:
+      fail-fast: false
+
+    runs-on: [self-hosted, linux.4xlarge.nvidia.gpu]
+    container:
+      image: pytorch/conda-builder:cuda116
+      options: --gpus all
+
+    steps:
+      - name: Run nvidia-smi
+        run: nvidia-smi
+
+      - name: Upgrade system packages
+        run: python -m pip install --upgrade pip setuptools wheel
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install PyTorch nightly builds
+        run: pip install --progress-bar=off --pre torch torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cu116/
+
+      - name: Install torchvision
+        run: pip install --progress-bar=off --no-build-isolation --editable .
+
+      - name: Install other prototype dependencies
+        run: pip install --progress-bar=off scipy pycocotools h5py iopath
+
+      - name: Install test requirements
+        run: pip install --progress-bar=off pytest pytest-mock pytest-cov
+
+      - name: Mark setup as complete
+        id: setup
+        run: python -c "import torch; exit(not torch.cuda.is_available())"
+
+      - name: Run prototype features tests
+        shell: bash
+        run: |
+          pytest \
+            --durations=20 \
+            --cov=torchvision/prototype/features \
+            --cov-report=term-missing \
+            test/test_prototype_features*.py
+
+      - name: Run prototype datasets tests
+        if: success() || ( failure() && steps.setup.conclusion == 'success' )
+        shell: bash
+        run: |
+          pytest \
+            --durations=20 \
+            --cov=torchvision/prototype/datasets \
+            --cov-report=term-missing \
+            test/test_prototype_datasets*.py
+
+      - name: Run prototype transforms tests
+        if: success() || ( failure() && steps.setup.conclusion == 'success' )
+        shell: bash
+        run: |
+          pytest \
+            --durations=20 \
+            --cov=torchvision/prototype/transforms \
+            --cov-report=term-missing \
+            test/test_prototype_transforms*.py
+
+      - name: Run prototype models tests
+        if: success() || ( failure() && steps.setup.conclusion == 'success' )
+        shell: bash
+        run: |
+          pytest \
+            --durations=20 \
+            --cov=torchvision/prototype/models \
+            --cov-report=term-missing \
+            test/test_prototype_models*.py
