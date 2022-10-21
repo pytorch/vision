@@ -77,6 +77,7 @@ class TestVideoApi:
                 # compare the frames and ptss
                 for i in range(len(vr_frames)):
                     assert float(av_pts[i]) == approx(vr_pts[i], abs=0.1)
+
                     mean_delta = torch.mean(torch.abs(av_frames[i].float() - vr_frames[i].float()))
                     # on average the difference is very small and caused
                     # by decoding (around 1%)
@@ -113,6 +114,46 @@ class TestVideoApi:
                     max_delta = torch.max(torch.abs(av_frames[i].float() - vr_frames[i].float()))
                     # we assure that there is never more than 1% difference in signal
                     assert max_delta.item() < 0.001
+
+    @pytest.mark.parametrize("stream", ["video", "audio"])
+    @pytest.mark.parametrize("test_video", test_videos.keys())
+    def test_frame_reading_mem_vs_file(self, test_video, stream):
+        full_path = os.path.join(VIDEO_DIR, test_video)
+
+        # Test video reading from file vs from memory
+        vr_frames, vr_frames_mem = [], []
+        vr_pts, vr_pts_mem = [], []
+        # get vr frames
+        video_reader = VideoReader(full_path, stream)
+        for vr_frame in video_reader:
+            vr_frames.append(vr_frame["data"])
+            vr_pts.append(vr_frame["pts"])
+
+        # get vr frames = read from memory
+        f = open(full_path, "rb")
+        fbytes = f.read()
+        f.close()
+        video_reader_from_mem = VideoReader(fbytes, stream)
+
+        for vr_frame_from_mem in video_reader_from_mem:
+            vr_frames_mem.append(vr_frame_from_mem["data"])
+            vr_pts_mem.append(vr_frame_from_mem["pts"])
+
+        # same number of frames
+        assert len(vr_frames) == len(vr_frames_mem)
+        assert len(vr_pts) == len(vr_pts_mem)
+
+        # compare the frames and ptss
+        for i in range(len(vr_frames)):
+            assert vr_pts[i] == vr_pts_mem[i]
+            mean_delta = torch.mean(torch.abs(vr_frames[i].float() - vr_frames_mem[i].float()))
+            # on average the difference is very small and caused
+            # by decoding (around 1%)
+            # TODO: asses empirically how to set this? atm it's 1%
+            # averaged over all frames
+            assert mean_delta.item() < 2.55
+
+        del vr_frames, vr_pts, vr_frames_mem, vr_pts_mem
 
     @pytest.mark.parametrize("test_video,config", test_videos.items())
     def test_metadata(self, test_video, config):

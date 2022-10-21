@@ -67,11 +67,11 @@ class Video(_Feature):
         return self.shape[-4]
 
     def horizontal_flip(self) -> Video:
-        output = self._F.horizontal_flip_video(self)
+        output = self._F.horizontal_flip_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
 
     def vertical_flip(self) -> Video:
-        output = self._F.vertical_flip_video(self)
+        output = self._F.vertical_flip_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
 
     def resize(  # type: ignore[override]
@@ -81,15 +81,21 @@ class Video(_Feature):
         max_size: Optional[int] = None,
         antialias: bool = False,
     ) -> Video:
-        output = self._F.resize_video(self, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
+        output = self._F.resize_video(
+            self.as_subclass(torch.Tensor),
+            size,
+            interpolation=interpolation,
+            max_size=max_size,
+            antialias=antialias,
+        )
         return Video.wrap_like(self, output)
 
     def crop(self, top: int, left: int, height: int, width: int) -> Video:
-        output = self._F.crop_video(self, top, left, height, width)
+        output = self._F.crop_video(self.as_subclass(torch.Tensor), top, left, height, width)
         return Video.wrap_like(self, output)
 
     def center_crop(self, output_size: List[int]) -> Video:
-        output = self._F.center_crop_video(self, output_size=output_size)
+        output = self._F.center_crop_video(self.as_subclass(torch.Tensor), output_size=output_size)
         return Video.wrap_like(self, output)
 
     def resized_crop(
@@ -103,7 +109,14 @@ class Video(_Feature):
         antialias: bool = False,
     ) -> Video:
         output = self._F.resized_crop_video(
-            self, top, left, height, width, size=list(size), interpolation=interpolation, antialias=antialias
+            self.as_subclass(torch.Tensor),
+            top,
+            left,
+            height,
+            width,
+            size=list(size),
+            interpolation=interpolation,
+            antialias=antialias,
         )
         return Video.wrap_like(self, output)
 
@@ -113,7 +126,7 @@ class Video(_Feature):
         fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> Video:
-        output = self._F.pad_video(self, padding, fill=fill, padding_mode=padding_mode)
+        output = self._F.pad_video(self.as_subclass(torch.Tensor), padding, fill=fill, padding_mode=padding_mode)
         return Video.wrap_like(self, output)
 
     def rotate(
@@ -124,8 +137,8 @@ class Video(_Feature):
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Video:
-        output = self._F._geometry.rotate_video(
-            self, angle, interpolation=interpolation, expand=expand, fill=fill, center=center
+        output = self._F.rotate_video(
+            self.as_subclass(torch.Tensor), angle, interpolation=interpolation, expand=expand, fill=fill, center=center
         )
         return Video.wrap_like(self, output)
 
@@ -139,8 +152,8 @@ class Video(_Feature):
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Video:
-        output = self._F._geometry.affine_video(
-            self,
+        output = self._F.affine_video(
+            self.as_subclass(torch.Tensor),
             angle,
             translate=translate,
             scale=scale,
@@ -157,7 +170,9 @@ class Video(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> Video:
-        output = self._F._geometry.perspective_video(self, perspective_coeffs, interpolation=interpolation, fill=fill)
+        output = self._F.perspective_video(
+            self.as_subclass(torch.Tensor), perspective_coeffs, interpolation=interpolation, fill=fill
+        )
         return Video.wrap_like(self, output)
 
     def elastic(
@@ -166,55 +181,57 @@ class Video(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> Video:
-        output = self._F._geometry.elastic_video(self, displacement, interpolation=interpolation, fill=fill)
+        output = self._F.elastic_video(
+            self.as_subclass(torch.Tensor), displacement, interpolation=interpolation, fill=fill
+        )
         return Video.wrap_like(self, output)
 
     def adjust_brightness(self, brightness_factor: float) -> Video:
-        output = self._F.adjust_brightness_video(self, brightness_factor=brightness_factor)
+        output = self._F.adjust_brightness_video(self.as_subclass(torch.Tensor), brightness_factor=brightness_factor)
         return Video.wrap_like(self, output)
 
     def adjust_saturation(self, saturation_factor: float) -> Video:
-        output = self._F.adjust_saturation_video(self, saturation_factor=saturation_factor)
+        output = self._F.adjust_saturation_video(self.as_subclass(torch.Tensor), saturation_factor=saturation_factor)
         return Video.wrap_like(self, output)
 
     def adjust_contrast(self, contrast_factor: float) -> Video:
-        output = self._F.adjust_contrast_video(self, contrast_factor=contrast_factor)
+        output = self._F.adjust_contrast_video(self.as_subclass(torch.Tensor), contrast_factor=contrast_factor)
         return Video.wrap_like(self, output)
 
     def adjust_sharpness(self, sharpness_factor: float) -> Video:
-        output = self._F.adjust_sharpness_video(self, sharpness_factor=sharpness_factor)
+        output = self._F.adjust_sharpness_video(self.as_subclass(torch.Tensor), sharpness_factor=sharpness_factor)
         return Video.wrap_like(self, output)
 
     def adjust_hue(self, hue_factor: float) -> Video:
-        output = self._F.adjust_hue_video(self, hue_factor=hue_factor)
+        output = self._F.adjust_hue_video(self.as_subclass(torch.Tensor), hue_factor=hue_factor)
         return Video.wrap_like(self, output)
 
     def adjust_gamma(self, gamma: float, gain: float = 1) -> Video:
-        output = self._F.adjust_gamma_video(self, gamma=gamma, gain=gain)
+        output = self._F.adjust_gamma_video(self.as_subclass(torch.Tensor), gamma=gamma, gain=gain)
         return Video.wrap_like(self, output)
 
     def posterize(self, bits: int) -> Video:
-        output = self._F.posterize_video(self, bits=bits)
+        output = self._F.posterize_video(self.as_subclass(torch.Tensor), bits=bits)
         return Video.wrap_like(self, output)
 
     def solarize(self, threshold: float) -> Video:
-        output = self._F.solarize_video(self, threshold=threshold)
+        output = self._F.solarize_video(self.as_subclass(torch.Tensor), threshold=threshold)
         return Video.wrap_like(self, output)
 
     def autocontrast(self) -> Video:
-        output = self._F.autocontrast_video(self)
+        output = self._F.autocontrast_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
 
     def equalize(self) -> Video:
-        output = self._F.equalize_video(self)
+        output = self._F.equalize_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
 
     def invert(self) -> Video:
-        output = self._F.invert_video(self)
+        output = self._F.invert_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
 
     def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Video:
-        output = self._F.gaussian_blur_video(self, kernel_size=kernel_size, sigma=sigma)
+        output = self._F.gaussian_blur_video(self.as_subclass(torch.Tensor), kernel_size=kernel_size, sigma=sigma)
         return Video.wrap_like(self, output)
 
 
