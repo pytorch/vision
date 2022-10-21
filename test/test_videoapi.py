@@ -124,40 +124,46 @@ class TestVideoApi:
         torchvision.set_video_backend(backend)
         full_path = os.path.join(VIDEO_DIR, test_video)
 
-        # Test video reading from file vs from memory
-        vr_frames, vr_frames_mem = [], []
-        vr_pts, vr_pts_mem = [], []
-        # get vr frames
-        video_reader = VideoReader(full_path, stream)
-        for vr_frame in video_reader:
-            vr_frames.append(vr_frame["data"])
-            vr_pts.append(vr_frame["pts"])
+        reader = VideoReader(full_path)
+        reader_md = reader.get_metadata()
 
-        # get vr frames = read from memory
-        f = open(full_path, "rb")
-        fbytes = f.read()
-        f.close()
-        video_reader_from_mem = VideoReader(fbytes, stream)
+        if stream in reader_md:
+            # Test video reading from file vs from memory
+            vr_frames, vr_frames_mem = [], []
+            vr_pts, vr_pts_mem = [], []
+            # get vr frames
+            video_reader = VideoReader(full_path, stream)
+            for vr_frame in video_reader:
+                vr_frames.append(vr_frame["data"])
+                vr_pts.append(vr_frame["pts"])
 
-        for vr_frame_from_mem in video_reader_from_mem:
-            vr_frames_mem.append(vr_frame_from_mem["data"])
-            vr_pts_mem.append(vr_frame_from_mem["pts"])
+            # get vr frames = read from memory
+            f = open(full_path, "rb")
+            fbytes = f.read()
+            f.close()
+            video_reader_from_mem = VideoReader(fbytes, stream)
 
-        # same number of frames
-        assert len(vr_frames) == len(vr_frames_mem)
-        assert len(vr_pts) == len(vr_pts_mem)
+            for vr_frame_from_mem in video_reader_from_mem:
+                vr_frames_mem.append(vr_frame_from_mem["data"])
+                vr_pts_mem.append(vr_frame_from_mem["pts"])
 
-        # compare the frames and ptss
-        for i in range(len(vr_frames)):
-            assert vr_pts[i] == vr_pts_mem[i]
-            mean_delta = torch.mean(torch.abs(vr_frames[i].float() - vr_frames_mem[i].float()))
-            # on average the difference is very small and caused
-            # by decoding (around 1%)
-            # TODO: asses empirically how to set this? atm it's 1%
-            # averaged over all frames
-            assert mean_delta.item() < 2.55
+            # same number of frames
+            assert len(vr_frames) == len(vr_frames_mem)
+            assert len(vr_pts) == len(vr_pts_mem)
 
-        del vr_frames, vr_pts, vr_frames_mem, vr_pts_mem
+            # compare the frames and ptss
+            for i in range(len(vr_frames)):
+                assert vr_pts[i] == vr_pts_mem[i]
+                mean_delta = torch.mean(torch.abs(vr_frames[i].float() - vr_frames_mem[i].float()))
+                # on average the difference is very small and caused
+                # by decoding (around 1%)
+                # TODO: asses empirically how to set this? atm it's 1%
+                # averaged over all frames
+                assert mean_delta.item() < 2.55
+
+            del vr_frames, vr_pts, vr_frames_mem, vr_pts_mem
+        else:
+            del reader, reader_md
 
     @pytest.mark.parametrize("test_video,config", test_videos.items())
     @pytest.mark.parametrize("backend", ["video_reader", "pyav"])
