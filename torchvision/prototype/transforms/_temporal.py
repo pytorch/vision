@@ -5,7 +5,10 @@ from torchvision.prototype.transforms import functional as F, Transform
 
 
 class UniformTemporalSubsample(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Video,)
+    _transformed_types = (
+        features.is_simple_tensor,
+        features.Video,
+    )
 
     def __init__(self, num_samples: int, temporal_dim: int = -4):
         super().__init__()

@@ -1899,3 +1899,22 @@ def test_transpose_dimensions(dims):
             assert type(transformed_value) == torch.Tensor
         else:
             assert transformed_value is value
+
+
+class TestUniformTemporalSubsample:
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.zeros(10, 3, 8, 8),
+            torch.zeros(1, 10, 3, 8, 8),
+            features.Video(torch.zeros(1, 10, 3, 8, 8)),
+        ],
+    )
+    def test__transform(self, inpt):
+        num_samples = 5
+        transform = transforms.UniformTemporalSubsample(num_samples)
+
+        output = transform(inpt)
+        assert isinstance(output, inpt.__class__)
+        assert output.shape[-4] == num_samples
+        assert output.dtype == inpt.dtype
