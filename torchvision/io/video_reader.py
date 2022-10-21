@@ -137,20 +137,17 @@ class VideoReader:
                 src = path
                 warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
         elif isinstance(src, bytes):
-            if self.backend == "cuda":
-                raise RuntimeError("GPU VideoReader cannot be initialized from Tensor or bytes object.")
-            elif self.backend == "pyav":
-                src = io.BytesIO(src)
+            if self.backend in ["cuda", "pyav"]:
+                raise RuntimeError(
+                    "VideoReader cannot be initialized from bytes object when using cuda or pyav backend."
+                )
             else:
                 src = torch.frombuffer(src, dtype=torch.uint8)
         elif isinstance(src, torch.Tensor):
-            if self.backend in ["cuda"]:
-                raise RuntimeError("GPU VideoReader cannot be initialized from Tensor or bytes object.")
-            elif self.backend == "pyav":
-                buff = io.BytesIO()
-                torch.save(src, buff)
-                buff.seek(0)
-                src = buff
+            if self.backend in ["cuda", "pyav"]:
+                raise RuntimeError(
+                    "VideoReader cannot be initialized from Tensor object when using cuda or pyav backend."
+                )
         else:
             raise TypeError("`src` must be either string, Tensor or bytes object.")
 
