@@ -146,8 +146,8 @@ def adjust_sharpness(inpt: features.InputTypeJIT, sharpness_factor: float) -> fe
 def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
     r, g, _ = image.unbind(dim=-3)
 
-    # Implementation is based on https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/
-    # src/libImaging/Convert.c#L330
+    # Implementation is based on
+    # https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/src/libImaging/Convert.c#L330
     minc, maxc = torch.aminmax(image, dim=-3)
 
     # The algorithm erases S and H channel where `maxc = minc`. This avoids NaN
@@ -160,16 +160,16 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
     # backprop, if it is ever supported, but it doesn't hurt to do so.
     eqc = maxc == minc
 
-    cr = maxc - minc
-    # Since `eqc => cr = 0`, replacing denominator with 1 when `eqc` is fine.
+    channels_range = maxc - minc
+    # Since `eqc => channels_range = 0`, replacing denominator with 1 when `eqc` is fine.
     ones = torch.ones_like(maxc)
-    s = cr / torch.where(eqc, ones, maxc)
+    s = channels_range / torch.where(eqc, ones, maxc)
     # Note that `eqc => maxc = minc = r = g = b`. So the following calculation
     # of `h` would reduce to `bc - gc + 2 + rc - bc + 4 + rc - bc = 6` so it
     # would not matter what values `rc`, `gc`, and `bc` have here, and thus
     # replacing denominator with 1 when `eqc` is fine.
-    cr_divisor = torch.where(eqc, ones, cr).unsqueeze_(dim=-3)
-    rc, gc, bc = ((maxc.unsqueeze(dim=-3) - image) / cr_divisor).unbind(dim=-3)
+    channels_range_divisor = torch.where(eqc, ones, channels_range).unsqueeze_(dim=-3)
+    rc, gc, bc = ((maxc.unsqueeze(dim=-3) - image) / channels_range_divisor).unbind(dim=-3)
 
     mask_maxc_neq_r = maxc != r
     mask_maxc_eq_g = maxc == g
