@@ -17,7 +17,11 @@ class ConvertBoundingBoxFormat(Transform):
         self.format = format
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
-        output = F.convert_format_bounding_box(inpt, old_format=inpt.format, new_format=params["format"])
+        # We need to unwrap here to avoid unnecessary `__torch_function__` calls,
+        # since `convert_format_bounding_box` does not have a dispatcher function that would do that for us
+        output = F.convert_format_bounding_box(
+            inpt.as_subclass(torch.Tensor), old_format=inpt.format, new_format=params["format"]
+        )
         return features.BoundingBox.wrap_like(inpt, output, format=params["format"])
 
 
@@ -72,6 +76,8 @@ class ClampBoundingBoxes(Transform):
     _transformed_types = (features.BoundingBox,)
 
     def _transform(self, inpt: features.BoundingBox, params: Dict[str, Any]) -> features.BoundingBox:
+        # We need to unwrap here to avoid unnecessary `__torch_function__` calls,
+        # since `clamp_bounding_box` does not have a dispatcher function that would do that for us
         output = F.clamp_bounding_box(
             inpt.as_subclass(torch.Tensor), format=inpt.format, spatial_size=inpt.spatial_size
         )
