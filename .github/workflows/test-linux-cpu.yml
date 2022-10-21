@@ -56,7 +56,7 @@ jobs:
             -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
             "${CUDATOOLKIT}"
           ${CONDA_RUN} python3 setup.py develop
-          ${CONDA_RUN} python3 -m pip install pytest pytest-mock av
+          ${CONDA_RUN} python3 -m pip install pytest pytest-mock 'av<10'
       - name: Run tests
         shell: bash -l {0}
         env:
