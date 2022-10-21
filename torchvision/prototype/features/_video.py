@@ -66,18 +66,6 @@ class Video(_Feature):
     def num_frames(self) -> int:
         return self.shape[-4]
 
-    def to_color_space(self, color_space: Union[str, ColorSpace], copy: bool = True) -> Video:
-        if isinstance(color_space, str):
-            color_space = ColorSpace.from_str(color_space.upper())
-
-        return Video.wrap_like(
-            self,
-            self._F.convert_color_space_video(
-                self.as_subclass(torch.Tensor), old_color_space=self.color_space, new_color_space=color_space, copy=copy
-            ),
-            color_space=color_space,
-        )
-
     def horizontal_flip(self) -> Video:
         output = self._F.horizontal_flip_video(self.as_subclass(torch.Tensor))
         return Video.wrap_like(self, output)
