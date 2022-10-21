@@ -194,35 +194,57 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.numel() == 0:
         return image
 
-    # input image shape should be (*, H, W)
-    shape = image.shape
-    # Compute image histogram:
-    flat_image = image.flatten(start_dim=-2).to(torch.long)  # -> [*, H * W]
-    hist = flat_image.new_zeros(shape[:-2] + (256,), dtype=torch.int32)
+    # The algorithm for histogram equalization is mirrored from PIL:
+    # https://github.com/python-pillow/Pillow/blob/eb59cb61d5239ee69cbbf12709a0c6fd7314e6d7/src/PIL/ImageOps.py#L368-L385
+    # Although PyTorch has builtin functionality for histograms, we are not using them here since they can only be
+    # applied to the complete tensor. We need to apply them to the spatial size, i.e. the last two dimensions only, and
+    # thus we would need to call them in a for loop, which is inefficient.
+    batch_shape = image.shape[:-2]
+    flat_image = image.flatten(start_dim=-2).to(torch.long)
+
+    # The histogram is computed by using the flattened image as index. For example, a pixel value of 127 in the image
+    # corresponds to adding 1 to index 127 in the histogram.
+    hist = flat_image.new_zeros(batch_shape + (256,), dtype=torch.int32)
     hist.scatter_add_(dim=-1, index=flat_image, src=hist.new_ones(1).expand_as(flat_image))
+    cum_hist = hist.cumsum(dim=-1)
 
-    # Compute image cdf
-    pixels = flat_image.size(-1)
-    chist = hist.cumsum(dim=-1)
-    # Compute steps, where step per channel is nonzero_hist[:-1].sum() // 255
-    # Trick: nonzero_hist[-1] == hist[chist.argmax()]
-    idx = chist.argmax(dim=-1).unsqueeze_(-1)
-    step = pixels - hist.gather(dim=-1, index=idx)
-    step.div_(255, rounding_mode="floor")
+    # The simplest form of lookup-table (LUT) that also achieves histogram equalization is
+    # `lut = cum_hist / flat_image.shape[-1] * 255`
+    # However, PIL uses a more elaborate scheme:
+    # 1. Instead of normalizing the cumulative histogram by the number of pixels (` / flat_image.shape[-1]` above),
+    #    it is normalized by the number of pixels that are don't have the maximum value. Note that maximum value here
+    #    does not mean 255 per se but rather the maximum value in the image, which might be or not be 255.
+    # 2. Instead of normalizing just the cumulative histogram, a constant based on the number of non-maximum is added
+    #    to it.
+    # This brings the computation of the  LUT to
+    # `lut = ((cum_hist + num_non_max_pixels // (2 * 255)) // num_non_max_pixels) * 255`
 
-    # Compute batched Look-up-table:
-    non_zero = step == 0
-    # Necessary to avoid an integer division by zero, which raises
-    clamped_step = step.clamp_(min=1)
-    chist = chist[..., :-1]
-    chist.add_(torch.div(step, 2, rounding_mode="floor")).div_(clamped_step, rounding_mode="floor").clamp_(0, 255)
-    lut = chist.to(torch.uint8)
+    # The last non-zero element in the histogram is the first element in the cumulative histogram with the maximum value
+    index = cum_hist.argmax(dim=-1)
+    num_non_max_pixels = flat_image.shape[-1] - hist.gather(dim=-1, index=index.unsqueeze_(-1))
 
-    # Pad lut with zeros
-    zeros = lut.new_zeros(1).expand(shape[:-2] + (1,))
-    lut = torch.cat([zeros, lut], dim=-1)
+    # This is performance optimization that saves us one multiplication later. With this, the LUT computation simplifies
+    # to `lut = (cum_hist + step // 2) // step` and thus saving the final multiplication by 255 while keeping the
+    # division count the same. PIL uses the variable name `step` for this, so we keep that for easier comparison.
+    step = num_non_max_pixels.div_(255, rounding_mode="floor")
 
-    return torch.where(non_zero.unsqueeze_(-1), image, lut.gather(dim=-1, index=flat_image).view_as(image))
+    # Although it looks like we could return early if we find `step == 0` like PIL does, that is unfortunately not as
+    # easy due to our support for batched images. We can only return early if `(step == 0).all()` holds. If it doesn't,
+    # we have to go through the computation below anyway. Since `step == 0` is an edge case anyway, it makes no sense to
+    # pay the runtime cost for checking it every time.
+    no_equalization = step.eq(0).unsqueeze_(-1)
+
+    # `lut[k]` is computed with `cum_hist[k-1]` with `lut[0] == (step // 2) // step == 0`. Thus, we perform the
+    # computation only for `lut[1:]` and add `lut[0] == 0` afterwards.
+    cum_hist = cum_hist[..., :-1]
+    # We need the `step.clamp_`(min=1) call here to avoid zero division. This has no effect on the returned result of
+    # this kernel since images inside the batch with `step == 0` are returned as is rather than their equalized version.
+    cum_hist.add_(step // 2).div_(step.clamp_(min=1), rounding_mode="floor").clamp_(0, 255)
+    lut = cum_hist.to(torch.uint8)
+    lut = torch.cat([lut.new_zeros(1).expand(batch_shape + (1,)), lut], dim=-1)
+    equalized_image = lut.gather(dim=-1, index=flat_image).view_as(image)
+
+    return torch.where(no_equalization, image, equalized_image)
 
 
 equalize_image_pil = _FP.equalize
