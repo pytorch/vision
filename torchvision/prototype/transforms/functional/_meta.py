@@ -125,13 +125,10 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
 
 
 def convert_format_bounding_box(
-    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, copy: bool = True
+    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat
 ) -> torch.Tensor:
     if new_format == old_format:
-        if copy:
-            return bounding_box.clone()
-        else:
-            return bounding_box
+        return bounding_box
 
     if old_format == BoundingBoxFormat.XYWH:
         bounding_box = _xywh_to_xyxy(bounding_box)
@@ -149,12 +146,16 @@ def convert_format_bounding_box(
 def clamp_bounding_box(
     bounding_box: torch.Tensor, format: BoundingBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
-    # TODO: (PERF) Possible speed up clamping if we have different implementations for each bbox format.
-    # Not sure if they yield equivalent results.
-    xyxy_boxes = convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
+    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
+    #  BoundingBoxFormat instead of converting back and forth
+    xyxy_boxes = (
+        bounding_box.clone()
+        if format == BoundingBoxFormat.XYXY
+        else convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
+    )
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
-    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
+    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format)
 
 
 def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -192,13 +193,10 @@ def _rgb_to_gray(image: torch.Tensor) -> torch.Tensor:
 
 
 def convert_color_space_image_tensor(
-    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
+    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
 ) -> torch.Tensor:
     if new_color_space == old_color_space:
-        if copy:
-            return image.clone()
-        else:
-            return image
+        return image
 
     if old_color_space == ColorSpace.OTHER or new_color_space == ColorSpace.OTHER:
         raise RuntimeError(f"Conversion to or from {ColorSpace.OTHER} is not supported.")
@@ -242,34 +240,29 @@ _COLOR_SPACE_TO_PIL_MODE = {
 
 
 @torch.jit.unused
-def convert_color_space_image_pil(
-    image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
-) -> PIL.Image.Image:
+def convert_color_space_image_pil(image: PIL.Image.Image, color_space: ColorSpace) -> PIL.Image.Image:
     old_mode = image.mode
     try:
         new_mode = _COLOR_SPACE_TO_PIL_MODE[color_space]
     except KeyError:
         raise ValueError(f"Conversion from {ColorSpace.from_pil_mode(old_mode)} to {color_space} is not supported.")
 
-    if not copy and image.mode == new_mode:
+    if image.mode == new_mode:
         return image
 
     return image.convert(new_mode)
 
 
 def convert_color_space_video(
-    video: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
+    video: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
 ) -> torch.Tensor:
-    return convert_color_space_image_tensor(
-        video, old_color_space=old_color_space, new_color_space=new_color_space, copy=copy
-    )
+    return convert_color_space_image_tensor(video, old_color_space=old_color_space, new_color_space=new_color_space)
 
 
 def convert_color_space(
     inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT],
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
-    copy: bool = True,
 ) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
@@ -279,10 +272,16 @@ def convert_color_space(
                 "In order to convert the color space of simple tensors, "
                 "the `old_color_space=...` parameter needs to be passed."
             )
-        return convert_color_space_image_tensor(
-            inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
+        return convert_color_space_image_tensor(inpt, old_color_space=old_color_space, new_color_space=color_space)
+    elif isinstance(inpt, features.Image):
+        output = convert_color_space_image_tensor(
+            inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
         )
-    elif isinstance(inpt, (features.Image, features.Video)):
-        return inpt.to_color_space(color_space, copy=copy)
+        return features.Image.wrap_like(inpt, output, color_space=color_space)
+    elif isinstance(inpt, features.Video):
+        output = convert_color_space_video(
+            inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
+        )
+        return features.Video.wrap_like(inpt, output, color_space=color_space)
     else:
-        return convert_color_space_image_pil(inpt, color_space, copy=copy)
+        return convert_color_space_image_pil(inpt, color_space)

@@ -50,7 +50,6 @@ class ConvertColorSpace(Transform):
         self,
         color_space: Union[str, features.ColorSpace],
         old_color_space: Optional[Union[str, features.ColorSpace]] = None,
-        copy: bool = True,
     ) -> None:
         super().__init__()
 
@@ -62,14 +61,10 @@ class ConvertColorSpace(Transform):
             old_color_space = features.ColorSpace.from_str(old_color_space)
         self.old_color_space = old_color_space
 
-        self.copy = copy
-
     def _transform(
         self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
     ) -> Union[features.ImageType, features.VideoType]:
-        return F.convert_color_space(
-            inpt, color_space=self.color_space, old_color_space=self.old_color_space, copy=self.copy
-        )
+        return F.convert_color_space(inpt, color_space=self.color_space, old_color_space=self.old_color_space)
 
 
 class ClampBoundingBoxes(Transform):
