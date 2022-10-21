@@ -403,12 +403,8 @@ def affine_bounding_box(
 ) -> torch.Tensor:
     original_shape = bounding_box.shape
 
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
     bounding_box = (
-        bounding_box.clone()
-        if format == features.BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
+        convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
 
     out_bboxes, _ = _affine_bounding_box_xyxy(bounding_box, spatial_size, angle, translate, scale, shear, center)
