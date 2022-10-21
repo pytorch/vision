@@ -127,7 +127,7 @@ def xfail_all_tests(*, reason, condition):
             "test_batched_vs_single",
             "test_no_inplace",
             "test_cuda_vs_cpu",
-            "test_dtype_and_dtype_consistency",
+            "test_dtype_and_device_consistency",
         ]
     ]
 
