@@ -193,13 +193,10 @@ def _rgb_to_gray(image: torch.Tensor) -> torch.Tensor:
 
 
 def convert_color_space_image_tensor(
-    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
+    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
 ) -> torch.Tensor:
     if new_color_space == old_color_space:
-        if copy:
-            return image.clone()
-        else:
-            return image
+        return image
 
     if old_color_space == ColorSpace.OTHER or new_color_space == ColorSpace.OTHER:
         raise RuntimeError(f"Conversion to or from {ColorSpace.OTHER} is not supported.")
