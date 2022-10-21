@@ -176,7 +176,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
 
     orig_dtype = image.dtype
     if image.dtype == torch.uint8:
-        image = image.to(dtype=torch.float32) / 255.0
+        image = image / 255.0
 
     image = _rgb_to_hsv(image)
     h, s, v = image.unbind(dim=-3)
@@ -185,7 +185,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     image_hue_adj = _hsv_to_rgb(image)
 
     if orig_dtype == torch.uint8:
-        image_hue_adj = (image_hue_adj * 255.0).to(dtype=orig_dtype)
+        image_hue_adj = image_hue_adj.mul_(255.0).to(dtype=orig_dtype)
 
     return image_hue_adj
 
