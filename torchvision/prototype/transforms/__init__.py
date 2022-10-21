@@ -54,3 +54,4 @@ from ._misc import (
 from ._type_conversion import DecodeImage, LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
 from ._deprecated import Grayscale, RandomGrayscale, ToTensor  # usort: skip
+from ._temporal import UniformTemporalSubsample
