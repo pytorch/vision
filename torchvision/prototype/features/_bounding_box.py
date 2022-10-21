@@ -68,20 +68,20 @@ class BoundingBox(_Feature):
         return BoundingBox.wrap_like(
             self,
             self._F.convert_format_bounding_box(
-                self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), old_format=self.format, new_format=format
+                self.as_subclass(torch.Tensor), old_format=self.format, new_format=format
             ),
             format=format,
         )
 
     def horizontal_flip(self) -> BoundingBox:
         output = self._F.horizontal_flip_bounding_box(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
+            self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
         )
         return BoundingBox.wrap_like(self, output)
 
     def vertical_flip(self) -> BoundingBox:
         output = self._F.vertical_flip_bounding_box(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
+            self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size
         )
         return BoundingBox.wrap_like(self, output)
 
@@ -120,7 +120,7 @@ class BoundingBox(_Feature):
         antialias: bool = False,
     ) -> BoundingBox:
         output, spatial_size = self._F.resized_crop_bounding_box(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), self.format, top, left, height, width, size=size
+            self.as_subclass(torch.Tensor), self.format, top, left, height, width, size=size
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
@@ -185,9 +185,7 @@ class BoundingBox(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> BoundingBox:
-        output = self._F.perspective_bounding_box(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), self.format, perspective_coeffs
-        )
+        output = self._F.perspective_bounding_box(self.as_subclass(torch.Tensor), self.format, perspective_coeffs)
         return BoundingBox.wrap_like(self, output)
 
     def elastic(
@@ -196,7 +194,5 @@ class BoundingBox(_Feature):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> BoundingBox:
-        output = self._F.elastic_bounding_box(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), self.format, displacement
-        )
+        output = self._F.elastic_bounding_box(self.as_subclass(torch.Tensor), self.format, displacement)
         return BoundingBox.wrap_like(self, output)

@@ -123,11 +123,11 @@ class Image(_Feature):
         )
 
     def horizontal_flip(self) -> Image:
-        output = self._F.horizontal_flip_image_tensor(self.as_subclass(torch.Tensor).as_subclass(torch.Tensor))
+        output = self._F.horizontal_flip_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
     def vertical_flip(self) -> Image:
-        output = self._F.vertical_flip_image_tensor(self.as_subclass(torch.Tensor).as_subclass(torch.Tensor))
+        output = self._F.vertical_flip_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
     def resize(  # type: ignore[override]
@@ -143,15 +143,11 @@ class Image(_Feature):
         return Image.wrap_like(self, output)
 
     def crop(self, top: int, left: int, height: int, width: int) -> Image:
-        output = self._F.crop_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), top, left, height, width
-        )
+        output = self._F.crop_image_tensor(self.as_subclass(torch.Tensor), top, left, height, width)
         return Image.wrap_like(self, output)
 
     def center_crop(self, output_size: List[int]) -> Image:
-        output = self._F.center_crop_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), output_size=output_size
-        )
+        output = self._F.center_crop_image_tensor(self.as_subclass(torch.Tensor), output_size=output_size)
         return Image.wrap_like(self, output)
 
     def resized_crop(
@@ -182,9 +178,7 @@ class Image(_Feature):
         fill: FillTypeJIT = None,
         padding_mode: str = "constant",
     ) -> Image:
-        output = self._F.pad_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), padding, fill=fill, padding_mode=padding_mode
-        )
+        output = self._F.pad_image_tensor(self.as_subclass(torch.Tensor), padding, fill=fill, padding_mode=padding_mode)
         return Image.wrap_like(self, output)
 
     def rotate(
@@ -246,65 +240,57 @@ class Image(_Feature):
 
     def adjust_brightness(self, brightness_factor: float) -> Image:
         output = self._F.adjust_brightness_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), brightness_factor=brightness_factor
+            self.as_subclass(torch.Tensor), brightness_factor=brightness_factor
         )
         return Image.wrap_like(self, output)
 
     def adjust_saturation(self, saturation_factor: float) -> Image:
         output = self._F.adjust_saturation_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), saturation_factor=saturation_factor
+            self.as_subclass(torch.Tensor), saturation_factor=saturation_factor
         )
         return Image.wrap_like(self, output)
 
     def adjust_contrast(self, contrast_factor: float) -> Image:
-        output = self._F.adjust_contrast_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), contrast_factor=contrast_factor
-        )
+        output = self._F.adjust_contrast_image_tensor(self.as_subclass(torch.Tensor), contrast_factor=contrast_factor)
         return Image.wrap_like(self, output)
 
     def adjust_sharpness(self, sharpness_factor: float) -> Image:
         output = self._F.adjust_sharpness_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), sharpness_factor=sharpness_factor
+            self.as_subclass(torch.Tensor), sharpness_factor=sharpness_factor
         )
         return Image.wrap_like(self, output)
 
     def adjust_hue(self, hue_factor: float) -> Image:
-        output = self._F.adjust_hue_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), hue_factor=hue_factor
-        )
+        output = self._F.adjust_hue_image_tensor(self.as_subclass(torch.Tensor), hue_factor=hue_factor)
         return Image.wrap_like(self, output)
 
     def adjust_gamma(self, gamma: float, gain: float = 1) -> Image:
-        output = self._F.adjust_gamma_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), gamma=gamma, gain=gain
-        )
+        output = self._F.adjust_gamma_image_tensor(self.as_subclass(torch.Tensor), gamma=gamma, gain=gain)
         return Image.wrap_like(self, output)
 
     def posterize(self, bits: int) -> Image:
-        output = self._F.posterize_image_tensor(self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), bits=bits)
+        output = self._F.posterize_image_tensor(self.as_subclass(torch.Tensor), bits=bits)
         return Image.wrap_like(self, output)
 
     def solarize(self, threshold: float) -> Image:
-        output = self._F.solarize_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), threshold=threshold
-        )
+        output = self._F.solarize_image_tensor(self.as_subclass(torch.Tensor), threshold=threshold)
         return Image.wrap_like(self, output)
 
     def autocontrast(self) -> Image:
-        output = self._F.autocontrast_image_tensor(self.as_subclass(torch.Tensor).as_subclass(torch.Tensor))
+        output = self._F.autocontrast_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
     def equalize(self) -> Image:
-        output = self._F.equalize_image_tensor(self.as_subclass(torch.Tensor).as_subclass(torch.Tensor))
+        output = self._F.equalize_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
     def invert(self) -> Image:
-        output = self._F.invert_image_tensor(self.as_subclass(torch.Tensor).as_subclass(torch.Tensor))
+        output = self._F.invert_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
 
     def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Image:
         output = self._F.gaussian_blur_image_tensor(
-            self.as_subclass(torch.Tensor).as_subclass(torch.Tensor), kernel_size=kernel_size, sigma=sigma
+            self.as_subclass(torch.Tensor), kernel_size=kernel_size, sigma=sigma
         )
         return Image.wrap_like(self, output)
 
