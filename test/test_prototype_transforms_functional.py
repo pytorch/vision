@@ -178,7 +178,7 @@ class TestKernels:
 
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_dtype_consistency(self, info, args_kwargs, device):
+    def test_dtype_and_device_consistency(self, info, args_kwargs, device):
         (input, *other_args), kwargs = args_kwargs.load(device)
 
         output = info.kernel(input, *other_args, **kwargs)
@@ -187,17 +187,6 @@ class TestKernels:
             output, *_ = output
 
         assert output.dtype == input.dtype
-
-    @sample_inputs
-    @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_device_consistency(self, info, args_kwargs, device):
-        (input, *other_args), kwargs = args_kwargs.load(device)
-
-        output = info.kernel(input, *other_args, **kwargs)
-        # Most kernels just return a tensor, but some also return some additional metadata
-        if not isinstance(output, torch.Tensor):
-            output, *_ = output
-
         assert output.device == input.device
 
     @reference_inputs

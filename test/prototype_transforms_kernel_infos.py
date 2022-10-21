@@ -127,8 +127,7 @@ def xfail_all_tests(*, reason, condition):
             "test_batched_vs_single",
             "test_no_inplace",
             "test_cuda_vs_cpu",
-            "test_dtype_consistency",
-            "test_device_consistency",
+            "test_dtype_and_dtype_consistency",
         ]
     ]
 
@@ -2061,7 +2060,7 @@ def sample_inputs_convert_dtype_video():
 
 _common_convert_dtype_marks = [
     TestMark(
-        ("TestKernels", "test_dtype_consistency"),
+        ("TestKernels", "test_dtype_and_device_consistency"),
         pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
         condition=lambda args_kwargs: args_kwargs.args[0].dtype != args_kwargs.kwargs.get("dtype", torch.float32),
     ),
