@@ -211,7 +211,43 @@ def solarize(inpt: features.InputTypeJIT, threshold: float) -> features.InputTyp
         return solarize_image_pil(inpt, threshold=threshold)
 
 
-autocontrast_image_tensor = _FT.autocontrast
+def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
+
+    if not (isinstance(image, torch.Tensor)):
+        raise TypeError("Input img should be Tensor image")
+
+    c = get_num_channels_image_tensor(image)
+
+    if c not in [1, 3]:
+        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+
+    # if img.ndim < 3:
+    #     raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {img.ndim}")
+
+    # _assert_channels(img, [1, 3])
+
+    bound = 1.0 if image.is_floating_point() else 255.0
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+
+    # let's squash spatial dims into a single dim, such that torch.aminmax support it
+    shape = image.shape[:-2] + (image.shape[-2] * image.shape[-1], )
+    print("shape:", shape, image.numel())
+
+    minimum = torch.amin(image.view(shape), dim=(-2, -1), keepdim=True)
+    maximum = torch.amax(image.view(shape), dim=(-2, -1), keepdim=True)
+    print(minimum, maximum)
+
+    minimum, maximum = torch.aminmax(image.view(shape), dim=-1, keepdim=True)
+    minimum = minimum.to(dtype).unsqueeze(-1)
+    maximum = maximum.to(dtype).unsqueeze(-1)
+    scale = bound / (maximum - minimum)
+    eq_idxs = maximum == minimum
+    minimum[eq_idxs] = 0.0
+    scale[eq_idxs] = 1.0
+
+    return ((image - minimum) * scale).clamp_(0, bound).to(image.dtype)
+
+
 autocontrast_image_pil = _FP.autocontrast
 
 
