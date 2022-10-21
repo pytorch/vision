@@ -14,57 +14,44 @@ env:
 
 jobs:
   tests:
-    name: "Unit-tests on Linux CPU"
-    runs-on: [self-hosted, linux.12xlarge]
-    container:
-      image: pytorch/conda-builder:cpu
     strategy:
       matrix:
         py_vers: ["3.7", "3.8", "3.9", "3.10"]
       fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    with:
+      runner: linux.12xlarge
+      repository: pytorch/vision
+      script: |
+        # Mark Build Directory Safe
+        git config --global --add safe.directory /__w/vision/vision
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Set Release CHANNEL (for release)
-        if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }}
-        run: |
-          echo "CHANNEL=test" >> "$GITHUB_ENV"
-      - name: Setup Conda
-        shell: bash -l {0}
-        env:
-          ENV_NAME: conda-env-${{ github.run_id }}
-          PY_VERS: ${{ matrix.py_vers }}
-        run: |
-          git config --global --add safe.directory /__w/vision/vision
-          . ~/miniconda3/etc/profile.d/conda.sh
-          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy
-          echo "CONDA_RUN=conda run -p ${ENV_NAME}" >> "$GITHUB_ENV"
-      - name: Install TorchVision
-        shell: bash -l {0}
-        env:
-          VERSION: cpu
-          CUDATOOLKIT: cpuonly
-        run: |
-          # Needed for JPEG library detection as setup.py detects conda presence
-          # by running `shutil.which('conda')`
-          export PATH=~/miniconda3/bin:$PATH
-          set -ex
-          ${CONDA_RUN} conda install \
-            --yes \
-            -c "pytorch-${CHANNEL}" \
-            -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
-            "${CUDATOOLKIT}"
-          ${CONDA_RUN} python3 setup.py develop
-          ${CONDA_RUN} python3 -m pip install pytest pytest-mock 'av<10'
-      - name: Run tests
-        shell: bash -l {0}
-        env:
-          ENV_NAME: conda-env-${{ github.run_id }}
-          PY_VERS: ${{ matrix.py_vers }}
-        run: |
-          . ~/miniconda3/etc/profile.d/conda.sh
-          set -ex
-          ${CONDA_RUN} python3 -m torch.utils.collect_env
-          ${CONDA_RUN} python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
-          conda env remove -p ${ENV_NAME}
+        # Set up Environment Variables
+        export PYTHON_VERSION="${{ matrix.py_vers }}"
+        export VERSION="cpu"
+        export CUDATOOLKIT="cpuonly"
+
+        # Set CHANNEL
+        if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
+          export CHANNEL=test
+        else
+          export CHANNEL=nightly
+        fi
+
+        # Create Conda Env
+        conda create -yp ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy
+        conda activate /work/ci_env
+        
+        # Install PyTorch, Torchvision, and testing libraries
+        set -ex
+        conda install \
+          --yes \
+          -c "pytorch-${CHANNEL}" \
+          -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
+          "${CUDATOOLKIT}"
+        python3 setup.py develop
+        python3 -m pip install pytest pytest-mock 'av<10'
+
+        # Run Tests
+        python3 -m torch.utils.collect_env
+        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
