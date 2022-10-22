@@ -18,10 +18,12 @@ from prototype_common_utils import (
     make_masks,
     make_one_hot_labels,
     make_segmentation_mask,
+    make_video,
     make_videos,
 )
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features, transforms
+from torchvision.prototype.transforms._utils import _isinstance
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
@@ -90,7 +92,7 @@ class TestSmoke:
         transforms.RandomErasing(p=1.0),
         transforms.Resize([16, 16]),
         transforms.CenterCrop([16, 16]),
-        transforms.ConvertImageDtype(),
+        transforms.ConvertDtype(),
         transforms.RandomHorizontalFlip(),
         transforms.Pad(5),
         transforms.RandomZoomOut(),
@@ -1824,5 +1826,76 @@ def test_to_dtype(dtype, expected_dtypes):
 
         if isinstance(value, torch.Tensor):
             assert transformed_value.dtype is expected_dtypes[value_type]
+        else:
+            assert transformed_value is value
+
+
+@pytest.mark.parametrize(
+    ("dims", "inverse_dims"),
+    [
+        (
+            {torch.Tensor: (1, 2, 0), features.Image: (2, 1, 0), features.Video: None},
+            {torch.Tensor: (2, 0, 1), features.Image: (2, 1, 0), features.Video: None},
+        ),
+        (
+            {torch.Tensor: (1, 2, 0), features.Image: (2, 1, 0), features.Video: (1, 2, 3, 0)},
+            {torch.Tensor: (2, 0, 1), features.Image: (2, 1, 0), features.Video: (3, 0, 1, 2)},
+        ),
+    ],
+)
+def test_permute_dimensions(dims, inverse_dims):
+    sample = dict(
+        plain_tensor=torch.testing.make_tensor((3, 28, 28), dtype=torch.uint8, device="cpu"),
+        image=make_image(),
+        bounding_box=make_bounding_box(format=features.BoundingBoxFormat.XYXY),
+        video=make_video(),
+        str="str",
+        int=0,
+    )
+
+    transform = transforms.PermuteDimensions(dims)
+    transformed_sample = transform(sample)
+
+    for key, value in sample.items():
+        value_type = type(value)
+        transformed_value = transformed_sample[key]
+
+        if _isinstance(value, (features.Image, features.is_simple_tensor, features.Video)):
+            if transform.dims.get(value_type) is not None:
+                assert transformed_value.permute(inverse_dims[value_type]).equal(value)
+            assert type(transformed_value) == torch.Tensor
+        else:
+            assert transformed_value is value
+
+
+@pytest.mark.parametrize(
+    "dims",
+    [
+        (-1, -2),
+        {torch.Tensor: (-1, -2), features.Image: (1, 2), features.Video: None},
+    ],
+)
+def test_transpose_dimensions(dims):
+    sample = dict(
+        plain_tensor=torch.testing.make_tensor((3, 28, 28), dtype=torch.uint8, device="cpu"),
+        image=make_image(),
+        bounding_box=make_bounding_box(format=features.BoundingBoxFormat.XYXY),
+        video=make_video(),
+        str="str",
+        int=0,
+    )
+
+    transform = transforms.TransposeDimensions(dims)
+    transformed_sample = transform(sample)
+
+    for key, value in sample.items():
+        value_type = type(value)
+        transformed_value = transformed_sample[key]
+
+        transposed_dims = transform.dims.get(value_type)
+        if _isinstance(value, (features.Image, features.is_simple_tensor, features.Video)):
+            if transposed_dims is not None:
+                assert transformed_value.transpose(*transposed_dims).equal(value)
+            assert type(transformed_value) == torch.Tensor
         else:
             assert transformed_value is value

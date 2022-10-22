@@ -25,7 +25,7 @@ class ConvertBoundingBoxFormat(Transform):
         return features.BoundingBox.wrap_like(inpt, output, format=params["format"])
 
 
-class ConvertImageDtype(Transform):
+class ConvertDtype(Transform):
     _transformed_types = (features.is_simple_tensor, features.Image, features.Video)
 
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
@@ -35,12 +35,12 @@ class ConvertImageDtype(Transform):
     def _transform(
         self, inpt: Union[features.TensorImageType, features.TensorVideoType], params: Dict[str, Any]
     ) -> Union[features.TensorImageType, features.TensorVideoType]:
-        # TODO: the `inpt.as_subclass(torch.Tensor)` call can be removed as soon as we have a proper dispatcher that
-        #  handles this. See https://github.com/pytorch/vision/pull/6783 for details.
-        output = F.convert_image_dtype(inpt.as_subclass(torch.Tensor), dtype=self.dtype)
-        return (
-            output if features.is_simple_tensor(inpt) else type(inpt).wrap_like(inpt, output)  # type: ignore[attr-defined]
-        )
+        return F.convert_dtype(inpt, self.dtype)
+
+
+# We changed the name to align it with the new naming scheme. Still, `ConvertImageDtype` is
+# prevalent and well understood. Thus, we just alias it without deprecating the old name.
+ConvertImageDtype = ConvertDtype
 
 
 class ConvertColorSpace(Transform):
@@ -50,7 +50,6 @@ class ConvertColorSpace(Transform):
         self,
         color_space: Union[str, features.ColorSpace],
         old_color_space: Optional[Union[str, features.ColorSpace]] = None,
-        copy: bool = True,
     ) -> None:
         super().__init__()
 
@@ -62,14 +61,10 @@ class ConvertColorSpace(Transform):
             old_color_space = features.ColorSpace.from_str(old_color_space)
         self.old_color_space = old_color_space
 
-        self.copy = copy
-
     def _transform(
         self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
     ) -> Union[features.ImageType, features.VideoType]:
-        return F.convert_color_space(
-            inpt, color_space=self.color_space, old_color_space=self.old_color_space, copy=self.copy
-        )
+        return F.convert_color_space(inpt, color_space=self.color_space, old_color_space=self.old_color_space)
 
 
 class ClampBoundingBoxes(Transform):

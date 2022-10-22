@@ -655,9 +655,7 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for any valid boxes with centers within the crop area
-                xyxy_bboxes = F.convert_format_bounding_box(
-                    bboxes, old_format=bboxes.format, new_format=features.BoundingBoxFormat.XYXY, copy=True
-                )
+                xyxy_bboxes = F.convert_format_bounding_box(bboxes, bboxes.format, features.BoundingBoxFormat.XYXY)
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])
                 cy = 0.5 * (xyxy_bboxes[..., 1] + xyxy_bboxes[..., 3])
                 is_within_crop_area = (left < cx) & (cx < right) & (top < cy) & (cy < bottom)
@@ -801,22 +799,21 @@ class FixedSizeCrop(Transform):
         top = int(offset_height * r)
         left = int(offset_width * r)
 
+        bounding_boxes: Optional[torch.Tensor]
         try:
             bounding_boxes = query_bounding_box(flat_inputs)
         except ValueError:
             bounding_boxes = None
 
         if needs_crop and bounding_boxes is not None:
-            bounding_boxes = cast(
-                features.BoundingBox, F.crop(bounding_boxes, top=top, left=left, height=new_height, width=new_width)
+            format = bounding_boxes.format
+            bounding_boxes, spatial_size = F.crop_bounding_box(
+                bounding_boxes, format=format, top=top, left=left, height=new_height, width=new_width
             )
-            bounding_boxes = features.BoundingBox.wrap_like(
-                bounding_boxes,
-                F.clamp_bounding_box(
-                    bounding_boxes, format=bounding_boxes.format, spatial_size=bounding_boxes.spatial_size
-                ),
-            )
-            height_and_width = bounding_boxes.to_format(features.BoundingBoxFormat.XYWH)[..., 2:]
+            bounding_boxes = F.clamp_bounding_box(bounding_boxes, format=format, spatial_size=spatial_size)
+            height_and_width = F.convert_format_bounding_box(
+                bounding_boxes, old_format=format, new_format=features.BoundingBoxFormat.XYWH
+            )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
         else:
             is_valid = None

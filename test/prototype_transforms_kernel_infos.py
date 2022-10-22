@@ -461,9 +461,7 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
             ],
             dtype=bbox.dtype,
         )
-        return F.convert_format_bounding_box(
-            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-        )
+        return F.convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format)
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
@@ -556,17 +554,12 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_convert_format_bounding_box():
-    formats = set(features.BoundingBoxFormat)
-    for bounding_box_loader in make_bounding_box_loaders(formats=formats):
-        old_format = bounding_box_loader.format
-        for params in combinations_grid(new_format=formats - {old_format}, copy=(True, False)):
-            yield ArgsKwargs(bounding_box_loader, old_format=old_format, **params)
+    formats = list(features.BoundingBoxFormat)
+    for bounding_box_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
+        yield ArgsKwargs(bounding_box_loader, old_format=bounding_box_loader.format, new_format=new_format)
 
 
-def reference_convert_format_bounding_box(bounding_box, old_format, new_format, copy):
-    if not copy:
-        raise pytest.UsageError("Reference for `convert_format_bounding_box` only supports `copy=True`")
-
+def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
     return torchvision.ops.box_convert(
         bounding_box, in_fmt=old_format.kernel_name.lower(), out_fmt=new_format.kernel_name.lower()
     )
@@ -574,8 +567,7 @@ def reference_convert_format_bounding_box(bounding_box, old_format, new_format, 
 
 def reference_inputs_convert_format_bounding_box():
     for args_kwargs in sample_inputs_convert_color_space_image_tensor():
-        (image_loader, *other_args), kwargs = args_kwargs
-        if len(image_loader.shape) == 2 and kwargs.setdefault("copy", True):
+        if len(args_kwargs.args[0].shape) == 2:
             yield args_kwargs
 
 
@@ -600,11 +592,11 @@ def sample_inputs_convert_color_space_image_tensor():
         for image_loader in make_image_loaders(
             sizes=["random"], color_spaces=[color_space], dtypes=[torch.float32], constant_alpha=True
         ):
-            yield ArgsKwargs(image_loader, old_color_space=color_space, new_color_space=color_space, copy=False)
+            yield ArgsKwargs(image_loader, old_color_space=color_space, new_color_space=color_space)
 
 
 @pil_reference_wrapper
-def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space, copy=True):
+def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space):
     color_space_pil = features.ColorSpace.from_pil_mode(image_pil.mode)
     if color_space_pil != old_color_space:
         raise pytest.UsageError(
@@ -612,7 +604,7 @@ def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_c
             f"from {old_color_space} to {color_space_pil}"
         )
 
-    return F.convert_color_space_image_pil(image_pil, color_space=new_color_space, copy=copy)
+    return F.convert_color_space_image_pil(image_pil, color_space=new_color_space)
 
 
 def reference_inputs_convert_color_space_image_tensor():
@@ -1987,7 +1979,7 @@ KERNEL_INFOS.extend(
 )
 
 
-def sample_inputs_convert_image_dtype():
+def sample_inputs_convert_dtype_image_tensor():
     for input_dtype, output_dtype in itertools.product(
         [torch.uint8, torch.int64, torch.float32, torch.float64], repeat=2
     ):
@@ -2000,10 +1992,8 @@ def sample_inputs_convert_image_dtype():
         ):
             yield ArgsKwargs(image_loader, dtype=output_dtype)
 
-    yield ArgsKwargs(make_image_loader(color_space=features.ColorSpace.RGB), dtype=torch.uint8)
 
-
-def reference_convert_image_dtype(image, dtype=torch.float):
+def reference_convert_dtype_image_tensor(image, dtype=torch.float):
     input_dtype = image.dtype
     output_dtype = dtype
 
@@ -2034,7 +2024,7 @@ def reference_convert_image_dtype(image, dtype=torch.float):
     return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype)
 
 
-def reference_inputs_convert_image_dtype():
+def reference_inputs_convert_dtype_image_tensor():
     for input_dtype, output_dtype in itertools.product(
         [
             torch.uint8,
@@ -2063,24 +2053,32 @@ def reference_inputs_convert_image_dtype():
         yield ArgsKwargs(image, dtype=output_dtype)
 
 
+def sample_inputs_convert_dtype_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader)
+
+
+_common_convert_dtype_marks = [
+    TestMark(
+        ("TestKernels", "test_dtype_and_device_consistency"),
+        pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
+        condition=lambda args_kwargs: args_kwargs.args[0].dtype != args_kwargs.kwargs.get("dtype", torch.float32),
+    ),
+    TestMark(
+        ("TestKernels", "test_scripted_vs_eager"),
+        pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %')}:UserWarning"),
+    ),
+]
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.convert_image_dtype,
-            sample_inputs_fn=sample_inputs_convert_image_dtype,
-            reference_fn=reference_convert_image_dtype,
-            reference_inputs_fn=reference_inputs_convert_image_dtype,
+            F.convert_dtype_image_tensor,
+            sample_inputs_fn=sample_inputs_convert_dtype_image_tensor,
+            reference_fn=reference_convert_dtype_image_tensor,
+            reference_inputs_fn=reference_inputs_convert_dtype_image_tensor,
             test_marks=[
-                TestMark(
-                    ("TestKernels", "test_scripted_vs_eager"),
-                    pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %41')}:UserWarning"),
-                ),
-                TestMark(
-                    ("TestKernels", "test_dtype_and_device_consistency"),
-                    pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
-                    condition=lambda args_kwargs: args_kwargs.args[0].dtype
-                    != args_kwargs.kwargs.get("dtype", torch.float32),
-                ),
+                *_common_convert_dtype_marks,
                 TestMark(
                     ("TestKernels", "test_against_reference"),
                     pytest.mark.xfail(reason="Conversion overflows"),
@@ -2089,15 +2087,16 @@ KERNEL_INFOS.extend(
                         and not args_kwargs.kwargs["dtype"].is_floating_point
                     )
                     or (
-                        args_kwargs.args[0].dtype in {torch.float16, torch.bfloat16}
-                        and args_kwargs.kwargs["dtype"] == torch.int64
-                    )
-                    or (
                         args_kwargs.args[0].dtype in {torch.int32, torch.int64}
                         and args_kwargs.kwargs["dtype"] == torch.float16
                     ),
                 ),
             ],
+        ),
+        KernelInfo(
+            F.convert_dtype_video,
+            sample_inputs_fn=sample_inputs_convert_dtype_video,
+            test_marks=_common_convert_dtype_marks,
         ),
     ]
 )
