@@ -153,7 +153,7 @@ CONSISTENCY_CONFIGS = [
         ),
     ),
     ConsistencyConfig(
-        prototype_transforms.ConvertImageDtype,
+        prototype_transforms.ConvertDtype,
         legacy_transforms.ConvertImageDtype,
         [
             ArgsKwargs(torch.float16),

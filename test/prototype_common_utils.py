@@ -22,7 +22,7 @@ from torch.testing._comparison import (
     UnsupportedInputs,
 )
 from torchvision.prototype import features
-from torchvision.prototype.transforms.functional import convert_image_dtype, to_image_tensor
+from torchvision.prototype.transforms.functional import convert_dtype_image_tensor, to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 __all__ = [
@@ -97,8 +97,8 @@ class PILImagePair(TensorLikePair):
     def _equalize_attributes(self, actual, expected):
         if actual.dtype != expected.dtype:
             dtype = torch.promote_types(actual.dtype, expected.dtype)
-            actual = convert_image_dtype(actual, dtype)
-            expected = convert_image_dtype(expected, dtype)
+            actual = convert_dtype_image_tensor(actual, dtype)
+            expected = convert_dtype_image_tensor(expected, dtype)
 
         return super()._equalize_attributes(actual, expected)
 
