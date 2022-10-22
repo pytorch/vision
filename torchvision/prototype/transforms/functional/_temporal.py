@@ -6,7 +6,7 @@ from torchvision.prototype import features
 def uniform_temporal_subsample_video(video: torch.Tensor, num_samples: int, temporal_dim: int = -4) -> torch.Tensor:
     # Reference: https://github.com/facebookresearch/pytorchvideo/blob/a0a131e/pytorchvideo/transforms/functional.py#L19
     t_max = video.shape[temporal_dim] - 1
-    indices = torch.linspace(0, t_max, num_samples, device=video.device, dtype=torch.int64)
+    indices = torch.linspace(0, t_max, num_samples, device=video.device).long()
     return torch.index_select(video, temporal_dim, indices)
 
 
