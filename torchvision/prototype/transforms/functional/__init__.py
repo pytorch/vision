@@ -161,6 +161,7 @@ from ._misc import (
     normalize_image_tensor,
     normalize_video,
 )
+from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_video
 from ._type_conversion import (
     convert_image_dtype,
     decode_image_with_pil,
@@ -172,4 +173,3 @@ from ._type_conversion import (
 )
 
 from ._deprecated import get_image_size, rgb_to_grayscale, to_grayscale, to_tensor  # usort: skip
-from ._temporal import uniform_temporal_subsample_video, uniform_temporal_subsample  # usort: skip
