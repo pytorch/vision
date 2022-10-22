@@ -308,6 +308,7 @@ class TestDispatchers:
             (F.get_image_num_channels, F.get_num_channels),
             (F.to_pil_image, F.to_image_pil),
             (F.elastic_transform, F.elastic),
+            (F.convert_image_dtype, F.convert_dtype_image_tensor),
         ]
     ],
 )

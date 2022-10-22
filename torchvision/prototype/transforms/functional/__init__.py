@@ -8,6 +8,10 @@ from ._meta import (
     convert_color_space_image_pil,
     convert_color_space_video,
     convert_color_space,
+    convert_dtype_image_tensor,
+    convert_dtype,
+    convert_dtype_video,
+    convert_image_dtype,
     get_dimensions_image_tensor,
     get_dimensions_image_pil,
     get_dimensions,
@@ -163,7 +167,6 @@ from ._misc import (
 )
 from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_video
 from ._type_conversion import (
-    convert_image_dtype,
     decode_image_with_pil,
     decode_video_with_av,
     pil_to_tensor,
