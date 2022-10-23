@@ -136,8 +136,7 @@ def xfail_all_tests(*, reason, condition):
 def package_is_available(name):
     try:
         importlib.import_module(name)
-        # FIXME
-        return False
+        return True
     except ModuleNotFoundError:
         return False
 
@@ -2134,8 +2133,8 @@ def reference_uniform_temporal_subsample_video(video, num_samples, temporal_dim=
 
 def reference_inputs_uniform_temporal_subsample_video():
     for video_loader in make_video_loaders(sizes=["random"], color_spaces=[features.ColorSpace.RGB], num_frames=[10]):
-        for num_frames in range(1, 11):
-            yield ArgsKwargs(video_loader, num_frames)
+        for num_samples in range(1, video_loader.shape[-4] + 1):
+            yield ArgsKwargs(video_loader, num_samples)
 
 
 KERNEL_INFOS.append(
