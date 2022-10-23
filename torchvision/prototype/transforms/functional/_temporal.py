@@ -16,7 +16,7 @@ def uniform_temporal_subsample(
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Video)):
         return uniform_temporal_subsample_video(inpt, num_samples, temporal_dim=temporal_dim)
     else:  # isinstance(inpt, features.Video)
-        if temporal_dim != -4 or inpt.ndim - 4 != temporal_dim:
+        if not (temporal_dim == -4 or inpt.ndim - 4 == temporal_dim):
             raise ValueError("Video inputs must have temporal_dim equivalent to -4")
         output = uniform_temporal_subsample_video(
             inpt.as_subclass(torch.Tensor), num_samples, temporal_dim=temporal_dim
