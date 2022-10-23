@@ -1915,6 +1915,6 @@ class TestUniformTemporalSubsample:
         transform = transforms.UniformTemporalSubsample(num_samples)
 
         output = transform(inpt)
-        assert isinstance(output, inpt.__class__)
+        assert type(output) is type(inpt)
         assert output.shape[-4] == num_samples
         assert output.dtype == inpt.dtype
