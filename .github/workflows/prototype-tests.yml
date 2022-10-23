@@ -34,7 +34,7 @@ jobs:
         run: pip install --progress-bar=off --no-build-isolation --editable .
 
       - name: Install other prototype dependencies
-        run: pip install --progress-bar=off scipy pycocotools h5py iopath
+        run: pip install --progress-bar=off scipy pycocotools h5py iopath pytorchvideo
 
       - name: Install test requirements
         run: pip install --progress-bar=off pytest pytest-mock pytest-cov

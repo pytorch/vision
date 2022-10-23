@@ -1,5 +1,6 @@
 import decimal
 import functools
+import importlib
 import itertools
 import math
 import re
@@ -130,6 +131,23 @@ def xfail_all_tests(*, reason, condition):
             "test_dtype_and_device_consistency",
         ]
     ]
+
+
+def package_is_available(name):
+    try:
+        importlib.import_module(name)
+        # FIXME
+        return False
+    except ModuleNotFoundError:
+        return False
+
+
+def skip_on_missing_third_party_reference(name):
+    return TestMark(
+        ("TestKernels", "test_against_reference"),
+        pytest.mark.skip(f"Third party package '{name}' is not available"),
+        condition=lambda args_kwargs: package_is_available(name),
+    )
 
 
 KERNEL_INFOS = []
@@ -2099,4 +2117,40 @@ KERNEL_INFOS.extend(
             test_marks=_common_convert_dtype_marks,
         ),
     ]
+)
+
+
+def sample_inputs_uniform_temporal_subsample_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=[4]):
+        for temporal_dim in [-4, len(video_loader.shape) - 4]:
+            yield ArgsKwargs(video_loader, num_samples=2, temporal_dim=temporal_dim)
+
+
+def reference_uniform_temporal_subsample_video(video, num_samples, temporal_dim=-4):
+    from pytorchvideo.transforms.functional import uniform_temporal_subsample
+
+    return uniform_temporal_subsample(video, num_samples=num_samples, temporal_dim=temporal_dim)
+
+
+def reference_inputs_uniform_temporal_subsample_video():
+    for video_loader in make_video_loaders(sizes=["random"], color_spaces=[features.ColorSpace.RGB], num_frames=[10]):
+        for num_frames in range(1, 11):
+            yield ArgsKwargs(video_loader, num_frames)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.uniform_temporal_subsample_video,
+        sample_inputs_fn=sample_inputs_uniform_temporal_subsample_video,
+        reference_fn=reference_uniform_temporal_subsample_video,
+        reference_inputs_fn=reference_inputs_uniform_temporal_subsample_video,
+        test_marks=[
+            skip_on_missing_third_party_reference("pytorchvideo"),
+            TestMark(
+                ("TestKernels", "test_batched_vs_single"),
+                pytest.mark.skip("Positive `temporal_dim` arguments are not equivalent for batched and single inputs"),
+                condition=lambda args_kwargs: args_kwargs.kwargs.get("temporal_dim") >= 0,
+            ),
+        ],
+    )
 )
