@@ -145,7 +145,7 @@ def skip_on_missing_third_party_reference(name):
     return TestMark(
         ("TestKernels", "test_against_reference"),
         pytest.mark.skip(f"Third party package '{name}' is not available"),
-        condition=lambda args_kwargs: package_is_available(name),
+        condition=lambda args_kwargs: not package_is_available(name),
     )
 
 
