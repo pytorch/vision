@@ -12,9 +12,6 @@ from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 def normalize_image_tensor(
     image: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False
 ) -> torch.Tensor:
-    if not isinstance(image, torch.Tensor):
-        raise TypeError("Input img should be Tensor image")
-
     if not image.is_floating_point():
         raise TypeError(f"Input tensor should be a float tensor. Got {image.dtype}.")
 
@@ -24,7 +21,7 @@ def normalize_image_tensor(
         )
 
     if (isinstance(std, (tuple, list)) and not all(std)) or std == 0:
-        raise ValueError(f"std evaluated to zero after conversion to {image.dtype}, leading to division by zero.")
+        raise ValueError(f"std evaluated to zero, leading to division by zero.")
 
     dtype = image.dtype
     device = image.device
