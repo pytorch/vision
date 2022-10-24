@@ -27,7 +27,7 @@ def normalize_image_tensor(
     else:
         divzero = False
     if divzero:
-        raise ValueError(f"std evaluated to zero, leading to division by zero.")
+        raise ValueError("std evaluated to zero, leading to division by zero.")
 
     dtype = image.dtype
     device = image.device
