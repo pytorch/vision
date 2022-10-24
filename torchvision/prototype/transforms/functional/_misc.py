@@ -8,7 +8,36 @@ from torchvision.prototype import features
 from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
-normalize_image_tensor = _FT.normalize
+
+def normalize_image_tensor(
+    image: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False
+) -> torch.Tensor:
+    if not isinstance(image, torch.Tensor):
+        raise TypeError("Input img should be Tensor image")
+
+    if not image.is_floating_point():
+        raise TypeError(f"Input tensor should be a float tensor. Got {image.dtype}.")
+
+    if image.ndim < 3:
+        raise ValueError(
+            f"Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = {image.size()}"
+        )
+
+    if (isinstance(std, (tuple, list)) and any(std)) or std == 0:
+        raise ValueError(f"std evaluated to zero after conversion to {image.dtype}, leading to division by zero.")
+
+    if not inplace:
+        image = image.clone()
+
+    dtype = image.dtype
+    mean = torch.as_tensor(mean, dtype=dtype, device=image.device)
+    std = torch.as_tensor(std, dtype=dtype, device=image.device)
+    if mean.ndim == 1:
+        mean = mean.view(-1, 1, 1)
+    if std.ndim == 1:
+        std = std.view(-1, 1, 1)
+
+    return image.sub_(mean).div_(std)
 
 
 def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
