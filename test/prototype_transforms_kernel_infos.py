@@ -2100,3 +2100,43 @@ KERNEL_INFOS.extend(
         ),
     ]
 )
+
+
+def sample_inputs_uniform_temporal_subsample_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=[4]):
+        for temporal_dim in [-4, len(video_loader.shape) - 4]:
+            yield ArgsKwargs(video_loader, num_samples=2, temporal_dim=temporal_dim)
+
+
+def reference_uniform_temporal_subsample_video(x, num_samples, temporal_dim=-4):
+    # Copy-pasted from
+    # https://github.com/facebookresearch/pytorchvideo/blob/c8d23d8b7e597586a9e2d18f6ed31ad8aa379a7a/pytorchvideo/transforms/functional.py#L19
+    t = x.shape[temporal_dim]
+    assert num_samples > 0 and t > 0
+    # Sample by nearest neighbor interpolation if num_samples > t.
+    indices = torch.linspace(0, t - 1, num_samples)
+    indices = torch.clamp(indices, 0, t - 1).long()
+    return torch.index_select(x, temporal_dim, indices)
+
+
+def reference_inputs_uniform_temporal_subsample_video():
+    for video_loader in make_video_loaders(sizes=["random"], color_spaces=[features.ColorSpace.RGB], num_frames=[10]):
+        for num_samples in range(1, video_loader.shape[-4] + 1):
+            yield ArgsKwargs(video_loader, num_samples)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.uniform_temporal_subsample_video,
+        sample_inputs_fn=sample_inputs_uniform_temporal_subsample_video,
+        reference_fn=reference_uniform_temporal_subsample_video,
+        reference_inputs_fn=reference_inputs_uniform_temporal_subsample_video,
+        test_marks=[
+            TestMark(
+                ("TestKernels", "test_batched_vs_single"),
+                pytest.mark.skip("Positive `temporal_dim` arguments are not equivalent for batched and single inputs"),
+                condition=lambda args_kwargs: args_kwargs.kwargs.get("temporal_dim") >= 0,
+            ),
+        ],
+    )
+)
