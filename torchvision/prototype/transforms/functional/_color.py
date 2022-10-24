@@ -435,7 +435,14 @@ def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
         return equalize_image_pil(inpt)
 
 
-invert_image_tensor = _FT.invert
+def invert_image_tensor(image: torch.Tensor):
+    num_channels, height, width = get_dimensions_image_tensor(image)
+    if num_channels not in (1, 3):
+        raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {num_channels}")
+
+    return 1.0 - image if image.is_floating_point() else image.bitwise_not()
+
+
 invert_image_pil = _FP.invert
 
 
