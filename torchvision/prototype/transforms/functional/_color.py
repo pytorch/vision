@@ -8,7 +8,7 @@ from ._meta import _rgb_to_gray, convert_dtype_image_tensor, get_dimensions_imag
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
     ratio = float(ratio)
     fp = image1.is_floating_point()
-    bound = 1.0 if fp else 255.0
+    bound = _FT._max_value(image1.dtype)
     output = image1.mul(ratio).add_(image2, alpha=(1.0 - ratio)).clamp_(0, bound)
     return output if fp else output.to(image1.dtype)
 
@@ -20,7 +20,7 @@ def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float
     _FT._assert_channels(image, [1, 3])
 
     fp = image.is_floating_point()
-    bound = 1.0 if fp else 255.0
+    bound = _FT._max_value(image.dtype)
     output = image.mul(brightness_factor).clamp_(0, bound)
     return output if fp else output.to(image.dtype)
 
@@ -226,8 +226,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
         return image
 
     orig_dtype = image.dtype
-    if image.dtype == torch.uint8:
-        image = image / 255.0
+    image = convert_dtype_image_tensor(image, torch.float32)
 
     image = _rgb_to_hsv(image)
     h, s, v = image.unbind(dim=-3)
@@ -235,10 +234,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     image = torch.stack((h, s, v), dim=-3)
     image_hue_adj = _hsv_to_rgb(image)
 
-    if orig_dtype == torch.uint8:
-        image_hue_adj = image_hue_adj.mul_(255.0).to(dtype=orig_dtype)
-
-    return image_hue_adj
+    return convert_dtype_image_tensor(image_hue_adj, orig_dtype)
 
 
 adjust_hue_image_pil = _FP.adjust_hue
@@ -313,8 +309,7 @@ def posterize(inpt: features.InputTypeJIT, bits: int) -> features.InputTypeJIT:
 
 
 def solarize_image_tensor(image: torch.Tensor, threshold: float) -> torch.Tensor:
-    bound = 1 if image.is_floating_point() else 255
-    if threshold > bound:
+    if threshold > _FT._max_value(image.dtype):
         raise TypeError(f"Threshold should be less or equal the maximum value of the dtype, but got {threshold}")
 
     return torch.where(image >= threshold, invert_image_tensor(image), image)
@@ -350,7 +345,7 @@ def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
         # exit earlier on empty images
         return image
 
-    bound = 1.0 if image.is_floating_point() else 255.0
+    bound = _FT._max_value(image.dtype)
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
 
     minimum = image.amin(dim=(-2, -1), keepdim=True).to(dtype)
@@ -467,7 +462,7 @@ def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.dtype == torch.uint8:
         return image.bitwise_not()
     else:
-        return (1 if image.is_floating_point() else 255) - image  # type: ignore[no-any-return]
+        return _FT._max_value(image.dtype) - image  # type: ignore[no-any-return]
 
 
 invert_image_pil = _FP.invert
