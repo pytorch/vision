@@ -436,8 +436,6 @@ def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
 
 
 def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
-    _FT._assert_image_tensor(image)
-
     if image.dtype == torch.uint8:
         return image.bitwise_not()
     else:
