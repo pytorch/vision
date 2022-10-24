@@ -16,7 +16,7 @@ def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
         chw.insert(0, 1)
         return chw
     else:
-        raise TypeError("Invalid input tensor dimensions.")
+        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
 get_dimensions_image_pil = _FP.get_dimensions
@@ -43,7 +43,7 @@ def get_num_channels_image_tensor(image: torch.Tensor) -> int:
     elif ndims == 2:
         return 1
     else:
-        raise TypeError("Invalid input tensor dimensions.")
+        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
 get_num_channels_image_pil = _FP.get_image_num_channels
@@ -71,10 +71,11 @@ get_image_num_channels = get_num_channels
 
 def get_spatial_size_image_tensor(image: torch.Tensor) -> List[int]:
     hw = list(image.shape[-2:])
-    if len(hw) == 2:
+    ndims = len(hw)
+    if ndims == 2:
         return hw
     else:
-        raise TypeError("Invalid input tensor dimensions.")
+        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
 @torch.jit.unused
