@@ -435,13 +435,13 @@ def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
         return equalize_image_pil(inpt)
 
 
-def invert_image_tensor(image: torch.Tensor):
+def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
     _FT._assert_image_tensor(image)
 
     if image.dtype == torch.uint8:
         return image.bitwise_not()
     else:
-        return _FT._max_value(image.dtype) - image
+        return _FT._max_value(image.dtype) - image  # type: ignore[no-any-return]
 
 
 invert_image_pil = _FP.invert
