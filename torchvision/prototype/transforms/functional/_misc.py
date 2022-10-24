@@ -23,21 +23,24 @@ def normalize_image_tensor(
             f"Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = {image.size()}"
         )
 
-    if (isinstance(std, (tuple, list)) and any(std)) or std == 0:
+    if (isinstance(std, (tuple, list)) and not all(std)) or std == 0:
         raise ValueError(f"std evaluated to zero after conversion to {image.dtype}, leading to division by zero.")
 
-    if not inplace:
-        image = image.clone()
-
     dtype = image.dtype
-    mean = torch.as_tensor(mean, dtype=dtype, device=image.device)
-    std = torch.as_tensor(std, dtype=dtype, device=image.device)
+    device = image.device
+    mean = torch.as_tensor(mean, dtype=dtype, device=device)
+    std = torch.as_tensor(std, dtype=dtype, device=device)
     if mean.ndim == 1:
         mean = mean.view(-1, 1, 1)
     if std.ndim == 1:
         std = std.view(-1, 1, 1)
 
-    return image.sub_(mean).div_(std)
+    if inplace:
+        image = image.sub_(mean)
+    else:
+        image = image.sub(mean)
+
+    return image.div_(std)
 
 
 def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
