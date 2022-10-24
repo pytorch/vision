@@ -242,6 +242,7 @@ class TestDispatchers:
             F.get_num_frames,
             F.get_spatial_size,
             F.rgb_to_grayscale,
+            F.uniform_temporal_subsample,
         ],
         ids=lambda dispatcher: dispatcher.__name__,
     )
@@ -307,6 +308,7 @@ class TestDispatchers:
             (F.get_image_num_channels, F.get_num_channels),
             (F.to_pil_image, F.to_image_pil),
             (F.elastic_transform, F.elastic),
+            (F.convert_image_dtype, F.convert_dtype_image_tensor),
         ]
     ],
 )
@@ -1059,3 +1061,13 @@ def test_equalize_image_tensor_edge_cases():
     inpt[..., 100:, 100:] = 1
     output = F.equalize_image_tensor(inpt)
     assert output.unique().tolist() == [0, 255]
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_uniform_temporal_subsample(device):
+    video = torch.arange(10, device=device)[:, None, None, None].expand(-1, 3, 8, 8)
+    out_video = F.uniform_temporal_subsample(video, 5)
+    assert out_video.unique().tolist() == [0, 2, 4, 6, 9]
+
+    out_video = F.uniform_temporal_subsample(video, 8)
+    assert out_video.unique().tolist() == [0, 1, 2, 3, 5, 6, 7, 9]

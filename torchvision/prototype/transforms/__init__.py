@@ -39,7 +39,7 @@ from ._geometry import (
     ScaleJitter,
     TenCrop,
 )
-from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat, ConvertColorSpace, ConvertImageDtype
+from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat, ConvertColorSpace, ConvertDtype, ConvertImageDtype
 from ._misc import (
     GaussianBlur,
     Identity,
@@ -51,6 +51,7 @@ from ._misc import (
     ToDtype,
     TransposeDimensions,
 )
+from ._temporal import UniformTemporalSubsample
 from ._type_conversion import DecodeImage, LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
 from ._deprecated import Grayscale, RandomGrayscale, ToTensor  # usort: skip
