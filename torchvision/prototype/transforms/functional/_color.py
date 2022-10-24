@@ -277,7 +277,7 @@ def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1
         output = image.pow(gamma)
 
     if gain != 1.0:
-        # The clamp operation is needed only if mutiplication is performed. It's only when gain != 1, that the scale
+        # The clamp operation is needed only if multiplication is performed. It's only when gain != 1, that the scale
         # of the output can go beyond [0, 1].
         output = output.mul_(gain).clamp_(0.0, 1.0)
 
