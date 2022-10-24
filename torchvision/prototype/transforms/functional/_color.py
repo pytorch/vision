@@ -261,11 +261,6 @@ def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1
     if not (isinstance(image, torch.Tensor)):
         raise TypeError("Input img should be Tensor image")
 
-    c = get_num_channels_image_tensor(image)
-
-    if c not in [1, 3]:
-        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
-
     if gamma < 0:
         raise ValueError("Gamma should be a non-negative real number")
 
