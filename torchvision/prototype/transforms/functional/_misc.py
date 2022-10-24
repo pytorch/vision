@@ -20,7 +20,13 @@ def normalize_image_tensor(
             f"Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = {image.size()}"
         )
 
-    if (isinstance(std, (tuple, list)) and not all(std)) or std == 0:
+    if isinstance(std, (tuple, list)):
+        divzero = not all(std)
+    elif isinstance(std, (int, float)):
+        divzero = std == 0
+    else:
+        divzero = False
+    if divzero:
         raise ValueError(f"std evaluated to zero, leading to division by zero.")
 
     dtype = image.dtype
