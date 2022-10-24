@@ -15,12 +15,6 @@ def _assert_image_tensor(img: Tensor) -> None:
         raise TypeError("Tensor is not a torch image.")
 
 
-def _assert_threshold(img: Tensor, threshold: float) -> None:
-    bound = 1 if img.is_floating_point() else 255
-    if threshold > bound:
-        raise TypeError("Threshold should be less than bound of img.")
-
-
 def get_dimensions(img: Tensor) -> List[int]:
     _assert_image_tensor(img)
     channels = 1 if img.ndim == 2 else img.shape[-3]
@@ -212,8 +206,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
         return img
 
     orig_dtype = img.dtype
-    if img.dtype == torch.uint8:
-        img = img.to(dtype=torch.float32) / 255.0
+    img = convert_image_dtype(img, torch.float32)
 
     img = _rgb2hsv(img)
     h, s, v = img.unbind(dim=-3)
@@ -221,10 +214,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     img = torch.stack((h, s, v), dim=-3)
     img_hue_adj = _hsv2rgb(img)
 
-    if orig_dtype == torch.uint8:
-        img_hue_adj = (img_hue_adj * 255.0).to(dtype=orig_dtype)
-
-    return img_hue_adj
+    return convert_image_dtype(img_hue_adj, orig_dtype)
 
 
 def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
@@ -263,7 +253,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
 def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
     ratio = float(ratio)
-    bound = 1.0 if img1.is_floating_point() else 255.0
+    bound = _max_value(img1.dtype)
     return (ratio * img1 + (1.0 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
@@ -775,8 +765,7 @@ def invert(img: Tensor) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    bound = torch.tensor(1 if img.is_floating_point() else 255, dtype=img.dtype, device=img.device)
-    return bound - img
+    return _max_value(img.dtype) - img
 
 
 def posterize(img: Tensor, bits: int) -> Tensor:
@@ -802,7 +791,8 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    _assert_threshold(img, threshold)
+    if threshold > _max_value(img.dtype):
+        raise TypeError("Threshold should be less than bound of img.")
 
     inverted_img = invert(img)
     return torch.where(img >= threshold, inverted_img, img)
@@ -849,7 +839,7 @@ def autocontrast(img: Tensor) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    bound = 1.0 if img.is_floating_point() else 255.0
+    bound = _max_value(img.dtype)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
 
     minimum = img.amin(dim=(-2, -1), keepdim=True).to(dtype)
