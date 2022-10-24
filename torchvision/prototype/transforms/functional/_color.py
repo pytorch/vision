@@ -301,7 +301,7 @@ def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
 
     # JIT-friendly for: ~(2 ** (8 - bits) - 1)
     mask = -int(2 ** (8 - bits))
-    return mask & image
+    return image & mask
 
 
 posterize_image_pil = _FP.posterize
