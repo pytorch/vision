@@ -426,4 +426,13 @@ DISPATCHER_INFOS = [
             skip_dispatch_feature,
         ],
     ),
+    DispatcherInfo(
+        F.uniform_temporal_subsample,
+        kernels={
+            features.Video: F.uniform_temporal_subsample_video,
+        },
+        test_marks=[
+            skip_dispatch_feature,
+        ],
+    ),
 ]
