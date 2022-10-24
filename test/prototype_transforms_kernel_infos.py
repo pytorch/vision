@@ -1433,16 +1433,14 @@ _POSTERIZE_BITS = [1, 4, 8]
 
 def sample_inputs_posterize_image_tensor():
     for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
     ):
         yield ArgsKwargs(image_loader, bits=_POSTERIZE_BITS[0])
 
 
 def reference_inputs_posterize_image_tensor():
     for image_loader, bits in itertools.product(
-        make_image_loaders(
-            color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
-        ),
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
         _POSTERIZE_BITS,
     ):
         yield ArgsKwargs(image_loader, bits=bits)
