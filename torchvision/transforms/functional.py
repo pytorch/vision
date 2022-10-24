@@ -1308,7 +1308,13 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     return F_t.erase(img, i, j, h, w, v, inplace=inplace)
 
 
-def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
+def gaussian_blur(
+    img: Tensor,
+    kernel_size: List[int],
+    sigma: Optional[List[float]] = None,
+    pad_mode: str = "reflect",
+    pad_value: float = 0.0,
+) -> Tensor:
     """Performs Gaussian blurring on the image by given kernel.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -1330,6 +1336,8 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
             .. note::
                 In torchscript mode sigma as single float is
                 not supported, use a sequence of length 1: ``[sigma, ]``.
+        pad_mode (str): padding mode to be passed to the padding function. Default: "reflect".
+        pad_value (float): value to be passed to the padding function. Default: 0.0.
 
     Returns:
         PIL Image or Tensor: Gaussian Blurred version of the image.
@@ -1368,7 +1376,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
 
         t_img = pil_to_tensor(img)
 
-    output = F_t.gaussian_blur(t_img, kernel_size, sigma)
+    output = F_t.gaussian_blur(t_img, kernel_size, sigma, pad_mode, pad_value)
 
     if not isinstance(img, torch.Tensor):
         output = to_pil_image(output, mode=img.mode)

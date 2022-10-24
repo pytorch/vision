@@ -1754,7 +1754,7 @@ class GaussianBlur(torch.nn.Module):
 
     """
 
-    def __init__(self, kernel_size, sigma=(0.1, 2.0)):
+    def __init__(self, kernel_size, sigma=(0.1, 2.0), pad_mode="reflect", pad_value=0.0):
         super().__init__()
         _log_api_usage_once(self)
         self.kernel_size = _setup_size(kernel_size, "Kernel size should be a tuple/list of two integers")
@@ -1772,7 +1772,18 @@ class GaussianBlur(torch.nn.Module):
         else:
             raise ValueError("sigma should be a single number or a list/tuple with length 2.")
 
+        if not isinstance(pad_value, numbers.Number):
+            raise ValueError("pad_value should be a single float number.")
+
+        if pad_mode not in ["constant", "reflect", "replicate", "circular"]:
+            raise ValueError(
+                "Unknown padding mode: {}. Use one of 'constant', 'reflect', 'replicate', 'circular'".format(pad_mode)
+            )
+        elif pad_mode != "constant" and pad_value != 0.0:
+            raise ValueError("Only constant padding mode supports non-zero pad_value.")
         self.sigma = sigma
+        self.pad_mode = pad_mode
+        self.pad_value = pad_value
 
     @staticmethod
     def get_params(sigma_min: float, sigma_max: float) -> float:
@@ -1796,7 +1807,7 @@ class GaussianBlur(torch.nn.Module):
             PIL Image or Tensor: Gaussian blurred image
         """
         sigma = self.get_params(self.sigma[0], self.sigma[1])
-        return F.gaussian_blur(img, self.kernel_size, [sigma, sigma])
+        return F.gaussian_blur(img, self.kernel_size, [sigma, sigma], self.pad_mode, self.pad_value)
 
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}(kernel_size={self.kernel_size}, sigma={self.sigma})"
