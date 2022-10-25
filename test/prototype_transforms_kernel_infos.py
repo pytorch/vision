@@ -83,24 +83,21 @@ def pil_reference_wrapper(pil_kernel):
     return wrapper
 
 
+def xfail_jit(reason, *, condition=None):
+    return TestMark(("TestKernels", "test_scripted_vs_eager"), pytest.mark.xfail(reason=reason), condition=condition)
+
+
 def xfail_jit_python_scalar_arg(name, *, reason=None):
-    reason = reason or f"Python scalar int or float for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestKernels", "test_scripted_vs_eager"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Python scalar int or float for `{name}` is not supported when scripting",
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), (int, float)),
     )
 
 
-def xfail_jit_integer_size(name="size"):
-    return xfail_jit_python_scalar_arg(name, reason=f"Integer `{name}` is not supported when scripting.")
-
-
 def xfail_jit_tuple_instead_of_list(name, *, reason=None):
     reason = reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestKernels", "test_scripted_vs_eager"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting",
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
     )
 
@@ -111,25 +108,10 @@ def is_list_of_ints(args_kwargs):
 
 
 def xfail_jit_list_of_ints(name, *, reason=None):
-    reason = reason or f"Passing a list of integers for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestKernels", "test_scripted_vs_eager"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Passing a list of integers for `{name}` is not supported when scripting",
         condition=is_list_of_ints,
     )
-
-
-def xfail_all_tests(*, reason, condition):
-    return [
-        TestMark(("TestKernels", test_name), pytest.mark.xfail(reason=reason), condition=condition)
-        for test_name in [
-            "test_scripted_vs_eager",
-            "test_batched_vs_single",
-            "test_no_inplace",
-            "test_cuda_vs_cpu",
-            "test_dtype_and_device_consistency",
-        ]
-    ]
 
 
 KERNEL_INFOS = []
@@ -297,14 +279,14 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_jit_integer_size(),
+                xfail_jit_python_scalar_arg("size"),
             ],
         ),
         KernelInfo(
             F.resize_bounding_box,
             sample_inputs_fn=sample_inputs_resize_bounding_box,
             test_marks=[
-                xfail_jit_integer_size(),
+                xfail_jit_python_scalar_arg("size"),
             ],
         ),
         KernelInfo(
@@ -314,7 +296,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_jit_integer_size(),
+                xfail_jit_python_scalar_arg("size"),
             ],
         ),
         KernelInfo(
@@ -1279,14 +1261,14 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_center_crop_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_jit_integer_size("output_size"),
+                xfail_jit_python_scalar_arg("output_size"),
             ],
         ),
         KernelInfo(
             F.center_crop_bounding_box,
             sample_inputs_fn=sample_inputs_center_crop_bounding_box,
             test_marks=[
-                xfail_jit_integer_size("output_size"),
+                xfail_jit_python_scalar_arg("output_size"),
             ],
         ),
         KernelInfo(
@@ -1296,7 +1278,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_center_crop_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_jit_integer_size("output_size"),
+                xfail_jit_python_scalar_arg("output_size"),
             ],
         ),
         KernelInfo(
@@ -1923,7 +1905,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
             test_marks=[
-                xfail_jit_integer_size(),
+                xfail_jit_python_scalar_arg("size"),
                 mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
             ],
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
@@ -1934,7 +1916,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
             test_marks=[
-                xfail_jit_integer_size(),
+                xfail_jit_python_scalar_arg("size"),
                 mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
             ],
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
@@ -1945,6 +1927,7 @@ KERNEL_INFOS.extend(
 _NORMALIZE_MEANS_STDS = [
     ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
+    (0.5, 2.0),
 ]
 
 
@@ -1970,6 +1953,10 @@ KERNEL_INFOS.extend(
             F.normalize_image_tensor,
             kernel_name="normalize_image_tensor",
             sample_inputs_fn=sample_inputs_normalize_image_tensor,
+            test_marks=[
+                xfail_jit_python_scalar_arg("mean"),
+                xfail_jit_python_scalar_arg("std"),
+            ],
         ),
         KernelInfo(
             F.normalize_video,

@@ -73,24 +73,24 @@ class DispatcherInfo(InfoBase):
                     yield args_kwargs
 
 
-def xfail_jit_python_scalar_arg(name, *, reason=None):
-    reason = reason or f"Python scalar int or float for `{name}` is not supported when scripting"
+def xfail_jit(reason, *, condition=None):
     return TestMark(
         ("TestDispatchers", "test_scripted_smoke"),
         pytest.mark.xfail(reason=reason),
+        condition=condition,
+    )
+
+
+def xfail_jit_python_scalar_arg(name, *, reason=None):
+    return xfail_jit(
+        reason or f"Python scalar int or float for `{name}` is not supported when scripting",
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), (int, float)),
     )
 
 
-def xfail_jit_integer_size(name="size"):
-    return xfail_jit_python_scalar_arg(name, reason=f"Integer `{name}` is not supported when scripting.")
-
-
 def xfail_jit_tuple_instead_of_list(name, *, reason=None):
-    reason = reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestDispatchers", "test_scripted_smoke"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting",
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
     )
 
@@ -101,10 +101,8 @@ def is_list_of_ints(args_kwargs):
 
 
 def xfail_jit_list_of_ints(name, *, reason=None):
-    reason = reason or f"Passing a list of integers for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestDispatchers", "test_scripted_smoke"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Passing a list of integers for `{name}` is not supported when scripting",
         condition=is_list_of_ints,
     )
 
@@ -137,17 +135,6 @@ xfail_dispatch_pil_if_fill_sequence_needs_broadcast = TestMark(
 )
 
 
-def xfail_all_tests(*, reason, condition):
-    return [
-        TestMark(("TestDispatchers", test_name), pytest.mark.xfail(reason=reason), condition=condition)
-        for test_name in [
-            "test_scripted_smoke",
-            "test_dispatch_simple_tensor",
-            "test_dispatch_feature",
-        ]
-    ]
-
-
 DISPATCHER_INFOS = [
     DispatcherInfo(
         F.horizontal_flip,
@@ -167,7 +154,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.resize_image_pil),
         test_marks=[
-            xfail_jit_integer_size(),
+            xfail_jit_python_scalar_arg("size"),
         ],
     ),
     DispatcherInfo(
@@ -284,7 +271,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.center_crop_image_pil),
         test_marks=[
-            xfail_jit_integer_size("output_size"),
+            xfail_jit_python_scalar_arg("output_size"),
         ],
     ),
     DispatcherInfo(
@@ -392,7 +379,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.five_crop_image_pil),
         test_marks=[
-            xfail_jit_integer_size(),
+            xfail_jit_python_scalar_arg("size"),
             skip_dispatch_feature,
         ],
     ),
@@ -402,7 +389,7 @@ DISPATCHER_INFOS = [
             features.Image: F.ten_crop_image_tensor,
         },
         test_marks=[
-            xfail_jit_integer_size(),
+            xfail_jit_python_scalar_arg("size"),
             skip_dispatch_feature,
         ],
         pil_kernel_info=PILKernelInfo(F.ten_crop_image_pil),
@@ -414,6 +401,8 @@ DISPATCHER_INFOS = [
         },
         test_marks=[
             skip_dispatch_feature,
+            xfail_jit_python_scalar_arg("mean"),
+            xfail_jit_python_scalar_arg("std"),
         ],
     ),
     DispatcherInfo(
