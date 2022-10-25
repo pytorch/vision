@@ -23,8 +23,8 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
 
 
 def rgb_to_grayscale(
-    inpt: Union[features.LegacyImageTypeJIT, features.LegacyVideoTypeJIT], num_output_channels: int = 1
-) -> Union[features.LegacyImageTypeJIT, features.LegacyVideoTypeJIT]:
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT], num_output_channels: int = 1
+) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
     old_color_space = (
         features._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
         if isinstance(inpt, torch.Tensor)
