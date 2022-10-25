@@ -34,12 +34,15 @@ def erase(
     v: torch.Tensor,
     inplace: bool = False,
 ) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
-    if isinstance(inpt, torch.Tensor):
-        if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
-            inpt = inpt.as_subclass(torch.Tensor)
-        output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-        if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
-            output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
-        return output
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+    ):
+        return erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+    elif isinstance(inpt, features.Image):
+        output = erase_image_tensor(inpt.as_subclass(torch.Tensor), i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+        return features.Image.wrap_like(inpt, output)
+    elif isinstance(inpt, features.Video):
+        output = erase_video(inpt.as_subclass(torch.Tensor), i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+        return features.Video.wrap_like(inpt, output)
     else:  # isinstance(inpt, PIL.Image.Image):
         return erase_image_pil(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
