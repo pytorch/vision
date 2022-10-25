@@ -25,12 +25,13 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
 def rgb_to_grayscale(
     inpt: Union[features.LegacyImageTypeJIT, features.LegacyVideoTypeJIT], num_output_channels: int = 1
 ) -> Union[features.LegacyImageTypeJIT, features.LegacyVideoTypeJIT]:
-    old_color_space = (
-        features._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
-        if isinstance(inpt, torch.Tensor)
-        and (torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video)))
-        else None
-    )
+    if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
+        inpt = inpt.as_subclass(torch.Tensor)
+        old_color_space = None
+    elif isinstance(inpt, torch.Tensor):
+        old_color_space = features._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
+    else:
+        old_color_space = None
 
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
     replacement = (
