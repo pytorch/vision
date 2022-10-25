@@ -29,7 +29,7 @@ def rgb_to_grayscale(
         inpt = inpt.as_subclass(torch.Tensor)
         old_color_space = None
     elif isinstance(inpt, torch.Tensor):
-        old_color_space = features._image._from_tensor_shape(inpt.shape)
+        old_color_space = features._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
     else:
         old_color_space = None
 
