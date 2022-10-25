@@ -61,18 +61,6 @@ class BoundingBox(_Feature):
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(format=self.format, spatial_size=self.spatial_size)
 
-    def to_format(self, format: Union[str, BoundingBoxFormat]) -> BoundingBox:
-        if isinstance(format, str):
-            format = BoundingBoxFormat.from_str(format.upper())
-
-        return BoundingBox.wrap_like(
-            self,
-            self._F.convert_format_bounding_box(
-                self.as_subclass(torch.Tensor), old_format=self.format, new_format=format
-            ),
-            format=format,
-        )
-
     def horizontal_flip(self) -> BoundingBox:
         output = self._F.horizontal_flip_bounding_box(
             self.as_subclass(torch.Tensor), format=self.format, spatial_size=self.spatial_size

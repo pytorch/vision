@@ -16,9 +16,7 @@ def normalize_image_tensor(
         raise TypeError(f"Input tensor should be a float tensor. Got {image.dtype}.")
 
     if image.ndim < 3:
-        raise ValueError(
-            f"Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = {image.size()}"
-        )
+        raise ValueError(f"Expected tensor to be a tensor image of size (..., C, H, W). Got {image.shape}.")
 
     if isinstance(std, (tuple, list)):
         divzero = not all(std)

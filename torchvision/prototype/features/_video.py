@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, cast, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import torch
 from torchvision.transforms.functional import InterpolationMode
@@ -56,7 +56,7 @@ class Video(_Feature):
 
     @property
     def spatial_size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], tuple(self.shape[-2:]))
+        return tuple(self.shape[-2:])  # type: ignore[return-value]
 
     @property
     def num_channels(self) -> int:
@@ -237,7 +237,5 @@ class Video(_Feature):
 
 VideoType = Union[torch.Tensor, Video]
 VideoTypeJIT = torch.Tensor
-LegacyVideoType = torch.Tensor
-LegacyVideoTypeJIT = torch.Tensor
 TensorVideoType = Union[torch.Tensor, Video]
 TensorVideoTypeJIT = torch.Tensor
