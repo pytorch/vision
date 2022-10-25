@@ -808,14 +808,14 @@ def test_solarize_threshold1_upper_bound(threshold, device):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("threshold", [0, 64, 128, 192, 255])
 def test_solarize_threshold2_bound(threshold, device):
-    img = torch.randint(0, 256, (3, 12, 23)).to(device)
+    img = torch.randint(0, 256, (3, 12, 23), dtype=torch.uint8, device=device)
     F_t.solarize(img, threshold)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("threshold", [260])
 def test_solarize_threshold2_upper_bound(threshold, device):
-    img = torch.randint(0, 256, (3, 12, 23)).to(device)
+    img = torch.randint(0, 256, (3, 12, 23), dtype=torch.uint8, device=device)
     with pytest.raises(TypeError, match="Threshold should be less than bound of img."):
         F_t.solarize(img, threshold)
 
