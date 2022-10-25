@@ -27,9 +27,10 @@ def script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
-# Scripting a function often triggers
-# UserWarning: operator() profile_node %373 : int[] = prim::profile_ivalue(%371) does not have profile information
-# with varying numbers. Since these are uninteresting for us and only clutter the test summary, we ignore them.
+# Scripting a function often triggers a warning like
+# `UserWarning: operator() profile_node %$INT1 : int[] = prim::profile_ivalue($INT2) does not have profile information`
+# with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
+# them.
 ignore_jit_warning_no_profile = pytest.mark.filterwarnings(
     f"ignore:{re.escape('operator() profile_node %')}:UserWarning"
 )
