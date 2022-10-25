@@ -40,7 +40,14 @@ class RandomErasing(_RandomApplyTransform):
             raise ValueError("Scale should be between 0 and 1")
         self.scale = scale
         self.ratio = ratio
-        self.value = value
+        if isinstance(value, (int, float)):
+            self.value = [value]
+        elif isinstance(value, str):
+            self.value = None
+        elif isinstance(value, tuple):
+            self.value = list(value)
+        else:
+            self.value = value
         self.inplace = inplace
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
@@ -48,16 +55,7 @@ class RandomErasing(_RandomApplyTransform):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         img_c, img_h, img_w = query_chw(flat_inputs)
 
-        if isinstance(self.value, (int, float)):
-            value = [self.value]
-        elif isinstance(self.value, str):
-            value = None
-        elif isinstance(self.value, tuple):
-            value = list(self.value)
-        else:
-            value = self.value
-
-        if value is not None and not (len(value) in (1, img_c)):
+        if self.value is not None and not (len(self.value) in (1, img_c)):
             raise ValueError(
                 f"If value is a sequence, it should have either a single value or {img_c} (number of inpt channels)"
             )
@@ -79,10 +77,10 @@ class RandomErasing(_RandomApplyTransform):
             if not (h < img_h and w < img_w):
                 continue
 
-            if value is None:
+            if self.value is None:
                 v = torch.empty([img_c, h, w], dtype=torch.float32).normal_()
             else:
-                v = torch.tensor(value)[:, None, None]
+                v = torch.tensor(self.value)[:, None, None]
 
             i = torch.randint(0, img_h - h + 1, size=(1,)).item()
             j = torch.randint(0, img_w - w + 1, size=(1,)).item()
