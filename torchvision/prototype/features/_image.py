@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, cast, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch

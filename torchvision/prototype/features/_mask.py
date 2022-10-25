@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import torch
 from torchvision.transforms import InterpolationMode
