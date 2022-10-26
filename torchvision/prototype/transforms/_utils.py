@@ -75,9 +75,10 @@ def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, F
     _check_fill_arg(fill)
 
     if isinstance(fill, dict):
+        fill_copy = {}
         for k, v in fill.items():
-            fill[k] = _convert_fill_arg(v)
-        return fill
+            fill_copy[k] = _convert_fill_arg(v)
+        return fill_copy
 
     return _get_defaultdict(_convert_fill_arg(fill))
 
