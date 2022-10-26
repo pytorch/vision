@@ -223,19 +223,16 @@ class Pad(Transform):
         _check_padding_arg(padding)
         _check_padding_mode_arg(padding_mode)
 
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        if not isinstance(padding, int):
+            padding = list(padding)
         self.padding = padding
         self.fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-
-        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
-        padding = self.padding
-        if not isinstance(padding, int):
-            padding = list(padding)
-
-        return F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
+        return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)
 
 
 class RandomZoomOut(_RandomApplyTransform):
@@ -298,7 +295,7 @@ class RandomRotation(Transform):
         self.center = center
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        angle = float(torch.empty(1).uniform_(float(self.degrees[0]), float(self.degrees[1])).item())
+        angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -355,7 +352,7 @@ class RandomAffine(Transform):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         height, width = query_spatial_size(flat_inputs)
 
-        angle = float(torch.empty(1).uniform_(float(self.degrees[0]), float(self.degrees[1])).item())
+        angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
         if self.translate is not None:
             max_dx = float(self.translate[0] * width)
             max_dy = float(self.translate[1] * height)
@@ -366,15 +363,15 @@ class RandomAffine(Transform):
             translate = (0, 0)
 
         if self.scale is not None:
-            scale = float(torch.empty(1).uniform_(self.scale[0], self.scale[1]).item())
+            scale = torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
         else:
             scale = 1.0
 
         shear_x = shear_y = 0.0
         if self.shear is not None:
-            shear_x = float(torch.empty(1).uniform_(self.shear[0], self.shear[1]).item())
+            shear_x = torch.empty(1).uniform_(self.shear[0], self.shear[1]).item()
             if len(self.shear) == 4:
-                shear_y = float(torch.empty(1).uniform_(self.shear[2], self.shear[3]).item())
+                shear_y = torch.empty(1).uniform_(self.shear[2], self.shear[3]).item()
 
         shear = (shear_x, shear_y)
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
@@ -451,12 +448,12 @@ class RandomCrop(Transform):
         needs_pad = any(padding)
 
         needs_vert_crop, top = (
-            (True, int(torch.randint(0, padded_height - cropped_height + 1, size=())))
+            (True, torch.randint(0, padded_height - cropped_height + 1, size=()).item())
             if padded_height > cropped_height
             else (False, 0)
         )
         needs_horz_crop, left = (
-            (True, int(torch.randint(0, padded_width - cropped_width + 1, size=())))
+            (True, torch.randint(0, padded_width - cropped_width + 1, size=()).item())
             if padded_width > cropped_width
             else (False, 0)
         )
@@ -506,21 +503,23 @@ class RandomPerspective(_RandomApplyTransform):
 
         half_height = height // 2
         half_width = width // 2
+        bound_height = int(distortion_scale * half_height) + 1
+        bound_width = int(distortion_scale * half_width) + 1
         topleft = [
-            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1,)).item()),
-            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1,)).item()),
+            torch.randint(0, bound_width, size=(1,)).item(),
+            torch.randint(0, bound_height, size=(1,)).item(),
         ]
         topright = [
-            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1,)).item()),
-            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1,)).item()),
+            torch.randint(width - bound_width, width, size=(1,)).item(),
+            torch.randint(0, bound_height, size=(1,)).item(),
         ]
         botright = [
-            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1,)).item()),
-            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1,)).item()),
+            torch.randint(width - bound_width, width, size=(1,)).item(),
+            torch.randint(height - bound_height, height, size=(1,)).item(),
         ]
         botleft = [
-            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1,)).item()),
-            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1,)).item()),
+            torch.randint(0, bound_width, size=(1,)).item(),
+            torch.randint(height - bound_height, height, size=(1,)).item(),
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
@@ -623,7 +622,7 @@ class RandomIoUCrop(Transform):
 
         while True:
             # sample an option
-            idx = int(torch.randint(low=0, high=len(self.options), size=(1,)))
+            idx = torch.randint(low=0, high=len(self.options), size=(1,)).item()
             min_jaccard_overlap = self.options[idx]
             if min_jaccard_overlap >= 1.0:  # a value larger than 1 encodes the leave as-is option
                 return dict()
