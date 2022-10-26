@@ -239,9 +239,9 @@ class SimpleCopyPaste(_RandomApplyTransform):
         if blending:
             paste_alpha_mask = F.gaussian_blur(paste_alpha_mask.unsqueeze(0), kernel_size=[5, 5], sigma=[2.0])
 
-        inverse_paste_alpha_mask = ~paste_alpha_mask
+        inverse_paste_alpha_mask = paste_alpha_mask.logical_not()
         # Copy-paste images:
-        image = (image * inverse_paste_alpha_mask).add_(paste_image * paste_alpha_mask)
+        image = image.mul(inverse_paste_alpha_mask).add_(paste_image.mul(paste_alpha_mask))
 
         # Copy-paste masks:
         masks = masks * inverse_paste_alpha_mask
