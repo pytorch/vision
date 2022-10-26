@@ -33,12 +33,13 @@ def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size:
 
 
 def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
-    if type(fill) == dict:
-        # Do exact type check to avoid accepting default dicts from the user. DefaultDict values can be verified only
-        # at runtime not at construction type.
+    if isinstance(fill, dict):
         for key, value in fill.items():
             # Check key for type
             _check_fill_arg(value)
+        if isinstance(fill, defaultdict) and callable(fill.default_factory):
+            default_value = fill.default_factory()
+            _check_fill_arg(default_value)
     else:
         if fill is not None and not isinstance(fill, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate fill arg, only Numbers, tuples, lists and dicts are allowed.")
@@ -75,10 +76,13 @@ def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, F
     _check_fill_arg(fill)
 
     if isinstance(fill, dict):
-        fill_copy = {}
         for k, v in fill.items():
-            fill_copy[k] = _convert_fill_arg(v)
-        return fill_copy
+            fill[k] = _convert_fill_arg(v)
+        if isinstance(fill, defaultdict) and callable(fill.default_factory):
+            default_value = fill.default_factory()
+            sanitized_default = _convert_fill_arg(default_value)
+            fill.default_factory = functools.partial(_default_arg, sanitized_default)
+        return fill  # type: ignore[return-value]
 
     return _get_defaultdict(_convert_fill_arg(fill))
 
