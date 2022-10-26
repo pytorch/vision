@@ -505,7 +505,13 @@ class AugMix(_AutoAugmentBase):
                 aug = self._apply_image_or_video_transform(
                     aug, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
                 )
-            mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
+            mix.add_(
+                # The multiplication below could become in-place provided `aug is not batch and aug.is_floating_point()`
+                # Currently we can't do this because `aug` has to be `unint8` to support ops like `equalize`.
+                # TODO: change this once all ops in `F` support float inputs.
+                combined_weights[:, i].reshape(batch_dims)
+                * aug
+            )
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
         if isinstance(orig_image_or_video, (features.Image, features.Video)):
