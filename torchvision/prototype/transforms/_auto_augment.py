@@ -1,5 +1,5 @@
 import math
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -166,9 +166,7 @@ class AutoAugment(_AutoAugmentBase):
         "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Posterize": (
-            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
-            .round()
-            .int(),
+            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 4))).round().int(),
             False,
         ),
         "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
@@ -323,9 +321,7 @@ class RandAugment(_AutoAugmentBase):
         "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Posterize": (
-            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
-            .round()
-            .int(),
+            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 4))).round().int(),
             False,
         ),
         "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
@@ -379,9 +375,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
         "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
         "Posterize": (
-            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 6)))
-            .round()
-            .int(),
+            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 6))).round().int(),
             False,
         ),
         "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
@@ -426,9 +420,7 @@ class AugMix(_AutoAugmentBase):
         "TranslateY": (lambda num_bins, height, width: torch.linspace(0.0, height / 3.0, num_bins), True),
         "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins), True),
         "Posterize": (
-            lambda num_bins, height, width: cast(torch.Tensor, 4 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
-            .round()
-            .int(),
+            lambda num_bins, height, width: (4 - (torch.arange(num_bins) / ((num_bins - 1) / 4))).round().int(),
             False,
         ),
         "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
