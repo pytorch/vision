@@ -2,7 +2,6 @@ import enum
 import inspect
 import random
 import re
-from collections import defaultdict
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
