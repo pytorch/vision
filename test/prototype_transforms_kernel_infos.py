@@ -2,7 +2,6 @@ import decimal
 import functools
 import itertools
 import math
-import re
 
 import numpy as np
 import pytest
@@ -83,24 +82,21 @@ def pil_reference_wrapper(pil_kernel):
     return wrapper
 
 
+def xfail_jit(reason, *, condition=None):
+    return TestMark(("TestKernels", "test_scripted_vs_eager"), pytest.mark.xfail(reason=reason), condition=condition)
+
+
 def xfail_jit_python_scalar_arg(name, *, reason=None):
-    reason = reason or f"Python scalar int or float for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestKernels", "test_scripted_vs_eager"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Python scalar int or float for `{name}` is not supported when scripting",
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), (int, float)),
     )
 
 
-def xfail_jit_integer_size(name="size"):
-    return xfail_jit_python_scalar_arg(name, reason=f"Integer `{name}` is not supported when scripting.")
-
-
 def xfail_jit_tuple_instead_of_list(name, *, reason=None):
     reason = reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestKernels", "test_scripted_vs_eager"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting",
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
     )
 
@@ -111,25 +107,10 @@ def is_list_of_ints(args_kwargs):
 
 
 def xfail_jit_list_of_ints(name, *, reason=None):
-    reason = reason or f"Passing a list of integers for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestKernels", "test_scripted_vs_eager"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Passing a list of integers for `{name}` is not supported when scripting",
         condition=is_list_of_ints,
     )
-
-
-def xfail_all_tests(*, reason, condition):
-    return [
-        TestMark(("TestKernels", test_name), pytest.mark.xfail(reason=reason), condition=condition)
-        for test_name in [
-            "test_scripted_vs_eager",
-            "test_batched_vs_single",
-            "test_no_inplace",
-            "test_cuda_vs_cpu",
-            "test_dtype_and_device_consistency",
-        ]
-    ]
 
 
 KERNEL_INFOS = []
@@ -177,12 +158,6 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.horizontal_flip_bounding_box,
             sample_inputs_fn=sample_inputs_horizontal_flip_bounding_box,
-            test_marks=[
-                TestMark(
-                    ("TestKernels", "test_scripted_vs_eager"),
-                    pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %72')}:UserWarning"),
-                )
-            ],
         ),
         KernelInfo(
             F.horizontal_flip_mask,
@@ -297,14 +272,14 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_jit_integer_size(),
+                xfail_jit_python_scalar_arg("size"),
             ],
         ),
         KernelInfo(
             F.resize_bounding_box,
             sample_inputs_fn=sample_inputs_resize_bounding_box,
             test_marks=[
-                xfail_jit_integer_size(),
+                xfail_jit_python_scalar_arg("size"),
             ],
         ),
         KernelInfo(
@@ -314,7 +289,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_jit_integer_size(),
+                xfail_jit_python_scalar_arg("size"),
             ],
         ),
         KernelInfo(
@@ -461,9 +436,7 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
             ],
             dtype=bbox.dtype,
         )
-        return F.convert_format_bounding_box(
-            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-        )
+        return F.convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format)
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
@@ -556,17 +529,12 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_convert_format_bounding_box():
-    formats = set(features.BoundingBoxFormat)
-    for bounding_box_loader in make_bounding_box_loaders(formats=formats):
-        old_format = bounding_box_loader.format
-        for params in combinations_grid(new_format=formats - {old_format}, copy=(True, False)):
-            yield ArgsKwargs(bounding_box_loader, old_format=old_format, **params)
+    formats = list(features.BoundingBoxFormat)
+    for bounding_box_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
+        yield ArgsKwargs(bounding_box_loader, old_format=bounding_box_loader.format, new_format=new_format)
 
 
-def reference_convert_format_bounding_box(bounding_box, old_format, new_format, copy):
-    if not copy:
-        raise pytest.UsageError("Reference for `convert_format_bounding_box` only supports `copy=True`")
-
+def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
     return torchvision.ops.box_convert(
         bounding_box, in_fmt=old_format.kernel_name.lower(), out_fmt=new_format.kernel_name.lower()
     )
@@ -574,8 +542,7 @@ def reference_convert_format_bounding_box(bounding_box, old_format, new_format, 
 
 def reference_inputs_convert_format_bounding_box():
     for args_kwargs in sample_inputs_convert_color_space_image_tensor():
-        (image_loader, *other_args), kwargs = args_kwargs
-        if len(image_loader.shape) == 2 and kwargs.setdefault("copy", True):
+        if len(args_kwargs.args[0].shape) == 2:
             yield args_kwargs
 
 
@@ -600,11 +567,11 @@ def sample_inputs_convert_color_space_image_tensor():
         for image_loader in make_image_loaders(
             sizes=["random"], color_spaces=[color_space], dtypes=[torch.float32], constant_alpha=True
         ):
-            yield ArgsKwargs(image_loader, old_color_space=color_space, new_color_space=color_space, copy=False)
+            yield ArgsKwargs(image_loader, old_color_space=color_space, new_color_space=color_space)
 
 
 @pil_reference_wrapper
-def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space, copy=True):
+def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space):
     color_space_pil = features.ColorSpace.from_pil_mode(image_pil.mode)
     if color_space_pil != old_color_space:
         raise pytest.UsageError(
@@ -612,7 +579,7 @@ def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_c
             f"from {old_color_space} to {color_space_pil}"
         )
 
-    return F.convert_color_space_image_pil(image_pil, color_space=new_color_space, copy=copy)
+    return F.convert_color_space_image_pil(image_pil, color_space=new_color_space)
 
 
 def reference_inputs_convert_color_space_image_tensor():
@@ -1287,14 +1254,14 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_center_crop_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_jit_integer_size("output_size"),
+                xfail_jit_python_scalar_arg("output_size"),
             ],
         ),
         KernelInfo(
             F.center_crop_bounding_box,
             sample_inputs_fn=sample_inputs_center_crop_bounding_box,
             test_marks=[
-                xfail_jit_integer_size("output_size"),
+                xfail_jit_python_scalar_arg("output_size"),
             ],
         ),
         KernelInfo(
@@ -1304,7 +1271,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_center_crop_mask,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_jit_integer_size("output_size"),
+                xfail_jit_python_scalar_arg("output_size"),
             ],
         ),
         KernelInfo(
@@ -1931,7 +1898,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
             test_marks=[
-                xfail_jit_integer_size(),
+                xfail_jit_python_scalar_arg("size"),
                 mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
             ],
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
@@ -1942,7 +1909,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
             test_marks=[
-                xfail_jit_integer_size(),
+                xfail_jit_python_scalar_arg("size"),
                 mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
             ],
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
@@ -1953,6 +1920,7 @@ KERNEL_INFOS.extend(
 _NORMALIZE_MEANS_STDS = [
     ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
+    (0.5, 2.0),
 ]
 
 
@@ -1978,6 +1946,10 @@ KERNEL_INFOS.extend(
             F.normalize_image_tensor,
             kernel_name="normalize_image_tensor",
             sample_inputs_fn=sample_inputs_normalize_image_tensor,
+            test_marks=[
+                xfail_jit_python_scalar_arg("mean"),
+                xfail_jit_python_scalar_arg("std"),
+            ],
         ),
         KernelInfo(
             F.normalize_video,
@@ -1987,7 +1959,7 @@ KERNEL_INFOS.extend(
 )
 
 
-def sample_inputs_convert_image_dtype():
+def sample_inputs_convert_dtype_image_tensor():
     for input_dtype, output_dtype in itertools.product(
         [torch.uint8, torch.int64, torch.float32, torch.float64], repeat=2
     ):
@@ -2000,10 +1972,8 @@ def sample_inputs_convert_image_dtype():
         ):
             yield ArgsKwargs(image_loader, dtype=output_dtype)
 
-    yield ArgsKwargs(make_image_loader(color_space=features.ColorSpace.RGB), dtype=torch.uint8)
 
-
-def reference_convert_image_dtype(image, dtype=torch.float):
+def reference_convert_dtype_image_tensor(image, dtype=torch.float):
     input_dtype = image.dtype
     output_dtype = dtype
 
@@ -2034,7 +2004,7 @@ def reference_convert_image_dtype(image, dtype=torch.float):
     return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype)
 
 
-def reference_inputs_convert_image_dtype():
+def reference_inputs_convert_dtype_image_tensor():
     for input_dtype, output_dtype in itertools.product(
         [
             torch.uint8,
@@ -2063,24 +2033,26 @@ def reference_inputs_convert_image_dtype():
         yield ArgsKwargs(image, dtype=output_dtype)
 
 
+def sample_inputs_convert_dtype_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+        yield ArgsKwargs(video_loader)
+
+
+skip_dtype_consistency = TestMark(
+    ("TestKernels", "test_dtype_and_device_consistency"),
+    pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
+    condition=lambda args_kwargs: args_kwargs.args[0].dtype != args_kwargs.kwargs.get("dtype", torch.float32),
+)
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
-            F.convert_image_dtype,
-            sample_inputs_fn=sample_inputs_convert_image_dtype,
-            reference_fn=reference_convert_image_dtype,
-            reference_inputs_fn=reference_inputs_convert_image_dtype,
+            F.convert_dtype_image_tensor,
+            sample_inputs_fn=sample_inputs_convert_dtype_image_tensor,
+            reference_fn=reference_convert_dtype_image_tensor,
+            reference_inputs_fn=reference_inputs_convert_dtype_image_tensor,
             test_marks=[
-                TestMark(
-                    ("TestKernels", "test_scripted_vs_eager"),
-                    pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %41')}:UserWarning"),
-                ),
-                TestMark(
-                    ("TestKernels", "test_dtype_and_device_consistency"),
-                    pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
-                    condition=lambda args_kwargs: args_kwargs.args[0].dtype
-                    != args_kwargs.kwargs.get("dtype", torch.float32),
-                ),
+                skip_dtype_consistency,
                 TestMark(
                     ("TestKernels", "test_against_reference"),
                     pytest.mark.xfail(reason="Conversion overflows"),
@@ -2089,15 +2061,58 @@ KERNEL_INFOS.extend(
                         and not args_kwargs.kwargs["dtype"].is_floating_point
                     )
                     or (
-                        args_kwargs.args[0].dtype in {torch.float16, torch.bfloat16}
-                        and args_kwargs.kwargs["dtype"] == torch.int64
-                    )
-                    or (
                         args_kwargs.args[0].dtype in {torch.int32, torch.int64}
                         and args_kwargs.kwargs["dtype"] == torch.float16
                     ),
                 ),
             ],
         ),
+        KernelInfo(
+            F.convert_dtype_video,
+            sample_inputs_fn=sample_inputs_convert_dtype_video,
+            test_marks=[
+                skip_dtype_consistency,
+            ],
+        ),
     ]
+)
+
+
+def sample_inputs_uniform_temporal_subsample_video():
+    for video_loader in make_video_loaders(sizes=["random"], num_frames=[4]):
+        for temporal_dim in [-4, len(video_loader.shape) - 4]:
+            yield ArgsKwargs(video_loader, num_samples=2, temporal_dim=temporal_dim)
+
+
+def reference_uniform_temporal_subsample_video(x, num_samples, temporal_dim=-4):
+    # Copy-pasted from
+    # https://github.com/facebookresearch/pytorchvideo/blob/c8d23d8b7e597586a9e2d18f6ed31ad8aa379a7a/pytorchvideo/transforms/functional.py#L19
+    t = x.shape[temporal_dim]
+    assert num_samples > 0 and t > 0
+    # Sample by nearest neighbor interpolation if num_samples > t.
+    indices = torch.linspace(0, t - 1, num_samples)
+    indices = torch.clamp(indices, 0, t - 1).long()
+    return torch.index_select(x, temporal_dim, indices)
+
+
+def reference_inputs_uniform_temporal_subsample_video():
+    for video_loader in make_video_loaders(sizes=["random"], color_spaces=[features.ColorSpace.RGB], num_frames=[10]):
+        for num_samples in range(1, video_loader.shape[-4] + 1):
+            yield ArgsKwargs(video_loader, num_samples)
+
+
+KERNEL_INFOS.append(
+    KernelInfo(
+        F.uniform_temporal_subsample_video,
+        sample_inputs_fn=sample_inputs_uniform_temporal_subsample_video,
+        reference_fn=reference_uniform_temporal_subsample_video,
+        reference_inputs_fn=reference_inputs_uniform_temporal_subsample_video,
+        test_marks=[
+            TestMark(
+                ("TestKernels", "test_batched_vs_single"),
+                pytest.mark.skip("Positive `temporal_dim` arguments are not equivalent for batched and single inputs"),
+                condition=lambda args_kwargs: args_kwargs.kwargs.get("temporal_dim") >= 0,
+            ),
+        ],
+    )
 )

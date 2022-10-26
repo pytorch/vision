@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, cast, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -104,23 +104,11 @@ class Image(_Feature):
 
     @property
     def spatial_size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], tuple(self.shape[-2:]))
+        return tuple(self.shape[-2:])  # type: ignore[return-value]
 
     @property
     def num_channels(self) -> int:
         return self.shape[-3]
-
-    def to_color_space(self, color_space: Union[str, ColorSpace], copy: bool = True) -> Image:
-        if isinstance(color_space, str):
-            color_space = ColorSpace.from_str(color_space.upper())
-
-        return Image.wrap_like(
-            self,
-            self._F.convert_color_space_image_tensor(
-                self.as_subclass(torch.Tensor), old_color_space=self.color_space, new_color_space=color_space, copy=copy
-            ),
-            color_space=color_space,
-        )
 
     def horizontal_flip(self) -> Image:
         output = self._F.horizontal_flip_image_tensor(self.as_subclass(torch.Tensor))
@@ -297,7 +285,5 @@ class Image(_Feature):
 
 ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
 ImageTypeJIT = torch.Tensor
-LegacyImageType = Union[torch.Tensor, PIL.Image.Image]
-LegacyImageTypeJIT = torch.Tensor
 TensorImageType = Union[torch.Tensor, Image]
 TensorImageTypeJIT = torch.Tensor

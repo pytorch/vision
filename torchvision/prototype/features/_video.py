@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, cast, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import torch
 from torchvision.transforms.functional import InterpolationMode
@@ -56,7 +56,7 @@ class Video(_Feature):
 
     @property
     def spatial_size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], tuple(self.shape[-2:]))
+        return tuple(self.shape[-2:])  # type: ignore[return-value]
 
     @property
     def num_channels(self) -> int:
@@ -65,18 +65,6 @@ class Video(_Feature):
     @property
     def num_frames(self) -> int:
         return self.shape[-4]
-
-    def to_color_space(self, color_space: Union[str, ColorSpace], copy: bool = True) -> Video:
-        if isinstance(color_space, str):
-            color_space = ColorSpace.from_str(color_space.upper())
-
-        return Video.wrap_like(
-            self,
-            self._F.convert_color_space_video(
-                self.as_subclass(torch.Tensor), old_color_space=self.color_space, new_color_space=color_space, copy=copy
-            ),
-            color_space=color_space,
-        )
 
     def horizontal_flip(self) -> Video:
         output = self._F.horizontal_flip_video(self.as_subclass(torch.Tensor))
@@ -249,7 +237,5 @@ class Video(_Feature):
 
 VideoType = Union[torch.Tensor, Video]
 VideoTypeJIT = torch.Tensor
-LegacyVideoType = torch.Tensor
-LegacyVideoTypeJIT = torch.Tensor
 TensorVideoType = Union[torch.Tensor, Video]
 TensorVideoTypeJIT = torch.Tensor

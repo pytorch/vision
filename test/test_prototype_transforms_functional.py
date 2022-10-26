@@ -1,5 +1,6 @@
 import math
 import os
+import re
 
 import numpy as np
 import PIL.Image
@@ -24,6 +25,15 @@ def script(fn):
         return torch.jit.script(fn)
     except Exception as error:
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
+
+
+# Scripting a function often triggers a warning like
+# `UserWarning: operator() profile_node %$INT1 : int[] = prim::profile_ivalue($INT2) does not have profile information`
+# with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
+# them.
+ignore_jit_warning_no_profile = pytest.mark.filterwarnings(
+    f"ignore:{re.escape('operator() profile_node %')}:UserWarning"
+)
 
 
 def make_info_args_kwargs_params(info, *, args_kwargs_fn, test_id=None):
@@ -87,6 +97,7 @@ class TestKernels:
         condition=lambda info: info.reference_fn is not None,
     )
 
+    @ignore_jit_warning_no_profile
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_scripted_vs_eager(self, info, args_kwargs, device):
@@ -174,10 +185,7 @@ class TestKernels:
         output_cpu = info.kernel(input_cpu, *other_args, **kwargs)
         output_cuda = info.kernel(input_cuda, *other_args, **kwargs)
 
-        try:
-            assert_close(output_cuda, output_cpu, check_device=False, **info.closeness_kwargs)
-        except AssertionError:
-            pytest.xfail("CUDA vs CPU tolerance issue to be fixed")
+        assert_close(output_cuda, output_cpu, check_device=False, **info.closeness_kwargs)
 
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -221,6 +229,7 @@ class TestDispatchers:
         condition=lambda info: features.Image in info.kernels,
     )
 
+    @ignore_jit_warning_no_profile
     @image_sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_scripted_smoke(self, info, args_kwargs, device):
@@ -233,6 +242,7 @@ class TestDispatchers:
 
     # TODO: We need this until the dispatchers below also have `DispatcherInfo`'s. If they do, `test_scripted_smoke`
     #  replaces this test for them.
+    @ignore_jit_warning_no_profile
     @pytest.mark.parametrize(
         "dispatcher",
         [
@@ -245,6 +255,7 @@ class TestDispatchers:
             F.get_num_frames,
             F.get_spatial_size,
             F.rgb_to_grayscale,
+            F.uniform_temporal_subsample,
         ],
         ids=lambda dispatcher: dispatcher.__name__,
     )
@@ -310,6 +321,7 @@ class TestDispatchers:
             (F.get_image_num_channels, F.get_num_channels),
             (F.to_pil_image, F.to_image_pil),
             (F.elastic_transform, F.elastic),
+            (F.convert_image_dtype, F.convert_dtype_image_tensor),
         ]
     ],
 )
@@ -481,9 +493,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             device=bbox.device,
         )
         return (
-            convert_format_bounding_box(
-                out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
-            ),
+            convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format),
             (height, width),
         )
 
@@ -736,14 +746,16 @@ def test_correctness_pad_bounding_box(device, padding):
 
         bbox_format = bbox.format
         bbox_dtype = bbox.dtype
-        bbox = convert_format_bounding_box(bbox, old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY)
+        bbox = (
+            bbox.clone()
+            if bbox_format == features.BoundingBoxFormat.XYXY
+            else convert_format_bounding_box(bbox, bbox_format, features.BoundingBoxFormat.XYXY)
+        )
 
         bbox[0::2] += pad_left
         bbox[1::2] += pad_up
 
-        bbox = convert_format_bounding_box(
-            bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
-        )
+        bbox = convert_format_bounding_box(bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format)
         if bbox.dtype != bbox_dtype:
             # Temporary cast to original dtype
             # e.g. float32 -> int
@@ -843,9 +855,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_format_bounding_box(
-            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
-        )
+        return convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format)
 
     spatial_size = (32, 38)
 
@@ -906,7 +916,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_format_bounding_box(out_bbox, features.BoundingBoxFormat.XYWH, format_, copy=False)
+        return convert_format_bounding_box(out_bbox, features.BoundingBoxFormat.XYWH, format_)
 
     for bboxes in make_bounding_boxes(extra_dims=((4,),)):
         bboxes = bboxes.to(device)
@@ -1064,3 +1074,13 @@ def test_equalize_image_tensor_edge_cases():
     inpt[..., 100:, 100:] = 1
     output = F.equalize_image_tensor(inpt)
     assert output.unique().tolist() == [0, 255]
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_uniform_temporal_subsample(device):
+    video = torch.arange(10, device=device)[:, None, None, None].expand(-1, 3, 8, 8)
+    out_video = F.uniform_temporal_subsample(video, 5)
+    assert out_video.unique().tolist() == [0, 2, 4, 6, 9]
+
+    out_video = F.uniform_temporal_subsample(video, 8)
+    assert out_video.unique().tolist() == [0, 1, 2, 3, 5, 6, 7, 9]
