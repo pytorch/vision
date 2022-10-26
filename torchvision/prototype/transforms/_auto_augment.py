@@ -508,7 +508,7 @@ class AugMix(_AutoAugmentBase):
             mix.add_(
                 # The multiplication below could become in-place provided `aug is not batch and aug.is_floating_point()`
                 # Currently we can't do this because `aug` has to be `unint8` to support ops like `equalize`.
-                # TODO: change this once all ops in `F` support float inputs.
+                # TODO: change this once all ops in `F` support floats. https://github.com/pytorch/vision/issues/6840
                 combined_weights[:, i].reshape(batch_dims)
                 * aug
             )
