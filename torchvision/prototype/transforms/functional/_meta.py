@@ -183,6 +183,10 @@ def clamp_bounding_box(
     return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format)
 
 
+def _split_alpha(image: torch.Tensor) -> List[torch.Tensor]:
+    return torch.tensor_split(image, indices=(-1,), dim=-3)
+
+
 def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
     image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
     if not torch.all(alpha == _FT._max_value(alpha.dtype)):
@@ -233,7 +237,7 @@ def convert_color_space_image_tensor(
     elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB:
         return _gray_to_rgb(_strip_alpha(image))
     elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB_ALPHA:
-        image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
+        image, alpha = _split_alpha(image)
         return _add_alpha(_gray_to_rgb(image), alpha)
     elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAY:
         return _rgb_to_gray(image)
@@ -244,7 +248,7 @@ def convert_color_space_image_tensor(
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY:
         return _rgb_to_gray(_strip_alpha(image))
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY_ALPHA:
-        image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
+        image, alpha = _split_alpha(image)
         return _add_alpha(_rgb_to_gray(image), alpha)
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.RGB:
         return _strip_alpha(image)
