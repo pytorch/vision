@@ -235,7 +235,6 @@ class Pad(Transform):
         if not isinstance(padding, int):
             padding = list(padding)
 
-        fill = F._geometry._convert_fill_arg(fill)
         return F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
 
 
@@ -274,7 +273,6 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
         return F.pad(inpt, **params, fill=fill)
 
 
@@ -305,7 +303,6 @@ class RandomRotation(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
         return F.rotate(
             inpt,
             **params,
@@ -384,7 +381,6 @@ class RandomAffine(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
         return F.affine(
             inpt,
             **params,
@@ -478,8 +474,6 @@ class RandomCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
             fill = self.fill[type(inpt)]
-            fill = F._geometry._convert_fill_arg(fill)
-
             inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         if params["needs_crop"]:
@@ -535,7 +529,6 @@ class RandomPerspective(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
         return F.perspective(
             inpt,
             **params,
@@ -584,7 +577,6 @@ class ElasticTransform(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
         return F.elastic(
             inpt,
             **params,
@@ -855,7 +847,6 @@ class FixedSizeCrop(Transform):
 
         if params["needs_pad"]:
             fill = self.fill[type(inpt)]
-            fill = F._geometry._convert_fill_arg(fill)
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt

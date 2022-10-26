@@ -71,10 +71,9 @@ class _AutoAugmentBase(Transform):
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Dict[Type, features.FillType],
+        fill: Dict[Type, features.FillTypeJIT],
     ) -> Union[features.ImageType, features.VideoType]:
         fill_ = fill[type(image)]
-        fill_ = F._geometry._convert_fill_arg(fill_)
 
         if transform_id == "Identity":
             return image

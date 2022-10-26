@@ -7,7 +7,7 @@ import PIL.Image
 
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features
-from torchvision.prototype.features._feature import FillType
+from torchvision.prototype.features._feature import FillType, FillTypeJIT
 
 from torchvision.prototype.transforms.functional._meta import get_dimensions, get_spatial_size
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
@@ -55,13 +55,30 @@ def _get_defaultdict(default: T) -> Dict[Any, T]:
     return defaultdict(functools.partial(_default_arg, default))
 
 
-def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillType]:
+def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
+    # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
+    # So, we can't reassign fill to 0
+    # if fill is None:
+    #     fill = 0
+    if fill is None:
+        return fill
+
+    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
+    if not isinstance(fill, (int, float)):
+        fill = [float(v) for v in list(fill)]
+    return fill
+
+
+def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillTypeJIT]:
     _check_fill_arg(fill)
 
     if isinstance(fill, dict):
-        return fill
+        fill_copy = {}
+        for k, v in fill.items():
+            fill_copy[k] = _convert_fill_arg(v)
+        return fill_copy
 
-    return _get_defaultdict(fill)
+    return _get_defaultdict(_convert_fill_arg(fill))
 
 
 def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
