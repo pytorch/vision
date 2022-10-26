@@ -1040,7 +1040,9 @@ class TestRefSegTransforms:
                 seg_transforms.RandomCrop(size=480),
                 prototype_transforms.Compose(
                     [
-                        PadIfSmaller(size=480, fill={features.Mask: 255, features.Image: 0, PIL.Image.Image: 0, torch.Tensor: 0}),
+                        PadIfSmaller(
+                            size=480, fill={features.Mask: 255, features.Image: 0, PIL.Image.Image: 0, torch.Tensor: 0}
+                        ),
                         prototype_transforms.RandomCrop(size=480),
                     ]
                 ),
