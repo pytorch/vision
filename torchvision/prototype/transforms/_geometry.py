@@ -506,23 +506,23 @@ class RandomPerspective(_RandomApplyTransform):
         bound_height = int(distortion_scale * half_height) + 1
         bound_width = int(distortion_scale * half_width) + 1
         topleft = [
-            torch.randint(0, bound_width, size=(1,)).item(),
-            torch.randint(0, bound_height, size=(1,)).item(),
+            int(torch.randint(0, bound_width, size=(1,))),
+            int(torch.randint(0, bound_height, size=(1,))),
         ]
         topright = [
-            torch.randint(width - bound_width, width, size=(1,)).item(),
-            torch.randint(0, bound_height, size=(1,)).item(),
+            int(torch.randint(width - bound_width, width, size=(1,))),
+            int(torch.randint(0, bound_height, size=(1,))),
         ]
         botright = [
-            torch.randint(width - bound_width, width, size=(1,)).item(),
-            torch.randint(height - bound_height, height, size=(1,)).item(),
+            int(torch.randint(width - bound_width, width, size=(1,))),
+            int(torch.randint(height - bound_height, height, size=(1,))),
         ]
         botleft = [
-            torch.randint(0, bound_width, size=(1,)).item(),
-            torch.randint(height - bound_height, height, size=(1,)).item(),
+            int(torch.randint(0, bound_width, size=(1,))),
+            int(torch.randint(height - bound_height, height, size=(1,))),
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
-        endpoints: List[List[int]] = [topleft, topright, botright, botleft]  # type: ignore[list-item]
+        endpoints = [topleft, topright, botright, botleft]
         perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
         return dict(perspective_coeffs=perspective_coeffs)
 
@@ -622,7 +622,7 @@ class RandomIoUCrop(Transform):
 
         while True:
             # sample an option
-            idx: int = torch.randint(low=0, high=len(self.options), size=(1,)).item()  # type: ignore[assignment]
+            idx = int(torch.randint(low=0, high=len(self.options), size=(1,)))
             min_jaccard_overlap = self.options[idx]
             if min_jaccard_overlap >= 1.0:  # a value larger than 1 encodes the leave as-is option
                 return dict()
