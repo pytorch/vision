@@ -1,5 +1,5 @@
 import math
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -10,9 +10,6 @@ from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F,
 from torchvision.prototype.transforms.functional._meta import get_spatial_size
 
 from ._utils import _isinstance, _setup_fill_arg
-
-K = TypeVar("K")
-V = TypeVar("V")
 
 
 class _AutoAugmentBase(Transform):
@@ -26,7 +23,7 @@ class _AutoAugmentBase(Transform):
         self.interpolation = interpolation
         self.fill = _setup_fill_arg(fill)
 
-    def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
+    def _get_random_item(self, dct: Dict[str, Tuple[Callable, bool]]) -> Tuple[str, Tuple[Callable, bool]]:
         keys = tuple(dct.keys())
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
