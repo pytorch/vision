@@ -522,7 +522,7 @@ class RandomPerspective(_RandomApplyTransform):
             torch.randint(height - bound_height, height, size=(1,)).item(),
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
-        endpoints = [topleft, topright, botright, botleft]
+        endpoints: List[List[int]] = [topleft, topright, botright, botleft]  # type: ignore[list-item]
         perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
         return dict(perspective_coeffs=perspective_coeffs)
 
@@ -622,7 +622,7 @@ class RandomIoUCrop(Transform):
 
         while True:
             # sample an option
-            idx = torch.randint(low=0, high=len(self.options), size=(1,)).item()
+            idx: int = torch.randint(low=0, high=len(self.options), size=(1,)).item()  # type: ignore[assignment]
             min_jaccard_overlap = self.options[idx]
             if min_jaccard_overlap >= 1.0:  # a value larger than 1 encodes the leave as-is option
                 return dict()

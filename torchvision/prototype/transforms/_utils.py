@@ -97,7 +97,7 @@ def _check_padding_mode_arg(padding_mode: Literal["constant", "edge", "reflect",
 
 
 def query_bounding_box(flat_inputs: List[Any]) -> features.BoundingBox:
-    bounding_boxes = {inpt for inpt in flat_inputs if isinstance(inpt, features.BoundingBox)}
+    bounding_boxes = [inpt for inpt in flat_inputs if isinstance(inpt, features.BoundingBox)]
     if not bounding_boxes:
         raise TypeError("No bounding box was found in the sample")
     elif len(bounding_boxes) > 1:
