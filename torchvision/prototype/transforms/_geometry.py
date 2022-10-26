@@ -448,12 +448,12 @@ class RandomCrop(Transform):
         needs_pad = any(padding)
 
         needs_vert_crop, top = (
-            (True, torch.randint(0, padded_height - cropped_height + 1, size=()).item())
+            (True, int(torch.randint(0, padded_height - cropped_height + 1, size=())))
             if padded_height > cropped_height
             else (False, 0)
         )
         needs_horz_crop, left = (
-            (True, torch.randint(0, padded_width - cropped_width + 1, size=()).item())
+            (True, int(torch.randint(0, padded_width - cropped_width + 1, size=())))
             if padded_width > cropped_width
             else (False, 0)
         )
