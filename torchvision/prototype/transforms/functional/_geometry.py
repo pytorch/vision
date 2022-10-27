@@ -470,20 +470,6 @@ def affine_video(
     )
 
 
-def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
-    # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
-    # So, we can't reassign fill to 0
-    # if fill is None:
-    #     fill = 0
-    if fill is None:
-        return fill
-
-    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
-    if not isinstance(fill, (int, float)):
-        fill = [float(v) for v in list(fill)]
-    return fill
-
-
 def affine(
     inpt: features.InputTypeJIT,
     angle: Union[int, float],
