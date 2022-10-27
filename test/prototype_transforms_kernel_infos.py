@@ -2,7 +2,6 @@ import decimal
 import functools
 import itertools
 import math
-import re
 
 import numpy as np
 import pytest
@@ -159,12 +158,6 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.horizontal_flip_bounding_box,
             sample_inputs_fn=sample_inputs_horizontal_flip_bounding_box,
-            test_marks=[
-                TestMark(
-                    ("TestKernels", "test_scripted_vs_eager"),
-                    pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %72')}:UserWarning"),
-                )
-            ],
         ),
         KernelInfo(
             F.horizontal_flip_mask,
@@ -2045,17 +2038,11 @@ def sample_inputs_convert_dtype_video():
         yield ArgsKwargs(video_loader)
 
 
-_common_convert_dtype_marks = [
-    TestMark(
-        ("TestKernels", "test_dtype_and_device_consistency"),
-        pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
-        condition=lambda args_kwargs: args_kwargs.args[0].dtype != args_kwargs.kwargs.get("dtype", torch.float32),
-    ),
-    TestMark(
-        ("TestKernels", "test_scripted_vs_eager"),
-        pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %')}:UserWarning"),
-    ),
-]
+skip_dtype_consistency = TestMark(
+    ("TestKernels", "test_dtype_and_device_consistency"),
+    pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
+    condition=lambda args_kwargs: args_kwargs.args[0].dtype != args_kwargs.kwargs.get("dtype", torch.float32),
+)
 
 KERNEL_INFOS.extend(
     [
@@ -2065,7 +2052,7 @@ KERNEL_INFOS.extend(
             reference_fn=reference_convert_dtype_image_tensor,
             reference_inputs_fn=reference_inputs_convert_dtype_image_tensor,
             test_marks=[
-                *_common_convert_dtype_marks,
+                skip_dtype_consistency,
                 TestMark(
                     ("TestKernels", "test_against_reference"),
                     pytest.mark.xfail(reason="Conversion overflows"),
@@ -2083,7 +2070,9 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.convert_dtype_video,
             sample_inputs_fn=sample_inputs_convert_dtype_video,
-            test_marks=_common_convert_dtype_marks,
+            test_marks=[
+                skip_dtype_consistency,
+            ],
         ),
     ]
 )

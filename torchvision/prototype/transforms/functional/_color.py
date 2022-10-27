@@ -188,7 +188,7 @@ def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
     h, s, v = img.unbind(dim=-3)
     h6 = h * 6
     i = torch.floor(h6)
-    f = (h6) - i
+    f = h6 - i
     i = i.to(dtype=torch.int32)
 
     p = (v * (1.0 - s)).clamp_(0.0, 1.0)
@@ -209,9 +209,6 @@ def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
 def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
-
-    if not (isinstance(image, torch.Tensor)):
-        raise TypeError("Input img should be Tensor image")
 
     c = get_num_channels_image_tensor(image)
 
@@ -254,9 +251,6 @@ def adjust_hue(inpt: features.InputTypeJIT, hue_factor: float) -> features.Input
 
 
 def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1.0) -> torch.Tensor:
-    if not (isinstance(image, torch.Tensor)):
-        raise TypeError("Input img should be Tensor image")
-
     if gamma < 0:
         raise ValueError("Gamma should be a non-negative real number")
 
@@ -332,10 +326,6 @@ def solarize(inpt: features.InputTypeJIT, threshold: float) -> features.InputTyp
 
 
 def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
-
-    if not (isinstance(image, torch.Tensor)):
-        raise TypeError("Input img should be Tensor image")
-
     c = get_num_channels_image_tensor(image)
 
     if c not in [1, 3]:
