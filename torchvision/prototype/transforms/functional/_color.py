@@ -304,10 +304,8 @@ def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
         if bits < num_value_bits:
             mask = ((1 << bits) - 1) << (num_value_bits - bits)
             return image & mask
-        elif bits == num_value_bits:
-            return image
         else:
-            raise ValueError
+            return image
 
 
 posterize_image_pil = _FP.posterize
