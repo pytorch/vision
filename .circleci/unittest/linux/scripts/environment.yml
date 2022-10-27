@@ -10,7 +10,6 @@ dependencies:
   - jpeg
   - ca-certificates
   - h5py
-  - numpy>=1.23.3
   - pip:
     - future
     - scipy
