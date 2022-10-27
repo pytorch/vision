@@ -15,7 +15,7 @@ import urllib.error
 import urllib.request
 import warnings
 import zipfile
-from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union
 from urllib.parse import urlparse
 
 import numpy as np
@@ -486,7 +486,7 @@ def verify_str_arg(
     return value
 
 
-def _read_pfm(file_name: str, slice_channels: int = 2) -> np.ndarray:
+def _read_pfm(file_name: Union[str, pathlib.Path], slice_channels: int = 2) -> np.ndarray:
     """Read file in .pfm format. Might contain either 1 or 3 channels of data.
 
     Args:
