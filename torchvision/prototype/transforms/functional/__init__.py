@@ -165,6 +165,7 @@ from ._misc import (
     normalize_image_tensor,
     normalize_video,
 )
+from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_video
 from ._type_conversion import (
     decode_image_with_pil,
     decode_video_with_av,
