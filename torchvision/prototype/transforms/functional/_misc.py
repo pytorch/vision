@@ -67,9 +67,9 @@ def normalize(
     return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
 
 
-def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> torch.Tensor:
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
     lim = (kernel_size - 1) / (2 * math.sqrt(2) * sigma)
-    x = torch.linspace(-lim, lim, steps=kernel_size)
+    x = torch.linspace(-lim, lim, steps=kernel_size, dtype=dtype, device=device)
     kernel1d = torch.softmax(-x.pow_(2), dim=0)
     return kernel1d
 
@@ -77,8 +77,8 @@ def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> torch.Tensor:
 def _get_gaussian_kernel2d(
     kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
 ) -> torch.Tensor:
-    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0]).to(device, dtype=dtype)
-    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1]).to(device, dtype=dtype)
+    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0], dtype, device)
+    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1], dtype, device)
     kernel2d = kernel1d_y.unsqueeze(-1) * kernel1d_x
     return kernel2d
 
