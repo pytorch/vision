@@ -1,5 +1,5 @@
 import math
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -10,9 +10,6 @@ from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F,
 from torchvision.prototype.transforms.functional._meta import get_spatial_size
 
 from ._utils import _isinstance, _setup_fill_arg
-
-K = TypeVar("K")
-V = TypeVar("V")
 
 
 class _AutoAugmentBase(Transform):
@@ -26,7 +23,7 @@ class _AutoAugmentBase(Transform):
         self.interpolation = interpolation
         self.fill = _setup_fill_arg(fill)
 
-    def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
+    def _get_random_item(self, dct: Dict[str, Tuple[Callable, bool]]) -> Tuple[str, Tuple[Callable, bool]]:
         keys = tuple(dct.keys())
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
@@ -71,10 +68,9 @@ class _AutoAugmentBase(Transform):
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Dict[Type, features.FillType],
+        fill: Dict[Type, features.FillTypeJIT],
     ) -> Union[features.ImageType, features.VideoType]:
         fill_ = fill[type(image)]
-        fill_ = F._geometry._convert_fill_arg(fill_)
 
         if transform_id == "Identity":
             return image
@@ -170,9 +166,7 @@ class AutoAugment(_AutoAugmentBase):
         "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Posterize": (
-            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
-            .round()
-            .int(),
+            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 4))).round().int(),
             False,
         ),
         "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
@@ -327,9 +321,7 @@ class RandAugment(_AutoAugmentBase):
         "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Posterize": (
-            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
-            .round()
-            .int(),
+            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 4))).round().int(),
             False,
         ),
         "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
@@ -383,9 +375,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
         "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
         "Posterize": (
-            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 6)))
-            .round()
-            .int(),
+            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 6))).round().int(),
             False,
         ),
         "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
@@ -430,9 +420,7 @@ class AugMix(_AutoAugmentBase):
         "TranslateY": (lambda num_bins, height, width: torch.linspace(0.0, height / 3.0, num_bins), True),
         "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins), True),
         "Posterize": (
-            lambda num_bins, height, width: cast(torch.Tensor, 4 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
-            .round()
-            .int(),
+            lambda num_bins, height, width: (4 - (torch.arange(num_bins) / ((num_bins - 1) / 4))).round().int(),
             False,
         ),
         "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
@@ -517,7 +505,13 @@ class AugMix(_AutoAugmentBase):
                 aug = self._apply_image_or_video_transform(
                     aug, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
                 )
-            mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
+            mix.add_(
+                # The multiplication below could become in-place provided `aug is not batch and aug.is_floating_point()`
+                # Currently we can't do this because `aug` has to be `unint8` to support ops like `equalize`.
+                # TODO: change this once all ops in `F` support floats. https://github.com/pytorch/vision/issues/6840
+                combined_weights[:, i].reshape(batch_dims)
+                * aug
+            )
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
         if isinstance(orig_image_or_video, (features.Image, features.Video)):
