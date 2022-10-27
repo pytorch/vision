@@ -8,7 +8,7 @@ unset PYTORCH_VERSION
 set -e
 
 eval "$(./conda/bin/conda shell.bash hook)"
-conda update -y conda
+# conda update -y conda
 conda activate ./env
 
 
