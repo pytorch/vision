@@ -1,5 +1,5 @@
 import torch
-from torchvision.prototype import features, transforms
+from torchvision.prototype import transforms
 
 
 class VideoClassificationPresetTrain:
