@@ -1,57 +1,67 @@
 import collections.abc
-import dataclasses
-
-from collections import defaultdict
-
-from typing import Callable, Dict, List, Optional, Sequence, Type
 
 import pytest
 import torchvision.prototype.transforms.functional as F
-from prototype_transforms_kernel_infos import KERNEL_INFOS, TestMark
+from prototype_common_utils import InfoBase, TestMark
+from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torchvision.prototype import features
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
 
-KERNEL_INFO_MAP = {info.kernel: info for info in KERNEL_INFOS}
+
+class PILKernelInfo(InfoBase):
+    def __init__(
+        self,
+        kernel,
+        *,
+        # Defaults to `kernel.__name__`. Should be set if the function is exposed under a different name
+        # TODO: This can probably be removed after roll-out since we shouldn't have any aliasing then
+        kernel_name=None,
+    ):
+        super().__init__(id=kernel_name or kernel.__name__)
+        self.kernel = kernel
 
 
-@dataclasses.dataclass
-class PILKernelInfo:
-    kernel: Callable
-    kernel_name: str = dataclasses.field(default=None)
+class DispatcherInfo(InfoBase):
+    _KERNEL_INFO_MAP = {info.kernel: info for info in KERNEL_INFOS}
 
-    def __post_init__(self):
-        self.kernel_name = self.kernel_name or self.kernel.__name__
+    def __init__(
+        self,
+        dispatcher,
+        *,
+        # Dictionary of types that map to the kernel the dispatcher dispatches to.
+        kernels,
+        # If omitted, no PIL dispatch test will be performed.
+        pil_kernel_info=None,
+        # See InfoBase
+        test_marks=None,
+        # See InfoBase
+        closeness_kwargs=None,
+    ):
+        super().__init__(id=dispatcher.__name__, test_marks=test_marks, closeness_kwargs=closeness_kwargs)
+        self.dispatcher = dispatcher
+        self.kernels = kernels
+        self.pil_kernel_info = pil_kernel_info
 
-
-@dataclasses.dataclass
-class DispatcherInfo:
-    dispatcher: Callable
-    kernels: Dict[Type, Callable]
-    pil_kernel_info: Optional[PILKernelInfo] = None
-    method_name: str = dataclasses.field(default=None)
-    test_marks: Sequence[TestMark] = dataclasses.field(default_factory=list)
-    _test_marks_map: Dict[str, List[TestMark]] = dataclasses.field(default=None, init=False)
-
-    def __post_init__(self):
-        self.kernel_infos = {feature_type: KERNEL_INFO_MAP[kernel] for feature_type, kernel in self.kernels.items()}
-        self.method_name = self.method_name or self.dispatcher.__name__
-        test_marks_map = defaultdict(list)
-        for test_mark in self.test_marks:
-            test_marks_map[test_mark.test_id].append(test_mark)
-        self._test_marks_map = dict(test_marks_map)
-
-    def get_marks(self, test_id, args_kwargs):
-        return [
-            test_mark.mark for test_mark in self._test_marks_map.get(test_id, []) if test_mark.condition(args_kwargs)
-        ]
+        kernel_infos = {}
+        for feature_type, kernel in self.kernels.items():
+            kernel_info = self._KERNEL_INFO_MAP.get(kernel)
+            if not kernel_info:
+                raise pytest.UsageError(
+                    f"Can't register {kernel.__name__} for type {feature_type} since there is no `KernelInfo` for it. "
+                    f"Please add a `KernelInfo` for it in `prototype_transforms_kernel_infos.py`."
+                )
+            kernel_infos[feature_type] = kernel_info
+        self.kernel_infos = kernel_infos
 
     def sample_inputs(self, *feature_types, filter_metadata=True):
-        for feature_type in feature_types or self.kernels.keys():
-            if feature_type not in self.kernels:
-                raise pytest.UsageError(f"There is no kernel registered for type {feature_type.__name__}")
+        for feature_type in feature_types or self.kernel_infos.keys():
+            kernel_info = self.kernel_infos.get(feature_type)
+            if not kernel_info:
+                raise pytest.UsageError(f"There is no kernel registered for type {type.__name__}")
 
-            sample_inputs = self.kernel_infos[feature_type].sample_inputs_fn()
+            sample_inputs = kernel_info.sample_inputs_fn()
+
             if not filter_metadata:
                 yield from sample_inputs
             else:
@@ -63,24 +73,24 @@ class DispatcherInfo:
                     yield args_kwargs
 
 
-def xfail_jit_python_scalar_arg(name, *, reason=None):
-    reason = reason or f"Python scalar int or float for `{name}` is not supported when scripting"
+def xfail_jit(reason, *, condition=None):
     return TestMark(
         ("TestDispatchers", "test_scripted_smoke"),
         pytest.mark.xfail(reason=reason),
+        condition=condition,
+    )
+
+
+def xfail_jit_python_scalar_arg(name, *, reason=None):
+    return xfail_jit(
+        reason or f"Python scalar int or float for `{name}` is not supported when scripting",
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), (int, float)),
     )
 
 
-def xfail_jit_integer_size(name="size"):
-    return xfail_jit_python_scalar_arg(name, reason=f"Integer `{name}` is not supported when scripting.")
-
-
 def xfail_jit_tuple_instead_of_list(name, *, reason=None):
-    reason = reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestDispatchers", "test_scripted_smoke"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting",
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
     )
 
@@ -91,10 +101,8 @@ def is_list_of_ints(args_kwargs):
 
 
 def xfail_jit_list_of_ints(name, *, reason=None):
-    reason = reason or f"Passing a list of integers for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestDispatchers", "test_scripted_smoke"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Passing a list of integers for `{name}` is not supported when scripting",
         condition=is_list_of_ints,
     )
 
@@ -146,7 +154,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.resize_image_pil),
         test_marks=[
-            xfail_jit_integer_size(),
+            xfail_jit_python_scalar_arg("size"),
         ],
     ),
     DispatcherInfo(
@@ -263,7 +271,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.center_crop_image_pil),
         test_marks=[
-            xfail_jit_integer_size("output_size"),
+            xfail_jit_python_scalar_arg("output_size"),
         ],
     ),
     DispatcherInfo(
@@ -371,7 +379,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.five_crop_image_pil),
         test_marks=[
-            xfail_jit_integer_size(),
+            xfail_jit_python_scalar_arg("size"),
             skip_dispatch_feature,
         ],
     ),
@@ -381,7 +389,7 @@ DISPATCHER_INFOS = [
             features.Image: F.ten_crop_image_tensor,
         },
         test_marks=[
-            xfail_jit_integer_size(),
+            xfail_jit_python_scalar_arg("size"),
             skip_dispatch_feature,
         ],
         pil_kernel_info=PILKernelInfo(F.ten_crop_image_pil),
@@ -390,6 +398,27 @@ DISPATCHER_INFOS = [
         F.normalize,
         kernels={
             features.Image: F.normalize_image_tensor,
+        },
+        test_marks=[
+            skip_dispatch_feature,
+            xfail_jit_python_scalar_arg("mean"),
+            xfail_jit_python_scalar_arg("std"),
+        ],
+    ),
+    DispatcherInfo(
+        F.convert_dtype,
+        kernels={
+            features.Image: F.convert_dtype_image_tensor,
+            features.Video: F.convert_dtype_video,
+        },
+        test_marks=[
+            skip_dispatch_feature,
+        ],
+    ),
+    DispatcherInfo(
+        F.uniform_temporal_subsample,
+        kernels={
+            features.Video: F.uniform_temporal_subsample_video,
         },
         test_marks=[
             skip_dispatch_feature,

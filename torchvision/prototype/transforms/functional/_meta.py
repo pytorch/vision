@@ -1,4 +1,4 @@
-from typing import cast, List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -6,36 +6,62 @@ from torchvision.prototype import features
 from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
-get_dimensions_image_tensor = _FT.get_dimensions
+
+def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
+    chw = list(image.shape[-3:])
+    ndims = len(chw)
+    if ndims == 3:
+        return chw
+    elif ndims == 2:
+        chw.insert(0, 1)
+        return chw
+    else:
+        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
+
+
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-# TODO: Should this be prefixed with `_` similar to other methods that don't get exposed by init?
-def get_chw(image: features.ImageTypeJIT) -> Tuple[int, int, int]:
-    if isinstance(image, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(image, features.Image)):
-        channels, height, width = get_dimensions_image_tensor(image)
-    elif isinstance(image, features.Image):
+def get_dimensions(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> List[int]:
+    if isinstance(image, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+    ):
+        return get_dimensions_image_tensor(image)
+    elif isinstance(image, (features.Image, features.Video)):
         channels = image.num_channels
-        height, width = image.image_size
-    else:  # isinstance(image, PIL.Image.Image)
-        channels, height, width = get_dimensions_image_pil(image)
-    return channels, height, width
+        height, width = image.spatial_size
+        return [channels, height, width]
+    else:
+        return get_dimensions_image_pil(image)
 
 
-# The three functions below are here for BC. Whether we want to have two different kernels and how they and the
-# compound version should be named is still under discussion: https://github.com/pytorch/vision/issues/6491
-# Given that these kernels should also support boxes, masks, and videos, it is unlikely that there name will stay.
-# They will either be deprecated or simply aliased to the new kernels if we have reached consensus about the issue
-# detailed above.
+def get_num_channels_image_tensor(image: torch.Tensor) -> int:
+    chw = image.shape[-3:]
+    ndims = len(chw)
+    if ndims == 3:
+        return chw[0]
+    elif ndims == 2:
+        return 1
+    else:
+        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
-def get_dimensions(image: features.ImageTypeJIT) -> List[int]:
-    return list(get_chw(image))
+get_num_channels_image_pil = _FP.get_image_num_channels
 
 
-def get_num_channels(image: features.ImageTypeJIT) -> int:
-    num_channels, *_ = get_chw(image)
-    return num_channels
+def get_num_channels_video(video: torch.Tensor) -> int:
+    return get_num_channels_image_tensor(video)
+
+
+def get_num_channels(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> int:
+    if isinstance(image, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+    ):
+        return get_num_channels_image_tensor(image)
+    elif isinstance(image, (features.Image, features.Video)):
+        return image.num_channels
+    else:
+        return get_num_channels_image_pil(image)
 
 
 # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
@@ -43,9 +69,54 @@ def get_num_channels(image: features.ImageTypeJIT) -> int:
 get_image_num_channels = get_num_channels
 
 
-def get_spatial_size(image: features.ImageTypeJIT) -> List[int]:
-    _, *size = get_chw(image)
-    return size
+def get_spatial_size_image_tensor(image: torch.Tensor) -> List[int]:
+    hw = list(image.shape[-2:])
+    ndims = len(hw)
+    if ndims == 2:
+        return hw
+    else:
+        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
+
+
+@torch.jit.unused
+def get_spatial_size_image_pil(image: PIL.Image.Image) -> List[int]:
+    width, height = _FP.get_image_size(image)
+    return [height, width]
+
+
+def get_spatial_size_video(video: torch.Tensor) -> List[int]:
+    return get_spatial_size_image_tensor(video)
+
+
+def get_spatial_size_mask(mask: torch.Tensor) -> List[int]:
+    return get_spatial_size_image_tensor(mask)
+
+
+@torch.jit.unused
+def get_spatial_size_bounding_box(bounding_box: features.BoundingBox) -> List[int]:
+    return list(bounding_box.spatial_size)
+
+
+def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+        return get_spatial_size_image_tensor(inpt)
+    elif isinstance(inpt, (features.Image, features.Video, features.BoundingBox, features.Mask)):
+        return list(inpt.spatial_size)
+    else:
+        return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
+
+
+def get_num_frames_video(video: torch.Tensor) -> int:
+    return video.shape[-4]
+
+
+def get_num_frames(inpt: features.VideoTypeJIT) -> int:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Video)):
+        return get_num_frames_video(inpt)
+    elif isinstance(inpt, features.Video):
+        return inpt.num_frames
+    else:
+        raise TypeError(f"The video should be a Tensor. Got {type(inpt)}")
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
@@ -79,13 +150,10 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
 
 
 def convert_format_bounding_box(
-    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, copy: bool = True
+    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat
 ) -> torch.Tensor:
     if new_format == old_format:
-        if copy:
-            return bounding_box.clone()
-        else:
-            return bounding_box
+        return bounding_box
 
     if old_format == BoundingBoxFormat.XYWH:
         bounding_box = _xywh_to_xyxy(bounding_box)
@@ -101,22 +169,22 @@ def convert_format_bounding_box(
 
 
 def clamp_bounding_box(
-    bounding_box: torch.Tensor, format: BoundingBoxFormat, image_size: Tuple[int, int]
+    bounding_box: torch.Tensor, format: BoundingBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
-    # TODO: (PERF) Possible speed up clamping if we have different implementations for each bbox format.
-    # Not sure if they yield equivalent results.
-    xyxy_boxes = convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
-    xyxy_boxes[..., 0::2].clamp_(min=0, max=image_size[1])
-    xyxy_boxes[..., 1::2].clamp_(min=0, max=image_size[0])
-    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format, copy=False)
-
-
-def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-    return image[..., :-1, :, :], image[..., -1:, :, :]
+    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
+    #  BoundingBoxFormat instead of converting back and forth
+    xyxy_boxes = (
+        bounding_box.clone()
+        if format == BoundingBoxFormat.XYXY
+        else convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
+    )
+    xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
+    xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
+    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format)
 
 
 def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
-    image, alpha = _split_alpha(image)
+    image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
     if not torch.all(alpha == _FT._max_value(alpha.dtype)):
         raise RuntimeError(
             "Stripping the alpha channel if it contains values other than the max value is not supported."
@@ -138,17 +206,18 @@ def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
     return grayscale.repeat(repeats)
 
 
-_rgb_to_gray = _FT.rgb_to_grayscale
+def _rgb_to_gray(image: torch.Tensor) -> torch.Tensor:
+    r, g, b = image.unbind(dim=-3)
+    l_img = (0.2989 * r).add_(g, alpha=0.587).add_(b, alpha=0.114)
+    l_img = l_img.to(image.dtype).unsqueeze(dim=-3)
+    return l_img
 
 
 def convert_color_space_image_tensor(
-    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
+    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
 ) -> torch.Tensor:
     if new_color_space == old_color_space:
-        if copy:
-            return image.clone()
-        else:
-            return image
+        return image
 
     if old_color_space == ColorSpace.OTHER or new_color_space == ColorSpace.OTHER:
         raise RuntimeError(f"Conversion to or from {ColorSpace.OTHER} is not supported.")
@@ -164,7 +233,7 @@ def convert_color_space_image_tensor(
     elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB:
         return _gray_to_rgb(_strip_alpha(image))
     elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB_ALPHA:
-        image, alpha = _split_alpha(image)
+        image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
         return _add_alpha(_gray_to_rgb(image), alpha)
     elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAY:
         return _rgb_to_gray(image)
@@ -175,7 +244,7 @@ def convert_color_space_image_tensor(
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY:
         return _rgb_to_gray(_strip_alpha(image))
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY_ALPHA:
-        image, alpha = _split_alpha(image)
+        image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
         return _add_alpha(_rgb_to_gray(image), alpha)
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.RGB:
         return _strip_alpha(image)
@@ -192,37 +261,144 @@ _COLOR_SPACE_TO_PIL_MODE = {
 
 
 @torch.jit.unused
-def convert_color_space_image_pil(
-    image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
-) -> PIL.Image.Image:
+def convert_color_space_image_pil(image: PIL.Image.Image, color_space: ColorSpace) -> PIL.Image.Image:
     old_mode = image.mode
     try:
         new_mode = _COLOR_SPACE_TO_PIL_MODE[color_space]
     except KeyError:
         raise ValueError(f"Conversion from {ColorSpace.from_pil_mode(old_mode)} to {color_space} is not supported.")
 
-    if not copy and image.mode == new_mode:
+    if image.mode == new_mode:
         return image
 
     return image.convert(new_mode)
 
 
+def convert_color_space_video(
+    video: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
+) -> torch.Tensor:
+    return convert_color_space_image_tensor(video, old_color_space=old_color_space, new_color_space=new_color_space)
+
+
 def convert_color_space(
-    inpt: features.ImageTypeJIT,
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT],
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
-    copy: bool = True,
-) -> features.ImageTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image)):
+) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+    ):
         if old_color_space is None:
             raise RuntimeError(
-                "In order to convert the color space of simple tensor images, "
+                "In order to convert the color space of simple tensors, "
                 "the `old_color_space=...` parameter needs to be passed."
             )
-        return convert_color_space_image_tensor(
-            inpt, old_color_space=old_color_space, new_color_space=color_space, copy=copy
-        )
+        return convert_color_space_image_tensor(inpt, old_color_space=old_color_space, new_color_space=color_space)
     elif isinstance(inpt, features.Image):
-        return inpt.to_color_space(color_space, copy=copy)
+        output = convert_color_space_image_tensor(
+            inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
+        )
+        return features.Image.wrap_like(inpt, output, color_space=color_space)
+    elif isinstance(inpt, features.Video):
+        output = convert_color_space_video(
+            inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
+        )
+        return features.Video.wrap_like(inpt, output, color_space=color_space)
     else:
-        return cast(features.ImageTypeJIT, convert_color_space_image_pil(inpt, color_space, copy=copy))
+        return convert_color_space_image_pil(inpt, color_space)
+
+
+def _num_value_bits(dtype: torch.dtype) -> int:
+    if dtype == torch.uint8:
+        return 8
+    elif dtype == torch.int8:
+        return 7
+    elif dtype == torch.int16:
+        return 15
+    elif dtype == torch.int32:
+        return 31
+    elif dtype == torch.int64:
+        return 63
+    else:
+        raise TypeError(f"Number of value bits is only defined for integer dtypes, but got {dtype}.")
+
+
+def convert_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
+    if image.dtype == dtype:
+        return image
+
+    float_input = image.is_floating_point()
+    if torch.jit.is_scripting():
+        # TODO: remove this branch as soon as `dtype.is_floating_point` is supported by JIT
+        float_output = torch.tensor(0, dtype=dtype).is_floating_point()
+    else:
+        float_output = dtype.is_floating_point
+
+    if float_input:
+        # float to float
+        if float_output:
+            return image.to(dtype)
+
+        # float to int
+        if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (
+            image.dtype == torch.float64 and dtype == torch.int64
+        ):
+            raise RuntimeError(f"The conversion from {image.dtype} to {dtype} cannot be performed safely.")
+
+        # For data in the range `[0.0, 1.0]`, just multiplying by the maximum value of the integer range and converting
+        # to the integer dtype  is not sufficient. For example, `torch.rand(...).mul(255).to(torch.uint8)` will only
+        # be `255` if the input is exactly `1.0`. See https://github.com/pytorch/vision/pull/2078#issuecomment-612045321
+        # for a detailed analysis.
+        # To mitigate this, we could round before we convert to the integer dtype, but this is an extra operation.
+        # Instead, we can also multiply by the maximum value plus something close to `1`. See
+        # https://github.com/pytorch/vision/pull/2078#issuecomment-613524965 for details.
+        eps = 1e-3
+        max_value = float(_FT._max_value(dtype))
+        # We need to scale first since the conversion would otherwise turn the input range `[0.0, 1.0]` into the
+        # discrete set `{0, 1}`.
+        return image.mul(max_value + 1.0 - eps).to(dtype)
+    else:
+        # int to float
+        if float_output:
+            return image.to(dtype).div_(_FT._max_value(image.dtype))
+
+        # int to int
+        num_value_bits_input = _num_value_bits(image.dtype)
+        num_value_bits_output = _num_value_bits(dtype)
+
+        if num_value_bits_input > num_value_bits_output:
+            return image.bitwise_right_shift(num_value_bits_input - num_value_bits_output).to(dtype)
+        else:
+            # The bitshift kernel is not vectorized
+            #  https://github.com/pytorch/pytorch/blob/703c19008df4700b6a522b0ae5c4b6d5ffc0906f/aten/src/ATen/native/cpu/BinaryOpsKernel.cpp#L315-L322
+            #  This results in the multiplication actually being faster.
+            # TODO: If the bitshift kernel is optimized in core, replace the computation below with
+            #  `image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)`
+            max_value_input = float(_FT._max_value(dtype))
+            max_value_output = float(_FT._max_value(image.dtype))
+            factor = int((max_value_input + 1) // (max_value_output + 1))
+            return image.to(dtype).mul_(factor)
+
+
+# We changed the name to align it with the new naming scheme. Still, `convert_image_dtype` is
+# prevalent and well understood. Thus, we just alias it without deprecating the old name.
+convert_image_dtype = convert_dtype_image_tensor
+
+
+def convert_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
+    return convert_dtype_image_tensor(video, dtype)
+
+
+def convert_dtype(
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT], dtype: torch.dtype = torch.float
+) -> torch.Tensor:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+    ):
+        return convert_dtype_image_tensor(inpt, dtype)
+    elif isinstance(inpt, features.Image):
+        output = convert_dtype_image_tensor(inpt.as_subclass(torch.Tensor), dtype)
+        return features.Image.wrap_like(inpt, output)
+    else:  # isinstance(inpt, features.Video):
+        output = convert_dtype_video(inpt.as_subclass(torch.Tensor), dtype)
+        return features.Video.wrap_like(inpt, output)

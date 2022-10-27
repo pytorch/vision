@@ -831,12 +831,7 @@ def _blurred_degenerate_image(img: Tensor) -> Tensor:
     kernel /= kernel.sum()
     kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    result_tmp, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(
-        img,
-        [
-            kernel.dtype,
-        ],
-    )
+    result_tmp, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype])
     result_tmp = conv2d(result_tmp, kernel, groups=result_tmp.shape[-3])
     result_tmp = _cast_squeeze_out(result_tmp, need_cast, need_squeeze, out_dtype)
 
@@ -890,7 +885,7 @@ def _scale_channel(img_chan: Tensor) -> Tensor:
     if img_chan.is_cuda:
         hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
     else:
-        hist = torch.bincount(img_chan.view(-1), minlength=256)
+        hist = torch.bincount(img_chan.reshape(-1), minlength=256)
 
     nonzero_hist = hist[hist != 0]
     step = torch.div(nonzero_hist[:-1].sum(), 255, rounding_mode="floor")

@@ -20,10 +20,12 @@ from . import functional_pil as F_pil, functional_tensor as F_t
 
 class InterpolationMode(Enum):
     """Interpolation modes
-    Available interpolation methods are ``nearest``, ``bilinear``, ``bicubic``, ``box``, ``hamming``, and ``lanczos``.
+    Available interpolation methods are ``nearest``, ``nearest-exact``, ``bilinear``, ``bicubic``, ``box``, ``hamming``,
+    and ``lanczos``.
     """
 
     NEAREST = "nearest"
+    NEAREST_EXACT = "nearest-exact"
     BILINEAR = "bilinear"
     BICUBIC = "bicubic"
     # For PIL compatibility
@@ -50,6 +52,7 @@ pil_modes_mapping = {
     InterpolationMode.NEAREST: 0,
     InterpolationMode.BILINEAR: 2,
     InterpolationMode.BICUBIC: 3,
+    InterpolationMode.NEAREST_EXACT: 0,
     InterpolationMode.BOX: 4,
     InterpolationMode.HAMMING: 5,
     InterpolationMode.LANCZOS: 1,
@@ -416,7 +419,8 @@ def resize(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
+            supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         max_size (int, optional): The maximum allowed for the longer edge of
@@ -617,7 +621,8 @@ def resized_crop(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
+            supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias

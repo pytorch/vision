@@ -1,11 +1,10 @@
 import enum
-from typing import Any, Callable, Dict, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Tuple, Type, Union
 
 import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.prototype import features
 from torchvision.prototype.transforms._utils import _isinstance
 from torchvision.utils import _log_api_usage_once
 
@@ -13,32 +12,34 @@ from torchvision.utils import _log_api_usage_once
 class Transform(nn.Module):
 
     # Class attribute defining transformed types. Other types are passed-through without any transformation
-    _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (
-        features.is_simple_tensor,
-        features._Feature,
-        PIL.Image.Image,
-    )
+    # We support both Types and callables that are able to do further checks on the type of the input.
+    _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor, PIL.Image.Image)
 
     def __init__(self) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _check_inputs(self, flat_inputs: List[Any]) -> None:
+        pass
+
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         return dict()
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         raise NotImplementedError
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
+        flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
-        params = self._get_params(sample)
+        self._check_inputs(flat_inputs)
 
-        flat_inputs, spec = tree_flatten(sample)
+        params = self._get_params(flat_inputs)
+
         flat_outputs = [
             self._transform(inpt, params) if _isinstance(inpt, self._transformed_types) else inpt
             for inpt in flat_inputs
         ]
+
         return tree_unflatten(flat_outputs, spec)
 
     def extra_repr(self) -> str:
@@ -64,9 +65,23 @@ class _RandomApplyTransform(Transform):
         self.p = p
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
+        # We need to almost duplicate `Transform.forward()` here since we always want to check the inputs, but return
+        # early afterwards in case the random check triggers. The same result could be achieved by calling
+        # `super().forward()` after the random check, but that would call `self._check_inputs` twice.
+
+        inputs = inputs if len(inputs) > 1 else inputs[0]
+        flat_inputs, spec = tree_flatten(inputs)
+
+        self._check_inputs(flat_inputs)
 
         if torch.rand(1) >= self.p:
-            return sample
+            return inputs
 
-        return super().forward(sample)
+        params = self._get_params(flat_inputs)
+
+        flat_outputs = [
+            self._transform(inpt, params) if _isinstance(inpt, self._transformed_types) else inpt
+            for inpt in flat_inputs
+        ]
+
+        return tree_unflatten(flat_outputs, spec)

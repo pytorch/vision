@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, List
+from typing import Any, List, Union
 
 import PIL.Image
 import torch
@@ -22,12 +22,16 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
     return _F.to_grayscale(inpt, num_output_channels=num_output_channels)
 
 
-def rgb_to_grayscale(inpt: features.LegacyImageTypeJIT, num_output_channels: int = 1) -> features.LegacyImageTypeJIT:
-    old_color_space = (
-        features._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
-        if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Image))
-        else None
-    )
+def rgb_to_grayscale(
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT], num_output_channels: int = 1
+) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
+    if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
+        inpt = inpt.as_subclass(torch.Tensor)
+        old_color_space = None
+    elif isinstance(inpt, torch.Tensor):
+        old_color_space = features._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
+    else:
+        old_color_space = None
 
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
     replacement = (
@@ -56,7 +60,7 @@ def to_tensor(inpt: Any) -> torch.Tensor:
     return _F.to_tensor(inpt)
 
 
-def get_image_size(inpt: features.ImageTypeJIT) -> List[int]:
+def get_image_size(inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> List[int]:
     warnings.warn(
         "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
         "Instead, please use `get_spatial_size(...)` which returns `[h, w]` instead of `[w, h]`."
