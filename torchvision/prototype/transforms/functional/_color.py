@@ -2,7 +2,13 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
-from ._meta import _rgb_to_gray, convert_dtype_image_tensor, get_dimensions_image_tensor, get_num_channels_image_tensor
+from ._meta import (
+    _num_value_bits,
+    _rgb_to_gray,
+    convert_dtype_image_tensor,
+    get_dimensions_image_tensor,
+    get_num_channels_image_tensor,
+)
 
 
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
@@ -459,10 +465,13 @@ def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
 
 
 def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
-    if image.dtype == torch.uint8:
-        return image.bitwise_not()
-    else:
+    if image.is_floating_point():
         return _FT._max_value(image.dtype) - image  # type: ignore[no-any-return]
+    elif image.dtype == torch.uint8:
+        return image.bitwise_not()
+    else:  # signed integer dtypes
+        # We can't use `Tensor.bitwise_not` here, since we want to retain the leading zero bit that encodes the sign
+        return image.bitwise_xor((1 << _num_value_bits(image.dtype)) - 1)
 
 
 invert_image_pil = _FP.invert
