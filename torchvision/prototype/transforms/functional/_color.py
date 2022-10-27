@@ -374,7 +374,6 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.numel() == 0:
         return image
 
-    output_dtype = image.dtype
     # 1. The algorithm below can easily be extended to support arbitrary integer dtypes. However, the histogram that
     #    would be needed to computed will have at least `torch.iinfo(dtype).max + 1` values. That is perfectly fine for
     #    `torch.int8`, `torch.uint8`, and `torch.int16`, at least questionable for `torch.int32` and completely
@@ -385,8 +384,8 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     #    and more complicated to implement than a simple conversion and a fast histogram implementation for integers.
     # Since we need to convert in most cases anyway and out of the acceptable dtypes mentioned in 1. `torch.uint8` is
     # by far the most common, we choose it as base.
-    if output_dtype != torch.uint8:
-        image = convert_dtype_image_tensor(image, torch.uint8)
+    output_dtype = image.dtype
+    image = convert_dtype_image_tensor(image, torch.uint8)
 
     # The histogram is computed by using the flattened image as index. For example, a pixel value of 127 in the image
     # corresponds to adding 1 to index 127 in the histogram.
@@ -417,7 +416,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     # easy due to our support for batched images. We can only return early if `(step == 0).all()` holds. If it doesn't,
     # we have to go through the computation below anyway. Since `step == 0` is an edge case anyway, it makes no sense to
     # pay the runtime cost for checking it every time.
-    no_equalization = step.eq(0).unsqueeze_(-1)
+    valid_equalization = step.ne(0).unsqueeze_(-1)
 
     # `lut[k]` is computed with `cum_hist[k-1]` with `lut[0] == (step // 2) // step == 0`. Thus, we perform the
     # computation only for `lut[1:]` with `cum_hist[:-1]` and add `lut[0] == 0` afterwards.
@@ -436,7 +435,8 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     lut = torch.cat([lut.new_zeros(1).expand(batch_shape + (1,)), lut], dim=-1)
     equalized_image = lut.gather(dim=-1, index=flat_image).view_as(image)
 
-    return convert_dtype_image_tensor(torch.where(no_equalization, image, equalized_image), output_dtype)
+    output = torch.where(valid_equalization, equalized_image, image)
+    return convert_dtype_image_tensor(output, output_dtype)
 
 
 equalize_image_pil = _FP.equalize
