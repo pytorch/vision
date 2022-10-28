@@ -24,7 +24,7 @@ jobs:
           - repository: pytorch/vision
             pre-script: ""
             post-script: ""
-            # TODO: add smoke-test script here once merged.
+            smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
     uses: pytorch/test-infra/.github/workflows/build_wheels_linux.yml@main
