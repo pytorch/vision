@@ -536,12 +536,12 @@ def sample_inputs_convert_format_bounding_box():
 
 def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
     return torchvision.ops.box_convert(
-        bounding_box, in_fmt=old_format.kernel_name.lower(), out_fmt=new_format.kernel_name.lower()
-    )
+        bounding_box, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()
+    ).to(bounding_box.dtype)
 
 
 def reference_inputs_convert_format_bounding_box():
-    for args_kwargs in sample_inputs_convert_color_space_image_tensor():
+    for args_kwargs in sample_inputs_convert_format_bounding_box():
         if len(args_kwargs.args[0].shape) == 2:
             yield args_kwargs
 
