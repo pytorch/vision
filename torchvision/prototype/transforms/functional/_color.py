@@ -469,7 +469,7 @@ def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
 
 def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.is_floating_point():
-        return _FT._max_value(image.dtype) - image  # type: ignore[no-any-return]
+        return 1.0 - image  # type: ignore[no-any-return]
     elif image.dtype == torch.uint8:
         return image.bitwise_not()
     else:  # signed integer dtypes
