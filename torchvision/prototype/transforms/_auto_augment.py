@@ -505,13 +505,18 @@ class AugMix(_AutoAugmentBase):
                 aug = self._apply_image_or_video_transform(
                     aug, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
                 )
-            mix.add_(
-                # The multiplication below could become in-place provided `aug is not batch and aug.is_floating_point()`
-                # Currently we can't do this because `aug` has to be `unint8` to support ops like `equalize`.
-                # TODO: change this once all ops in `F` support floats. https://github.com/pytorch/vision/issues/6840
-                combined_weights[:, i].reshape(batch_dims)
-                * aug
-            )
+            weights = combined_weights[:, i].reshape(batch_dims)
+            # We use the is operator to cheaply check if the `aug` reference we have is the same as the `batch`.
+            # This can happen if we repeatedly sample the identity operator. Because all operators avoid in-place
+            # modifications, this is a cheap and safe way to detect it.
+            if aug is batch or not aug.is_floating_point():
+                # When the `aug` is not variable is not floating point or if it's the same as the original batch
+                # we can't do in-place operations.
+                aug = aug.mul(weights)
+            else:
+                # We can do in-place on all other cases.
+                aug.mul_(weights)
+            mix.add_(aug)
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
         if isinstance(orig_image_or_video, (features.Image, features.Video)):
