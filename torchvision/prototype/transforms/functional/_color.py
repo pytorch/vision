@@ -2,13 +2,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
-from ._meta import (
-    _num_value_bits,
-    _rgb_to_gray,
-    convert_dtype_image_tensor,
-    get_dimensions_image_tensor,
-    get_num_channels_image_tensor,
-)
+from ._meta import _rgb_to_gray, convert_dtype_image_tensor, get_dimensions_image_tensor, get_num_channels_image_tensor
 
 
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
@@ -296,16 +290,15 @@ def adjust_gamma(inpt: features.InputTypeJIT, gamma: float, gain: float = 1) -> 
 
 
 def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
+    if bits > 8:
+        return image
+
     if image.is_floating_point():
         levels = 1 << bits
         return image.mul(levels).floor_().clamp_(0, levels - 1).div_(levels)
     else:
-        num_value_bits = _num_value_bits(image.dtype)
-        if bits < num_value_bits:
-            mask = ((1 << bits) - 1) << (num_value_bits - bits)
-            return image & mask
-        else:
-            return image
+        mask = ((1 << bits) - 1) << (8 - bits)
+        return image & mask
 
 
 posterize_image_pil = _FP.posterize
