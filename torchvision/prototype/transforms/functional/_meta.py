@@ -143,15 +143,13 @@ def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
 
 
 def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
-    x1, y1, x2, y2 = torch.unbind(xyxy, dim=-1)
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
-    w = x2 - x1
-    h = y2 - y1
-    cxcywh = torch.stack((cx, cy, w, h), dim=-1).to(xyxy.dtype)
-    if inplace:
-        return xyxy.fill_(cxcywh)
-    return cxcywh
+    if not inplace:
+        xyxy = xyxy.clone()
+
+    xyxy[..., 2:].sub_(xyxy[..., :2])
+    xyxy[..., :2].mul_(2).add_(xyxy[..., 2:]).div_(2, rounding_mode=None if xyxy.is_floating_point() else "floor")
+
+    return xyxy
 
 
 def convert_format_bounding_box(
