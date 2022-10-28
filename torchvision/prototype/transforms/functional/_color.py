@@ -289,7 +289,18 @@ def adjust_gamma(inpt: features.InputTypeJIT, gamma: float, gain: float = 1) -> 
         return adjust_gamma_image_pil(inpt, gamma=gamma, gain=gain)
 
 
-posterize_image_tensor = _FT.posterize
+def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
+    if bits > 8:
+        return image
+
+    if image.is_floating_point():
+        levels = 1 << bits
+        return image.mul(levels).floor_().clamp_(0, levels - 1).div_(levels)
+    else:
+        mask = ((1 << bits) - 1) << (8 - bits)
+        return image & mask
+
+
 posterize_image_pil = _FP.posterize
 
 
