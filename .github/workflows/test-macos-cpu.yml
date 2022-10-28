@@ -22,6 +22,7 @@ jobs:
     with:
       runner: macos-12
       repository: pytorch/vision
+      timeout: 60
       script: |
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
