@@ -618,7 +618,7 @@ class RandomIoUCrop(Transform):
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         orig_h, orig_w = query_spatial_size(flat_inputs)
-        bboxes = query_bounding_box(flat_inputs)
+        bboxes = query_bounding_box(flat_inputs).as_subclass(torch.Tensor)
 
         while True:
             # sample an option
@@ -798,6 +798,7 @@ class FixedSizeCrop(Transform):
 
         if needs_crop and bounding_boxes is not None:
             format = bounding_boxes.format
+            bounding_boxes = bounding_boxes.as_subclass(torch.Tensor)
             bounding_boxes, spatial_size = F.crop_bounding_box(
                 bounding_boxes, format=format, top=top, left=left, height=new_height, width=new_width
             )

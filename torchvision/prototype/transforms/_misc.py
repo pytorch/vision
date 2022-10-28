@@ -200,7 +200,7 @@ class RemoveSmallBoundingBoxes(Transform):
         self.min_size = min_size
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        bounding_box = query_bounding_box(flat_inputs)
+        bounding_box = query_bounding_box(flat_inputs).as_subclass(torch.Tensor)
 
         # TODO: We can improve performance here by not using the `remove_small_boxes` function. It requires the box to
         #  be in XYXY format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH

@@ -119,8 +119,9 @@ def get_num_frames(inpt: features.VideoTypeJIT) -> int:
         raise TypeError(f"The video should be a Tensor. Got {type(inpt)}")
 
 
-def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
-    xyxy = xywh.clone()
+def _xywh_to_xyxy(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        xyxy = xywh.clone()
     xyxy[..., 2:] += xyxy[..., :2]
     return xyxy
 
@@ -150,20 +151,20 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
 
 
 def convert_format_bounding_box(
-    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat
+    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
     if new_format == old_format:
         return bounding_box
 
     if old_format == BoundingBoxFormat.XYWH:
-        bounding_box = _xywh_to_xyxy(bounding_box)
+        bounding_box = _xywh_to_xyxy(bounding_box, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:
-        bounding_box = _cxcywh_to_xyxy(bounding_box)
+        bounding_box = _cxcywh_to_xyxy(bounding_box, inplace)
 
     if new_format == BoundingBoxFormat.XYWH:
-        bounding_box = _xyxy_to_xywh(bounding_box)
+        bounding_box = _xyxy_to_xywh(bounding_box, inplace)
     elif new_format == BoundingBoxFormat.CXCYWH:
-        bounding_box = _xyxy_to_cxcywh(bounding_box)
+        bounding_box = _xyxy_to_cxcywh(bounding_box, inplace)
 
     return bounding_box
 
@@ -173,14 +174,12 @@ def clamp_bounding_box(
 ) -> torch.Tensor:
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
-    xyxy_boxes = (
-        bounding_box.clone()
-        if format == BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
+    xyxy_boxes = convert_format_bounding_box(
+        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
     )
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
-    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format)
+    return convert_format_bounding_box(xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True)
 
 
 def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
