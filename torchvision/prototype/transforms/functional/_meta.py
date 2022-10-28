@@ -120,34 +120,39 @@ def get_num_frames(inpt: features.VideoTypeJIT) -> int:
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
-    if not inplace:
-        xyxy = xywh.clone()
+    xyxy = xywh if inplace else xywh.clone()
     xyxy[..., 2:] += xyxy[..., :2]
     return xyxy
 
 
-def _xyxy_to_xywh(xyxy: torch.Tensor) -> torch.Tensor:
-    xywh = xyxy.clone()
+def _xyxy_to_xywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
+    xywh = xyxy if inplace else xyxy.clone()
     xywh[..., 2:] -= xywh[..., :2]
     return xywh
 
 
-def _cxcywh_to_xyxy(cxcywh: torch.Tensor) -> torch.Tensor:
+def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
     cx, cy, w, h = torch.unbind(cxcywh, dim=-1)
     x1 = cx - 0.5 * w
     y1 = cy - 0.5 * h
     x2 = cx + 0.5 * w
     y2 = cy + 0.5 * h
-    return torch.stack((x1, y1, x2, y2), dim=-1).to(cxcywh.dtype)
+    xyxy = torch.stack((x1, y1, x2, y2), dim=-1).to(cxcywh.dtype)
+    if inplace:
+        return cxcywh.fill_(xyxy)
+    return xyxy
 
 
-def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
+def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     x1, y1, x2, y2 = torch.unbind(xyxy, dim=-1)
     cx = (x1 + x2) / 2
     cy = (y1 + y2) / 2
     w = x2 - x1
     h = y2 - y1
-    return torch.stack((cx, cy, w, h), dim=-1).to(xyxy.dtype)
+    cxcywh = torch.stack((cx, cy, w, h), dim=-1).to(xyxy.dtype)
+    if inplace:
+        return xyxy.fill_(cxcywh)
+    return cxcywh
 
 
 def convert_format_bounding_box(
