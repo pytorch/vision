@@ -318,10 +318,6 @@ def posterize(inpt: features.InputTypeJIT, bits: int) -> features.InputTypeJIT:
 
 
 def solarize_image_tensor(image: torch.Tensor, threshold: float) -> torch.Tensor:
-    bound = 1 if image.is_floating_point() else 255
-    if threshold > bound:
-        raise TypeError(f"Threshold should be less or equal the maximum value of the dtype, but got {threshold}")
-
     return torch.where(image >= threshold, invert_image_tensor(image), image)
 
 
