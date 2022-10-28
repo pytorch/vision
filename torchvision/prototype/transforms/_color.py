@@ -51,7 +51,7 @@ class ColorJitter(Transform):
 
     @staticmethod
     def _generate_value(left: float, right: float) -> float:
-        return float(torch.distributions.Uniform(left, right).sample())
+        return torch.empty(1).uniform_(left, right).item()
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         fn_idx = torch.randperm(4)

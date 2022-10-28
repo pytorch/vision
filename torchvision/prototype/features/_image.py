@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, cast, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -104,7 +104,7 @@ class Image(_Feature):
 
     @property
     def spatial_size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], tuple(self.shape[-2:]))
+        return tuple(self.shape[-2:])  # type: ignore[return-value]
 
     @property
     def num_channels(self) -> int:
@@ -285,7 +285,5 @@ class Image(_Feature):
 
 ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
 ImageTypeJIT = torch.Tensor
-LegacyImageType = Union[torch.Tensor, PIL.Image.Image]
-LegacyImageTypeJIT = torch.Tensor
 TensorImageType = Union[torch.Tensor, Image]
 TensorImageTypeJIT = torch.Tensor
