@@ -292,14 +292,15 @@ def adjust_gamma(inpt: features.InputTypeJIT, gamma: float, gain: float = 1) -> 
 
 
 def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
-    if bits > 8:
-        return image
-
     if image.is_floating_point():
         levels = 1 << bits
         return image.mul(levels).floor_().clamp_(0, levels - 1).div_(levels)
     else:
-        mask = ((1 << bits) - 1) << (8 - bits)
+        num_value_bits = _num_value_bits(image.dtype)
+        if bits >= num_value_bits:
+            return image
+
+        mask = ((1 << bits) - 1) << (num_value_bits - bits)
         return image & mask
 
 
