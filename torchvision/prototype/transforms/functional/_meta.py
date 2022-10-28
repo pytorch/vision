@@ -132,15 +132,14 @@ def _xyxy_to_xywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
 
 
 def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
-    cx, cy, w, h = torch.unbind(cxcywh, dim=-1)
-    x1 = cx - 0.5 * w
-    y1 = cy - 0.5 * h
-    x2 = cx + 0.5 * w
-    y2 = cy + 0.5 * h
-    xyxy = torch.stack((x1, y1, x2, y2), dim=-1).to(cxcywh.dtype)
-    if inplace:
-        return cxcywh.fill_(xyxy)
-    return xyxy
+    if not inplace:
+        cxcywh = cxcywh.clone()
+
+    half_wh = cxcywh[..., 2:].div(-2, rounding_mode=None if cxcywh.is_floating_point() else "floor").abs_()
+    cxcywh[..., :2].sub_(half_wh)
+    cxcywh[..., 2:].add_(cxcywh[..., :2])
+
+    return cxcywh
 
 
 def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
