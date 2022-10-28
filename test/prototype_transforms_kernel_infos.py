@@ -1322,7 +1322,7 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_equalize_image_tensor():
     for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
     ):
         yield ArgsKwargs(image_loader)
 
@@ -1331,27 +1331,41 @@ def reference_inputs_equalize_image_tensor():
     # We are not using `make_image_loaders` here since that uniformly samples the values over the whole value range.
     # Since the whole point of this kernel is to transform an arbitrary distribution of values into a uniform one,
     # the information gain is low if we already provide something really close to the expected value.
+    def make_uniform_band_image(shape, dtype, device, *, low_factor, high_factor):
+        if dtype.is_floating_point:
+            low = low_factor
+            high = high_factor
+        else:
+            max_value = torch.iinfo(dtype).max
+            low = int(low_factor * max_value)
+            high = int(high_factor * max_value)
+        return torch.testing.make_tensor(shape, dtype=dtype, device=device, low=low, high=high)
+
+    def make_beta_distributed_image(shape, dtype, device, *, alpha, beta):
+        image = torch.distributions.Beta(alpha, beta).sample(shape)
+        if not dtype.is_floating_point:
+            image.mul_(torch.iinfo(dtype).max).round_()
+        return image.to(dtype=dtype, device=device)
+
     spatial_size = (256, 256)
-    for fn, color_space in itertools.product(
+    for dtype, color_space, fn in itertools.product(
+        [torch.uint8, torch.float32],
+        [features.ColorSpace.GRAY, features.ColorSpace.RGB],
         [
+            lambda shape, dtype, device: torch.zeros(shape, dtype=dtype, device=device),
+            lambda shape, dtype, device: torch.full(
+                shape, 1.0 if dtype.is_floating_point else torch.iinfo(dtype).max, dtype=dtype, device=device
+            ),
             *[
-                lambda shape, dtype, device, low=low, high=high: torch.randint(
-                    low, high, shape, dtype=dtype, device=device
-                )
-                for low, high in [
-                    (0, 1),
-                    (255, 256),
-                    (0, 64),
-                    (64, 192),
-                    (192, 256),
+                functools.partial(make_uniform_band_image, low_factor=low_factor, high_factor=high_factor)
+                for low_factor, high_factor in [
+                    (0.0, 0.25),
+                    (0.25, 0.75),
+                    (0.75, 1.0),
                 ]
             ],
             *[
-                lambda shape, dtype, device, alpha=alpha, beta=beta: torch.distributions.Beta(alpha, beta)
-                .sample(shape)
-                .mul_(255)
-                .round_()
-                .to(dtype=dtype, device=device)
+                functools.partial(make_beta_distributed_image, alpha=alpha, beta=beta)
                 for alpha, beta in [
                     (0.5, 0.5),
                     (2, 2),
@@ -1360,10 +1374,9 @@ def reference_inputs_equalize_image_tensor():
                 ]
             ],
         ],
-        [features.ColorSpace.GRAY, features.ColorSpace.RGB],
     ):
         image_loader = ImageLoader(
-            fn, shape=(get_num_channels(color_space), *spatial_size), dtype=torch.uint8, color_space=color_space
+            fn, shape=(get_num_channels(color_space), *spatial_size), dtype=dtype, color_space=color_space
         )
         yield ArgsKwargs(image_loader)
 
