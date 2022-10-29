@@ -50,7 +50,7 @@ jobs:
         fi
 
         conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
-        conda env update --file "$.circleci/unittest/linux/scripts/environment.yml" --prune
+        conda env update --file ".circleci/unittest/linux/scripts/environment.yml" --prune
         
         # Install PyTorch, Torchvision, and testing libraries
         set -ex
