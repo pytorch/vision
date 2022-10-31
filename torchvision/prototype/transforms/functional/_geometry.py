@@ -42,6 +42,7 @@ def horizontal_flip_bounding_box(
         bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
     ).reshape(-1, 4)
 
+    # TODO: performance improvement by using inplace on intermediate results
     bounding_box[:, [0, 2]] = spatial_size[1] - bounding_box[:, [2, 0]]
 
     return convert_format_bounding_box(
@@ -81,6 +82,7 @@ def vertical_flip_bounding_box(
         bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
     ).reshape(-1, 4)
 
+    # TODO: performance improvement by using inplace on intermediate results
     bounding_box[:, [1, 3]] = spatial_size[0] - bounding_box[:, [3, 1]]
 
     return convert_format_bounding_box(
@@ -172,6 +174,7 @@ def resize_bounding_box(
     new_height, new_width = _compute_resized_output_size(spatial_size, size=size, max_size=max_size)
     ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
     return (
+        # TODO: check if this is faster than repeating the ratios to shape of 4 and multipling directly
         bounding_box.reshape(-1, 2, 2).mul(ratios).to(bounding_box.dtype).reshape(bounding_box.shape),
         (new_height, new_width),
     )
@@ -356,6 +359,7 @@ def _affine_bounding_box_xyxy(
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
     transformed_points = transformed_points.reshape(-1, 4, 2)
+    # TODO: check if aminmax could help here
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
@@ -376,6 +380,7 @@ def _affine_bounding_box_xyxy(
         )
         new_points = torch.matmul(points, transposed_affine_matrix)
         tr, _ = torch.min(new_points, dim=0, keepdim=True)
+        # TODO: performance improvement by using inplace on intermediate results
         # Translate bounding boxes
         out_bboxes[:, 0::2] = out_bboxes[:, 0::2] - tr[:, 0]
         out_bboxes[:, 1::2] = out_bboxes[:, 1::2] - tr[:, 1]
@@ -759,6 +764,7 @@ def pad_bounding_box(
 
     bounding_box = bounding_box.clone()
 
+    # TODO: avoid repeated indexing and perform concurrently. `output.add_(torch.tensor([left, top, left, top]))` is 3x faster
     # this works without conversion since padding only affects xy coordinates
     bounding_box[..., 0] += left
     bounding_box[..., 1] += top
@@ -815,6 +821,7 @@ def crop_bounding_box(
         bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
     )
 
+    # TODO: avoid repeated indexing and perform concurrently.
     # Crop or implicit pad if left and/or top have negative values:
     bounding_box[..., 0::2] -= left
     bounding_box[..., 1::2] -= top
@@ -946,6 +953,7 @@ def perspective_bounding_box(
     #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #   y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
 
+    # TODO: Investigate potential optimizations by in-placing intermediate results, aminmax etc
     numer_points = torch.matmul(points, theta1.T)
     denom_points = torch.matmul(points, theta2.T)
     transformed_points = numer_points / denom_points
@@ -1062,6 +1070,7 @@ def elastic_bounding_box(
     # Or add spatial_size arg and check displacement shape
     spatial_size = displacement.shape[-3], displacement.shape[-2]
 
+    # TODO: Investigate potential optimizations by in-placing intermediate results, aminmax etc
     id_grid = _FT._create_identity_grid(list(spatial_size)).to(bounding_box.device)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
     # This is not an exact inverse of the grid
