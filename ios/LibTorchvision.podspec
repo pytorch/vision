@@ -1,4 +1,4 @@
-pytorch_version = '1.12.0'
+pytorch_version = '1.13.0'
 
 Pod::Spec.new do |s|
     s.name             = 'LibTorchvision'
