@@ -137,10 +137,7 @@ class _AutoAugmentBase(Transform):
         elif transform_id == "Posterize":
             return F.posterize(image, bits=int(magnitude))
         elif transform_id == "Solarize":
-            if isinstance(image, torch.Tensor):
-                bound = 1.0 if image.is_floating_point() else 255.0
-            else:  # isinstance(inpt, PIL)
-                bound = 255.0
+            bound = 1.0 if isinstance(image, torch.Tensor) and image.is_floating_point() else 255.0
             return F.solarize(image, threshold=bound * magnitude)
         elif transform_id == "AutoContrast":
             return F.autocontrast(image)
