@@ -506,10 +506,7 @@ class AugMix(_AutoAugmentBase):
                 aug = self._apply_image_or_video_transform(
                     aug, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
                 )
-            mix.add_(
-                combined_weights[:, i].reshape(batch_dims)
-                * aug
-            )
+            mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
         if isinstance(orig_image_or_video, (features.Image, features.Video)):
