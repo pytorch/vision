@@ -207,7 +207,9 @@ class RemoveSmallBoundingBoxes(Transform):
         #  format,we need to convert first just to afterwards compute the width and height again, although they were
         #  there in the first place for these formats.
         bounding_box = F.convert_format_bounding_box(
-            bounding_box, old_format=bounding_box.format, new_format=features.BoundingBoxFormat.XYXY
+            bounding_box.as_subclass(torch.Tensor),
+            old_format=bounding_box.format,
+            new_format=features.BoundingBoxFormat.XYXY,
         )
         valid_indices = remove_small_boxes(bounding_box, min_size=self.min_size)
 
