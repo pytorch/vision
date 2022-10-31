@@ -125,7 +125,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
 
 class RandomMixup(_BaseMixupCutmix):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        return dict(lam=float(self._dist.sample(())))
+        return dict(lam=float(self._dist.sample(())))  # type: ignore[arg-type]
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
@@ -147,7 +147,7 @@ class RandomMixup(_BaseMixupCutmix):
 
 class RandomCutmix(_BaseMixupCutmix):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        lam = float(self._dist.sample(()))
+        lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 
         H, W = query_spatial_size(flat_inputs)
 
