@@ -31,24 +31,6 @@ def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return horizontal_flip_image_tensor(mask)
 
 
-def horizontal_flip_bounding_box_old(
-    bounding_box: torch.Tensor, format: features.BoundingBoxFormat, spatial_size: Tuple[int, int]
-) -> torch.Tensor:
-    shape = bounding_box.shape
-
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = convert_format_bounding_box(
-        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
-    ).reshape(-1, 4)
-
-    bounding_box[:, [0, 2]] = spatial_size[1] - bounding_box[:, [2, 0]]
-
-    return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-    ).reshape(shape)
-
-
 def horizontal_flip_bounding_box(
     bounding_box: torch.Tensor, format: features.BoundingBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
@@ -85,24 +67,6 @@ vertical_flip_image_pil = _FP.vflip
 
 def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return vertical_flip_image_tensor(mask)
-
-
-def vertical_flip_bounding_box_old(
-    bounding_box: torch.Tensor, format: features.BoundingBoxFormat, spatial_size: Tuple[int, int]
-) -> torch.Tensor:
-    shape = bounding_box.shape
-
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = convert_format_bounding_box(
-        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
-    ).reshape(-1, 4)
-
-    bounding_box[:, [1, 3]] = spatial_size[0] - bounding_box[:, [3, 1]]
-
-    return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-    ).reshape(shape)
 
 
 def vertical_flip_bounding_box(
