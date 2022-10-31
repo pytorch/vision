@@ -31,7 +31,7 @@ def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return horizontal_flip_image_tensor(mask)
 
 
-def horizontal_flip_bounding_box(
+def horizontal_flip_bounding_box_old(
     bounding_box: torch.Tensor, format: features.BoundingBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
     shape = bounding_box.shape
@@ -47,6 +47,23 @@ def horizontal_flip_bounding_box(
     return convert_format_bounding_box(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(shape)
+
+
+def horizontal_flip_bounding_box(
+    bounding_box: torch.Tensor, format: features.BoundingBoxFormat, spatial_size: Tuple[int, int]
+) -> torch.Tensor:
+    shape = bounding_box.shape
+
+    bounding_box = bounding_box.clone().reshape(-1, 4)
+
+    if format == features.BoundingBoxFormat.XYXY:
+        bounding_box[:, [0, 2]] = spatial_size[1] - bounding_box[:, [2, 0]]
+    elif format == features.BoundingBoxFormat.XYWH:
+        bounding_box[:, 0] = spatial_size[1] - bounding_box[:, 0] - bounding_box[:, 2]
+    else:  # format == features.BoundingBoxFormat.CXCYWH:
+        bounding_box[:, 0] = spatial_size[1] - bounding_box[:, 0]
+
+    return bounding_box.reshape(shape)
 
 
 def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
@@ -70,7 +87,7 @@ def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return vertical_flip_image_tensor(mask)
 
 
-def vertical_flip_bounding_box(
+def vertical_flip_bounding_box_old(
     bounding_box: torch.Tensor, format: features.BoundingBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
     shape = bounding_box.shape
@@ -86,6 +103,23 @@ def vertical_flip_bounding_box(
     return convert_format_bounding_box(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(shape)
+
+
+def vertical_flip_bounding_box(
+    bounding_box: torch.Tensor, format: features.BoundingBoxFormat, spatial_size: Tuple[int, int]
+) -> torch.Tensor:
+    shape = bounding_box.shape
+
+    bounding_box = bounding_box.clone().reshape(-1, 4)
+
+    if format == features.BoundingBoxFormat.XYXY:
+        bounding_box[:, [1, 3]] = spatial_size[0] - bounding_box[:, [3, 1]]
+    elif format == features.BoundingBoxFormat.XYWH:
+        bounding_box[:, 1] = spatial_size[0] - bounding_box[:, 1] - bounding_box[:, 3]
+    else:  # format == features.BoundingBoxFormat.CXCYWH:
+        bounding_box[:, 1] = spatial_size[0] - bounding_box[:, 1]
+
+    return bounding_box.reshape(shape)
 
 
 def vertical_flip_video(video: torch.Tensor) -> torch.Tensor:
