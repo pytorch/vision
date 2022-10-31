@@ -24,6 +24,7 @@ jobs:
       repository: pytorch/vision
       timeout: 60
       script: |
+        set -ex
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
 
@@ -53,7 +54,6 @@ jobs:
         conda env update --file ".circleci/unittest/linux/scripts/environment.yml" --prune
         
         # Install PyTorch, Torchvision, and testing libraries
-        set -ex
         conda install \
           --yes \
           -c "pytorch-${CHANNEL}" \
