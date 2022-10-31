@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read  #  to fetch code (actions/checkout)
+  pull-requests: write  #  to create pull request comment (mshick/add-pr-comment)
+
 jobs:
   is-properly-labeled:
     runs-on: ubuntu-latest
