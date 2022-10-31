@@ -59,7 +59,7 @@ class RenderedSST2(VisionDataset):
     def __len__(self) -> int:
         return len(self._samples)
 
-    def __getitem__(self, idx) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
         image_file, label = self._samples[idx]
         image = PIL.Image.open(image_file).convert("RGB")
 
