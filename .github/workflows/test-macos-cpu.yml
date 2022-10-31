@@ -59,9 +59,9 @@ jobs:
           -c "pytorch-${CHANNEL}" \
           "pytorch-${CHANNEL}"::pytorch \
           "${CUDATOOLKIT}"
-        python3 setup.py develop
-        python3 -m pip install pytest pytest-mock 'av<10'
+        python setup.py develop
+        python -m pip install pytest pytest-mock 'av<10'
 
         # Run Tests
-        python3 -m torch.utils.collect_env
-        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
+        python -m torch.utils.collect_env
+        python -m pytest --junitxml=test-results/junit.xml -v --durations 20
