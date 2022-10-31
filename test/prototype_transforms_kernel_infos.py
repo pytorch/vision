@@ -436,8 +436,11 @@ def _compute_affine_matrix(angle, translate, scale, shear, center):
 
 def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix):
     def transform(bbox, affine_matrix_, format_):
-
-        bbox_xyxy = F.convert_format_bounding_box(bbox, old_format=format_, new_format=features.BoundingBoxFormat.XYXY)
+        # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
+        in_dtype = bbox.dtype
+        bbox_xyxy = F.convert_format_bounding_box(
+            bbox.float(), old_format=format_, new_format=features.BoundingBoxFormat.XYXY, inplace=True
+        )
         points = np.array(
             [
                 [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
@@ -454,11 +457,11 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix)
                 np.max(transformed_points[:, 0]).item(),
                 np.max(transformed_points[:, 1]).item(),
             ],
-        ).to(dtype=bbox.dtype)
-        # Explicit cast with .to(dtype) removes
-        # DeprecationWarning: an integer is required (got type float).  Implicit conversion to integers using
-        # __int__ is deprecated, and may be removed in a future version of Python.
-        return F.convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format)
+        )
+        out_bbox = F.convert_format_bounding_box(
+            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        )
+        return out_bbox.to(dtype=in_dtype)
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
