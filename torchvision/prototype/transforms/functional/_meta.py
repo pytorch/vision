@@ -135,8 +135,12 @@ def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
     if not inplace:
         cxcywh = cxcywh.clone()
 
+    # Trick to do fast division by 2 and ceil, without casting. It produces the same result as
+    # `torchvision.ops._box_convert._box_cxcywh_to_xyxy`.
     half_wh = cxcywh[..., 2:].div(-2, rounding_mode=None if cxcywh.is_floating_point() else "floor").abs_()
+    # (cx - width / 2) = x1, same for y1
     cxcywh[..., :2].sub_(half_wh)
+    # (x1 + width) = x2, same for y2
     cxcywh[..., 2:].add_(cxcywh[..., :2])
 
     return cxcywh
@@ -146,7 +150,9 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     if not inplace:
         xyxy = xyxy.clone()
 
+    # (x2 - x1) = width, same for height
     xyxy[..., 2:].sub_(xyxy[..., :2])
+    # (x1 * 2 + width) / 2 = x1 + width / 2 = x1 + (x2-x1)/2 = (x1 + x2)/2 = cx, same for cy
     xyxy[..., :2].mul_(2).add_(xyxy[..., 2:]).div_(2, rounding_mode=None if xyxy.is_floating_point() else "floor")
 
     return xyxy
