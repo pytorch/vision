@@ -1,4 +1,5 @@
-import torch
+"""Run smoke tests"""
+
 import torchvision
-import torchvision.datasets as dset
-import torchvision.transforms
+
+print("torchvision version is ", torchvision.__version__)

@@ -542,7 +542,7 @@ class LocalFeatureEncoderLayer(nn.Module):
 
         # attention operation
         message = self.attention_op(queries, keys, values, x_mask, source_mask)
-        # concatenating attention heads together before passing throught projection layer
+        # concatenating attention heads together before passing through projection layer
         message = self.merge(message.reshape(B, S, D))
         message = self.attention_norm(message)
 

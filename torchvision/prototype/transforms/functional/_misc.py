@@ -8,7 +8,40 @@ from torchvision.prototype import features
 from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
-normalize_image_tensor = _FT.normalize
+
+def normalize_image_tensor(
+    image: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False
+) -> torch.Tensor:
+    if not image.is_floating_point():
+        raise TypeError(f"Input tensor should be a float tensor. Got {image.dtype}.")
+
+    if image.ndim < 3:
+        raise ValueError(f"Expected tensor to be a tensor image of size (..., C, H, W). Got {image.shape}.")
+
+    if isinstance(std, (tuple, list)):
+        divzero = not all(std)
+    elif isinstance(std, (int, float)):
+        divzero = std == 0
+    else:
+        divzero = False
+    if divzero:
+        raise ValueError("std evaluated to zero, leading to division by zero.")
+
+    dtype = image.dtype
+    device = image.device
+    mean = torch.as_tensor(mean, dtype=dtype, device=device)
+    std = torch.as_tensor(std, dtype=dtype, device=device)
+    if mean.ndim == 1:
+        mean = mean.view(-1, 1, 1)
+    if std.ndim == 1:
+        std = std.view(-1, 1, 1)
+
+    if inplace:
+        image = image.sub_(mean)
+    else:
+        image = image.sub(mean)
+
+    return image.div_(std)
 
 
 def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
@@ -34,9 +67,9 @@ def normalize(
     return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
 
 
-def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> torch.Tensor:
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
     lim = (kernel_size - 1) / (2 * math.sqrt(2) * sigma)
-    x = torch.linspace(-lim, lim, steps=kernel_size)
+    x = torch.linspace(-lim, lim, steps=kernel_size, dtype=dtype, device=device)
     kernel1d = torch.softmax(-x.pow_(2), dim=0)
     return kernel1d
 
@@ -44,8 +77,8 @@ def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> torch.Tensor:
 def _get_gaussian_kernel2d(
     kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
 ) -> torch.Tensor:
-    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0]).to(device, dtype=dtype)
-    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1]).to(device, dtype=dtype)
+    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0], dtype, device)
+    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1], dtype, device)
     kernel2d = kernel1d_y.unsqueeze(-1) * kernel1d_x
     return kernel2d
 
