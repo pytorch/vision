@@ -15,6 +15,10 @@ on:
   workflow_dispatch:
 env:
   CHANNEL: "nightly"
+
+permissions:
+  contents: read  #  to fetch code (actions/checkout)
+
 jobs:
   build_wheels:
     name: "Build TorchVision M1 wheels"
