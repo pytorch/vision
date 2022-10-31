@@ -119,51 +119,60 @@ def get_num_frames(inpt: features.VideoTypeJIT) -> int:
         raise TypeError(f"The video should be a Tensor. Got {type(inpt)}")
 
 
-def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
-    xyxy = xywh.clone()
+def _xywh_to_xyxy(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    xyxy = xywh if inplace else xywh.clone()
     xyxy[..., 2:] += xyxy[..., :2]
     return xyxy
 
 
-def _xyxy_to_xywh(xyxy: torch.Tensor) -> torch.Tensor:
-    xywh = xyxy.clone()
+def _xyxy_to_xywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
+    xywh = xyxy if inplace else xyxy.clone()
     xywh[..., 2:] -= xywh[..., :2]
     return xywh
 
 
-def _cxcywh_to_xyxy(cxcywh: torch.Tensor) -> torch.Tensor:
-    cx, cy, w, h = torch.unbind(cxcywh, dim=-1)
-    x1 = cx - 0.5 * w
-    y1 = cy - 0.5 * h
-    x2 = cx + 0.5 * w
-    y2 = cy + 0.5 * h
-    return torch.stack((x1, y1, x2, y2), dim=-1).to(cxcywh.dtype)
+def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        cxcywh = cxcywh.clone()
+
+    # Trick to do fast division by 2 and ceil, without casting. It produces the same result as
+    # `torchvision.ops._box_convert._box_cxcywh_to_xyxy`.
+    half_wh = cxcywh[..., 2:].div(-2, rounding_mode=None if cxcywh.is_floating_point() else "floor").abs_()
+    # (cx - width / 2) = x1, same for y1
+    cxcywh[..., :2].sub_(half_wh)
+    # (x1 + width) = x2, same for y2
+    cxcywh[..., 2:].add_(cxcywh[..., :2])
+
+    return cxcywh
 
 
-def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
-    x1, y1, x2, y2 = torch.unbind(xyxy, dim=-1)
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
-    w = x2 - x1
-    h = y2 - y1
-    return torch.stack((cx, cy, w, h), dim=-1).to(xyxy.dtype)
+def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        xyxy = xyxy.clone()
+
+    # (x2 - x1) = width, same for height
+    xyxy[..., 2:].sub_(xyxy[..., :2])
+    # (x1 * 2 + width) / 2 = x1 + width / 2 = x1 + (x2-x1)/2 = (x1 + x2)/2 = cx, same for cy
+    xyxy[..., :2].mul_(2).add_(xyxy[..., 2:]).div_(2, rounding_mode=None if xyxy.is_floating_point() else "floor")
+
+    return xyxy
 
 
 def convert_format_bounding_box(
-    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat
+    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
     if new_format == old_format:
         return bounding_box
 
     if old_format == BoundingBoxFormat.XYWH:
-        bounding_box = _xywh_to_xyxy(bounding_box)
+        bounding_box = _xywh_to_xyxy(bounding_box, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:
-        bounding_box = _cxcywh_to_xyxy(bounding_box)
+        bounding_box = _cxcywh_to_xyxy(bounding_box, inplace)
 
     if new_format == BoundingBoxFormat.XYWH:
-        bounding_box = _xyxy_to_xywh(bounding_box)
+        bounding_box = _xyxy_to_xywh(bounding_box, inplace)
     elif new_format == BoundingBoxFormat.CXCYWH:
-        bounding_box = _xyxy_to_cxcywh(bounding_box)
+        bounding_box = _xyxy_to_cxcywh(bounding_box, inplace)
 
     return bounding_box
 
@@ -173,14 +182,12 @@ def clamp_bounding_box(
 ) -> torch.Tensor:
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
-    xyxy_boxes = (
-        bounding_box.clone()
-        if format == BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
+    xyxy_boxes = convert_format_bounding_box(
+        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
     )
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
-    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format)
+    return convert_format_bounding_box(xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True)
 
 
 def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
