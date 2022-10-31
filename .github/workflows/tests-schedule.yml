@@ -10,8 +10,15 @@ on:
   schedule:
     - cron: "0 9 * * *"
 
+permissions:
+  contents: read  #  to fetch code (actions/checkout)
+
 jobs:
   download:
+    permissions:
+      contents: read  #  to fetch code (actions/checkout)
+      issues: write  #  to create new issues (jasonetco/create-an-issue)
+
     runs-on: ubuntu-latest
 
     steps:
