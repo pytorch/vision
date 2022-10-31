@@ -9,6 +9,10 @@ on:
   workflow_dispatch:
 env:
   CHANNEL: "nightly"
+
+permissions:
+  contents: read  #  to fetch code (actions/checkout)
+
 jobs:
   tests:
     name: "Unit-tests on M1"
