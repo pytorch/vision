@@ -1159,11 +1159,14 @@ def _center_crop_compute_crop_anchor(
 
 def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    image_height, image_width = image.shape[-2:]
+    shape = image.shape
+    if image.numel() == 0:
+        return image.reshape(shape[:-2] + (crop_height, crop_width))
+    image_height, image_width = shape[-2:]
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-        image = pad_image_tensor(image, padding_ltrb, fill=0)
+        image = _FT.torch_pad(image, _FT._parse_pad_padding(padding_ltrb), value=0.0)
 
         image_height, image_width = image.shape[-2:]
         if crop_width == image_width and crop_height == image_height:
