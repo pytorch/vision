@@ -862,6 +862,29 @@ def sample_inputs_crop_video():
         yield ArgsKwargs(video_loader, top=4, left=3, height=7, width=8)
 
 
+def reference_crop_bounding_box(bounding_box, *, format, top, left, height, width):
+
+    affine_matrix = np.array(
+        [
+            [1, 0, -left],
+            [0, 1, -top],
+        ],
+        dtype="float32",
+    )
+
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, affine_matrix=affine_matrix
+    )
+    return expected_bboxes, (height, width)
+
+
+def reference_inputs_crop_bounding_box():
+    for bounding_box_loader, params in itertools.product(
+        make_bounding_box_loaders(extra_dims=((), (4,))), [_CROP_PARAMS[0], _CROP_PARAMS[-1]]
+    ):
+        yield ArgsKwargs(bounding_box_loader, format=bounding_box_loader.format, **params)
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -875,6 +898,8 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.crop_bounding_box,
             sample_inputs_fn=sample_inputs_crop_bounding_box,
+            reference_fn=reference_crop_bounding_box,
+            reference_inputs_fn=reference_inputs_crop_bounding_box,
         ),
         KernelInfo(
             F.crop_mask,

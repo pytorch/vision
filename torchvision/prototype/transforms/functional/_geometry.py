@@ -801,7 +801,7 @@ crop_image_tensor = _FT.crop
 crop_image_pil = _FP.crop
 
 
-def crop_bounding_box(
+def crop_bounding_box_old(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
     top: int,
@@ -825,6 +825,27 @@ def crop_bounding_box(
         ),
         (height, width),
     )
+
+
+def crop_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
+
+    bounding_box = bounding_box.clone()
+
+    # Crop or implicit pad if left and/or top have negative values:
+    if format == features.BoundingBoxFormat.XYXY:
+        sub = torch.tensor([left, top, left, top])
+    else:
+        sub = torch.tensor([left, top, 0, 0])
+    bounding_box.sub_(sub)
+
+    return bounding_box, (height, width)
 
 
 def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
