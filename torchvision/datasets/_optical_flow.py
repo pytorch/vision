@@ -14,6 +14,10 @@ from .utils import _read_pfm, verify_str_arg
 from .vision import VisionDataset
 
 
+T1 = Tuple[Image.Image, Image.Image, Optional[np.ndarray], Optional[np.ndarray]]
+T2 = Tuple[Image.Image, Image.Image, Optional[np.ndarray]]
+
+
 __all__ = (
     "KittiFlow",
     "Sintel",
@@ -37,18 +41,18 @@ class FlowDataset(ABC, VisionDataset):
         self._flow_list: List[str] = []
         self._image_list: List[List[str]] = []
 
-    def _read_img(self, file_name: Union[str, Path]) -> Image.Image:
+    def _read_img(self, file_name: str) -> Image.Image:
         img = Image.open(file_name)
         if img.mode != "RGB":
             img = img.convert("RGB")
         return img
 
     @abstractmethod
-    def _read_flow(self, file_name):
+    def _read_flow(self, file_name: str):
         # Return the flow or a tuple with the flow and the valid_flow_mask if _has_builtin_flow_mask is True
         pass
 
-    def __getitem__(self, index: int) -> Tuple:
+    def __getitem__(self, index: int) -> Union[T1, T2]:
 
         img1 = self._read_img(self._image_list[index][0])
         img2 = self._read_img(self._image_list[index][1])
@@ -146,7 +150,7 @@ class Sintel(FlowDataset):
                 if split == "train":
                     self._flow_list += sorted(glob(str(flow_root / scene / "*.flo")))
 
-    def __getitem__(self, index: int) -> Tuple:
+    def __getitem__(self, index: int) -> Union[T1, T2]:
         """Return example at given index.
 
         Args:
@@ -161,7 +165,7 @@ class Sintel(FlowDataset):
         """
         return super().__getitem__(index)
 
-    def _read_flow(self, file_name: Union[str, Path]) -> np.ndarray:
+    def _read_flow(self, file_name: str) -> np.ndarray:
         return _read_flo(file_name)
 
 
@@ -207,7 +211,7 @@ class KittiFlow(FlowDataset):
         if split == "train":
             self._flow_list = sorted(glob(str(root / "flow_occ" / "*_10.png")))
 
-    def __getitem__(self, index: int) -> Tuple:
+    def __getitem__(self, index: int) -> Union[T1, T2]:
         """Return example at given index.
 
         Args:
@@ -222,7 +226,7 @@ class KittiFlow(FlowDataset):
         """
         return super().__getitem__(index)
 
-    def _read_flow(self, file_name: Union[str, Path]) -> Tuple[np.ndarray, np.ndarray]:
+    def _read_flow(self, file_name: str) -> Tuple[np.ndarray, np.ndarray]:
         return _read_16bits_png_with_flow_and_valid_mask(file_name)
 
 
@@ -275,7 +279,7 @@ class FlyingChairs(FlowDataset):
                 self._flow_list += [flows[i]]
                 self._image_list += [[images[2 * i], images[2 * i + 1]]]
 
-    def __getitem__(self, index: int) -> Tuple:
+    def __getitem__(self, index: int) -> Union[T1, T2]:
         """Return example at given index.
 
         Args:
@@ -290,7 +294,7 @@ class FlyingChairs(FlowDataset):
         """
         return super().__getitem__(index)
 
-    def _read_flow(self, file_name: Union[str, Path]) -> np.ndarray:
+    def _read_flow(self, file_name: str) -> np.ndarray:
         return _read_flo(file_name)
 
 
@@ -373,7 +377,7 @@ class FlyingThings3D(FlowDataset):
                         self._image_list += [[images[i + 1], images[i]]]
                         self._flow_list += [flows[i + 1]]
 
-    def __getitem__(self, index: int) -> Tuple:
+    def __getitem__(self, index: int) -> Union[T1, T2]:
         """Return example at given index.
 
         Args:
@@ -388,7 +392,7 @@ class FlyingThings3D(FlowDataset):
         """
         return super().__getitem__(index)
 
-    def _read_flow(self, file_name: Union[str, Path]) -> np.ndarray:
+    def _read_flow(self, file_name: str) -> np.ndarray:
         return _read_pfm(file_name)
 
 
@@ -440,10 +444,10 @@ class HD1K(FlowDataset):
                 "Could not find the HD1K images. Please make sure the directory structure is correct."
             )
 
-    def _read_flow(self, file_name: Union[str, Path]) -> Tuple[np.ndarray, np.ndarray]:
+    def _read_flow(self, file_name: str) -> Tuple[np.ndarray, np.ndarray]:
         return _read_16bits_png_with_flow_and_valid_mask(file_name)
 
-    def __getitem__(self, index: int) -> Tuple:
+    def __getitem__(self, index: int) -> Union[T1, T2]:
         """Return example at given index.
 
         Args:
@@ -459,7 +463,7 @@ class HD1K(FlowDataset):
         return super().__getitem__(index)
 
 
-def _read_flo(file_name: Union[str, Path]) -> np.ndarray:
+def _read_flo(file_name: str) -> np.ndarray:
     """Read .flo file in Middlebury format"""
     # Code adapted from:
     # http://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
@@ -476,9 +480,9 @@ def _read_flo(file_name: Union[str, Path]) -> np.ndarray:
         return data.reshape(h, w, 2).transpose(2, 0, 1)
 
 
-def _read_16bits_png_with_flow_and_valid_mask(file_name: Union[str, Path]) -> Tuple[np.ndarray, np.ndarray]:
+def _read_16bits_png_with_flow_and_valid_mask(file_name: str) -> Tuple[np.ndarray, np.ndarray]:
 
-    flow_and_valid = _read_png_16(str(file_name)).to(torch.float32)
+    flow_and_valid = _read_png_16(file_name).to(torch.float32)
     flow, valid_flow_mask = flow_and_valid[:2, :, :], flow_and_valid[2, :, :]
     flow = (flow - 2**15) / 64  # This conversion is explained somewhere on the kitti archive
     valid_flow_mask = valid_flow_mask.bool()
