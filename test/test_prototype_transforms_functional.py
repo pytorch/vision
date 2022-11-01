@@ -38,6 +38,10 @@ ignore_jit_warning_no_profile = pytest.mark.filterwarnings(
 
 def make_info_args_kwargs_params(info, *, args_kwargs_fn, test_id=None):
     args_kwargs = list(args_kwargs_fn(info))
+    if not args_kwargs:
+        raise pytest.UsageError(
+            f"Couldn't collect a single `ArgsKwargs` for `{info.id}`{f' in {test_id}' if test_id else ''}"
+        )
     idx_field_len = len(str(len(args_kwargs)))
     return [
         pytest.param(
