@@ -1173,7 +1173,7 @@ def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> tor
             return image
 
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, image_height, image_width)
-    return crop_image_tensor(image, crop_top, crop_left, crop_height, crop_width)
+    return image[..., crop_top:(crop_top + crop_height), crop_left:(crop_left + crop_width)]
 
 
 @torch.jit.unused
