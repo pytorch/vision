@@ -872,9 +872,7 @@ def reference_crop_bounding_box(bounding_box, *, format, top, left, height, widt
         dtype="float32",
     )
 
-    expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=format, affine_matrix=affine_matrix
-    )
+    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
     return expected_bboxes, (height, width)
 
 
