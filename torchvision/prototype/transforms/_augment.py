@@ -125,7 +125,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
 
 class RandomMixup(_BaseMixupCutmix):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        return dict(lam=float(self._dist.sample(())))
+        return dict(lam=float(self._dist.sample(())))  # type: ignore[arg-type]
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
@@ -147,7 +147,7 @@ class RandomMixup(_BaseMixupCutmix):
 
 class RandomCutmix(_BaseMixupCutmix):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        lam = float(self._dist.sample(()))
+        lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 
         H, W = query_spatial_size(flat_inputs)
 
@@ -262,7 +262,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
         boxes = F.convert_format_bounding_box(
-            xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format
+            xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, inplace=True
         )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
 

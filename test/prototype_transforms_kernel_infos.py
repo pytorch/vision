@@ -145,6 +145,29 @@ def sample_inputs_horizontal_flip_video():
         yield ArgsKwargs(video_loader)
 
 
+def reference_horizontal_flip_bounding_box(bounding_box, *, format, spatial_size):
+    affine_matrix = np.array(
+        [
+            [-1, 0, spatial_size[1]],
+            [0, 1, 0],
+        ],
+        dtype="float32",
+    )
+
+    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+
+    return expected_bboxes
+
+
+def reference_inputs_flip_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders(extra_dims=[()]):
+        yield ArgsKwargs(
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
+        )
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -158,6 +181,8 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.horizontal_flip_bounding_box,
             sample_inputs_fn=sample_inputs_horizontal_flip_bounding_box,
+            reference_fn=reference_horizontal_flip_bounding_box,
+            reference_inputs_fn=reference_inputs_flip_bounding_box,
         ),
         KernelInfo(
             F.horizontal_flip_mask,
@@ -409,15 +434,13 @@ def _compute_affine_matrix(angle, translate, scale, shear, center):
     return true_matrix
 
 
-def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, translate, scale, shear, center=None):
-    if center is None:
-        center = [s * 0.5 for s in spatial_size[::-1]]
-
-    def transform(bbox):
-        affine_matrix = _compute_affine_matrix(angle, translate, scale, shear, center)
-        affine_matrix = affine_matrix[:2, :]
-
-        bbox_xyxy = F.convert_format_bounding_box(bbox, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
+def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix):
+    def transform(bbox, affine_matrix_, format_):
+        # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
+        in_dtype = bbox.dtype
+        bbox_xyxy = F.convert_format_bounding_box(
+            bbox.float(), old_format=format_, new_format=features.BoundingBoxFormat.XYXY, inplace=True
+        )
         points = np.array(
             [
                 [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
@@ -426,7 +449,7 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
                 [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
             ]
         )
-        transformed_points = np.matmul(points, affine_matrix.T)
+        transformed_points = np.matmul(points, affine_matrix_.T)
         out_bbox = torch.tensor(
             [
                 np.min(transformed_points[:, 0]).item(),
@@ -434,18 +457,32 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
                 np.max(transformed_points[:, 0]).item(),
                 np.max(transformed_points[:, 1]).item(),
             ],
-            dtype=bbox.dtype,
         )
-        return F.convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format)
+        out_bbox = F.convert_format_bounding_box(
+            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        )
+        return out_bbox.to(dtype=in_dtype)
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
 
-    expected_bboxes = [transform(bbox) for bbox in bounding_box]
+    expected_bboxes = [transform(bbox, affine_matrix, format) for bbox in bounding_box]
     if len(expected_bboxes) > 1:
         expected_bboxes = torch.stack(expected_bboxes)
     else:
         expected_bboxes = expected_bboxes[0]
+
+    return expected_bboxes
+
+
+def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, translate, scale, shear, center=None):
+    if center is None:
+        center = [s * 0.5 for s in spatial_size[::-1]]
+
+    affine_matrix = _compute_affine_matrix(angle, translate, scale, shear, center)
+    affine_matrix = affine_matrix[:2, :]
+
+    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
 
     return expected_bboxes
 
@@ -536,12 +573,12 @@ def sample_inputs_convert_format_bounding_box():
 
 def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
     return torchvision.ops.box_convert(
-        bounding_box, in_fmt=old_format.kernel_name.lower(), out_fmt=new_format.kernel_name.lower()
-    )
+        bounding_box, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()
+    ).to(bounding_box.dtype)
 
 
 def reference_inputs_convert_format_bounding_box():
-    for args_kwargs in sample_inputs_convert_color_space_image_tensor():
+    for args_kwargs in sample_inputs_convert_format_bounding_box():
         if len(args_kwargs.args[0].shape) == 2:
             yield args_kwargs
 
@@ -643,6 +680,20 @@ def sample_inputs_vertical_flip_video():
         yield ArgsKwargs(video_loader)
 
 
+def reference_vertical_flip_bounding_box(bounding_box, *, format, spatial_size):
+    affine_matrix = np.array(
+        [
+            [1, 0, 0],
+            [0, -1, spatial_size[0]],
+        ],
+        dtype="float32",
+    )
+
+    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+
+    return expected_bboxes
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -656,6 +707,8 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.vertical_flip_bounding_box,
             sample_inputs_fn=sample_inputs_vertical_flip_bounding_box,
+            reference_fn=reference_vertical_flip_bounding_box,
+            reference_inputs_fn=reference_inputs_flip_bounding_box,
         ),
         KernelInfo(
             F.vertical_flip_mask,
@@ -1322,7 +1375,7 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_equalize_image_tensor():
     for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
     ):
         yield ArgsKwargs(image_loader)
 
@@ -1331,27 +1384,41 @@ def reference_inputs_equalize_image_tensor():
     # We are not using `make_image_loaders` here since that uniformly samples the values over the whole value range.
     # Since the whole point of this kernel is to transform an arbitrary distribution of values into a uniform one,
     # the information gain is low if we already provide something really close to the expected value.
+    def make_uniform_band_image(shape, dtype, device, *, low_factor, high_factor):
+        if dtype.is_floating_point:
+            low = low_factor
+            high = high_factor
+        else:
+            max_value = torch.iinfo(dtype).max
+            low = int(low_factor * max_value)
+            high = int(high_factor * max_value)
+        return torch.testing.make_tensor(shape, dtype=dtype, device=device, low=low, high=high)
+
+    def make_beta_distributed_image(shape, dtype, device, *, alpha, beta):
+        image = torch.distributions.Beta(alpha, beta).sample(shape)
+        if not dtype.is_floating_point:
+            image.mul_(torch.iinfo(dtype).max).round_()
+        return image.to(dtype=dtype, device=device)
+
     spatial_size = (256, 256)
-    for fn, color_space in itertools.product(
+    for dtype, color_space, fn in itertools.product(
+        [torch.uint8, torch.float32],
+        [features.ColorSpace.GRAY, features.ColorSpace.RGB],
         [
+            lambda shape, dtype, device: torch.zeros(shape, dtype=dtype, device=device),
+            lambda shape, dtype, device: torch.full(
+                shape, 1.0 if dtype.is_floating_point else torch.iinfo(dtype).max, dtype=dtype, device=device
+            ),
             *[
-                lambda shape, dtype, device, low=low, high=high: torch.randint(
-                    low, high, shape, dtype=dtype, device=device
-                )
-                for low, high in [
-                    (0, 1),
-                    (255, 256),
-                    (0, 64),
-                    (64, 192),
-                    (192, 256),
+                functools.partial(make_uniform_band_image, low_factor=low_factor, high_factor=high_factor)
+                for low_factor, high_factor in [
+                    (0.0, 0.25),
+                    (0.25, 0.75),
+                    (0.75, 1.0),
                 ]
             ],
             *[
-                lambda shape, dtype, device, alpha=alpha, beta=beta: torch.distributions.Beta(alpha, beta)
-                .sample(shape)
-                .mul_(255)
-                .round_()
-                .to(dtype=dtype, device=device)
+                functools.partial(make_beta_distributed_image, alpha=alpha, beta=beta)
                 for alpha, beta in [
                     (0.5, 0.5),
                     (2, 2),
@@ -1360,10 +1427,9 @@ def reference_inputs_equalize_image_tensor():
                 ]
             ],
         ],
-        [features.ColorSpace.GRAY, features.ColorSpace.RGB],
     ):
         image_loader = ImageLoader(
-            fn, shape=(get_num_channels(color_space), *spatial_size), dtype=torch.uint8, color_space=color_space
+            fn, shape=(get_num_channels(color_space), *spatial_size), dtype=dtype, color_space=color_space
         )
         yield ArgsKwargs(image_loader)
 
@@ -1433,16 +1499,14 @@ _POSTERIZE_BITS = [1, 4, 8]
 
 def sample_inputs_posterize_image_tensor():
     for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
     ):
         yield ArgsKwargs(image_loader, bits=_POSTERIZE_BITS[0])
 
 
 def reference_inputs_posterize_image_tensor():
     for image_loader, bits in itertools.product(
-        make_image_loaders(
-            color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
-        ),
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
         _POSTERIZE_BITS,
     ):
         yield ArgsKwargs(image_loader, bits=bits)

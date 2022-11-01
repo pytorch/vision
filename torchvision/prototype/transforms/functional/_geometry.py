@@ -38,16 +38,14 @@ def horizontal_flip_bounding_box(
 
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = (
-        bounding_box.clone()
-        if format == features.BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
+    bounding_box = convert_format_bounding_box(
+        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
     ).reshape(-1, 4)
 
     bounding_box[:, [0, 2]] = spatial_size[1] - bounding_box[:, [2, 0]]
 
     return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(shape)
 
 
@@ -79,16 +77,14 @@ def vertical_flip_bounding_box(
 
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = (
-        bounding_box.clone()
-        if format == features.BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
+    bounding_box = convert_format_bounding_box(
+        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
     ).reshape(-1, 4)
 
     bounding_box[:, [1, 3]] = spatial_size[0] - bounding_box[:, [3, 1]]
 
     return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(shape)
 
 
@@ -412,7 +408,7 @@ def affine_bounding_box(
     # out_bboxes should be of shape [N boxes, 4]
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
 
@@ -468,20 +464,6 @@ def affine_video(
         fill=fill,
         center=center,
     )
-
-
-def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
-    # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
-    # So, we can't reassign fill to 0
-    # if fill is None:
-    #     fill = 0
-    if fill is None:
-        return fill
-
-    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
-    if not isinstance(fill, (int, float)):
-        fill = [float(v) for v in list(fill)]
-    return fill
 
 
 def affine(
@@ -608,9 +590,9 @@ def rotate_bounding_box(
     )
 
     return (
-        convert_format_bounding_box(out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format).reshape(
-            original_shape
-        ),
+        convert_format_bounding_box(
+            out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        ).reshape(original_shape),
         spatial_size,
     )
 
@@ -829,10 +811,8 @@ def crop_bounding_box(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = (
-        bounding_box.clone()
-        if format == features.BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
+    bounding_box = convert_format_bounding_box(
+        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
     )
 
     # Crop or implicit pad if left and/or top have negative values:
@@ -840,7 +820,9 @@ def crop_bounding_box(
     bounding_box[..., 1::2] -= top
 
     return (
-        convert_format_bounding_box(bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format),
+        convert_format_bounding_box(
+            bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        ),
         (height, width),
     )
 
@@ -978,7 +960,7 @@ def perspective_bounding_box(
     # out_bboxes should be of shape [N boxes, 4]
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
 
@@ -1099,7 +1081,7 @@ def elastic_bounding_box(
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
 
