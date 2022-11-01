@@ -144,7 +144,12 @@ def gaussian_blur_image_tensor(
             output.round_()
         output = output.to(dtype)
 
-    return output.reshape(shape)
+    if ndim > 4:
+        output = output.reshape(shape)
+    elif ndim == 3:
+        output = output.squeeze(dim=0)
+
+    return output
 
 
 @torch.jit.unused
