@@ -16,12 +16,7 @@ from torchvision.transforms.functional import (
 )
 from torchvision.transforms.functional_tensor import _parse_pad_padding
 
-from ._meta import (
-    convert_format_bounding_box,
-    get_dimensions_image_tensor,
-    get_spatial_size_image_pil,
-    get_spatial_size_image_tensor,
-)
+from ._meta import convert_format_bounding_box, get_spatial_size_image_pil
 
 horizontal_flip_image_tensor = _FT.hflip
 horizontal_flip_image_pil = _FP.hflip
@@ -1173,7 +1168,7 @@ def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> tor
             return image
 
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, image_height, image_width)
-    return image[..., crop_top:(crop_top + crop_height), crop_left:(crop_left + crop_width)]
+    return image[..., crop_top : (crop_top + crop_height), crop_left : (crop_left + crop_width)]
 
 
 @torch.jit.unused
