@@ -154,7 +154,7 @@ def reference_horizontal_flip_bounding_box(bounding_box, *, format, spatial_size
         dtype="float32",
     )
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes, _ = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
 
     return expected_bboxes
 
@@ -434,45 +434,73 @@ def _compute_affine_matrix(angle, translate, scale, shear, center):
     return true_matrix
 
 
-def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix):
-    def transform(bbox, affine_matrix_, format_):
+def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix, spatial_size=None, expand=False):
+    def transform(bbox, affine_matrix_, format_, spatial_size_, expand_):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
         bbox_xyxy = F.convert_format_bounding_box(
             bbox.float(), old_format=format_, new_format=features.BoundingBoxFormat.XYXY, inplace=True
         )
-        points = np.array(
-            [
-                [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
-                [bbox_xyxy[2].item(), bbox_xyxy[1].item(), 1.0],
-                [bbox_xyxy[0].item(), bbox_xyxy[3].item(), 1.0],
-                [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
+        if expand:
+            assert spatial_size_ is not None
+        points = [
+            [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
+            [bbox_xyxy[2].item(), bbox_xyxy[1].item(), 1.0],
+            [bbox_xyxy[0].item(), bbox_xyxy[3].item(), 1.0],
+            [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
+        ]
+        if expand:
+            points += [
+                # image frame
+                [0.0, 0.0, 1.0],
+                [0.0, spatial_size_[0], 1.0],
+                [spatial_size_[1], spatial_size_[0], 1.0],
+                [spatial_size_[1], 0.0, 1.0],
             ]
-        )
+
+        points = np.array(points)
         transformed_points = np.matmul(points, affine_matrix_.T)
         out_bbox = torch.tensor(
             [
-                np.min(transformed_points[:, 0]).item(),
-                np.min(transformed_points[:, 1]).item(),
-                np.max(transformed_points[:, 0]).item(),
-                np.max(transformed_points[:, 1]).item(),
+                np.min(transformed_points[:4, 0]),
+                np.min(transformed_points[:4, 1]),
+                np.max(transformed_points[:4, 0]),
+                np.max(transformed_points[:4, 1]),
             ],
         )
         out_bbox = F.convert_format_bounding_box(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
         )
-        return out_bbox.to(dtype=in_dtype)
+
+        if not expand_:
+            return out_bbox.to(dtype=in_dtype)
+
+        tr_x = np.min(transformed_points[4:, 0])
+        tr_y = np.min(transformed_points[4:, 1])
+        out_bbox[0] -= tr_x
+        out_bbox[1] -= tr_y
+        out_bbox[2] -= tr_x
+        out_bbox[3] -= tr_y
+
+        height = int(spatial_size_[0] - 2 * tr_y)
+        width = int(spatial_size_[1] - 2 * tr_x)
+
+        return out_bbox.to(dtype=in_dtype), (height, width)
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
 
-    expected_bboxes = [transform(bbox, affine_matrix, format) for bbox in bounding_box]
-    if len(expected_bboxes) > 1:
-        expected_bboxes = torch.stack(expected_bboxes)
-    else:
-        expected_bboxes = expected_bboxes[0]
+    expected_bboxes = [transform(bbox, affine_matrix, format, spatial_size, expand) for bbox in bounding_box]
 
-    return expected_bboxes
+    expected_size = spatial_size
+    if expand:
+        expected_size = expected_bboxes[0][1]
+        expected_bboxes = [b for b, _ in expected_bboxes]
+
+    if len(expected_bboxes) > 1:
+        return torch.stack(expected_bboxes), expected_size
+    else:
+        return expected_bboxes[0], expected_size
 
 
 def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, translate, scale, shear, center=None):
@@ -482,7 +510,7 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
     affine_matrix = _compute_affine_matrix(angle, translate, scale, shear, center)
     affine_matrix = affine_matrix[:2, :]
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes, _ = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
 
     return expected_bboxes
 
@@ -689,7 +717,7 @@ def reference_vertical_flip_bounding_box(bounding_box, *, format, spatial_size):
         dtype="float32",
     )
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes, _ = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
 
     return expected_bboxes
 
@@ -786,6 +814,33 @@ def sample_inputs_rotate_video():
         yield ArgsKwargs(video_loader, angle=15.0)
 
 
+def reference_rotate_bounding_box(bounding_box, *, format, spatial_size, angle, expand, center):
+    if center is None:
+        center = [s * 0.5 for s in spatial_size[::-1]]
+
+    affine_matrix = _compute_affine_matrix(angle, [0.0, 0.0], 1.0, [0.0, 0.0], center)
+    affine_matrix = affine_matrix[:2, :]
+
+    expected_bboxes, (height, width)  = reference_affine_bounding_box_helper(
+        bounding_box, format=format, affine_matrix=affine_matrix, expand=expand, spatial_size=spatial_size
+    )
+
+    return expected_bboxes, (height, width)
+
+
+def reference_inputs_rotate_bounding_box():
+    for bounding_box_loader in make_bounding_box_loaders(extra_dims=((), (4,))):
+        for expand, center in [(True, None), (False, None), (False, (12, 14))]:
+            yield ArgsKwargs(
+                bounding_box_loader,
+                format=bounding_box_loader.format,
+                spatial_size=bounding_box_loader.spatial_size,
+                angle=_ROTATE_ANGLES[0],
+                expand=expand,
+                center=center,
+            )
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -803,6 +858,8 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.rotate_bounding_box,
             sample_inputs_fn=sample_inputs_rotate_bounding_box,
+            reference_fn=reference_rotate_bounding_box,
+            reference_inputs_fn=reference_inputs_rotate_bounding_box,
         ),
         KernelInfo(
             F.rotate_mask,
@@ -872,7 +929,9 @@ def reference_crop_bounding_box(bounding_box, *, format, top, left, height, widt
         dtype="float32",
     )
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes, _ = reference_affine_bounding_box_helper(
+        bounding_box, format=format, affine_matrix=affine_matrix
+    )
     return expected_bboxes, (height, width)
 
 

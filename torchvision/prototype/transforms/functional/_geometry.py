@@ -812,9 +812,9 @@ def crop_bounding_box(
 
     # Crop or implicit pad if left and/or top have negative values:
     if format == features.BoundingBoxFormat.XYXY:
-        sub = torch.tensor([left, top, left, top])
+        sub = torch.tensor([left, top, left, top], device=bounding_box.device)
     else:
-        sub = torch.tensor([left, top, 0, 0])
+        sub = torch.tensor([left, top, 0, 0], device=bounding_box.device)
     bounding_box.sub_(sub)
 
     return bounding_box, (height, width)
