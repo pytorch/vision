@@ -801,32 +801,6 @@ crop_image_tensor = _FT.crop
 crop_image_pil = _FP.crop
 
 
-def crop_bounding_box_old(
-    bounding_box: torch.Tensor,
-    format: features.BoundingBoxFormat,
-    top: int,
-    left: int,
-    height: int,
-    width: int,
-) -> Tuple[torch.Tensor, Tuple[int, int]]:
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = convert_format_bounding_box(
-        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
-    )
-
-    # Crop or implicit pad if left and/or top have negative values:
-    bounding_box[..., 0::2] -= left
-    bounding_box[..., 1::2] -= top
-
-    return (
-        convert_format_bounding_box(
-            bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-        ),
-        (height, width),
-    )
-
-
 def crop_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
