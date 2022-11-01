@@ -188,7 +188,7 @@ def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
     h, s, v = img.unbind(dim=-3)
     h6 = h * 6
     i = torch.floor(h6)
-    f = (h6) - i
+    f = h6 - i
     i = i.to(dtype=torch.int32)
 
     p = (v * (1.0 - s)).clamp_(0.0, 1.0)
@@ -209,9 +209,6 @@ def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
 def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
-
-    if not (isinstance(image, torch.Tensor)):
-        raise TypeError("Input img should be Tensor image")
 
     c = get_num_channels_image_tensor(image)
 
@@ -258,9 +255,6 @@ def adjust_hue(inpt: features.InputTypeJIT, hue_factor: float) -> features.Input
 
 
 def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1.0) -> torch.Tensor:
-    if not (isinstance(image, torch.Tensor)):
-        raise TypeError("Input img should be Tensor image")
-
     if gamma < 0:
         raise ValueError("Gamma should be a non-negative real number")
 
@@ -295,7 +289,18 @@ def adjust_gamma(inpt: features.InputTypeJIT, gamma: float, gain: float = 1) -> 
         return adjust_gamma_image_pil(inpt, gamma=gamma, gain=gain)
 
 
-posterize_image_tensor = _FT.posterize
+def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
+    if bits > 8:
+        return image
+
+    if image.is_floating_point():
+        levels = 1 << bits
+        return image.mul(levels).floor_().clamp_(0, levels - 1).div_(levels)
+    else:
+        mask = ((1 << bits) - 1) << (8 - bits)
+        return image & mask
+
+
 posterize_image_pil = _FP.posterize
 
 
@@ -337,10 +342,6 @@ def solarize(inpt: features.InputTypeJIT, threshold: float) -> features.InputTyp
 
 
 def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
-
-    if not (isinstance(image, torch.Tensor)):
-        raise TypeError("Input img should be Tensor image")
-
     c = get_num_channels_image_tensor(image)
 
     if c not in [1, 3]:
@@ -381,26 +382,22 @@ def autocontrast(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
 
 
 def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
-    if image.dtype != torch.uint8:
-        raise TypeError(f"Only torch.uint8 image tensors are supported, but found {image.dtype}")
-
-    num_channels, height, width = get_dimensions_image_tensor(image)
-    if num_channels not in (1, 3):
-        raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {num_channels}")
-
     if image.numel() == 0:
         return image
 
+    output_dtype = image.dtype
+    if image.is_floating_point():
+        # Floating point inputs need to be binned for this algorithm. Apart from converting them to an integer dtype, we
+        # could also use PyTorch's builtin histogram functionality. However, that has its own set of issues: in addition
+        # to being slow in general, PyTorch's implementation also doesn't support batches. In total, that makes it
+        # slower and more complicated to implement than a simple conversion and a fast histogram implementation for
+        # integers.
+        image = convert_dtype_image_tensor(image, torch.uint8)
+
+    # The histogram is computed by using the flattened image as index. For example, a pixel value of 127 in the image
+    # corresponds to adding 1 to index 127 in the histogram.
     batch_shape = image.shape[:-2]
     flat_image = image.flatten(start_dim=-2).to(torch.long)
-
-    # The algorithm for histogram equalization is mirrored from PIL:
-    # https://github.com/python-pillow/Pillow/blob/eb59cb61d5239ee69cbbf12709a0c6fd7314e6d7/src/PIL/ImageOps.py#L368-L385
-
-    # Although PyTorch has builtin functionality for histograms, it doesn't support batches. Since we deal with uint8
-    # images here and thus the values are already binned, the computation is trivial. The histogram is computed by using
-    # the flattened image as index. For example, a pixel value of 127 in the image corresponds to adding 1 to index 127
-    # in the histogram.
     hist = flat_image.new_zeros(batch_shape + (256,), dtype=torch.int32)
     hist.scatter_add_(dim=-1, index=flat_image, src=hist.new_ones(1).expand_as(flat_image))
     cum_hist = hist.cumsum(dim=-1)
@@ -408,6 +405,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     # The simplest form of lookup-table (LUT) that also achieves histogram equalization is
     # `lut = cum_hist / flat_image.shape[-1] * 255`
     # However, PIL uses a more elaborate scheme:
+    # https://github.com/python-pillow/Pillow/blob/eb59cb61d5239ee69cbbf12709a0c6fd7314e6d7/src/PIL/ImageOps.py#L368-L385
     # `lut = ((cum_hist + num_non_max_pixels // (2 * 255)) // num_non_max_pixels) * 255`
 
     # The last non-zero element in the histogram is the first element in the cumulative histogram with the maximum
@@ -425,7 +423,7 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     # easy due to our support for batched images. We can only return early if `(step == 0).all()` holds. If it doesn't,
     # we have to go through the computation below anyway. Since `step == 0` is an edge case anyway, it makes no sense to
     # pay the runtime cost for checking it every time.
-    no_equalization = step.eq(0).unsqueeze_(-1)
+    valid_equalization = step.ne(0).unsqueeze_(-1)
 
     # `lut[k]` is computed with `cum_hist[k-1]` with `lut[0] == (step // 2) // step == 0`. Thus, we perform the
     # computation only for `lut[1:]` with `cum_hist[:-1]` and add `lut[0] == 0` afterwards.
@@ -444,7 +442,8 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     lut = torch.cat([lut.new_zeros(1).expand(batch_shape + (1,)), lut], dim=-1)
     equalized_image = lut.gather(dim=-1, index=flat_image).view_as(image)
 
-    return torch.where(no_equalization, image, equalized_image)
+    output = torch.where(valid_equalization, equalized_image, image)
+    return convert_dtype_image_tensor(output, output_dtype)
 
 
 equalize_image_pil = _FP.equalize

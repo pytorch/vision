@@ -2,7 +2,6 @@ import decimal
 import functools
 import itertools
 import math
-import re
 
 import numpy as np
 import pytest
@@ -159,12 +158,6 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.horizontal_flip_bounding_box,
             sample_inputs_fn=sample_inputs_horizontal_flip_bounding_box,
-            test_marks=[
-                TestMark(
-                    ("TestKernels", "test_scripted_vs_eager"),
-                    pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %72')}:UserWarning"),
-                )
-            ],
         ),
         KernelInfo(
             F.horizontal_flip_mask,
@@ -543,12 +536,12 @@ def sample_inputs_convert_format_bounding_box():
 
 def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
     return torchvision.ops.box_convert(
-        bounding_box, in_fmt=old_format.kernel_name.lower(), out_fmt=new_format.kernel_name.lower()
-    )
+        bounding_box, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()
+    ).to(bounding_box.dtype)
 
 
 def reference_inputs_convert_format_bounding_box():
-    for args_kwargs in sample_inputs_convert_color_space_image_tensor():
+    for args_kwargs in sample_inputs_convert_format_bounding_box():
         if len(args_kwargs.args[0].shape) == 2:
             yield args_kwargs
 
@@ -1329,7 +1322,7 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_equalize_image_tensor():
     for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
     ):
         yield ArgsKwargs(image_loader)
 
@@ -1338,27 +1331,41 @@ def reference_inputs_equalize_image_tensor():
     # We are not using `make_image_loaders` here since that uniformly samples the values over the whole value range.
     # Since the whole point of this kernel is to transform an arbitrary distribution of values into a uniform one,
     # the information gain is low if we already provide something really close to the expected value.
+    def make_uniform_band_image(shape, dtype, device, *, low_factor, high_factor):
+        if dtype.is_floating_point:
+            low = low_factor
+            high = high_factor
+        else:
+            max_value = torch.iinfo(dtype).max
+            low = int(low_factor * max_value)
+            high = int(high_factor * max_value)
+        return torch.testing.make_tensor(shape, dtype=dtype, device=device, low=low, high=high)
+
+    def make_beta_distributed_image(shape, dtype, device, *, alpha, beta):
+        image = torch.distributions.Beta(alpha, beta).sample(shape)
+        if not dtype.is_floating_point:
+            image.mul_(torch.iinfo(dtype).max).round_()
+        return image.to(dtype=dtype, device=device)
+
     spatial_size = (256, 256)
-    for fn, color_space in itertools.product(
+    for dtype, color_space, fn in itertools.product(
+        [torch.uint8, torch.float32],
+        [features.ColorSpace.GRAY, features.ColorSpace.RGB],
         [
+            lambda shape, dtype, device: torch.zeros(shape, dtype=dtype, device=device),
+            lambda shape, dtype, device: torch.full(
+                shape, 1.0 if dtype.is_floating_point else torch.iinfo(dtype).max, dtype=dtype, device=device
+            ),
             *[
-                lambda shape, dtype, device, low=low, high=high: torch.randint(
-                    low, high, shape, dtype=dtype, device=device
-                )
-                for low, high in [
-                    (0, 1),
-                    (255, 256),
-                    (0, 64),
-                    (64, 192),
-                    (192, 256),
+                functools.partial(make_uniform_band_image, low_factor=low_factor, high_factor=high_factor)
+                for low_factor, high_factor in [
+                    (0.0, 0.25),
+                    (0.25, 0.75),
+                    (0.75, 1.0),
                 ]
             ],
             *[
-                lambda shape, dtype, device, alpha=alpha, beta=beta: torch.distributions.Beta(alpha, beta)
-                .sample(shape)
-                .mul_(255)
-                .round_()
-                .to(dtype=dtype, device=device)
+                functools.partial(make_beta_distributed_image, alpha=alpha, beta=beta)
                 for alpha, beta in [
                     (0.5, 0.5),
                     (2, 2),
@@ -1367,10 +1374,9 @@ def reference_inputs_equalize_image_tensor():
                 ]
             ],
         ],
-        [features.ColorSpace.GRAY, features.ColorSpace.RGB],
     ):
         image_loader = ImageLoader(
-            fn, shape=(get_num_channels(color_space), *spatial_size), dtype=torch.uint8, color_space=color_space
+            fn, shape=(get_num_channels(color_space), *spatial_size), dtype=dtype, color_space=color_space
         )
         yield ArgsKwargs(image_loader)
 
@@ -1440,16 +1446,14 @@ _POSTERIZE_BITS = [1, 4, 8]
 
 def sample_inputs_posterize_image_tensor():
     for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), dtypes=[torch.uint8]
+        sizes=["random"], color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB)
     ):
         yield ArgsKwargs(image_loader, bits=_POSTERIZE_BITS[0])
 
 
 def reference_inputs_posterize_image_tensor():
     for image_loader, bits in itertools.product(
-        make_image_loaders(
-            color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
-        ),
+        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
         _POSTERIZE_BITS,
     ):
         yield ArgsKwargs(image_loader, bits=bits)
@@ -2045,17 +2049,11 @@ def sample_inputs_convert_dtype_video():
         yield ArgsKwargs(video_loader)
 
 
-_common_convert_dtype_marks = [
-    TestMark(
-        ("TestKernels", "test_dtype_and_device_consistency"),
-        pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
-        condition=lambda args_kwargs: args_kwargs.args[0].dtype != args_kwargs.kwargs.get("dtype", torch.float32),
-    ),
-    TestMark(
-        ("TestKernels", "test_scripted_vs_eager"),
-        pytest.mark.filterwarnings(f"ignore:{re.escape('operator() profile_node %')}:UserWarning"),
-    ),
-]
+skip_dtype_consistency = TestMark(
+    ("TestKernels", "test_dtype_and_device_consistency"),
+    pytest.mark.skip(reason="`convert_dtype_*` kernels convert the dtype by design"),
+    condition=lambda args_kwargs: args_kwargs.args[0].dtype != args_kwargs.kwargs.get("dtype", torch.float32),
+)
 
 KERNEL_INFOS.extend(
     [
@@ -2065,7 +2063,7 @@ KERNEL_INFOS.extend(
             reference_fn=reference_convert_dtype_image_tensor,
             reference_inputs_fn=reference_inputs_convert_dtype_image_tensor,
             test_marks=[
-                *_common_convert_dtype_marks,
+                skip_dtype_consistency,
                 TestMark(
                     ("TestKernels", "test_against_reference"),
                     pytest.mark.xfail(reason="Conversion overflows"),
@@ -2083,7 +2081,9 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.convert_dtype_video,
             sample_inputs_fn=sample_inputs_convert_dtype_video,
-            test_marks=_common_convert_dtype_marks,
+            test_marks=[
+                skip_dtype_consistency,
+            ],
         ),
     ]
 )

@@ -983,8 +983,6 @@ class PadIfSmaller(prototype_transforms.Transform):
             return inpt
 
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
-
         return F.pad(inpt, padding=params["padding"], fill=fill)
 
 

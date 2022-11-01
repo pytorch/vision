@@ -7,7 +7,18 @@ from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
 
-get_dimensions_image_tensor = _FT.get_dimensions
+def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
+    chw = list(image.shape[-3:])
+    ndims = len(chw)
+    if ndims == 3:
+        return chw
+    elif ndims == 2:
+        chw.insert(0, 1)
+        return chw
+    else:
+        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
+
+
 get_dimensions_image_pil = _FP.get_dimensions
 
 
@@ -24,7 +35,17 @@ def get_dimensions(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -
         return get_dimensions_image_pil(image)
 
 
-get_num_channels_image_tensor = _FT.get_image_num_channels
+def get_num_channels_image_tensor(image: torch.Tensor) -> int:
+    chw = image.shape[-3:]
+    ndims = len(chw)
+    if ndims == 3:
+        return chw[0]
+    elif ndims == 2:
+        return 1
+    else:
+        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
+
+
 get_num_channels_image_pil = _FP.get_image_num_channels
 
 
@@ -36,11 +57,11 @@ def get_num_channels(image: Union[features.ImageTypeJIT, features.VideoTypeJIT])
     if isinstance(image, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
     ):
-        return _FT.get_image_num_channels(image)
+        return get_num_channels_image_tensor(image)
     elif isinstance(image, (features.Image, features.Video)):
         return image.num_channels
     else:
-        return _FP.get_image_num_channels(image)
+        return get_num_channels_image_pil(image)
 
 
 # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
@@ -49,8 +70,12 @@ get_image_num_channels = get_num_channels
 
 
 def get_spatial_size_image_tensor(image: torch.Tensor) -> List[int]:
-    width, height = _FT.get_image_size(image)
-    return [height, width]
+    hw = list(image.shape[-2:])
+    ndims = len(hw)
+    if ndims == 2:
+        return hw
+    else:
+        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
 
 
 @torch.jit.unused
@@ -94,51 +119,60 @@ def get_num_frames(inpt: features.VideoTypeJIT) -> int:
         raise TypeError(f"The video should be a Tensor. Got {type(inpt)}")
 
 
-def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
-    xyxy = xywh.clone()
+def _xywh_to_xyxy(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    xyxy = xywh if inplace else xywh.clone()
     xyxy[..., 2:] += xyxy[..., :2]
     return xyxy
 
 
-def _xyxy_to_xywh(xyxy: torch.Tensor) -> torch.Tensor:
-    xywh = xyxy.clone()
+def _xyxy_to_xywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
+    xywh = xyxy if inplace else xyxy.clone()
     xywh[..., 2:] -= xywh[..., :2]
     return xywh
 
 
-def _cxcywh_to_xyxy(cxcywh: torch.Tensor) -> torch.Tensor:
-    cx, cy, w, h = torch.unbind(cxcywh, dim=-1)
-    x1 = cx - 0.5 * w
-    y1 = cy - 0.5 * h
-    x2 = cx + 0.5 * w
-    y2 = cy + 0.5 * h
-    return torch.stack((x1, y1, x2, y2), dim=-1).to(cxcywh.dtype)
+def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        cxcywh = cxcywh.clone()
+
+    # Trick to do fast division by 2 and ceil, without casting. It produces the same result as
+    # `torchvision.ops._box_convert._box_cxcywh_to_xyxy`.
+    half_wh = cxcywh[..., 2:].div(-2, rounding_mode=None if cxcywh.is_floating_point() else "floor").abs_()
+    # (cx - width / 2) = x1, same for y1
+    cxcywh[..., :2].sub_(half_wh)
+    # (x1 + width) = x2, same for y2
+    cxcywh[..., 2:].add_(cxcywh[..., :2])
+
+    return cxcywh
 
 
-def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
-    x1, y1, x2, y2 = torch.unbind(xyxy, dim=-1)
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
-    w = x2 - x1
-    h = y2 - y1
-    return torch.stack((cx, cy, w, h), dim=-1).to(xyxy.dtype)
+def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        xyxy = xyxy.clone()
+
+    # (x2 - x1) = width, same for height
+    xyxy[..., 2:].sub_(xyxy[..., :2])
+    # (x1 * 2 + width) / 2 = x1 + width / 2 = x1 + (x2-x1)/2 = (x1 + x2)/2 = cx, same for cy
+    xyxy[..., :2].mul_(2).add_(xyxy[..., 2:]).div_(2, rounding_mode=None if xyxy.is_floating_point() else "floor")
+
+    return xyxy
 
 
 def convert_format_bounding_box(
-    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat
+    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
     if new_format == old_format:
         return bounding_box
 
     if old_format == BoundingBoxFormat.XYWH:
-        bounding_box = _xywh_to_xyxy(bounding_box)
+        bounding_box = _xywh_to_xyxy(bounding_box, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:
-        bounding_box = _cxcywh_to_xyxy(bounding_box)
+        bounding_box = _cxcywh_to_xyxy(bounding_box, inplace)
 
     if new_format == BoundingBoxFormat.XYWH:
-        bounding_box = _xyxy_to_xywh(bounding_box)
+        bounding_box = _xyxy_to_xywh(bounding_box, inplace)
     elif new_format == BoundingBoxFormat.CXCYWH:
-        bounding_box = _xyxy_to_cxcywh(bounding_box)
+        bounding_box = _xyxy_to_cxcywh(bounding_box, inplace)
 
     return bounding_box
 
@@ -148,22 +182,16 @@ def clamp_bounding_box(
 ) -> torch.Tensor:
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
-    xyxy_boxes = (
-        bounding_box.clone()
-        if format == BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, format, BoundingBoxFormat.XYXY)
+    xyxy_boxes = convert_format_bounding_box(
+        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
     )
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
-    return convert_format_bounding_box(xyxy_boxes, BoundingBoxFormat.XYXY, format)
-
-
-def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-    return image[..., :-1, :, :], image[..., -1:, :, :]
+    return convert_format_bounding_box(xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True)
 
 
 def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
-    image, alpha = _split_alpha(image)
+    image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
     if not torch.all(alpha == _FT._max_value(alpha.dtype)):
         raise RuntimeError(
             "Stripping the alpha channel if it contains values other than the max value is not supported."
@@ -212,7 +240,7 @@ def convert_color_space_image_tensor(
     elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB:
         return _gray_to_rgb(_strip_alpha(image))
     elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB_ALPHA:
-        image, alpha = _split_alpha(image)
+        image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
         return _add_alpha(_gray_to_rgb(image), alpha)
     elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAY:
         return _rgb_to_gray(image)
@@ -223,7 +251,7 @@ def convert_color_space_image_tensor(
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY:
         return _rgb_to_gray(_strip_alpha(image))
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY_ALPHA:
-        image, alpha = _split_alpha(image)
+        image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
         return _add_alpha(_rgb_to_gray(image), alpha)
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.RGB:
         return _strip_alpha(image)

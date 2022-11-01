@@ -1,5 +1,6 @@
 import math
 import os
+import re
 
 import numpy as np
 import PIL.Image
@@ -26,8 +27,21 @@ def script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
+# Scripting a function often triggers a warning like
+# `UserWarning: operator() profile_node %$INT1 : int[] = prim::profile_ivalue($INT2) does not have profile information`
+# with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
+# them.
+ignore_jit_warning_no_profile = pytest.mark.filterwarnings(
+    f"ignore:{re.escape('operator() profile_node %')}:UserWarning"
+)
+
+
 def make_info_args_kwargs_params(info, *, args_kwargs_fn, test_id=None):
     args_kwargs = list(args_kwargs_fn(info))
+    if not args_kwargs:
+        raise pytest.UsageError(
+            f"Couldn't collect a single `ArgsKwargs` for `{info.id}`{f' in {test_id}' if test_id else ''}"
+        )
     idx_field_len = len(str(len(args_kwargs)))
     return [
         pytest.param(
@@ -87,6 +101,7 @@ class TestKernels:
         condition=lambda info: info.reference_fn is not None,
     )
 
+    @ignore_jit_warning_no_profile
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_scripted_vs_eager(self, info, args_kwargs, device):
@@ -218,6 +233,7 @@ class TestDispatchers:
         condition=lambda info: features.Image in info.kernels,
     )
 
+    @ignore_jit_warning_no_profile
     @image_sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_scripted_smoke(self, info, args_kwargs, device):
@@ -230,6 +246,7 @@ class TestDispatchers:
 
     # TODO: We need this until the dispatchers below also have `DispatcherInfo`'s. If they do, `test_scripted_smoke`
     #  replaces this test for them.
+    @ignore_jit_warning_no_profile
     @pytest.mark.parametrize(
         "dispatcher",
         [
