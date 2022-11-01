@@ -16,12 +16,7 @@ from torchvision.transforms.functional import (
 )
 from torchvision.transforms.functional_tensor import _parse_pad_padding
 
-from ._meta import (
-    convert_format_bounding_box,
-    get_dimensions_image_tensor,
-    get_spatial_size_image_pil,
-    get_spatial_size_image_tensor,
-)
+from ._meta import convert_format_bounding_box, get_spatial_size_image_pil
 
 horizontal_flip_image_tensor = _FT.hflip
 horizontal_flip_image_pil = _FP.hflip
@@ -36,17 +31,16 @@ def horizontal_flip_bounding_box(
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = convert_format_bounding_box(
-        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
-    ).reshape(-1, 4)
+    bounding_box = bounding_box.clone().reshape(-1, 4)
 
-    bounding_box[:, [0, 2]] = spatial_size[1] - bounding_box[:, [2, 0]]
+    if format == features.BoundingBoxFormat.XYXY:
+        bounding_box[:, [2, 0]] = bounding_box[:, [0, 2]].sub_(spatial_size[1]).neg_()
+    elif format == features.BoundingBoxFormat.XYWH:
+        bounding_box[:, 0].add_(bounding_box[:, 2]).sub_(spatial_size[1]).neg_()
+    else:  # format == features.BoundingBoxFormat.CXCYWH:
+        bounding_box[:, 0].sub_(spatial_size[1]).neg_()
 
-    return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-    ).reshape(shape)
+    return bounding_box.reshape(shape)
 
 
 def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
@@ -75,17 +69,16 @@ def vertical_flip_bounding_box(
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = convert_format_bounding_box(
-        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
-    ).reshape(-1, 4)
+    bounding_box = bounding_box.clone().reshape(-1, 4)
 
-    bounding_box[:, [1, 3]] = spatial_size[0] - bounding_box[:, [3, 1]]
+    if format == features.BoundingBoxFormat.XYXY:
+        bounding_box[:, [1, 3]] = bounding_box[:, [3, 1]].sub_(spatial_size[0]).neg_()
+    elif format == features.BoundingBoxFormat.XYWH:
+        bounding_box[:, 1].add_(bounding_box[:, 3]).sub_(spatial_size[0]).neg_()
+    else:  # format == features.BoundingBoxFormat.CXCYWH:
+        bounding_box[:, 1].sub_(spatial_size[0]).neg_()
 
-    return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-    ).reshape(shape)
+    return bounding_box.reshape(shape)
 
 
 def vertical_flip_video(video: torch.Tensor) -> torch.Tensor:
@@ -122,9 +115,9 @@ def resize_image_tensor(
     max_size: Optional[int] = None,
     antialias: bool = False,
 ) -> torch.Tensor:
-    num_channels, old_height, old_width = get_dimensions_image_tensor(image)
+    shape = image.shape
+    num_channels, old_height, old_width = shape[-3:]
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
-    extra_dims = image.shape[:-3]
 
     if image.numel() > 0:
         image = image.reshape(-1, num_channels, old_height, old_width)
@@ -136,7 +129,7 @@ def resize_image_tensor(
             antialias=antialias,
         )
 
-    return image.reshape(extra_dims + (num_channels, new_height, new_width))
+    return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
 
 @torch.jit.unused
@@ -272,8 +265,8 @@ def affine_image_tensor(
     if image.numel() == 0:
         return image
 
-    num_channels, height, width = image.shape[-3:]
-    extra_dims = image.shape[:-3]
+    shape = image.shape
+    num_channels, height, width = shape[-3:]
     image = image.reshape(-1, num_channels, height, width)
 
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
@@ -287,7 +280,7 @@ def affine_image_tensor(
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
 
     output = _FT.affine(image, matrix, interpolation=interpolation.value, fill=fill)
-    return output.reshape(extra_dims + (num_channels, height, width))
+    return output.reshape(shape)
 
 
 @torch.jit.unused
@@ -513,8 +506,8 @@ def rotate_image_tensor(
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    num_channels, height, width = image.shape[-3:]
-    extra_dims = image.shape[:-3]
+    shape = image.shape
+    num_channels, height, width = shape[-3:]
 
     center_f = [0.0, 0.0]
     if center is not None:
@@ -540,7 +533,7 @@ def rotate_image_tensor(
     else:
         new_width, new_height = _FT._compute_affine_output_size(matrix, width, height) if expand else (width, height)
 
-    return image.reshape(extra_dims + (num_channels, new_height, new_width))
+    return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
 
 @torch.jit.unused
@@ -677,8 +670,8 @@ def _pad_with_scalar_fill(
     fill: Union[int, float, None],
     padding_mode: str = "constant",
 ) -> torch.Tensor:
-    num_channels, height, width = image.shape[-3:]
-    extra_dims = image.shape[:-3]
+    shape = image.shape
+    num_channels, height, width = shape[-3:]
 
     if image.numel() > 0:
         image = _FT.pad(
@@ -690,7 +683,7 @@ def _pad_with_scalar_fill(
         new_height = height + top + bottom
         new_width = width + left + right
 
-    return image.reshape(extra_dims + (num_channels, new_height, new_width))
+    return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
 
 # TODO: This should be removed once pytorch pad supports non-scalar padding values
@@ -1132,7 +1125,8 @@ elastic_transform = elastic
 
 def _center_crop_parse_output_size(output_size: List[int]) -> List[int]:
     if isinstance(output_size, numbers.Number):
-        return [int(output_size), int(output_size)]
+        s = int(output_size)
+        return [s, s]
     elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
         return [output_size[0], output_size[0]]
     else:
@@ -1158,18 +1152,21 @@ def _center_crop_compute_crop_anchor(
 
 def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    image_height, image_width = get_spatial_size_image_tensor(image)
+    shape = image.shape
+    if image.numel() == 0:
+        return image.reshape(shape[:-2] + (crop_height, crop_width))
+    image_height, image_width = shape[-2:]
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-        image = pad_image_tensor(image, padding_ltrb, fill=0)
+        image = _FT.torch_pad(image, _FT._parse_pad_padding(padding_ltrb), value=0.0)
 
-        image_height, image_width = get_spatial_size_image_tensor(image)
+        image_height, image_width = image.shape[-2:]
         if crop_width == image_width and crop_height == image_height:
             return image
 
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, image_height, image_width)
-    return crop_image_tensor(image, crop_top, crop_left, crop_height, crop_width)
+    return image[..., crop_top : (crop_top + crop_height), crop_left : (crop_left + crop_width)]
 
 
 @torch.jit.unused
@@ -1334,7 +1331,7 @@ def five_crop_image_tensor(
     image: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     crop_height, crop_width = _parse_five_crop_size(size)
-    image_height, image_width = get_spatial_size_image_tensor(image)
+    image_height, image_width = image.shape[-2:]
 
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
