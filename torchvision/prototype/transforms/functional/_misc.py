@@ -89,7 +89,7 @@ def gaussian_blur_image_tensor(
     # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
-    if len(kernel_size) != 2:
+    elif len(kernel_size) != 2:
         raise ValueError(f"If kernel_size is a sequence its length should be 2. Got {len(kernel_size)}")
     for ksize in kernel_size:
         if ksize % 2 == 0 or ksize < 0:
@@ -97,15 +97,19 @@ def gaussian_blur_image_tensor(
 
     if sigma is None:
         sigma = [ksize * 0.15 + 0.35 for ksize in kernel_size]
-
-    if sigma is not None and not isinstance(sigma, (int, float, list, tuple)):
-        raise TypeError(f"sigma should be either float or sequence of floats. Got {type(sigma)}")
-    if isinstance(sigma, (int, float)):
-        sigma = [float(sigma), float(sigma)]
-    if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
-        sigma = [sigma[0], sigma[0]]
-    if len(sigma) != 2:
-        raise ValueError(f"If sigma is a sequence, its length should be 2. Got {len(sigma)}")
+    else:
+        if isinstance(sigma, (int, float)):
+            s = float(sigma)
+            sigma = [s, s]
+        elif isinstance(sigma, (list, tuple)):
+            length = len(sigma)
+            if length == 1:
+                s = float(sigma[0])
+                sigma = [s, s]
+            elif length != 2:
+                raise ValueError(f"If sigma is a sequence, its length should be 2. Got {len(sigma)}")
+        else:
+            raise TypeError(f"sigma should be either float or sequence of floats. Got {type(sigma)}")
     for s in sigma:
         if s <= 0.0:
             raise ValueError(f"sigma should have positive values. Got {sigma}")
@@ -113,31 +117,34 @@ def gaussian_blur_image_tensor(
     if image.numel() == 0:
         return image
 
+    dtype = image.dtype
     shape = image.shape
-
-    if image.ndim > 4:
+    ndim = len(shape)
+    if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
-        needs_unsquash = True
-    else:
-        needs_unsquash = False
+    elif ndim == 3:
+        image = image.unsqueeze(dim=0)
+    elif ndim < 3:
+        raise ValueError(f"Expected tensor to be a tensor image of size (..., C, H, W). Got {image.shape}.")
 
-    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
-    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=image.device)
-    kernel = kernel.expand(image.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    image, need_cast, need_squeeze, out_dtype = _FT._cast_squeeze_in(image, [kernel.dtype])
+    fp = torch.is_floating_point(image)
+    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype if fp else torch.float32, device=image.device)
+    kernel = kernel.expand(shape[-3], 1, kernel.shape[0], kernel.shape[1])
+
+    output = image if fp else image.to(torch.float32)
 
     # padding = (left, right, top, bottom)
     padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
-    output = torch_pad(image, padding, mode="reflect")
+    output = torch_pad(output, padding, mode="reflect")
     output = conv2d(output, kernel, groups=output.shape[-3])
 
-    output = _FT._cast_squeeze_out(output, need_cast, need_squeeze, out_dtype)
+    if output.dtype != dtype:
+        if not fp:
+            output.round_()
+        output = output.to(dtype)
 
-    if needs_unsquash:
-        output = output.reshape(shape)
-
-    return output
+    return output.reshape(shape)
 
 
 @torch.jit.unused
