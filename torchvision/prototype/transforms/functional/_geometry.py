@@ -41,9 +41,9 @@ def horizontal_flip_bounding_box(
     if format == features.BoundingBoxFormat.XYXY:
         bounding_box[:, [2, 0]] = bounding_box[:, [0, 2]].sub_(spatial_size[1]).neg_()
     elif format == features.BoundingBoxFormat.XYWH:
-        torch.sub(spatial_size[1], bounding_box[:, 0].add_(bounding_box[:, 2]), out=bounding_box[:, 0])
+        bounding_box[:, 0].add_(bounding_box[:, 2]).sub_(spatial_size[1]).neg_()
     else:  # format == features.BoundingBoxFormat.CXCYWH:
-        torch.sub(spatial_size[1], bounding_box[:, 0], out=bounding_box[:, 0])
+        bounding_box[:, 0].sub_(spatial_size[1]).neg_()
 
     return bounding_box.reshape(shape)
 
@@ -79,9 +79,9 @@ def vertical_flip_bounding_box(
     if format == features.BoundingBoxFormat.XYXY:
         bounding_box[:, [1, 3]] = bounding_box[:, [3, 1]].sub_(spatial_size[0]).neg_()
     elif format == features.BoundingBoxFormat.XYWH:
-        torch.sub(spatial_size[0], bounding_box[:, 1].add_(bounding_box[:, 3]), out=bounding_box[:, 1])
+        bounding_box[:, 1].add_(bounding_box[:, 3]).sub_(spatial_size[0]).neg_()
     else:  # format == features.BoundingBoxFormat.CXCYWH:
-        torch.sub(spatial_size[0], bounding_box[:, 1], out=bounding_box[:, 1])
+        bounding_box[:, 1].sub_(spatial_size[0]).neg_()
 
     return bounding_box.reshape(shape)
 
