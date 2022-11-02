@@ -73,9 +73,10 @@ def test_get_model_weights(name, weight):
     ],
 )
 def test_weights_copyable(copy_fn, name):
-    weights = models.get_model_weights(name)
-    copied_weights = copy_fn(weights)
-    assert copied_weights is weights
+    model_weights = models.get_model_weights(name)
+    for weights in list(model_weights):
+        copied_weights = copy_fn(weights)
+        assert copied_weights is weights
 
 
 @pytest.mark.parametrize(
