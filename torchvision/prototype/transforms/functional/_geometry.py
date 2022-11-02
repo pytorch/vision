@@ -820,22 +820,17 @@ def crop_bounding_box(
     height: int,
     width: int,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = convert_format_bounding_box(
-        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
-    )
+
+    bounding_box = bounding_box.clone()
 
     # Crop or implicit pad if left and/or top have negative values:
-    bounding_box[..., 0::2] -= left
-    bounding_box[..., 1::2] -= top
+    if format == features.BoundingBoxFormat.XYXY:
+        sub = torch.tensor([left, top, left, top], device=bounding_box.device)
+    else:
+        sub = torch.tensor([left, top, 0, 0], device=bounding_box.device)
+    bounding_box = bounding_box.sub_(sub)
 
-    return (
-        convert_format_bounding_box(
-            bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-        ),
-        (height, width),
-    )
+    return bounding_box, (height, width)
 
 
 def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
