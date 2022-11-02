@@ -750,14 +750,12 @@ def pad_bounding_box(
 
     left, right, top, bottom = _parse_pad_padding(padding)
 
-    bounding_box = bounding_box.clone()
-
     # this works without conversion since padding only affects xy coordinates
     if format == features.BoundingBoxFormat.XYXY:
         pad = torch.tensor([left, top, left, top], device=bounding_box.device)
     else:
         pad = torch.tensor([left, top, 0, 0], device=bounding_box.device)
-    bounding_box = bounding_box.add_(pad)
+    bounding_box = bounding_box + pad
 
     height, width = spatial_size
     height += top + bottom
@@ -803,14 +801,12 @@ def crop_bounding_box(
     width: int,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
 
-    bounding_box = bounding_box.clone()
-
     # Crop or implicit pad if left and/or top have negative values:
     if format == features.BoundingBoxFormat.XYXY:
         sub = torch.tensor([left, top, left, top], device=bounding_box.device)
     else:
         sub = torch.tensor([left, top, 0, 0], device=bounding_box.device)
-    bounding_box = bounding_box.sub_(sub)
+    bounding_box = bounding_box - sub
 
     return bounding_box, (height, width)
 
