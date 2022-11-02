@@ -682,7 +682,7 @@ def pad_image_tensor(
     # Be aware that while `padding` has order `[left, top, right, bottom]` has order, `torch_padding` uses
     # `[left, right, top, bottom]`. This stems from the fact that we align our API with PIL, but need to use `torch_pad`
     # internally.
-    torch_padding = _FT._parse_pad_padding(padding)
+    torch_padding = _parse_pad_padding(padding)
 
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
         raise ValueError(
@@ -693,9 +693,10 @@ def pad_image_tensor(
     if fill is None:
         # This is a JIT workaround
         return _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode=padding_mode)
-    elif isinstance(fill, (int, float)) or len(fill) == 1:
-        fill_number = fill[0] if isinstance(fill, list) else fill
-        return _pad_with_scalar_fill(image, torch_padding, fill=fill_number, padding_mode=padding_mode)
+    elif isinstance(fill, (int, float)):
+        return _pad_with_scalar_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
+    elif len(fill) == 1:
+        return _pad_with_scalar_fill(image, torch_padding, fill=fill[0], padding_mode=padding_mode)
     else:
         return _pad_with_vector_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
 
