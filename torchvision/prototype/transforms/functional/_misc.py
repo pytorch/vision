@@ -68,9 +68,9 @@ def normalize(
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
-    lim = (kernel_size - 1) / (2 * math.sqrt(2) * sigma)
+    lim = (kernel_size - 1) / (2.0 * math.sqrt(2.0) * sigma)
     x = torch.linspace(-lim, lim, steps=kernel_size, dtype=dtype, device=device)
-    kernel1d = torch.softmax(-x.pow_(2), dim=0)
+    kernel1d = torch.softmax(x.pow_(2).neg_(), dim=0)
     return kernel1d
 
 
@@ -98,16 +98,16 @@ def gaussian_blur_image_tensor(
     if sigma is None:
         sigma = [ksize * 0.15 + 0.35 for ksize in kernel_size]
     else:
-        if isinstance(sigma, (int, float)):
-            s = float(sigma)
-            sigma = [s, s]
-        elif isinstance(sigma, (list, tuple)):
+        if isinstance(sigma, (list, tuple)):
             length = len(sigma)
             if length == 1:
                 s = float(sigma[0])
                 sigma = [s, s]
             elif length != 2:
-                raise ValueError(f"If sigma is a sequence, its length should be 2. Got {len(sigma)}")
+                raise ValueError(f"If sigma is a sequence, its length should be 2. Got {length}")
+        elif isinstance(sigma, (int, float)):
+            s = float(sigma)
+            sigma = [s, s]
         else:
             raise TypeError(f"sigma should be either float or sequence of floats. Got {type(sigma)}")
     for s in sigma:
@@ -119,35 +119,30 @@ def gaussian_blur_image_tensor(
 
     dtype = image.dtype
     shape = image.shape
-    ndim = len(shape)
-    if ndim > 4:
-        image = image.reshape((-1,) + shape[-3:])
-    elif ndim == 3:
+    ndim = image.ndim
+    if ndim == 3:
         image = image.unsqueeze(dim=0)
-    elif ndim < 3:
-        raise ValueError(f"Expected tensor to be a tensor image of size (..., C, H, W). Got {image.shape}.")
-
+    elif ndim > 4:
+        image = image.reshape((-1,) + shape[-3:])
 
     fp = torch.is_floating_point(image)
     kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype if fp else torch.float32, device=image.device)
     kernel = kernel.expand(shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    output = image if fp else image.to(torch.float32)
+    output = image if fp else image.to(dtype=torch.float32)
 
     # padding = (left, right, top, bottom)
     padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
     output = torch_pad(output, padding, mode="reflect")
-    output = conv2d(output, kernel, groups=output.shape[-3])
+    output = conv2d(output, kernel, groups=shape[-3])
 
-    if output.dtype != dtype:
-        if not fp:
-            output.round_()
-        output = output.to(dtype)
-
-    if ndim > 4:
-        output = output.reshape(shape)
-    elif ndim == 3:
+    if ndim == 3:
         output = output.squeeze(dim=0)
+    elif ndim > 4:
+        output = output.reshape(shape)
+
+    if not fp:
+        output = output.round_().to(dtype=dtype)
 
     return output
 
