@@ -815,7 +815,7 @@ def crop_bounding_box(
         sub = torch.tensor([left, top, left, top], device=bounding_box.device)
     else:
         sub = torch.tensor([left, top, 0, 0], device=bounding_box.device)
-    bounding_box.sub_(sub)
+    bounding_box = bounding_box.sub_(sub)
 
     return bounding_box, (height, width)
 
