@@ -4,6 +4,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
+from torch.nn.functional import interpolate
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 from torchvision.transforms.functional import (
@@ -122,12 +123,29 @@ def resize_image_tensor(
     if image.numel() > 0:
         image = image.reshape(-1, num_channels, old_height, old_width)
 
-        image = _FT.resize(
+        align_corners: Optional[bool] = None
+        if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
+            align_corners = False
+        elif antialias:
+            raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
+
+        dtype = image.dtype
+        fp = torch.is_floating_point(image)
+        if not fp:
+            image = image.to(dtype=torch.float32)
+
+        image = interpolate(
             image,
             size=[new_height, new_width],
-            interpolation=interpolation.value,
+            mode=interpolation.value,
+            align_corners=align_corners,
             antialias=antialias,
         )
+
+        if not fp:
+            if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
+                image = image.clamp_(min=0, max=255)
+            image = image.round_().to(dtype=dtype)
 
     return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
@@ -1317,9 +1335,11 @@ def resized_crop(
 
 def _parse_five_crop_size(size: List[int]) -> List[int]:
     if isinstance(size, numbers.Number):
-        size = [int(size), int(size)]
+        s = int(size)
+        size = [s, s]
     elif isinstance(size, (tuple, list)) and len(size) == 1:
-        size = [size[0], size[0]]
+        s = size[0]
+        size = [s, s]
 
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
