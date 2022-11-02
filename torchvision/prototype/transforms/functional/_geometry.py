@@ -754,10 +754,10 @@ def pad_bounding_box(
 
     # this works without conversion since padding only affects xy coordinates
     if format == features.BoundingBoxFormat.XYXY:
-        sub = torch.tensor([left, top, left, top], device=bounding_box.device)
+        pad = torch.tensor([left, top, left, top], device=bounding_box.device)
     else:
-        sub = torch.tensor([left, top, 0, 0], device=bounding_box.device)
-    bounding_box = bounding_box.add_(sub)
+        pad = torch.tensor([left, top, 0, 0], device=bounding_box.device)
+    bounding_box = bounding_box.add_(pad)
 
     height, width = spatial_size
     height += top + bottom
