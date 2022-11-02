@@ -130,8 +130,8 @@ def resize_image_tensor(
             raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
 
         dtype = image.dtype
-        fp = torch.is_floating_point(image)
-        if not fp:
+        need_cast = dtype != torch.float32 and dtype != torch.float64
+        if need_cast:
             image = image.to(dtype=torch.float32)
 
         image = interpolate(
@@ -142,7 +142,7 @@ def resize_image_tensor(
             antialias=antialias,
         )
 
-        if not fp:
+        if need_cast:
             if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
                 image = image.clamp_(min=0, max=255)
             image = image.round_().to(dtype=dtype)
