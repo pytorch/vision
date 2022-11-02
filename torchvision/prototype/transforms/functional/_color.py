@@ -2,7 +2,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
-from ._meta import _rgb_to_gray, convert_dtype_image_tensor, get_dimensions_image_tensor, get_num_channels_image_tensor
+from ._meta import _rgb_to_gray, convert_dtype_image_tensor
 
 
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
@@ -45,7 +45,7 @@ def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float
     if saturation_factor < 0:
         raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
-    c = get_num_channels_image_tensor(image)
+    c = image.shape[-3]
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
 
@@ -75,7 +75,7 @@ def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) ->
     if contrast_factor < 0:
         raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
 
-    c = get_num_channels_image_tensor(image)
+    c = image.shape[-3]
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
@@ -101,7 +101,7 @@ def adjust_contrast(inpt: features.InputTypeJIT, contrast_factor: float) -> feat
 
 
 def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
-    num_channels, height, width = get_dimensions_image_tensor(image)
+    num_channels, height, width = image.shape[-3:]
     if num_channels not in (1, 3):
         raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {num_channels}")
 
@@ -210,8 +210,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
 
-    c = get_num_channels_image_tensor(image)
-
+    c = image.shape[-3]
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
 
@@ -342,8 +341,7 @@ def solarize(inpt: features.InputTypeJIT, threshold: float) -> features.InputTyp
 
 
 def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
-    c = get_num_channels_image_tensor(image)
-
+    c = image.shape[-3]
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
 
