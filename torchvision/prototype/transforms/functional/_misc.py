@@ -5,7 +5,6 @@ import PIL.Image
 import torch
 from torch.nn.functional import conv2d, pad as torch_pad
 from torchvision.prototype import features
-from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 
