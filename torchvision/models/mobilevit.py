@@ -2,13 +2,17 @@
 
 from torch import nn
 from torchvision.utils import _log_api_usage_once
+from torchvision.models.mobilenetv2 import MobileNetV2
 from torchvision.models._api import register_model, Weights, WeightsEnum
 from torchvision.models._utils import _ovewrite_named_param
 from torchvision.models._meta import _IMAGENET_CATEGORIES
 from torch import Tensor
 from typing import Callable, Optional, Any, List
 from ..transforms._presets import ImageClassification
+from ..ops.misc import MLP
 from functools import partial
+from collections import OrderedDict
+import torch
 
 __all__ = ["MobileViT", "MobileViT_Weights", "MobileViT_V2_Weights"]
 
@@ -22,7 +26,7 @@ _COMMON_META = {
 # Paper link: v2 https://arxiv.org/pdf/2206.02680.pdf. 
 # v2 (what the difference with the V1 paper?)
 # Things to be done: write the V1, MobileViTblock, MobileViTV2block, weights (for V1 and V2), documentation...
-# TODO: What about multi-scale sampler?
+# TODO: What about multi-scale sampler? Check later...
 
 class MobileViT_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
@@ -85,18 +89,146 @@ class MobileViT_XXS_Weights(WeightsEnum):
     )
     DEFAULT = IMAGENET1K_V1
 
-
+# TODO: Take inspiration from the V1 weights... In progress...
 class MobileViT_V2_Weights(WeightsEnum):
     pass
 
+# The EncoderBlock and Encoder from vision_transformer.py
+# TODO: Maybe refactor later...
+class TransformerEncoderBlock(nn.Module):
+    """Transformer encoder block."""
+
+    def __init__(
+        self,
+        num_heads: int,
+        hidden_dim: int,
+        mlp_dim: int,
+        dropout: float,
+        attention_dropout: float,
+        norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
+    ):
+        super().__init__()
+        self.num_heads = num_heads
+
+        # Attention block
+        self.ln_1 = norm_layer(hidden_dim)
+        self.self_attention = nn.MultiheadAttention(hidden_dim, num_heads, dropout=attention_dropout, batch_first=True)
+        self.dropout = nn.Dropout(dropout)
+
+        # MLP block (inspired from swin_transformer.py)
+        self.mlp = MLP(mlp_dim, [hidden_dim, mlp_dim], 
+                       activation_layer=nn.GELU, inplace=None, dropout=dropout)
+
+        for m in self.mlp.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    nn.init.normal_(m.bias, std=1e-6)
+
+    def forward(self, input: torch.Tensor):
+        torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
+        x = self.ln_1(input)
+        x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
+        x = self.dropout(x)
+        x = x + input
+        y = self.mlp(y)
+        return x + y
+
+
+class TransformerEncoder(nn.Module):
+    """Transformer Model Encoder for sequence to sequence translation."""
+
+    def __init__(
+        self,
+        seq_length: int,
+        num_layers: int,
+        num_heads: int,
+        hidden_dim: int,
+        mlp_dim: int,
+        dropout: float,
+        attention_dropout: float,
+        norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
+    ):
+        super().__init__()
+        # Note that batch_size is on the first dim because
+        # we have batch_first=True in nn.MultiAttention() by default
+        self.pos_embedding = nn.Parameter(torch.empty(1, seq_length, hidden_dim).normal_(std=0.02))  # from BERT
+        self.dropout = nn.Dropout(dropout)
+        layers: OrderedDict[str, nn.Module] = OrderedDict()
+        # Multiple 
+        for i in range(num_layers):
+            layers[f"encoder_layer_{i}"] = TransformerEncoderBlock(
+                num_heads,
+                hidden_dim,
+                mlp_dim,
+                dropout,
+                attention_dropout,
+                norm_layer,
+            )
+        self.layers = nn.Sequential(layers)
+        self.ln = norm_layer(hidden_dim)
+
+    def forward(self, input: torch.Tensor):
+        torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
+        input = input + self.pos_embedding
+        return self.ln(self.layers(self.dropout(input)))
+
+# TODO: We will need a mobilenet block as well.
+# TODO: We need to use a Transformer. In progress... Using the one from TorchVision...
+# TODO: We need a LayerNorm as well...In progress...
 
 
 class MobileViTBlock(nn.Module):
-    def forward(self, x: Tensor):
-        return x
+    def __init__(self, dim, depth, channel, kernel_size, patch_dimensions, mlp_dim, dropout=0.):
+        super().__init__()
+        self.patch_height, self.patch_width = patch_dimensions
+        self.conv1 = nn.Sequential(
+                        nn.Conv2d(channel, channel, kernel_size, 1, bias=False),
+                        nn.BatchNorm2d(channel),
+                        nn.SiLU())
+        # Point-wise convolution (1 x 1)
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(channel, dim, 1, 1, 0, bias=False),
+            nn.BatchNorm2d(dim),
+            nn.SiLU()
+        )
+        # TODO: Setup the inputs...
+        self.transformer = TransformerEncoder(dim, depth, 4, 8, mlp_dim, dropout)
+
+        self.conv3 = nn.Sequential(
+                        nn.Conv2d(dim, channel, 1, 1, 0, bias=False),
+                        nn.BatchNorm2d(channel),
+                        nn.SiLU())
+        self.conv4 = nn.Sequential(
+                        nn.Conv2d(2 * channel, channel, kernel_size, 1, bias=False),
+                        nn.BatchNorm2d(channel),
+                        nn.SiLU())
+
+
+    def forward(self, x):
+        y = x.copy()
+        x = self.conv1(x)
+        x = self.conv2(x)
+        # batch, channels, height, width.
+        _, _, h, w = x.shape
+        # This is the unfloding (from spatial features to patches) and folding (from patches back to features) parts.
+        # TODO: What are the values of self.ph and self.pw.
+        # TODO: Change with a PyTorch operation... In progress...
+        print(x.shape)
+        """
+        x = rearrange(x, 'b d (h ph) (w pw) -> b (ph pw) (h w) d', ph=self.ph, pw=self.pw)
+        x = self.transformer(x)
+        # The reverse operation...
+        x = rearrange(x, 'b (ph pw) (h w) d -> b d (h ph) (w pw)', h=h//self.ph, w=w//self.pw, ph=self.ph, pw=self.pw)
+        x = self.conv3(x)
+        x = torch.cat((x, y), 1)
+        x = self.conv4(x)
+        """
+        return x 
 
 
 # Separable self-attention
+# TODO: Is this necessary? Check... Maybe
 class MobileViTV2Block(MobileViTBlock):
     def forward(self, x: Tensor):
         return x
@@ -147,6 +279,7 @@ def _mobile_vit(
 
     model = MobileViT(
         # TODO: Update these...Will pass different configurations depending on the size of the mdoel...
+        # In progress...
         **kwargs,
     )
 
@@ -169,7 +302,7 @@ def mobile_vit_s(*, weights: Optional[MobileViT_Weights] = None, progress: bool 
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.swin_transformer.MobileVit``
+        **kwargs: parameters passed to the ``torchvision.models.mobile_vit.MobileVit``
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilevit.py>`_
             for more details about this class.
@@ -192,6 +325,10 @@ def mobile_vit_xxs():
     return _mobile_vit(weights=weights)
 
 @register_model()
-def mobile_vit_v2()
+def mobile_vit_v2():
     weights = MobileViT_V2_Weights.verify(weights)
     return _mobile_vit(weights=weights)
+
+
+if __name__ == "__main__":
+    print(MobileViTBlock(1, 3, 1, 1, 0.5))
