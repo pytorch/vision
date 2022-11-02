@@ -20,7 +20,7 @@ class MaxvitTester(unittest.TestCase):
         x_hat = partition(x, partition_size)
         x_hat = departition(x_hat, partition_size, n_partitions, n_partitions)
 
-        assert torch.allclose(x, x_hat)
+        torch.testing.assert_close(x, x_hat)
 
     def test_maxvit_grid_partition(self):
         input_shape = (1, 3, 224, 224)
@@ -39,7 +39,7 @@ class MaxvitTester(unittest.TestCase):
         x_hat = post_swap(x_hat)
         x_hat = departition(x_hat, n_partitions, partition_size, partition_size)
 
-        assert torch.allclose(x, x_hat)
+        torch.testing.assert_close(x, x_hat)
 
 
 if __name__ == "__main__":
