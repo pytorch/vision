@@ -6,7 +6,7 @@ ifneq ($(EXAMPLES_PATTERN),)
 endif
 
 # You can set these variables from the command line.
-SPHINXOPTS    = -W $(EXAMPLES_PATTERN_OPTS)
+SPHINXOPTS    = -W -j auto $(EXAMPLES_PATTERN_OPTS)
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = torchvision
 SOURCEDIR     = source
@@ -33,6 +33,7 @@ clean:
 	rm -rf $(SOURCEDIR)/auto_examples/  # sphinx-gallery
 	rm -rf $(SOURCEDIR)/gen_modules/  # sphinx-gallery
 	rm -rf $(SOURCEDIR)/generated/  # autosummary
+	rm -rf $(SOURCEDIR)/models/generated  # autosummary
 
 .PHONY: help Makefile docset
 
