@@ -90,7 +90,7 @@ class TestONNXExporter:
                 torch.testing.assert_close(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
             except AssertionError as error:
                 if tolerate_small_mismatch:
-                    assert "(0.00%)" in str(error), str(error)
+                    assert "(0.0%)" in str(error), str(error)
                 else:
                     raise
 
