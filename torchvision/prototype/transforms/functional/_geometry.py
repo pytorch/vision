@@ -4,6 +4,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
+from torch.nn.functional import interpolate
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 from torchvision.transforms.functional import (
@@ -115,6 +116,12 @@ def resize_image_tensor(
     max_size: Optional[int] = None,
     antialias: bool = False,
 ) -> torch.Tensor:
+    align_corners: Optional[bool] = None
+    if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
+        align_corners = False
+    elif antialias:
+        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
+
     shape = image.shape
     num_channels, old_height, old_width = shape[-3:]
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
@@ -122,12 +129,23 @@ def resize_image_tensor(
     if image.numel() > 0:
         image = image.reshape(-1, num_channels, old_height, old_width)
 
-        image = _FT.resize(
+        dtype = image.dtype
+        need_cast = dtype not in (torch.float32, torch.float64)
+        if need_cast:
+            image = image.to(dtype=torch.float32)
+
+        image = interpolate(
             image,
             size=[new_height, new_width],
-            interpolation=interpolation.value,
+            mode=interpolation.value,
+            align_corners=align_corners,
             antialias=antialias,
         )
+
+        if need_cast:
+            if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
+                image = image.clamp_(min=0, max=255)
+            image = image.round_().to(dtype=dtype)
 
     return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
@@ -750,14 +768,11 @@ def pad_bounding_box(
 
     left, right, top, bottom = _parse_pad_padding(padding)
 
-    bounding_box = bounding_box.clone()
-
-    # this works without conversion since padding only affects xy coordinates
-    bounding_box[..., 0] += left
-    bounding_box[..., 1] += top
     if format == features.BoundingBoxFormat.XYXY:
-        bounding_box[..., 2] += left
-        bounding_box[..., 3] += top
+        pad = [left, top, left, top]
+    else:
+        pad = [left, top, 0, 0]
+    bounding_box = bounding_box + torch.tensor(pad, dtype=bounding_box.dtype, device=bounding_box.device)
 
     height, width = spatial_size
     height += top + bottom
@@ -802,22 +817,16 @@ def crop_bounding_box(
     height: int,
     width: int,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = convert_format_bounding_box(
-        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
-    )
 
     # Crop or implicit pad if left and/or top have negative values:
-    bounding_box[..., 0::2] -= left
-    bounding_box[..., 1::2] -= top
+    if format == features.BoundingBoxFormat.XYXY:
+        sub = [left, top, left, top]
+    else:
+        sub = [left, top, 0, 0]
 
-    return (
-        convert_format_bounding_box(
-            bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-        ),
-        (height, width),
-    )
+    bounding_box = bounding_box - torch.tensor(sub, dtype=bounding_box.dtype, device=bounding_box.device)
+
+    return bounding_box, (height, width)
 
 
 def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
@@ -919,14 +928,14 @@ def perspective_bounding_box(
         (-perspective_coeffs[0] * perspective_coeffs[7] + perspective_coeffs[1] * perspective_coeffs[6]) / denom,
     ]
 
-    theta1 = torch.tensor(
-        [[inv_coeffs[0], inv_coeffs[1], inv_coeffs[2]], [inv_coeffs[3], inv_coeffs[4], inv_coeffs[5]]],
+    theta12_T = torch.tensor(
+        [
+            [inv_coeffs[0], inv_coeffs[3], inv_coeffs[6], inv_coeffs[6]],
+            [inv_coeffs[1], inv_coeffs[4], inv_coeffs[7], inv_coeffs[7]],
+            [inv_coeffs[2], inv_coeffs[5], 1.0, 1.0],
+        ],
         dtype=dtype,
         device=device,
-    )
-
-    theta2 = torch.tensor(
-        [[inv_coeffs[6], inv_coeffs[7], 1.0], [inv_coeffs[6], inv_coeffs[7], 1.0]], dtype=dtype, device=device
     )
 
     # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
@@ -939,15 +948,16 @@ def perspective_bounding_box(
     #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #   y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
 
-    numer_points = torch.matmul(points, theta1.T)
-    denom_points = torch.matmul(points, theta2.T)
-    transformed_points = numer_points / denom_points
+    numer_denom_points = torch.matmul(points, theta12_T)
+    numer_points = numer_denom_points[:, :2]
+    denom_points = numer_denom_points[:, 2:]
+    transformed_points = numer_points.div_(denom_points)
 
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
     transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
-    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
+
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     # out_bboxes should be of shape [N boxes, 4]
@@ -1317,9 +1327,11 @@ def resized_crop(
 
 def _parse_five_crop_size(size: List[int]) -> List[int]:
     if isinstance(size, numbers.Number):
-        size = [int(size), int(size)]
+        s = int(size)
+        size = [s, s]
     elif isinstance(size, (tuple, list)) and len(size) == 1:
-        size = [size[0], size[0]]
+        s = size[0]
+        size = [s, s]
 
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
