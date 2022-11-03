@@ -1047,6 +1047,18 @@ def elastic_image_pil(
     return to_pil_image(output, mode=image.mode)
 
 
+def _create_identity_grid(size: Tuple[int, int]) -> torch.Tensor:
+    sy, sx = size
+    base_grid = torch.empty(1, sy, sx, 2)
+    x_grid = torch.linspace((-sx + 1) / sx, (sx - 1) / sx, sx)
+    base_grid[..., 0].copy_(x_grid)
+
+    y_grid = torch.linspace((-sy + 1) / sy, (sy - 1) / sy, sy).unsqueeze_(-1)
+    base_grid[..., 1].copy_(y_grid)
+
+    return base_grid
+
+
 def elastic_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
@@ -1064,22 +1076,22 @@ def elastic_bounding_box(
     # Or add spatial_size arg and check displacement shape
     spatial_size = displacement.shape[-3], displacement.shape[-2]
 
-    id_grid = _FT._create_identity_grid(list(spatial_size)).to(bounding_box.device)
+    id_grid = _create_identity_grid(spatial_size).to(bounding_box.device)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
     # This is not an exact inverse of the grid
     inv_grid = id_grid - displacement
 
     # Get points from bboxes
     points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
-    index_x = torch.floor(points[:, 0] + 0.5).to(dtype=torch.long)
-    index_y = torch.floor(points[:, 1] + 0.5).to(dtype=torch.long)
+    index_xy = torch.floor(points + 0.5).to(dtype=torch.long)
+    index_x, index_y = index_xy[:, 0], index_xy[:, 1]
+
     # Transform points:
     t_size = torch.tensor(spatial_size[::-1], device=displacement.device, dtype=displacement.dtype)
     transformed_points = (inv_grid[0, index_y, index_x, :] + 1) * 0.5 * t_size - 0.5
 
     transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
-    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     return convert_format_bounding_box(
