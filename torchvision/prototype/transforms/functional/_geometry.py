@@ -181,9 +181,11 @@ def resize_bounding_box(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = spatial_size
     new_height, new_width = _compute_resized_output_size(spatial_size, size=size, max_size=max_size)
-    ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
+    w_ratio = new_width / old_width
+    h_ratio = new_height / old_height
+    ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio], device=bounding_box.device)
     return (
-        bounding_box.reshape(-1, 2, 2).mul(ratios).to(bounding_box.dtype).reshape(bounding_box.shape),
+        bounding_box.mul(ratios).to(bounding_box.dtype),
         (new_height, new_width),
     )
 
@@ -367,8 +369,7 @@ def _affine_bounding_box_xyxy(
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
     transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
-    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
 
     if expand:
@@ -388,8 +389,7 @@ def _affine_bounding_box_xyxy(
         new_points = torch.matmul(points, transposed_affine_matrix)
         tr, _ = torch.min(new_points, dim=0, keepdim=True)
         # Translate bounding boxes
-        out_bboxes[:, 0::2] = out_bboxes[:, 0::2] - tr[:, 0]
-        out_bboxes[:, 1::2] = out_bboxes[:, 1::2] - tr[:, 1]
+        out_bboxes.sub_(tr.repeat((1, 2)))
         # Estimate meta-data for image with inverted=True and with center=[0,0]
         affine_vector = _get_inverse_affine_matrix([0.0, 0.0], angle, translate, scale, shear)
         new_width, new_height = _FT._compute_affine_output_size(affine_vector, width, height)
@@ -828,14 +828,11 @@ def pad_bounding_box(
 
     left, right, top, bottom = _parse_pad_padding(padding)
 
-    bounding_box = bounding_box.clone()
-
-    # this works without conversion since padding only affects xy coordinates
-    bounding_box[..., 0] += left
-    bounding_box[..., 1] += top
     if format == features.BoundingBoxFormat.XYXY:
-        bounding_box[..., 2] += left
-        bounding_box[..., 3] += top
+        pad = [left, top, left, top]
+    else:
+        pad = [left, top, 0, 0]
+    bounding_box = bounding_box + torch.tensor(pad, dtype=bounding_box.dtype, device=bounding_box.device)
 
     height, width = spatial_size
     height += top + bottom
@@ -881,14 +878,13 @@ def crop_bounding_box(
     width: int,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
 
-    bounding_box = bounding_box.clone()
-
     # Crop or implicit pad if left and/or top have negative values:
     if format == features.BoundingBoxFormat.XYXY:
-        sub = torch.tensor([left, top, left, top], device=bounding_box.device)
+        sub = [left, top, left, top]
     else:
-        sub = torch.tensor([left, top, 0, 0], device=bounding_box.device)
-    bounding_box = bounding_box.sub_(sub)
+        sub = [left, top, 0, 0]
+
+    bounding_box = bounding_box - torch.tensor(sub, dtype=bounding_box.dtype, device=bounding_box.device)
 
     return bounding_box, (height, width)
 
@@ -992,14 +988,14 @@ def perspective_bounding_box(
         (-perspective_coeffs[0] * perspective_coeffs[7] + perspective_coeffs[1] * perspective_coeffs[6]) / denom,
     ]
 
-    theta1 = torch.tensor(
-        [[inv_coeffs[0], inv_coeffs[1], inv_coeffs[2]], [inv_coeffs[3], inv_coeffs[4], inv_coeffs[5]]],
+    theta12_T = torch.tensor(
+        [
+            [inv_coeffs[0], inv_coeffs[3], inv_coeffs[6], inv_coeffs[6]],
+            [inv_coeffs[1], inv_coeffs[4], inv_coeffs[7], inv_coeffs[7]],
+            [inv_coeffs[2], inv_coeffs[5], 1.0, 1.0],
+        ],
         dtype=dtype,
         device=device,
-    )
-
-    theta2 = torch.tensor(
-        [[inv_coeffs[6], inv_coeffs[7], 1.0], [inv_coeffs[6], inv_coeffs[7], 1.0]], dtype=dtype, device=device
     )
 
     # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
@@ -1012,15 +1008,16 @@ def perspective_bounding_box(
     #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #   y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
 
-    numer_points = torch.matmul(points, theta1.T)
-    denom_points = torch.matmul(points, theta2.T)
-    transformed_points = numer_points / denom_points
+    numer_denom_points = torch.matmul(points, theta12_T)
+    numer_points = numer_denom_points[:, :2]
+    denom_points = numer_denom_points[:, 2:]
+    transformed_points = numer_points.div_(denom_points)
 
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
     transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
-    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
+
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     # out_bboxes should be of shape [N boxes, 4]
