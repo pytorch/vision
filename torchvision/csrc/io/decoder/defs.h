@@ -213,6 +213,12 @@ struct DecoderParameters {
 
   // Skip packets that fail with EPERM errors and continue decoding.
   bool skipOperationNotPermittedPackets{false};
+
+  // probing size in bytes, i.e. the size of the data to analyze to get stream
+  // information. A higher value will enable detecting more information in case
+  // it is dispersed into the stream, but will increase latency. Must be an
+  // integer not lesser than 32. It is 5000000 by default.
+  int64_t probeSize{5000000};
 };
 
 struct DecoderHeader {
