@@ -86,13 +86,7 @@ class TestONNXExporter:
         ort_outs = ort_session.run(None, ort_inputs)
 
         for i in range(0, len(outputs)):
-            try:
-                torch.testing.assert_close(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
-            except AssertionError as error:
-                if tolerate_small_mismatch:
-                    assert "(0.0%)" in str(error), str(error)
-                else:
-                    raise
+            torch.testing.assert_close(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
 
     def test_nms(self):
         num_boxes = 100
