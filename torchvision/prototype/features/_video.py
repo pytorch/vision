@@ -173,7 +173,12 @@ class Video(_Feature):
         coefficients: Optional[List[float]] = None,
     ) -> Video:
         output = self._F.perspective_video(
-            self.as_subclass(torch.Tensor), startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+            self.as_subclass(torch.Tensor),
+            startpoints,
+            endpoints,
+            interpolation=interpolation,
+            fill=fill,
+            coefficients=coefficients,
         )
         return Video.wrap_like(self, output)
 

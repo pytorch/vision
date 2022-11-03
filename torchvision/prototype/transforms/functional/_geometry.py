@@ -1094,11 +1094,17 @@ def perspective(
     coefficients: Optional[List[float]] = None,
 ) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        return perspective_image_tensor(inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients)
+        return perspective_image_tensor(
+            inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+        )
     elif isinstance(inpt, features._Feature):
-        return inpt.perspective(startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients)
+        return inpt.perspective(
+            startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+        )
     else:
-        return perspective_image_pil(inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients)
+        return perspective_image_pil(
+            inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+        )
 
 
 def elastic_image_tensor(

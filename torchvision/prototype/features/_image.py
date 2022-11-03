@@ -213,7 +213,12 @@ class Image(_Feature):
         coefficients: Optional[List[float]] = None,
     ) -> Image:
         output = self._F.perspective_image_tensor(
-            self.as_subclass(torch.Tensor), startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+            self.as_subclass(torch.Tensor),
+            startpoints,
+            endpoints,
+            interpolation=interpolation,
+            fill=fill,
+            coefficients=coefficients,
         )
         return Image.wrap_like(self, output)
 
