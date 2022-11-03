@@ -50,6 +50,8 @@ def _max_value(dtype: torch.dtype) -> int:
     elif dtype == torch.int64:
         return 9223372036854775807
     else:
+        # This is only here for completeness. This value is implicitly assumed in a lot of places so changing it is not
+        # easy.
         return 1
 
 
