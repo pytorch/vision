@@ -234,7 +234,6 @@ DISPATCHER_INFOS = [
                 condition=lambda args_kwargs: fill_sequence_needs_broadcast(args_kwargs)
                 and args_kwargs.kwargs.get("padding_mode", "constant") == "constant",
             ),
-            xfail_jit_python_scalar_arg("padding"),
             xfail_jit_tuple_instead_of_list("padding"),
             xfail_jit_tuple_instead_of_list("fill"),
             # TODO: check if this is a regression since it seems that should be supported if `int` is ok
