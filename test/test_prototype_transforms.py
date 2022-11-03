@@ -940,7 +940,7 @@ class TestRandomPerspective:
         params = transform._get_params([inpt])
 
         fill = transforms._utils._convert_fill_arg(fill)
-        fn.assert_called_once_with(inpt, **params, fill=fill, interpolation=interpolation)
+        fn.assert_called_once_with(inpt, None, None, **params, fill=fill, interpolation=interpolation)
 
 
 class TestElasticTransform:
