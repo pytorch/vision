@@ -1084,7 +1084,9 @@ def elastic_bounding_box(
 
     # Get points from bboxes
     points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
-    index_xy = points.ceil_().to(dtype=torch.long)
+    if points.is_floating_point():
+        points = points.ceil_()
+    index_xy = points.to(dtype=torch.long)
     index_x, index_y = index_xy[:, 0], index_xy[:, 1]
 
     # Transform points:
