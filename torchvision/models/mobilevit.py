@@ -1,18 +1,19 @@
 # TODO: Implement v1 and v2 versions of the mobile ViT model.
 
-from torch import nn
-from torchvision.utils import _log_api_usage_once
-from torchvision.models.mobilenetv2 import MobileNetV2
-from torchvision.models._api import register_model, Weights, WeightsEnum
-from torchvision.models._utils import _ovewrite_named_param
-from torchvision.models._meta import _IMAGENET_CATEGORIES
-from torch import Tensor
-from typing import Callable, Optional, Any, List
-from ..transforms._presets import ImageClassification
-from ..ops.misc import MLP
-from functools import partial
 from collections import OrderedDict
+from functools import partial
+from typing import Any, Callable, List, Optional
+
 import torch
+from torch import nn, Tensor
+from torchvision.models._api import register_model, Weights, WeightsEnum
+from torchvision.models._meta import _IMAGENET_CATEGORIES
+from torchvision.models._utils import _ovewrite_named_param
+from torchvision.models.mobilenetv2 import MobileNetV2
+from torchvision.utils import _log_api_usage_once
+
+from torchvision.ops.misc import MLP
+from torchvision.transforms._presets import ImageClassification
 
 __all__ = ["MobileViT", "MobileViT_Weights", "MobileViT_V2_Weights"]
 
@@ -20,24 +21,25 @@ _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
 }
 
-# For V1, we have 3 sets of weights xx_small (1.3M parameters), x_small (2.3M parameters), and small (5.6M parameters)
-# For V2, we have one set of weights.
+# For V1, we have 3 sets of weights xx_small (1.3M parameters), x_small (2.3M parameters), and small (5.6M parameters)
+# For V2, we have one set of weights.
 # Paper link: v1 https://arxiv.org/abs/2110.02178.
-# Paper link: v2 https://arxiv.org/pdf/2206.02680.pdf. 
+# Paper link: v2 https://arxiv.org/pdf/2206.02680.pdf.
 # v2 (what the difference with the V1 paper?)
 # Things to be done: write the V1, MobileViTblock, MobileViTV2block, weights (for V1 and V2), documentation...
-# TODO: What about multi-scale sampler? Check later...
+# TODO: What about multi-scale sampler? Check later...
+
 
 class MobileViT_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # TODO: Update the URL once the model has been trained...
+        # TODO: Update the URL once the model has been trained...
         url="https://download.pytorch.org/models/mobilevit.pth",
         transforms=partial(ImageClassification, crop_size=256),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
             "_metrics": {
-                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
+                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
                 "ImageNet-1K": {
                     "acc@1": 78.4,
                     "acc@5": 94.1,
@@ -48,16 +50,17 @@ class MobileViT_Weights(WeightsEnum):
     )
     DEFAULT = IMAGENET1K_V1
 
+
 class MobileViT_XS_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # TODO: Update the URL once the model has been trained...
+        # TODO: Update the URL once the model has been trained...
         url="https://download.pytorch.org/models/mobilevit_xs.pth",
         transforms=partial(ImageClassification, crop_size=256),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
             "_metrics": {
-                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
+                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
                 "ImageNet-1K": {
                     "acc@1": 74.8,
                     "acc@5": 92.3,
@@ -71,14 +74,14 @@ class MobileViT_XS_Weights(WeightsEnum):
 
 class MobileViT_XXS_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # TODO: Update the URL once the model has been trained...
+        # TODO: Update the URL once the model has been trained...
         url="https://download.pytorch.org/models/mobilevit_xxs.pth",
         transforms=partial(ImageClassification, crop_size=256),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
             "_metrics": {
-                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
+                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
                 "ImageNet-1K": {
                     "acc@1": 69.0,
                     "acc@5": 88.9,
@@ -89,9 +92,11 @@ class MobileViT_XXS_Weights(WeightsEnum):
     )
     DEFAULT = IMAGENET1K_V1
 
+
 # TODO: Take inspiration from the V1 weights... In progress...
 class MobileViT_V2_Weights(WeightsEnum):
     pass
+
 
 # The EncoderBlock and Encoder from vision_transformer.py
 # TODO: Maybe refactor later...
@@ -116,8 +121,7 @@ class TransformerEncoderBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         # MLP block (inspired from swin_transformer.py)
-        self.mlp = MLP(mlp_dim, [hidden_dim, mlp_dim], 
-                       activation_layer=nn.GELU, inplace=None, dropout=dropout)
+        self.mlp = MLP(mlp_dim, [hidden_dim, mlp_dim], activation_layer=nn.GELU, inplace=None, dropout=dropout)
 
         for m in self.mlp.modules():
             if isinstance(m, nn.Linear):
@@ -155,7 +159,7 @@ class TransformerEncoder(nn.Module):
         self.pos_embedding = nn.Parameter(torch.empty(1, seq_length, hidden_dim).normal_(std=0.02))  # from BERT
         self.dropout = nn.Dropout(dropout)
         layers: OrderedDict[str, nn.Module] = OrderedDict()
-        # Multiple 
+        # Multiple
         for i in range(num_layers):
             layers[f"encoder_layer_{i}"] = TransformerEncoderBlock(
                 num_heads,
@@ -173,37 +177,28 @@ class TransformerEncoder(nn.Module):
         input = input + self.pos_embedding
         return self.ln(self.layers(self.dropout(input)))
 
+
 # TODO: We will need a mobilenet block as well.
 # TODO: We need to use a Transformer. In progress... Using the one from TorchVision...
 # TODO: We need a LayerNorm as well...In progress...
 
 
 class MobileViTBlock(nn.Module):
-    def __init__(self, dim, depth, channel, kernel_size, patch_dimensions, mlp_dim, dropout=0.):
+    def __init__(self, dim, depth, channel, kernel_size, patch_dimensions, mlp_dim, dropout=0.0):
         super().__init__()
         self.patch_height, self.patch_width = patch_dimensions
         self.conv1 = nn.Sequential(
-                        nn.Conv2d(channel, channel, kernel_size, 1, bias=False),
-                        nn.BatchNorm2d(channel),
-                        nn.SiLU())
-        # Point-wise convolution (1 x 1)
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(channel, dim, 1, 1, 0, bias=False),
-            nn.BatchNorm2d(dim),
-            nn.SiLU()
+            nn.Conv2d(channel, channel, kernel_size, 1, bias=False), nn.BatchNorm2d(channel), nn.SiLU()
         )
+        # Point-wise convolution (1 x 1)
+        self.conv2 = nn.Sequential(nn.Conv2d(channel, dim, 1, 1, 0, bias=False), nn.BatchNorm2d(dim), nn.SiLU())
         # TODO: Setup the inputs...
         self.transformer = TransformerEncoder(dim, depth, 4, 8, mlp_dim, dropout)
 
-        self.conv3 = nn.Sequential(
-                        nn.Conv2d(dim, channel, 1, 1, 0, bias=False),
-                        nn.BatchNorm2d(channel),
-                        nn.SiLU())
+        self.conv3 = nn.Sequential(nn.Conv2d(dim, channel, 1, 1, 0, bias=False), nn.BatchNorm2d(channel), nn.SiLU())
         self.conv4 = nn.Sequential(
-                        nn.Conv2d(2 * channel, channel, kernel_size, 1, bias=False),
-                        nn.BatchNorm2d(channel),
-                        nn.SiLU())
-
+            nn.Conv2d(2 * channel, channel, kernel_size, 1, bias=False), nn.BatchNorm2d(channel), nn.SiLU()
+        )
 
     def forward(self, x):
         y = x.copy()
@@ -224,7 +219,7 @@ class MobileViTBlock(nn.Module):
         x = torch.cat((x, y), 1)
         x = self.conv4(x)
         """
-        return x 
+        return x
 
 
 # Separable self-attention
@@ -232,6 +227,7 @@ class MobileViTBlock(nn.Module):
 class MobileViTV2Block(MobileViTBlock):
     def forward(self, x: Tensor):
         return x
+
 
 class MobileViT(nn.Module):
     """
@@ -244,10 +240,10 @@ class MobileViT(nn.Module):
 
     def __init__(
         self,
-        # Trained on ImageNet1K by default.
+        # Trained on ImageNet1K by default.
         num_classes: int = 1000,
         layers_conf: dict = None,
-        # TODO: Should this be optional? Yes probably...
+        # TODO: Should this be optional? Yes probably...
         block: Optional[Callable[..., nn.Module]] = None,
     ):
         super().__init__()
@@ -257,10 +253,9 @@ class MobileViT(nn.Module):
 
         if block is None:
             block = MobileViTBlock
-        # Build the model one layer at a time.
+        # Build the model one layer at a time.
         layers: List[nn.Module] = []
         self.features = nn.Sequential(*layers)
-
 
     # TODO: This is the core thing to implement...
     def forward(self, x):
@@ -269,7 +264,7 @@ class MobileViT(nn.Module):
 
 
 def _mobile_vit(
-    # TODO: Update the parameters...
+    # TODO: Update the parameters...
     weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
@@ -278,7 +273,7 @@ def _mobile_vit(
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = MobileViT(
-        # TODO: Update these...Will pass different configurations depending on the size of the mdoel...
+        # TODO: Update these...Will pass different configurations depending on the size of the mdoel...
         # In progress...
         **kwargs,
     )
@@ -287,6 +282,7 @@ def _mobile_vit(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
 
 @register_model()
 def mobile_vit_s(*, weights: Optional[MobileViT_Weights] = None, progress: bool = True, **kwargs: Any):
@@ -319,10 +315,12 @@ def mobile_vit_xs():
     weights = MobileViT_XS_Weights.verify(weights)
     return _mobile_vit(weights=weights)
 
+
 @register_model()
 def mobile_vit_xxs():
     weights = MobileViT_XXS_Weights.verify(weights)
     return _mobile_vit(weights=weights)
+
 
 @register_model()
 def mobile_vit_v2():
