@@ -87,7 +87,7 @@ class TestONNXExporter:
 
         for i in range(0, len(outputs)):
             try:
-                torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
+                torch.testing.assert_close(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
             except AssertionError as error:
                 if tolerate_small_mismatch:
                     assert "(0.00%)" in str(error), str(error)
