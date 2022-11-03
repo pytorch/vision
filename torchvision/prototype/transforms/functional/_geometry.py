@@ -691,9 +691,9 @@ def pad_image_tensor(
         )
 
     if fill is None:
-        # This is a JIT workaround
-        return _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode=padding_mode)
-    elif isinstance(fill, (int, float)):
+        fill = 0
+
+    if isinstance(fill, (int, float)):
         return _pad_with_scalar_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
     elif len(fill) == 1:
         return _pad_with_scalar_fill(image, torch_padding, fill=fill[0], padding_mode=padding_mode)
