@@ -458,8 +458,8 @@ def resize(
 
     img = interpolate(img, size=size, mode=interpolation, align_corners=align_corners, antialias=antialias)
 
-    if interpolation == "bicubic" and out_dtype not in (torch.float32, torch.float64):
-        img = img.clamp(min=0, max=_max_value(out_dtype))
+    if interpolation == "bicubic" and out_dtype == torch.uint8:
+        img = img.clamp(min=0, max=255)
 
     img = _cast_squeeze_out(img, need_cast=need_cast, need_squeeze=need_squeeze, out_dtype=out_dtype)
 

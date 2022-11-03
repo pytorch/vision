@@ -143,9 +143,8 @@ def resize_image_tensor(
         )
 
         if need_cast:
-            # bicubic interpolation can overshoot
-            if interpolation == InterpolationMode.BICUBIC:
-                image = image.clamp_(min=0, max=_FT._max_value(dtype))
+            if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
+                image = image.clamp_(min=0, max=255)
             image = image.round_().to(dtype=dtype)
 
     return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
