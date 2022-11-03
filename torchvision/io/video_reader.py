@@ -236,11 +236,10 @@ class VideoReader:
             # handle special case as pyav doesn't catch it
             if time_s < 0:
                 time_s = 0
-            temp_str = self.container.streams.get(**self.pyav_stream)[0]
-            offset = int(round(time_s / temp_str.time_base))
+            offset = int(round(time_s / av.time_base))
             if not keyframes_only:
                 warnings.warn("Accurate seek is not implemented for pyav backend")
-            self.container.seek(offset, backward=True, any_frame=False, stream=temp_str)
+            self.container.seek(offset, backward=True, any_frame=False)
             self._c = self.container.decode(**self.pyav_stream)
         return self
 
