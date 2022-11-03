@@ -25,7 +25,7 @@ from prototype_common_utils import (
 )
 from torch.utils._pytree import tree_map
 from torchvision.prototype import features
-from torchvision.transforms.functional_tensor import _max_value as get_max_value
+from torchvision.transforms.functional_tensor import _max_value as get_max_value, _parse_pad_padding
 
 __all__ = ["KernelInfo", "KERNEL_INFOS"]
 
@@ -1078,6 +1078,38 @@ def sample_inputs_pad_video():
         yield ArgsKwargs(video_loader, padding=[1])
 
 
+def reference_pad_bounding_box(bounding_box, *, format, spatial_size, padding, padding_mode):
+
+    left, right, top, bottom = _parse_pad_padding(padding)
+
+    affine_matrix = np.array(
+        [
+            [1, 0, left],
+            [0, 1, top],
+        ],
+        dtype="float32",
+    )
+
+    height = spatial_size[0] + top + bottom
+    width = spatial_size[1] + left + right
+
+    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    return expected_bboxes, (height, width)
+
+
+def reference_inputs_pad_bounding_box():
+    for bounding_box_loader, padding in itertools.product(
+        make_bounding_box_loaders(extra_dims=((), (4,))), [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
+    ):
+        yield ArgsKwargs(
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
+            padding=padding,
+            padding_mode="constant",
+        )
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -1097,6 +1129,8 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.pad_bounding_box,
             sample_inputs_fn=sample_inputs_pad_bounding_box,
+            reference_fn=reference_pad_bounding_box,
+            reference_inputs_fn=reference_inputs_pad_bounding_box,
             test_marks=[
                 xfail_jit_python_scalar_arg("padding"),
                 xfail_jit_tuple_instead_of_list("padding"),
