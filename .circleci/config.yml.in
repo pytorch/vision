@@ -1110,7 +1110,6 @@ workflows:
 
   nightly:
     jobs:
-      {{ ios_workflows(nightly=True) }}
       {{ android_workflows(nightly=True) }}
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
   docker_build:
