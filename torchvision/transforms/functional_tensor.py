@@ -940,8 +940,8 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     return img
 
 
-def _create_identity_grid(size: List[int]) -> Tensor:
-    hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in size]
+def _create_identity_grid(size: List[int], device: torch.device) -> Tensor:
+    hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s, device=device) for s in size]
     grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
     return torch.stack([grid_x, grid_y], -1).unsqueeze(0)  # 1 x H x W x 2
 
@@ -959,6 +959,6 @@ def elastic_transform(
     size = list(img.shape[-2:])
     displacement = displacement.to(img.device)
 
-    identity_grid = _create_identity_grid(size)
+    identity_grid = _create_identity_grid(size, img.device)
     grid = identity_grid.to(img.device) + displacement
     return _apply_grid_transform(img, grid, interpolation, fill)
