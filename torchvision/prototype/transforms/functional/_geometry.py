@@ -181,9 +181,11 @@ def resize_bounding_box(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = spatial_size
     new_height, new_width = _compute_resized_output_size(spatial_size, size=size, max_size=max_size)
-    ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
+    w_ratio = new_width / old_width
+    h_ratio = new_height / old_height
+    ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio], device=bounding_box.device)
     return (
-        bounding_box.reshape(-1, 2, 2).mul(ratios).to(bounding_box.dtype).reshape(bounding_box.shape),
+        bounding_box.mul(ratios).to(bounding_box.dtype),
         (new_height, new_width),
     )
 
@@ -367,6 +369,7 @@ def _affine_bounding_box_xyxy(
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
     transformed_points = transformed_points.reshape(-1, 4, 2)
+    # TODO: check if aminmax could help here
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
@@ -388,6 +391,7 @@ def _affine_bounding_box_xyxy(
         new_points = torch.matmul(points, transposed_affine_matrix)
         tr, _ = torch.min(new_points, dim=0, keepdim=True)
         # Translate bounding boxes
+        # TODO: performance improvement by using inplace on intermediate results
         out_bboxes[:, 0::2] = out_bboxes[:, 0::2] - tr[:, 0]
         out_bboxes[:, 1::2] = out_bboxes[:, 1::2] - tr[:, 1]
         # Estimate meta-data for image with inverted=True and with center=[0,0]
@@ -947,7 +951,7 @@ def perspective_bounding_box(
     # 2) Now let's transform the points using perspective matrices
     #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #   y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
-
+    # TODO: Investigate potential optimizations by in-placing intermediate results, aminmax etc
     numer_points = torch.matmul(points, theta1.T)
     denom_points = torch.matmul(points, theta2.T)
     transformed_points = numer_points / denom_points
@@ -1063,7 +1067,7 @@ def elastic_bounding_box(
     # Question (vfdev-5): should we rely on good displacement shape and fetch image size from it
     # Or add spatial_size arg and check displacement shape
     spatial_size = displacement.shape[-3], displacement.shape[-2]
-
+    # TODO: Investigate potential optimizations by in-placing intermediate results, aminmax etc
     id_grid = _FT._create_identity_grid(list(spatial_size)).to(bounding_box.device)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
     # This is not an exact inverse of the grid
