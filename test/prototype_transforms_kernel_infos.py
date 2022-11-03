@@ -1087,7 +1087,6 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_pad_image_tensor,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
             test_marks=[
-                xfail_jit_python_scalar_arg("padding"),
                 xfail_jit_tuple_instead_of_list("padding"),
                 xfail_jit_tuple_instead_of_list("fill"),
                 # TODO: check if this is a regression since it seems that should be supported if `int` is ok

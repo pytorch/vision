@@ -664,15 +664,9 @@ def rotate(
 
 
 def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
-    if not isinstance(padding, (int, tuple, list)):
-        raise TypeError(f"`padding` should be an integer or tuple or list of integers, but got {padding}")
-
     if isinstance(padding, int):
-        if torch.jit.is_scripting():
-            # This maybe unreachable
-            raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
         pad_left = pad_right = pad_top = pad_bottom = padding
-    else:
+    elif isinstance(padding, (tuple, list)):
         if len(padding) == 1:
             pad_left = pad_right = pad_top = pad_bottom = padding[0]
         elif len(padding) == 2:
@@ -687,6 +681,8 @@ def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
             raise ValueError(
                 f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
             )
+    else:
+        raise TypeError(f"`padding` should be an integer or tuple or list of integers, but got {padding}")
 
     return [pad_left, pad_right, pad_top, pad_bottom]
 
