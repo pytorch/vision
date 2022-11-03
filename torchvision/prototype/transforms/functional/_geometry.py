@@ -1065,21 +1065,23 @@ def elastic_bounding_box(
     # Question (vfdev-5): should we rely on good displacement shape and fetch image size from it
     # Or add spatial_size arg and check displacement shape
     spatial_size = displacement.shape[-3], displacement.shape[-2]
-    id_grid = _FT._create_identity_grid(list(spatial_size), bounding_box.device)
+
+    id_grid = _FT._create_identity_grid(list(spatial_size)).to(bounding_box.device)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
     # This is not an exact inverse of the grid
     inv_grid = id_grid.sub_(displacement)
 
     # Get points from bboxes
-    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].ceil_().reshape(-1, 2)
-    index_x = points[:, 0].to(dtype=torch.long)
-    index_y = points[:, 1].to(dtype=torch.long)
+    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
+    index_x = torch.floor(points[:, 0] + 0.5).to(dtype=torch.long)
+    index_y = torch.floor(points[:, 1] + 0.5).to(dtype=torch.long)
     # Transform points:
     t_size = torch.tensor(spatial_size[::-1], device=displacement.device, dtype=displacement.dtype)
-    transformed_points = inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
+    transformed_points = (inv_grid[0, index_y, index_x, :] + 1) * 0.5 * t_size - 0.5
 
     transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
+    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
+    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     return convert_format_bounding_box(
