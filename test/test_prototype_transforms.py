@@ -917,8 +917,8 @@ class TestRandomPerspective:
         params = transform._get_params([image])
 
         h, w = image.spatial_size
-        assert "perspective_coeffs" in params
-        assert len(params["perspective_coeffs"]) == 8
+        assert "coefficients" in params
+        assert len(params["coefficients"]) == 8
 
     @pytest.mark.parametrize("distortion_scale", [0.1, 0.7])
     def test__transform(self, distortion_scale, mocker):

@@ -206,12 +206,14 @@ class Image(_Feature):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> Image:
         output = self._F.perspective_image_tensor(
-            self.as_subclass(torch.Tensor), perspective_coeffs, interpolation=interpolation, fill=fill
+            self.as_subclass(torch.Tensor), startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
         )
         return Image.wrap_like(self, output)
 
