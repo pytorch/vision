@@ -116,18 +116,18 @@ def resize_image_tensor(
     max_size: Optional[int] = None,
     antialias: bool = False,
 ) -> torch.Tensor:
+    align_corners: Optional[bool] = None
+    if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
+        align_corners = False
+    elif antialias:
+        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
+
     shape = image.shape
     num_channels, old_height, old_width = shape[-3:]
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
 
     if image.numel() > 0:
         image = image.reshape(-1, num_channels, old_height, old_width)
-
-        align_corners: Optional[bool] = None
-        if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
-            align_corners = False
-        elif antialias:
-            raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
 
         dtype = image.dtype
         need_cast = dtype not in (torch.float32, torch.float64)
