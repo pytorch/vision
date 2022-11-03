@@ -1158,7 +1158,6 @@ KERNEL_INFOS.extend(
             reference_fn=reference_pad_bounding_box,
             reference_inputs_fn=reference_inputs_pad_bounding_box,
             test_marks=[
-                xfail_jit_python_scalar_arg("padding"),
                 xfail_jit_tuple_instead_of_list("padding"),
             ],
         ),
