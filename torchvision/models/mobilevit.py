@@ -184,7 +184,8 @@ class TransformerEncoder(nn.Module):
 
 
 class MobileViTBlock(nn.Module):
-    def __init__(self, dim, depth, channel, kernel_size, patch_dimensions, mlp_dim, dropout=0.0):
+    def __init__(self, dim, depth, channel, kernel_size, patch_dimensions, mlp_dim, dropout=0.0,
+                 attention_dropout=0.5):
         super().__init__()
         self.patch_height, self.patch_width = patch_dimensions
         self.conv1 = nn.Sequential(
@@ -193,7 +194,7 @@ class MobileViTBlock(nn.Module):
         # Point-wise convolution (1 x 1)
         self.conv2 = nn.Sequential(nn.Conv2d(channel, dim, 1, 1, 0, bias=False), nn.BatchNorm2d(dim), nn.SiLU())
         # TODO: Setup the inputs...
-        self.transformer = TransformerEncoder(dim, depth, 4, 8, mlp_dim, dropout)
+        self.transformer = TransformerEncoder(dim, depth, 4, 8, mlp_dim, dropout, attention_dropout)
 
         self.conv3 = nn.Sequential(nn.Conv2d(dim, channel, 1, 1, 0, bias=False), nn.BatchNorm2d(channel), nn.SiLU())
         self.conv4 = nn.Sequential(
@@ -201,7 +202,7 @@ class MobileViTBlock(nn.Module):
         )
 
     def forward(self, x):
-        y = x.copy()
+        y = x.detach().clone()
         x = self.conv1(x)
         x = self.conv2(x)
         # batch, channels, height, width.
@@ -329,4 +330,9 @@ def mobile_vit_v2():
 
 
 if __name__ == "__main__":
-    print(MobileViTBlock(1, 3, 1, 1, 0.5))
+    # dim, depth, channel, kernel_size, patch_dimensions, mlp_dim, dropout=0.0
+    block = MobileViTBlock(dim=1, depth=3, channel=3, kernel_size=3, patch_dimensions=(2, 2), 
+                           mlp_dim=2, dropout=0.5)
+    print(block)
+    x = torch.rand(3, 3, 3, 3)
+    print(block(x))
