@@ -123,7 +123,7 @@ class Image(_Feature):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Image:
         output = self._F.resize_image_tensor(
             self.as_subclass(torch.Tensor), size, interpolation=interpolation, max_size=max_size, antialias=antialias
@@ -146,7 +146,7 @@ class Image(_Feature):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Image:
         output = self._F.resized_crop_image_tensor(
             self.as_subclass(torch.Tensor),

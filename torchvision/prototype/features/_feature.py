@@ -164,7 +164,7 @@ class _Feature(torch.Tensor):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> _Feature:
         return self
 
@@ -182,7 +182,7 @@ class _Feature(torch.Tensor):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> _Feature:
         return self
 
