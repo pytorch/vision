@@ -2020,6 +2020,12 @@ def reference_inputs_five_crop_image_tensor():
             yield ArgsKwargs(image_loader, size=size)
 
 
+def sample_inputs_five_crop_video():
+    size = _FIVE_TEN_CROP_SIZES[0]
+    for video_loader in make_video_loaders(sizes=[_get_five_ten_crop_spatial_size(size)]):
+        yield ArgsKwargs(video_loader, size=size)
+
+
 def sample_inputs_ten_crop_image_tensor():
     for size, vertical_flip in itertools.product(_FIVE_TEN_CROP_SIZES, [False, True]):
         for image_loader in make_image_loaders(
@@ -2036,6 +2042,17 @@ def reference_inputs_ten_crop_image_tensor():
             yield ArgsKwargs(image_loader, size=size, vertical_flip=vertical_flip)
 
 
+def sample_inputs_ten_crop_video():
+    size = _FIVE_TEN_CROP_SIZES[0]
+    for video_loader in make_video_loaders(sizes=[_get_five_ten_crop_spatial_size(size)]):
+        yield ArgsKwargs(video_loader, size=size)
+
+
+_common_five_ten_crop_marks = [
+    xfail_jit_python_scalar_arg("size"),
+    mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
+]
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -2043,22 +2060,26 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_five_crop_image_tensor,
             reference_fn=pil_reference_wrapper(F.five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
-            test_marks=[
-                xfail_jit_python_scalar_arg("size"),
-                mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
-            ],
+            test_marks=_common_five_ten_crop_marks,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.five_crop_video,
+            sample_inputs_fn=sample_inputs_five_crop_video,
+            test_marks=_common_five_ten_crop_marks,
         ),
         KernelInfo(
             F.ten_crop_image_tensor,
             sample_inputs_fn=sample_inputs_ten_crop_image_tensor,
             reference_fn=pil_reference_wrapper(F.ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
-            test_marks=[
-                xfail_jit_python_scalar_arg("size"),
-                mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
-            ],
+            test_marks=_common_five_ten_crop_marks,
             closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+        ),
+        KernelInfo(
+            F.ten_crop_video,
+            sample_inputs_fn=sample_inputs_ten_crop_video,
+            test_marks=_common_five_ten_crop_marks,
         ),
     ]
 )
