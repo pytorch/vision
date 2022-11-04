@@ -3,6 +3,8 @@ import math
 import os
 import re
 
+from typing import get_type_hints
+
 import numpy as np
 import PIL.Image
 import pytest
@@ -349,6 +351,28 @@ class TestDispatchers:
                 ) from None
 
             assert dispatcher_param == kernel_param
+
+    @pytest.mark.parametrize("info", DISPATCHER_INFOS, ids=lambda info: info.id)
+    def test_dispatcher_feature_signatures_consistency(self, info):
+        try:
+            feature_method = getattr(features._Feature, info.id)
+        except AttributeError:
+            pytest.skip("foo")
+
+        dispatcher_signature = inspect.signature(info.dispatcher)
+        dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
+
+        feature_signature = inspect.signature(feature_method)
+        feature_params = list(feature_signature.parameters.values())[1:]
+
+        # Because we use `from __future__ import annotations` inside the module where `features._Feature` is defined,
+        # the annotations are stored as strings. This makes them concrete again, so they can be compared to the natively
+        # concrete dispatcher annotations.
+        feature_annotations = get_type_hints(feature_method)
+        for param in feature_params:
+            param._annotation = feature_annotations[param.name]
+
+        assert dispatcher_params == feature_params
 
 
 @pytest.mark.parametrize(
