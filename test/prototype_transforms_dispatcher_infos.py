@@ -73,24 +73,24 @@ class DispatcherInfo(InfoBase):
                     yield args_kwargs
 
 
-def xfail_jit_python_scalar_arg(name, *, reason=None):
-    reason = reason or f"Python scalar int or float for `{name}` is not supported when scripting"
+def xfail_jit(reason, *, condition=None):
     return TestMark(
         ("TestDispatchers", "test_scripted_smoke"),
         pytest.mark.xfail(reason=reason),
+        condition=condition,
+    )
+
+
+def xfail_jit_python_scalar_arg(name, *, reason=None):
+    return xfail_jit(
+        reason or f"Python scalar int or float for `{name}` is not supported when scripting",
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), (int, float)),
     )
 
 
-def xfail_jit_integer_size(name="size"):
-    return xfail_jit_python_scalar_arg(name, reason=f"Integer `{name}` is not supported when scripting.")
-
-
 def xfail_jit_tuple_instead_of_list(name, *, reason=None):
-    reason = reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestDispatchers", "test_scripted_smoke"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting",
         condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
     )
 
@@ -101,10 +101,8 @@ def is_list_of_ints(args_kwargs):
 
 
 def xfail_jit_list_of_ints(name, *, reason=None):
-    reason = reason or f"Passing a list of integers for `{name}` is not supported when scripting"
-    return TestMark(
-        ("TestDispatchers", "test_scripted_smoke"),
-        pytest.mark.xfail(reason=reason),
+    return xfail_jit(
+        reason or f"Passing a list of integers for `{name}` is not supported when scripting",
         condition=is_list_of_ints,
     )
 
@@ -137,22 +135,12 @@ xfail_dispatch_pil_if_fill_sequence_needs_broadcast = TestMark(
 )
 
 
-def xfail_all_tests(*, reason, condition):
-    return [
-        TestMark(("TestDispatchers", test_name), pytest.mark.xfail(reason=reason), condition=condition)
-        for test_name in [
-            "test_scripted_smoke",
-            "test_dispatch_simple_tensor",
-            "test_dispatch_feature",
-        ]
-    ]
-
-
 DISPATCHER_INFOS = [
     DispatcherInfo(
         F.horizontal_flip,
         kernels={
             features.Image: F.horizontal_flip_image_tensor,
+            features.Video: F.horizontal_flip_video,
             features.BoundingBox: F.horizontal_flip_bounding_box,
             features.Mask: F.horizontal_flip_mask,
         },
@@ -162,18 +150,20 @@ DISPATCHER_INFOS = [
         F.resize,
         kernels={
             features.Image: F.resize_image_tensor,
+            features.Video: F.resize_video,
             features.BoundingBox: F.resize_bounding_box,
             features.Mask: F.resize_mask,
         },
         pil_kernel_info=PILKernelInfo(F.resize_image_pil),
         test_marks=[
-            xfail_jit_integer_size(),
+            xfail_jit_python_scalar_arg("size"),
         ],
     ),
     DispatcherInfo(
         F.affine,
         kernels={
             features.Image: F.affine_image_tensor,
+            features.Video: F.affine_video,
             features.BoundingBox: F.affine_bounding_box,
             features.Mask: F.affine_mask,
         },
@@ -190,6 +180,7 @@ DISPATCHER_INFOS = [
         F.vertical_flip,
         kernels={
             features.Image: F.vertical_flip_image_tensor,
+            features.Video: F.vertical_flip_video,
             features.BoundingBox: F.vertical_flip_bounding_box,
             features.Mask: F.vertical_flip_mask,
         },
@@ -199,6 +190,7 @@ DISPATCHER_INFOS = [
         F.rotate,
         kernels={
             features.Image: F.rotate_image_tensor,
+            features.Video: F.rotate_video,
             features.BoundingBox: F.rotate_bounding_box,
             features.Mask: F.rotate_mask,
         },
@@ -213,6 +205,7 @@ DISPATCHER_INFOS = [
         F.crop,
         kernels={
             features.Image: F.crop_image_tensor,
+            features.Video: F.crop_video,
             features.BoundingBox: F.crop_bounding_box,
             features.Mask: F.crop_mask,
         },
@@ -222,6 +215,7 @@ DISPATCHER_INFOS = [
         F.resized_crop,
         kernels={
             features.Image: F.resized_crop_image_tensor,
+            features.Video: F.resized_crop_video,
             features.BoundingBox: F.resized_crop_bounding_box,
             features.Mask: F.resized_crop_mask,
         },
@@ -231,6 +225,7 @@ DISPATCHER_INFOS = [
         F.pad,
         kernels={
             features.Image: F.pad_image_tensor,
+            features.Video: F.pad_video,
             features.BoundingBox: F.pad_bounding_box,
             features.Mask: F.pad_mask,
         },
@@ -247,7 +242,6 @@ DISPATCHER_INFOS = [
                 condition=lambda args_kwargs: fill_sequence_needs_broadcast(args_kwargs)
                 and args_kwargs.kwargs.get("padding_mode", "constant") == "constant",
             ),
-            xfail_jit_python_scalar_arg("padding"),
             xfail_jit_tuple_instead_of_list("padding"),
             xfail_jit_tuple_instead_of_list("fill"),
             # TODO: check if this is a regression since it seems that should be supported if `int` is ok
@@ -258,6 +252,7 @@ DISPATCHER_INFOS = [
         F.perspective,
         kernels={
             features.Image: F.perspective_image_tensor,
+            features.Video: F.perspective_video,
             features.BoundingBox: F.perspective_bounding_box,
             features.Mask: F.perspective_mask,
         },
@@ -270,6 +265,7 @@ DISPATCHER_INFOS = [
         F.elastic,
         kernels={
             features.Image: F.elastic_image_tensor,
+            features.Video: F.elastic_video,
             features.BoundingBox: F.elastic_bounding_box,
             features.Mask: F.elastic_mask,
         },
@@ -279,18 +275,20 @@ DISPATCHER_INFOS = [
         F.center_crop,
         kernels={
             features.Image: F.center_crop_image_tensor,
+            features.Video: F.center_crop_video,
             features.BoundingBox: F.center_crop_bounding_box,
             features.Mask: F.center_crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.center_crop_image_pil),
         test_marks=[
-            xfail_jit_integer_size("output_size"),
+            xfail_jit_python_scalar_arg("output_size"),
         ],
     ),
     DispatcherInfo(
         F.gaussian_blur,
         kernels={
             features.Image: F.gaussian_blur_image_tensor,
+            features.Video: F.gaussian_blur_video,
         },
         pil_kernel_info=PILKernelInfo(F.gaussian_blur_image_pil),
         test_marks=[
@@ -302,6 +300,7 @@ DISPATCHER_INFOS = [
         F.equalize,
         kernels={
             features.Image: F.equalize_image_tensor,
+            features.Video: F.equalize_video,
         },
         pil_kernel_info=PILKernelInfo(F.equalize_image_pil, kernel_name="equalize_image_pil"),
     ),
@@ -309,6 +308,7 @@ DISPATCHER_INFOS = [
         F.invert,
         kernels={
             features.Image: F.invert_image_tensor,
+            features.Video: F.invert_video,
         },
         pil_kernel_info=PILKernelInfo(F.invert_image_pil, kernel_name="invert_image_pil"),
     ),
@@ -316,6 +316,7 @@ DISPATCHER_INFOS = [
         F.posterize,
         kernels={
             features.Image: F.posterize_image_tensor,
+            features.Video: F.posterize_video,
         },
         pil_kernel_info=PILKernelInfo(F.posterize_image_pil, kernel_name="posterize_image_pil"),
     ),
@@ -323,6 +324,7 @@ DISPATCHER_INFOS = [
         F.solarize,
         kernels={
             features.Image: F.solarize_image_tensor,
+            features.Video: F.solarize_video,
         },
         pil_kernel_info=PILKernelInfo(F.solarize_image_pil, kernel_name="solarize_image_pil"),
     ),
@@ -330,6 +332,7 @@ DISPATCHER_INFOS = [
         F.autocontrast,
         kernels={
             features.Image: F.autocontrast_image_tensor,
+            features.Video: F.autocontrast_video,
         },
         pil_kernel_info=PILKernelInfo(F.autocontrast_image_pil, kernel_name="autocontrast_image_pil"),
     ),
@@ -337,6 +340,7 @@ DISPATCHER_INFOS = [
         F.adjust_sharpness,
         kernels={
             features.Image: F.adjust_sharpness_image_tensor,
+            features.Video: F.adjust_sharpness_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_sharpness_image_pil, kernel_name="adjust_sharpness_image_pil"),
     ),
@@ -344,6 +348,7 @@ DISPATCHER_INFOS = [
         F.erase,
         kernels={
             features.Image: F.erase_image_tensor,
+            features.Video: F.erase_video,
         },
         pil_kernel_info=PILKernelInfo(F.erase_image_pil),
         test_marks=[
@@ -354,6 +359,7 @@ DISPATCHER_INFOS = [
         F.adjust_brightness,
         kernels={
             features.Image: F.adjust_brightness_image_tensor,
+            features.Video: F.adjust_brightness_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_brightness_image_pil, kernel_name="adjust_brightness_image_pil"),
     ),
@@ -361,6 +367,7 @@ DISPATCHER_INFOS = [
         F.adjust_contrast,
         kernels={
             features.Image: F.adjust_contrast_image_tensor,
+            features.Video: F.adjust_contrast_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_contrast_image_pil, kernel_name="adjust_contrast_image_pil"),
     ),
@@ -368,6 +375,7 @@ DISPATCHER_INFOS = [
         F.adjust_gamma,
         kernels={
             features.Image: F.adjust_gamma_image_tensor,
+            features.Video: F.adjust_gamma_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_gamma_image_pil, kernel_name="adjust_gamma_image_pil"),
     ),
@@ -375,6 +383,7 @@ DISPATCHER_INFOS = [
         F.adjust_hue,
         kernels={
             features.Image: F.adjust_hue_image_tensor,
+            features.Video: F.adjust_hue_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_hue_image_pil, kernel_name="adjust_hue_image_pil"),
     ),
@@ -382,6 +391,7 @@ DISPATCHER_INFOS = [
         F.adjust_saturation,
         kernels={
             features.Image: F.adjust_saturation_image_tensor,
+            features.Video: F.adjust_saturation_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_saturation_image_pil, kernel_name="adjust_saturation_image_pil"),
     ),
@@ -389,10 +399,11 @@ DISPATCHER_INFOS = [
         F.five_crop,
         kernels={
             features.Image: F.five_crop_image_tensor,
+            features.Video: F.five_crop_video,
         },
         pil_kernel_info=PILKernelInfo(F.five_crop_image_pil),
         test_marks=[
-            xfail_jit_integer_size(),
+            xfail_jit_python_scalar_arg("size"),
             skip_dispatch_feature,
         ],
     ),
@@ -400,9 +411,10 @@ DISPATCHER_INFOS = [
         F.ten_crop,
         kernels={
             features.Image: F.ten_crop_image_tensor,
+            features.Video: F.ten_crop_video,
         },
         test_marks=[
-            xfail_jit_integer_size(),
+            xfail_jit_python_scalar_arg("size"),
             skip_dispatch_feature,
         ],
         pil_kernel_info=PILKernelInfo(F.ten_crop_image_pil),
@@ -411,9 +423,12 @@ DISPATCHER_INFOS = [
         F.normalize,
         kernels={
             features.Image: F.normalize_image_tensor,
+            features.Video: F.normalize_video,
         },
         test_marks=[
             skip_dispatch_feature,
+            xfail_jit_python_scalar_arg("mean"),
+            xfail_jit_python_scalar_arg("std"),
         ],
     ),
     DispatcherInfo(
@@ -421,6 +436,15 @@ DISPATCHER_INFOS = [
         kernels={
             features.Image: F.convert_dtype_image_tensor,
             features.Video: F.convert_dtype_video,
+        },
+        test_marks=[
+            skip_dispatch_feature,
+        ],
+    ),
+    DispatcherInfo(
+        F.uniform_temporal_subsample,
+        kernels={
+            features.Video: F.uniform_temporal_subsample_video,
         },
         test_marks=[
             skip_dispatch_feature,

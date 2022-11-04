@@ -223,20 +223,16 @@ class Pad(Transform):
         _check_padding_arg(padding)
         _check_padding_mode_arg(padding_mode)
 
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
+        if not isinstance(padding, int):
+            padding = list(padding)
         self.padding = padding
         self.fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-
-        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
-        padding = self.padding
-        if not isinstance(padding, int):
-            padding = list(padding)
-
-        fill = F._geometry._convert_fill_arg(fill)
-        return F.pad(inpt, padding=padding, fill=fill, padding_mode=self.padding_mode)
+        return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)
 
 
 class RandomZoomOut(_RandomApplyTransform):
@@ -274,7 +270,6 @@ class RandomZoomOut(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
         return F.pad(inpt, **params, fill=fill)
 
 
@@ -300,12 +295,11 @@ class RandomRotation(Transform):
         self.center = center
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        angle = float(torch.empty(1).uniform_(float(self.degrees[0]), float(self.degrees[1])).item())
+        angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
         return F.rotate(
             inpt,
             **params,
@@ -358,7 +352,7 @@ class RandomAffine(Transform):
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         height, width = query_spatial_size(flat_inputs)
 
-        angle = float(torch.empty(1).uniform_(float(self.degrees[0]), float(self.degrees[1])).item())
+        angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
         if self.translate is not None:
             max_dx = float(self.translate[0] * width)
             max_dy = float(self.translate[1] * height)
@@ -369,22 +363,21 @@ class RandomAffine(Transform):
             translate = (0, 0)
 
         if self.scale is not None:
-            scale = float(torch.empty(1).uniform_(self.scale[0], self.scale[1]).item())
+            scale = torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
         else:
             scale = 1.0
 
         shear_x = shear_y = 0.0
         if self.shear is not None:
-            shear_x = float(torch.empty(1).uniform_(self.shear[0], self.shear[1]).item())
+            shear_x = torch.empty(1).uniform_(self.shear[0], self.shear[1]).item()
             if len(self.shear) == 4:
-                shear_y = float(torch.empty(1).uniform_(self.shear[2], self.shear[3]).item())
+                shear_y = torch.empty(1).uniform_(self.shear[2], self.shear[3]).item()
 
         shear = (shear_x, shear_y)
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
         return F.affine(
             inpt,
             **params,
@@ -478,8 +471,6 @@ class RandomCrop(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
             fill = self.fill[type(inpt)]
-            fill = F._geometry._convert_fill_arg(fill)
-
             inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         if params["needs_crop"]:
@@ -512,35 +503,38 @@ class RandomPerspective(_RandomApplyTransform):
 
         half_height = height // 2
         half_width = width // 2
+        bound_height = int(distortion_scale * half_height) + 1
+        bound_width = int(distortion_scale * half_width) + 1
         topleft = [
-            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1,)).item()),
-            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1,)).item()),
+            int(torch.randint(0, bound_width, size=(1,))),
+            int(torch.randint(0, bound_height, size=(1,))),
         ]
         topright = [
-            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1,)).item()),
-            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1,)).item()),
+            int(torch.randint(width - bound_width, width, size=(1,))),
+            int(torch.randint(0, bound_height, size=(1,))),
         ]
         botright = [
-            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1,)).item()),
-            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1,)).item()),
+            int(torch.randint(width - bound_width, width, size=(1,))),
+            int(torch.randint(height - bound_height, height, size=(1,))),
         ]
         botleft = [
-            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1,)).item()),
-            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1,)).item()),
+            int(torch.randint(0, bound_width, size=(1,))),
+            int(torch.randint(height - bound_height, height, size=(1,))),
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
         perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
-        return dict(perspective_coeffs=perspective_coeffs)
+        return dict(coefficients=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
         return F.perspective(
             inpt,
-            **params,
+            None,
+            None,
             fill=fill,
             interpolation=self.interpolation,
+            **params,
         )
 
 
@@ -584,7 +578,6 @@ class ElasticTransform(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
         return F.elastic(
             inpt,
             **params,
@@ -655,7 +648,9 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for any valid boxes with centers within the crop area
-                xyxy_bboxes = F.convert_format_bounding_box(bboxes, bboxes.format, features.BoundingBoxFormat.XYXY)
+                xyxy_bboxes = F.convert_format_bounding_box(
+                    bboxes.as_subclass(torch.Tensor), bboxes.format, features.BoundingBoxFormat.XYXY
+                )
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])
                 cy = 0.5 * (xyxy_bboxes[..., 1] + xyxy_bboxes[..., 3])
                 is_within_crop_area = (left < cx) & (cx < right) & (top < cy) & (cy < bottom)
@@ -808,7 +803,12 @@ class FixedSizeCrop(Transform):
         if needs_crop and bounding_boxes is not None:
             format = bounding_boxes.format
             bounding_boxes, spatial_size = F.crop_bounding_box(
-                bounding_boxes, format=format, top=top, left=left, height=new_height, width=new_width
+                bounding_boxes.as_subclass(torch.Tensor),
+                format=format,
+                top=top,
+                left=left,
+                height=new_height,
+                width=new_width,
             )
             bounding_boxes = F.clamp_bounding_box(bounding_boxes, format=format, spatial_size=spatial_size)
             height_and_width = F.convert_format_bounding_box(
@@ -855,7 +855,6 @@ class FixedSizeCrop(Transform):
 
         if params["needs_pad"]:
             fill = self.fill[type(inpt)]
-            fill = F._geometry._convert_fill_arg(fill)
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt

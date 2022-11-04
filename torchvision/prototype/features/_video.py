@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, cast, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import torch
 from torchvision.transforms.functional import InterpolationMode
@@ -56,7 +56,7 @@ class Video(_Feature):
 
     @property
     def spatial_size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], tuple(self.shape[-2:]))
+        return tuple(self.shape[-2:])  # type: ignore[return-value]
 
     @property
     def num_channels(self) -> int:
@@ -79,7 +79,7 @@ class Video(_Feature):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Video:
         output = self._F.resize_video(
             self.as_subclass(torch.Tensor),
@@ -106,7 +106,7 @@ class Video(_Feature):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Video:
         output = self._F.resized_crop_video(
             self.as_subclass(torch.Tensor),
@@ -166,12 +166,19 @@ class Video(_Feature):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> Video:
         output = self._F.perspective_video(
-            self.as_subclass(torch.Tensor), perspective_coeffs, interpolation=interpolation, fill=fill
+            self.as_subclass(torch.Tensor),
+            startpoints,
+            endpoints,
+            interpolation=interpolation,
+            fill=fill,
+            coefficients=coefficients,
         )
         return Video.wrap_like(self, output)
 
@@ -237,7 +244,5 @@ class Video(_Feature):
 
 VideoType = Union[torch.Tensor, Video]
 VideoTypeJIT = torch.Tensor
-LegacyVideoType = torch.Tensor
-LegacyVideoTypeJIT = torch.Tensor
 TensorVideoType = Union[torch.Tensor, Video]
 TensorVideoTypeJIT = torch.Tensor

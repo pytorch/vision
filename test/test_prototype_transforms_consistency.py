@@ -163,6 +163,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(torch.uint8),
         ],
         supports_pil=False,
+        # Use default tolerances of `torch.testing.assert_close`
+        closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
         prototype_transforms.ToPILImage,
@@ -983,8 +985,6 @@ class PadIfSmaller(prototype_transforms.Transform):
             return inpt
 
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
-
         return F.pad(inpt, padding=params["padding"], fill=fill)
 
 

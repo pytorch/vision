@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import torch
 from torchvision.transforms import InterpolationMode
@@ -34,7 +34,7 @@ class Mask(_Feature):
 
     @property
     def spatial_size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], tuple(self.shape[-2:]))
+        return tuple(self.shape[-2:])  # type: ignore[return-value]
 
     def horizontal_flip(self) -> Mask:
         output = self._F.horizontal_flip_mask(self.as_subclass(torch.Tensor))
@@ -49,7 +49,7 @@ class Mask(_Feature):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Mask:
         output = self._F.resize_mask(self.as_subclass(torch.Tensor), size, max_size=max_size)
         return Mask.wrap_like(self, output)
@@ -70,7 +70,7 @@ class Mask(_Feature):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Mask:
         output = self._F.resized_crop_mask(self.as_subclass(torch.Tensor), top, left, height, width, size=size)
         return Mask.wrap_like(self, output)
@@ -118,11 +118,15 @@ class Mask(_Feature):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> Mask:
-        output = self._F.perspective_mask(self.as_subclass(torch.Tensor), perspective_coeffs, fill=fill)
+        output = self._F.perspective_mask(
+            self.as_subclass(torch.Tensor), startpoints, endpoints, fill=fill, coefficients=coefficients
+        )
         return Mask.wrap_like(self, output)
 
     def elastic(

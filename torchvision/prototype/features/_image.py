@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, cast, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -104,7 +104,7 @@ class Image(_Feature):
 
     @property
     def spatial_size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], tuple(self.shape[-2:]))
+        return tuple(self.shape[-2:])  # type: ignore[return-value]
 
     @property
     def num_channels(self) -> int:
@@ -123,7 +123,7 @@ class Image(_Feature):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Image:
         output = self._F.resize_image_tensor(
             self.as_subclass(torch.Tensor), size, interpolation=interpolation, max_size=max_size, antialias=antialias
@@ -146,7 +146,7 @@ class Image(_Feature):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Image:
         output = self._F.resized_crop_image_tensor(
             self.as_subclass(torch.Tensor),
@@ -206,12 +206,19 @@ class Image(_Feature):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> Image:
         output = self._F.perspective_image_tensor(
-            self.as_subclass(torch.Tensor), perspective_coeffs, interpolation=interpolation, fill=fill
+            self.as_subclass(torch.Tensor),
+            startpoints,
+            endpoints,
+            interpolation=interpolation,
+            fill=fill,
+            coefficients=coefficients,
         )
         return Image.wrap_like(self, output)
 
@@ -285,7 +292,5 @@ class Image(_Feature):
 
 ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
 ImageTypeJIT = torch.Tensor
-LegacyImageType = Union[torch.Tensor, PIL.Image.Image]
-LegacyImageTypeJIT = torch.Tensor
 TensorImageType = Union[torch.Tensor, Image]
 TensorImageTypeJIT = torch.Tensor
