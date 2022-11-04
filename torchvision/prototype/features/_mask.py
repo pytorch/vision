@@ -118,11 +118,15 @@ class Mask(_Feature):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> Mask:
-        output = self._F.perspective_mask(self.as_subclass(torch.Tensor), perspective_coeffs, fill=fill)
+        output = self._F.perspective_mask(
+            self.as_subclass(torch.Tensor), startpoints, endpoints, fill=fill, coefficients=coefficients
+        )
         return Mask.wrap_like(self, output)
 
     def elastic(
