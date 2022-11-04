@@ -169,11 +169,15 @@ class BoundingBox(_Feature):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> BoundingBox:
-        output = self._F.perspective_bounding_box(self.as_subclass(torch.Tensor), self.format, perspective_coeffs)
+        output = self._F.perspective_bounding_box(
+            self.as_subclass(torch.Tensor), startpoints, endpoints, self.format, coefficients=coefficients
+        )
         return BoundingBox.wrap_like(self, output)
 
     def elastic(
