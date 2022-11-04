@@ -962,10 +962,9 @@ def perspective_image_tensor(
     fill: features.FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
     if image.numel() == 0:
         return image
-
-    perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
 
     shape = image.shape
 
