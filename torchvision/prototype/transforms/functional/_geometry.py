@@ -912,14 +912,13 @@ def _perspective_coefficients(
     endpoints: Optional[List[List[int]]],
     coefficients: Optional[List[float]],
 ) -> List[float]:
-    has_points = startpoints is not None and endpoints is not None
     if coefficients is not None:
-        if has_points:
+        if startpoints is not None and endpoints is not None:
             raise ValueError("The startpoints/endpoints and the coefficients shouldn't be defined concurrently.")
         elif len(coefficients) != 8:
             raise ValueError("Argument coefficients should have 8 float values")
         return coefficients
-    elif has_points:
+    elif startpoints is not None and endpoints is not None:
         return _get_perspective_coeffs(startpoints, endpoints)
     else:
         raise ValueError("Either the startpoints/endpoints or the coefficients must have non `None` values.")
