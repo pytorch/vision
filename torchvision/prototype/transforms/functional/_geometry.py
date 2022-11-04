@@ -4,7 +4,8 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
-from torch.nn.functional import interpolate
+from torch.nn.functional import interpolate, pad as torch_pad
+
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 from torchvision.transforms.functional import (
@@ -15,7 +16,6 @@ from torchvision.transforms.functional import (
     pil_to_tensor,
     to_pil_image,
 )
-from torchvision.transforms.functional_tensor import _parse_pad_padding
 
 from ._meta import convert_format_bounding_box, get_spatial_size_image_pil
 
