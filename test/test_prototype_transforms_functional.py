@@ -357,7 +357,7 @@ class TestDispatchers:
         try:
             feature_method = getattr(features._Feature, info.id)
         except AttributeError:
-            pytest.skip("foo")
+            pytest.skip("Dispatcher doesn't support arbitrary feature dispatch.")
 
         dispatcher_signature = inspect.signature(info.dispatcher)
         dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
