@@ -874,8 +874,8 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         output_bboxes = F.perspective_bounding_box(
             bboxes,
             bboxes_format,
-            None,
-            None,
+            startpoints=None,
+            endpoints=None,
             coefficients=pcoeffs,
         )
 
