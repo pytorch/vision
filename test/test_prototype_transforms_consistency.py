@@ -2,6 +2,7 @@ import enum
 import inspect
 import random
 import re
+import typing
 from collections import defaultdict
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
@@ -25,9 +26,10 @@ from prototype_common_utils import (
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
-from torchvision.prototype.transforms import functional as F
+from torchvision.prototype.transforms import functional as prototype_F
 from torchvision.prototype.transforms._utils import query_spatial_size
 from torchvision.prototype.transforms.functional import to_image_pil
+from torchvision.transforms import functional as legacy_F
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])
 
@@ -985,7 +987,7 @@ class PadIfSmaller(prototype_transforms.Transform):
             return inpt
 
         fill = self.fill[type(inpt)]
-        return F.pad(inpt, padding=params["padding"], fill=fill)
+        return prototype_F.pad(inpt, padding=params["padding"], fill=fill)
 
 
 class TestRefSegTransforms:
@@ -1119,3 +1121,28 @@ class TestRefSegTransforms:
         t_ref = seg_transforms.RandomResize(min_size=base_size, max_size=base_size)
 
         self.check_resize(mocker, t_ref, t)
+
+
+@pytest.mark.parametrize(
+    "legacy_dispatcher",
+    [
+        fn
+        for name, fn in legacy_F.__dict__.items()
+        if callable(fn) and not name.startswith("_") and not isinstance(fn, type) and name not in typing.__dict__
+    ],
+)
+def test_dispatcher_signature_consistency(legacy_dispatcher):
+    try:
+        prototype_dispatcher = getattr(prototype_F, legacy_dispatcher.__name__)
+    except AttributeError:
+        raise AssertionError(
+            f"Legacy dispatcher `F.{legacy_dispatcher.__name__}` has no prototype equivalent"
+        ) from None
+
+    prototype_signature = inspect.signature(prototype_dispatcher)
+    prototype_params = list(prototype_signature.parameters.values())[1:]
+
+    legacy_signature = inspect.signature(legacy_dispatcher)
+    legacy_params = list(legacy_signature.parameters.values())[1:]
+
+    assert prototype_params == legacy_params
