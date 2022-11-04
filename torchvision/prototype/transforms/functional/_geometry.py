@@ -11,6 +11,7 @@ from torchvision.transforms import functional_pil as _FP, functional_tensor as _
 from torchvision.transforms.functional import (
     _compute_resized_output_size as __compute_resized_output_size,
     _get_inverse_affine_matrix,
+    _get_perspective_coeffs,
     InterpolationMode,
     pil_modes_mapping,
     pil_to_tensor,
@@ -906,12 +907,62 @@ def crop(inpt: features.InputTypeJIT, top: int, left: int, height: int, width: i
         return crop_image_pil(inpt, top, left, height, width)
 
 
+def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
+    # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
+    # src/libImaging/Geometry.c#L394
+
+    #
+    # x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
+    # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
+    #
+
+    theta1 = torch.tensor(
+        [[[coeffs[0], coeffs[1], coeffs[2]], [coeffs[3], coeffs[4], coeffs[5]]]], dtype=dtype, device=device
+    )
+    theta2 = torch.tensor([[[coeffs[6], coeffs[7], 1.0], [coeffs[6], coeffs[7], 1.0]]], dtype=dtype, device=device)
+
+    d = 0.5
+    base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
+    x_grid = torch.linspace(d, ow * 1.0 + d - 1.0, steps=ow, device=device)
+    base_grid[..., 0].copy_(x_grid)
+    y_grid = torch.linspace(d, oh * 1.0 + d - 1.0, steps=oh, device=device).unsqueeze_(-1)
+    base_grid[..., 1].copy_(y_grid)
+    base_grid[..., 2].fill_(1)
+
+    rescaled_theta1 = theta1.transpose(1, 2).div_(torch.tensor([0.5 * ow, 0.5 * oh], dtype=dtype, device=device))
+    output_grid1 = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta1)
+    output_grid2 = base_grid.view(1, oh * ow, 3).bmm(theta2.transpose(1, 2))
+
+    output_grid = output_grid1.div_(output_grid2).sub_(1.0)
+    return output_grid.view(1, oh, ow, 2)
+
+
+def _perspective_coefficients(
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
+    coefficients: Optional[List[float]],
+) -> List[float]:
+    if coefficients is not None:
+        if startpoints is not None and endpoints is not None:
+            raise ValueError("The startpoints/endpoints and the coefficients shouldn't be defined concurrently.")
+        elif len(coefficients) != 8:
+            raise ValueError("Argument coefficients should have 8 float values")
+        return coefficients
+    elif startpoints is not None and endpoints is not None:
+        return _get_perspective_coeffs(startpoints, endpoints)
+    else:
+        raise ValueError("Either the startpoints/endpoints or the coefficients must have non `None` values.")
+
+
 def perspective_image_tensor(
     image: torch.Tensor,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
     if image.numel() == 0:
         return image
 
@@ -923,7 +974,19 @@ def perspective_image_tensor(
     else:
         needs_unsquash = False
 
-    output = _FT.perspective(image, perspective_coeffs, interpolation=interpolation.value, fill=fill)
+    _FT._assert_grid_transform_inputs(
+        image,
+        matrix=None,
+        interpolation=interpolation.value,
+        fill=fill,
+        supported_interpolation_modes=["nearest", "bilinear"],
+        coeffs=perspective_coeffs,
+    )
+
+    ow, oh = image.shape[-1], image.shape[-2]
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=image.device)
+    output = _FT._apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
     if needs_unsquash:
         output = output.reshape(shape)
@@ -934,21 +997,24 @@ def perspective_image_tensor(
 @torch.jit.unused
 def perspective_image_pil(
     image: PIL.Image.Image,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
     interpolation: InterpolationMode = InterpolationMode.BICUBIC,
     fill: features.FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
+    perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
     return _FP.perspective(image, perspective_coeffs, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
 def perspective_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
+    coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
-
-    if len(perspective_coeffs) != 8:
-        raise ValueError("Argument perspective_coeffs should have 8 float values")
+    perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
 
     original_shape = bounding_box.shape
     bounding_box = (
@@ -988,14 +1054,14 @@ def perspective_bounding_box(
         (-perspective_coeffs[0] * perspective_coeffs[7] + perspective_coeffs[1] * perspective_coeffs[6]) / denom,
     ]
 
-    theta12_T = torch.tensor(
-        [
-            [inv_coeffs[0], inv_coeffs[3], inv_coeffs[6], inv_coeffs[6]],
-            [inv_coeffs[1], inv_coeffs[4], inv_coeffs[7], inv_coeffs[7]],
-            [inv_coeffs[2], inv_coeffs[5], 1.0, 1.0],
-        ],
+    theta1 = torch.tensor(
+        [[inv_coeffs[0], inv_coeffs[1], inv_coeffs[2]], [inv_coeffs[3], inv_coeffs[4], inv_coeffs[5]]],
         dtype=dtype,
         device=device,
+    )
+
+    theta2 = torch.tensor(
+        [[inv_coeffs[6], inv_coeffs[7], 1.0], [inv_coeffs[6], inv_coeffs[7], 1.0]], dtype=dtype, device=device
     )
 
     # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
@@ -1008,9 +1074,8 @@ def perspective_bounding_box(
     #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #   y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
 
-    numer_denom_points = torch.matmul(points, theta12_T)
-    numer_points = numer_denom_points[:, :2]
-    denom_points = numer_denom_points[:, 2:]
+    numer_points = torch.matmul(points, theta1.T)
+    denom_points = torch.matmul(points, theta2.T)
     transformed_points = numer_points.div_(denom_points)
 
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
@@ -1029,8 +1094,10 @@ def perspective_bounding_box(
 
 def perspective_mask(
     mask: torch.Tensor,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
     fill: features.FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -1039,7 +1106,7 @@ def perspective_mask(
         needs_squeeze = False
 
     output = perspective_image_tensor(
-        mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST, fill=fill
+        mask, startpoints, endpoints, interpolation=InterpolationMode.NEAREST, fill=fill, coefficients=coefficients
     )
 
     if needs_squeeze:
@@ -1050,25 +1117,37 @@ def perspective_mask(
 
 def perspective_video(
     video: torch.Tensor,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    return perspective_image_tensor(video, perspective_coeffs, interpolation=interpolation, fill=fill)
+    return perspective_image_tensor(
+        video, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+    )
 
 
 def perspective(
     inpt: features.InputTypeJIT,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
 ) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
+        return perspective_image_tensor(
+            inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+        )
     elif isinstance(inpt, features._Feature):
-        return inpt.perspective(perspective_coeffs, interpolation=interpolation, fill=fill)
+        return inpt.perspective(
+            startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+        )
     else:
-        return perspective_image_pil(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
+        return perspective_image_pil(
+            inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+        )
 
 
 def elastic_image_tensor(
@@ -1108,6 +1187,18 @@ def elastic_image_pil(
     return to_pil_image(output, mode=image.mode)
 
 
+def _create_identity_grid(size: Tuple[int, int], device: torch.device) -> torch.Tensor:
+    sy, sx = size
+    base_grid = torch.empty(1, sy, sx, 2, device=device)
+    x_grid = torch.linspace((-sx + 1) / sx, (sx - 1) / sx, sx, device=device)
+    base_grid[..., 0].copy_(x_grid)
+
+    y_grid = torch.linspace((-sy + 1) / sy, (sy - 1) / sy, sy, device=device).unsqueeze_(-1)
+    base_grid[..., 1].copy_(y_grid)
+
+    return base_grid
+
+
 def elastic_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
@@ -1125,22 +1216,24 @@ def elastic_bounding_box(
     # Or add spatial_size arg and check displacement shape
     spatial_size = displacement.shape[-3], displacement.shape[-2]
 
-    id_grid = _FT._create_identity_grid(list(spatial_size)).to(bounding_box.device)
+    id_grid = _create_identity_grid(spatial_size, bounding_box.device)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
     # This is not an exact inverse of the grid
-    inv_grid = id_grid - displacement
+    inv_grid = id_grid.sub_(displacement)
 
     # Get points from bboxes
     points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
-    index_x = torch.floor(points[:, 0] + 0.5).to(dtype=torch.long)
-    index_y = torch.floor(points[:, 1] + 0.5).to(dtype=torch.long)
+    if points.is_floating_point():
+        points = points.ceil_()
+    index_xy = points.to(dtype=torch.long)
+    index_x, index_y = index_xy[:, 0], index_xy[:, 1]
+
     # Transform points:
     t_size = torch.tensor(spatial_size[::-1], device=displacement.device, dtype=displacement.dtype)
-    transformed_points = (inv_grid[0, index_y, index_x, :] + 1) * 0.5 * t_size - 0.5
+    transformed_points = inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
 
     transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
-    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     return convert_format_bounding_box(

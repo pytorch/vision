@@ -910,7 +910,9 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         output_bboxes = F.perspective_bounding_box(
             bboxes,
             bboxes_format,
-            perspective_coeffs=pcoeffs,
+            None,
+            None,
+            coefficients=pcoeffs,
         )
 
         if bboxes.ndim < 2:
