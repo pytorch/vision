@@ -8,6 +8,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
 from torchvision.prototype import features
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.prototype.transforms.functional._meta import get_spatial_size
+from torchvision.transforms import functional_tensor as _FT
 
 from ._utils import _isinstance, _setup_fill_arg
 
@@ -137,7 +138,7 @@ class _AutoAugmentBase(Transform):
         elif transform_id == "Posterize":
             return F.posterize(image, bits=int(magnitude))
         elif transform_id == "Solarize":
-            bound = 1.0 if isinstance(image, torch.Tensor) and image.is_floating_point() else 255.0
+            bound = _FT._max_value(image.dtype) if isinstance(image, torch.Tensor) else 255.0
             return F.solarize(image, threshold=bound * magnitude)
         elif transform_id == "AutoContrast":
             return F.autocontrast(image)
