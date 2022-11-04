@@ -367,7 +367,7 @@ def convert_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.f
     else:
         # int to float
         if float_output:
-            return image.to(dtype).div_(_FT._max_value(image.dtype))
+            return image.to(dtype).mul_(1.0 / _FT._max_value(image.dtype))
 
         # int to int
         num_value_bits_input = _num_value_bits(image.dtype)
