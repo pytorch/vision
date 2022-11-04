@@ -4,6 +4,8 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
+from torch.nn.functional import interpolate, pad as torch_pad
+
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 from torchvision.transforms.functional import (
@@ -14,14 +16,8 @@ from torchvision.transforms.functional import (
     pil_to_tensor,
     to_pil_image,
 )
-from torchvision.transforms.functional_tensor import _parse_pad_padding
 
-from ._meta import (
-    convert_format_bounding_box,
-    get_dimensions_image_tensor,
-    get_spatial_size_image_pil,
-    get_spatial_size_image_tensor,
-)
+from ._meta import convert_format_bounding_box, get_spatial_size_image_pil
 
 horizontal_flip_image_tensor = _FT.hflip
 horizontal_flip_image_pil = _FP.hflip
@@ -36,19 +32,16 @@ def horizontal_flip_bounding_box(
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = (
-        bounding_box.clone()
-        if format == features.BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
-    ).reshape(-1, 4)
+    bounding_box = bounding_box.clone().reshape(-1, 4)
 
-    bounding_box[:, [0, 2]] = spatial_size[1] - bounding_box[:, [2, 0]]
+    if format == features.BoundingBoxFormat.XYXY:
+        bounding_box[:, [2, 0]] = bounding_box[:, [0, 2]].sub_(spatial_size[1]).neg_()
+    elif format == features.BoundingBoxFormat.XYWH:
+        bounding_box[:, 0].add_(bounding_box[:, 2]).sub_(spatial_size[1]).neg_()
+    else:  # format == features.BoundingBoxFormat.CXCYWH:
+        bounding_box[:, 0].sub_(spatial_size[1]).neg_()
 
-    return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
-    ).reshape(shape)
+    return bounding_box.reshape(shape)
 
 
 def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
@@ -77,19 +70,16 @@ def vertical_flip_bounding_box(
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = (
-        bounding_box.clone()
-        if format == features.BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
-    ).reshape(-1, 4)
+    bounding_box = bounding_box.clone().reshape(-1, 4)
 
-    bounding_box[:, [1, 3]] = spatial_size[0] - bounding_box[:, [3, 1]]
+    if format == features.BoundingBoxFormat.XYXY:
+        bounding_box[:, [1, 3]] = bounding_box[:, [3, 1]].sub_(spatial_size[0]).neg_()
+    elif format == features.BoundingBoxFormat.XYWH:
+        bounding_box[:, 1].add_(bounding_box[:, 3]).sub_(spatial_size[0]).neg_()
+    else:  # format == features.BoundingBoxFormat.CXCYWH:
+        bounding_box[:, 1].sub_(spatial_size[0]).neg_()
 
-    return convert_format_bounding_box(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
-    ).reshape(shape)
+    return bounding_box.reshape(shape)
 
 
 def vertical_flip_video(video: torch.Tensor) -> torch.Tensor:
@@ -126,21 +116,38 @@ def resize_image_tensor(
     max_size: Optional[int] = None,
     antialias: bool = False,
 ) -> torch.Tensor:
-    num_channels, old_height, old_width = get_dimensions_image_tensor(image)
+    align_corners: Optional[bool] = None
+    if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
+        align_corners = False
+    elif antialias:
+        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
+
+    shape = image.shape
+    num_channels, old_height, old_width = shape[-3:]
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
-    extra_dims = image.shape[:-3]
 
     if image.numel() > 0:
         image = image.reshape(-1, num_channels, old_height, old_width)
 
-        image = _FT.resize(
+        dtype = image.dtype
+        need_cast = dtype not in (torch.float32, torch.float64)
+        if need_cast:
+            image = image.to(dtype=torch.float32)
+
+        image = interpolate(
             image,
             size=[new_height, new_width],
-            interpolation=interpolation.value,
+            mode=interpolation.value,
+            align_corners=align_corners,
             antialias=antialias,
         )
 
-    return image.reshape(extra_dims + (num_channels, new_height, new_width))
+        if need_cast:
+            if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
+                image = image.clamp_(min=0, max=255)
+            image = image.round_().to(dtype=dtype)
+
+    return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
 
 @torch.jit.unused
@@ -174,9 +181,11 @@ def resize_bounding_box(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = spatial_size
     new_height, new_width = _compute_resized_output_size(spatial_size, size=size, max_size=max_size)
-    ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
+    w_ratio = new_width / old_width
+    h_ratio = new_height / old_height
+    ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio], device=bounding_box.device)
     return (
-        bounding_box.reshape(-1, 2, 2).mul(ratios).to(bounding_box.dtype).reshape(bounding_box.shape),
+        bounding_box.mul(ratios).to(bounding_box.dtype),
         (new_height, new_width),
     )
 
@@ -276,8 +285,8 @@ def affine_image_tensor(
     if image.numel() == 0:
         return image
 
-    num_channels, height, width = image.shape[-3:]
-    extra_dims = image.shape[:-3]
+    shape = image.shape
+    num_channels, height, width = shape[-3:]
     image = image.reshape(-1, num_channels, height, width)
 
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
@@ -291,7 +300,7 @@ def affine_image_tensor(
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
 
     output = _FT.affine(image, matrix, interpolation=interpolation.value, fill=fill)
-    return output.reshape(extra_dims + (num_channels, height, width))
+    return output.reshape(shape)
 
 
 @torch.jit.unused
@@ -360,8 +369,7 @@ def _affine_bounding_box_xyxy(
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
     transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
-    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
 
     if expand:
@@ -381,8 +389,7 @@ def _affine_bounding_box_xyxy(
         new_points = torch.matmul(points, transposed_affine_matrix)
         tr, _ = torch.min(new_points, dim=0, keepdim=True)
         # Translate bounding boxes
-        out_bboxes[:, 0::2] = out_bboxes[:, 0::2] - tr[:, 0]
-        out_bboxes[:, 1::2] = out_bboxes[:, 1::2] - tr[:, 1]
+        out_bboxes.sub_(tr.repeat((1, 2)))
         # Estimate meta-data for image with inverted=True and with center=[0,0]
         affine_vector = _get_inverse_affine_matrix([0.0, 0.0], angle, translate, scale, shear)
         new_width, new_height = _FT._compute_affine_output_size(affine_vector, width, height)
@@ -412,7 +419,7 @@ def affine_bounding_box(
     # out_bboxes should be of shape [N boxes, 4]
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
 
@@ -470,20 +477,6 @@ def affine_video(
     )
 
 
-def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
-    # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
-    # So, we can't reassign fill to 0
-    # if fill is None:
-    #     fill = 0
-    if fill is None:
-        return fill
-
-    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
-    if not isinstance(fill, (int, float)):
-        fill = [float(v) for v in list(fill)]
-    return fill
-
-
 def affine(
     inpt: features.InputTypeJIT,
     angle: Union[int, float],
@@ -531,8 +524,8 @@ def rotate_image_tensor(
     fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    num_channels, height, width = image.shape[-3:]
-    extra_dims = image.shape[:-3]
+    shape = image.shape
+    num_channels, height, width = shape[-3:]
 
     center_f = [0.0, 0.0]
     if center is not None:
@@ -558,7 +551,7 @@ def rotate_image_tensor(
     else:
         new_width, new_height = _FT._compute_affine_output_size(matrix, width, height) if expand else (width, height)
 
-    return image.reshape(extra_dims + (num_channels, new_height, new_width))
+    return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
 
 @torch.jit.unused
@@ -608,9 +601,9 @@ def rotate_bounding_box(
     )
 
     return (
-        convert_format_bounding_box(out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format).reshape(
-            original_shape
-        ),
+        convert_format_bounding_box(
+            out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        ).reshape(original_shape),
         spatial_size,
     )
 
@@ -670,7 +663,28 @@ def rotate(
         return rotate_image_pil(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
 
-pad_image_pil = _FP.pad
+def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
+    if isinstance(padding, int):
+        pad_left = pad_right = pad_top = pad_bottom = padding
+    elif isinstance(padding, (tuple, list)):
+        if len(padding) == 1:
+            pad_left = pad_right = pad_top = pad_bottom = padding[0]
+        elif len(padding) == 2:
+            pad_left = pad_right = padding[0]
+            pad_top = pad_bottom = padding[1]
+        elif len(padding) == 4:
+            pad_left = padding[0]
+            pad_top = padding[1]
+            pad_right = padding[2]
+            pad_bottom = padding[3]
+        else:
+            raise ValueError(
+                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
+            )
+    else:
+        raise TypeError(f"`padding` should be an integer or tuple or list of integers, but got {padding}")
+
+    return [pad_left, pad_right, pad_top, pad_bottom]
 
 
 def pad_image_tensor(
@@ -679,50 +693,86 @@ def pad_image_tensor(
     fill: features.FillTypeJIT = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
+    # Be aware that while `padding` has order `[left, top, right, bottom]` has order, `torch_padding` uses
+    # `[left, right, top, bottom]`. This stems from the fact that we align our API with PIL, but need to use `torch_pad`
+    # internally.
+    torch_padding = _parse_pad_padding(padding)
+
+    if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
+        raise ValueError(
+            f"`padding_mode` should be either `'constant'`, `'edge'`, `'reflect'` or `'symmetric'`, "
+            f"but got `'{padding_mode}'`."
+        )
+
     if fill is None:
-        # This is a JIT workaround
-        return _pad_with_scalar_fill(image, padding, fill=None, padding_mode=padding_mode)
-    elif isinstance(fill, (int, float)) or len(fill) == 1:
-        fill_number = fill[0] if isinstance(fill, list) else fill
-        return _pad_with_scalar_fill(image, padding, fill=fill_number, padding_mode=padding_mode)
+        fill = 0
+
+    if isinstance(fill, (int, float)):
+        return _pad_with_scalar_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
+    elif len(fill) == 1:
+        return _pad_with_scalar_fill(image, torch_padding, fill=fill[0], padding_mode=padding_mode)
     else:
-        return _pad_with_vector_fill(image, padding, fill=fill, padding_mode=padding_mode)
+        return _pad_with_vector_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
 
 
 def _pad_with_scalar_fill(
     image: torch.Tensor,
-    padding: Union[int, List[int]],
-    fill: Union[int, float, None],
-    padding_mode: str = "constant",
+    torch_padding: List[int],
+    fill: Union[int, float],
+    padding_mode: str,
 ) -> torch.Tensor:
-    num_channels, height, width = image.shape[-3:]
-    extra_dims = image.shape[:-3]
+    shape = image.shape
+    num_channels, height, width = shape[-3:]
 
     if image.numel() > 0:
-        image = _FT.pad(
-            img=image.reshape(-1, num_channels, height, width), padding=padding, fill=fill, padding_mode=padding_mode
-        )
+        image = image.reshape(-1, num_channels, height, width)
+
+        if padding_mode == "edge":
+            # Similar to the padding order, `torch_pad`'s PIL's padding modes don't have the same names. Thus, we map
+            # the PIL name for the padding mode, which we are also using for our API, to the corresponding `torch_pad`
+            # name.
+            padding_mode = "replicate"
+
+        if padding_mode == "constant":
+            image = torch_pad(image, torch_padding, mode=padding_mode, value=float(fill))
+        elif padding_mode in ("reflect", "replicate"):
+            # `torch_pad` only supports `"reflect"` or `"replicate"` padding for floating point inputs.
+            # TODO: See https://github.com/pytorch/pytorch/issues/40763
+            dtype = image.dtype
+            if not image.is_floating_point():
+                needs_cast = True
+                image = image.to(torch.float32)
+            else:
+                needs_cast = False
+
+            image = torch_pad(image, torch_padding, mode=padding_mode)
+
+            if needs_cast:
+                image = image.to(dtype)
+        else:  # padding_mode == "symmetric"
+            image = _FT._pad_symmetric(image, torch_padding)
+
         new_height, new_width = image.shape[-2:]
     else:
-        left, right, top, bottom = _FT._parse_pad_padding(padding)
+        left, right, top, bottom = torch_padding
         new_height = height + top + bottom
         new_width = width + left + right
 
-    return image.reshape(extra_dims + (num_channels, new_height, new_width))
+    return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
 
-# TODO: This should be removed once pytorch pad supports non-scalar padding values
+# TODO: This should be removed once torch_pad supports non-scalar padding values
 def _pad_with_vector_fill(
     image: torch.Tensor,
-    padding: Union[int, List[int]],
+    torch_padding: List[int],
     fill: List[float],
-    padding_mode: str = "constant",
+    padding_mode: str,
 ) -> torch.Tensor:
     if padding_mode != "constant":
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
-    output = _pad_with_scalar_fill(image, padding, fill=0, padding_mode="constant")
-    left, right, top, bottom = _parse_pad_padding(padding)
+    output = _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode="constant")
+    left, right, top, bottom = torch_padding
     fill = torch.tensor(fill, dtype=image.dtype, device=image.device).reshape(-1, 1, 1)
 
     if top > 0:
@@ -734,6 +784,9 @@ def _pad_with_vector_fill(
     if right > 0:
         output[..., :, -right:] = fill
     return output
+
+
+pad_image_pil = _FP.pad
 
 
 def pad_mask(
@@ -775,14 +828,11 @@ def pad_bounding_box(
 
     left, right, top, bottom = _parse_pad_padding(padding)
 
-    bounding_box = bounding_box.clone()
-
-    # this works without conversion since padding only affects xy coordinates
-    bounding_box[..., 0] += left
-    bounding_box[..., 1] += top
     if format == features.BoundingBoxFormat.XYXY:
-        bounding_box[..., 2] += left
-        bounding_box[..., 3] += top
+        pad = [left, top, left, top]
+    else:
+        pad = [left, top, 0, 0]
+    bounding_box = bounding_box + torch.tensor(pad, dtype=bounding_box.dtype, device=bounding_box.device)
 
     height, width = spatial_size
     height += top + bottom
@@ -827,22 +877,16 @@ def crop_bounding_box(
     height: int,
     width: int,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
-    # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
-    #  BoundingBoxFormat instead of converting back and forth
-    bounding_box = (
-        bounding_box.clone()
-        if format == features.BoundingBoxFormat.XYXY
-        else convert_format_bounding_box(bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY)
-    )
 
     # Crop or implicit pad if left and/or top have negative values:
-    bounding_box[..., 0::2] -= left
-    bounding_box[..., 1::2] -= top
+    if format == features.BoundingBoxFormat.XYXY:
+        sub = [left, top, left, top]
+    else:
+        sub = [left, top, 0, 0]
 
-    return (
-        convert_format_bounding_box(bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format),
-        (height, width),
-    )
+    bounding_box = bounding_box - torch.tensor(sub, dtype=bounding_box.dtype, device=bounding_box.device)
+
+    return bounding_box, (height, width)
 
 
 def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
@@ -944,14 +988,14 @@ def perspective_bounding_box(
         (-perspective_coeffs[0] * perspective_coeffs[7] + perspective_coeffs[1] * perspective_coeffs[6]) / denom,
     ]
 
-    theta1 = torch.tensor(
-        [[inv_coeffs[0], inv_coeffs[1], inv_coeffs[2]], [inv_coeffs[3], inv_coeffs[4], inv_coeffs[5]]],
+    theta12_T = torch.tensor(
+        [
+            [inv_coeffs[0], inv_coeffs[3], inv_coeffs[6], inv_coeffs[6]],
+            [inv_coeffs[1], inv_coeffs[4], inv_coeffs[7], inv_coeffs[7]],
+            [inv_coeffs[2], inv_coeffs[5], 1.0, 1.0],
+        ],
         dtype=dtype,
         device=device,
-    )
-
-    theta2 = torch.tensor(
-        [[inv_coeffs[6], inv_coeffs[7], 1.0], [inv_coeffs[6], inv_coeffs[7], 1.0]], dtype=dtype, device=device
     )
 
     # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
@@ -964,21 +1008,22 @@ def perspective_bounding_box(
     #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #   y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
 
-    numer_points = torch.matmul(points, theta1.T)
-    denom_points = torch.matmul(points, theta2.T)
-    transformed_points = numer_points / denom_points
+    numer_denom_points = torch.matmul(points, theta12_T)
+    numer_points = numer_denom_points[:, :2]
+    denom_points = numer_denom_points[:, 2:]
+    transformed_points = numer_points.div_(denom_points)
 
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
     transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
-    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
+
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     # out_bboxes should be of shape [N boxes, 4]
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
 
@@ -1099,7 +1144,7 @@ def elastic_bounding_box(
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
 
     return convert_format_bounding_box(
-        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
 
@@ -1150,7 +1195,8 @@ elastic_transform = elastic
 
 def _center_crop_parse_output_size(output_size: List[int]) -> List[int]:
     if isinstance(output_size, numbers.Number):
-        return [int(output_size), int(output_size)]
+        s = int(output_size)
+        return [s, s]
     elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
         return [output_size[0], output_size[0]]
     else:
@@ -1176,18 +1222,21 @@ def _center_crop_compute_crop_anchor(
 
 def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    image_height, image_width = get_spatial_size_image_tensor(image)
+    shape = image.shape
+    if image.numel() == 0:
+        return image.reshape(shape[:-2] + (crop_height, crop_width))
+    image_height, image_width = shape[-2:]
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-        image = pad_image_tensor(image, padding_ltrb, fill=0)
+        image = _FT.torch_pad(image, _FT._parse_pad_padding(padding_ltrb), value=0.0)
 
-        image_height, image_width = get_spatial_size_image_tensor(image)
+        image_height, image_width = image.shape[-2:]
         if crop_width == image_width and crop_height == image_height:
             return image
 
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, image_height, image_width)
-    return crop_image_tensor(image, crop_top, crop_left, crop_height, crop_width)
+    return image[..., crop_top : (crop_top + crop_height), crop_left : (crop_left + crop_width)]
 
 
 @torch.jit.unused
@@ -1338,9 +1387,11 @@ def resized_crop(
 
 def _parse_five_crop_size(size: List[int]) -> List[int]:
     if isinstance(size, numbers.Number):
-        size = [int(size), int(size)]
+        s = int(size)
+        size = [s, s]
     elif isinstance(size, (tuple, list)) and len(size) == 1:
-        size = [size[0], size[0]]
+        s = size[0]
+        size = [s, s]
 
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
@@ -1352,7 +1403,7 @@ def five_crop_image_tensor(
     image: torch.Tensor, size: List[int]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     crop_height, crop_width = _parse_five_crop_size(size)
-    image_height, image_width = get_spatial_size_image_tensor(image)
+    image_height, image_width = image.shape[-2:]
 
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
@@ -1400,12 +1451,16 @@ def five_crop(
     inpt: ImageOrVideoTypeJIT, size: List[int]
 ) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
     # TODO: consider breaking BC here to return List[features.ImageTypeJIT/VideoTypeJIT] to align this op with `ten_crop`
-    if isinstance(inpt, torch.Tensor):
-        output = five_crop_image_tensor(inpt, size)
-        if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
-            tmp = tuple(inpt.wrap_like(inpt, item) for item in output)  # type: ignore[arg-type]
-            output = tmp  # type: ignore[assignment]
-        return output
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+    ):
+        return five_crop_image_tensor(inpt, size)
+    elif isinstance(inpt, features.Image):
+        output = five_crop_image_tensor(inpt.as_subclass(torch.Tensor), size)
+        return tuple(features.Image.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
+    elif isinstance(inpt, features.Video):
+        output = five_crop_video(inpt.as_subclass(torch.Tensor), size)
+        return tuple(features.Video.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
     else:  # isinstance(inpt, PIL.Image.Image):
         return five_crop_image_pil(inpt, size)
 
@@ -1444,10 +1499,15 @@ def ten_crop_video(video: torch.Tensor, size: List[int], vertical_flip: bool = F
 def ten_crop(
     inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT], size: List[int], vertical_flip: bool = False
 ) -> Union[List[features.ImageTypeJIT], List[features.VideoTypeJIT]]:
-    if isinstance(inpt, torch.Tensor):
-        output = ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
-        if not torch.jit.is_scripting() and isinstance(inpt, (features.Image, features.Video)):
-            output = [inpt.wrap_like(inpt, item) for item in output]  # type: ignore[arg-type]
-        return output
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+    ):
+        return ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
+    elif isinstance(inpt, features.Image):
+        output = ten_crop_image_tensor(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)
+        return [features.Image.wrap_like(inpt, item) for item in output]
+    elif isinstance(inpt, features.Video):
+        output = ten_crop_video(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)
+        return [features.Video.wrap_like(inpt, item) for item in output]
     else:  # isinstance(inpt, PIL.Image.Image):
         return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)

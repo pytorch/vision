@@ -1,5 +1,6 @@
 import math
 import os
+import re
 
 import numpy as np
 import PIL.Image
@@ -26,8 +27,21 @@ def script(fn):
         raise AssertionError(f"Trying to `torch.jit.script` '{fn.__name__}' raised the error above.") from error
 
 
+# Scripting a function often triggers a warning like
+# `UserWarning: operator() profile_node %$INT1 : int[] = prim::profile_ivalue($INT2) does not have profile information`
+# with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
+# them.
+ignore_jit_warning_no_profile = pytest.mark.filterwarnings(
+    f"ignore:{re.escape('operator() profile_node %')}:UserWarning"
+)
+
+
 def make_info_args_kwargs_params(info, *, args_kwargs_fn, test_id=None):
     args_kwargs = list(args_kwargs_fn(info))
+    if not args_kwargs:
+        raise pytest.UsageError(
+            f"Couldn't collect a single `ArgsKwargs` for `{info.id}`{f' in {test_id}' if test_id else ''}"
+        )
     idx_field_len = len(str(len(args_kwargs)))
     return [
         pytest.param(
@@ -87,6 +101,7 @@ class TestKernels:
         condition=lambda info: info.reference_fn is not None,
     )
 
+    @ignore_jit_warning_no_profile
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_scripted_vs_eager(self, info, args_kwargs, device):
@@ -218,6 +233,7 @@ class TestDispatchers:
         condition=lambda info: features.Image in info.kernels,
     )
 
+    @ignore_jit_warning_no_profile
     @image_sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_scripted_smoke(self, info, args_kwargs, device):
@@ -230,6 +246,7 @@ class TestDispatchers:
 
     # TODO: We need this until the dispatchers below also have `DispatcherInfo`'s. If they do, `test_scripted_smoke`
     #  replaces this test for them.
+    @ignore_jit_warning_no_profile
     @pytest.mark.parametrize(
         "dispatcher",
         [
@@ -242,6 +259,7 @@ class TestDispatchers:
             F.get_num_frames,
             F.get_spatial_size,
             F.rgb_to_grayscale,
+            F.uniform_temporal_subsample,
         ],
         ids=lambda dispatcher: dispatcher.__name__,
     )
@@ -882,7 +900,8 @@ def test_correctness_center_crop_bounding_box(device, output_size):
     def _compute_expected_bbox(bbox, output_size_):
         format_ = bbox.format
         spatial_size_ = bbox.spatial_size
-        bbox = convert_format_bounding_box(bbox, format_, features.BoundingBoxFormat.XYWH)
+        dtype = bbox.dtype
+        bbox = convert_format_bounding_box(bbox.float(), format_, features.BoundingBoxFormat.XYWH)
 
         if len(output_size_) == 1:
             output_size_.append(output_size_[-1])
@@ -895,14 +914,9 @@ def test_correctness_center_crop_bounding_box(device, output_size):
             bbox[2].item(),
             bbox[3].item(),
         ]
-        out_bbox = features.BoundingBox(
-            out_bbox,
-            format=features.BoundingBoxFormat.XYWH,
-            spatial_size=output_size_,
-            dtype=bbox.dtype,
-            device=bbox.device,
-        )
-        return convert_format_bounding_box(out_bbox, features.BoundingBoxFormat.XYWH, format_)
+        out_bbox = torch.tensor(out_bbox)
+        out_bbox = convert_format_bounding_box(out_bbox, features.BoundingBoxFormat.XYWH, format_)
+        return out_bbox.to(dtype=dtype, device=bbox.device)
 
     for bboxes in make_bounding_boxes(extra_dims=((4,),)):
         bboxes = bboxes.to(device)
@@ -1060,3 +1074,13 @@ def test_equalize_image_tensor_edge_cases():
     inpt[..., 100:, 100:] = 1
     output = F.equalize_image_tensor(inpt)
     assert output.unique().tolist() == [0, 255]
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_uniform_temporal_subsample(device):
+    video = torch.arange(10, device=device)[:, None, None, None].expand(-1, 3, 8, 8)
+    out_video = F.uniform_temporal_subsample(video, 5)
+    assert out_video.unique().tolist() == [0, 2, 4, 6, 9]
+
+    out_video = F.uniform_temporal_subsample(video, 8)
+    assert out_video.unique().tolist() == [0, 1, 2, 3, 5, 6, 7, 9]

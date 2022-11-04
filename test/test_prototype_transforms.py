@@ -389,7 +389,7 @@ class TestPad:
         inpt = mocker.MagicMock(spec=features.Image)
         _ = transform(inpt)
 
-        fill = transforms.functional._geometry._convert_fill_arg(fill)
+        fill = transforms._utils._convert_fill_arg(fill)
         if isinstance(padding, tuple):
             padding = list(padding)
         fn.assert_called_once_with(inpt, padding=padding, fill=fill, padding_mode=padding_mode)
@@ -405,14 +405,14 @@ class TestPad:
         _ = transform(inpt)
 
         if isinstance(fill, int):
-            fill = transforms.functional._geometry._convert_fill_arg(fill)
+            fill = transforms._utils._convert_fill_arg(fill)
             calls = [
                 mocker.call(image, padding=1, fill=fill, padding_mode="constant"),
                 mocker.call(mask, padding=1, fill=fill, padding_mode="constant"),
             ]
         else:
-            fill_img = transforms.functional._geometry._convert_fill_arg(fill[type(image)])
-            fill_mask = transforms.functional._geometry._convert_fill_arg(fill[type(mask)])
+            fill_img = transforms._utils._convert_fill_arg(fill[type(image)])
+            fill_mask = transforms._utils._convert_fill_arg(fill[type(mask)])
             calls = [
                 mocker.call(image, padding=1, fill=fill_img, padding_mode="constant"),
                 mocker.call(mask, padding=1, fill=fill_mask, padding_mode="constant"),
@@ -466,7 +466,7 @@ class TestRandomZoomOut:
         torch.rand(1)  # random apply changes random state
         params = transform._get_params([inpt])
 
-        fill = transforms.functional._geometry._convert_fill_arg(fill)
+        fill = transforms._utils._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, fill=fill)
 
     @pytest.mark.parametrize("fill", [12, {features.Image: 12, features.Mask: 34}])
@@ -485,14 +485,14 @@ class TestRandomZoomOut:
         params = transform._get_params(inpt)
 
         if isinstance(fill, int):
-            fill = transforms.functional._geometry._convert_fill_arg(fill)
+            fill = transforms._utils._convert_fill_arg(fill)
             calls = [
                 mocker.call(image, **params, fill=fill),
                 mocker.call(mask, **params, fill=fill),
             ]
         else:
-            fill_img = transforms.functional._geometry._convert_fill_arg(fill[type(image)])
-            fill_mask = transforms.functional._geometry._convert_fill_arg(fill[type(mask)])
+            fill_img = transforms._utils._convert_fill_arg(fill[type(image)])
+            fill_mask = transforms._utils._convert_fill_arg(fill[type(mask)])
             calls = [
                 mocker.call(image, **params, fill=fill_img),
                 mocker.call(mask, **params, fill=fill_mask),
@@ -556,7 +556,7 @@ class TestRandomRotation:
         torch.manual_seed(12)
         params = transform._get_params(inpt)
 
-        fill = transforms.functional._geometry._convert_fill_arg(fill)
+        fill = transforms._utils._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
     @pytest.mark.parametrize("angle", [34, -87])
@@ -694,7 +694,7 @@ class TestRandomAffine:
         torch.manual_seed(12)
         params = transform._get_params([inpt])
 
-        fill = transforms.functional._geometry._convert_fill_arg(fill)
+        fill = transforms._utils._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, interpolation=interpolation, fill=fill, center=center)
 
 
@@ -939,7 +939,7 @@ class TestRandomPerspective:
         torch.rand(1)  # random apply changes random state
         params = transform._get_params([inpt])
 
-        fill = transforms.functional._geometry._convert_fill_arg(fill)
+        fill = transforms._utils._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, fill=fill, interpolation=interpolation)
 
 
@@ -1009,7 +1009,7 @@ class TestElasticTransform:
         transform._get_params = mocker.MagicMock()
         _ = transform(inpt)
         params = transform._get_params([inpt])
-        fill = transforms.functional._geometry._convert_fill_arg(fill)
+        fill = transforms._utils._convert_fill_arg(fill)
         fn.assert_called_once_with(inpt, **params, fill=fill, interpolation=interpolation)
 
 
@@ -1632,7 +1632,7 @@ class TestFixedSizeCrop:
             if not needs_crop:
                 assert args[0] is inpt_sentinel
             assert args[1] is padding_sentinel
-            fill_sentinel = transforms.functional._geometry._convert_fill_arg(fill_sentinel)
+            fill_sentinel = transforms._utils._convert_fill_arg(fill_sentinel)
             assert kwargs == dict(fill=fill_sentinel, padding_mode=padding_mode_sentinel)
         else:
             mock_pad.assert_not_called()
@@ -1899,3 +1899,22 @@ def test_transpose_dimensions(dims):
             assert type(transformed_value) == torch.Tensor
         else:
             assert transformed_value is value
+
+
+class TestUniformTemporalSubsample:
+    @pytest.mark.parametrize(
+        "inpt",
+        [
+            torch.zeros(10, 3, 8, 8),
+            torch.zeros(1, 10, 3, 8, 8),
+            features.Video(torch.zeros(1, 10, 3, 8, 8)),
+        ],
+    )
+    def test__transform(self, inpt):
+        num_samples = 5
+        transform = transforms.UniformTemporalSubsample(num_samples)
+
+        output = transform(inpt)
+        assert type(output) is type(inpt)
+        assert output.shape[-4] == num_samples
+        assert output.dtype == inpt.dtype
