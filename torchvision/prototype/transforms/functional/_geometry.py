@@ -181,9 +181,11 @@ def resize_bounding_box(
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = spatial_size
     new_height, new_width = _compute_resized_output_size(spatial_size, size=size, max_size=max_size)
-    ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
+    w_ratio = new_width / old_width
+    h_ratio = new_height / old_height
+    ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio], device=bounding_box.device)
     return (
-        bounding_box.reshape(-1, 2, 2).mul(ratios).to(bounding_box.dtype).reshape(bounding_box.shape),
+        bounding_box.mul(ratios).to(bounding_box.dtype),
         (new_height, new_width),
     )
 
@@ -367,8 +369,7 @@ def _affine_bounding_box_xyxy(
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
     transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
-    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
 
     if expand:
@@ -388,8 +389,7 @@ def _affine_bounding_box_xyxy(
         new_points = torch.matmul(points, transposed_affine_matrix)
         tr, _ = torch.min(new_points, dim=0, keepdim=True)
         # Translate bounding boxes
-        out_bboxes[:, 0::2] = out_bboxes[:, 0::2] - tr[:, 0]
-        out_bboxes[:, 1::2] = out_bboxes[:, 1::2] - tr[:, 1]
+        out_bboxes.sub_(tr.repeat((1, 2)))
         # Estimate meta-data for image with inverted=True and with center=[0,0]
         affine_vector = _get_inverse_affine_matrix([0.0, 0.0], angle, translate, scale, shear)
         new_width, new_height = _FT._compute_affine_output_size(affine_vector, width, height)
