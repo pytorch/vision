@@ -1,4 +1,4 @@
-name: Build Macos Conda
+name: Build M1 Conda
 
 on:
   pull_request:
