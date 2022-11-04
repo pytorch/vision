@@ -1184,38 +1184,38 @@ _PERSPECTIVE_COEFFS = [
 def sample_inputs_perspective_image_tensor():
     for image_loader in make_image_loaders(sizes=["random"]):
         for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
-            yield ArgsKwargs(image_loader, fill=fill, perspective_coeffs=_PERSPECTIVE_COEFFS[0])
+            yield ArgsKwargs(image_loader, None, None, fill=fill, coefficients=_PERSPECTIVE_COEFFS[0])
 
 
 def reference_inputs_perspective_image_tensor():
-    for image_loader, perspective_coeffs in itertools.product(make_image_loaders(extra_dims=[()]), _PERSPECTIVE_COEFFS):
+    for image_loader, coefficients in itertools.product(make_image_loaders(extra_dims=[()]), _PERSPECTIVE_COEFFS):
         # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
         for fill in [None, 128.0, 128, [12.0 + c for c in range(image_loader.num_channels)]]:
-            yield ArgsKwargs(image_loader, fill=fill, perspective_coeffs=perspective_coeffs)
+            yield ArgsKwargs(image_loader, None, None, fill=fill, coefficients=coefficients)
 
 
 def sample_inputs_perspective_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         yield ArgsKwargs(
-            bounding_box_loader, format=bounding_box_loader.format, perspective_coeffs=_PERSPECTIVE_COEFFS[0]
+            bounding_box_loader, bounding_box_loader.format, None, None, coefficients=_PERSPECTIVE_COEFFS[0]
         )
 
 
 def sample_inputs_perspective_mask():
     for mask_loader in make_mask_loaders(sizes=["random"]):
-        yield ArgsKwargs(mask_loader, perspective_coeffs=_PERSPECTIVE_COEFFS[0])
+        yield ArgsKwargs(mask_loader, None, None, coefficients=_PERSPECTIVE_COEFFS[0])
 
 
 def reference_inputs_perspective_mask():
     for mask_loader, perspective_coeffs in itertools.product(
         make_mask_loaders(extra_dims=[()], num_objects=[1]), _PERSPECTIVE_COEFFS
     ):
-        yield ArgsKwargs(mask_loader, perspective_coeffs=perspective_coeffs)
+        yield ArgsKwargs(mask_loader, None, None, coefficients=perspective_coeffs)
 
 
 def sample_inputs_perspective_video():
     for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
-        yield ArgsKwargs(video_loader, perspective_coeffs=_PERSPECTIVE_COEFFS[0])
+        yield ArgsKwargs(video_loader, None, None, coefficients=_PERSPECTIVE_COEFFS[0])
 
 
 KERNEL_INFOS.extend(

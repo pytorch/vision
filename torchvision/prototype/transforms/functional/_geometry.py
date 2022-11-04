@@ -11,6 +11,7 @@ from torchvision.transforms import functional_pil as _FP, functional_tensor as _
 from torchvision.transforms.functional import (
     _compute_resized_output_size as __compute_resized_output_size,
     _get_inverse_affine_matrix,
+    _get_perspective_coeffs,
     InterpolationMode,
     pil_modes_mapping,
     pil_to_tensor,
@@ -906,12 +907,32 @@ def crop(inpt: features.InputTypeJIT, top: int, left: int, height: int, width: i
         return crop_image_pil(inpt, top, left, height, width)
 
 
+def _perspective_coefficients(
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
+    coefficients: Optional[List[float]],
+) -> List[float]:
+    if coefficients is not None:
+        if startpoints is not None and endpoints is not None:
+            raise ValueError("The startpoints/endpoints and the coefficients shouldn't be defined concurrently.")
+        elif len(coefficients) != 8:
+            raise ValueError("Argument coefficients should have 8 float values")
+        return coefficients
+    elif startpoints is not None and endpoints is not None:
+        return _get_perspective_coeffs(startpoints, endpoints)
+    else:
+        raise ValueError("Either the startpoints/endpoints or the coefficients must have non `None` values.")
+
+
 def perspective_image_tensor(
     image: torch.Tensor,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
     if image.numel() == 0:
         return image
 
@@ -934,21 +955,24 @@ def perspective_image_tensor(
 @torch.jit.unused
 def perspective_image_pil(
     image: PIL.Image.Image,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
     interpolation: InterpolationMode = InterpolationMode.BICUBIC,
     fill: features.FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
+    perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
     return _FP.perspective(image, perspective_coeffs, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
 def perspective_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
+    coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
-
-    if len(perspective_coeffs) != 8:
-        raise ValueError("Argument perspective_coeffs should have 8 float values")
+    perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
 
     original_shape = bounding_box.shape
     bounding_box = (
@@ -1029,8 +1053,10 @@ def perspective_bounding_box(
 
 def perspective_mask(
     mask: torch.Tensor,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
     fill: features.FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -1039,7 +1065,7 @@ def perspective_mask(
         needs_squeeze = False
 
     output = perspective_image_tensor(
-        mask, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST, fill=fill
+        mask, startpoints, endpoints, interpolation=InterpolationMode.NEAREST, fill=fill, coefficients=coefficients
     )
 
     if needs_squeeze:
@@ -1050,25 +1076,37 @@ def perspective_mask(
 
 def perspective_video(
     video: torch.Tensor,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    return perspective_image_tensor(video, perspective_coeffs, interpolation=interpolation, fill=fill)
+    return perspective_image_tensor(
+        video, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+    )
 
 
 def perspective(
     inpt: features.InputTypeJIT,
-    perspective_coeffs: List[float],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: features.FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
 ) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        return perspective_image_tensor(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
+        return perspective_image_tensor(
+            inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+        )
     elif isinstance(inpt, features._Feature):
-        return inpt.perspective(perspective_coeffs, interpolation=interpolation, fill=fill)
+        return inpt.perspective(
+            startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+        )
     else:
-        return perspective_image_pil(inpt, perspective_coeffs, interpolation=interpolation, fill=fill)
+        return perspective_image_pil(
+            inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+        )
 
 
 def elastic_image_tensor(
