@@ -874,7 +874,9 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         output_bboxes = F.perspective_bounding_box(
             bboxes,
             bboxes_format,
-            perspective_coeffs=pcoeffs,
+            None,
+            None,
+            coefficients=pcoeffs,
         )
 
         if bboxes.ndim < 2:
@@ -900,7 +902,8 @@ def test_correctness_center_crop_bounding_box(device, output_size):
     def _compute_expected_bbox(bbox, output_size_):
         format_ = bbox.format
         spatial_size_ = bbox.spatial_size
-        bbox = convert_format_bounding_box(bbox, format_, features.BoundingBoxFormat.XYWH)
+        dtype = bbox.dtype
+        bbox = convert_format_bounding_box(bbox.float(), format_, features.BoundingBoxFormat.XYWH)
 
         if len(output_size_) == 1:
             output_size_.append(output_size_[-1])
@@ -913,14 +916,9 @@ def test_correctness_center_crop_bounding_box(device, output_size):
             bbox[2].item(),
             bbox[3].item(),
         ]
-        out_bbox = features.BoundingBox(
-            out_bbox,
-            format=features.BoundingBoxFormat.XYWH,
-            spatial_size=output_size_,
-            dtype=bbox.dtype,
-            device=bbox.device,
-        )
-        return convert_format_bounding_box(out_bbox, features.BoundingBoxFormat.XYWH, format_)
+        out_bbox = torch.tensor(out_bbox)
+        out_bbox = convert_format_bounding_box(out_bbox, features.BoundingBoxFormat.XYWH, format_)
+        return out_bbox.to(dtype=dtype, device=bbox.device)
 
     for bboxes in make_bounding_boxes(extra_dims=((4,),)):
         bboxes = bboxes.to(device)

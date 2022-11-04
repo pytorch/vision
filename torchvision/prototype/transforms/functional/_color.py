@@ -2,13 +2,13 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
-from ._meta import _rgb_to_gray, convert_dtype_image_tensor, get_dimensions_image_tensor, get_num_channels_image_tensor
+from ._meta import _num_value_bits, _rgb_to_gray, convert_dtype_image_tensor
 
 
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
     ratio = float(ratio)
     fp = image1.is_floating_point()
-    bound = 1.0 if fp else 255.0
+    bound = _FT._max_value(image1.dtype)
     output = image1.mul(ratio).add_(image2, alpha=(1.0 - ratio)).clamp_(0, bound)
     return output if fp else output.to(image1.dtype)
 
@@ -20,7 +20,7 @@ def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float
     _FT._assert_channels(image, [1, 3])
 
     fp = image.is_floating_point()
-    bound = 1.0 if fp else 255.0
+    bound = _FT._max_value(image.dtype)
     output = image.mul(brightness_factor).clamp_(0, bound)
     return output if fp else output.to(image.dtype)
 
@@ -45,7 +45,7 @@ def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float
     if saturation_factor < 0:
         raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
-    c = get_num_channels_image_tensor(image)
+    c = image.shape[-3]
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
 
@@ -75,7 +75,7 @@ def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) ->
     if contrast_factor < 0:
         raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
 
-    c = get_num_channels_image_tensor(image)
+    c = image.shape[-3]
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
@@ -101,7 +101,7 @@ def adjust_contrast(inpt: features.InputTypeJIT, contrast_factor: float) -> feat
 
 
 def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
-    num_channels, height, width = get_dimensions_image_tensor(image)
+    num_channels, height, width = image.shape[-3:]
     if num_channels not in (1, 3):
         raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {num_channels}")
 
@@ -180,7 +180,7 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
     hb = (4.0 + gc).sub_(rc).mul_(mask_maxc_neq_g & mask_maxc_neq_r)
 
     h = hr.add_(hg).add_(hb)
-    h = h.div_(6.0).add_(1.0).fmod_(1.0)
+    h = h.mul_(1.0 / 6.0).add_(1.0).fmod_(1.0)
     return torch.stack((h, s, maxc), dim=-3)
 
 
@@ -210,8 +210,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
 
-    c = get_num_channels_image_tensor(image)
-
+    c = image.shape[-3]
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
 
@@ -223,8 +222,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
         return image
 
     orig_dtype = image.dtype
-    if image.dtype == torch.uint8:
-        image = image / 255.0
+    image = convert_dtype_image_tensor(image, torch.float32)
 
     image = _rgb_to_hsv(image)
     h, s, v = image.unbind(dim=-3)
@@ -232,10 +230,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     image = torch.stack((h, s, v), dim=-3)
     image_hue_adj = _hsv_to_rgb(image)
 
-    if orig_dtype == torch.uint8:
-        image_hue_adj = image_hue_adj.mul_(255.0).to(dtype=orig_dtype)
-
-    return image_hue_adj
+    return convert_dtype_image_tensor(image_hue_adj, orig_dtype)
 
 
 adjust_hue_image_pil = _FP.adjust_hue
@@ -290,14 +285,15 @@ def adjust_gamma(inpt: features.InputTypeJIT, gamma: float, gain: float = 1) -> 
 
 
 def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
-    if bits > 8:
-        return image
-
     if image.is_floating_point():
         levels = 1 << bits
-        return image.mul(levels).floor_().clamp_(0, levels - 1).div_(levels)
+        return image.mul(levels).floor_().clamp_(0, levels - 1).mul_(1.0 / levels)
     else:
-        mask = ((1 << bits) - 1) << (8 - bits)
+        num_value_bits = _num_value_bits(image.dtype)
+        if bits >= num_value_bits:
+            return image
+
+        mask = ((1 << bits) - 1) << (num_value_bits - bits)
         return image & mask
 
 
@@ -318,8 +314,7 @@ def posterize(inpt: features.InputTypeJIT, bits: int) -> features.InputTypeJIT:
 
 
 def solarize_image_tensor(image: torch.Tensor, threshold: float) -> torch.Tensor:
-    bound = 1 if image.is_floating_point() else 255
-    if threshold > bound:
+    if threshold > _FT._max_value(image.dtype):
         raise TypeError(f"Threshold should be less or equal the maximum value of the dtype, but got {threshold}")
 
     return torch.where(image >= threshold, invert_image_tensor(image), image)
@@ -342,8 +337,7 @@ def solarize(inpt: features.InputTypeJIT, threshold: float) -> features.InputTyp
 
 
 def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
-    c = get_num_channels_image_tensor(image)
-
+    c = image.shape[-3]
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
 
@@ -351,7 +345,7 @@ def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
         # exit earlier on empty images
         return image
 
-    bound = 1.0 if image.is_floating_point() else 255.0
+    bound = _FT._max_value(image.dtype)
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
 
     minimum = image.amin(dim=(-2, -1), keepdim=True).to(dtype)
@@ -385,14 +379,18 @@ def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.numel() == 0:
         return image
 
+    # 1. The algorithm below can easily be extended to support arbitrary integer dtypes. However, the histogram that
+    #    would be needed to computed will have at least `torch.iinfo(dtype).max + 1` values. That is perfectly fine for
+    #    `torch.int8`, `torch.uint8`, and `torch.int16`, at least questionable for `torch.int32` and completely
+    #    unfeasible for `torch.int64`.
+    # 2. Floating point inputs need to be binned for this algorithm. Apart from converting them to an integer dtype, we
+    #    could also use PyTorch's builtin histogram functionality. However, that has its own set of issues: in addition
+    #    to being slow in general, PyTorch's implementation also doesn't support batches. In total, that makes it slower
+    #    and more complicated to implement than a simple conversion and a fast histogram implementation for integers.
+    # Since we need to convert in most cases anyway and out of the acceptable dtypes mentioned in 1. `torch.uint8` is
+    # by far the most common, we choose it as base.
     output_dtype = image.dtype
-    if image.is_floating_point():
-        # Floating point inputs need to be binned for this algorithm. Apart from converting them to an integer dtype, we
-        # could also use PyTorch's builtin histogram functionality. However, that has its own set of issues: in addition
-        # to being slow in general, PyTorch's implementation also doesn't support batches. In total, that makes it
-        # slower and more complicated to implement than a simple conversion and a fast histogram implementation for
-        # integers.
-        image = convert_dtype_image_tensor(image, torch.uint8)
+    image = convert_dtype_image_tensor(image, torch.uint8)
 
     # The histogram is computed by using the flattened image as index. For example, a pixel value of 127 in the image
     # corresponds to adding 1 to index 127 in the histogram.
@@ -463,10 +461,13 @@ def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
 
 
 def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
-    if image.dtype == torch.uint8:
+    if image.is_floating_point():
+        return 1.0 - image  # type: ignore[no-any-return]
+    elif image.dtype == torch.uint8:
         return image.bitwise_not()
-    else:
-        return (1 if image.is_floating_point() else 255) - image  # type: ignore[no-any-return]
+    else:  # signed integer dtypes
+        # We can't use `Tensor.bitwise_not` here, since we want to retain the leading zero bit that encodes the sign
+        return image.bitwise_xor((1 << _num_value_bits(image.dtype)) - 1)
 
 
 invert_image_pil = _FP.invert
