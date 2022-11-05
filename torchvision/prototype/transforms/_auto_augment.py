@@ -519,8 +519,55 @@ class AugMix(_AutoAugmentBase):
 
 
 class _AutoAugmentDetectionBase(_AutoAugmentBase):
+    def _flatten_and_extract_image_or_video_and_bboxes(
+        self,
+        inputs: Any,
+        unsupported_types: Tuple[Type, ...] = (features.Mask),
+    ) -> Tuple[
+        Tuple[List[Any], TreeSpec, int, int], Union[features.ImageType, features.VideoType], features.BoundingBox
+    ]:
+        flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
+
+        image_or_videos = []
+        bboxes = []
+        for idx, inpt in enumerate(flat_inputs):
+            if _isinstance(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)):
+                image_or_videos.append((idx, inpt))
+            elif isinstance(inpt, unsupported_types):
+                raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
+
+        if not image_or_videos:
+            raise TypeError("Found no image in the sample.")
+        if len(image_or_videos) > 1:
+            raise TypeError(
+                f"Auto augment transformations are only properly defined for a single image or video, "
+                f"but found {len(image_or_videos)}."
+            )
+        if not bboxes:
+            raise TypeError("Found no bounding box in the sample.")
+        if len(bboxes) > 1:
+            raise TypeError(
+                f"Auto augment transformations are only properly defined for a single bboxes tensor, "
+                f"but found {len(bboxes)}."
+            )
+
+        idx1, image_or_video = image_or_videos[0]
+        idx2, bboxes = bboxes[0]
+        return (flat_inputs, spec, idx1, idx2), image_or_video, bboxes
+
+    def _unflatten_and_insert_image_or_video_and_bboxes(
+        self,
+        flat_inputs_with_spec: Tuple[List[Any], TreeSpec, int, int],
+        image_or_video: Union[features.ImageType, features.VideoType],
+        bboxes: features.BoundingBox,
+    ) -> Any:
+        flat_inputs, spec, idx1, idx2 = flat_inputs_with_spec
+        flat_inputs[idx1] = image_or_video
+        flat_inputs[idx2] = bboxes
+        return tree_unflatten(flat_inputs, spec)
+
     @staticmethod
-    def _transform_image_in_bboxes(
+    def _transform_image_or_video_in_bboxes(
         fn: Callable[..., torch.Tensor], fn_kwrgs: dict, image: torch.Tensor, bboxes: torch.Tensor
     ) -> torch.Tensor:
         new_img = image.clone()
@@ -530,30 +577,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
             new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]] = out_bbox_img
         return new_img
 
-    def _extract_image_bboxes(
-        self,
-        sample: Any,
-        unsupported_types: Tuple[Type, ...] = (features.Mask,),
-    ) -> List[Tuple[int, Union[features.ImageType, features.BoundingBox]]]:
-        sample_flat, _ = tree_flatten(sample)
-        images = []
-        for id, inpt in enumerate(sample_flat):
-            if _isinstance(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor)):
-                images.append((id, inpt))
-            elif isinstance(inpt, features.BoundingBox):
-                images.append((id, inpt))
-            elif isinstance(inpt, unsupported_types):
-                raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
-
-        if not images:
-            raise TypeError("Found no image in the sample.")
-        if len(images) > 2:
-            raise TypeError(
-                f"Auto augment transformations are only properly defined for a single image and its bboxes, but found {len(images)}."
-            )
-        return images
-
-    def _apply_image_bboxes_transform(
+    def _apply_image_or_video_and_bboxes_transform(
         self,
         image: Any,
         bboxes: features.BoundingBox,
@@ -567,16 +591,18 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         if transform_id.endswith("_Only_BBoxes"):
             transform_id = transform_id[:-12]
             fn_kwargs = dict(transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill)
-            image = self._transform_image_in_bboxes(self._apply_image_transform, fn_kwargs, image, bboxes)
+            image = self._transform_image_or_video_in_bboxes(
+                self._apply_image_or_video_transform, fn_kwargs, image, bboxes
+            )
         elif transform_id.endswith("_BBox"):
             transform_id = transform_id[:-5]
-            image = self._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
+            image = self._apply_image_or_video_transform(image, transform_id, magnitude, interpolation, fill)
 
             if transform_id == "Rotate":
                 bboxes.data = F.affine_bounding_box(
                     bboxes.data,
                     bboxes.format,
-                    bboxes.image_size,
+                    bboxes.spatial_size,
                     angle=magnitude,
                     translate=[0, 0],
                     scale=1.0,
@@ -587,7 +613,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
                 bboxes.data = F.affine_bounding_box(
                     bboxes.data,
                     bboxes.format,
-                    bboxes.image_size,
+                    bboxes.spatial_size,
                     angle=0.0,
                     translate=[int(magnitude), 0],
                     scale=1.0,
@@ -597,7 +623,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
                 bboxes.data = F.affine_bounding_box(
                     bboxes.data,
                     bboxes.format,
-                    bboxes.image_size,
+                    bboxes.spatial_size,
                     angle=0.0,
                     translate=[0, int(magnitude)],
                     scale=1.0,
@@ -607,7 +633,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
                 bboxes.data = F.affine_bounding_box(
                     bboxes.data,
                     bboxes.format,
-                    bboxes.image_size,
+                    bboxes.spatial_size,
                     angle=0.0,
                     translate=[0, 0],
                     scale=1.0,
@@ -618,7 +644,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
                 bboxes.data = F.affine_bounding_box(
                     bboxes.data,
                     bboxes.format,
-                    bboxes.image_size,
+                    bboxes.spatial_size,
                     angle=0.0,
                     translate=[0, 0],
                     scale=1.0,
@@ -628,7 +654,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         elif transform_id == "BBox_Cutout":
             raise NotImplementedError()
         else:
-            image = self._apply_image_transform(image, transform_id, magnitude, interpolation, fill)
+            image = self._apply_image_or_video_transform(image, transform_id, magnitude, interpolation, fill)
 
         return image, bboxes
 
@@ -638,9 +664,7 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         "AutoContrast": (lambda num_bins, height, width: None, False),
         "Equalize": (lambda num_bins, height, width: None, False),
         "Posterize": (
-            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
-            .round()
-            .int(),
+            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 6))).round().int(),
             False,
         ),  # TODO: tf repo is (0 -> 4) while this seems to be (8 -> 4)
         "Solarize": (
@@ -771,15 +795,10 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
             raise ValueError(f"The provided policy {policy} is not recognized.")
 
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-
-        images = self._extract_image_bboxes(sample)
-        id, image = images[0]
-        id_bboxes, bboxes = images[1]
-        image: features.ImageType
-        bboxes: features.BoundingBox
-        _, height, width = get_chw(image)
-
+        flat_inputs_with_spec, image_or_video, bboxes = self._flatten_and_extract_image_or_video_and_bboxes(
+            inputs, unsupported_types=(features.Mask,)
+        )
+        height, width = get_spatial_size(image_or_video)
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
         for transform_id, probability, magnitude_idx in policy:
@@ -796,9 +815,8 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
             else:
                 magnitude = 0.0
 
-            image = self._apply_image_bboxes_transform(
-                image, bboxes, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
+            image_or_video, bboxes = self._apply_image_or_video_and_bboxes_transform(
+                image_or_video, bboxes, transform_id, magnitude, interpolation=self.interpolation, fill=self.fill
             )
 
-        self._put_into_sample(sample, id_bboxes, bboxes)
-        return self._put_into_sample(sample, id, image)
+        return self._unflatten_and_insert_image_or_video_and_bboxes(flat_inputs_with_spec, image_or_video, bboxes)
