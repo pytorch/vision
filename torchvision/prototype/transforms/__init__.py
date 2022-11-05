@@ -51,6 +51,7 @@ from ._misc import (
     ToDtype,
     TransposeDimensions,
 )
+from ._mixup_detection import MixupDetection
 from ._temporal import UniformTemporalSubsample
 from ._type_conversion import DecodeImage, LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 

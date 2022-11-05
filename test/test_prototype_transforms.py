@@ -1918,3 +1918,80 @@ class TestUniformTemporalSubsample:
         assert type(output) is type(inpt)
         assert output.shape[-4] == num_samples
         assert output.dtype == inpt.dtype
+
+
+class TestMixupDetection:
+    def create_fake_image(self, mocker, image_type):
+        if image_type == PIL.Image.Image:
+            return PIL.Image.new("RGB", (32, 32), 123)
+        return mocker.MagicMock(spec=image_type)
+
+    def test__extract_image_targets_assertion(self, mocker):
+        transform = transforms.MixupDetection()
+
+        flat_sample = [
+            # images, batch size = 2
+            self.create_fake_image(mocker, features.Image),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.Label),
+            mocker.MagicMock(spec=features.BoundingBox),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.BoundingBox),
+        ]
+
+        with pytest.raises(TypeError, match="requires input sample to contain equal-sized list of Images"):
+            transform._extract_image_targets(flat_sample)
+
+    @pytest.mark.parametrize("image_type", [features.Image, PIL.Image.Image, torch.Tensor])
+    def test__extract_image_targets(self, image_type, mocker):
+        transform = transforms.MixupDetection()
+
+        flat_sample = [
+            # images, batch size = 2
+            self.create_fake_image(mocker, image_type),
+            self.create_fake_image(mocker, image_type),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.Label),
+            mocker.MagicMock(spec=features.BoundingBox),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=features.Label),
+            mocker.MagicMock(spec=features.BoundingBox),
+        ]
+
+        images, targets = transform._extract_image_targets(flat_sample)
+
+        assert len(images) == len(targets) == 2
+        if image_type == PIL.Image.Image:
+            torch.testing.assert_close(images[0], pil_to_tensor(flat_sample[0]))
+            torch.testing.assert_close(images[1], pil_to_tensor(flat_sample[1]))
+        else:
+            assert images[0] == flat_sample[0]
+            assert images[1] == flat_sample[1]
+
+    def test__mixup(self):
+        image1 = 2*torch.ones(3, 32, 64)
+        target_1 = {
+            "boxes": features.BoundingBox(
+                torch.tensor([[0.0, 0.0, 10.0, 10.0], [20.0, 20.0, 30.0, 30.0]]),
+                format = "XYXY",
+                spatial_size = (32, 64),
+                ),
+            "labels": features.Label(torch.tensor([1, 2])),
+        }
+
+        image2 = 10*torch.ones(3, 64, 32)
+        target_2 = {
+            "boxes": features.BoundingBox(
+                torch.tensor([[10.0, 0.0, 20.0, 20.0], [10.0, 20.0, 30.0, 30.0]]),
+                format = "XYXY",
+                spatial_size = (64, 32),
+                ),
+            "labels": features.Label(torch.tensor([2, 3])),
+        }
+
+        transform = transforms.MixupDetection()
+        output_image, output_target = transform._mixup(image1, target_1, image2, target_2)
+        assert output_image.shape == (3, 64, 64)
+        assert output_target["boxes"].spatial_size == (64, 64)
+        assert len(output_target["boxes"]) == 4
+        assert len(output_target["labels"]) == 4
