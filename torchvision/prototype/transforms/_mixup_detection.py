@@ -2,21 +2,19 @@
 This script is used to apply the mixup transform for Object detection to the dataset.
 The code is inspired from the paper: https://arxiv.org/abs/1902.0410
 
-In a nutshell, mixup is a data augmentation technique that linearly interpolates between
-two randomly chosen images and their labels. The linear interpolation is parameterized by
-a weight, beta, which is drawn from a beta distribution. The value of beta is sampled
-uniformly from the range [0, 1]. The technique is described in the paper: https://arxiv.org/abs/1902.0410
+In a nutshell, mixup is a data augmentation technique that combines two images in the ratio of
+beta to (1-beta) and this value of beta is sampled from a beta distribution. This makes our model
+robust to the object being present in the image or not. Plus, it is kind of like a free lunch.
 """
-import random
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
+
 import PIL.Image
 
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype import features
-from torchvision.prototype.transforms import functional as F, Transform, SimpleCopyPaste
-from torchvision.prototype.transforms._utils import query_chw
 from torchvision.prototype.features._feature import is_simple_tensor
+from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms.functional import pil_to_tensor
 
 
@@ -30,7 +28,6 @@ class MixupDetection(Transform):
     ) -> None:
         super().__init__()
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
-
 
     def _get_params():
         pass
@@ -99,10 +96,10 @@ class MixupDetection(Transform):
         output_images, output_targets = [], []
         for image_1, target_1, image_2, target_2 in zip(images, targets, images_rolled, targets_rolled):
             output_image, output_target = self._mixup(
-                                image_1,
-                                target_1,
-                                image_2,
-                                target_2,
+                image_1,
+                target_1,
+                image_2,
+                target_2,
             )
             output_images.append(output_image)
             output_targets.append(output_target)
@@ -117,7 +114,7 @@ class MixupDetection(Transform):
         target_1: Dict[str, Any],
         image_2: features.TensorImageType,
         target_2: Dict[str, Any],
-        ):
+    ):
         """
         Performs mixup on the given images and targets.
         """
@@ -129,8 +126,8 @@ class MixupDetection(Transform):
 
         # mixup images
         mix_img = torch.zeros(c_1, h_mixup, w_mixup, dtype=torch.float32)
-        mix_img[:, :image_1.shape[1], :image_1.shape[2]] = image_1 * lambd
-        mix_img[:, :image_2.shape[1], :image_2.shape[2]] += image_2 * (1. - lambd)
+        mix_img[:, : image_1.shape[1], : image_1.shape[2]] = image_1 * lambd
+        mix_img[:, : image_2.shape[1], : image_2.shape[2]] += image_2 * (1.0 - lambd)
         # mixup targets
         mix_target = {**target_1, **target_2}
         box_format = target_1["boxes"].format
@@ -139,7 +136,7 @@ class MixupDetection(Transform):
                 torch.vstack((target_1["boxes"], target_2["boxes"])),
                 format=box_format,
                 spatial_size=(h_mixup, w_mixup),
-                )
+            )
         }
         mix_labels = {"labels": torch.cat((target_1["labels"], target_2["labels"]))}
         mix_target.update(mixed_boxes)

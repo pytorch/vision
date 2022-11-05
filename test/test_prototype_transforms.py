@@ -1969,23 +1969,23 @@ class TestMixupDetection:
             assert images[1] == flat_sample[1]
 
     def test__mixup(self):
-        image1 = 2*torch.ones(3, 32, 64)
+        image1 = 2 * torch.ones(3, 32, 64)
         target_1 = {
             "boxes": features.BoundingBox(
                 torch.tensor([[0.0, 0.0, 10.0, 10.0], [20.0, 20.0, 30.0, 30.0]]),
-                format = "XYXY",
-                spatial_size = (32, 64),
-                ),
+                format="XYXY",
+                spatial_size=(32, 64),
+            ),
             "labels": features.Label(torch.tensor([1, 2])),
         }
 
-        image2 = 10*torch.ones(3, 64, 32)
+        image2 = 10 * torch.ones(3, 64, 32)
         target_2 = {
             "boxes": features.BoundingBox(
                 torch.tensor([[10.0, 0.0, 20.0, 20.0], [10.0, 20.0, 30.0, 30.0]]),
-                format = "XYXY",
-                spatial_size = (64, 32),
-                ),
+                format="XYXY",
+                spatial_size=(64, 32),
+            ),
             "labels": features.Label(torch.tensor([2, 3])),
         }
 
