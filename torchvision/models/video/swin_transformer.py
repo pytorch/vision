@@ -507,18 +507,26 @@ _COMMON_META = {
 
 class Swin3D_T_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
-        url="",
+        url="https://download.pytorch.org/models/swin3d_t-7615ae03.pth",
         transforms=partial(
             VideoClassification,
+            crop_size=(224, 224),
+            resize_size=(256,),
+            mean=(0.4850, 0.4560, 0.4060),
+            std=(0.2290, 0.2240, 0.2250),
         ),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification#s3d",
+            "_docs": (
+                "The weights were ported from the paper. The accuracies are estimated on video-level "
+                "with parameters `frame_rate=15`, `clips_per_video=12`, and `clip_len=32`"
+            ),
             "num_params": 000,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": 0,
-                    "acc@5": 0,
+                    "acc@1": 77.715,
+                    "acc@5": 93.519,
                 }
             },
         },
@@ -528,18 +536,26 @@ class Swin3D_T_Weights(WeightsEnum):
 
 class Swin3D_S_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
-        url="",
+        url="https://download.pytorch.org/models/swin3d_s-da41c237.pth",
         transforms=partial(
             VideoClassification,
+            crop_size=(224, 224),
+            resize_size=(256,),
+            mean=(0.4850, 0.4560, 0.4060),
+            std=(0.2290, 0.2240, 0.2250),
         ),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification#s3d",
+            "_docs": (
+                "The weights were ported from the paper. The accuracies are estimated on video-level "
+                "with parameters `frame_rate=15`, `clips_per_video=12`, and `clip_len=32`"
+            ),
             "num_params": 000,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": 0,
-                    "acc@5": 0,
+                    "acc@1": 79.521,
+                    "acc@5": 94.158,
                 }
             },
         },
@@ -549,18 +565,51 @@ class Swin3D_S_Weights(WeightsEnum):
 
 class Swin3D_B_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
-        url="",
+        url="https://download.pytorch.org/models/swin3d_b_1k-24f7c7c6.pth",
         transforms=partial(
             VideoClassification,
+            crop_size=(224, 224),
+            resize_size=(256,),
+            mean=(0.4850, 0.4560, 0.4060),
+            std=(0.2290, 0.2240, 0.2250),
         ),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification#s3d",
+            "_docs": (
+                "The weights were ported from the paper. The accuracies are estimated on video-level "
+                "with parameters `frame_rate=15`, `clips_per_video=12`, and `clip_len=32`"
+            ),
             "num_params": 000,
             "_metrics": {
                 "Kinetics-400": {
-                    "acc@1": 0,
-                    "acc@5": 0,
+                    "acc@1": 79.427,
+                    "acc@5": 94.386,
+                }
+            },
+        },
+    )
+    KINETICS400_IMAGENET22K_V1 = Weights(
+        url="httIps://download.pytorch.org/models/swin3d_b_22k-7c6ae6fa.pth",
+        transforms=partial(
+            VideoClassification,
+            crop_size=(224, 224),
+            resize_size=(256,),
+            mean=(0.4850, 0.4560, 0.4060),
+            std=(0.2290, 0.2240, 0.2250),
+        ),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification#s3d",
+            "_docs": (
+                "The weights were ported from the paper. The accuracies are estimated on video-level "
+                "with parameters `frame_rate=15`, `clips_per_video=12`, and `clip_len=32`"
+            ),
+            "num_params": 000,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 81.643,
+                    "acc@5": 95.574,
                 }
             },
         },
