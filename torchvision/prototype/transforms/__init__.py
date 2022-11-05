@@ -6,7 +6,7 @@ from ._transform import Transform  # usort: skip
 from ._presets import StereoMatching  # usort: skip
 
 from ._augment import RandomCutmix, RandomErasing, RandomMixup, SimpleCopyPaste
-from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
+from ._auto_augment import AugMix, AutoAugment, AutoAugmentDetection, RandAugment, TrivialAugmentWide
 from ._color import (
     ColorJitter,
     RandomAdjustSharpness,

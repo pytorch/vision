@@ -188,6 +188,37 @@ class TestSmoke:
     @parametrize(
         [
             (
+                transform,
+                itertools.chain.from_iterable(
+                    fn(
+                        color_spaces=[
+                            features.ColorSpace.GRAY,
+                            features.ColorSpace.RGB,
+                        ],
+                        dtypes=[torch.uint8],
+                        extra_dims=[(), (4,)],
+                        **(dict(num_frames=["random"]) if fn is make_videos else dict()),
+                    )
+                    for fn in [
+                        make_images,
+                        # make_vanilla_tensor_images,
+                        # make_pil_images,
+                        make_videos,
+                    ]
+                ),
+            )
+            for transform in (
+                transforms.AutoAugmentDetection("vtest"),
+            )
+        ]
+    )
+    def test_auto_augment_detection(self, transform, input):
+        bboxes = make_bounding_box(spatial_size=input.spatial_size, format=features.BoundingBoxFormat.XYXY)
+        transform(input, bboxes)
+
+    @parametrize(
+        [
+            (
                 transforms.Normalize(mean=[0.0, 0.0, 0.0], std=[1.0, 1.0, 1.0]),
                 itertools.chain.from_iterable(
                     fn(color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32])
