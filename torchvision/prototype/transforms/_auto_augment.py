@@ -522,17 +522,19 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
     def _flatten_and_extract_image_or_video_and_bboxes(
         self,
         inputs: Any,
-        unsupported_types: Tuple[Type, ...] = (features.Mask),
+        unsupported_types: Tuple[Type, ...] = (features.Mask,),
     ) -> Tuple[
         Tuple[List[Any], TreeSpec, int, int], Union[features.ImageType, features.VideoType], features.BoundingBox
     ]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
         image_or_videos = []
-        bboxes = []
+        bboxes_list = []
         for idx, inpt in enumerate(flat_inputs):
             if _isinstance(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)):
                 image_or_videos.append((idx, inpt))
+            elif isinstance(inpt, features.BoundingBox):
+                bboxes_list.append((idx, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
 
@@ -543,16 +545,16 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
                 f"Auto augment transformations are only properly defined for a single image or video, "
                 f"but found {len(image_or_videos)}."
             )
-        if not bboxes:
+        if not bboxes_list:
             raise TypeError("Found no bounding box in the sample.")
-        if len(bboxes) > 1:
+        if len(bboxes_list) > 1:
             raise TypeError(
                 f"Auto augment transformations are only properly defined for a single bboxes tensor, "
-                f"but found {len(bboxes)}."
+                f"but found {len(bboxes_list)}."
             )
 
         idx1, image_or_video = image_or_videos[0]
-        idx2, bboxes = bboxes[0]
+        idx2, bboxes = bboxes_list[0]
         return (flat_inputs, spec, idx1, idx2), image_or_video, bboxes
 
     def _unflatten_and_insert_image_or_video_and_bboxes(
@@ -584,7 +586,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Dict[Type, features.FillType],
+        fill: Dict[Type, features.FillTypeJIT],
     ) -> Tuple[Any, features.BoundingBox]:
         # TODO: SolarizeAdd, Cutout, BBox_Cutout, Flip_Only_BBoxes, Cutout_Only_BBoxes
 
