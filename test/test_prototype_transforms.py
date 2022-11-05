@@ -207,9 +207,7 @@ class TestSmoke:
                     ]
                 ),
             )
-            for transform in (
-                transforms.AutoAugmentDetection("vtest"),
-            )
+            for transform in (transforms.AutoAugmentDetection("vtest"),)
         ]
     )
     def test_auto_augment_detection(self, transform, input):
