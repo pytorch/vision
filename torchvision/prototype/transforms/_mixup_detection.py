@@ -15,7 +15,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype import features
 from torchvision.prototype.features._feature import is_simple_tensor
 from torchvision.prototype.transforms import functional as F, Transform
-from torchvision.transforms.functional import pil_to_tensor
+from torchvision.prototype.transforms._utils import has_any
 
 
 class MixupDetection(Transform):
@@ -29,9 +29,10 @@ class MixupDetection(Transform):
         super().__init__()
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def _get_params(self) -> Dict[str, Any]:
         # TODO: Retrieve the params from the input sample
-        pass
+        mixup_ratio = self._dist.sample().item()
+        return {"mixup_ratio": mixup_ratio}
 
     def _extract_image_targets(self, flat_sample: List[Any]) -> Tuple[List[Any], List[Dict[str, Any]]]:
         # fetch all images, bboxes and labels from unstructured input
@@ -41,7 +42,7 @@ class MixupDetection(Transform):
             if isinstance(obj, features.Image) or is_simple_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
-                images.append(pil_to_tensor(obj))
+                images.append(F.to_tensor(obj))
             elif isinstance(obj, features.BoundingBox):
                 bboxes.append(obj)
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
@@ -60,7 +61,19 @@ class MixupDetection(Transform):
         return images, targets
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        return super()._check_inputs(flat_inputs)
+        if has_any(flat_inputs, features.Mask):
+            raise TypeError(f"Masks are not supported by {type(self).__name__}()")
+
+        if not has_any(flat_inputs, PIL.Image.Image, features.Image, features.is_simple_tensor):
+            raise TypeError(
+                f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
+            )
+
+        if not (
+            has_any(flat_inputs, features.Image, PIL.Image.Image, features.is_simple_tensor)
+            and has_any(flat_inputs, features.BoundingBox)
+        ):
+            raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and bounding boxes.")
 
     def _insert_outputs(
         self, flat_sample: List[Any], output_images: List[Any], output_targets: List[Dict[str, Any]]
@@ -85,6 +98,7 @@ class MixupDetection(Transform):
 
     def forward(self, *inputs: Any) -> Any:
         flat_sample, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
+        self._check_inputs(flat_sample)
 
         images, targets = self._extract_image_targets(flat_sample)
 
@@ -119,7 +133,7 @@ class MixupDetection(Transform):
         """
         Performs mixup on the given images and targets.
         """
-        mixup_ratio = self._dist.sample().item()
+        mixup_ratio = self._get_params().get("mixup_ratio")
         c_1, h_1, w_1 = image_1.shape
         c_2, h_2, w_2 = image_2.shape
         h_mixup = max(h_1, h_2)
@@ -128,7 +142,7 @@ class MixupDetection(Transform):
         if mixup_ratio >= 1:
             return image_1, target_1
 
-        # mixup images
+        # mixup images and prevent the object aspect ratio from changing
         mix_img = torch.zeros(c_1, h_mixup, w_mixup, dtype=torch.float32)
         mix_img[:, : image_1.shape[1], : image_1.shape[2]] = image_1 * mixup_ratio
         mix_img[:, : image_2.shape[1], : image_2.shape[2]] += image_2 * (1.0 - mixup_ratio)

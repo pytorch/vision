@@ -24,7 +24,7 @@ from prototype_common_utils import (
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features, transforms
 from torchvision.prototype.transforms._utils import _isinstance
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
+from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image, to_tensor
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
 
@@ -1950,10 +1950,10 @@ class TestMixupDetection:
             # images, batch size = 2
             self.create_fake_image(mocker, image_type),
             self.create_fake_image(mocker, image_type),
-            # labels, bboxes, masks
+            # labels, bboxes
             mocker.MagicMock(spec=features.Label),
             mocker.MagicMock(spec=features.BoundingBox),
-            # labels, bboxes, masks
+            # labels, bboxes
             mocker.MagicMock(spec=features.Label),
             mocker.MagicMock(spec=features.BoundingBox),
         ]
@@ -1962,8 +1962,8 @@ class TestMixupDetection:
 
         assert len(images) == len(targets) == 2
         if image_type == PIL.Image.Image:
-            torch.testing.assert_close(images[0], pil_to_tensor(flat_sample[0]))
-            torch.testing.assert_close(images[1], pil_to_tensor(flat_sample[1]))
+            torch.testing.assert_close(images[0], to_tensor(flat_sample[0]))
+            torch.testing.assert_close(images[1], to_tensor(flat_sample[1]))
         else:
             assert images[0] == flat_sample[0]
             assert images[1] == flat_sample[1]
