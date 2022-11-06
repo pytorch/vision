@@ -180,7 +180,7 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
     hb = (4.0 + gc).sub_(rc).mul_(mask_maxc_neq_g & mask_maxc_neq_r)
 
     h = hr.add_(hg).add_(hb)
-    h = h.div_(6.0).add_(1.0).fmod_(1.0)
+    h = h.mul_(1.0 / 6.0).add_(1.0).fmod_(1.0)
     return torch.stack((h, s, maxc), dim=-3)
 
 
@@ -287,7 +287,7 @@ def adjust_gamma(inpt: features.InputTypeJIT, gamma: float, gain: float = 1) -> 
 def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
     if image.is_floating_point():
         levels = 1 << bits
-        return image.mul(levels).floor_().clamp_(0, levels - 1).div_(levels)
+        return image.mul(levels).floor_().clamp_(0, levels - 1).mul_(1.0 / levels)
     else:
         num_value_bits = _num_value_bits(image.dtype)
         if bits >= num_value_bits:
