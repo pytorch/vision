@@ -29,7 +29,8 @@ class MixupDetection(Transform):
         super().__init__()
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def _get_params():
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        # TODO: Retrieve the params from the input sample
         pass
 
     def _extract_image_targets(self, flat_sample: List[Any]) -> Tuple[List[Any], List[Dict[str, Any]]]:
@@ -114,20 +115,23 @@ class MixupDetection(Transform):
         target_1: Dict[str, Any],
         image_2: features.TensorImageType,
         target_2: Dict[str, Any],
-    ):
+    ) -> Tuple[features.TensorImageType, Dict[str, Any]]:
         """
         Performs mixup on the given images and targets.
         """
-        lambd = self._dist.sample().item()
+        mixup_ratio = self._dist.sample().item()
         c_1, h_1, w_1 = image_1.shape
         c_2, h_2, w_2 = image_2.shape
         h_mixup = max(h_1, h_2)
         w_mixup = max(w_1, w_2)
 
+        if mixup_ratio >= 1:
+            return image_1, target_1
+
         # mixup images
         mix_img = torch.zeros(c_1, h_mixup, w_mixup, dtype=torch.float32)
-        mix_img[:, : image_1.shape[1], : image_1.shape[2]] = image_1 * lambd
-        mix_img[:, : image_2.shape[1], : image_2.shape[2]] += image_2 * (1.0 - lambd)
+        mix_img[:, : image_1.shape[1], : image_1.shape[2]] = image_1 * mixup_ratio
+        mix_img[:, : image_2.shape[1], : image_2.shape[2]] += image_2 * (1.0 - mixup_ratio)
         # mixup targets
         mix_target = {**target_1, **target_2}
         box_format = target_1["boxes"].format
