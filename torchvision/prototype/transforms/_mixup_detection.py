@@ -29,11 +29,6 @@ class MixupDetection(Transform):
         super().__init__()
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def _get_params(self) -> Dict[str, Any]:
-        # TODO: Retrieve the params from the input sample
-        mixup_ratio = self._dist.sample().item()
-        return {"mixup_ratio": mixup_ratio}
-
     def _extract_image_targets(self, flat_sample: List[Any]) -> Tuple[List[Any], List[Dict[str, Any]]]:
         # fetch all images, bboxes and labels from unstructured input
         # with List[image], List[BoundingBox], List[Label]
@@ -135,13 +130,15 @@ class MixupDetection(Transform):
         """
         Performs mixup on the given images and targets.
         """
-        mixup_ratio = self._get_params().get("mixup_ratio")
+        mixup_ratio = self._dist.sample().item()
+        print(mixup_ratio)
+
         c_1, h_1, w_1 = image_1.shape
         c_2, h_2, w_2 = image_2.shape
         h_mixup = max(h_1, h_2)
         w_mixup = max(w_1, w_2)
 
-        if mixup_ratio >= 1:
+        if mixup_ratio >= 1.0:
             return image_1, target_1
 
         # mixup images and prevent the object aspect ratio from changing
