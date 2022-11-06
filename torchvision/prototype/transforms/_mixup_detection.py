@@ -42,7 +42,9 @@ class MixupDetection(Transform):
             if isinstance(obj, features.Image) or is_simple_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
-                images.append(F.to_tensor(obj))
+                obj = F.to_image_tensor(obj)
+                obj = F.convert_image_dtype(obj, dtype=torch.float32)
+                images.append(obj)
             elif isinstance(obj, features.BoundingBox):
                 bboxes.append(obj)
             elif isinstance(obj, (features.Label, features.OneHotLabel)):
