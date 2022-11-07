@@ -25,9 +25,10 @@ from prototype_common_utils import (
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
-from torchvision.prototype.transforms import functional as F
+from torchvision.prototype.transforms import functional as prototype_F
 from torchvision.prototype.transforms._utils import query_spatial_size
 from torchvision.prototype.transforms.functional import to_image_pil
+from torchvision.transforms import functional as legacy_F
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])
 
@@ -985,7 +986,7 @@ class PadIfSmaller(prototype_transforms.Transform):
             return inpt
 
         fill = self.fill[type(inpt)]
-        return F.pad(inpt, padding=params["padding"], fill=fill)
+        return prototype_F.pad(inpt, padding=params["padding"], fill=fill)
 
 
 class TestRefSegTransforms:
@@ -1119,3 +1120,81 @@ class TestRefSegTransforms:
         t_ref = seg_transforms.RandomResize(min_size=base_size, max_size=base_size)
 
         self.check_resize(mocker, t_ref, t)
+
+
+@pytest.mark.parametrize(
+    ("legacy_dispatcher", "name_only_params"),
+    [
+        (legacy_F.get_dimensions, {}),
+        (legacy_F.get_image_size, {}),
+        (legacy_F.get_image_num_channels, {}),
+        (legacy_F.to_tensor, {}),
+        (legacy_F.pil_to_tensor, {}),
+        (legacy_F.convert_image_dtype, {}),
+        (legacy_F.to_pil_image, {}),
+        (legacy_F.normalize, {}),
+        (legacy_F.resize, {}),
+        (legacy_F.pad, {"padding", "fill"}),
+        (legacy_F.crop, {}),
+        (legacy_F.center_crop, {}),
+        (legacy_F.resized_crop, {}),
+        (legacy_F.hflip, {}),
+        (legacy_F.perspective, {"startpoints", "endpoints", "fill"}),
+        (legacy_F.vflip, {}),
+        (legacy_F.five_crop, {}),
+        (legacy_F.ten_crop, {}),
+        (legacy_F.adjust_brightness, {}),
+        (legacy_F.adjust_contrast, {}),
+        (legacy_F.adjust_saturation, {}),
+        (legacy_F.adjust_hue, {}),
+        (legacy_F.adjust_gamma, {}),
+        (legacy_F.rotate, {"center", "fill"}),
+        (legacy_F.affine, {"angle", "translate", "center", "fill"}),
+        (legacy_F.to_grayscale, {}),
+        (legacy_F.rgb_to_grayscale, {}),
+        (legacy_F.to_tensor, {}),
+        (legacy_F.erase, {}),
+        (legacy_F.gaussian_blur, {}),
+        (legacy_F.invert, {}),
+        (legacy_F.posterize, {}),
+        (legacy_F.solarize, {}),
+        (legacy_F.adjust_sharpness, {}),
+        (legacy_F.autocontrast, {}),
+        (legacy_F.equalize, {}),
+        (legacy_F.elastic_transform, {"fill"}),
+    ],
+)
+def test_dispatcher_signature_consistency(legacy_dispatcher, name_only_params):
+    legacy_signature = inspect.signature(legacy_dispatcher)
+    legacy_params = list(legacy_signature.parameters.values())[1:]
+
+    try:
+        prototype_dispatcher = getattr(prototype_F, legacy_dispatcher.__name__)
+    except AttributeError:
+        raise AssertionError(
+            f"Legacy dispatcher `F.{legacy_dispatcher.__name__}` has no prototype equivalent"
+        ) from None
+
+    prototype_signature = inspect.signature(prototype_dispatcher)
+    prototype_params = list(prototype_signature.parameters.values())[1:]
+
+    # Some dispatchers got extra parameters. This makes sure they have a default argument and thus are BC. We don't
+    # need to check if parameters were added in the middle rather than at the end, since that will be caught by the
+    # regular check below.
+    prototype_params, new_prototype_params = (
+        prototype_params[: len(legacy_params)],
+        prototype_params[len(legacy_params) :],
+    )
+    for param in new_prototype_params:
+        assert param.default is not param.empty
+
+    # Some annotations were changed mostly to supersets of what was there before. Plus, some legacy dispatchers had no
+    # annotations. In these cases we simply drop the annotation and default argument from the comparison
+    for prototype_param, legacy_param in zip(prototype_params, legacy_params):
+        if legacy_param.name in name_only_params:
+            prototype_param._annotation = prototype_param._default = inspect.Parameter.empty
+            legacy_param._annotation = legacy_param._default = inspect.Parameter.empty
+        elif legacy_param.annotation is inspect.Parameter.empty:
+            prototype_param._annotation = inspect.Parameter.empty
+
+    assert prototype_params == legacy_params
