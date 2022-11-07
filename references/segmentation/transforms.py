@@ -32,7 +32,7 @@ class PadIfSmaller(PT.Transform):
             return inpt
 
         fill = self.fill[type(inpt)]
-        fill = PF._utils._convert_fill_arg(fill)
+        fill = PT._utils._convert_fill_arg(fill)
 
         return PF.pad(inpt, padding=params["padding"], fill=fill)
 
