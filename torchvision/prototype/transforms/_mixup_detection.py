@@ -90,7 +90,7 @@ class MixupDetection(Transform):
                 flat_sample[i] = features.BoundingBox.wrap_like(obj, output_targets[c1]["boxes"])
                 c1 += 1
             elif isinstance(obj, (features.Label)):
-                flat_sample[i] = obj.wrap_like(obj, output_targets[c2]["labels"])  # type: ignore[arg-type]
+                flat_sample[i] = obj.wrap_like(obj, output_targets[c2]["labels"])
                 c2 += 1
 
     def forward(self, *inputs: Any) -> Any:
