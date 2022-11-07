@@ -197,14 +197,19 @@ class TestKernels:
 
     @sample_inputs
     @needs_cuda
-    def test_cuda_vs_cpu(self, info, args_kwargs):
+    def test_cuda_vs_cpu(self, test_id, info, args_kwargs):
         (input_cpu, *other_args), kwargs = args_kwargs.load("cpu")
         input_cuda = input_cpu.to("cuda")
 
         output_cpu = info.kernel(input_cpu, *other_args, **kwargs)
         output_cuda = info.kernel(input_cuda, *other_args, **kwargs)
 
-        assert_close(output_cuda, output_cpu, check_device=False, **info.closeness_kwargs)
+        assert_close(
+            output_cuda,
+            output_cpu,
+            check_device=False,
+            **info.get_closeness_kwargs(test_id, dtype=input_cuda.dtype, device=input_cuda.device),
+        )
 
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
