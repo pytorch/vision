@@ -115,8 +115,9 @@ def resize_image_tensor(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: bool = False,
+    antialias: Optional[bool] = None,
 ) -> torch.Tensor:
+    antialias = False if antialias is None else antialias
     align_corners: Optional[bool] = None
     if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
         align_corners = False
@@ -196,7 +197,7 @@ def resize_video(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: bool = False,
+    antialias: Optional[bool] = None,
 ) -> torch.Tensor:
     return resize_image_tensor(video, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
@@ -209,10 +210,8 @@ def resize(
     antialias: Optional[bool] = None,
 ) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        antialias = False if antialias is None else antialias
         return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, features._Feature):
-        antialias = False if antialias is None else antialias
         return inpt.resize(size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     else:
         if antialias is not None and not antialias:
@@ -1396,7 +1395,7 @@ def resized_crop_image_tensor(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    antialias: bool = False,
+    antialias: Optional[bool] = None,
 ) -> torch.Tensor:
     image = crop_image_tensor(image, top, left, height, width)
     return resize_image_tensor(image, size, interpolation=interpolation, antialias=antialias)
@@ -1449,7 +1448,7 @@ def resized_crop_video(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    antialias: bool = False,
+    antialias: Optional[bool] = None,
 ) -> torch.Tensor:
     return resized_crop_image_tensor(
         video, top, left, height, width, antialias=antialias, size=size, interpolation=interpolation
@@ -1467,12 +1466,10 @@ def resized_crop(
     antialias: Optional[bool] = None,
 ) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
-        antialias = False if antialias is None else antialias
         return resized_crop_image_tensor(
             inpt, top, left, height, width, antialias=antialias, size=size, interpolation=interpolation
         )
     elif isinstance(inpt, features._Feature):
-        antialias = False if antialias is None else antialias
         return inpt.resized_crop(top, left, height, width, antialias=antialias, size=size, interpolation=interpolation)
     else:
         return resized_crop_image_pil(inpt, top, left, height, width, size=size, interpolation=interpolation)
