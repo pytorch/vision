@@ -132,8 +132,8 @@ class BoundingBox(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
+        fill: FillTypeJIT = None,
     ) -> BoundingBox:
         output, spatial_size = self._F.rotate_bounding_box(
             self.as_subclass(torch.Tensor),

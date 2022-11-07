@@ -61,11 +61,15 @@ class KernelInfo(InfoBase):
         self.reference_inputs_fn = reference_inputs_fn
 
 
-DEFAULT_IMAGE_CLOSENESS_KWARGS = dict(
-    atol=1e-5,
-    rtol=0,
-    agg_method="mean",
-)
+DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS = {
+    (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=1e-5, rtol=0, agg_method="mean"),
+    (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=1e-5, rtol=0, agg_method="mean"),
+}
+
+CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE = {
+    (("TestKernels", "test_cuda_vs_cpu"), dtype, "cuda"): dict(atol=atol, rtol=0)
+    for dtype, atol in [(torch.uint8, 1), (torch.float32, 1 / 255)]
+}
 
 
 def pil_reference_wrapper(pil_kernel):
@@ -176,7 +180,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_horizontal_flip_image_tensor,
             reference_fn=pil_reference_wrapper(F.horizontal_flip_image_pil),
             reference_inputs_fn=reference_inputs_horizontal_flip_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.horizontal_flip_bounding_box,
@@ -320,7 +324,10 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_resize_image_tensor,
             reference_fn=reference_resize_image_tensor,
             reference_inputs_fn=reference_inputs_resize_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
             ],
@@ -339,7 +346,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_resize_mask,
             reference_fn=reference_resize_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
             ],
@@ -347,6 +354,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.resize_video,
             sample_inputs_fn=sample_inputs_resize_video,
+            closeness_kwargs=CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
         ),
     ]
 )
@@ -556,7 +564,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_image_tensor,
             reference_fn=pil_reference_wrapper(F.affine_image_pil),
             reference_inputs_fn=reference_inputs_affine_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
                 xfail_jit_tuple_instead_of_list("fill"),
@@ -569,7 +577,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_bounding_box,
             reference_fn=reference_affine_bounding_box,
             reference_inputs_fn=reference_inputs_affine_bounding_box,
-            closeness_kwargs=dict(atol=1, rtol=0),
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
             ],
@@ -579,7 +589,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_mask,
             reference_fn=reference_affine_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
             ],
@@ -668,7 +678,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_convert_color_space_image_tensor,
             reference_fn=reference_convert_color_space_image_tensor,
             reference_inputs_fn=reference_inputs_convert_color_space_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.convert_color_space_video,
@@ -729,7 +739,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_vertical_flip_image_tensor,
             reference_fn=pil_reference_wrapper(F.vertical_flip_image_pil),
             reference_inputs_fn=reference_inputs_vertical_flip_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.vertical_flip_bounding_box,
@@ -820,7 +830,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_rotate_image_tensor,
             reference_fn=pil_reference_wrapper(F.rotate_image_pil),
             reference_inputs_fn=reference_inputs_rotate_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
             test_marks=[
                 xfail_jit_tuple_instead_of_list("fill"),
                 # TODO: check if this is a regression since it seems that should be supported if `int` is ok
@@ -836,7 +846,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_rotate_mask,
             reference_fn=reference_rotate_mask,
             reference_inputs_fn=reference_inputs_rotate_mask,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.rotate_video,
@@ -918,7 +928,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_crop_image_tensor,
             reference_fn=pil_reference_wrapper(F.crop_image_pil),
             reference_inputs_fn=reference_inputs_crop_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.crop_bounding_box,
@@ -931,7 +941,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_crop_mask,
             reference_fn=pil_reference_wrapper(F.crop_image_pil),
             reference_inputs_fn=reference_inputs_crop_mask,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.crop_video,
@@ -1010,7 +1020,10 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_resized_crop_image_tensor,
             reference_fn=reference_resized_crop_image_tensor,
             reference_inputs_fn=reference_inputs_resized_crop_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
+            },
         ),
         KernelInfo(
             F.resized_crop_bounding_box,
@@ -1021,11 +1034,12 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_resized_crop_mask,
             reference_fn=pil_reference_wrapper(F.resized_crop_image_pil),
             reference_inputs_fn=reference_inputs_resized_crop_mask,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.resized_crop_video,
             sample_inputs_fn=sample_inputs_resized_crop_video,
+            closeness_kwargs=CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
         ),
     ]
 )
@@ -1144,7 +1158,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_pad_image_tensor,
             reference_fn=pil_reference_wrapper(F.pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
             test_marks=[
                 xfail_jit_tuple_instead_of_list("padding"),
                 xfail_jit_tuple_instead_of_list("fill"),
@@ -1166,7 +1180,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_pad_mask,
             reference_fn=pil_reference_wrapper(F.pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_mask,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.pad_video,
@@ -1225,7 +1239,10 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_perspective_image_tensor,
             reference_fn=pil_reference_wrapper(F.perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
+            },
         ),
         KernelInfo(
             F.perspective_bounding_box,
@@ -1236,11 +1253,12 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_perspective_mask,
             reference_fn=pil_reference_wrapper(F.perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_mask,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.perspective_video,
             sample_inputs_fn=sample_inputs_perspective_video,
+            closeness_kwargs=CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
         ),
     ]
 )
@@ -1306,7 +1324,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_elastic_image_tensor,
             reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.elastic_bounding_box,
@@ -1317,7 +1335,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_elastic_mask,
             reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_mask,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.elastic_video,
@@ -1387,7 +1405,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_center_crop_image_tensor,
             reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
             test_marks=[
                 xfail_jit_python_scalar_arg("output_size"),
             ],
@@ -1404,7 +1422,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_center_crop_mask,
             reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_mask,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
             test_marks=[
                 xfail_jit_python_scalar_arg("output_size"),
             ],
@@ -1441,7 +1459,10 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.gaussian_blur_image_tensor,
             sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("kernel_size"),
                 xfail_jit_python_scalar_arg("sigma"),
@@ -1450,6 +1471,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.gaussian_blur_video,
             sample_inputs_fn=sample_inputs_gaussian_blur_video,
+            closeness_kwargs=CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
         ),
     ]
 )
@@ -1529,7 +1551,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_equalize_image_tensor,
             reference_fn=pil_reference_wrapper(F.equalize_image_pil),
             reference_inputs_fn=reference_inputs_equalize_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.equalize_video,
@@ -1566,7 +1588,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_invert_image_tensor,
             reference_fn=pil_reference_wrapper(F.invert_image_pil),
             reference_inputs_fn=reference_inputs_invert_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.invert_video,
@@ -1607,7 +1629,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_posterize_image_tensor,
             reference_fn=pil_reference_wrapper(F.posterize_image_pil),
             reference_inputs_fn=reference_inputs_posterize_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.posterize_video,
@@ -1651,7 +1673,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_solarize_image_tensor,
             reference_fn=pil_reference_wrapper(F.solarize_image_pil),
             reference_inputs_fn=reference_inputs_solarize_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.solarize_video,
@@ -1688,7 +1710,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_autocontrast_image_tensor,
             reference_fn=pil_reference_wrapper(F.autocontrast_image_pil),
             reference_inputs_fn=reference_inputs_autocontrast_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.autocontrast_video,
@@ -1729,7 +1751,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_sharpness_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_sharpness_image_pil),
             reference_inputs_fn=reference_inputs_adjust_sharpness_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.adjust_sharpness_video,
@@ -1800,7 +1822,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_brightness_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_brightness_image_pil),
             reference_inputs_fn=reference_inputs_adjust_brightness_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.adjust_brightness_video,
@@ -1841,7 +1863,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_contrast_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_contrast_image_pil),
             reference_inputs_fn=reference_inputs_adjust_contrast_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.adjust_contrast_video,
@@ -1886,7 +1908,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_gamma_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_gamma_image_pil),
             reference_inputs_fn=reference_inputs_adjust_gamma_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.adjust_gamma_video,
@@ -1927,7 +1949,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_hue_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_hue_image_pil),
             reference_inputs_fn=reference_inputs_adjust_hue_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.adjust_hue_video,
@@ -1967,7 +1989,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_saturation_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_saturation_image_pil),
             reference_inputs_fn=reference_inputs_adjust_saturation_image_tensor,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.adjust_saturation_video,
@@ -2061,7 +2083,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
             test_marks=_common_five_ten_crop_marks,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.five_crop_video,
@@ -2074,7 +2096,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
             test_marks=_common_five_ten_crop_marks,
-            closeness_kwargs=DEFAULT_IMAGE_CLOSENESS_KWARGS,
+            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.ten_crop_video,
