@@ -89,8 +89,8 @@ class Mask(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
+        fill: FillTypeJIT = None,
     ) -> Mask:
         output = self._F.rotate_mask(self.as_subclass(torch.Tensor), angle, expand=expand, center=center, fill=fill)
         return Mask.wrap_like(self, output)
