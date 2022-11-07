@@ -524,8 +524,8 @@ def rotate_image_tensor(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
+    fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
     shape = image.shape
     num_channels, height, width = shape[-3:]
@@ -563,8 +563,8 @@ def rotate_image_pil(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
+    fill: features.FillTypeJIT = None,
 ) -> PIL.Image.Image:
     if center is not None and expand:
         warnings.warn("The provided center argument has no effect on the result if expand is True")
@@ -615,8 +615,8 @@ def rotate_mask(
     mask: torch.Tensor,
     angle: float,
     expand: bool = False,
-    fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
+    fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -644,8 +644,8 @@ def rotate_video(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
+    fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
     return rotate_image_tensor(video, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
@@ -655,8 +655,8 @@ def rotate(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
+    fill: features.FillTypeJIT = None,
 ) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)

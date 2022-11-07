@@ -305,8 +305,8 @@ class RandomRotation(Transform):
             **params,
             interpolation=self.interpolation,
             expand=self.expand,
-            fill=fill,
             center=self.center,
+            fill=fill,
         )
 
 
