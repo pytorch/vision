@@ -66,6 +66,11 @@ DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS = {
     (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=1e-5, rtol=0, agg_method="mean"),
 }
 
+CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE = {
+    (("TestKernels", "test_cuda_vs_cpu"), dtype, "cuda"): dict(atol=atol, rtol=0)
+    for dtype, atol in [(torch.uint8, 1), (torch.float32, 1 / 255)]
+}
+
 
 def pil_reference_wrapper(pil_kernel):
     @functools.wraps(pil_kernel)
@@ -319,7 +324,10 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_resize_image_tensor,
             reference_fn=reference_resize_image_tensor,
             reference_inputs_fn=reference_inputs_resize_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
             ],
@@ -346,6 +354,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.resize_video,
             sample_inputs_fn=sample_inputs_resize_video,
+            closeness_kwargs=CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
         ),
     ]
 )
@@ -1011,7 +1020,10 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_resized_crop_image_tensor,
             reference_fn=reference_resized_crop_image_tensor,
             reference_inputs_fn=reference_inputs_resized_crop_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
+            },
         ),
         KernelInfo(
             F.resized_crop_bounding_box,
@@ -1027,6 +1039,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.resized_crop_video,
             sample_inputs_fn=sample_inputs_resized_crop_video,
+            closeness_kwargs=CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
         ),
     ]
 )
@@ -1226,7 +1239,10 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_perspective_image_tensor,
             reference_fn=pil_reference_wrapper(F.perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
+            },
         ),
         KernelInfo(
             F.perspective_bounding_box,
@@ -1242,6 +1258,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.perspective_video,
             sample_inputs_fn=sample_inputs_perspective_video,
+            closeness_kwargs=CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
         ),
     ]
 )
@@ -1442,7 +1459,10 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.gaussian_blur_image_tensor,
             sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("kernel_size"),
                 xfail_jit_python_scalar_arg("sigma"),
@@ -1451,6 +1471,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.gaussian_blur_video,
             sample_inputs_fn=sample_inputs_gaussian_blur_video,
+            closeness_kwargs=CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
         ),
     ]
 )
