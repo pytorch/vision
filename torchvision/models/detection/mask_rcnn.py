@@ -14,7 +14,6 @@ from ._utils import overwrite_eps
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .faster_rcnn import _default_anchorgen, FasterRCNN, FastRCNNConvFCHead, RPNHead
 
-
 __all__ = [
     "MaskRCNN",
     "MaskRCNN_ResNet50_FPN_Weights",
@@ -110,6 +109,7 @@ class MaskRCNN(FasterRCNN):
         mask_head (nn.Module): module that takes the cropped feature maps as input
         mask_predictor (nn.Module): module that takes the output of the mask_head and returns the
             segmentation mask logits
+        use_edge_loss (bool): signals if to use edge loss during training
 
     Example::
 
@@ -160,44 +160,45 @@ class MaskRCNN(FasterRCNN):
     """
 
     def __init__(
-        self,
-        backbone,
-        num_classes=None,
-        # transform parameters
-        min_size=800,
-        max_size=1333,
-        image_mean=None,
-        image_std=None,
-        # RPN parameters
-        rpn_anchor_generator=None,
-        rpn_head=None,
-        rpn_pre_nms_top_n_train=2000,
-        rpn_pre_nms_top_n_test=1000,
-        rpn_post_nms_top_n_train=2000,
-        rpn_post_nms_top_n_test=1000,
-        rpn_nms_thresh=0.7,
-        rpn_fg_iou_thresh=0.7,
-        rpn_bg_iou_thresh=0.3,
-        rpn_batch_size_per_image=256,
-        rpn_positive_fraction=0.5,
-        rpn_score_thresh=0.0,
-        # Box parameters
-        box_roi_pool=None,
-        box_head=None,
-        box_predictor=None,
-        box_score_thresh=0.05,
-        box_nms_thresh=0.5,
-        box_detections_per_img=100,
-        box_fg_iou_thresh=0.5,
-        box_bg_iou_thresh=0.5,
-        box_batch_size_per_image=512,
-        box_positive_fraction=0.25,
-        bbox_reg_weights=None,
-        # Mask parameters
-        mask_roi_pool=None,
-        mask_head=None,
-        mask_predictor=None,
-        **kwargs,
+            self,
+            backbone,
+            num_classes=None,
+            # transform parameters
+            min_size=800,
+            max_size=1333,
+            image_mean=None,
+            image_std=None,
+            # RPN parameters
+            rpn_anchor_generator=None,
+            rpn_head=None,
+            rpn_pre_nms_top_n_train=2000,
+            rpn_pre_nms_top_n_test=1000,
+            rpn_post_nms_top_n_train=2000,
+            rpn_post_nms_top_n_test=1000,
+            rpn_nms_thresh=0.7,
+            rpn_fg_iou_thresh=0.7,
+            rpn_bg_iou_thresh=0.3,
+            rpn_batch_size_per_image=256,
+            rpn_positive_fraction=0.5,
+            rpn_score_thresh=0.0,
+            # Box parameters
+            box_roi_pool=None,
+            box_head=None,
+            box_predictor=None,
+            box_score_thresh=0.05,
+            box_nms_thresh=0.5,
+            box_detections_per_img=100,
+            box_fg_iou_thresh=0.5,
+            box_bg_iou_thresh=0.5,
+            box_batch_size_per_image=512,
+            box_positive_fraction=0.25,
+            bbox_reg_weights=None,
+            # Mask parameters
+            mask_roi_pool=None,
+            mask_head=None,
+            mask_predictor=None,
+            use_edge_loss=False,
+            **kwargs,
     ):
 
         if not isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None))):
@@ -262,6 +263,7 @@ class MaskRCNN(FasterRCNN):
 
         self.roi_heads.mask_roi_pool = mask_roi_pool
         self.roi_heads.mask_head = mask_head
+        self.roi_heads.use_edge_loss = use_edge_loss
         self.roi_heads.mask_predictor = mask_predictor
 
 
@@ -300,14 +302,14 @@ class MaskRCNNHeads(nn.Sequential):
                     nn.init.zeros_(layer.bias)
 
     def _load_from_state_dict(
-        self,
-        state_dict,
-        prefix,
-        local_metadata,
-        strict,
-        missing_keys,
-        unexpected_keys,
-        error_msgs,
+            self,
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
     ):
         version = local_metadata.get("version", None)
 
@@ -315,7 +317,7 @@ class MaskRCNNHeads(nn.Sequential):
             num_blocks = len(self)
             for i in range(num_blocks):
                 for type in ["weight", "bias"]:
-                    old_key = f"{prefix}mask_fcn{i+1}.{type}"
+                    old_key = f"{prefix}mask_fcn{i + 1}.{type}"
                     new_key = f"{prefix}{i}.0.{type}"
                     if old_key in state_dict:
                         state_dict[new_key] = state_dict.pop(old_key)
@@ -402,13 +404,13 @@ class MaskRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
 )
 def maskrcnn_resnet50_fpn(
-    *,
-    weights: Optional[MaskRCNN_ResNet50_FPN_Weights] = None,
-    progress: bool = True,
-    num_classes: Optional[int] = None,
-    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
-    trainable_backbone_layers: Optional[int] = None,
-    **kwargs: Any,
+        *,
+        weights: Optional[MaskRCNN_ResNet50_FPN_Weights] = None,
+        progress: bool = True,
+        num_classes: Optional[int] = None,
+        weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
+        trainable_backbone_layers: Optional[int] = None,
+        **kwargs: Any,
 ) -> MaskRCNN:
     """Mask R-CNN model with a ResNet-50-FPN backbone from the `Mask R-CNN
     <https://arxiv.org/abs/1703.06870>`_ paper.
@@ -510,13 +512,13 @@ def maskrcnn_resnet50_fpn(
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
 )
 def maskrcnn_resnet50_fpn_v2(
-    *,
-    weights: Optional[MaskRCNN_ResNet50_FPN_V2_Weights] = None,
-    progress: bool = True,
-    num_classes: Optional[int] = None,
-    weights_backbone: Optional[ResNet50_Weights] = None,
-    trainable_backbone_layers: Optional[int] = None,
-    **kwargs: Any,
+        *,
+        weights: Optional[MaskRCNN_ResNet50_FPN_V2_Weights] = None,
+        progress: bool = True,
+        num_classes: Optional[int] = None,
+        weights_backbone: Optional[ResNet50_Weights] = None,
+        trainable_backbone_layers: Optional[int] = None,
+        **kwargs: Any,
 ) -> MaskRCNN:
     """Improved Mask R-CNN model with a ResNet-50-FPN backbone from the `Benchmarking Detection Transfer
     Learning with Vision Transformers <https://arxiv.org/abs/2111.11429>`_ paper.
@@ -585,7 +587,6 @@ def maskrcnn_resnet50_fpn_v2(
 
 # The dictionary below is internal implementation detail and will be removed in v0.15
 from .._utils import _ModelURLs
-
 
 model_urls = _ModelURLs(
     {
