@@ -70,7 +70,6 @@ jobs:
             --durations=20 \
             --cov=torchvision/prototype/transforms \
             --cov-report=term-missing \
-            -vv \
             test/test_prototype_transforms*.py
 
       - name: Run prototype models tests
