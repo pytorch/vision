@@ -90,6 +90,13 @@ def fix_rng_seed():
     yield
 
 
+@pytest.fixture()
+def test_id(request):
+    test_class_name = request.cls.__name__ if request.cls is not None else None
+    test_function_name = request.node.originalname
+    return test_class_name, test_function_name
+
+
 class TestKernels:
     sample_inputs = make_info_args_kwargs_parametrization(
         KERNEL_INFOS,
@@ -104,16 +111,20 @@ class TestKernels:
     @ignore_jit_warning_no_profile
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_scripted_vs_eager(self, info, args_kwargs, device):
+    def test_scripted_vs_eager(self, test_id, info, args_kwargs, device):
         kernel_eager = info.kernel
         kernel_scripted = script(kernel_eager)
 
-        args, kwargs = args_kwargs.load(device)
+        (input, *other_args), kwargs = args_kwargs.load(device)
 
-        actual = kernel_scripted(*args, **kwargs)
-        expected = kernel_eager(*args, **kwargs)
+        actual = kernel_scripted(input, *other_args, **kwargs)
+        expected = kernel_eager(input, *other_args, **kwargs)
 
-        assert_close(actual, expected, **info.closeness_kwargs)
+        assert_close(
+            actual,
+            expected,
+            **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
+        )
 
     def _unbatch(self, batch, *, data_dims):
         if isinstance(batch, torch.Tensor):
@@ -134,7 +145,7 @@ class TestKernels:
 
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_batched_vs_single(self, info, args_kwargs, device):
+    def test_batched_vs_single(self, test_id, info, args_kwargs, device):
         (batched_input, *other_args), kwargs = args_kwargs.load(device)
 
         feature_type = features.Image if features.is_simple_tensor(batched_input) else type(batched_input)
@@ -165,7 +176,11 @@ class TestKernels:
         single_inputs = self._unbatch(batched_input, data_dims=data_dims)
         expected = tree_map(lambda single_input: info.kernel(single_input, *other_args, **kwargs), single_inputs)
 
-        assert_close(actual, expected, **info.closeness_kwargs)
+        assert_close(
+            actual,
+            expected,
+            **info.get_closeness_kwargs(test_id, dtype=batched_input.dtype, device=batched_input.device),
+        )
 
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -205,13 +220,18 @@ class TestKernels:
         assert output.device == input.device
 
     @reference_inputs
-    def test_against_reference(self, info, args_kwargs):
-        args, kwargs = args_kwargs.load("cpu")
+    def test_against_reference(self, test_id, info, args_kwargs):
+        (input, *other_args), kwargs = args_kwargs.load("cpu")
 
-        actual = info.kernel(*args, **kwargs)
-        expected = info.reference_fn(*args, **kwargs)
+        actual = info.kernel(input, *other_args, **kwargs)
+        expected = info.reference_fn(input, *other_args, **kwargs)
 
-        assert_close(actual, expected, check_dtype=False, **info.closeness_kwargs)
+        assert_close(
+            actual,
+            expected,
+            check_dtype=False,
+            **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
+        )
 
 
 @pytest.fixture
