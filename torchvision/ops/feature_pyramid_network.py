@@ -243,7 +243,7 @@ class TwoSidesFeaturePyramidNetwork(nn.Module):
 
         Returns:
             results (OrderedDict[Tensor]): feature maps after FPN layers.
-                They are ordered from highest resolution first.
+                They are ordered from the highest resolution first.
         """
         # unpack OrderedDict into two lists for easier handling
         names = list(x.keys())
