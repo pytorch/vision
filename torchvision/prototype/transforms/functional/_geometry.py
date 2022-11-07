@@ -337,6 +337,9 @@ def _affine_bounding_box_xyxy(
     center: Optional[List[float]] = None,
     expand: bool = False,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    if bounding_box.numel() == 0:
+        return bounding_box, spatial_size
+
     angle, translate, shear, center = _affine_parse_args(
         angle, translate, scale, shear, InterpolationMode.NEAREST, center
     )
@@ -1013,6 +1016,9 @@ def perspective_bounding_box(
     endpoints: Optional[List[List[int]]],
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    if bounding_box.numel() == 0:
+        return bounding_box
+
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
 
     original_shape = bounding_box.shape
@@ -1203,6 +1209,9 @@ def elastic_bounding_box(
     format: features.BoundingBoxFormat,
     displacement: torch.Tensor,
 ) -> torch.Tensor:
+    if bounding_box.numel() == 0:
+        return bounding_box
+
     # TODO: add in docstring about approximation we are doing for grid inversion
     displacement = displacement.to(bounding_box.device)
 
