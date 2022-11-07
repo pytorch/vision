@@ -42,13 +42,13 @@ class MixupDetection(Transform):
                 images.append(obj)
             elif isinstance(obj, features.BoundingBox):
                 bboxes.append(obj)
-            elif isinstance(obj, (features.Label, features.OneHotLabel)):
+            elif isinstance(obj, (features.Label)):
                 labels.append(obj)
 
         if not (len(images) == len(bboxes) == len(labels)):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain equal-sized list of Images, "
-                "BoundingBoxes, and Labels or OneHotLabels."
+                "BoundingBoxes and Labels."
             )
 
         targets = []
@@ -70,7 +70,7 @@ class MixupDetection(Transform):
             has_any(flat_inputs, features.Image, PIL.Image.Image, features.is_simple_tensor)
             and has_any(flat_inputs, features.BoundingBox)
         ):
-            raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and bounding boxes.")
+            raise TypeError(f"{type(self).__name__}() is only defined for tensor images and bounding boxes.")
 
     def _insert_outputs(
         self, flat_sample: List[Any], output_images: List[Any], output_targets: List[Dict[str, Any]]
@@ -89,7 +89,7 @@ class MixupDetection(Transform):
             elif isinstance(obj, features.BoundingBox):
                 flat_sample[i] = features.BoundingBox.wrap_like(obj, output_targets[c1]["boxes"])
                 c1 += 1
-            elif isinstance(obj, (features.Label, features.OneHotLabel)):
+            elif isinstance(obj, (features.Label)):
                 flat_sample[i] = obj.wrap_like(obj, output_targets[c2]["labels"])  # type: ignore[arg-type]
                 c2 += 1
 
