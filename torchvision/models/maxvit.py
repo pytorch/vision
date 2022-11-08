@@ -1,6 +1,6 @@
 import math
 from functools import partial
-from typing import Any, Callable, List, Optional, OrderedDict, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -96,7 +96,7 @@ class MBConv(nn.Module):
         else:
             self.stochastic_depth = nn.Identity()  # type: ignore
 
-        _layers = OrderedDict()
+        _layers = {}
         _layers["pre_norm"] = norm_layer(in_channels)
         _layers["conv_a"] = Conv2dNormActivation(
             in_channels,
@@ -426,7 +426,7 @@ class MaxVitLayer(nn.Module):
     ) -> None:
         super().__init__()
 
-        layers: OrderedDict[str, Any] = OrderedDict()  # type: ignore
+        layers: Dict[str, Any] = {}
 
         # convolutional layer
         layers["MBconv"] = MBConv(
