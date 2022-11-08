@@ -341,13 +341,7 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     bottom_indices = [-(i + 1) for i in range(padding[3])]
     y_indices = torch.tensor(top_indices + _y_indices + bottom_indices, device=img.device)
 
-    ndim = img.ndim
-    if ndim == 3:
-        return img[:, y_indices[:, None], x_indices[None, :]]
-    elif ndim == 4:
-        return img[:, :, y_indices[:, None], x_indices[None, :]]
-    else:
-        raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
+    return img[..., y_indices[:, None], x_indices[None, :]]
 
 
 def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
