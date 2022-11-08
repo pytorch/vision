@@ -190,38 +190,88 @@ class RandomCutmix(_BaseMixupCutmix):
             return inpt
 
 
-def flatten_and_extract(
-    inputs: Any, **types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]
-) -> Tuple[Tuple[List[Any], TreeSpec, Dict[str, List[int]]], Dict[str, List[Any]]]:
-    flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
+def flatten_and_extract_data(
+    inputs: Any, **target_types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]
+) -> Tuple[Tuple[List[Any], TreeSpec, List[Dict[str, int]]], List[features.TensorImageType], List[Dict[str, Any]]]:
+    # Images are special in the sense that they will always be extracted and returned
+    # separately. Internally however, they behave just as the other features.
+    types_or_checks: Dict[str, Tuple[Union[Type, Callable[[Any], bool]], ...]] = {
+        "images": (features.Image, PIL.Image.Image, features.is_simple_tensor),
+        **target_types_or_checks,
+    }
 
-    idcs: Dict[str, List[int]] = {key: [] for key in types_or_checks.keys()}
-    inputs: Dict[str, List[Any]] = {key: [] for key in types_or_checks.keys()}
-    for idx, inpt in enumerate(flat_inputs):
-        for key, types_or_checks_ in types_or_checks.items():
-            if _isinstance(inpt, types_or_checks_):
-                inputs[key].append(inpt)
-                idcs[key].append(idx)
+    batch = inputs if len(inputs) > 1 else inputs[0]
+    flat_batch = []
+    sample_specs = []
+
+    offset = 0
+    batch_idcs = []
+    batch_data = []
+    for sample_idx, sample in enumerate(batch):
+        flat_sample, sample_spec = tree_flatten(sample)
+        flat_batch.extend(flat_sample)
+        sample_specs.append(sample_spec)
+
+        sample_types_or_checks = types_or_checks.copy()
+        sample_idcs = {}
+        sample_data = {}
+        for flat_idx, item in enumerate(flat_sample, offset):
+            if not sample_types_or_checks:
                 break
 
-    num_inputs = [len(inputs_) for inputs_ in inputs.values()]
-    if not all(num_inputs_ == num_inputs[0] for num_inputs_ in num_inputs[1:]):
-        raise TypeError("FIXME")
+            for key, types_or_checks_ in sample_types_or_checks.items():
+                if _isinstance(item, types_or_checks_):
+                    break
+            else:
+                continue
 
-    return (flat_inputs, spec, idcs), inputs
+            del sample_types_or_checks[key]
+            sample_idcs[key] = flat_idx
+            sample_data[key] = item
+
+        if sample_types_or_checks:
+            # TODO: improve message
+            raise TypeError(f"Sample at index {sample_idx} in the batch is missing {sample_types_or_checks.keys()}`")
+
+        batch_idcs.append(sample_idcs)
+        batch_data.append(sample_data)
+        offset += len(flat_sample)
+
+    batch_spec = TreeSpec(list, context=None, children_specs=sample_specs)
+
+    targets = batch_data
+    batch_data = []
+    for target in targets:
+        image = target.pop("images")
+        if isinstance(image, features.Image):
+            image = image.as_subclass(torch.Tensor)
+        elif isinstance(image, PIL.Image.Image):
+            image = F.pil_to_tensor(image)
+        batch_data.append(image)
+
+    return (flat_batch, batch_spec, batch_idcs), batch_data, targets
 
 
-def unflatten_and_insert(
-    flat_inputs_with_spec: Tuple[List[Any], TreeSpec, Dict[str, List[int]]],
-    outputs: Dict[str, List[Any]],
+def unflatten_and_insert_data(
+    flat_batch_with_spec: Tuple[List[Any], TreeSpec, List[Dict[str, int]]],
+    images: List[features.TensorImageType],
+    targets: List[Dict[str, Any]],
 ) -> Any:
-    flat_inputs, spec, idcs = flat_inputs_with_spec
+    flat_batch, batch_spec, batch_idcs = flat_batch_with_spec
 
-    for key, idcs_ in idcs.items():
-        for idx, output in zip(idcs_, outputs[key]):
-            flat_inputs[idx] = output
+    for sample_idx, sample_idcs in enumerate(batch_idcs):
+        for key, flat_idx in sample_idcs.items():
+            item = images[sample_idx] if key == "images" else targets[sample_idx][key]
 
-    return tree_unflatten(flat_inputs, spec)
+            inpt = flat_batch[flat_idx]
+            if isinstance(inpt, features._Feature):
+                item = type(inpt).wrap_like(inpt, item)
+            elif isinstance(inpt, PIL.Image.Image):
+                item = F.to_image_pil(item)
+
+            flat_batch[flat_idx] = item
+
+    return tree_unflatten(flat_batch, batch_spec)
 
 
 class SimpleCopyPaste(_RandomApplyTransform):
@@ -239,24 +289,15 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
     def _copy_paste(
         self,
-        image: features.ImageType,
+        image: features.TensorImageType,
         target: Dict[str, Any],
-        paste_image: features.ImageType,
+        paste_image: features.TensorImageType,
         paste_target: Dict[str, Any],
         random_selection: torch.Tensor,
         blending: bool,
         resize_interpolation: F.InterpolationMode,
         antialias: Optional[bool],
-    ) -> Tuple[features.ImageType, Dict[str, Any]]:
-        if isinstance(image, features.Image):
-            out_image = image.as_subclass(torch.Tensor)
-            paste_image = paste_image.as_subclass(torch.Tensor)
-        elif isinstance(image, PIL.Image.Image):
-            out_image = F.pil_to_tensor(image)
-            paste_image = F.pil_to_tensor(paste_image)
-        else:  # features.is_simple_tensor(image)
-            out_image = image
-
+    ) -> Tuple[features.TensorImageType, Dict[str, Any]]:
         paste_masks = paste_target["masks"].wrap_like(paste_target["masks"], paste_target["masks"][random_selection])
         paste_boxes = paste_target["boxes"].wrap_like(paste_target["boxes"], paste_target["boxes"][random_selection])
         paste_labels = paste_target["labels"].wrap_like(
@@ -269,7 +310,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # This is something different to TF implementation we introduced here as
         # originally the algorithm works on equal-sized data
         # (for example, coming from LSJ data augmentations)
-        size1 = cast(List[int], out_image.shape[-2:])
+        size1 = cast(List[int], image.shape[-2:])
         size2 = paste_image.shape[-2:]
         if size1 != size2:
             paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation, antialias=antialias)
@@ -283,7 +324,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
         inverse_paste_alpha_mask = paste_alpha_mask.logical_not()
         # Copy-paste images:
-        out_image = out_image.mul(inverse_paste_alpha_mask).add_(paste_image.mul(paste_alpha_mask))
+        out_image = image.mul(inverse_paste_alpha_mask).add_(paste_image.mul(paste_alpha_mask))
 
         # Copy-paste masks:
         masks = masks * inverse_paste_alpha_mask
@@ -323,28 +364,15 @@ class SimpleCopyPaste(_RandomApplyTransform):
             out_target["masks"] = out_target["masks"][valid_targets]
             out_target["labels"] = out_target["labels"][valid_targets]
 
-        if isinstance(image, features.Image):
-            out_image = features.Image.wrap_like(image, out_image)
-        elif isinstance(image, PIL.Image.Image):
-            out_image = F.to_image_pil(out_image)
-
-        out_target["boxes"] = features.BoundingBox.wrap_like(target["boxes"], out_target["boxes"])
-        out_target["masks"] = features.Mask.wrap_like(target["masks"], out_target["masks"])
-        out_target["labels"] = features.Label.wrap_like(target["labels"], out_target["labels"])
-
         return out_image, out_target
 
     def forward(self, *inputs: Any) -> Any:
-        flat_inputs_with_spec, inputs = flatten_and_extract(
+        flat_batch_with_spec, images, targets = flatten_and_extract_data(
             inputs,
-            images=(features.Image, PIL.Image.Image, features.is_simple_tensor),
             boxes=(features.BoundingBox,),
             masks=(features.Mask,),
             labels=(features.Label, features.OneHotLabel),
         )
-
-        images = inputs.pop("images")
-        targets = [dict(zip(inputs.keys(), target)) for target in zip(*inputs.values())]
 
         # images = [t1, t2, ..., tN]
         # Let's define paste_images as shifted list of input images
@@ -381,8 +409,4 @@ class SimpleCopyPaste(_RandomApplyTransform):
             output_images.append(output_image)
             output_targets.append(output_target)
 
-        outputs = dict(
-            dict(zip(output_targets[0].keys(), zip(*(list(target.values()) for target in output_targets)))),
-            images=images,
-        )
-        return unflatten_and_insert(flat_inputs_with_spec, outputs)
+        return unflatten_and_insert_data(flat_batch_with_spec, output_images, output_targets)

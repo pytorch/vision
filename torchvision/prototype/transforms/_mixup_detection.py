@@ -12,10 +12,10 @@ import PIL.Image
 
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import functional as F, Transform
+from torchvision.prototype.transforms import Transform
 from torchvision.prototype.transforms._utils import has_any
 
-from ._augment import flatten_and_extract, unflatten_and_insert
+from ._augment import flatten_and_extract_data, unflatten_and_insert_data
 
 
 class MixupDetection(Transform):
@@ -45,19 +45,13 @@ class MixupDetection(Transform):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images and bounding boxes.")
 
     def forward(self, *inputs: Any) -> Any:
-        flat_inputs_with_spec, inputs = flatten_and_extract(
+        flat_batch_with_spec, images, targets = flatten_and_extract_data(
             inputs,
-            images=(features.Image, PIL.Image.Image, features.is_simple_tensor),
             boxes=(features.BoundingBox,),
             labels=(features.Label, features.OneHotLabel),
         )
         # TODO: refactor this since we have already extracted the images and boxes
-        self._check_inputs(flat_inputs_with_spec[0])
-
-        # TODO: this is copying the structure from `SimpleCopyPaste`. We should
-        #  investigate if we want that or a different structure might be beneficial here
-        images = inputs.pop("images")
-        targets = [dict(zip(inputs.keys(), target)) for target in zip(*inputs.values())]
+        self._check_inputs(flat_batch_with_spec[0])
 
         # images = [t1, t2, ..., tN]
         # Let's define paste_images as shifted list of input images
@@ -76,34 +70,18 @@ class MixupDetection(Transform):
             output_images.append(output_image)
             output_targets.append(output_target)
 
-        # TODO: same as above
-        outputs = dict(
-            dict(zip(output_targets[0].keys(), zip(*(list(target.values()) for target in output_targets)))),
-            images=images,
-        )
-        return unflatten_and_insert(flat_inputs_with_spec, outputs)
+        return unflatten_and_insert_data(flat_batch_with_spec, output_images, output_targets)
 
     def _mixup(
         self,
-        image_1: features.ImageType,
+        image_1: features.TensorImageType,
         target_1: Dict[str, Any],
-        image_2: features.ImageType,
+        image_2: features.TensorImageType,
         target_2: Dict[str, Any],
-    ) -> Tuple[features.ImageType, Dict[str, Any]]:
+    ) -> Tuple[features.TensorImageType, Dict[str, Any]]:
         """
         Performs mixup on the given images and targets.
         """
-        if isinstance(image_1, features.Image):
-            ref = image_1
-            image_1 = image_1.as_subclass(torch.Tensor)
-            image_2 = image_2.as_subclass(torch.Tensor)
-        elif isinstance(image_1, PIL.Image.Image):
-            ref = None
-            image_1 = F.pil_to_tensor(image_1)
-            image_2 = F.pil_to_tensor(image_2)
-        else:  # features.is_simple_tensor(image)
-            ref = None
-
         mixup_ratio = self._dist.sample().item()
         print(mixup_ratio)
 
@@ -132,14 +110,5 @@ class MixupDetection(Transform):
         mix_labels = {"labels": torch.cat((target_1["labels"], target_2["labels"]))}
         mix_target.update(mixed_boxes)
         mix_target.update(mix_labels)
-
-        if isinstance(image_1, features.Image):
-            mix_img = features.Image.wrap_like(ref, mix_img)  # type: ignore[arg-type]
-        elif isinstance(image_1, PIL.Image.Image):
-            mix_img = F.to_image_pil(mix_img)
-
-        mix_target["boxes"] = features.BoundingBox.wrap_like(target_1["boxes"], mix_target["boxes"])
-        mix_target["masks"] = features.Mask.wrap_like(target_1["masks"], mix_target["masks"])
-        mix_target["labels"] = features.Label.wrap_like(target_1["labels"], mix_target["labels"])
 
         return mix_img, mix_target

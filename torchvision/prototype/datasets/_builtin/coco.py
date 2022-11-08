@@ -24,7 +24,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     read_categories_file,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
+from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label, Mask
 
 from .._api import register_dataset, register_info
 
@@ -114,7 +114,7 @@ class Coco(Dataset):
         labels = [ann["category_id"] for ann in anns]
         return dict(
             # TODO: create a segmentation feature
-            segmentations=_Feature(
+            segmentations=Mask(
                 torch.stack(
                     [
                         self._segmentation_to_mask(
