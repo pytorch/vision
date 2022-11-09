@@ -3,7 +3,8 @@ from typing import Callable, Dict, List, Optional, Union
 
 from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
-from torchvision.ops.feature_pyramid_network import ExtraFPNBlock, FeaturePyramidNetwork, LastLevelMaxPool
+from torchvision.ops.feature_pyramid_network import ExtraFPNBlock, FeaturePyramidNetwork, LastLevelMaxPool, \
+    TwoSidesFeaturePyramidNetwork
 
 from .. import mobilenet, resnet
 from .._api import _get_enum_from_fn, WeightsEnum
@@ -31,13 +32,14 @@ class BackboneWithFPN(nn.Module):
     """
 
     def __init__(
-        self,
-        backbone: nn.Module,
-        return_layers: Dict[str, str],
-        in_channels_list: List[int],
-        out_channels: int,
-        extra_blocks: Optional[ExtraFPNBlock] = None,
-        norm_layer: Optional[Callable[..., nn.Module]] = None,
+            self,
+            backbone: nn.Module,
+            return_layers: Dict[str, str],
+            in_channels_list: List[int],
+            out_channels: int,
+            extra_blocks: Optional[ExtraFPNBlock] = None,
+            norm_layer: Optional[Callable[..., nn.Module]] = None,
+            two_sides: bool = False
     ) -> None:
         super().__init__()
 
@@ -45,12 +47,19 @@ class BackboneWithFPN(nn.Module):
             extra_blocks = LastLevelMaxPool()
 
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-        self.fpn = FeaturePyramidNetwork(
-            in_channels_list=in_channels_list,
-            out_channels=out_channels,
-            extra_blocks=extra_blocks,
-            norm_layer=norm_layer,
-        )
+        if two_sides:
+            self.fpn = TwoSidesFeaturePyramidNetwork(
+                in_channels_list=in_channels_list,
+                out_channels=out_channels,
+                extra_blocks=extra_blocks,
+            )
+        else:
+            self.fpn = FeaturePyramidNetwork(
+                in_channels_list=in_channels_list,
+                out_channels=out_channels,
+                extra_blocks=extra_blocks,
+                norm_layer=norm_layer,
+            )
         self.out_channels = out_channels
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
@@ -61,18 +70,18 @@ class BackboneWithFPN(nn.Module):
 
 @handle_legacy_interface(
     weights=(
-        "pretrained",
-        lambda kwargs: _get_enum_from_fn(resnet.__dict__[kwargs["backbone_name"]]).from_str("IMAGENET1K_V1"),
+            "pretrained",
+            lambda kwargs: _get_enum_from_fn(resnet.__dict__[kwargs["backbone_name"]]).from_str("IMAGENET1K_V1"),
     ),
 )
 def resnet_fpn_backbone(
-    *,
-    backbone_name: str,
-    weights: Optional[WeightsEnum],
-    norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
-    trainable_layers: int = 3,
-    returned_layers: Optional[List[int]] = None,
-    extra_blocks: Optional[ExtraFPNBlock] = None,
+        *,
+        backbone_name: str,
+        weights: Optional[WeightsEnum],
+        norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
+        trainable_layers: int = 3,
+        returned_layers: Optional[List[int]] = None,
+        extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> BackboneWithFPN:
     """
     Constructs a specified ResNet backbone with FPN on top. Freezes the specified number of layers in the backbone.
@@ -114,13 +123,12 @@ def resnet_fpn_backbone(
 
 
 def _resnet_fpn_extractor(
-    backbone: resnet.ResNet,
-    trainable_layers: int,
-    returned_layers: Optional[List[int]] = None,
-    extra_blocks: Optional[ExtraFPNBlock] = None,
-    norm_layer: Optional[Callable[..., nn.Module]] = None,
+        backbone: resnet.ResNet,
+        trainable_layers: int,
+        returned_layers: Optional[List[int]] = None,
+        extra_blocks: Optional[ExtraFPNBlock] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> BackboneWithFPN:
-
     # select layers that wont be frozen
     if trainable_layers < 0 or trainable_layers > 5:
         raise ValueError(f"Trainable layers should be in the range [0,5], got {trainable_layers}")
@@ -149,10 +157,10 @@ def _resnet_fpn_extractor(
 
 
 def _validate_trainable_layers(
-    is_trained: bool,
-    trainable_backbone_layers: Optional[int],
-    max_value: int,
-    default_value: int,
+        is_trained: bool,
+        trainable_backbone_layers: Optional[int],
+        max_value: int,
+        default_value: int,
 ) -> int:
     # don't freeze any layers if pretrained model or backbone is not used
     if not is_trained:
@@ -176,31 +184,31 @@ def _validate_trainable_layers(
 
 @handle_legacy_interface(
     weights=(
-        "pretrained",
-        lambda kwargs: _get_enum_from_fn(mobilenet.__dict__[kwargs["backbone_name"]]).from_str("IMAGENET1K_V1"),
+            "pretrained",
+            lambda kwargs: _get_enum_from_fn(mobilenet.__dict__[kwargs["backbone_name"]]).from_str("IMAGENET1K_V1"),
     ),
 )
 def mobilenet_backbone(
-    *,
-    backbone_name: str,
-    weights: Optional[WeightsEnum],
-    fpn: bool,
-    norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
-    trainable_layers: int = 2,
-    returned_layers: Optional[List[int]] = None,
-    extra_blocks: Optional[ExtraFPNBlock] = None,
+        *,
+        backbone_name: str,
+        weights: Optional[WeightsEnum],
+        fpn: bool,
+        norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
+        trainable_layers: int = 2,
+        returned_layers: Optional[List[int]] = None,
+        extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> nn.Module:
     backbone = mobilenet.__dict__[backbone_name](weights=weights, norm_layer=norm_layer)
     return _mobilenet_extractor(backbone, fpn, trainable_layers, returned_layers, extra_blocks)
 
 
 def _mobilenet_extractor(
-    backbone: Union[mobilenet.MobileNetV2, mobilenet.MobileNetV3],
-    fpn: bool,
-    trainable_layers: int,
-    returned_layers: Optional[List[int]] = None,
-    extra_blocks: Optional[ExtraFPNBlock] = None,
-    norm_layer: Optional[Callable[..., nn.Module]] = None,
+        backbone: Union[mobilenet.MobileNetV2, mobilenet.MobileNetV3],
+        fpn: bool,
+        trainable_layers: int,
+        returned_layers: Optional[List[int]] = None,
+        extra_blocks: Optional[ExtraFPNBlock] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> nn.Module:
     backbone = backbone.features
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.

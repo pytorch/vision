@@ -25,10 +25,10 @@ class ExtraFPNBlock(nn.Module):
     """
 
     def forward(
-        self,
-        results: List[Tensor],
-        x: List[Tensor],
-        names: List[str],
+            self,
+            results: List[Tensor],
+            x: List[Tensor],
+            names: List[str],
     ) -> Tuple[List[Tensor], List[str]]:
         pass
 
@@ -75,11 +75,11 @@ class FeaturePyramidNetwork(nn.Module):
     _version = 2
 
     def __init__(
-        self,
-        in_channels_list: List[int],
-        out_channels: int,
-        extra_blocks: Optional[ExtraFPNBlock] = None,
-        norm_layer: Optional[Callable[..., nn.Module]] = None,
+            self,
+            in_channels_list: List[int],
+            out_channels: int,
+            extra_blocks: Optional[ExtraFPNBlock] = None,
+            norm_layer: Optional[Callable[..., nn.Module]] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -110,14 +110,14 @@ class FeaturePyramidNetwork(nn.Module):
         self.extra_blocks = extra_blocks
 
     def _load_from_state_dict(
-        self,
-        state_dict,
-        prefix,
-        local_metadata,
-        strict,
-        missing_keys,
-        unexpected_keys,
-        error_msgs,
+            self,
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
     ):
         version = local_metadata.get("version", None)
 
@@ -204,16 +204,86 @@ class FeaturePyramidNetwork(nn.Module):
         return out
 
 
+class TwoSidesFeaturePyramidNetwork(nn.Module):
+    """
+    two sides extension to the fpn class, as described in EfficientPS paper
+    """
+
+    def __init__(self, in_channels_list: List[int], out_channels: int, extra_blocks: Optional[ExtraFPNBlock] = None):
+        super(TwoSidesFeaturePyramidNetwork, self).__init__()
+        self.inner_blocks_1 = nn.ModuleList()
+        self.inner_blocks = nn.ModuleList()
+        self.layer_blocks = nn.ModuleList()
+        for in_channels in in_channels_list:
+            if in_channels == 0:
+                raise ValueError("in_channels=0 is currently not supported")
+            inner_block_1_module = nn.Conv2d(in_channels, out_channels, 1)
+            inner_block_2_module = nn.Conv2d(in_channels, out_channels, 1)
+            layer_block_module = nn.Conv2d(out_channels, out_channels, 3, padding=1)
+            self.inner_blocks_1.append(inner_block_1_module)
+            self.inner_blocks.append(inner_block_2_module)
+            self.layer_blocks.append(layer_block_module)
+
+        # initialize parameters now to avoid modifying the initialization of top_blocks
+        for m in self.children():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_uniform_(m.weight, a=1)
+                nn.init.constant_(m.bias, 0)
+
+        if extra_blocks is not None:
+            assert isinstance(extra_blocks, ExtraFPNBlock)
+        self.extra_blocks = extra_blocks
+
+    def forward(self, x):
+        """
+        Computes the TwoSidesFPN for a set of feature maps.
+
+        Arguments:
+            x (OrderedDict[Tensor]): feature maps for each feature level.
+
+        Returns:
+            results (OrderedDict[Tensor]): feature maps after FPN layers.
+                They are ordered from the highest resolution first.
+        """
+        # unpack OrderedDict into two lists for easier handling
+        names = list(x.keys())
+        x = list(x.values())
+
+        # bottom up path:
+        parallel_pyramid = [self.inner_blocks_1[0](x[0])]
+
+        for i in range(1, len(x)):
+            down_sampled = F.max_pool2d(parallel_pyramid[-1], 2)
+            parallel_pyramid.append(self.inner_blocks_1[i](x[i]) + down_sampled)
+
+        last_inner = self.inner_blocks[-1](x[-1])
+        results = [self.layer_blocks[-1](last_inner + parallel_pyramid[-1])]
+        for i in reversed(range(len(x) - 1)):
+            inner_lateral = self.inner_blocks[i](x[i])
+            feat_shape = inner_lateral.shape[-2:]
+            inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
+            last_inner = inner_lateral + inner_top_down
+            results.insert(0, self.layer_blocks[i](last_inner + parallel_pyramid[i]))
+
+        if self.extra_blocks is not None:
+            results, names = self.extra_blocks(results, x, names)
+
+        # make it back an OrderedDict
+        out = OrderedDict([(k, v) for k, v in zip(names, results)])
+
+        return out
+
+
 class LastLevelMaxPool(ExtraFPNBlock):
     """
     Applies a max_pool2d on top of the last feature map
     """
 
     def forward(
-        self,
-        x: List[Tensor],
-        y: List[Tensor],
-        names: List[str],
+            self,
+            x: List[Tensor],
+            y: List[Tensor],
+            names: List[str],
     ) -> Tuple[List[Tensor], List[str]]:
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))
@@ -235,10 +305,10 @@ class LastLevelP6P7(ExtraFPNBlock):
         self.use_P5 = in_channels == out_channels
 
     def forward(
-        self,
-        p: List[Tensor],
-        c: List[Tensor],
-        names: List[str],
+            self,
+            p: List[Tensor],
+            c: List[Tensor],
+            names: List[str],
     ) -> Tuple[List[Tensor], List[str]]:
         p5, c5 = p[-1], c[-1]
         x = p5 if self.use_P5 else c5
