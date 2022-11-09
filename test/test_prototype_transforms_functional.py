@@ -237,7 +237,6 @@ class TestKernels:
         assert_close(
             actual,
             expected,
-            check_dtype=False,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
         )
 

@@ -4,6 +4,7 @@ import itertools
 import math
 
 import numpy as np
+import PIL.Image
 import pytest
 import torch.testing
 import torchvision.ops
@@ -62,8 +63,8 @@ class KernelInfo(InfoBase):
 
 
 DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS = {
-    (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=1e-5, rtol=0, agg_method="mean"),
-    (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=1e-5, rtol=0, agg_method="mean"),
+    (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=0.9, rtol=0, agg_method="mean"),
+    (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=255 * 0.9, rtol=0, agg_method="mean"),
 }
 
 CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE = {
@@ -74,14 +75,26 @@ CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE = {
 
 def pil_reference_wrapper(pil_kernel):
     @functools.wraps(pil_kernel)
-    def wrapper(image_tensor, *other_args, **kwargs):
-        if image_tensor.ndim > 3:
+    def wrapper(input_tensor, *other_args, **kwargs):
+        if input_tensor.ndim > 3:
             raise pytest.UsageError(
-                f"Can only test single tensor images against PIL, but input has shape {image_tensor.shape}"
+                f"Can only test single tensor images against PIL, but input has shape {input_tensor.shape}"
             )
 
-        # We don't need to convert back to tensor here, since `assert_close` does that automatically.
-        return pil_kernel(F.to_image_pil(image_tensor), *other_args, **kwargs)
+        input_pil = F.to_image_pil(input_tensor)
+        output_pil = pil_kernel(input_pil, *other_args, **kwargs)
+        if not isinstance(output_pil, PIL.Image.Image):
+            return output_pil
+
+        output_tensor = F.convert_dtype_image_tensor(F.to_image_tensor(output_pil), dtype=input_tensor.dtype)
+
+        # 2D mask shenanigans
+        if output_tensor.ndim == 2 and input_tensor.ndim == 3:
+            output_tensor = output_tensor.unsqueeze(0)
+        elif output_tensor.ndim == 3 and input_tensor.ndim == 2:
+            output_tensor = output_tensor.squeeze(0)
+
+        return output_tensor
 
     return wrapper
 
@@ -400,6 +413,23 @@ _DIVERSE_AFFINE_PARAMS = [
 ]
 
 
+def _get_fills(*, num_channels, dtype, vector=True):
+    yield None
+
+    max_value = get_max_value(dtype)
+    # This intentionally gives us a float and an int scalar fill value
+    yield max_value / 2
+    yield max_value
+
+    if not vector:
+        return
+
+    if dtype.is_floating_point:
+        yield [0.1 + c / 10 for c in range(num_channels)]
+    else:
+        yield [12.0 + c for c in range(num_channels)]
+
+
 def sample_inputs_affine_image_tensor():
     make_affine_image_loaders = functools.partial(
         make_image_loaders, sizes=["random"], color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32]
@@ -409,10 +439,7 @@ def sample_inputs_affine_image_tensor():
         yield ArgsKwargs(image_loader, **affine_params)
 
     for image_loader in make_affine_image_loaders():
-        fills = [None, 0.5]
-        if image_loader.num_channels > 1:
-            fills.extend(vector_fill * image_loader.num_channels for vector_fill in [(0.5,), (1,), [0.5], [1]])
-        for fill in fills:
+        for fill in _get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, **_full_affine_params(), fill=fill)
 
     for image_loader, interpolation in itertools.product(
@@ -631,7 +658,9 @@ KERNEL_INFOS.append(
 
 
 def sample_inputs_convert_color_space_image_tensor():
-    color_spaces = list(set(features.ColorSpace) - {features.ColorSpace.OTHER})
+    color_spaces = sorted(
+        set(features.ColorSpace) - {features.ColorSpace.OTHER}, key=lambda color_space: color_space.value
+    )
 
     for old_color_space, new_color_space in cycle_over(color_spaces):
         for image_loader in make_image_loaders(sizes=["random"], color_spaces=[old_color_space], constant_alpha=True):
@@ -678,7 +707,10 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_convert_color_space_image_tensor,
             reference_fn=reference_convert_color_space_image_tensor,
             reference_inputs_fn=reference_inputs_convert_color_space_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=2 / 255, rtol=0),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=1, rtol=0),
+            },
         ),
         KernelInfo(
             F.convert_color_space_video,
@@ -775,10 +807,7 @@ def sample_inputs_rotate_image_tensor():
         yield ArgsKwargs(image_loader, angle=15.0, center=center)
 
     for image_loader in make_rotate_image_loaders():
-        fills = [None, 0.5]
-        if image_loader.num_channels > 1:
-            fills.extend(vector_fill * image_loader.num_channels for vector_fill in [(0.5,), (1,), [0.5], [1]])
-        for fill in fills:
+        for fill in _get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, angle=15.0, fill=fill)
 
     for image_loader, interpolation in itertools.product(
@@ -1062,10 +1091,7 @@ def sample_inputs_pad_image_tensor():
         yield ArgsKwargs(image_loader, padding=padding)
 
     for image_loader in make_pad_image_loaders():
-        fills = [None, 0.5]
-        if image_loader.num_channels > 1:
-            fills.extend(vector_fill * image_loader.num_channels for vector_fill in [(0.5,), (1,), [0.5], [1]])
-        for fill in fills:
+        for fill in _get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, padding=[1], fill=fill)
 
     for image_loader, padding_mode in itertools.product(
@@ -1084,10 +1110,11 @@ def sample_inputs_pad_image_tensor():
 def reference_inputs_pad_image_tensor():
     for image_loader, params in itertools.product(make_image_loaders(extra_dims=[()]), _PAD_PARAMS):
         # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
-        fills = [None, 128.0, 128]
-        if params["padding_mode"] == "constant":
-            fills.append([12.0 + c for c in range(image_loader.num_channels)])
-        for fill in fills:
+        for fill in _get_fills(
+            num_channels=image_loader.num_channels,
+            dtype=image_loader.dtype,
+            vector=params["padding_mode"] == "constant",
+        ):
             yield ArgsKwargs(image_loader, fill=fill, **params)
 
 
@@ -1110,8 +1137,10 @@ def sample_inputs_pad_mask():
 
 
 def reference_inputs_pad_mask():
-    for image_loader, fill, params in itertools.product(make_image_loaders(extra_dims=[()]), [None, 127], _PAD_PARAMS):
-        yield ArgsKwargs(image_loader, fill=fill, **params)
+    for mask_loader, fill, params in itertools.product(
+        make_mask_loaders(num_objects=[1], extra_dims=[()]), [None, 127], _PAD_PARAMS
+    ):
+        yield ArgsKwargs(mask_loader, fill=fill, **params)
 
 
 def sample_inputs_pad_video():
@@ -1197,14 +1226,14 @@ _PERSPECTIVE_COEFFS = [
 
 def sample_inputs_perspective_image_tensor():
     for image_loader in make_image_loaders(sizes=["random"]):
-        for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
+        for fill in _get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, None, None, fill=fill, coefficients=_PERSPECTIVE_COEFFS[0])
 
 
 def reference_inputs_perspective_image_tensor():
     for image_loader, coefficients in itertools.product(make_image_loaders(extra_dims=[()]), _PERSPECTIVE_COEFFS):
         # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
-        for fill in [None, 128.0, 128, [12.0 + c for c in range(image_loader.num_channels)]]:
+        for fill in _get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, None, None, fill=fill, coefficients=coefficients)
 
 
@@ -1271,7 +1300,7 @@ def _get_elastic_displacement(spatial_size):
 def sample_inputs_elastic_image_tensor():
     for image_loader in make_image_loaders(sizes=["random"]):
         displacement = _get_elastic_displacement(image_loader.spatial_size)
-        for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
+        for fill in _get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, displacement=displacement, fill=fill)
 
 
@@ -1285,7 +1314,7 @@ def reference_inputs_elastic_image_tensor():
         ],
     ):
         displacement = _get_elastic_displacement(image_loader.spatial_size)
-        for fill in [None, 128.0, 128, [12.0], [12.0 + c for c in range(image_loader.num_channels)]]:
+        for fill in _get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, interpolation=interpolation, displacement=displacement, fill=fill)
 
 
@@ -2070,6 +2099,17 @@ def sample_inputs_ten_crop_video():
         yield ArgsKwargs(video_loader, size=size)
 
 
+def multi_crop_pil_reference_wrapper(pil_kernel):
+    def wrapper(input_tensor, *other_args, **kwargs):
+        output = pil_reference_wrapper(pil_kernel)(input_tensor, *other_args, **kwargs)
+        return type(output)(
+            F.convert_dtype_image_tensor(F.to_image_tensor(output_pil), dtype=input_tensor.dtype)
+            for output_pil in output
+        )
+
+    return wrapper
+
+
 _common_five_ten_crop_marks = [
     xfail_jit_python_scalar_arg("size"),
     mark_framework_limitation(("TestKernels", "test_batched_vs_single"), "Custom batching needed."),
@@ -2080,7 +2120,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.five_crop_image_tensor,
             sample_inputs_fn=sample_inputs_five_crop_image_tensor,
-            reference_fn=pil_reference_wrapper(F.five_crop_image_pil),
+            reference_fn=multi_crop_pil_reference_wrapper(F.five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
             test_marks=_common_five_ten_crop_marks,
             closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
@@ -2093,7 +2133,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.ten_crop_image_tensor,
             sample_inputs_fn=sample_inputs_ten_crop_image_tensor,
-            reference_fn=pil_reference_wrapper(F.ten_crop_image_pil),
+            reference_fn=multi_crop_pil_reference_wrapper(F.ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
             test_marks=_common_five_ten_crop_marks,
             closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,

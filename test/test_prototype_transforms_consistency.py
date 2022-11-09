@@ -1005,7 +1005,7 @@ class TestRefSegTransforms:
 
             dp = (conv_fn(feature_image), feature_mask)
             dp_ref = (
-                to_image_pil(feature_image) if supports_pil else torch.Tensor(feature_image),
+                to_image_pil(feature_image) if supports_pil else feature_image.as_subclass(torch.Tensor),
                 to_image_pil(feature_mask),
             )
 
@@ -1019,12 +1019,16 @@ class TestRefSegTransforms:
         for dp, dp_ref in self.make_datapoints(**data_kwargs or dict()):
 
             self.set_seed()
-            output = t(dp)
+            actual = actual_image, actual_mask = t(dp)
 
             self.set_seed()
-            expected_output = t_ref(*dp_ref)
+            expected_image, expected_mask = t_ref(*dp_ref)
+            if isinstance(actual_image, torch.Tensor) and not isinstance(expected_image, torch.Tensor):
+                expected_image = legacy_F.pil_to_tensor(expected_image)
+            expected_mask = legacy_F.pil_to_tensor(expected_mask).squeeze(0)
+            expected = (expected_image, expected_mask)
 
-            assert_equal(output, expected_output)
+            assert_equal(actual, expected)
 
     @pytest.mark.parametrize(
         ("t_ref", "t", "data_kwargs"),
