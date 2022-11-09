@@ -628,21 +628,34 @@ def mark_framework_limitation(test_id, reason):
 
 
 class InfoBase:
-    def __init__(self, *, id, test_marks=None, closeness_kwargs=None):
+    def __init__(
+        self,
+        *,
         # Identifier if the info that shows up the parametrization.
-        self.id = id
+        id,
         # Test markers that will be (conditionally) applied to an `ArgsKwargs` parametrization.
         # See the `TestMark` class for details
-        self.test_marks = test_marks or []
-        # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`.
-        self.closeness_kwargs = closeness_kwargs or dict()
+        test_marks=None,
+        # Additional parameters, e.g. `rtol=1e-3`, passed to `assert_close`. Keys are a 3-tuple of `test_id` (see
+        # `TestMark`), the dtype, and the device.
+        closeness_kwargs=None,
+    ):
+        self.id = id
 
+        self.test_marks = test_marks or []
         test_marks_map = defaultdict(list)
         for test_mark in self.test_marks:
             test_marks_map[test_mark.test_id].append(test_mark)
         self._test_marks_map = dict(test_marks_map)
 
+        self.closeness_kwargs = closeness_kwargs or dict()
+
     def get_marks(self, test_id, args_kwargs):
         return [
             test_mark.mark for test_mark in self._test_marks_map.get(test_id, []) if test_mark.condition(args_kwargs)
         ]
+
+    def get_closeness_kwargs(self, test_id, *, dtype, device):
+        if isinstance(device, torch.device):
+            device = device.type
+        return self.closeness_kwargs.get((test_id, dtype, device), dict())

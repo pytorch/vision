@@ -337,6 +337,9 @@ def _affine_bounding_box_xyxy(
     center: Optional[List[float]] = None,
     expand: bool = False,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    if bounding_box.numel() == 0:
+        return bounding_box, spatial_size
+
     angle, translate, shear, center = _affine_parse_args(
         angle, translate, scale, shear, InterpolationMode.NEAREST, center
     )
@@ -521,8 +524,8 @@ def rotate_image_tensor(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
+    fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
     shape = image.shape
     num_channels, height, width = shape[-3:]
@@ -560,8 +563,8 @@ def rotate_image_pil(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
+    fill: features.FillTypeJIT = None,
 ) -> PIL.Image.Image:
     if center is not None and expand:
         warnings.warn("The provided center argument has no effect on the result if expand is True")
@@ -612,8 +615,8 @@ def rotate_mask(
     mask: torch.Tensor,
     angle: float,
     expand: bool = False,
-    fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
+    fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
@@ -641,8 +644,8 @@ def rotate_video(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
+    fill: features.FillTypeJIT = None,
 ) -> torch.Tensor:
     return rotate_image_tensor(video, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
@@ -652,8 +655,8 @@ def rotate(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    fill: features.FillTypeJIT = None,
     center: Optional[List[float]] = None,
+    fill: features.FillTypeJIT = None,
 ) -> features.InputTypeJIT:
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
         return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
@@ -1013,6 +1016,9 @@ def perspective_bounding_box(
     endpoints: Optional[List[List[int]]],
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    if bounding_box.numel() == 0:
+        return bounding_box
+
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
 
     original_shape = bounding_box.shape
@@ -1203,6 +1209,9 @@ def elastic_bounding_box(
     format: features.BoundingBoxFormat,
     displacement: torch.Tensor,
 ) -> torch.Tensor:
+    if bounding_box.numel() == 0:
+        return bounding_box
+
     # TODO: add in docstring about approximation we are doing for grid inversion
     displacement = displacement.to(bounding_box.device)
 
