@@ -305,8 +305,8 @@ class RandomRotation(Transform):
             **params,
             interpolation=self.interpolation,
             expand=self.expand,
-            fill=fill,
             center=self.center,
+            fill=fill,
         )
 
 
@@ -524,15 +524,17 @@ class RandomPerspective(_RandomApplyTransform):
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
         perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
-        return dict(perspective_coeffs=perspective_coeffs)
+        return dict(coefficients=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
         return F.perspective(
             inpt,
-            **params,
+            None,
+            None,
             fill=fill,
             interpolation=self.interpolation,
+            **params,
         )
 
 
@@ -646,7 +648,9 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for any valid boxes with centers within the crop area
-                xyxy_bboxes = F.convert_format_bounding_box(bboxes, bboxes.format, features.BoundingBoxFormat.XYXY)
+                xyxy_bboxes = F.convert_format_bounding_box(
+                    bboxes.as_subclass(torch.Tensor), bboxes.format, features.BoundingBoxFormat.XYXY
+                )
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])
                 cy = 0.5 * (xyxy_bboxes[..., 1] + xyxy_bboxes[..., 3])
                 is_within_crop_area = (left < cx) & (cx < right) & (top < cy) & (cy < bottom)
@@ -799,7 +803,12 @@ class FixedSizeCrop(Transform):
         if needs_crop and bounding_boxes is not None:
             format = bounding_boxes.format
             bounding_boxes, spatial_size = F.crop_bounding_box(
-                bounding_boxes, format=format, top=top, left=left, height=new_height, width=new_width
+                bounding_boxes.as_subclass(torch.Tensor),
+                format=format,
+                top=top,
+                left=left,
+                height=new_height,
+                width=new_width,
             )
             bounding_boxes = F.clamp_bounding_box(bounding_boxes, format=format, spatial_size=spatial_size)
             height_and_width = F.convert_format_bounding_box(
