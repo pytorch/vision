@@ -199,11 +199,10 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
 
     mask_maxc_neq_r = maxc != r
     mask_maxc_eq_g = maxc == g
-    mask_maxc_neq_g = ~mask_maxc_eq_g
 
     hg = rc.add(2.0).sub_(bc).mul_(mask_maxc_eq_g & mask_maxc_neq_r)
     hr = bc.sub_(gc).mul_(~mask_maxc_neq_r)
-    hb = gc.add_(4.0).sub_(rc).mul_(mask_maxc_neq_g & mask_maxc_neq_r)
+    hb = gc.add_(4.0).sub_(rc).mul_(mask_maxc_neq_r.logical_and_(mask_maxc_eq_g.logical_not_()))
 
     h = hr.add_(hg).add_(hb)
     h = h.mul_(1.0 / 6.0).add_(1.0).fmod_(1.0)
