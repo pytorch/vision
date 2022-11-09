@@ -189,13 +189,13 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
     channels_range = maxc - minc
     # Since `eqc => channels_range = 0`, replacing denominator with 1 when `eqc` is fine.
     ones = torch.ones_like(maxc)
-    s = channels_range.div_(torch.where(eqc, ones, maxc))
+    s = channels_range / torch.where(eqc, ones, maxc)
     # Note that `eqc => maxc = minc = r = g = b`. So the following calculation
     # of `h` would reduce to `bc - gc + 2 + rc - bc + 4 + rc - bc = 6` so it
     # would not matter what values `rc`, `gc`, and `bc` have here, and thus
     # replacing denominator with 1 when `eqc` is fine.
     channels_range_divisor = torch.where(eqc, ones, channels_range).unsqueeze_(dim=-3)
-    rc, gc, bc = ((maxc.unsqueeze(dim=-3) - image).div_(channels_range_divisor)).unbind(dim=-3)
+    rc, gc, bc = ((maxc.unsqueeze(dim=-3) - image) / channels_range_divisor).unbind(dim=-3)
 
     mask_maxc_neq_r = maxc != r
     mask_maxc_eq_g = maxc == g
