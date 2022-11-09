@@ -164,6 +164,7 @@ def convert_format_bounding_box(
     if new_format == old_format:
         return bounding_box
 
+    # TODO: Add _xywh_to_cxcywh and _cxcywh_to_xywh to improve performance
     if old_format == BoundingBoxFormat.XYWH:
         bounding_box = _xywh_to_xyxy(bounding_box, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:

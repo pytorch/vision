@@ -189,21 +189,21 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
     channels_range = maxc - minc
     # Since `eqc => channels_range = 0`, replacing denominator with 1 when `eqc` is fine.
     ones = torch.ones_like(maxc)
-    s = channels_range / torch.where(eqc, ones, maxc)
+    s = channels_range.div_(torch.where(eqc, ones, maxc))
     # Note that `eqc => maxc = minc = r = g = b`. So the following calculation
     # of `h` would reduce to `bc - gc + 2 + rc - bc + 4 + rc - bc = 6` so it
     # would not matter what values `rc`, `gc`, and `bc` have here, and thus
     # replacing denominator with 1 when `eqc` is fine.
     channels_range_divisor = torch.where(eqc, ones, channels_range).unsqueeze_(dim=-3)
-    rc, gc, bc = ((maxc.unsqueeze(dim=-3) - image) / channels_range_divisor).unbind(dim=-3)
+    rc, gc, bc = ((maxc.unsqueeze(dim=-3) - image).div_(channels_range_divisor)).unbind(dim=-3)
 
     mask_maxc_neq_r = maxc != r
     mask_maxc_eq_g = maxc == g
     mask_maxc_neq_g = ~mask_maxc_eq_g
 
-    hr = (bc - gc).mul_(~mask_maxc_neq_r)
-    hg = (2.0 + rc).sub_(bc).mul_(mask_maxc_eq_g & mask_maxc_neq_r)
-    hb = (4.0 + gc).sub_(rc).mul_(mask_maxc_neq_g & mask_maxc_neq_r)
+    hg = rc.add(2.0).sub_(bc).mul_(mask_maxc_eq_g & mask_maxc_neq_r)
+    hr = bc.sub_(gc).mul_(~mask_maxc_neq_r)
+    hb = gc.add_(4.0).sub_(rc).mul_(mask_maxc_neq_g & mask_maxc_neq_r)
 
     h = hr.add_(hg).add_(hb)
     h = h.mul_(1.0 / 6.0).add_(1.0).fmod_(1.0)
@@ -212,14 +212,16 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
 
 def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
     h, s, v = img.unbind(dim=-3)
-    h6 = h * 6
+    h6 = h.mul(6)
     i = torch.floor(h6)
-    f = h6 - i
+    f = h6.sub_(i)
     i = i.to(dtype=torch.int32)
 
-    p = (v * (1.0 - s)).clamp_(0.0, 1.0)
-    q = (v * (1.0 - s * f)).clamp_(0.0, 1.0)
-    t = (v * (1.0 - s * (1.0 - f))).clamp_(0.0, 1.0)
+    sxf = s * f
+    one_minus_s = 1.0 - s
+    q = (1.0 - sxf).mul_(v).clamp_(0.0, 1.0)
+    t = sxf.add_(one_minus_s).mul_(v).clamp_(0.0, 1.0)
+    p = one_minus_s.mul_(v).clamp_(0.0, 1.0)
     i.remainder_(6)
 
     mask = i.unsqueeze(dim=-3) == torch.arange(6, device=i.device).view(-1, 1, 1)

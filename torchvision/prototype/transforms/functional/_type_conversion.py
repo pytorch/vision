@@ -1,4 +1,3 @@
-import unittest.mock
 from typing import Any, Dict, Tuple, Union
 
 import numpy as np
@@ -20,6 +19,7 @@ def decode_image_with_pil(encoded_image: torch.Tensor) -> features.Image:
 
 @torch.jit.unused
 def decode_video_with_av(encoded_video: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
+    import unittest.mock
     with unittest.mock.patch("torchvision.io.video.os.path.exists", return_value=True):
         return read_video(ReadOnlyTensorBuffer(encoded_video))  # type: ignore[arg-type]
 
