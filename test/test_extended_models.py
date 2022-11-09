@@ -155,21 +155,26 @@ def test_schema_meta_validation(model_fn):
         "recipe",
         "unquantized",
         "_docs",
+        "_flops",
+        "_weight_size",
     }
     # mandatory fields for each computer vision task
     classification_fields = {"categories", ("_metrics", "ImageNet-1K", "acc@1"), ("_metrics", "ImageNet-1K", "acc@5")}
+    rich_metadata = {"_flops", "_weight_size"}
     defaults = {
         "all": {"_metrics", "min_size", "num_params", "recipe", "_docs"},
-        "models": classification_fields,
-        "detection": {"categories", ("_metrics", "COCO-val2017", "box_map")},
+        "models": classification_fields | rich_metadata,
+        "detection": {"categories", ("_metrics", "COCO-val2017", "box_map")} | rich_metadata,
         "quantization": classification_fields | {"backend", "unquantized"},
         "segmentation": {
             "categories",
             ("_metrics", "COCO-val2017-VOC-labels", "miou"),
             ("_metrics", "COCO-val2017-VOC-labels", "pixel_acc"),
-        },
-        "video": {"categories", ("_metrics", "Kinetics-400", "acc@1"), ("_metrics", "Kinetics-400", "acc@5")},
-        "optical_flow": set(),
+        }
+        | rich_metadata,
+        "video": {"categories", ("_metrics", "Kinetics-400", "acc@1"), ("_metrics", "Kinetics-400", "acc@5")}
+        | rich_metadata,
+        "optical_flow": rich_metadata,
     }
     model_name = model_fn.__name__
     module_name = model_fn.__module__.split(".")[-2]

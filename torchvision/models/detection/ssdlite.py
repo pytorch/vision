@@ -198,6 +198,8 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
                     "box_map": 21.3,
                 }
             },
+            "_flops": 0.583172,
+            "_weight_size": 13.417583,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )

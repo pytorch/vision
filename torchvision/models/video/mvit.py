@@ -624,6 +624,8 @@ class MViT_V1_B_Weights(WeightsEnum):
                     "acc@5": 93.582,
                 }
             },
+            "_flops": 70.599408,
+            "_weight_size": 139.764235,
         },
     )
     DEFAULT = KINETICS400_V1
@@ -655,6 +657,8 @@ class MViT_V2_S_Weights(WeightsEnum):
                     "acc@5": 94.665,
                 }
             },
+            "_flops": 64.223816,
+            "_weight_size": 131.883704,
         },
     )
     DEFAULT = KINETICS400_V1

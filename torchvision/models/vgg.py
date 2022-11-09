@@ -127,6 +127,8 @@ class VGG11_Weights(WeightsEnum):
                     "acc@5": 88.628,
                 }
             },
+            "_flops": 7.609090,
+            "_weight_size": 506.840077,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -145,6 +147,8 @@ class VGG11_BN_Weights(WeightsEnum):
                     "acc@5": 89.810,
                 }
             },
+            "_flops": 7.609090,
+            "_weight_size": 506.881400,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -163,6 +167,8 @@ class VGG13_Weights(WeightsEnum):
                     "acc@5": 89.246,
                 }
             },
+            "_flops": 11.308466,
+            "_weight_size": 507.545068,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -181,6 +187,8 @@ class VGG13_BN_Weights(WeightsEnum):
                     "acc@5": 90.374,
                 }
             },
+            "_flops": 11.308466,
+            "_weight_size": 507.589627,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -199,6 +207,8 @@ class VGG16_Weights(WeightsEnum):
                     "acc@5": 90.382,
                 }
             },
+            "_flops": 15.470264,
+            "_weight_size": 527.795678,
         },
     )
     IMAGENET1K_FEATURES = Weights(
@@ -221,6 +231,8 @@ class VGG16_Weights(WeightsEnum):
                     "acc@5": float("nan"),
                 }
             },
+            "_flops": 15.470264,
+            "_weight_size": 527.801824,
             "_docs": """
                 These weights can't be used for classification because they are missing values in the `classifier`
                 module. Only the `features` module has valid values and can be used for feature extraction. The weights
@@ -244,6 +256,8 @@ class VGG16_BN_Weights(WeightsEnum):
                     "acc@5": 91.516,
                 }
             },
+            "_flops": 15.470264,
+            "_weight_size": 527.866207,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -262,6 +276,8 @@ class VGG19_Weights(WeightsEnum):
                     "acc@5": 90.876,
                 }
             },
+            "_flops": 19.632062,
+            "_weight_size": 548.051225,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -280,6 +296,8 @@ class VGG19_BN_Weights(WeightsEnum):
                     "acc@5": 91.842,
                 }
             },
+            "_flops": 19.632062,
+            "_weight_size": 548.142819,
         },
     )
     DEFAULT = IMAGENET1K_V1

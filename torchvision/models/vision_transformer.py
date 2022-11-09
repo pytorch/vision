@@ -363,6 +363,8 @@ class ViT_B_16_Weights(WeightsEnum):
                     "acc@5": 95.318,
                 }
             },
+            "_flops": 17.563828,
+            "_weight_size": 330.284623,
             "_docs": """
                 These weights were trained from scratch by using a modified version of `DeIT
                 <https://arxiv.org/abs/2012.12877>`_'s training recipe.
@@ -387,6 +389,8 @@ class ViT_B_16_Weights(WeightsEnum):
                     "acc@5": 97.650,
                 }
             },
+            "_flops": 55.484350,
+            "_weight_size": 331.397904,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
                 `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
@@ -412,6 +416,8 @@ class ViT_B_16_Weights(WeightsEnum):
                     "acc@5": 96.180,
                 }
             },
+            "_flops": 17.563828,
+            "_weight_size": 330.284623,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
                 weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
@@ -436,6 +442,8 @@ class ViT_B_32_Weights(WeightsEnum):
                     "acc@5": 92.466,
                 }
             },
+            "_flops": 4.409186,
+            "_weight_size": 336.603959,
             "_docs": """
                 These weights were trained from scratch by using a modified version of `DeIT
                 <https://arxiv.org/abs/2012.12877>`_'s training recipe.
@@ -460,6 +468,8 @@ class ViT_L_16_Weights(WeightsEnum):
                     "acc@5": 94.638,
                 }
             },
+            "_flops": 61.554713,
+            "_weight_size": 1161.023240,
             "_docs": """
                 These weights were trained from scratch by using a modified version of TorchVision's
                 `new training recipe
@@ -485,6 +495,8 @@ class ViT_L_16_Weights(WeightsEnum):
                     "acc@5": 98.512,
                 }
             },
+            "_flops": 361.986286,
+            "_weight_size": 1164.257615,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
                 `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
@@ -510,6 +522,8 @@ class ViT_L_16_Weights(WeightsEnum):
                     "acc@5": 97.422,
                 }
             },
+            "_flops": 61.554713,
+            "_weight_size": 1161.023240,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
                 weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
@@ -534,6 +548,8 @@ class ViT_L_32_Weights(WeightsEnum):
                     "acc@5": 93.07,
                 }
             },
+            "_flops": 15.377539,
+            "_weight_size": 1169.448960,
             "_docs": """
                 These weights were trained from scratch by using a modified version of `DeIT
                 <https://arxiv.org/abs/2012.12877>`_'s training recipe.
@@ -562,6 +578,8 @@ class ViT_H_14_Weights(WeightsEnum):
                     "acc@5": 98.694,
                 }
             },
+            "_flops": 1016.716764,
+            "_weight_size": 2416.643174,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
                 `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
@@ -587,6 +605,8 @@ class ViT_H_14_Weights(WeightsEnum):
                     "acc@5": 97.730,
                 }
             },
+            "_flops": 167.295109,
+            "_weight_size": 2411.208604,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
                 weights and a linear classifier learnt on top of them trained on ImageNet-1K data.

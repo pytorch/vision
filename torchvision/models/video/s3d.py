@@ -175,6 +175,8 @@ class S3D_Weights(WeightsEnum):
                     "acc@5": 88.050,
                 }
             },
+            "_flops": 17.978771,
+            "_weight_size": 31.971929,
         },
     )
     DEFAULT = KINETICS400_V1

@@ -328,6 +328,8 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
                     "kp_map": 61.1,
                 }
             },
+            "_flops": 133.924041,
+            "_weight_size": 226.053994,
             "_docs": """
                 These weights were produced by following a similar training recipe as on the paper but use a checkpoint
                 from an early epoch.
@@ -347,6 +349,8 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
                     "kp_map": 65.0,
                 }
             },
+            "_flops": 137.419502,
+            "_weight_size": 226.053994,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )

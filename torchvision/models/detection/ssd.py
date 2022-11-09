@@ -39,6 +39,8 @@ class SSD300_VGG16_Weights(WeightsEnum):
                     "box_map": 25.1,
                 }
             },
+            "_flops": 34.858153,
+            "_weight_size": 135.988447,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )

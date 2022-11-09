@@ -231,6 +231,8 @@ class MNASNet0_5_Weights(WeightsEnum):
                     "acc@5": 87.490,
                 }
             },
+            "_flops": 0.104456,
+            "_weight_size": 8.591165,
             "_docs": """These weights reproduce closely the results of the paper.""",
         },
     )
@@ -251,6 +253,8 @@ class MNASNet0_75_Weights(WeightsEnum):
                     "acc@5": 90.496,
                 }
             },
+            "_flops": 0.215493,
+            "_weight_size": 12.302564,
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -273,6 +277,8 @@ class MNASNet1_0_Weights(WeightsEnum):
                     "acc@5": 91.510,
                 }
             },
+            "_flops": 0.314416,
+            "_weight_size": 16.915318,
             "_docs": """These weights reproduce closely the results of the paper.""",
         },
     )
@@ -293,6 +299,8 @@ class MNASNet1_3_Weights(WeightsEnum):
                     "acc@5": 93.522,
                 }
             },
+            "_flops": 0.526362,
+            "_weight_size": 24.245618,
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.

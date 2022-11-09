@@ -662,6 +662,8 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
                     "box_map": 39.2,
                 }
             },
+            "_flops": 128.207053,
+            "_weight_size": 123.607730,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )

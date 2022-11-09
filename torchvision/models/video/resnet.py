@@ -332,6 +332,8 @@ class R3D_18_Weights(WeightsEnum):
                     "acc@5": 83.479,
                 }
             },
+            "_flops": 40.696553,
+            "_weight_size": 127.359406,
         },
     )
     DEFAULT = KINETICS400_V1
@@ -350,6 +352,8 @@ class MC3_18_Weights(WeightsEnum):
                     "acc@5": 84.130,
                 }
             },
+            "_flops": 43.342635,
+            "_weight_size": 44.671906,
         },
     )
     DEFAULT = KINETICS400_V1
@@ -368,6 +372,8 @@ class R2Plus1D_18_Weights(WeightsEnum):
                     "acc@5": 86.175,
                 }
             },
+            "_flops": 40.519081,
+            "_weight_size": 120.318409,
         },
     )
     DEFAULT = KINETICS400_V1

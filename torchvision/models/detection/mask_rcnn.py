@@ -370,6 +370,8 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
                     "mask_map": 34.6,
                 }
             },
+            "_flops": 134.379721,
+            "_weight_size": 169.839934,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
@@ -390,6 +392,8 @@ class MaskRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
                     "mask_map": 41.8,
                 }
             },
+            "_flops": 333.577360,
+            "_weight_size": 177.219453,
             "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )

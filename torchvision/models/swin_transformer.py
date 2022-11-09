@@ -660,6 +660,8 @@ class Swin_T_Weights(WeightsEnum):
                     "acc@5": 95.776,
                 }
             },
+            "_flops": 4.490567,
+            "_weight_size": 108.190383,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -683,6 +685,8 @@ class Swin_S_Weights(WeightsEnum):
                     "acc@5": 96.360,
                 }
             },
+            "_flops": 8.740875,
+            "_weight_size": 189.786254,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -706,6 +710,8 @@ class Swin_B_Weights(WeightsEnum):
                     "acc@5": 96.640,
                 }
             },
+            "_flops": 15.430947,
+            "_weight_size": 335.363585,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -729,6 +735,8 @@ class Swin_V2_T_Weights(WeightsEnum):
                     "acc@5": 96.132,
                 }
             },
+            "_flops": 5.939690,
+            "_weight_size": 108.625840,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -752,6 +760,8 @@ class Swin_V2_S_Weights(WeightsEnum):
                     "acc@5": 96.816,
                 }
             },
+            "_flops": 11.545857,
+            "_weight_size": 190.674577,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -775,6 +785,8 @@ class Swin_V2_B_Weights(WeightsEnum):
                     "acc@5": 96.864,
                 }
             },
+            "_flops": 20.325134,
+            "_weight_size": 336.371781,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )

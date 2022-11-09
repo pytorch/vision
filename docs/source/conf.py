@@ -375,7 +375,9 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines.append("")
 
 
-def generate_weights_table(module, table_name, metrics, dataset, include_patterns=None, exclude_patterns=None):
+def generate_weights_table(
+    module, table_name, metrics, dataset, include_patterns=None, exclude_patterns=None, exclude_columns=[]
+):
     weights_endswith = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
     weight_enums = [getattr(module, name) for name in dir(module) if name.endswith(weights_endswith)]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
@@ -385,27 +387,41 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
     if exclude_patterns is not None:
         weights = [w for w in weights if all(p not in str(w) for p in exclude_patterns)]
 
+    rich_metadata = ["GFLOPs", "Size (MB)"]
+
     metrics_keys, metrics_names = zip(*metrics)
-    column_names = ["Weight"] + list(metrics_names) + ["Params", "Recipe"]
-    column_names = [f"**{name}**" for name in column_names]  # Add bold
+    column_names = ["Weight"] + list(metrics_names) + ["Params"] + rich_metadata + ["Recipe"]  # Final column order
+    column_names_table = [f"**{name}**" for name in column_names if name not in exclude_columns]  # Add bold
+
+    column_patterns = list(
+        zip(
+            column_names,
+            [lambda w: f":class:`{w} <{type(w).__name__}>`"]
+            + [lambda w, metric=m: w.meta["_metrics"][dataset][metric] for m in metrics_keys]
+            + [
+                lambda w: f"{w.meta['num_params']/1e6:.1f}M",
+                lambda w: f"{w.meta['_flops']:.3f}",
+                lambda w: f"{round(w.meta['_weight_size'], 1):.1f}",
+                lambda w: f"`link <{w.meta['recipe']}>`__",
+            ],
+        )
+    )
 
     content = [
-        (
-            f":class:`{w} <{type(w).__name__}>`",
-            *(w.meta["_metrics"][dataset][metric] for metric in metrics_keys),
-            f"{w.meta['num_params']/1e6:.1f}M",
-            f"`link <{w.meta['recipe']}>`__",
-        )
-        for w in weights
+        [pattern(w) for col_name, pattern in column_patterns if col_name not in exclude_columns] for w in weights
     ]
-    table = tabulate(content, headers=column_names, tablefmt="rst")
+
+    column_widths = zip(column_names, ["120"] + ["18"] * len(metrics_names) + ["18", "18", "18", "10"])
+    widths_table = " ".join(width for col_name, width in column_widths if col_name not in exclude_columns)
+
+    table = tabulate(content, headers=column_names_table, tablefmt="rst")
 
     generated_dir = Path("generated")
     generated_dir.mkdir(exist_ok=True)
     with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
         table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
         table_file.write(".. table::\n")
-        table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
+        table_file.write(f"    :widths: {widths_table} \n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
 
@@ -417,6 +433,7 @@ generate_weights_table(
     table_name="classification_quant",
     metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")],
     dataset="ImageNet-1K",
+    exclude_columns=["GFLOPs", "Size (MB)"],
 )
 generate_weights_table(
     module=M.detection,
