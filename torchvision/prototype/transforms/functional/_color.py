@@ -235,7 +235,7 @@ def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
     a3 = torch.stack((p, p, t, v, v, q), dim=-3)
     a4 = torch.stack((a1, a2, a3), dim=-4)
 
-    return (a4.mul_(mask.to(dtype=img.dtype).unsqueeze(dim=-4))).sum(dim=-3)
+    return (a4.mul_(mask.unsqueeze(dim=-4))).sum(dim=-3)
 
 
 def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Tensor:
