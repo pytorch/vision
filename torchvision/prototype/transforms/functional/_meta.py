@@ -213,10 +213,12 @@ def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
     return grayscale.repeat(repeats)
 
 
-def _rgb_to_gray(image: torch.Tensor) -> torch.Tensor:
+def _rgb_to_gray(image: torch.Tensor, cast: bool = True) -> torch.Tensor:
     r, g, b = image.unbind(dim=-3)
-    l_img = (0.2989 * r).add_(g, alpha=0.587).add_(b, alpha=0.114)
-    l_img = l_img.to(image.dtype).unsqueeze(dim=-3)
+    l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
+    if cast:
+        l_img = l_img.to(image.dtype)
+    l_img = l_img.unsqueeze(dim=-3)
     return l_img
 
 
