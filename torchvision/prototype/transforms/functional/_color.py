@@ -80,8 +80,8 @@ def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) ->
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
-    grayscale_image = _rgb_to_gray(image) if c == 3 else image
-    mean = torch.mean(grayscale_image.to(dtype), dim=(-3, -2, -1), keepdim=True)
+    grayscale_image = _rgb_to_gray(image, cast=False) if c == 3 else image.to(dtype)
+    mean = torch.mean(grayscale_image, dim=(-3, -2, -1), keepdim=True)
     return _blend(image, mean, contrast_factor)
 
 
