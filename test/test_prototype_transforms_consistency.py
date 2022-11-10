@@ -244,16 +244,19 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=1, threshold=0.99),
         ],
     ),
-    ConsistencyConfig(
-        prototype_transforms.RandomAutocontrast,
-        legacy_transforms.RandomAutocontrast,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-        ],
-        # Use default tolerances of `torch.testing.assert_close`
-        closeness_kwargs=dict(rtol=None, atol=None),
-    ),
+    *[
+        ConsistencyConfig(
+            prototype_transforms.RandomAutocontrast,
+            legacy_transforms.RandomAutocontrast,
+            [
+                ArgsKwargs(p=0),
+                ArgsKwargs(p=1),
+            ],
+            make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[dt]),
+            closeness_kwargs=ckw,
+        )
+        for dt, ckw in [(torch.uint8, dict(atol=1, rtol=0)), (torch.float32, dict(rtol=None, atol=None))]
+    ],
     ConsistencyConfig(
         prototype_transforms.RandomAdjustSharpness,
         legacy_transforms.RandomAdjustSharpness,
