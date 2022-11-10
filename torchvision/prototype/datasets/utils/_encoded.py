@@ -6,9 +6,9 @@ from typing import Any, BinaryIO, Optional, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
-from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
-from ._feature import _Feature
+from torchvision.prototype.features._feature import _Feature
+from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
 D = TypeVar("D", bound="EncodedData")
 
