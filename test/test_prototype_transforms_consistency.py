@@ -251,6 +251,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=0),
             ArgsKwargs(p=1),
         ],
+        # Use default tolerances of `torch.testing.assert_close`
+        closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
         prototype_transforms.RandomAdjustSharpness,
