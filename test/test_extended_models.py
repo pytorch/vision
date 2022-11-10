@@ -160,9 +160,9 @@ def test_schema_meta_validation(model_fn):
     }
     # mandatory fields for each computer vision task
     classification_fields = {"categories", ("_metrics", "ImageNet-1K", "acc@1"), ("_metrics", "ImageNet-1K", "acc@5")}
-    rich_metadata = {"_flops", "_weight_size"}
+    rich_metadata = {"_flops"}
     defaults = {
-        "all": {"_metrics", "min_size", "num_params", "recipe", "_docs"},
+        "all": {"_metrics", "min_size", "num_params", "recipe", "_docs", "_weight_size"},
         "models": classification_fields | rich_metadata,
         "detection": {"categories", ("_metrics", "COCO-val2017", "box_map")} | rich_metadata,
         "quantization": classification_fields | {"backend", "unquantized"},

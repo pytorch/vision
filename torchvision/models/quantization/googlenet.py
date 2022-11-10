@@ -123,6 +123,7 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
                     "acc@5": 89.404,
                 }
             },
+            "_weight_size": 12.617729,
             "_docs": """
                 These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
                 weights listed below.

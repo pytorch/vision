@@ -139,6 +139,7 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
                     "acc@5": 79.780,
                 }
             },
+            "_weight_size": 1.500871,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -158,6 +159,7 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
                     "acc@5": 87.582,
                 }
             },
+            "_weight_size": 2.333858,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -178,6 +180,7 @@ class ShuffleNet_V2_X1_5_QuantizedWeights(WeightsEnum):
                     "acc@5": 90.700,
                 }
             },
+            "_weight_size": 3.671769,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -198,6 +201,7 @@ class ShuffleNet_V2_X2_0_QuantizedWeights(WeightsEnum):
                     "acc@5": 92.488,
                 }
             },
+            "_weight_size": 7.467118,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
