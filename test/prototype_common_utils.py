@@ -136,6 +136,29 @@ def assert_close(
 assert_equal = functools.partial(assert_close, rtol=0, atol=0)
 
 
+def parametrized_error_message(*args, **kwargs):
+    def to_str(obj):
+        if isinstance(obj, torch.Tensor) and obj.numel() > 10:
+            return f"tensor(shape={list(obj.shape)}, dtype={obj.dtype}, device={obj.device})"
+        else:
+            return repr(obj)
+
+    postfix = "\n".join(
+        [
+            "",
+            "Failure happened for the following parameters:",
+            "",
+            *[to_str(arg) for arg in args],
+            *[f"{name}={to_str(kwarg)}" for name, kwarg in kwargs.items()],
+        ]
+    )
+
+    def wrapper(msg):
+        return f"{msg}\n{postfix}"
+
+    return wrapper
+
+
 class ArgsKwargs:
     def __init__(self, *args, **kwargs):
         self.args = args
@@ -625,6 +648,13 @@ class InfoBase:
         ]
 
     def get_closeness_kwargs(self, test_id, *, dtype, device):
+        if not (isinstance(test_id, tuple) and len(test_id) == 2):
+            msg = "`test_id` should be a `Tuple[Optional[str], str]` denoting the test class and function name"
+            if callable(test_id):
+                msg += ". Did you forget to add the `test_id` fixture to parameters of the test?"
+            else:
+                msg += f", but got {test_id} instead."
+            raise pytest.UsageError(msg)
         if isinstance(device, torch.device):
             device = device.type
         return self.closeness_kwargs.get((test_id, dtype, device), dict())

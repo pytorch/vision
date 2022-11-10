@@ -11,7 +11,7 @@ import pytest
 
 import torch
 from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
-from prototype_common_utils import assert_close, make_bounding_boxes, make_image
+from prototype_common_utils import assert_close, make_bounding_boxes, make_image, parametrized_error_message
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
 from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torch.utils._pytree import tree_map
@@ -131,6 +131,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
+            msg=parametrized_error_message(*other_args, *kwargs),
         )
 
     def _unbatch(self, batch, *, data_dims):
@@ -187,6 +188,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=batched_input.dtype, device=batched_input.device),
+            msg=parametrized_error_message(*other_args, *kwargs),
         )
 
     @sample_inputs
@@ -216,6 +218,7 @@ class TestKernels:
             output_cpu,
             check_device=False,
             **info.get_closeness_kwargs(test_id, dtype=input_cuda.dtype, device=input_cuda.device),
+            msg=parametrized_error_message(*other_args, *kwargs),
         )
 
     @sample_inputs
@@ -242,6 +245,34 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
+            msg=parametrized_error_message(*other_args, *kwargs),
+        )
+
+    @make_info_args_kwargs_parametrization(
+        [info for info in KERNEL_INFOS if info.float32_vs_uint8],
+        args_kwargs_fn=lambda info: info.reference_inputs_fn(),
+    )
+    def test_float32_vs_uint8(self, test_id, info, args_kwargs):
+        (input, *other_args), kwargs = args_kwargs.load("cpu")
+
+        if input.dtype != torch.uint8:
+            pytest.skip(f"Input dtype is {input.dtype}.")
+
+        adapted_other_args, adapted_kwargs = info.float32_vs_uint8(other_args, kwargs)
+
+        actual = info.kernel(
+            F.convert_dtype_image_tensor(input, dtype=torch.float32),
+            *adapted_other_args,
+            **adapted_kwargs,
+        )
+
+        expected = F.convert_dtype_image_tensor(info.kernel(input, *other_args, **kwargs), dtype=torch.float32)
+
+        assert_close(
+            actual,
+            expected,
+            **info.get_closeness_kwargs(test_id, dtype=torch.float32, device=input.device),
+            msg=parametrized_error_message(*other_args, *kwargs),
         )
 
 
@@ -437,29 +468,6 @@ def test_convert_dtype_image_tensor_dtype_and_device(info, args_kwargs, device):
 
     assert output.dtype == dtype
     assert output.device == input.device
-
-
-@pytest.mark.parametrize(
-    ("info", "args_kwargs"),
-    make_info_args_kwargs_params(
-        KERNEL_INFOS_MAP[F.posterize_image_tensor],
-        args_kwargs_fn=lambda info: info.reference_inputs_fn(),
-    ),
-)
-def test_posterize_image_tensor_float_vs_int(info, args_kwargs):
-    (input, *other_args), kwargs = args_kwargs.load("cpu")
-
-    actual = F.convert_dtype_image_tensor(
-        info.kernel(
-            F.convert_dtype_image_tensor(input, dtype=torch.float32),
-            *other_args,
-            **kwargs,
-        ),
-        dtype=input.dtype,
-    )
-    expected = info.kernel(input, *other_args, **kwargs)
-
-    assert_close(actual, expected, atol=1, rtol=0)
 
 
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
