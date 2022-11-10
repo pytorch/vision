@@ -25,7 +25,6 @@ jobs:
       timeout: 60
       script: |
         set -ex
-        HOMEBREW_NO_AUTO_UPDATE=1 brew install wget
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
 
@@ -42,17 +41,8 @@ jobs:
         fi
 
         # Create Conda Env
-        conda create -yp ./ci_env python="${PYTHON_VERSION}"
+        conda create -yp ./ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy
         conda activate ./ci_env
-
-        # FFMPEG and Conda Dependencies
-        FFMPEG_PIN="=4.2"
-        if [[ "${PYTHON_VERSION}" = "3.9" ]]; then
-            FFMPEG_PIN=">=4.2"
-        fi
-
-        conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
-        conda env update --file ".circleci/unittest/linux/scripts/environment.yml" --prune
         
         # Install PyTorch, Torchvision, and testing libraries
         conda install \
@@ -60,9 +50,9 @@ jobs:
           -c "pytorch-${CHANNEL}" \
           "pytorch-${CHANNEL}"::pytorch \
           "${CUDATOOLKIT}"
-        python setup.py develop
-        python -m pip install pytest pytest-mock 'av<10'
+        python3 setup.py develop
+        python3 -m pip install pytest pytest-mock 'av<10'
 
         # Run Tests
-        python -m torch.utils.collect_env
-        python -m pytest --junitxml=test-results/junit.xml -v --durations 20
+        python3 -m torch.utils.collect_env
+        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
