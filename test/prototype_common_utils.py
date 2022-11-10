@@ -143,18 +143,21 @@ def parametrized_error_message(*args, **kwargs):
         else:
             return repr(obj)
 
-    postfix = "\n".join(
-        [
-            "",
-            "Failure happened for the following parameters:",
-            "",
-            *[to_str(arg) for arg in args],
-            *[f"{name}={to_str(kwarg)}" for name, kwarg in kwargs.items()],
-        ]
-    )
+    if args or kwargs:
+        postfix = "\n".join(
+            [
+                "",
+                "Failure happened for the following parameters:",
+                "",
+                *[to_str(arg) for arg in args],
+                *[f"{name}={to_str(kwarg)}" for name, kwarg in kwargs.items()],
+            ]
+        )
+    else:
+        postfix = ""
 
     def wrapper(msg):
-        return f"{msg}\n{postfix}"
+        return msg + postfix
 
     return wrapper
 

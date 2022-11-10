@@ -1825,7 +1825,10 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.autocontrast_image_pil),
             reference_inputs_fn=reference_inputs_autocontrast_image_tensor,
             float32_vs_uint8=True,
-            closeness_kwargs=float32_vs_uint8_pixel_difference(),
+            closeness_kwargs={
+                **pil_reference_pixel_difference(),
+                **float32_vs_uint8_pixel_difference(),
+            },
         ),
         KernelInfo(
             F.autocontrast_video,
