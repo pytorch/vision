@@ -386,7 +386,7 @@ class ResNet50_Weights(WeightsEnum):
                 }
             },
             "_flops": 4.089184,
-            "_weight_size": 97.780545,
+            "_weight_size": 97.790162,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -558,7 +558,7 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
                 }
             },
             "_flops": 16.414015,
-            "_weight_size": 339.586349,
+            "_weight_size": 339.673062,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.

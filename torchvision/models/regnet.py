@@ -894,7 +894,7 @@ class RegNet_X_400MF_Weights(WeightsEnum):
                 }
             },
             "_flops": 0.413813,
-            "_weight_size": 21.258035,
+            "_weight_size": 21.256570,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
                 `new training recipe
