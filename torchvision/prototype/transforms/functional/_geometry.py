@@ -1175,8 +1175,7 @@ def elastic_image_tensor(
         needs_unsquash = False
 
     image_height, image_width = shape[-2:]
-    identity_grid = _create_identity_grid((image_height, image_width), device=device)
-    grid = identity_grid + displacement.to(device)
+    grid = _create_identity_grid((image_height, image_width), device=device).add_(displacement.to(device))
     output = _FT._apply_grid_transform(image, grid, interpolation.value, fill)
 
     if needs_unsquash:
