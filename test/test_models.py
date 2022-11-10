@@ -40,7 +40,7 @@ def _get_image(input_shape, real_image, device):
     - `fcos_resnet50_fpn`,
     - `maskrcnn_resnet50_fpn`,
     - `maskrcnn_resnet50_fpn_v2`,
-    in `test_classification_model` and `test_detection_mode`.
+    in `test_classification_model` and `test_detection_model`.
     To do so, a keyword argument `real_image` was added to the abovelisted models in `_model_params`
     """
     if real_image:
@@ -167,6 +167,7 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
         return imported
 
     sm = torch.jit.script(nn_module)
+    sm.eval()
 
     if eager_out is None:
         with torch.no_grad(), freeze_rng_state():
