@@ -62,11 +62,6 @@ class KernelInfo(InfoBase):
         self.reference_inputs_fn = reference_inputs_fn
 
 
-DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS = {
-    (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=0.9, rtol=0, agg_method="mean"),
-    (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=255 * 0.9, rtol=0, agg_method="mean"),
-}
-
 CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE = {
     (("TestKernels", "test_cuda_vs_cpu"), dtype, "cuda"): dict(atol=atol, rtol=0)
     for dtype, atol in [(torch.uint8, 1), (torch.float32, 1 / 255)]
@@ -193,7 +188,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_horizontal_flip_image_tensor,
             reference_fn=pil_reference_wrapper(F.horizontal_flip_image_pil),
             reference_inputs_fn=reference_inputs_horizontal_flip_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=1 / 255, rtol=0),
+            },
         ),
         KernelInfo(
             F.horizontal_flip_bounding_box,
@@ -338,7 +335,14 @@ KERNEL_INFOS.extend(
             reference_fn=reference_resize_image_tensor,
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             closeness_kwargs={
-                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                # TODO: These tolerances are noticeably larger than "regular" ones. Investigate if this is a bug in the
+                #  kernel.
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(
+                    atol=110 / 255, rtol=0, agg_method="mean"
+                ),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(
+                    atol=110, rtol=0, agg_method="mean"
+                ),
                 **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
             },
             test_marks=[
@@ -359,7 +363,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_resize_mask,
             reference_fn=reference_resize_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=10, rtol=0),
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
             ],
@@ -591,7 +597,14 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_image_tensor,
             reference_fn=pil_reference_wrapper(F.affine_image_pil),
             reference_inputs_fn=reference_inputs_affine_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(
+                    atol=10 / 255, rtol=0, agg_method="mean"
+                ),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(
+                    atol=10, rtol=0, agg_method="mean"
+                ),
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
                 xfail_jit_tuple_instead_of_list("fill"),
@@ -616,7 +629,11 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_mask,
             reference_fn=reference_affine_mask,
             reference_inputs_fn=reference_inputs_resize_mask,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(
+                    atol=6, rtol=0, agg_method="mean"
+                ),
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
             ],
@@ -771,7 +788,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_vertical_flip_image_tensor,
             reference_fn=pil_reference_wrapper(F.vertical_flip_image_pil),
             reference_inputs_fn=reference_inputs_vertical_flip_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=1 / 255, rtol=0),
+            },
         ),
         KernelInfo(
             F.vertical_flip_bounding_box,
@@ -859,7 +878,16 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_rotate_image_tensor,
             reference_fn=pil_reference_wrapper(F.rotate_image_pil),
             reference_inputs_fn=reference_inputs_rotate_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                # TODO: These tolerances are noticeably larger than "regular" ones. Investigate if this is a bug in the
+                #  kernel.
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(
+                    atol=120 / 255, rtol=0, agg_method="mean"
+                ),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(
+                    atol=90, rtol=0, agg_method="mean"
+                ),
+            },
             test_marks=[
                 xfail_jit_tuple_instead_of_list("fill"),
                 # TODO: check if this is a regression since it seems that should be supported if `int` is ok
@@ -875,7 +903,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_rotate_mask,
             reference_fn=reference_rotate_mask,
             reference_inputs_fn=reference_inputs_rotate_mask,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=8, rtol=0),
+            },
         ),
         KernelInfo(
             F.rotate_video,
@@ -957,7 +987,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_crop_image_tensor,
             reference_fn=pil_reference_wrapper(F.crop_image_pil),
             reference_inputs_fn=reference_inputs_crop_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=1 / 255, rtol=0),
+            },
         ),
         KernelInfo(
             F.crop_bounding_box,
@@ -970,7 +1002,6 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_crop_mask,
             reference_fn=pil_reference_wrapper(F.crop_image_pil),
             reference_inputs_fn=reference_inputs_crop_mask,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.crop_video,
@@ -1050,7 +1081,14 @@ KERNEL_INFOS.extend(
             reference_fn=reference_resized_crop_image_tensor,
             reference_inputs_fn=reference_inputs_resized_crop_image_tensor,
             closeness_kwargs={
-                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                # TODO: These tolerances are noticeably larger than "regular" ones. Investigate if this is a bug in the
+                #  kernel.
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(
+                    atol=60 / 255, rtol=0, agg_method="mean"
+                ),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(
+                    atol=60, rtol=0, agg_method="mean"
+                ),
                 **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
             },
         ),
@@ -1063,7 +1101,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_resized_crop_mask,
             reference_fn=pil_reference_wrapper(F.resized_crop_image_pil),
             reference_inputs_fn=reference_inputs_resized_crop_mask,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=10, rtol=0),
+            },
         ),
         KernelInfo(
             F.resized_crop_video,
@@ -1187,7 +1227,12 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_pad_image_tensor,
             reference_fn=pil_reference_wrapper(F.pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                # FIXME: This tolerance effectively renders the test useless since it cannot fail. We need to
+                #  investigate for what configuration this is happening. Since uint8 works perfectly there seems to be
+                #  a bug in the kernel.
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=1, rtol=0),
+            },
             test_marks=[
                 xfail_jit_tuple_instead_of_list("padding"),
                 xfail_jit_tuple_instead_of_list("fill"),
@@ -1209,7 +1254,6 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_pad_mask,
             reference_fn=pil_reference_wrapper(F.pad_image_pil),
             reference_inputs_fn=reference_inputs_pad_mask,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.pad_video,
@@ -1269,7 +1313,14 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_image_tensor,
             closeness_kwargs={
-                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+                # TODO: This tolerance is noticeably larger than "regular" ones. Investigate if this is a bug in the
+                #  kernel.
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(
+                    atol=160 / 255, rtol=0, agg_method="mean"
+                ),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(
+                    atol=160, rtol=0, agg_method="mean"
+                ),
                 **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
             },
         ),
@@ -1282,7 +1333,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_perspective_mask,
             reference_fn=pil_reference_wrapper(F.perspective_image_pil),
             reference_inputs_fn=reference_inputs_perspective_mask,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=10, rtol=0),
+            },
         ),
         KernelInfo(
             F.perspective_video,
@@ -1353,7 +1406,13 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_elastic_image_tensor,
             reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                # TODO: This tolerance is noticeably larger than "regular" ones. Investigate if this is a bug in the
+                #  kernel for floating point inputs, given that uint8 works perfectly.
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(
+                    atol=160 / 255, rtol=0, agg_method="mean"
+                ),
+            },
         ),
         KernelInfo(
             F.elastic_bounding_box,
@@ -1364,7 +1423,11 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_elastic_mask,
             reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_mask,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(
+                    atol=65, rtol=0, agg_method="mean"
+                ),
+            },
         ),
         KernelInfo(
             F.elastic_video,
@@ -1434,7 +1497,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_center_crop_image_tensor,
             reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=1 / 255, rtol=0),
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("output_size"),
             ],
@@ -1451,7 +1516,6 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_center_crop_mask,
             reference_fn=pil_reference_wrapper(F.center_crop_image_pil),
             reference_inputs_fn=reference_inputs_center_crop_mask,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
             test_marks=[
                 xfail_jit_python_scalar_arg("output_size"),
             ],
@@ -1488,10 +1552,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.gaussian_blur_image_tensor,
             sample_inputs_fn=sample_inputs_gaussian_blur_image_tensor,
-            closeness_kwargs={
-                **DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
-                **CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
-            },
+            closeness_kwargs=CUDA_VS_CPU_SINGLE_PIXEL_DIFFERENCE,
             test_marks=[
                 xfail_jit_python_scalar_arg("kernel_size"),
                 xfail_jit_python_scalar_arg("sigma"),
@@ -1580,7 +1641,11 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_equalize_image_tensor,
             reference_fn=pil_reference_wrapper(F.equalize_image_pil),
             reference_inputs_fn=reference_inputs_equalize_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                # TODO: This tolerance is noticeably larger than "regular" ones. Investigate if this is a bug in the
+                #  kernel for floating point inputs, given that uint8 works perfectly.
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=12 / 255, rtol=0),
+            },
         ),
         KernelInfo(
             F.equalize_video,
@@ -1617,7 +1682,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_invert_image_tensor,
             reference_fn=pil_reference_wrapper(F.invert_image_pil),
             reference_inputs_fn=reference_inputs_invert_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=1 / 255, rtol=0),
+            },
         ),
         KernelInfo(
             F.invert_video,
@@ -1639,7 +1706,9 @@ def sample_inputs_posterize_image_tensor():
 
 def reference_inputs_posterize_image_tensor():
     for image_loader, bits in itertools.product(
-        make_image_loaders(color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]),
+        make_image_loaders(
+            color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
+        ),
         _POSTERIZE_BITS,
     ):
         yield ArgsKwargs(image_loader, bits=bits)
@@ -1658,7 +1727,6 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_posterize_image_tensor,
             reference_fn=pil_reference_wrapper(F.posterize_image_pil),
             reference_inputs_fn=reference_inputs_posterize_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
         ),
         KernelInfo(
             F.posterize_video,
@@ -1681,6 +1749,14 @@ def sample_inputs_solarize_image_tensor():
         yield ArgsKwargs(image_loader, threshold=next(_get_solarize_thresholds(image_loader.dtype)))
 
 
+def reference_solarize_image_tensor(image, threshold):
+    # The `pil_reference_wrapper` converts floating point tensor images into uint8 PIL images. In that case we also
+    # need to scale the threshold accordingly.
+    if image.dtype.is_floating_point:
+        threshold *= 255
+    return pil_reference_wrapper(F.solarize_image_pil)(image, threshold)
+
+
 def reference_inputs_solarize_image_tensor():
     for image_loader in make_image_loaders(
         color_spaces=(features.ColorSpace.GRAY, features.ColorSpace.RGB), extra_dims=[()]
@@ -1700,9 +1776,13 @@ KERNEL_INFOS.extend(
             F.solarize_image_tensor,
             kernel_name="solarize_image_tensor",
             sample_inputs_fn=sample_inputs_solarize_image_tensor,
-            reference_fn=pil_reference_wrapper(F.solarize_image_pil),
+            reference_fn=reference_solarize_image_tensor,
             reference_inputs_fn=reference_inputs_solarize_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(
+                    atol=1 / 255, rtol=0, agg_method="mean"
+                ),
+            },
         ),
         KernelInfo(
             F.solarize_video,
@@ -1739,7 +1819,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_autocontrast_image_tensor,
             reference_fn=pil_reference_wrapper(F.autocontrast_image_pil),
             reference_inputs_fn=reference_inputs_autocontrast_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=3 / 255, rtol=0),
+            },
         ),
         KernelInfo(
             F.autocontrast_video,
@@ -1780,7 +1862,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_sharpness_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_sharpness_image_pil),
             reference_inputs_fn=reference_inputs_adjust_sharpness_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=3 / 255, rtol=0),
+            },
         ),
         KernelInfo(
             F.adjust_sharpness_video,
@@ -1851,7 +1935,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_brightness_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_brightness_image_pil),
             reference_inputs_fn=reference_inputs_adjust_brightness_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=2 / 255, rtol=0),
+            },
         ),
         KernelInfo(
             F.adjust_brightness_video,
@@ -1892,7 +1978,10 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_contrast_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_contrast_image_pil),
             reference_inputs_fn=reference_inputs_adjust_contrast_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=2 / 255, rtol=0),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=1, rtol=0),
+            },
         ),
         KernelInfo(
             F.adjust_contrast_video,
@@ -1937,7 +2026,12 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_gamma_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_gamma_image_pil),
             reference_inputs_fn=reference_inputs_adjust_gamma_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                # TODO: This tolerance is noticeably larger than "regular" ones. Investigate if this is a bug in the
+                #  kernel for floating point inputs, given that uint8 works almost perfectly.
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=40 / 255, rtol=0),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=1, rtol=0),
+            },
         ),
         KernelInfo(
             F.adjust_gamma_video,
@@ -1978,7 +2072,12 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_hue_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_hue_image_pil),
             reference_inputs_fn=reference_inputs_adjust_hue_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                # TODO: These tolerances are noticeably larger than "regular" ones. Investigate if this is a bug in the
+                #  kernel.
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=20 / 255, rtol=0),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=20, rtol=0),
+            },
         ),
         KernelInfo(
             F.adjust_hue_video,
@@ -2018,7 +2117,10 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_adjust_saturation_image_tensor,
             reference_fn=pil_reference_wrapper(F.adjust_saturation_image_pil),
             reference_inputs_fn=reference_inputs_adjust_saturation_image_tensor,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=3 / 255, rtol=0),
+                (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): dict(atol=1, rtol=0),
+            },
         ),
         KernelInfo(
             F.adjust_saturation_video,
@@ -2123,7 +2225,9 @@ KERNEL_INFOS.extend(
             reference_fn=multi_crop_pil_reference_wrapper(F.five_crop_image_pil),
             reference_inputs_fn=reference_inputs_five_crop_image_tensor,
             test_marks=_common_five_ten_crop_marks,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=1 / 255, rtol=0),
+            },
         ),
         KernelInfo(
             F.five_crop_video,
@@ -2136,7 +2240,9 @@ KERNEL_INFOS.extend(
             reference_fn=multi_crop_pil_reference_wrapper(F.ten_crop_image_pil),
             reference_inputs_fn=reference_inputs_ten_crop_image_tensor,
             test_marks=_common_five_ten_crop_marks,
-            closeness_kwargs=DEFAULT_PIL_REFERENCE_CLOSENESS_KWARGS,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=1 / 255, rtol=0),
+            },
         ),
         KernelInfo(
             F.ten_crop_video,

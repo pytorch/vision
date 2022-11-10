@@ -22,6 +22,10 @@ from torchvision.prototype.transforms.functional._meta import convert_format_bou
 from torchvision.transforms.functional import _get_perspective_coeffs
 
 
+KERNEL_INFOS_MAP = {info.kernel: info for info in KERNEL_INFOS}
+DISPATCHER_INFOS_MAP = {info.dispatcher: info for info in DISPATCHER_INFOS}
+
+
 @cache
 def script(fn):
     try:
@@ -420,12 +424,12 @@ def test_alias(alias, target):
 @pytest.mark.parametrize(
     ("info", "args_kwargs"),
     make_info_args_kwargs_params(
-        next(info for info in KERNEL_INFOS if info.kernel is F.convert_image_dtype),
+        KERNEL_INFOS_MAP[F.convert_dtype_image_tensor],
         args_kwargs_fn=lambda info: info.sample_inputs_fn(),
     ),
 )
 @pytest.mark.parametrize("device", cpu_and_gpu())
-def test_dtype_and_device_convert_image_dtype(info, args_kwargs, device):
+def test_convert_dtype_image_tensor_dtype_and_device(info, args_kwargs, device):
     (input, *other_args), kwargs = args_kwargs.load(device)
     dtype = other_args[0] if other_args else kwargs.get("dtype", torch.float32)
 
@@ -433,6 +437,29 @@ def test_dtype_and_device_convert_image_dtype(info, args_kwargs, device):
 
     assert output.dtype == dtype
     assert output.device == input.device
+
+
+@pytest.mark.parametrize(
+    ("info", "args_kwargs"),
+    make_info_args_kwargs_params(
+        KERNEL_INFOS_MAP[F.posterize_image_tensor],
+        args_kwargs_fn=lambda info: info.reference_inputs_fn(),
+    ),
+)
+def test_posterize_image_tensor_float_vs_int(info, args_kwargs):
+    (input, *other_args), kwargs = args_kwargs.load("cpu")
+
+    actual = F.convert_dtype_image_tensor(
+        info.kernel(
+            F.convert_dtype_image_tensor(input, dtype=torch.float32),
+            *other_args,
+            **kwargs,
+        ),
+        dtype=input.dtype,
+    )
+    expected = info.kernel(input, *other_args, **kwargs)
+
+    assert_close(actual, expected, atol=1, rtol=0)
 
 
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
