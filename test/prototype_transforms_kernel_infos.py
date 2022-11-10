@@ -1443,7 +1443,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_elastic_mask,
             float32_vs_uint8=True,
             # TODO: investigate
-            closeness_kwargs=pil_reference_pixel_difference(65, agg_method="mean"),
+            closeness_kwargs=pil_reference_pixel_difference(80, agg_method="mean"),
         ),
         KernelInfo(
             F.elastic_video,
