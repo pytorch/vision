@@ -24,9 +24,7 @@ import os
 import sys
 import textwrap
 from copy import copy
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 import pytorch_sphinx_theme
 import torchvision
@@ -375,19 +373,6 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                 f"perform the following preprocessing operations: {field.transforms().describe()}"
             )
             lines.append("")
-
-
-@dataclass
-class Column:
-    name: str
-    width: int
-    generator: Callable
-
-    def get_bold_name(self):
-        return f"**{self.name}**"
-
-    def create_entry(self, w):
-        return self.generator(w)
 
 
 def generate_weights_table(module, table_name, metrics, dataset, include_patterns=None, exclude_patterns=None):
