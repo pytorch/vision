@@ -53,7 +53,11 @@ def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float
     if c == 1:  # Match PIL behaviour
         return image
 
-    return _blend(image, _rgb_to_gray(image), saturation_factor)
+    grayscale_image = _rgb_to_gray(image, cast=False)
+    if not image.is_floating_point():
+        grayscale_image = grayscale_image.floor_()
+
+    return _blend(image, grayscale_image, saturation_factor)
 
 
 adjust_saturation_image_pil = _FP.adjust_saturation
@@ -384,7 +388,7 @@ def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
     maximum = float_image.amax(dim=(-2, -1), keepdim=True)
 
     eq_idxs = maximum == minimum
-    inv_scale = maximum.sub_(minimum).div_(bound)
+    inv_scale = maximum.sub_(minimum).mul_(1.0 / bound)
     minimum[eq_idxs] = 0.0
     inv_scale[eq_idxs] = 1.0
 
