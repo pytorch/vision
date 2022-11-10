@@ -53,7 +53,11 @@ def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float
     if c == 1:  # Match PIL behaviour
         return image
 
-    return _blend(image, _rgb_to_gray(image), saturation_factor)
+    grayscale_image = _rgb_to_gray(image, cast=False)
+    if not image.is_floating_point():
+        grayscale_image = grayscale_image.floor_()
+
+    return _blend(image, grayscale_image, saturation_factor)
 
 
 adjust_saturation_image_pil = _FP.adjust_saturation
@@ -79,9 +83,14 @@ def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) ->
     c = image.shape[-3]
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
-    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
-    grayscale_image = _rgb_to_gray(image) if c == 3 else image
-    mean = torch.mean(grayscale_image.to(dtype), dim=(-3, -2, -1), keepdim=True)
+    fp = image.is_floating_point()
+    if c == 3:
+        grayscale_image = _rgb_to_gray(image, cast=False)
+        if not fp:
+            grayscale_image = grayscale_image.floor_()
+    else:
+        grayscale_image = image if fp else image.to(torch.float32)
+    mean = torch.mean(grayscale_image, dim=(-3, -2, -1), keepdim=True)
     return _blend(image, mean, contrast_factor)
 
 
@@ -199,11 +208,10 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
 
     mask_maxc_neq_r = maxc != r
     mask_maxc_eq_g = maxc == g
-    mask_maxc_neq_g = ~mask_maxc_eq_g
 
-    hr = (bc - gc).mul_(~mask_maxc_neq_r)
-    hg = (2.0 + rc).sub_(bc).mul_(mask_maxc_eq_g & mask_maxc_neq_r)
-    hb = (4.0 + gc).sub_(rc).mul_(mask_maxc_neq_g & mask_maxc_neq_r)
+    hg = rc.add(2.0).sub_(bc).mul_(mask_maxc_eq_g & mask_maxc_neq_r)
+    hr = bc.sub_(gc).mul_(~mask_maxc_neq_r)
+    hb = gc.add_(4.0).sub_(rc).mul_(mask_maxc_neq_r.logical_and_(mask_maxc_eq_g.logical_not_()))
 
     h = hr.add_(hg).add_(hb)
     h = h.mul_(1.0 / 6.0).add_(1.0).fmod_(1.0)
@@ -212,14 +220,16 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
 
 def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
     h, s, v = img.unbind(dim=-3)
-    h6 = h * 6
+    h6 = h.mul(6)
     i = torch.floor(h6)
-    f = h6 - i
+    f = h6.sub_(i)
     i = i.to(dtype=torch.int32)
 
-    p = (v * (1.0 - s)).clamp_(0.0, 1.0)
-    q = (v * (1.0 - s * f)).clamp_(0.0, 1.0)
-    t = (v * (1.0 - s * (1.0 - f))).clamp_(0.0, 1.0)
+    sxf = s * f
+    one_minus_s = 1.0 - s
+    q = (1.0 - sxf).mul_(v).clamp_(0.0, 1.0)
+    t = sxf.add_(one_minus_s).mul_(v).clamp_(0.0, 1.0)
+    p = one_minus_s.mul_(v).clamp_(0.0, 1.0)
     i.remainder_(6)
 
     mask = i.unsqueeze(dim=-3) == torch.arange(6, device=i.device).view(-1, 1, 1)
@@ -229,7 +239,7 @@ def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
     a3 = torch.stack((p, p, t, v, v, q), dim=-3)
     a4 = torch.stack((a1, a2, a3), dim=-4)
 
-    return (a4.mul_(mask.to(dtype=img.dtype).unsqueeze(dim=-4))).sum(dim=-3)
+    return (a4.mul_(mask.unsqueeze(dim=-4))).sum(dim=-3)
 
 
 def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Tensor:
@@ -372,17 +382,23 @@ def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
         return image
 
     bound = _FT._max_value(image.dtype)
-    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    fp = image.is_floating_point()
+    float_image = image if fp else image.to(torch.float32)
 
-    minimum = image.amin(dim=(-2, -1), keepdim=True).to(dtype)
-    maximum = image.amax(dim=(-2, -1), keepdim=True).to(dtype)
+    minimum = float_image.amin(dim=(-2, -1), keepdim=True)
+    maximum = float_image.amax(dim=(-2, -1), keepdim=True)
 
-    scale = bound / (maximum - minimum)
     eq_idxs = maximum == minimum
+    inv_scale = maximum.sub_(minimum).mul_(1.0 / bound)
     minimum[eq_idxs] = 0.0
-    scale[eq_idxs] = 1.0
+    inv_scale[eq_idxs] = 1.0
 
-    return (image - minimum).mul_(scale).clamp_(0, bound).to(image.dtype)
+    if fp:
+        diff = float_image.sub(minimum)
+    else:
+        diff = float_image.sub_(minimum)
+
+    return diff.div_(inv_scale).clamp_(0, bound).to(image.dtype)
 
 
 autocontrast_image_pil = _FP.autocontrast
