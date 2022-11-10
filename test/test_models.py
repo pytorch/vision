@@ -783,7 +783,8 @@ def test_detection_model(model_fn, dev):
     model.eval().to(device=dev)
     x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
     model_input = [x]
-    out = model(model_input)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(model_input)
     assert model_input[0] is x
 
     def check_out(out):
