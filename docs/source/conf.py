@@ -396,7 +396,9 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
     ops_name = "GOPs" if "QuantizedWeights" in weights_endswith else "GFLOPs"
 
     metrics_keys, metrics_names = zip(*metrics)
-    column_names = ["Weight"] + list(metrics_names) + ["Params"] + [ops_name, "Size (MB)", "Recipe"]  # Final column order
+    column_names = (
+        ["Weight"] + list(metrics_names) + ["Params"] + [ops_name, "Size (MB)", "Recipe"]
+    )  # Final column order
     column_names = [f"**{name}**" for name in column_names]  # Add bold
 
     content = []
