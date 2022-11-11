@@ -35,6 +35,7 @@ gen.yml
 *.orig
 *-checkpoint.ipynb
 *.venv
+*.DS_Store
 
 ## Xcode User settings
 xcuserdata/
