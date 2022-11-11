@@ -385,12 +385,10 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
     if exclude_patterns is not None:
         weights = [w for w in weights if all(p not in str(w) for p in exclude_patterns)]
 
-    rich_metadata = ["Size (MB)"]
-    if "_flops" in weights[0].meta:  # assumes same rich meta for all models in module
-        rich_metadata = ["GFLOPs"] + rich_metadata
+    ops_name = "GOPs" if "QuantizedWeights" in weights_endswith else "GFLOPs"
 
     metrics_keys, metrics_names = zip(*metrics)
-    column_names = ["Weight"] + list(metrics_names) + ["Params"] + rich_metadata + ["Recipe"]  # Final column order
+    column_names = ["Weight"] + list(metrics_names) + ["Params"] + [ops_name, "Size (MB)", "Recipe"]  # Final column order
     column_names = [f"**{name}**" for name in column_names]  # Add bold
 
     content = []
@@ -399,17 +397,14 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
             f":class:`{w} <{type(w).__name__}>`",
             *(w.meta["_metrics"][dataset][metric] for metric in metrics_keys),
             f"{w.meta['num_params']/1e6:.1f}M",
+            f"{w.meta['_ops']:.3f}",
+            f"{round(w.meta['_weight_size'], 1):.1f}",
+            f"`link <{w.meta['recipe']}>`__",
         ]
-
-        if "_flops" in w.meta:
-            row.append(f"{w.meta['_flops']:.3f}")
-
-        row.append(f"{round(w.meta['_weight_size'], 1):.1f}")
-        row.append(f"`link <{w.meta['recipe']}>`__")
 
         content.append(row)
 
-    column_widths = ["110"] + ["18"] * len(metrics_names) + ["18"] + ["18"] * len(rich_metadata) + ["10"]
+    column_widths = ["110"] + ["18"] * len(metrics_names) + ["18"] * 3 + ["10"]
     widths_table = " ".join(column_widths)
 
     table = tabulate(content, headers=column_names, tablefmt="rst")
