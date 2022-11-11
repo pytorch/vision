@@ -12,17 +12,9 @@ import torch
 import torch.testing
 from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
-from torch.testing._comparison import (
-    assert_equal as _assert_equal,
-    BooleanPair,
-    ErrorMeta,
-    NonePair,
-    NumberPair,
-    TensorLikePair,
-    UnsupportedInputs,
-)
+from torch.testing._comparison import assert_equal as _assert_equal, BooleanPair, NonePair, NumberPair, TensorLikePair
 from torchvision.prototype import features
-from torchvision.prototype.transforms.functional import convert_dtype_image_tensor, to_image_tensor
+from torchvision.prototype.transforms.functional import to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 __all__ = [
@@ -54,7 +46,7 @@ __all__ = [
 ]
 
 
-class PILImagePair(TensorLikePair):
+class ImagePair(TensorLikePair):
     def __init__(
         self,
         actual,
@@ -64,43 +56,12 @@ class PILImagePair(TensorLikePair):
         allowed_percentage_diff=None,
         **other_parameters,
     ):
-        if not any(isinstance(input, PIL.Image.Image) for input in (actual, expected)):
-            raise UnsupportedInputs()
-
-        # This parameter is ignored to enable checking PIL images to tensor images no on the CPU
-        other_parameters["check_device"] = False
+        if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
+            actual, expected = [to_image_tensor(input) for input in [actual, expected]]
 
         super().__init__(actual, expected, **other_parameters)
         self.agg_method = getattr(torch, agg_method) if isinstance(agg_method, str) else agg_method
         self.allowed_percentage_diff = allowed_percentage_diff
-
-    def _process_inputs(self, actual, expected, *, id, allow_subclasses):
-        actual, expected = [
-            to_image_tensor(input) if not isinstance(input, torch.Tensor) else features.Image(input)
-            for input in [actual, expected]
-        ]
-        # This broadcast is needed, because `features.Mask`'s can have a 2D shape, but converting the equivalent PIL
-        # image to a tensor adds a singleton leading dimension.
-        # Although it looks like this belongs in `self._equalize_attributes`, it has to happen here.
-        # `self._equalize_attributes` is called after `super()._compare_attributes` and that has an unconditional
-        # shape check that will fail if we don't broadcast before.
-        try:
-            actual, expected = torch.broadcast_tensors(actual, expected)
-        except RuntimeError:
-            raise ErrorMeta(
-                AssertionError,
-                f"The image shapes are not broadcastable: {actual.shape} != {expected.shape}.",
-                id=id,
-            ) from None
-        return super()._process_inputs(actual, expected, id=id, allow_subclasses=allow_subclasses)
-
-    def _equalize_attributes(self, actual, expected):
-        if actual.dtype != expected.dtype:
-            dtype = torch.promote_types(actual.dtype, expected.dtype)
-            actual = convert_dtype_image_tensor(actual, dtype)
-            expected = convert_dtype_image_tensor(expected, dtype)
-
-        return super()._equalize_attributes(actual, expected)
 
     def compare(self) -> None:
         actual, expected = self.actual, self.expected
@@ -111,16 +72,24 @@ class PILImagePair(TensorLikePair):
         abs_diff = torch.abs(actual - expected)
 
         if self.allowed_percentage_diff is not None:
-            percentage_diff = (abs_diff != 0).to(torch.float).mean()
+            percentage_diff = float((abs_diff.ne(0).to(torch.float64).mean()))
             if percentage_diff > self.allowed_percentage_diff:
-                self._make_error_meta(AssertionError, "percentage mismatch")
+                raise self._make_error_meta(
+                    AssertionError,
+                    f"{percentage_diff:.1%} elements differ, "
+                    f"but only {self.allowed_percentage_diff:.1%} is allowed",
+                )
 
         if self.agg_method is None:
             super()._compare_values(actual, expected)
         else:
-            err = self.agg_method(abs_diff.to(torch.float64))
-            if err > self.atol:
-                self._make_error_meta(AssertionError, "aggregated mismatch")
+            agg_abs_diff = float(self.agg_method(abs_diff.to(torch.float64)))
+            if agg_abs_diff > self.atol:
+                raise self._make_error_meta(
+                    AssertionError,
+                    f"The '{self.agg_method.__name__}' of the absolute difference is {agg_abs_diff}, "
+                    f"but only {self.atol} is allowed.",
+                )
 
 
 def assert_close(
@@ -148,7 +117,7 @@ def assert_close(
             NonePair,
             BooleanPair,
             NumberPair,
-            PILImagePair,
+            ImagePair,
             TensorLikePair,
         ),
         allow_subclasses=allow_subclasses,
@@ -165,6 +134,32 @@ def assert_close(
 
 
 assert_equal = functools.partial(assert_close, rtol=0, atol=0)
+
+
+def parametrized_error_message(*args, **kwargs):
+    def to_str(obj):
+        if isinstance(obj, torch.Tensor) and obj.numel() > 10:
+            return f"tensor(shape={list(obj.shape)}, dtype={obj.dtype}, device={obj.device})"
+        else:
+            return repr(obj)
+
+    if args or kwargs:
+        postfix = "\n".join(
+            [
+                "",
+                "Failure happened for the following parameters:",
+                "",
+                *[to_str(arg) for arg in args],
+                *[f"{name}={to_str(kwarg)}" for name, kwarg in kwargs.items()],
+            ]
+        )
+    else:
+        postfix = ""
+
+    def wrapper(msg):
+        return msg + postfix
+
+    return wrapper
 
 
 class ArgsKwargs:
@@ -656,6 +651,13 @@ class InfoBase:
         ]
 
     def get_closeness_kwargs(self, test_id, *, dtype, device):
+        if not (isinstance(test_id, tuple) and len(test_id) == 2):
+            msg = "`test_id` should be a `Tuple[Optional[str], str]` denoting the test class and function name"
+            if callable(test_id):
+                msg += ". Did you forget to add the `test_id` fixture to parameters of the test?"
+            else:
+                msg += f", but got {test_id} instead."
+            raise pytest.UsageError(msg)
         if isinstance(device, torch.device):
             device = device.type
         return self.closeness_kwargs.get((test_id, dtype, device), dict())

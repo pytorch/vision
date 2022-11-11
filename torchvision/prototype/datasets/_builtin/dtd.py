@@ -3,7 +3,7 @@ import pathlib
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import CSVParser, Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -12,7 +12,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     read_categories_file,
 )
-from torchvision.prototype.features import EncodedImage, Label
+from torchvision.prototype.features import Label
 
 from .._api import register_dataset, register_info
 
