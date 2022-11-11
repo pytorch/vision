@@ -401,6 +401,39 @@ def _apply_grid_transform(
     return float_img
 
 
+def _assert_grid_transform_inputs(
+    img: torch.Tensor,
+    matrix: Optional[List[float]],
+    interpolation: str,
+    fill: Optional[Union[int, float, List[float]]],
+    supported_interpolation_modes: List[str],
+    coeffs: Optional[List[float]] = None,
+) -> None:
+    if matrix is not None:
+        if not isinstance(matrix, list):
+            raise TypeError("Argument matrix should be a list")
+        elif len(matrix) != 6:
+            raise ValueError("Argument matrix should have 6 float values")
+
+    if coeffs is not None and len(coeffs) != 8:
+        raise ValueError("Argument coeffs should have 8 float values")
+
+    if fill is not None:
+        if isinstance(fill, (tuple, list)):
+            length = len(fill)
+            num_channels = img.shape[-3]
+            if length > 1 and length != num_channels:
+                raise ValueError(
+                    "The number of elements in 'fill' cannot broadcast to match the number of "
+                    f"channels of the image ({length} != {num_channels})"
+                )
+        elif not isinstance(fill, (int, float)):
+            raise ValueError("Argument fill should be either int, float, tuple or list")
+
+    if interpolation not in supported_interpolation_modes:
+        raise ValueError(f"Interpolation mode '{interpolation}' is unsupported with Tensor input")
+
+
 def affine_image_tensor(
     image: torch.Tensor,
     angle: Union[int, float],
@@ -1110,7 +1143,7 @@ def perspective_image_tensor(
     else:
         needs_unsquash = False
 
-    _FT._assert_grid_transform_inputs(
+    _assert_grid_transform_inputs(
         image,
         matrix=None,
         interpolation=interpolation.value,
