@@ -1,3 +1,4 @@
+import math
 import numbers
 import warnings
 from typing import List, Optional, Sequence, Tuple, Union
@@ -10,7 +11,6 @@ from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 from torchvision.transforms.functional import (
     _compute_resized_output_size as __compute_resized_output_size,
-    _get_inverse_affine_matrix,
     _get_perspective_coeffs,
     InterpolationMode,
     pil_modes_mapping,
@@ -272,6 +272,102 @@ def _affine_parse_args(
     return angle, translate, shear, center
 
 
+def _get_inverse_affine_matrix(
+    center: List[float], angle: float, translate: List[float], scale: float, shear: List[float], inverted: bool = True
+) -> List[float]:
+    # Helper method to compute inverse matrix for affine transformation
+
+    # Pillow requires inverse affine transformation matrix:
+    # Affine matrix is : M = T * C * RotateScaleShear * C^-1
+    #
+    # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
+    #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
+    #       RotateScaleShear is rotation with scale and shear matrix
+    #
+    #       RotateScaleShear(a, s, (sx, sy)) =
+    #       = R(a) * S(s) * SHy(sy) * SHx(sx)
+    #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(sx)/cos(sy) - sin(a)), 0 ]
+    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
+    #         [ 0                    , 0                                      , 1 ]
+    # where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:
+    # SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]
+    #          [0, 1      ]              [-tan(s), 1]
+    #
+    # Thus, the inverse is M^-1 = C * RotateScaleShear^-1 * C^-1 * T^-1
+
+    rot = math.radians(angle)
+    sx = math.radians(shear[0])
+    sy = math.radians(shear[1])
+
+    cx, cy = center
+    tx, ty = translate
+
+    # Cached results
+    cossy = math.cos(sy)
+    tansx = math.tan(sx)
+    rot_sy = rot - sy
+    cx_plus_tx = cx + tx
+    cy_plus_ty = cy + ty
+
+    # RSS without scaling
+    a = math.cos(rot_sy) / cossy
+    b = -math.sin(rot) - a * tansx
+    c = math.sin(rot_sy) / cossy
+    d = math.cos(rot) - c * tansx
+
+    if inverted:
+        # Inverted rotation matrix with scale and shear
+        # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
+        matrix = [d / scale, -b / scale, 0.0, -c / scale, a / scale, 0.0]
+        # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
+        # and then apply center translation: C * RSS^-1 * C^-1 * T^-1
+        matrix[2] += cx - matrix[0] * cx_plus_tx - matrix[1] * cy_plus_ty
+        matrix[5] += cy - matrix[3] * cx_plus_tx - matrix[4] * cy_plus_ty
+    else:
+        matrix = [a * scale, b * scale, 0.0, c * scale, d * scale, 0.0]
+        # Apply inverse of center translation: RSS * C^-1
+        # and then apply translation and center : T * C * RSS * C^-1
+        matrix[2] += cx_plus_tx - matrix[0] * cx - matrix[1] * cy
+        matrix[5] += cy_plus_ty - matrix[3] * cx - matrix[4] * cy
+
+    return matrix
+
+
+def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
+    # Inspired of PIL implementation:
+    # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
+
+    # pts are Top-Left, Top-Right, Bottom-Left, Bottom-Right points.
+    # Points are shifted due to affine matrix torch convention about
+    # the center point. Center is (0, 0) for image center pivot point (w * 0.5, h * 0.5)
+    half_w = 0.5 * w
+    half_h = 0.5 * h
+    pts = torch.tensor(
+        [
+            [-half_w, -half_h, 1.0],
+            [-half_w, half_h, 1.0],
+            [half_w, half_h, 1.0],
+            [half_w, -half_h, 1.0],
+        ]
+    )
+    theta = torch.tensor(matrix, dtype=torch.float).view(2, 3)
+    new_pts = torch.matmul(pts, theta.T)
+    min_vals, max_vals = new_pts.aminmax(dim=0)
+
+    # shift points to [0, w] and [0, h] interval to match PIL results
+    halfs = torch.tensor((half_w, half_h))
+    min_vals.add_(halfs)
+    max_vals.add_(halfs)
+
+    # Truncate precision to 1e-4 to avoid ceil of Xe-15 to 1.0
+    tol = 1e-4
+    inv_tol = 1.0 / tol
+    cmax = max_vals.mul_(inv_tol).trunc_().mul_(tol).ceil_()
+    cmin = min_vals.mul_(inv_tol).trunc_().mul_(tol).floor_()
+    size = cmax.sub_(cmin)
+    return int(size[0]), int(size[1])  # w, h
+
+
 def affine_image_tensor(
     image: torch.Tensor,
     angle: Union[int, float],
@@ -395,7 +491,7 @@ def _affine_bounding_box_xyxy(
         out_bboxes.sub_(tr.repeat((1, 2)))
         # Estimate meta-data for image with inverted=True and with center=[0,0]
         affine_vector = _get_inverse_affine_matrix([0.0, 0.0], angle, translate, scale, shear)
-        new_width, new_height = _FT._compute_affine_output_size(affine_vector, width, height)
+        new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         spatial_size = (new_height, new_width)
 
     return out_bboxes.to(bounding_box.dtype), spatial_size
@@ -552,7 +648,7 @@ def rotate_image_tensor(
         )
         new_height, new_width = image.shape[-2:]
     else:
-        new_width, new_height = _FT._compute_affine_output_size(matrix, width, height) if expand else (width, height)
+        new_width, new_height = _compute_affine_output_size(matrix, width, height) if expand else (width, height)
 
     return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
@@ -917,7 +1013,6 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
     # x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #
-    # TODO: should we define them transposed?
     theta1 = torch.tensor(
         [[[coeffs[0], coeffs[1], coeffs[2]], [coeffs[3], coeffs[4], coeffs[5]]]], dtype=dtype, device=device
     )
@@ -932,8 +1027,9 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
     base_grid[..., 2].fill_(1)
 
     rescaled_theta1 = theta1.transpose(1, 2).div_(torch.tensor([0.5 * ow, 0.5 * oh], dtype=dtype, device=device))
-    output_grid1 = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta1)
-    output_grid2 = base_grid.view(1, oh * ow, 3).bmm(theta2.transpose(1, 2))
+    shape = (1, oh * ow, 3)
+    output_grid1 = base_grid.view(shape).bmm(rescaled_theta1)
+    output_grid2 = base_grid.view(shape).bmm(theta2.transpose(1, 2))
 
     output_grid = output_grid1.div_(output_grid2).sub_(1.0)
     return output_grid.view(1, oh, ow, 2)
@@ -1059,7 +1155,6 @@ def perspective_bounding_box(
         (-perspective_coeffs[0] * perspective_coeffs[7] + perspective_coeffs[1] * perspective_coeffs[6]) / denom,
     ]
 
-    # TODO: should we define them transposed?
     theta1 = torch.tensor(
         [[inv_coeffs[0], inv_coeffs[1], inv_coeffs[2]], [inv_coeffs[3], inv_coeffs[4], inv_coeffs[5]]],
         dtype=dtype,
