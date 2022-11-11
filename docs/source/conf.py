@@ -364,9 +364,9 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                     v = f"{v_sample}, ... ({len(v)-max_visible} omitted)" if len(v) > max_visible else v_sample
                 elif k == "_ops":
                     if obj.__name__.endswith("_QuantizedWeights"):
-                        k = "integer operations (GOPs)"
+                        k = "giga instructions per sec (GIPS)"
                     else:
-                        k = "floating point operations (GFLOPs)"
+                        k = "giga floating-point operations  per sec (GFLOPS)"
                 elif k == "_weight_size":
                     k = "weights file size (MB)"
 
@@ -393,7 +393,7 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
     if exclude_patterns is not None:
         weights = [w for w in weights if all(p not in str(w) for p in exclude_patterns)]
 
-    ops_name = "GOPs" if "QuantizedWeights" in weights_endswith else "GFLOPs"
+    ops_name = "GIPS" if "QuantizedWeights" in weights_endswith else "GFLOPS"
 
     metrics_keys, metrics_names = zip(*metrics)
     column_names = (
