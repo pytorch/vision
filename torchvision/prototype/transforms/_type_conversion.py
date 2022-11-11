@@ -9,13 +9,6 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
 
-class DecodeImage(Transform):
-    _transformed_types = (features.EncodedImage,)
-
-    def _transform(self, inpt: torch.Tensor, params: Dict[str, Any]) -> features.Image:
-        return F.decode_image_with_pil(inpt)  # type: ignore[no-any-return]
-
-
 class LabelToOneHot(Transform):
     _transformed_types = (features.Label,)
 
