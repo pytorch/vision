@@ -6,14 +6,18 @@ from typing import Any, BinaryIO, Optional, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
-from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
-from ._feature import _Feature
+from torchvision.prototype.features._feature import _Feature
+from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
 D = TypeVar("D", bound="EncodedData")
 
 
 class EncodedData(_Feature):
+    @classmethod
+    def _wrap(cls: Type[D], tensor: torch.Tensor) -> D:
+        return tensor.as_subclass(cls)
+
     def __new__(
         cls,
         data: Any,
@@ -22,12 +26,19 @@ class EncodedData(_Feature):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> EncodedData:
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         # TODO: warn / bail out if we encounter a tensor with shape other than (N,) or with dtype other than uint8?
-        return super().__new__(cls, data, dtype=dtype, device=device, requires_grad=requires_grad)
+        return cls._wrap(tensor)
+
+    @classmethod
+    def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
+        return cls._wrap(tensor)
 
     @classmethod
     def from_file(cls: Type[D], file: BinaryIO, **kwargs: Any) -> D:
-        return cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder), **kwargs)
+        encoded_data = cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder), **kwargs)
+        file.close()
+        return encoded_data
 
     @classmethod
     def from_path(cls: Type[D], path: Union[str, os.PathLike], **kwargs: Any) -> D:
@@ -38,13 +49,9 @@ class EncodedData(_Feature):
 class EncodedImage(EncodedData):
     # TODO: Use @functools.cached_property if we can depend on Python 3.8
     @property
-    def image_size(self) -> Tuple[int, int]:
-        if not hasattr(self, "_image_size"):
+    def spatial_size(self) -> Tuple[int, int]:
+        if not hasattr(self, "_spatial_size"):
             with PIL.Image.open(ReadOnlyTensorBuffer(self)) as image:
-                self._image_size = image.height, image.width
+                self._spatial_size = image.height, image.width
 
-        return self._image_size
-
-
-class EncodedVideo(EncodedData):
-    pass
+        return self._spatial_size

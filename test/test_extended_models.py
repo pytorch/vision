@@ -1,3 +1,4 @@
+import copy
 import os
 
 import pytest
@@ -57,6 +58,25 @@ def test_get_model_builder(name, model_fn):
 )
 def test_get_model_weights(name, weight):
     assert models.get_model_weights(name) == weight
+
+
+@pytest.mark.parametrize("copy_fn", [copy.copy, copy.deepcopy])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "resnet50",
+        "retinanet_resnet50_fpn_v2",
+        "raft_large",
+        "quantized_resnet50",
+        "lraspp_mobilenet_v3_large",
+        "mvit_v1_b",
+    ],
+)
+def test_weights_copyable(copy_fn, name):
+    model_weights = models.get_model_weights(name)
+    for weights in list(model_weights):
+        copied_weights = copy_fn(weights)
+        assert copied_weights is weights
 
 
 @pytest.mark.parametrize(

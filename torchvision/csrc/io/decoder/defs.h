@@ -165,7 +165,7 @@ struct MediaFormat {
 struct DecoderParameters {
   // local file, remote file, http url, rtmp stream uri, etc. anything that
   // ffmpeg can recognize
-  std::string uri;
+  std::string uri{std::string()};
   // timeout on getting bytes for decoding
   size_t timeoutMs{1000};
   // logging level, default AV_LOG_PANIC

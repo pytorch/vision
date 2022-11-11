@@ -1,6 +1,7 @@
 import functools
 import io
 import pickle
+from collections import deque
 from pathlib import Path
 
 import pytest
@@ -11,10 +12,11 @@ from torch.utils.data import DataLoader
 from torch.utils.data.graph import traverse_dps
 from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import ShardingFilter, Shuffler
+from torchdata.datapipes.utils import StreamWrapper
 from torchvision._utils import sequence_to_str
-from torchvision.prototype import datasets, transforms
+from torchvision.prototype import datasets, features, transforms
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
-from torchvision.prototype.features import Image, Label
+
 
 assert_samples_equal = functools.partial(
     assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
@@ -23,6 +25,17 @@ assert_samples_equal = functools.partial(
 
 def extract_datapipes(dp):
     return get_all_graph_pipes(traverse_dps(dp))
+
+
+def consume(iterator):
+    # Copied from the official itertools recipes: https://docs.python.org/3/library/itertools.html#itertools-recipes
+    deque(iterator, maxlen=0)
+
+
+def next_consume(iterator):
+    item = next(iterator)
+    consume(iterator)
+    return item
 
 
 @pytest.fixture(autouse=True)
@@ -66,7 +79,7 @@ class TestCommon:
         dataset, _ = dataset_mock.load(config)
 
         try:
-            sample = next(iter(dataset))
+            sample = next_consume(iter(dataset))
         except StopIteration:
             raise AssertionError("Unable to draw any sample.") from None
         except Exception as error:
@@ -84,22 +97,53 @@ class TestCommon:
 
         assert len(list(dataset)) == mock_info["num_samples"]
 
+    @pytest.fixture
+    def log_session_streams(self):
+        debug_unclosed_streams = StreamWrapper.debug_unclosed_streams
+        try:
+            StreamWrapper.debug_unclosed_streams = True
+            yield
+        finally:
+            StreamWrapper.debug_unclosed_streams = debug_unclosed_streams
+
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_no_vanilla_tensors(self, dataset_mock, config):
+    def test_stream_closing(self, log_session_streams, dataset_mock, config):
+        def make_msg_and_close(head):
+            unclosed_streams = []
+            for stream in StreamWrapper.session_streams.keys():
+                unclosed_streams.append(repr(stream.file_obj))
+                stream.close()
+            unclosed_streams = "\n".join(unclosed_streams)
+            return f"{head}\n\n{unclosed_streams}"
+
+        if StreamWrapper.session_streams:
+            raise pytest.UsageError(make_msg_and_close("A previous test did not close the following streams:"))
+
         dataset, _ = dataset_mock.load(config)
 
-        vanilla_tensors = {key for key, value in next(iter(dataset)).items() if type(value) is torch.Tensor}
-        if vanilla_tensors:
+        consume(iter(dataset))
+
+        if StreamWrapper.session_streams:
+            raise AssertionError(make_msg_and_close("The following streams were not closed after a full iteration:"))
+
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_no_simple_tensors(self, dataset_mock, config):
+        dataset, _ = dataset_mock.load(config)
+
+        simple_tensors = {key for key, value in next_consume(iter(dataset)).items() if features.is_simple_tensor(value)}
+        if simple_tensors:
             raise AssertionError(
                 f"The values of key(s) "
-                f"{sequence_to_str(sorted(vanilla_tensors), separate_last='and ')} contained vanilla tensors."
+                f"{sequence_to_str(sorted(simple_tensors), separate_last='and ')} contained simple tensors."
             )
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_transformable(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
 
-        next(iter(dataset.map(transforms.Identity())))
+        dataset = dataset.map(transforms.Identity())
+
+        consume(iter(dataset))
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_traversable(self, dataset_mock, config):
@@ -131,7 +175,7 @@ class TestCommon:
             collate_fn=self._collate_fn,
         )
 
-        next(iter(dl))
+        consume(dl)
 
     # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
     #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
@@ -148,7 +192,7 @@ class TestCommon:
     def test_save_load(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
 
-        sample = next(iter(dataset))
+        sample = next_consume(iter(dataset))
 
         with io.BytesIO() as buffer:
             torch.save(sample, buffer)
@@ -177,7 +221,7 @@ class TestQMNIST:
     def test_extra_label(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
 
-        sample = next(iter(dataset))
+        sample = next_consume(iter(dataset))
         for key, type in (
             ("nist_hsf_series", int),
             ("nist_writer_id", int),
@@ -214,7 +258,7 @@ class TestUSPS:
             assert "image" in sample
             assert "label" in sample
 
-            assert isinstance(sample["image"], Image)
-            assert isinstance(sample["label"], Label)
+            assert isinstance(sample["image"], features.Image)
+            assert isinstance(sample["label"], features.Label)
 
             assert sample["image"].shape == (1, 16, 16)

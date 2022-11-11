@@ -1,6 +1,7 @@
 import enum
 import inspect
 import random
+import re
 from collections import defaultdict
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
@@ -12,6 +13,7 @@ import pytest
 import torch
 from prototype_common_utils import (
     ArgsKwargs,
+    assert_close,
     assert_equal,
     make_bounding_box,
     make_detection_mask,
@@ -23,9 +25,10 @@ from prototype_common_utils import (
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
-from torchvision.prototype.transforms import functional as F
-from torchvision.prototype.transforms._utils import query_chw
+from torchvision.prototype.transforms import functional as prototype_F
+from torchvision.prototype.transforms._utils import query_spatial_size
 from torchvision.prototype.transforms.functional import to_image_pil
+from torchvision.transforms import functional as legacy_F
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])
 
@@ -40,6 +43,7 @@ class ConsistencyConfig:
         make_images_kwargs=None,
         supports_pil=True,
         removed_params=(),
+        closeness_kwargs=None,
     ):
         self.prototype_cls = prototype_cls
         self.legacy_cls = legacy_cls
@@ -47,6 +51,7 @@ class ConsistencyConfig:
         self.make_images_kwargs = make_images_kwargs or DEFAULT_MAKE_IMAGES_KWARGS
         self.supports_pil = supports_pil
         self.removed_params = removed_params
+        self.closeness_kwargs = closeness_kwargs or dict(rtol=0, atol=0)
 
 
 # These are here since both the prototype and legacy transform need to be constructed with the same random parameters
@@ -149,7 +154,7 @@ CONSISTENCY_CONFIGS = [
         ),
     ),
     ConsistencyConfig(
-        prototype_transforms.ConvertImageDtype,
+        prototype_transforms.ConvertDtype,
         legacy_transforms.ConvertImageDtype,
         [
             ArgsKwargs(torch.float16),
@@ -159,6 +164,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(torch.uint8),
         ],
         supports_pil=False,
+        # Use default tolerances of `torch.testing.assert_close`
+        closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
         prototype_transforms.ToPILImage,
@@ -237,22 +244,28 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=1, threshold=0.99),
         ],
     ),
-    ConsistencyConfig(
-        prototype_transforms.RandomAutocontrast,
-        legacy_transforms.RandomAutocontrast,
-        [
-            ArgsKwargs(p=0),
-            ArgsKwargs(p=1),
-        ],
-    ),
+    *[
+        ConsistencyConfig(
+            prototype_transforms.RandomAutocontrast,
+            legacy_transforms.RandomAutocontrast,
+            [
+                ArgsKwargs(p=0),
+                ArgsKwargs(p=1),
+            ],
+            make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[dt]),
+            closeness_kwargs=ckw,
+        )
+        for dt, ckw in [(torch.uint8, dict(atol=1, rtol=0)), (torch.float32, dict(rtol=None, atol=None))]
+    ],
     ConsistencyConfig(
         prototype_transforms.RandomAdjustSharpness,
         legacy_transforms.RandomAdjustSharpness,
         [
             ArgsKwargs(p=0, sharpness_factor=0.5),
-            ArgsKwargs(p=1, sharpness_factor=0.3),
+            ArgsKwargs(p=1, sharpness_factor=0.2),
             ArgsKwargs(p=1, sharpness_factor=0.99),
         ],
+        closeness_kwargs={"atol": 1e-6, "rtol": 1e-6},
     ),
     ConsistencyConfig(
         prototype_transforms.RandomGrayscale,
@@ -302,25 +315,32 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(saturation=(0.8, 0.9)),
             ArgsKwargs(hue=0.3),
             ArgsKwargs(hue=(-0.1, 0.2)),
-            ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.7, hue=0.3),
+            ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.5, hue=0.6),
         ],
+        closeness_kwargs={"atol": 1e-5, "rtol": 1e-5},
     ),
-    ConsistencyConfig(
-        prototype_transforms.ElasticTransform,
-        legacy_transforms.ElasticTransform,
-        [
-            ArgsKwargs(),
-            ArgsKwargs(alpha=20.0),
-            ArgsKwargs(alpha=(15.3, 27.2)),
-            ArgsKwargs(sigma=3.0),
-            ArgsKwargs(sigma=(2.5, 3.9)),
-            ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.BICUBIC),
-            ArgsKwargs(fill=1),
-        ],
-        # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(163, 163), (72, 333), (313, 95)]),
-    ),
+    *[
+        ConsistencyConfig(
+            prototype_transforms.ElasticTransform,
+            legacy_transforms.ElasticTransform,
+            [
+                ArgsKwargs(),
+                ArgsKwargs(alpha=20.0),
+                ArgsKwargs(alpha=(15.3, 27.2)),
+                ArgsKwargs(sigma=3.0),
+                ArgsKwargs(sigma=(2.5, 3.9)),
+                ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.NEAREST),
+                ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.BICUBIC),
+                ArgsKwargs(fill=1),
+            ],
+            # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
+            make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(163, 163), (72, 333), (313, 95)], dtypes=[dt]),
+            # We updated gaussian blur kernel generation with a faster and numerically more stable version
+            # This brings float32 accumulation visible in elastic transform -> we need to relax consistency tolerance
+            closeness_kwargs=ckw,
+        )
+        for dt, ckw in [(torch.uint8, {"rtol": 1e-1, "atol": 1}), (torch.float32, {"rtol": 1e-2, "atol": 1e-3})]
+    ],
     ConsistencyConfig(
         prototype_transforms.GaussianBlur,
         legacy_transforms.GaussianBlur,
@@ -330,6 +350,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(kernel_size=3, sigma=0.7),
             ArgsKwargs(kernel_size=5, sigma=(0.3, 1.4)),
         ],
+        closeness_kwargs={"rtol": 1e-5, "atol": 1e-5},
     ),
     ConsistencyConfig(
         prototype_transforms.RandomAffine,
@@ -491,15 +512,18 @@ def test_signature_consistency(config):
     assert prototype_kinds == legacy_kinds
 
 
-def check_call_consistency(prototype_transform, legacy_transform, images=None, supports_pil=True):
+def check_call_consistency(
+    prototype_transform, legacy_transform, images=None, supports_pil=True, closeness_kwargs=None
+):
     if images is None:
         images = make_images(**DEFAULT_MAKE_IMAGES_KWARGS)
+
+    closeness_kwargs = closeness_kwargs or dict()
 
     for image in images:
         image_repr = f"[{tuple(image.shape)}, {str(image.dtype).rsplit('.')[-1]}]"
 
         image_tensor = torch.Tensor(image)
-
         try:
             torch.manual_seed(0)
             output_legacy_tensor = legacy_transform(image_tensor)
@@ -520,10 +544,11 @@ def check_call_consistency(prototype_transform, legacy_transform, images=None, s
                 f"`is_simple_tensor` path in `_transform`."
             ) from exc
 
-        assert_equal(
+        assert_close(
             output_prototype_tensor,
             output_legacy_tensor,
             msg=lambda msg: f"Tensor image consistency check failed with: \n\n{msg}",
+            **closeness_kwargs,
         )
 
         try:
@@ -536,10 +561,11 @@ def check_call_consistency(prototype_transform, legacy_transform, images=None, s
                 f"`features.Image` path in `_transform`."
             ) from exc
 
-        assert_equal(
+        assert_close(
             output_prototype_image,
             output_prototype_tensor,
             msg=lambda msg: f"Output for feature and tensor images is not equal: \n\n{msg}",
+            **closeness_kwargs,
         )
 
         if image.ndim == 3 and supports_pil:
@@ -565,21 +591,25 @@ def check_call_consistency(prototype_transform, legacy_transform, images=None, s
                     f"`PIL.Image.Image` path in `_transform`."
                 ) from exc
 
-            assert_equal(
+            assert_close(
                 output_prototype_pil,
                 output_legacy_pil,
                 msg=lambda msg: f"PIL image consistency check failed with: \n\n{msg}",
+                **closeness_kwargs,
             )
 
 
 @pytest.mark.parametrize(
     ("config", "args_kwargs"),
     [
-        pytest.param(config, args_kwargs, id=f"{config.legacy_cls.__name__}({args_kwargs})")
+        pytest.param(
+            config, args_kwargs, id=f"{config.legacy_cls.__name__}-{idx:0{len(str(len(config.args_kwargs)))}d}"
+        )
         for config in CONSISTENCY_CONFIGS
-        for args_kwargs in config.args_kwargs
+        for idx, args_kwargs in enumerate(config.args_kwargs)
     ],
 )
+@pytest.mark.filterwarnings("ignore")
 def test_call_consistency(config, args_kwargs):
     args, kwargs = args_kwargs
 
@@ -604,6 +634,7 @@ def test_call_consistency(config, args_kwargs):
         legacy_transform,
         images=make_images(**config.make_images_kwargs),
         supports_pil=config.supports_pil,
+        closeness_kwargs=config.closeness_kwargs,
     )
 
 
@@ -637,7 +668,7 @@ class TestContainerTransforms:
         prototype_transform = prototype_transforms.RandomApply(
             [
                 prototype_transforms.Resize(256),
-                legacy_transforms.CenterCrop(224),
+                prototype_transforms.CenterCrop(224),
             ],
             p=p,
         )
@@ -652,21 +683,21 @@ class TestContainerTransforms:
         check_call_consistency(prototype_transform, legacy_transform)
 
     # We can't test other values for `p` since the random parameter generation is different
-    @pytest.mark.parametrize("p", [(0, 1), (1, 0)])
-    def test_random_choice(self, p):
+    @pytest.mark.parametrize("probabilities", [(0, 1), (1, 0)])
+    def test_random_choice(self, probabilities):
         prototype_transform = prototype_transforms.RandomChoice(
             [
                 prototype_transforms.Resize(256),
                 legacy_transforms.CenterCrop(224),
             ],
-            p=p,
+            probabilities=probabilities,
         )
         legacy_transform = legacy_transforms.RandomChoice(
             [
                 legacy_transforms.Resize(256),
                 legacy_transforms.CenterCrop(224),
             ],
-            p=p,
+            p=probabilities,
         )
 
         check_call_consistency(prototype_transform, legacy_transform)
@@ -683,7 +714,8 @@ class TestToTensorTransforms:
             assert_equal(prototype_transform(image_pil), legacy_transform(image_pil))
 
     def test_to_tensor(self):
-        prototype_transform = prototype_transforms.ToTensor()
+        with pytest.warns(UserWarning, match=re.escape("The transform `ToTensor()` is deprecated")):
+            prototype_transform = prototype_transforms.ToTensor()
         legacy_transform = legacy_transforms.ToTensor()
 
         for image in make_images(extra_dims=[()]):
@@ -731,7 +763,7 @@ class TestAATransforms:
             expected_output = t_ref(inpt)
             output = t(inpt)
 
-            assert_equal(expected_output, output)
+            assert_close(expected_output, output, atol=1, rtol=0.1)
 
     @pytest.mark.parametrize(
         "inpt",
@@ -779,7 +811,7 @@ class TestAATransforms:
             expected_output = t_ref(inpt)
             output = t(inpt)
 
-            assert_equal(expected_output, output)
+            assert_close(expected_output, output, atol=1, rtol=0.1)
 
     @pytest.mark.parametrize(
         "inpt",
@@ -871,7 +903,7 @@ class TestRefDetTransforms:
 
         pil_image = to_image_pil(make_image(size=size, color_space=features.ColorSpace.RGB))
         target = {
-            "boxes": make_bounding_box(image_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -881,7 +913,7 @@ class TestRefDetTransforms:
 
         tensor_image = torch.Tensor(make_image(size=size, color_space=features.ColorSpace.RGB))
         target = {
-            "boxes": make_bounding_box(image_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -891,7 +923,7 @@ class TestRefDetTransforms:
 
         feature_image = make_image(size=size, color_space=features.ColorSpace.RGB)
         target = {
-            "boxes": make_bounding_box(image_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
+            "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
         }
         if with_mask:
@@ -949,7 +981,7 @@ class PadIfSmaller(prototype_transforms.Transform):
         self.fill = prototype_transforms._geometry._setup_fill_arg(fill)
 
     def _get_params(self, sample):
-        _, height, width = query_chw(sample)
+        height, width = query_spatial_size(sample)
         padding = [0, 0, max(self.size - width, 0), max(self.size - height, 0)]
         needs_padding = any(padding)
         return dict(padding=padding, needs_padding=needs_padding)
@@ -959,9 +991,7 @@ class PadIfSmaller(prototype_transforms.Transform):
             return inpt
 
         fill = self.fill[type(inpt)]
-        fill = F._geometry._convert_fill_arg(fill)
-
-        return F.pad(inpt, padding=params["padding"], fill=fill)
+        return prototype_F.pad(inpt, padding=params["padding"], fill=fill)
 
 
 class TestRefSegTransforms:
@@ -980,7 +1010,7 @@ class TestRefSegTransforms:
 
             dp = (conv_fn(feature_image), feature_mask)
             dp_ref = (
-                to_image_pil(feature_image) if supports_pil else torch.Tensor(feature_image),
+                to_image_pil(feature_image) if supports_pil else feature_image.as_subclass(torch.Tensor),
                 to_image_pil(feature_mask),
             )
 
@@ -994,12 +1024,16 @@ class TestRefSegTransforms:
         for dp, dp_ref in self.make_datapoints(**data_kwargs or dict()):
 
             self.set_seed()
-            output = t(dp)
+            actual = actual_image, actual_mask = t(dp)
 
             self.set_seed()
-            expected_output = t_ref(*dp_ref)
+            expected_image, expected_mask = t_ref(*dp_ref)
+            if isinstance(actual_image, torch.Tensor) and not isinstance(expected_image, torch.Tensor):
+                expected_image = legacy_F.pil_to_tensor(expected_image)
+            expected_mask = legacy_F.pil_to_tensor(expected_mask).squeeze(0)
+            expected = (expected_image, expected_mask)
 
-            assert_equal(output, expected_output)
+            assert_equal(actual, expected)
 
     @pytest.mark.parametrize(
         ("t_ref", "t", "data_kwargs"),
@@ -1095,3 +1129,81 @@ class TestRefSegTransforms:
         t_ref = seg_transforms.RandomResize(min_size=base_size, max_size=base_size)
 
         self.check_resize(mocker, t_ref, t)
+
+
+@pytest.mark.parametrize(
+    ("legacy_dispatcher", "name_only_params"),
+    [
+        (legacy_F.get_dimensions, {}),
+        (legacy_F.get_image_size, {}),
+        (legacy_F.get_image_num_channels, {}),
+        (legacy_F.to_tensor, {}),
+        (legacy_F.pil_to_tensor, {}),
+        (legacy_F.convert_image_dtype, {}),
+        (legacy_F.to_pil_image, {}),
+        (legacy_F.normalize, {}),
+        (legacy_F.resize, {}),
+        (legacy_F.pad, {"padding", "fill"}),
+        (legacy_F.crop, {}),
+        (legacy_F.center_crop, {}),
+        (legacy_F.resized_crop, {}),
+        (legacy_F.hflip, {}),
+        (legacy_F.perspective, {"startpoints", "endpoints", "fill"}),
+        (legacy_F.vflip, {}),
+        (legacy_F.five_crop, {}),
+        (legacy_F.ten_crop, {}),
+        (legacy_F.adjust_brightness, {}),
+        (legacy_F.adjust_contrast, {}),
+        (legacy_F.adjust_saturation, {}),
+        (legacy_F.adjust_hue, {}),
+        (legacy_F.adjust_gamma, {}),
+        (legacy_F.rotate, {"center", "fill"}),
+        (legacy_F.affine, {"angle", "translate", "center", "fill"}),
+        (legacy_F.to_grayscale, {}),
+        (legacy_F.rgb_to_grayscale, {}),
+        (legacy_F.to_tensor, {}),
+        (legacy_F.erase, {}),
+        (legacy_F.gaussian_blur, {}),
+        (legacy_F.invert, {}),
+        (legacy_F.posterize, {}),
+        (legacy_F.solarize, {}),
+        (legacy_F.adjust_sharpness, {}),
+        (legacy_F.autocontrast, {}),
+        (legacy_F.equalize, {}),
+        (legacy_F.elastic_transform, {"fill"}),
+    ],
+)
+def test_dispatcher_signature_consistency(legacy_dispatcher, name_only_params):
+    legacy_signature = inspect.signature(legacy_dispatcher)
+    legacy_params = list(legacy_signature.parameters.values())[1:]
+
+    try:
+        prototype_dispatcher = getattr(prototype_F, legacy_dispatcher.__name__)
+    except AttributeError:
+        raise AssertionError(
+            f"Legacy dispatcher `F.{legacy_dispatcher.__name__}` has no prototype equivalent"
+        ) from None
+
+    prototype_signature = inspect.signature(prototype_dispatcher)
+    prototype_params = list(prototype_signature.parameters.values())[1:]
+
+    # Some dispatchers got extra parameters. This makes sure they have a default argument and thus are BC. We don't
+    # need to check if parameters were added in the middle rather than at the end, since that will be caught by the
+    # regular check below.
+    prototype_params, new_prototype_params = (
+        prototype_params[: len(legacy_params)],
+        prototype_params[len(legacy_params) :],
+    )
+    for param in new_prototype_params:
+        assert param.default is not param.empty
+
+    # Some annotations were changed mostly to supersets of what was there before. Plus, some legacy dispatchers had no
+    # annotations. In these cases we simply drop the annotation and default argument from the comparison
+    for prototype_param, legacy_param in zip(prototype_params, legacy_params):
+        if legacy_param.name in name_only_params:
+            prototype_param._annotation = prototype_param._default = inspect.Parameter.empty
+            legacy_param._annotation = legacy_param._default = inspect.Parameter.empty
+        elif legacy_param.annotation is inspect.Parameter.empty:
+            prototype_param._annotation = inspect.Parameter.empty
+
+    assert prototype_params == legacy_params

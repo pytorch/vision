@@ -4,7 +4,7 @@ from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -15,7 +15,7 @@ from torchvision.prototype.datasets.utils._internal import (
     read_categories_file,
     read_mat,
 )
-from torchvision.prototype.features import _Feature, EncodedImage
+from torchvision.prototype.features import _Feature
 
 from .._api import register_dataset, register_info
 
@@ -49,31 +49,35 @@ class SBD(Dataset):
         super().__init__(root, dependencies=("scipy",), skip_integrity_check=skip_integrity_check)
 
     def _resources(self) -> List[OnlineResource]:
-        archive = HttpResource(
-            "https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz",
-            sha256="6a5a2918d5c73ce032fdeba876574d150d9d04113ab87540a1304cbcc715be53",
-        )
-        extra_split = HttpResource(
-            "http://home.bharathh.info/pubs/codes/SBD/train_noval.txt",
-            sha256="0b2068f7a359d2907431803e1cd63bf6162da37d7d503b589d3b08c6fd0c2432",
-        )
-        return [archive, extra_split]
+        resources = [
+            HttpResource(
+                "https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz",
+                sha256="6a5a2918d5c73ce032fdeba876574d150d9d04113ab87540a1304cbcc715be53",
+            )
+        ]
+        if self._split == "train_noval":
+            resources.append(
+                HttpResource(
+                    "http://home.bharathh.info/pubs/codes/SBD/train_noval.txt",
+                    sha256="0b2068f7a359d2907431803e1cd63bf6162da37d7d503b589d3b08c6fd0c2432",
+                )
+            )
+        return resources  # type: ignore[return-value]
 
     def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
         path = pathlib.Path(data[0])
         parent, grandparent, *_ = path.parents
 
-        if parent.name == "dataset":
-            return 0
-        elif grandparent.name == "dataset":
+        if grandparent.name == "dataset":
             if parent.name == "img":
-                return 1
+                return 0
             elif parent.name == "cls":
-                return 2
-            else:
-                return None
-        else:
-            return None
+                return 1
+
+        if parent.name == "dataset" and self._split != "train_noval":
+            return 2
+
+        return None
 
     def _prepare_sample(self, data: Tuple[Tuple[Any, Tuple[str, BinaryIO]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
@@ -93,18 +97,24 @@ class SBD(Dataset):
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
-        archive_dp, extra_split_dp = resource_dps
-
-        archive_dp = resource_dps[0]
-        split_dp, images_dp, anns_dp = Demultiplexer(
-            archive_dp,
-            3,
-            self._classify_archive,
-            buffer_size=INFINITE_BUFFER_SIZE,
-            drop_none=True,
-        )
         if self._split == "train_noval":
-            split_dp = extra_split_dp
+            archive_dp, split_dp = resource_dps
+            images_dp, anns_dp = Demultiplexer(
+                archive_dp,
+                2,
+                self._classify_archive,
+                buffer_size=INFINITE_BUFFER_SIZE,
+                drop_none=True,
+            )
+        else:
+            archive_dp = resource_dps[0]
+            images_dp, anns_dp, split_dp = Demultiplexer(
+                archive_dp,
+                3,
+                self._classify_archive,
+                buffer_size=INFINITE_BUFFER_SIZE,
+                drop_none=True,
+            )
 
         split_dp = Filter(split_dp, path_comparator("name", f"{self._split}.txt"))
         split_dp = LineReader(split_dp, decode=True)

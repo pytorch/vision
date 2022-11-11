@@ -13,4 +13,4 @@ dependencies:
   - pip:
     - future
     - scipy
-    - av
+    - av < 10
