@@ -362,6 +362,14 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                     max_visible = 3
                     v_sample = ", ".join(v[:max_visible])
                     v = f"{v_sample}, ... ({len(v)-max_visible} omitted)" if len(v) > max_visible else v_sample
+                elif k == "_ops":
+                    if obj.__name__.endswith("_QuantizedWeights"):
+                        k = "integer operations (GOPs)"
+                    else:
+                        k = "floating point operations (GFLOPs)"
+                elif k == "_weight_size":
+                    k = "weights file size (MB)"
+
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
             lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
