@@ -52,6 +52,6 @@ from ._misc import (
     TransposeDimensions,
 )
 from ._temporal import UniformTemporalSubsample
-from ._type_conversion import DecodeImage, LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
+from ._type_conversion import LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
 from ._deprecated import Grayscale, RandomGrayscale, ToTensor  # usort: skip
