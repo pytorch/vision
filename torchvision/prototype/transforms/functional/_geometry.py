@@ -1538,7 +1538,7 @@ def center_crop_image_tensor(image: torch.Tensor, output_size: List[int]) -> tor
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-        image = _FT.torch_pad(image, _FT._parse_pad_padding(padding_ltrb), value=0.0)
+        image = torch_pad(image, _parse_pad_padding(padding_ltrb), value=0.0)
 
         image_height, image_width = image.shape[-2:]
         if crop_width == image_width and crop_height == image_height:
