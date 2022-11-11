@@ -155,11 +155,13 @@ def test_schema_meta_validation(model_fn):
         "recipe",
         "unquantized",
         "_docs",
+        "_ops",
+        "_weight_size",
     }
     # mandatory fields for each computer vision task
     classification_fields = {"categories", ("_metrics", "ImageNet-1K", "acc@1"), ("_metrics", "ImageNet-1K", "acc@5")}
     defaults = {
-        "all": {"_metrics", "min_size", "num_params", "recipe", "_docs"},
+        "all": {"_metrics", "min_size", "num_params", "recipe", "_docs", "_weight_size", "_ops"},
         "models": classification_fields,
         "detection": {"categories", ("_metrics", "COCO-val2017", "box_map")},
         "quantization": classification_fields | {"backend", "unquantized"},
