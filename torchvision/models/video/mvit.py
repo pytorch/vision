@@ -624,7 +624,7 @@ class MViT_V1_B_Weights(WeightsEnum):
                     "acc@5": 93.582,
                 }
             },
-            "_ops": 70.599408,
+            "_ops": 70.6,
             "_weight_size": 139.764235,
         },
     )
@@ -657,7 +657,7 @@ class MViT_V2_S_Weights(WeightsEnum):
                     "acc@5": 94.665,
                 }
             },
-            "_ops": 64.223816,
+            "_ops": 64.2,
             "_weight_size": 131.883704,
         },
     )

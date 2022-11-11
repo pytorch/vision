@@ -332,7 +332,7 @@ class R3D_18_Weights(WeightsEnum):
                     "acc@5": 83.479,
                 }
             },
-            "_ops": 40.696553,
+            "_ops": 40.7,
             "_weight_size": 127.359406,
         },
     )
@@ -352,7 +352,7 @@ class MC3_18_Weights(WeightsEnum):
                     "acc@5": 84.130,
                 }
             },
-            "_ops": 43.342635,
+            "_ops": 43.3,
             "_weight_size": 44.671906,
         },
     )
@@ -372,7 +372,7 @@ class R2Plus1D_18_Weights(WeightsEnum):
                     "acc@5": 86.175,
                 }
             },
-            "_ops": 40.519081,
+            "_ops": 40.5,
             "_weight_size": 120.318409,
         },
     )

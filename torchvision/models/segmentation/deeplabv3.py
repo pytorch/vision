@@ -152,7 +152,7 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
                     "pixel_acc": 92.4,
                 }
             },
-            "_ops": 178.721945,
+            "_ops": 178.7,
             "_weight_size": 160.514977,
         },
     )
@@ -173,7 +173,7 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
                     "pixel_acc": 92.4,
                 }
             },
-            "_ops": 258.743039,
+            "_ops": 258.7,
             "_weight_size": 233.216800,
         },
     )
@@ -194,7 +194,7 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
                     "pixel_acc": 91.2,
                 }
             },
-            "_ops": 10.452448,
+            "_ops": 10.5,
             "_weight_size": 42.301330,
         },
     )

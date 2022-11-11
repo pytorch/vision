@@ -175,7 +175,7 @@ class S3D_Weights(WeightsEnum):
                     "acc@5": 88.050,
                 }
             },
-            "_ops": 17.978771,
+            "_ops": 18.0,
             "_weight_size": 31.971929,
         },
     )

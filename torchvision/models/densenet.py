@@ -277,7 +277,7 @@ class DenseNet121_Weights(WeightsEnum):
                     "acc@5": 91.972,
                 }
             },
-            "_ops": 2.834162,
+            "_ops": 2.8,
             "_weight_size": 30.844645,
         },
     )
@@ -297,7 +297,7 @@ class DenseNet161_Weights(WeightsEnum):
                     "acc@5": 93.560,
                 }
             },
-            "_ops": 7.727907,
+            "_ops": 7.7,
             "_weight_size": 110.369482,
         },
     )
@@ -317,7 +317,7 @@ class DenseNet169_Weights(WeightsEnum):
                     "acc@5": 92.806,
                 }
             },
-            "_ops": 3.359843,
+            "_ops": 3.4,
             "_weight_size": 54.708029,
         },
     )
@@ -337,7 +337,7 @@ class DenseNet201_Weights(WeightsEnum):
                     "acc@5": 93.370,
                 }
             },
-            "_ops": 4.291366,
+            "_ops": 4.3,
             "_weight_size": 77.373247,
         },
     )

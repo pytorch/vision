@@ -422,7 +422,7 @@ class Inception_V3_Weights(WeightsEnum):
                     "acc@5": 93.450,
                 }
             },
-            "_ops": 5.713216,
+            "_ops": 5.7,
             "_weight_size": 103.902575,
             "_docs": """These weights are ported from the original paper.""",
         },

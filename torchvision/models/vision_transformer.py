@@ -363,7 +363,7 @@ class ViT_B_16_Weights(WeightsEnum):
                     "acc@5": 95.318,
                 }
             },
-            "_ops": 17.563828,
+            "_ops": 17.6,
             "_weight_size": 330.284623,
             "_docs": """
                 These weights were trained from scratch by using a modified version of `DeIT
@@ -389,7 +389,7 @@ class ViT_B_16_Weights(WeightsEnum):
                     "acc@5": 97.650,
                 }
             },
-            "_ops": 55.484350,
+            "_ops": 55.5,
             "_weight_size": 331.397904,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
@@ -416,7 +416,7 @@ class ViT_B_16_Weights(WeightsEnum):
                     "acc@5": 96.180,
                 }
             },
-            "_ops": 17.563828,
+            "_ops": 17.6,
             "_weight_size": 330.284623,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
@@ -442,7 +442,7 @@ class ViT_B_32_Weights(WeightsEnum):
                     "acc@5": 92.466,
                 }
             },
-            "_ops": 4.409186,
+            "_ops": 4.4,
             "_weight_size": 336.603959,
             "_docs": """
                 These weights were trained from scratch by using a modified version of `DeIT
@@ -468,7 +468,7 @@ class ViT_L_16_Weights(WeightsEnum):
                     "acc@5": 94.638,
                 }
             },
-            "_ops": 61.554713,
+            "_ops": 61.6,
             "_weight_size": 1161.023240,
             "_docs": """
                 These weights were trained from scratch by using a modified version of TorchVision's
@@ -495,7 +495,7 @@ class ViT_L_16_Weights(WeightsEnum):
                     "acc@5": 98.512,
                 }
             },
-            "_ops": 361.986286,
+            "_ops": 362.0,
             "_weight_size": 1164.257615,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
@@ -522,7 +522,7 @@ class ViT_L_16_Weights(WeightsEnum):
                     "acc@5": 97.422,
                 }
             },
-            "_ops": 61.554713,
+            "_ops": 61.6,
             "_weight_size": 1161.023240,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
@@ -548,7 +548,7 @@ class ViT_L_32_Weights(WeightsEnum):
                     "acc@5": 93.07,
                 }
             },
-            "_ops": 15.377539,
+            "_ops": 15.4,
             "_weight_size": 1169.448960,
             "_docs": """
                 These weights were trained from scratch by using a modified version of `DeIT
@@ -578,7 +578,7 @@ class ViT_H_14_Weights(WeightsEnum):
                     "acc@5": 98.694,
                 }
             },
-            "_ops": 1016.716764,
+            "_ops": 1016.7,
             "_weight_size": 2416.643174,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
@@ -605,7 +605,7 @@ class ViT_H_14_Weights(WeightsEnum):
                     "acc@5": 97.730,
                 }
             },
-            "_ops": 167.295109,
+            "_ops": 167.3,
             "_weight_size": 2411.208604,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk

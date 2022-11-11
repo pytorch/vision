@@ -323,7 +323,7 @@ class ResNet18_Weights(WeightsEnum):
                     "acc@5": 89.078,
                 }
             },
-            "_ops": 1.814073,
+            "_ops": 1.8,
             "_weight_size": 44.661113,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -345,7 +345,7 @@ class ResNet34_Weights(WeightsEnum):
                     "acc@5": 91.420,
                 }
             },
-            "_ops": 3.663761,
+            "_ops": 3.7,
             "_weight_size": 83.274669,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -367,7 +367,7 @@ class ResNet50_Weights(WeightsEnum):
                     "acc@5": 92.862,
                 }
             },
-            "_ops": 4.089184,
+            "_ops": 4.1,
             "_weight_size": 97.780545,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -385,7 +385,7 @@ class ResNet50_Weights(WeightsEnum):
                     "acc@5": 95.434,
                 }
             },
-            "_ops": 4.089184,
+            "_ops": 4.1,
             "_weight_size": 97.790162,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -410,7 +410,7 @@ class ResNet101_Weights(WeightsEnum):
                     "acc@5": 93.546,
                 }
             },
-            "_ops": 7.801405,
+            "_ops": 7.8,
             "_weight_size": 170.511188,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -428,7 +428,7 @@ class ResNet101_Weights(WeightsEnum):
                     "acc@5": 95.780,
                 }
             },
-            "_ops": 7.801405,
+            "_ops": 7.8,
             "_weight_size": 170.530362,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -453,7 +453,7 @@ class ResNet152_Weights(WeightsEnum):
                     "acc@5": 94.046,
                 }
             },
-            "_ops": 11.513627,
+            "_ops": 11.5,
             "_weight_size": 230.434152,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -471,7 +471,7 @@ class ResNet152_Weights(WeightsEnum):
                     "acc@5": 96.002,
                 }
             },
-            "_ops": 11.513627,
+            "_ops": 11.5,
             "_weight_size": 230.473687,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -496,7 +496,7 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
                     "acc@5": 93.698,
                 }
             },
-            "_ops": 4.230480,
+            "_ops": 4.2,
             "_weight_size": 95.788646,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -514,7 +514,7 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
                     "acc@5": 95.340,
                 }
             },
-            "_ops": 4.230480,
+            "_ops": 4.2,
             "_weight_size": 95.833192,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -539,7 +539,7 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
                     "acc@5": 94.526,
                 }
             },
-            "_ops": 16.414015,
+            "_ops": 16.4,
             "_weight_size": 339.586349,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -557,7 +557,7 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
                     "acc@5": 96.228,
                 }
             },
-            "_ops": 16.414015,
+            "_ops": 16.4,
             "_weight_size": 339.673062,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -582,7 +582,7 @@ class ResNeXt101_64X4D_Weights(WeightsEnum):
                     "acc@5": 96.454,
                 }
             },
-            "_ops": 15.460270,
+            "_ops": 15.5,
             "_weight_size": 319.317594,
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe
@@ -607,7 +607,7 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
                     "acc@5": 94.086,
                 }
             },
-            "_ops": 11.398021,
+            "_ops": 11.4,
             "_weight_size": 131.820194,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -625,7 +625,7 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
                     "acc@5": 95.758,
                 }
             },
-            "_ops": 11.398021,
+            "_ops": 11.4,
             "_weight_size": 263.124207,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -650,7 +650,7 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
                     "acc@5": 94.284,
                 }
             },
-            "_ops": 22.753051,
+            "_ops": 22.8,
             "_weight_size": 242.896219,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -668,7 +668,7 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
                     "acc@5": 96.020,
                 }
             },
-            "_ops": 22.753051,
+            "_ops": 22.8,
             "_weight_size": 484.747281,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe

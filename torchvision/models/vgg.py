@@ -127,7 +127,7 @@ class VGG11_Weights(WeightsEnum):
                     "acc@5": 88.628,
                 }
             },
-            "_ops": 7.609090,
+            "_ops": 7.6,
             "_weight_size": 506.840077,
         },
     )
@@ -147,7 +147,7 @@ class VGG11_BN_Weights(WeightsEnum):
                     "acc@5": 89.810,
                 }
             },
-            "_ops": 7.609090,
+            "_ops": 7.6,
             "_weight_size": 506.881400,
         },
     )
@@ -167,7 +167,7 @@ class VGG13_Weights(WeightsEnum):
                     "acc@5": 89.246,
                 }
             },
-            "_ops": 11.308466,
+            "_ops": 11.3,
             "_weight_size": 507.545068,
         },
     )
@@ -187,7 +187,7 @@ class VGG13_BN_Weights(WeightsEnum):
                     "acc@5": 90.374,
                 }
             },
-            "_ops": 11.308466,
+            "_ops": 11.3,
             "_weight_size": 507.589627,
         },
     )
@@ -207,7 +207,7 @@ class VGG16_Weights(WeightsEnum):
                     "acc@5": 90.382,
                 }
             },
-            "_ops": 15.470264,
+            "_ops": 15.5,
             "_weight_size": 527.795678,
         },
     )
@@ -231,7 +231,7 @@ class VGG16_Weights(WeightsEnum):
                     "acc@5": float("nan"),
                 }
             },
-            "_ops": 15.470264,
+            "_ops": 15.5,
             "_weight_size": 527.801824,
             "_docs": """
                 These weights can't be used for classification because they are missing values in the `classifier`
@@ -256,7 +256,7 @@ class VGG16_BN_Weights(WeightsEnum):
                     "acc@5": 91.516,
                 }
             },
-            "_ops": 15.470264,
+            "_ops": 15.5,
             "_weight_size": 527.866207,
         },
     )
@@ -276,7 +276,7 @@ class VGG19_Weights(WeightsEnum):
                     "acc@5": 90.876,
                 }
             },
-            "_ops": 19.632062,
+            "_ops": 19.6,
             "_weight_size": 548.051225,
         },
     )
@@ -296,7 +296,7 @@ class VGG19_BN_Weights(WeightsEnum):
                     "acc@5": 91.842,
                 }
             },
-            "_ops": 19.632062,
+            "_ops": 19.6,
             "_weight_size": 548.142819,
         },
     )

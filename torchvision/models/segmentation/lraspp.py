@@ -108,7 +108,7 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
                     "pixel_acc": 91.2,
                 }
             },
-            "_ops": 2.086220,
+            "_ops": 2.1,
             "_weight_size": 12.490331,
             "_docs": """
                 These weights were trained on a subset of COCO, using only the 20 categories that are present in the
