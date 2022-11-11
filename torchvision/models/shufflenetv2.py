@@ -204,7 +204,7 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
                     "acc@5": 81.746,
                 }
             },
-            "_flops": 0.040476,
+            "_ops": 0.040476,
             "_weight_size": 5.281570,
             "_docs": """These weights were trained from scratch to reproduce closely the results of the paper.""",
         },
@@ -226,7 +226,7 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
                     "acc@5": 88.316,
                 }
             },
-            "_flops": 0.144908,
+            "_ops": 0.144908,
             "_weight_size": 8.791250,
             "_docs": """These weights were trained from scratch to reproduce closely the results of the paper.""",
         },
@@ -248,7 +248,7 @@ class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
                     "acc@5": 91.086,
                 }
             },
-            "_flops": 0.295759,
+            "_ops": 0.295759,
             "_weight_size": 13.557034,
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe
@@ -273,7 +273,7 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
                     "acc@5": 93.006,
                 }
             },
-            "_flops": 0.583253,
+            "_ops": 0.583253,
             "_weight_size": 28.432767,
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe

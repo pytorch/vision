@@ -71,7 +71,7 @@ class FCN_ResNet50_Weights(WeightsEnum):
                     "pixel_acc": 91.4,
                 }
             },
-            "_flops": 152.716512,
+            "_ops": 152.716512,
             "_weight_size": 135.009211,
         },
     )
@@ -92,7 +92,7 @@ class FCN_ResNet101_Weights(WeightsEnum):
                     "pixel_acc": 91.9,
                 }
             },
-            "_flops": 232.737606,
+            "_ops": 232.737606,
             "_weight_size": 207.711034,
         },
     )

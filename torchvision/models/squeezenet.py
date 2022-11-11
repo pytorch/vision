@@ -135,7 +135,7 @@ class SqueezeNet1_0_Weights(WeightsEnum):
                     "acc@5": 80.420,
                 }
             },
-            "_flops": 0.818925,
+            "_ops": 0.818925,
             "_weight_size": 4.778434,
         },
     )
@@ -156,7 +156,7 @@ class SqueezeNet1_1_Weights(WeightsEnum):
                     "acc@5": 80.624,
                 }
             },
-            "_flops": 0.349152,
+            "_ops": 0.349152,
             "_weight_size": 4.729117,
         },
     )

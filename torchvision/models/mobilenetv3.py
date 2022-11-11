@@ -307,7 +307,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
                     "acc@5": 91.340,
                 }
             },
-            "_flops": 0.216590,
+            "_ops": 0.216590,
             "_weight_size": 21.113799,
             "_docs": """These weights were trained from scratch by using a simple training recipe.""",
         },
@@ -325,7 +325,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
                     "acc@5": 92.566,
                 }
             },
-            "_flops": 0.216590,
+            "_ops": 0.216590,
             "_weight_size": 21.106828,
             "_docs": """
                 These weights improve marginally upon the results of the original paper by using a modified version of
@@ -351,7 +351,7 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
                     "acc@5": 87.402,
                 }
             },
-            "_flops": 0.056510,
+            "_ops": 0.056510,
             "_weight_size": 9.829093,
             "_docs": """
                 These weights improve upon the results of the original paper by using a simple training recipe.

@@ -428,7 +428,7 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
                     "acc@5": 91.716,
                 }
             },
-            "_flops": 0.401843,
+            "_ops": 0.401843,
             "_weight_size": 16.805909,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -446,7 +446,7 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
                     "acc@5": 92.742,
                 }
             },
-            "_flops": 0.401843,
+            "_ops": 0.401843,
             "_weight_size": 16.805909,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -472,7 +472,7 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
                     "acc@5": 93.136,
                 }
             },
-            "_flops": 0.833856,
+            "_ops": 0.833856,
             "_weight_size": 24.773644,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -490,7 +490,7 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
                     "acc@5": 94.502,
                 }
             },
-            "_flops": 0.833856,
+            "_ops": 0.833856,
             "_weight_size": 24.773522,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -516,7 +516,7 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
                     "acc@5": 93.966,
                 }
             },
-            "_flops": 1.612076,
+            "_ops": 1.612076,
             "_weight_size": 43.152310,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -534,7 +534,7 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
                     "acc@5": 95.444,
                 }
             },
-            "_flops": 1.612076,
+            "_ops": 1.612076,
             "_weight_size": 43.152310,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -560,7 +560,7 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
                     "acc@5": 94.576,
                 }
             },
-            "_flops": 3.176483,
+            "_ops": 3.176483,
             "_weight_size": 74.566991,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -578,7 +578,7 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
                     "acc@5": 95.972,
                 }
             },
-            "_flops": 3.176483,
+            "_ops": 3.176483,
             "_weight_size": 74.566991,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -604,7 +604,7 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
                     "acc@5": 95.048,
                 }
             },
-            "_flops": 8.473071,
+            "_ops": 8.473071,
             "_weight_size": 150.701436,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -622,7 +622,7 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
                     "acc@5": 96.330,
                 }
             },
-            "_flops": 8.473071,
+            "_ops": 8.473071,
             "_weight_size": 150.701436,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -648,7 +648,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                     "acc@5": 95.240,
                 }
             },
-            "_flops": 15.911510,
+            "_ops": 15.911510,
             "_weight_size": 319.490335,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -666,7 +666,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                     "acc@5": 96.328,
                 }
             },
-            "_flops": 15.911510,
+            "_ops": 15.911510,
             "_weight_size": 319.490335,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -689,7 +689,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                     "acc@5": 98.054,
                 }
             },
-            "_flops": 46.734897,
+            "_ops": 46.734897,
             "_weight_size": 319.490335,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
@@ -712,7 +712,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                     "acc@5": 97.244,
                 }
             },
-            "_flops": 15.911510,
+            "_ops": 15.911510,
             "_weight_size": 319.490335,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
@@ -737,7 +737,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                     "acc@5": 95.340,
                 }
             },
-            "_flops": 32.279553,
+            "_ops": 32.279553,
             "_weight_size": 554.076371,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -755,7 +755,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                     "acc@5": 96.498,
                 }
             },
-            "_flops": 32.279553,
+            "_ops": 32.279553,
             "_weight_size": 554.076371,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -778,7 +778,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                     "acc@5": 98.362,
                 }
             },
-            "_flops": 94.826458,
+            "_ops": 94.826458,
             "_weight_size": 554.076371,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
@@ -801,7 +801,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                     "acc@5": 97.480,
                 }
             },
-            "_flops": 32.279553,
+            "_ops": 32.279553,
             "_weight_size": 554.076371,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
@@ -827,7 +827,7 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
                     "acc@5": 98.682,
                 }
             },
-            "_flops": 374.570006,
+            "_ops": 374.570006,
             "_weight_size": 2461.563993,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
@@ -850,7 +850,7 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
                     "acc@5": 97.844,
                 }
             },
-            "_flops": 127.517816,
+            "_ops": 127.517816,
             "_weight_size": 2461.563993,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
@@ -875,7 +875,7 @@ class RegNet_X_400MF_Weights(WeightsEnum):
                     "acc@5": 90.950,
                 }
             },
-            "_flops": 0.413813,
+            "_ops": 0.413813,
             "_weight_size": 21.258035,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -893,7 +893,7 @@ class RegNet_X_400MF_Weights(WeightsEnum):
                     "acc@5": 92.322,
                 }
             },
-            "_flops": 0.413813,
+            "_ops": 0.413813,
             "_weight_size": 21.256570,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -919,7 +919,7 @@ class RegNet_X_800MF_Weights(WeightsEnum):
                     "acc@5": 92.348,
                 }
             },
-            "_flops": 0.799700,
+            "_ops": 0.799700,
             "_weight_size": 27.945130,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -937,7 +937,7 @@ class RegNet_X_800MF_Weights(WeightsEnum):
                     "acc@5": 93.826,
                 }
             },
-            "_flops": 0.799700,
+            "_ops": 0.799700,
             "_weight_size": 27.945130,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -963,7 +963,7 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
                     "acc@5": 93.440,
                 }
             },
-            "_flops": 1.602850,
+            "_ops": 1.602850,
             "_weight_size": 35.339471,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -981,7 +981,7 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
                     "acc@5": 94.922,
                 }
             },
-            "_flops": 1.602850,
+            "_ops": 1.602850,
             "_weight_size": 35.339471,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -1007,7 +1007,7 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
                     "acc@5": 93.992,
                 }
             },
-            "_flops": 3.176622,
+            "_ops": 3.176622,
             "_weight_size": 58.755979,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -1025,7 +1025,7 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
                     "acc@5": 95.430,
                 }
             },
-            "_flops": 3.176622,
+            "_ops": 3.176622,
             "_weight_size": 58.755979,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -1051,7 +1051,7 @@ class RegNet_X_8GF_Weights(WeightsEnum):
                     "acc@5": 94.686,
                 }
             },
-            "_flops": 7.995132,
+            "_ops": 7.995132,
             "_weight_size": 151.455937,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -1069,7 +1069,7 @@ class RegNet_X_8GF_Weights(WeightsEnum):
                     "acc@5": 95.678,
                 }
             },
-            "_flops": 7.995132,
+            "_ops": 7.995132,
             "_weight_size": 151.455937,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -1095,7 +1095,7 @@ class RegNet_X_16GF_Weights(WeightsEnum):
                     "acc@5": 94.944,
                 }
             },
-            "_flops": 15.940755,
+            "_ops": 15.940755,
             "_weight_size": 207.627419,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -1113,7 +1113,7 @@ class RegNet_X_16GF_Weights(WeightsEnum):
                     "acc@5": 96.196,
                 }
             },
-            "_flops": 15.940755,
+            "_ops": 15.940755,
             "_weight_size": 207.627419,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
@@ -1139,7 +1139,7 @@ class RegNet_X_32GF_Weights(WeightsEnum):
                     "acc@5": 95.248,
                 }
             },
-            "_flops": 31.735930,
+            "_ops": 31.735930,
             "_weight_size": 412.039433,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -1157,7 +1157,7 @@ class RegNet_X_32GF_Weights(WeightsEnum):
                     "acc@5": 96.288,
                 }
             },
-            "_flops": 31.735930,
+            "_ops": 31.735930,
             "_weight_size": 412.039433,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
