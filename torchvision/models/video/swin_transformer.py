@@ -502,6 +502,8 @@ def _swin_transformer3d(
 
 _COMMON_META = {
     "categories": _KINETICS400_CATEGORIES,
+    "min_size": (1, 1),
+    "min_temporal_size": 1,
 }
 
 
@@ -522,7 +524,7 @@ class Swin3D_T_Weights(WeightsEnum):
                 "The weights were ported from the paper. The accuracies are estimated on video-level "
                 "with parameters `frame_rate=15`, `clips_per_video=12`, and `clip_len=32`"
             ),
-            "num_params": 000,
+            "num_params": 28158070,
             "_metrics": {
                 "Kinetics-400": {
                     "acc@1": 77.715,
@@ -551,7 +553,7 @@ class Swin3D_S_Weights(WeightsEnum):
                 "The weights were ported from the paper. The accuracies are estimated on video-level "
                 "with parameters `frame_rate=15`, `clips_per_video=12`, and `clip_len=32`"
             ),
-            "num_params": 000,
+            "num_params": 49816678,
             "_metrics": {
                 "Kinetics-400": {
                     "acc@1": 79.521,
@@ -580,7 +582,7 @@ class Swin3D_B_Weights(WeightsEnum):
                 "The weights were ported from the paper. The accuracies are estimated on video-level "
                 "with parameters `frame_rate=15`, `clips_per_video=12`, and `clip_len=32`"
             ),
-            "num_params": 000,
+            "num_params": 88048984,
             "_metrics": {
                 "Kinetics-400": {
                     "acc@1": 79.427,
@@ -605,7 +607,7 @@ class Swin3D_B_Weights(WeightsEnum):
                 "The weights were ported from the paper. The accuracies are estimated on video-level "
                 "with parameters `frame_rate=15`, `clips_per_video=12`, and `clip_len=32`"
             ),
-            "num_params": 000,
+            "num_params": 88048984,
             "_metrics": {
                 "Kinetics-400": {
                     "acc@1": 81.643,
