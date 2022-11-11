@@ -5,7 +5,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
-from torch.nn.functional import interpolate, pad as torch_pad
+from torch.nn.functional import interpolate, grid_sample, pad as torch_pad
 
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
@@ -366,6 +366,39 @@ def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[in
     cmin = min_vals.mul_(inv_tol).trunc_().mul_(tol).floor_()
     size = cmax.sub_(cmin)
     return int(size[0]), int(size[1])  # w, h
+
+
+def _apply_grid_transform(
+    float_img: torch.Tensor, grid:  torch.Tensor, mode: str, fill: Optional[Union[int, float, List[float]]]
+) ->  torch.Tensor:
+
+    shape = float_img.shape
+    if shape[0] > 1:
+        # Apply same grid to a batch of images
+        grid = grid.expand(shape[0], -1, -1, -1)
+
+    # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
+    if fill is not None:
+        mask = torch.ones((shape[0], 1, shape[2], shape[3]), dtype=float_img.dtype, device=float_img.device)
+        float_img = torch.cat((float_img, mask), dim=1)
+
+    float_img = grid_sample(float_img, grid, mode=mode, padding_mode="zeros", align_corners=False)
+
+    # Fill with required color
+    if fill is not None:
+        float_img, mask = torch.tensor_split(float_img, indices=(-1,), dim=-3)
+        mask = mask.expand_as(float_img)
+        fill_list = fill if isinstance(fill, (tuple, list)) else [float(fill)]
+        fill_img = torch.tensor(fill_list, dtype=float_img.dtype, device=float_img.device).view(1, -1, 1, 1)
+        if mode == "nearest":
+            bool_mask = mask < 0.5
+            float_img[bool_mask] = fill_img.expand_as(float_img)[bool_mask]
+        else:  # 'bilinear'
+            # The following is mathematically equivalent to:
+            # img * mask + (1.0 - mask) * fill = img * mask - fill * mask + fill = mask * (img - fill) + fill
+            float_img = float_img.sub_(fill_img).mul_(mask).add_(fill_img)
+
+    return float_img
 
 
 def affine_image_tensor(
@@ -1065,9 +1098,14 @@ def perspective_image_tensor(
         return image
 
     shape = image.shape
+    ndim = image.ndim
+    fp = torch.is_floating_point(image)
 
-    if image.ndim > 4:
+    if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
+        needs_unsquash = True
+    elif ndim == 3:
+        image = image.unsqueeze(0)
         needs_unsquash = True
     else:
         needs_unsquash = False
@@ -1082,9 +1120,12 @@ def perspective_image_tensor(
     )
 
     ow, oh = image.shape[-1], image.shape[-2]
-    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    dtype = image.dtype if fp else torch.float32
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=image.device)
-    output = _FT._apply_grid_transform(image, grid, interpolation.value, fill=fill)
+    output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
+
+    if not fp:
+        output = output.to(image.dtype)
 
     if needs_unsquash:
         output = output.reshape(shape)
@@ -1261,17 +1302,25 @@ def elastic_image_tensor(
         return image
 
     shape = image.shape
+    ndim = image.ndim
     device = image.device
+    fp = torch.is_floating_point(image)
 
-    if image.ndim > 4:
+    if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
+        needs_unsquash = True
+    elif ndim == 3:
+        image = image.unsqueeze(0)
         needs_unsquash = True
     else:
         needs_unsquash = False
 
     image_height, image_width = shape[-2:]
     grid = _create_identity_grid((image_height, image_width), device=device).add_(displacement.to(device))
-    output = _FT._apply_grid_transform(image, grid, interpolation.value, fill)
+    output = _apply_grid_transform(image if fp else image.to(torch.float32), grid, interpolation.value, fill=fill)
+
+    if not fp:
+        output = output.to(image.dtype)
 
     if needs_unsquash:
         output = output.reshape(shape)
