@@ -135,8 +135,8 @@ class SqueezeNet1_0_Weights(WeightsEnum):
                     "acc@5": 80.420,
                 }
             },
-            "_ops": 0.8,
-            "_weight_size": 4.778434,
+            "_ops": 0.819,
+            "_weight_size": 4.778,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -156,8 +156,8 @@ class SqueezeNet1_1_Weights(WeightsEnum):
                     "acc@5": 80.624,
                 }
             },
-            "_ops": 0.3,
-            "_weight_size": 4.729117,
+            "_ops": 0.349,
+            "_weight_size": 4.729,
         },
     )
     DEFAULT = IMAGENET1K_V1

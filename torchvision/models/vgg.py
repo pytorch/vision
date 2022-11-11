@@ -127,8 +127,8 @@ class VGG11_Weights(WeightsEnum):
                     "acc@5": 88.628,
                 }
             },
-            "_ops": 7.6,
-            "_weight_size": 506.840077,
+            "_ops": 7.609,
+            "_weight_size": 506.84,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -147,8 +147,8 @@ class VGG11_BN_Weights(WeightsEnum):
                     "acc@5": 89.810,
                 }
             },
-            "_ops": 7.6,
-            "_weight_size": 506.881400,
+            "_ops": 7.609,
+            "_weight_size": 506.881,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -167,8 +167,8 @@ class VGG13_Weights(WeightsEnum):
                     "acc@5": 89.246,
                 }
             },
-            "_ops": 11.3,
-            "_weight_size": 507.545068,
+            "_ops": 11.308,
+            "_weight_size": 507.545,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -187,8 +187,8 @@ class VGG13_BN_Weights(WeightsEnum):
                     "acc@5": 90.374,
                 }
             },
-            "_ops": 11.3,
-            "_weight_size": 507.589627,
+            "_ops": 11.308,
+            "_weight_size": 507.59,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -207,8 +207,8 @@ class VGG16_Weights(WeightsEnum):
                     "acc@5": 90.382,
                 }
             },
-            "_ops": 15.5,
-            "_weight_size": 527.795678,
+            "_ops": 15.47,
+            "_weight_size": 527.796,
         },
     )
     IMAGENET1K_FEATURES = Weights(
@@ -231,8 +231,8 @@ class VGG16_Weights(WeightsEnum):
                     "acc@5": float("nan"),
                 }
             },
-            "_ops": 15.5,
-            "_weight_size": 527.801824,
+            "_ops": 15.47,
+            "_weight_size": 527.802,
             "_docs": """
                 These weights can't be used for classification because they are missing values in the `classifier`
                 module. Only the `features` module has valid values and can be used for feature extraction. The weights
@@ -256,8 +256,8 @@ class VGG16_BN_Weights(WeightsEnum):
                     "acc@5": 91.516,
                 }
             },
-            "_ops": 15.5,
-            "_weight_size": 527.866207,
+            "_ops": 15.47,
+            "_weight_size": 527.866,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -276,8 +276,8 @@ class VGG19_Weights(WeightsEnum):
                     "acc@5": 90.876,
                 }
             },
-            "_ops": 19.6,
-            "_weight_size": 548.051225,
+            "_ops": 19.632,
+            "_weight_size": 548.051,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -296,8 +296,8 @@ class VGG19_BN_Weights(WeightsEnum):
                     "acc@5": 91.842,
                 }
             },
-            "_ops": 19.6,
-            "_weight_size": 548.142819,
+            "_ops": 19.632,
+            "_weight_size": 548.143,
         },
     )
     DEFAULT = IMAGENET1K_V1

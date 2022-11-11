@@ -183,8 +183,8 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
                     "acc@5": 93.354,
                 }
             },
-            "_ops": 5.7,
-            "_weight_size": 23.145652,
+            "_ops": 5.713,
+            "_weight_size": 23.146,
             "_docs": """
                 These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
                 weights listed below.

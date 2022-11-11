@@ -690,8 +690,8 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
                     "box_map": 36.4,
                 }
             },
-            "_ops": 151.5,
-            "_weight_size": 130.267216,
+            "_ops": 151.54,
+            "_weight_size": 130.267,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
@@ -711,8 +711,8 @@ class RetinaNet_ResNet50_FPN_V2_Weights(WeightsEnum):
                     "box_map": 41.5,
                 }
             },
-            "_ops": 152.2,
-            "_weight_size": 146.037091,
+            "_ops": 152.238,
+            "_weight_size": 146.037,
             "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )

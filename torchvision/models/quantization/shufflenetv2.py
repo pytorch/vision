@@ -139,8 +139,8 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
                     "acc@5": 79.780,
                 }
             },
-            "_ops": 0.0,
-            "_weight_size": 1.500871,
+            "_ops": 0.04,
+            "_weight_size": 1.501,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -160,8 +160,8 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
                     "acc@5": 87.582,
                 }
             },
-            "_ops": 0.1,
-            "_weight_size": 2.333858,
+            "_ops": 0.145,
+            "_weight_size": 2.334,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -182,8 +182,8 @@ class ShuffleNet_V2_X1_5_QuantizedWeights(WeightsEnum):
                     "acc@5": 90.700,
                 }
             },
-            "_ops": 0.3,
-            "_weight_size": 3.671769,
+            "_ops": 0.296,
+            "_weight_size": 3.672,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -204,8 +204,8 @@ class ShuffleNet_V2_X2_0_QuantizedWeights(WeightsEnum):
                     "acc@5": 92.488,
                 }
             },
-            "_ops": 0.6,
-            "_weight_size": 7.467118,
+            "_ops": 0.583,
+            "_weight_size": 7.467,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1

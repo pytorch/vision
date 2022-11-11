@@ -152,8 +152,8 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
                     "pixel_acc": 92.4,
                 }
             },
-            "_ops": 178.7,
-            "_weight_size": 160.514977,
+            "_ops": 178.722,
+            "_weight_size": 160.515,
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -173,8 +173,8 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
                     "pixel_acc": 92.4,
                 }
             },
-            "_ops": 258.7,
-            "_weight_size": 233.216800,
+            "_ops": 258.743,
+            "_weight_size": 233.217,
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -194,8 +194,8 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
                     "pixel_acc": 91.2,
                 }
             },
-            "_ops": 10.5,
-            "_weight_size": 42.301330,
+            "_ops": 10.452,
+            "_weight_size": 42.301,
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
