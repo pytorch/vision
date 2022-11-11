@@ -5,7 +5,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
-from torch.nn.functional import interpolate, grid_sample, pad as torch_pad
+from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
 
 from torchvision.prototype import features
 from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
@@ -369,8 +369,8 @@ def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[in
 
 
 def _apply_grid_transform(
-    float_img: torch.Tensor, grid:  torch.Tensor, mode: str, fill: Optional[Union[int, float, List[float]]]
-) ->  torch.Tensor:
+    float_img: torch.Tensor, grid: torch.Tensor, mode: str, fill: Optional[Union[int, float, List[float]]]
+) -> torch.Tensor:
 
     shape = float_img.shape
     if shape[0] > 1:
