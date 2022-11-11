@@ -175,6 +175,7 @@ class ResNet18_QuantizedWeights(WeightsEnum):
                     "acc@5": 88.882,
                 }
             },
+            "_ops": 1.814073,
             "_weight_size": 11.238080,
         },
     )
@@ -195,6 +196,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
                     "acc@5": 92.814,
                 }
             },
+            "_ops": 4.089184,
             "_weight_size": 24.758719,
         },
     )
@@ -211,6 +213,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
                     "acc@5": 94.976,
                 }
             },
+            "_ops": 4.089184,
             "_weight_size": 24.953237,
         },
     )
@@ -231,6 +234,7 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
                     "acc@5": 94.480,
                 }
             },
+            "_ops": 16.414015,
             "_weight_size": 86.034273,
         },
     )
@@ -247,6 +251,7 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
                     "acc@5": 96.132,
                 }
             },
+            "_ops": 16.414015,
             "_weight_size": 86.645276,
         },
     )
@@ -268,6 +273,7 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
                     "acc@5": 96.326,
                 }
             },
+            "_ops": 15.460270,
             "_weight_size": 81.556409,
         },
     )
