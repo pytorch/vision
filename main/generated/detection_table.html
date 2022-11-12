@@ -223,7 +223,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+3100734 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+9750dfb ) &#x25BC</a>
     </div>
     
 
@@ -345,15 +345,19 @@
               
   <table class="table-weights docutils align-default">
 <colgroup>
-<col style="width: 67%" />
-<col style="width: 13%" />
-<col style="width: 13%" />
-<col style="width: 7%" />
+<col style="width: 57%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 5%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p><strong>Weight</strong></p></th>
 <th class="head"><p><strong>Box MAP</strong></p></th>
 <th class="head"><p><strong>Params</strong></p></th>
+<th class="head"><p><strong>GFLOPS</strong></p></th>
+<th class="head"><p><strong>Size (MB)</strong></p></th>
 <th class="head"><p><strong>Recipe</strong></p></th>
 </tr>
 </thead>
@@ -361,46 +365,64 @@
 <tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">FCOS_ResNet50_FPN_Weights.COCO_V1</span></code></p></td>
 <td><p>39.2</p></td>
 <td><p>32.3M</p></td>
+<td><p>128.207</p></td>
+<td><p>123.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1</span></code></p></td>
 <td><p>22.8</p></td>
 <td><p>19.4M</p></td>
+<td><p>0.719</p></td>
+<td><p>74.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">FasterRCNN_MobileNet_V3_Large_FPN_Weights.COCO_V1</span></code></p></td>
 <td><p>32.8</p></td>
 <td><p>19.4M</p></td>
+<td><p>4.494</p></td>
+<td><p>74.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">FasterRCNN_ResNet50_FPN_V2_Weights.COCO_V1</span></code></p></td>
 <td><p>46.7</p></td>
 <td><p>43.7M</p></td>
+<td><p>280.371</p></td>
+<td><p>167.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5763">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">FasterRCNN_ResNet50_FPN_Weights.COCO_V1</span></code></p></td>
 <td><p>37</p></td>
 <td><p>41.8M</p></td>
+<td><p>134.38</p></td>
+<td><p>159.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RetinaNet_ResNet50_FPN_V2_Weights.COCO_V1</span></code></p></td>
 <td><p>41.5</p></td>
 <td><p>38.2M</p></td>
+<td><p>152.238</p></td>
+<td><p>146</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5756">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RetinaNet_ResNet50_FPN_Weights.COCO_V1</span></code></p></td>
 <td><p>36.4</p></td>
 <td><p>34.0M</p></td>
+<td><p>151.54</p></td>
+<td><p>130.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#retinanet">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SSD300_VGG16_Weights.COCO_V1</span></code></p></td>
 <td><p>25.1</p></td>
 <td><p>35.6M</p></td>
+<td><p>34.858</p></td>
+<td><p>136</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SSDLite320_MobileNet_V3_Large_Weights.COCO_V1</span></code></p></td>
 <td><p>21.3</p></td>
 <td><p>3.4M</p></td>
+<td><p>0.583</p></td>
+<td><p>13.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large">link</a></p></td>
 </tr>
 </tbody>

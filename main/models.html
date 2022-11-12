@@ -225,7 +225,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+3100734 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+9750dfb ) &#x25BC</a>
     </div>
     
 
@@ -579,17 +579,21 @@ weights:</p>
 <p>Accuracies are reported on ImageNet-1K using single crops:</p>
 <table class="table-weights docutils align-default">
 <colgroup>
-<col style="width: 59%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 6%" />
+<col style="width: 52%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 5%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p><strong>Weight</strong></p></th>
 <th class="head"><p><strong>Acc&#64;1</strong></p></th>
 <th class="head"><p><strong>Acc&#64;5</strong></p></th>
 <th class="head"><p><strong>Params</strong></p></th>
+<th class="head"><p><strong>GFLOPS</strong></p></th>
+<th class="head"><p><strong>Size (MB)</strong></p></th>
 <th class="head"><p><strong>Recipe</strong></p></th>
 </tr>
 </thead>
@@ -598,690 +602,920 @@ weights:</p>
 <td><p>56.522</p></td>
 <td><p>79.066</p></td>
 <td><p>61.1M</p></td>
+<td><p>0.714</p></td>
+<td><p>233.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.convnext_base.html#torchvision.models.ConvNeXt_Base_Weights" title="torchvision.models.ConvNeXt_Base_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Base_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>84.062</p></td>
 <td><p>96.87</p></td>
 <td><p>88.6M</p></td>
+<td><p>15.355</p></td>
+<td><p>338.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.convnext_large.html#torchvision.models.ConvNeXt_Large_Weights" title="torchvision.models.ConvNeXt_Large_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Large_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>84.414</p></td>
 <td><p>96.976</p></td>
 <td><p>197.8M</p></td>
+<td><p>34.361</p></td>
+<td><p>754.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.convnext_small.html#torchvision.models.ConvNeXt_Small_Weights" title="torchvision.models.ConvNeXt_Small_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Small_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>83.616</p></td>
 <td><p>96.65</p></td>
 <td><p>50.2M</p></td>
+<td><p>8.684</p></td>
+<td><p>191.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.convnext_tiny.html#torchvision.models.ConvNeXt_Tiny_Weights" title="torchvision.models.ConvNeXt_Tiny_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Tiny_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>82.52</p></td>
 <td><p>96.146</p></td>
 <td><p>28.6M</p></td>
+<td><p>4.456</p></td>
+<td><p>109.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.densenet121.html#torchvision.models.DenseNet121_Weights" title="torchvision.models.DenseNet121_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">DenseNet121_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>74.434</p></td>
 <td><p>91.972</p></td>
 <td><p>8.0M</p></td>
+<td><p>2.834</p></td>
+<td><p>30.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/116">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.densenet161.html#torchvision.models.DenseNet161_Weights" title="torchvision.models.DenseNet161_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">DenseNet161_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>77.138</p></td>
 <td><p>93.56</p></td>
 <td><p>28.7M</p></td>
+<td><p>7.728</p></td>
+<td><p>110.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/116">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.densenet169.html#torchvision.models.DenseNet169_Weights" title="torchvision.models.DenseNet169_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">DenseNet169_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>75.6</p></td>
 <td><p>92.806</p></td>
 <td><p>14.1M</p></td>
+<td><p>3.36</p></td>
+<td><p>54.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/116">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.densenet201.html#torchvision.models.DenseNet201_Weights" title="torchvision.models.DenseNet201_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">DenseNet201_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>76.896</p></td>
 <td><p>93.37</p></td>
 <td><p>20.0M</p></td>
+<td><p>4.291</p></td>
+<td><p>77.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/116">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_b0.html#torchvision.models.EfficientNet_B0_Weights" title="torchvision.models.EfficientNet_B0_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B0_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>77.692</p></td>
 <td><p>93.532</p></td>
 <td><p>5.3M</p></td>
+<td><p>0.386</p></td>
+<td><p>20.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_b1.html#torchvision.models.EfficientNet_B1_Weights" title="torchvision.models.EfficientNet_B1_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B1_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>78.642</p></td>
 <td><p>94.186</p></td>
 <td><p>7.8M</p></td>
+<td><p>0.687</p></td>
+<td><p>30.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_b1.html#torchvision.models.EfficientNet_B1_Weights" title="torchvision.models.EfficientNet_B1_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B1_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>79.838</p></td>
 <td><p>94.934</p></td>
 <td><p>7.8M</p></td>
+<td><p>0.687</p></td>
+<td><p>30.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-lr-wd-crop-tuning">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_b2.html#torchvision.models.EfficientNet_B2_Weights" title="torchvision.models.EfficientNet_B2_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B2_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>80.608</p></td>
 <td><p>95.31</p></td>
 <td><p>9.1M</p></td>
+<td><p>1.088</p></td>
+<td><p>35.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_b3.html#torchvision.models.EfficientNet_B3_Weights" title="torchvision.models.EfficientNet_B3_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B3_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>82.008</p></td>
 <td><p>96.054</p></td>
 <td><p>12.2M</p></td>
+<td><p>1.827</p></td>
+<td><p>47.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_b4.html#torchvision.models.EfficientNet_B4_Weights" title="torchvision.models.EfficientNet_B4_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B4_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>83.384</p></td>
 <td><p>96.594</p></td>
 <td><p>19.3M</p></td>
+<td><p>4.394</p></td>
+<td><p>74.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_b5.html#torchvision.models.EfficientNet_B5_Weights" title="torchvision.models.EfficientNet_B5_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B5_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>83.444</p></td>
 <td><p>96.628</p></td>
 <td><p>30.4M</p></td>
+<td><p>10.266</p></td>
+<td><p>116.9</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_b6.html#torchvision.models.EfficientNet_B6_Weights" title="torchvision.models.EfficientNet_B6_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B6_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>84.008</p></td>
 <td><p>96.916</p></td>
 <td><p>43.0M</p></td>
+<td><p>19.068</p></td>
+<td><p>165.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_b7.html#torchvision.models.EfficientNet_B7_Weights" title="torchvision.models.EfficientNet_B7_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_B7_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>84.122</p></td>
 <td><p>96.908</p></td>
 <td><p>66.3M</p></td>
+<td><p>37.746</p></td>
+<td><p>254.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v1">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.EfficientNet_V2_L_Weights" title="torchvision.models.EfficientNet_V2_L_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_V2_L_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>85.808</p></td>
 <td><p>97.788</p></td>
 <td><p>118.5M</p></td>
+<td><p>56.08</p></td>
+<td><p>454.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v2">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_v2_m.html#torchvision.models.EfficientNet_V2_M_Weights" title="torchvision.models.EfficientNet_V2_M_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_V2_M_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>85.112</p></td>
 <td><p>97.156</p></td>
 <td><p>54.1M</p></td>
+<td><p>24.582</p></td>
+<td><p>208</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v2">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.efficientnet_v2_s.html#torchvision.models.EfficientNet_V2_S_Weights" title="torchvision.models.EfficientNet_V2_S_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">EfficientNet_V2_S_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>84.228</p></td>
 <td><p>96.878</p></td>
 <td><p>21.5M</p></td>
+<td><p>8.366</p></td>
+<td><p>82.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#efficientnet-v2">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.googlenet.html#torchvision.models.GoogLeNet_Weights" title="torchvision.models.GoogLeNet_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">GoogLeNet_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>69.778</p></td>
 <td><p>89.53</p></td>
 <td><p>6.6M</p></td>
+<td><p>1.498</p></td>
+<td><p>49.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#googlenet">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.inception_v3.html#torchvision.models.Inception_V3_Weights" title="torchvision.models.Inception_V3_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inception_V3_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>77.294</p></td>
 <td><p>93.45</p></td>
 <td><p>27.2M</p></td>
+<td><p>5.713</p></td>
+<td><p>103.9</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#inception-v3">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.mnasnet0_5.html#torchvision.models.MNASNet0_5_Weights" title="torchvision.models.MNASNet0_5_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet0_5_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>67.734</p></td>
 <td><p>87.49</p></td>
 <td><p>2.2M</p></td>
+<td><p>0.104</p></td>
+<td><p>8.6</p></td>
 <td><p><a class="reference external" href="https://github.com/1e100/mnasnet_trainer">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.mnasnet0_75.html#torchvision.models.MNASNet0_75_Weights" title="torchvision.models.MNASNet0_75_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet0_75_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>71.18</p></td>
 <td><p>90.496</p></td>
 <td><p>3.2M</p></td>
+<td><p>0.215</p></td>
+<td><p>12.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/6019">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.mnasnet1_0.html#torchvision.models.MNASNet1_0_Weights" title="torchvision.models.MNASNet1_0_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet1_0_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>73.456</p></td>
 <td><p>91.51</p></td>
 <td><p>4.4M</p></td>
+<td><p>0.314</p></td>
+<td><p>16.9</p></td>
 <td><p><a class="reference external" href="https://github.com/1e100/mnasnet_trainer">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.mnasnet1_3.html#torchvision.models.MNASNet1_3_Weights" title="torchvision.models.MNASNet1_3_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet1_3_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>76.506</p></td>
 <td><p>93.522</p></td>
 <td><p>6.3M</p></td>
+<td><p>0.526</p></td>
+<td><p>24.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/6019">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.maxvit_t.html#torchvision.models.MaxVit_T_Weights" title="torchvision.models.MaxVit_T_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MaxVit_T_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>83.7</p></td>
 <td><p>96.722</p></td>
 <td><p>30.9M</p></td>
+<td><p>5.558</p></td>
+<td><p>118.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#maxvit">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.mobilenet_v2.html#torchvision.models.MobileNet_V2_Weights" title="torchvision.models.MobileNet_V2_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V2_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>71.878</p></td>
 <td><p>90.286</p></td>
 <td><p>3.5M</p></td>
+<td><p>0.301</p></td>
+<td><p>13.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.mobilenet_v2.html#torchvision.models.MobileNet_V2_Weights" title="torchvision.models.MobileNet_V2_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V2_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>72.154</p></td>
 <td><p>90.822</p></td>
 <td><p>3.5M</p></td>
+<td><p>0.301</p></td>
+<td><p>13.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.mobilenet_v3_large.html#torchvision.models.MobileNet_V3_Large_Weights" title="torchvision.models.MobileNet_V3_Large_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V3_Large_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>74.042</p></td>
 <td><p>91.34</p></td>
 <td><p>5.5M</p></td>
+<td><p>0.217</p></td>
+<td><p>21.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.mobilenet_v3_large.html#torchvision.models.MobileNet_V3_Large_Weights" title="torchvision.models.MobileNet_V3_Large_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V3_Large_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>75.274</p></td>
 <td><p>92.566</p></td>
 <td><p>5.5M</p></td>
+<td><p>0.217</p></td>
+<td><p>21.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.mobilenet_v3_small.html#torchvision.models.MobileNet_V3_Small_Weights" title="torchvision.models.MobileNet_V3_Small_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V3_Small_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>67.668</p></td>
 <td><p>87.402</p></td>
 <td><p>2.5M</p></td>
+<td><p>0.057</p></td>
+<td><p>9.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_16gf.html#torchvision.models.RegNet_X_16GF_Weights" title="torchvision.models.RegNet_X_16GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_16GF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>80.058</p></td>
 <td><p>94.944</p></td>
 <td><p>54.3M</p></td>
+<td><p>15.941</p></td>
+<td><p>207.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#medium-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_16gf.html#torchvision.models.RegNet_X_16GF_Weights" title="torchvision.models.RegNet_X_16GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_16GF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>82.716</p></td>
 <td><p>96.196</p></td>
 <td><p>54.3M</p></td>
+<td><p>15.941</p></td>
+<td><p>207.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_1_6gf.html#torchvision.models.RegNet_X_1_6GF_Weights" title="torchvision.models.RegNet_X_1_6GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_1_6GF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>77.04</p></td>
 <td><p>93.44</p></td>
 <td><p>9.2M</p></td>
+<td><p>1.603</p></td>
+<td><p>35.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_1_6gf.html#torchvision.models.RegNet_X_1_6GF_Weights" title="torchvision.models.RegNet_X_1_6GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_1_6GF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>79.668</p></td>
 <td><p>94.922</p></td>
 <td><p>9.2M</p></td>
+<td><p>1.603</p></td>
+<td><p>35.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_32gf.html#torchvision.models.RegNet_X_32GF_Weights" title="torchvision.models.RegNet_X_32GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_32GF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>80.622</p></td>
 <td><p>95.248</p></td>
 <td><p>107.8M</p></td>
+<td><p>31.736</p></td>
+<td><p>412</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#large-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_32gf.html#torchvision.models.RegNet_X_32GF_Weights" title="torchvision.models.RegNet_X_32GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_32GF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>83.014</p></td>
 <td><p>96.288</p></td>
 <td><p>107.8M</p></td>
+<td><p>31.736</p></td>
+<td><p>412</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_3_2gf.html#torchvision.models.RegNet_X_3_2GF_Weights" title="torchvision.models.RegNet_X_3_2GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_3_2GF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>78.364</p></td>
 <td><p>93.992</p></td>
 <td><p>15.3M</p></td>
+<td><p>3.177</p></td>
+<td><p>58.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#medium-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_3_2gf.html#torchvision.models.RegNet_X_3_2GF_Weights" title="torchvision.models.RegNet_X_3_2GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_3_2GF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>81.196</p></td>
 <td><p>95.43</p></td>
 <td><p>15.3M</p></td>
+<td><p>3.177</p></td>
+<td><p>58.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_400mf.html#torchvision.models.RegNet_X_400MF_Weights" title="torchvision.models.RegNet_X_400MF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_400MF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>72.834</p></td>
 <td><p>90.95</p></td>
 <td><p>5.5M</p></td>
+<td><p>0.414</p></td>
+<td><p>21.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_400mf.html#torchvision.models.RegNet_X_400MF_Weights" title="torchvision.models.RegNet_X_400MF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_400MF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>74.864</p></td>
 <td><p>92.322</p></td>
 <td><p>5.5M</p></td>
+<td><p>0.414</p></td>
+<td><p>21.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_800mf.html#torchvision.models.RegNet_X_800MF_Weights" title="torchvision.models.RegNet_X_800MF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_800MF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>75.212</p></td>
 <td><p>92.348</p></td>
 <td><p>7.3M</p></td>
+<td><p>0.8</p></td>
+<td><p>27.9</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_800mf.html#torchvision.models.RegNet_X_800MF_Weights" title="torchvision.models.RegNet_X_800MF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_800MF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>77.522</p></td>
 <td><p>93.826</p></td>
 <td><p>7.3M</p></td>
+<td><p>0.8</p></td>
+<td><p>27.9</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_8gf.html#torchvision.models.RegNet_X_8GF_Weights" title="torchvision.models.RegNet_X_8GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_8GF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>79.344</p></td>
 <td><p>94.686</p></td>
 <td><p>39.6M</p></td>
+<td><p>7.995</p></td>
+<td><p>151.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#medium-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_x_8gf.html#torchvision.models.RegNet_X_8GF_Weights" title="torchvision.models.RegNet_X_8GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_X_8GF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>81.682</p></td>
 <td><p>95.678</p></td>
 <td><p>39.6M</p></td>
+<td><p>7.995</p></td>
+<td><p>151.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_128gf.html#torchvision.models.RegNet_Y_128GF_Weights" title="torchvision.models.RegNet_Y_128GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_128GF_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></a></p></td>
 <td><p>88.228</p></td>
 <td><p>98.682</p></td>
 <td><p>644.8M</p></td>
+<td><p>374.57</p></td>
+<td><p>2461.6</p></td>
 <td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_128gf.html#torchvision.models.RegNet_Y_128GF_Weights" title="torchvision.models.RegNet_Y_128GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_128GF_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></a></p></td>
 <td><p>86.068</p></td>
 <td><p>97.844</p></td>
 <td><p>644.8M</p></td>
+<td><p>127.518</p></td>
+<td><p>2461.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_16gf.html#torchvision.models.RegNet_Y_16GF_Weights" title="torchvision.models.RegNet_Y_16GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_16GF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>80.424</p></td>
 <td><p>95.24</p></td>
 <td><p>83.6M</p></td>
+<td><p>15.912</p></td>
+<td><p>319.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#large-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_16gf.html#torchvision.models.RegNet_Y_16GF_Weights" title="torchvision.models.RegNet_Y_16GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_16GF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>82.886</p></td>
 <td><p>96.328</p></td>
 <td><p>83.6M</p></td>
+<td><p>15.912</p></td>
+<td><p>319.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_16gf.html#torchvision.models.RegNet_Y_16GF_Weights" title="torchvision.models.RegNet_Y_16GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_16GF_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></a></p></td>
 <td><p>86.012</p></td>
 <td><p>98.054</p></td>
 <td><p>83.6M</p></td>
+<td><p>46.735</p></td>
+<td><p>319.5</p></td>
 <td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_16gf.html#torchvision.models.RegNet_Y_16GF_Weights" title="torchvision.models.RegNet_Y_16GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_16GF_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></a></p></td>
 <td><p>83.976</p></td>
 <td><p>97.244</p></td>
 <td><p>83.6M</p></td>
+<td><p>15.912</p></td>
+<td><p>319.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_1_6gf.html#torchvision.models.RegNet_Y_1_6GF_Weights" title="torchvision.models.RegNet_Y_1_6GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_1_6GF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>77.95</p></td>
 <td><p>93.966</p></td>
 <td><p>11.2M</p></td>
+<td><p>1.612</p></td>
+<td><p>43.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_1_6gf.html#torchvision.models.RegNet_Y_1_6GF_Weights" title="torchvision.models.RegNet_Y_1_6GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_1_6GF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>80.876</p></td>
 <td><p>95.444</p></td>
 <td><p>11.2M</p></td>
+<td><p>1.612</p></td>
+<td><p>43.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_32gf.html#torchvision.models.RegNet_Y_32GF_Weights" title="torchvision.models.RegNet_Y_32GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_32GF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>80.878</p></td>
 <td><p>95.34</p></td>
 <td><p>145.0M</p></td>
+<td><p>32.28</p></td>
+<td><p>554.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#large-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_32gf.html#torchvision.models.RegNet_Y_32GF_Weights" title="torchvision.models.RegNet_Y_32GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_32GF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>83.368</p></td>
 <td><p>96.498</p></td>
 <td><p>145.0M</p></td>
+<td><p>32.28</p></td>
+<td><p>554.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_32gf.html#torchvision.models.RegNet_Y_32GF_Weights" title="torchvision.models.RegNet_Y_32GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_32GF_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></a></p></td>
 <td><p>86.838</p></td>
 <td><p>98.362</p></td>
 <td><p>145.0M</p></td>
+<td><p>94.826</p></td>
+<td><p>554.1</p></td>
 <td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_32gf.html#torchvision.models.RegNet_Y_32GF_Weights" title="torchvision.models.RegNet_Y_32GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_32GF_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></a></p></td>
 <td><p>84.622</p></td>
 <td><p>97.48</p></td>
 <td><p>145.0M</p></td>
+<td><p>32.28</p></td>
+<td><p>554.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_3_2gf.html#torchvision.models.RegNet_Y_3_2GF_Weights" title="torchvision.models.RegNet_Y_3_2GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_3_2GF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>78.948</p></td>
 <td><p>94.576</p></td>
 <td><p>19.4M</p></td>
+<td><p>3.176</p></td>
+<td><p>74.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#medium-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_3_2gf.html#torchvision.models.RegNet_Y_3_2GF_Weights" title="torchvision.models.RegNet_Y_3_2GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_3_2GF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>81.982</p></td>
 <td><p>95.972</p></td>
 <td><p>19.4M</p></td>
+<td><p>3.176</p></td>
+<td><p>74.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_400mf.html#torchvision.models.RegNet_Y_400MF_Weights" title="torchvision.models.RegNet_Y_400MF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_400MF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>74.046</p></td>
 <td><p>91.716</p></td>
 <td><p>4.3M</p></td>
+<td><p>0.402</p></td>
+<td><p>16.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_400mf.html#torchvision.models.RegNet_Y_400MF_Weights" title="torchvision.models.RegNet_Y_400MF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_400MF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>75.804</p></td>
 <td><p>92.742</p></td>
 <td><p>4.3M</p></td>
+<td><p>0.402</p></td>
+<td><p>16.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_800mf.html#torchvision.models.RegNet_Y_800MF_Weights" title="torchvision.models.RegNet_Y_800MF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_800MF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>76.42</p></td>
 <td><p>93.136</p></td>
 <td><p>6.4M</p></td>
+<td><p>0.834</p></td>
+<td><p>24.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#small-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_800mf.html#torchvision.models.RegNet_Y_800MF_Weights" title="torchvision.models.RegNet_Y_800MF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_800MF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>78.828</p></td>
 <td><p>94.502</p></td>
 <td><p>6.4M</p></td>
+<td><p>0.834</p></td>
+<td><p>24.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_8gf.html#torchvision.models.RegNet_Y_8GF_Weights" title="torchvision.models.RegNet_Y_8GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_8GF_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>80.032</p></td>
 <td><p>95.048</p></td>
 <td><p>39.4M</p></td>
+<td><p>8.473</p></td>
+<td><p>150.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#medium-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.regnet_y_8gf.html#torchvision.models.RegNet_Y_8GF_Weights" title="torchvision.models.RegNet_Y_8GF_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegNet_Y_8GF_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>82.828</p></td>
 <td><p>96.33</p></td>
 <td><p>39.4M</p></td>
+<td><p>8.473</p></td>
+<td><p>150.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnext101_32x8d.html#torchvision.models.ResNeXt101_32X8D_Weights" title="torchvision.models.ResNeXt101_32X8D_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_32X8D_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>79.312</p></td>
 <td><p>94.526</p></td>
 <td><p>88.8M</p></td>
+<td><p>16.414</p></td>
+<td><p>339.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnext">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnext101_32x8d.html#torchvision.models.ResNeXt101_32X8D_Weights" title="torchvision.models.ResNeXt101_32X8D_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_32X8D_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>82.834</p></td>
 <td><p>96.228</p></td>
 <td><p>88.8M</p></td>
+<td><p>16.414</p></td>
+<td><p>339.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnext101_64x4d.html#torchvision.models.ResNeXt101_64X4D_Weights" title="torchvision.models.ResNeXt101_64X4D_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_64X4D_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>83.246</p></td>
 <td><p>96.454</p></td>
 <td><p>83.5M</p></td>
+<td><p>15.46</p></td>
+<td><p>319.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5935">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnext50_32x4d.html#torchvision.models.ResNeXt50_32X4D_Weights" title="torchvision.models.ResNeXt50_32X4D_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt50_32X4D_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>77.618</p></td>
 <td><p>93.698</p></td>
 <td><p>25.0M</p></td>
+<td><p>4.23</p></td>
+<td><p>95.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnext">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnext50_32x4d.html#torchvision.models.ResNeXt50_32X4D_Weights" title="torchvision.models.ResNeXt50_32X4D_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt50_32X4D_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>81.198</p></td>
 <td><p>95.34</p></td>
 <td><p>25.0M</p></td>
+<td><p>4.23</p></td>
+<td><p>95.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnet101.html#torchvision.models.ResNet101_Weights" title="torchvision.models.ResNet101_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet101_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>77.374</p></td>
 <td><p>93.546</p></td>
 <td><p>44.5M</p></td>
+<td><p>7.801</p></td>
+<td><p>170.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnet">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnet101.html#torchvision.models.ResNet101_Weights" title="torchvision.models.ResNet101_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet101_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>81.886</p></td>
 <td><p>95.78</p></td>
 <td><p>44.5M</p></td>
+<td><p>7.801</p></td>
+<td><p>170.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnet152.html#torchvision.models.ResNet152_Weights" title="torchvision.models.ResNet152_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet152_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>78.312</p></td>
 <td><p>94.046</p></td>
 <td><p>60.2M</p></td>
+<td><p>11.514</p></td>
+<td><p>230.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnet">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnet152.html#torchvision.models.ResNet152_Weights" title="torchvision.models.ResNet152_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet152_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>82.284</p></td>
 <td><p>96.002</p></td>
 <td><p>60.2M</p></td>
+<td><p>11.514</p></td>
+<td><p>230.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnet18.html#torchvision.models.ResNet18_Weights" title="torchvision.models.ResNet18_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet18_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>69.758</p></td>
 <td><p>89.078</p></td>
 <td><p>11.7M</p></td>
+<td><p>1.814</p></td>
+<td><p>44.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnet">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnet34.html#torchvision.models.ResNet34_Weights" title="torchvision.models.ResNet34_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet34_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>73.314</p></td>
 <td><p>91.42</p></td>
 <td><p>21.8M</p></td>
+<td><p>3.664</p></td>
+<td><p>83.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnet">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnet50.html#torchvision.models.ResNet50_Weights" title="torchvision.models.ResNet50_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet50_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>76.13</p></td>
 <td><p>92.862</p></td>
 <td><p>25.6M</p></td>
+<td><p>4.089</p></td>
+<td><p>97.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#resnet">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.resnet50.html#torchvision.models.ResNet50_Weights" title="torchvision.models.ResNet50_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet50_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>80.858</p></td>
 <td><p>95.434</p></td>
 <td><p>25.6M</p></td>
+<td><p>4.089</p></td>
+<td><p>97.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#issuecomment-1013906621">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.shufflenet_v2_x0_5.html#torchvision.models.ShuffleNet_V2_X0_5_Weights" title="torchvision.models.ShuffleNet_V2_X0_5_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>60.552</p></td>
 <td><p>81.746</p></td>
 <td><p>1.4M</p></td>
+<td><p>0.04</p></td>
+<td><p>5.3</p></td>
 <td><p><a class="reference external" href="https://github.com/ericsun99/Shufflenet-v2-Pytorch">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.shufflenet_v2_x1_0.html#torchvision.models.ShuffleNet_V2_X1_0_Weights" title="torchvision.models.ShuffleNet_V2_X1_0_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>69.362</p></td>
 <td><p>88.316</p></td>
 <td><p>2.3M</p></td>
+<td><p>0.145</p></td>
+<td><p>8.8</p></td>
 <td><p><a class="reference external" href="https://github.com/ericsun99/Shufflenet-v2-Pytorch">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.shufflenet_v2_x1_5.html#torchvision.models.ShuffleNet_V2_X1_5_Weights" title="torchvision.models.ShuffleNet_V2_X1_5_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>72.996</p></td>
 <td><p>91.086</p></td>
 <td><p>3.5M</p></td>
+<td><p>0.296</p></td>
+<td><p>13.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5906">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.shufflenet_v2_x2_0.html#torchvision.models.ShuffleNet_V2_X2_0_Weights" title="torchvision.models.ShuffleNet_V2_X2_0_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>76.23</p></td>
 <td><p>93.006</p></td>
 <td><p>7.4M</p></td>
+<td><p>0.583</p></td>
+<td><p>28.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5906">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.squeezenet1_0.html#torchvision.models.SqueezeNet1_0_Weights" title="torchvision.models.SqueezeNet1_0_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">SqueezeNet1_0_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>58.092</p></td>
 <td><p>80.42</p></td>
 <td><p>1.2M</p></td>
+<td><p>0.819</p></td>
+<td><p>4.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/49#issuecomment-277560717">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.squeezenet1_1.html#torchvision.models.SqueezeNet1_1_Weights" title="torchvision.models.SqueezeNet1_1_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">SqueezeNet1_1_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>58.178</p></td>
 <td><p>80.624</p></td>
 <td><p>1.2M</p></td>
+<td><p>0.349</p></td>
+<td><p>4.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/49#issuecomment-277560717">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.swin_b.html#torchvision.models.Swin_B_Weights" title="torchvision.models.Swin_B_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_B_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>83.582</p></td>
 <td><p>96.64</p></td>
 <td><p>87.8M</p></td>
+<td><p>15.431</p></td>
+<td><p>335.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.swin_s.html#torchvision.models.Swin_S_Weights" title="torchvision.models.Swin_S_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_S_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>83.196</p></td>
 <td><p>96.36</p></td>
 <td><p>49.6M</p></td>
+<td><p>8.741</p></td>
+<td><p>189.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.swin_t.html#torchvision.models.Swin_T_Weights" title="torchvision.models.Swin_T_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_T_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>81.474</p></td>
 <td><p>95.776</p></td>
 <td><p>28.3M</p></td>
+<td><p>4.491</p></td>
+<td><p>108.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.swin_v2_b.html#torchvision.models.Swin_V2_B_Weights" title="torchvision.models.Swin_V2_B_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_V2_B_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>84.112</p></td>
 <td><p>96.864</p></td>
 <td><p>87.9M</p></td>
+<td><p>20.325</p></td>
+<td><p>336.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer-v2">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.swin_v2_s.html#torchvision.models.Swin_V2_S_Weights" title="torchvision.models.Swin_V2_S_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_V2_S_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>83.712</p></td>
 <td><p>96.816</p></td>
 <td><p>49.7M</p></td>
+<td><p>11.546</p></td>
+<td><p>190.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer-v2">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.swin_v2_t.html#torchvision.models.Swin_V2_T_Weights" title="torchvision.models.Swin_V2_T_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Swin_V2_T_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>82.072</p></td>
 <td><p>96.132</p></td>
 <td><p>28.4M</p></td>
+<td><p>5.94</p></td>
+<td><p>108.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#swintransformer-v2">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.vgg11_bn.html#torchvision.models.VGG11_BN_Weights" title="torchvision.models.VGG11_BN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG11_BN_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>70.37</p></td>
 <td><p>89.81</p></td>
 <td><p>132.9M</p></td>
+<td><p>7.609</p></td>
+<td><p>506.9</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.vgg11.html#torchvision.models.VGG11_Weights" title="torchvision.models.VGG11_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG11_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>69.02</p></td>
 <td><p>88.628</p></td>
 <td><p>132.9M</p></td>
+<td><p>7.609</p></td>
+<td><p>506.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.vgg13_bn.html#torchvision.models.VGG13_BN_Weights" title="torchvision.models.VGG13_BN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG13_BN_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>71.586</p></td>
 <td><p>90.374</p></td>
 <td><p>133.1M</p></td>
+<td><p>11.308</p></td>
+<td><p>507.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.vgg13.html#torchvision.models.VGG13_Weights" title="torchvision.models.VGG13_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG13_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>69.928</p></td>
 <td><p>89.246</p></td>
 <td><p>133.0M</p></td>
+<td><p>11.308</p></td>
+<td><p>507.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.vgg16_bn.html#torchvision.models.VGG16_BN_Weights" title="torchvision.models.VGG16_BN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG16_BN_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>73.36</p></td>
 <td><p>91.516</p></td>
 <td><p>138.4M</p></td>
+<td><p>15.47</p></td>
+<td><p>527.9</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.vgg16.html#torchvision.models.VGG16_Weights" title="torchvision.models.VGG16_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG16_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>71.592</p></td>
 <td><p>90.382</p></td>
 <td><p>138.4M</p></td>
+<td><p>15.47</p></td>
+<td><p>527.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.vgg16.html#torchvision.models.VGG16_Weights" title="torchvision.models.VGG16_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG16_Weights.IMAGENET1K_FEATURES</span></code></a></p></td>
 <td><p>nan</p></td>
 <td><p>nan</p></td>
 <td><p>138.4M</p></td>
+<td><p>15.47</p></td>
+<td><p>527.8</p></td>
 <td><p><a class="reference external" href="https://github.com/amdegroot/ssd.pytorch#training-ssd">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.vgg19_bn.html#torchvision.models.VGG19_BN_Weights" title="torchvision.models.VGG19_BN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG19_BN_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>74.218</p></td>
 <td><p>91.842</p></td>
 <td><p>143.7M</p></td>
+<td><p>19.632</p></td>
+<td><p>548.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.vgg19.html#torchvision.models.VGG19_Weights" title="torchvision.models.VGG19_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">VGG19_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>72.376</p></td>
 <td><p>90.876</p></td>
 <td><p>143.7M</p></td>
+<td><p>19.632</p></td>
+<td><p>548.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.vit_b_16.html#torchvision.models.ViT_B_16_Weights" title="torchvision.models.ViT_B_16_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_B_16_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>81.072</p></td>
 <td><p>95.318</p></td>
 <td><p>86.6M</p></td>
+<td><p>17.564</p></td>
+<td><p>330.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.vit_b_16.html#torchvision.models.ViT_B_16_Weights" title="torchvision.models.ViT_B_16_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_B_16_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></a></p></td>
 <td><p>85.304</p></td>
 <td><p>97.65</p></td>
 <td><p>86.9M</p></td>
+<td><p>55.484</p></td>
+<td><p>331.4</p></td>
 <td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.vit_b_16.html#torchvision.models.ViT_B_16_Weights" title="torchvision.models.ViT_B_16_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_B_16_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></a></p></td>
 <td><p>81.886</p></td>
 <td><p>96.18</p></td>
 <td><p>86.6M</p></td>
+<td><p>17.564</p></td>
+<td><p>330.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.vit_b_32.html#torchvision.models.ViT_B_32_Weights" title="torchvision.models.ViT_B_32_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_B_32_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>75.912</p></td>
 <td><p>92.466</p></td>
 <td><p>88.2M</p></td>
+<td><p>4.409</p></td>
+<td><p>336.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#vit_b_32">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.vit_h_14.html#torchvision.models.ViT_H_14_Weights" title="torchvision.models.ViT_H_14_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_H_14_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></a></p></td>
 <td><p>88.552</p></td>
 <td><p>98.694</p></td>
 <td><p>633.5M</p></td>
+<td><p>1016.72</p></td>
+<td><p>2416.6</p></td>
 <td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.vit_h_14.html#torchvision.models.ViT_H_14_Weights" title="torchvision.models.ViT_H_14_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_H_14_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></a></p></td>
 <td><p>85.708</p></td>
 <td><p>97.73</p></td>
 <td><p>632.0M</p></td>
+<td><p>167.295</p></td>
+<td><p>2411.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.vit_l_16.html#torchvision.models.ViT_L_16_Weights" title="torchvision.models.ViT_L_16_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_L_16_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>79.662</p></td>
 <td><p>94.638</p></td>
 <td><p>304.3M</p></td>
+<td><p>61.555</p></td>
+<td><p>1161</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.vit_l_16.html#torchvision.models.ViT_L_16_Weights" title="torchvision.models.ViT_L_16_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_L_16_Weights.IMAGENET1K_SWAG_E2E_V1</span></code></a></p></td>
 <td><p>88.064</p></td>
 <td><p>98.512</p></td>
 <td><p>305.2M</p></td>
+<td><p>361.986</p></td>
+<td><p>1164.3</p></td>
 <td><p><a class="reference external" href="https://github.com/facebookresearch/SWAG">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.vit_l_16.html#torchvision.models.ViT_L_16_Weights" title="torchvision.models.ViT_L_16_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_L_16_Weights.IMAGENET1K_SWAG_LINEAR_V1</span></code></a></p></td>
 <td><p>85.146</p></td>
 <td><p>97.422</p></td>
 <td><p>304.3M</p></td>
+<td><p>61.555</p></td>
+<td><p>1161</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5793">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.vit_l_32.html#torchvision.models.ViT_L_32_Weights" title="torchvision.models.ViT_L_32_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViT_L_32_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>76.972</p></td>
 <td><p>93.07</p></td>
 <td><p>306.5M</p></td>
+<td><p>15.378</p></td>
+<td><p>1169.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#vit_l_32">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.wide_resnet101_2.html#torchvision.models.Wide_ResNet101_2_Weights" title="torchvision.models.Wide_ResNet101_2_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Wide_ResNet101_2_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>78.848</p></td>
 <td><p>94.284</p></td>
 <td><p>126.9M</p></td>
+<td><p>22.753</p></td>
+<td><p>242.9</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/912#issue-445437439">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.wide_resnet101_2.html#torchvision.models.Wide_ResNet101_2_Weights" title="torchvision.models.Wide_ResNet101_2_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Wide_ResNet101_2_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>82.51</p></td>
 <td><p>96.02</p></td>
 <td><p>126.9M</p></td>
+<td><p>22.753</p></td>
+<td><p>484.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.wide_resnet50_2.html#torchvision.models.Wide_ResNet50_2_Weights" title="torchvision.models.Wide_ResNet50_2_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Wide_ResNet50_2_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>78.468</p></td>
 <td><p>94.086</p></td>
 <td><p>68.9M</p></td>
+<td><p>11.398</p></td>
+<td><p>131.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/912#issue-445437439">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.wide_resnet50_2.html#torchvision.models.Wide_ResNet50_2_Weights" title="torchvision.models.Wide_ResNet50_2_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Wide_ResNet50_2_Weights.IMAGENET1K_V2</span></code></a></p></td>
 <td><p>81.602</p></td>
 <td><p>95.758</p></td>
 <td><p>68.9M</p></td>
+<td><p>11.398</p></td>
+<td><p>263.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres">link</a></p></td>
 </tr>
 </tbody>
@@ -1336,17 +1570,21 @@ pre-trained weights:</p>
 <p>Accuracies are reported on ImageNet-1K using single crops:</p>
 <table class="table-weights docutils align-default">
 <colgroup>
-<col style="width: 59%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 6%" />
+<col style="width: 52%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 5%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p><strong>Weight</strong></p></th>
 <th class="head"><p><strong>Acc&#64;1</strong></p></th>
 <th class="head"><p><strong>Acc&#64;5</strong></p></th>
 <th class="head"><p><strong>Params</strong></p></th>
+<th class="head"><p><strong>GIPS</strong></p></th>
+<th class="head"><p><strong>Size (MB)</strong></p></th>
 <th class="head"><p><strong>Recipe</strong></p></th>
 </tr>
 </thead>
@@ -1355,84 +1593,112 @@ pre-trained weights:</p>
 <td><p>69.826</p></td>
 <td><p>89.404</p></td>
 <td><p>6.6M</p></td>
+<td><p>1.498</p></td>
+<td><p>12.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.inception_v3.html#torchvision.models.quantization.Inception_V3_QuantizedWeights" title="torchvision.models.quantization.Inception_V3_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>77.176</p></td>
 <td><p>93.354</p></td>
 <td><p>27.2M</p></td>
+<td><p>5.713</p></td>
+<td><p>23.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.mobilenet_v2.html#torchvision.models.quantization.MobileNet_V2_QuantizedWeights" title="torchvision.models.quantization.MobileNet_V2_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1</span></code></a></p></td>
 <td><p>71.658</p></td>
 <td><p>90.15</p></td>
 <td><p>3.5M</p></td>
+<td><p>0.301</p></td>
+<td><p>3.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv2">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.mobilenet_v3_large.html#torchvision.models.quantization.MobileNet_V3_Large_QuantizedWeights" title="torchvision.models.quantization.MobileNet_V3_Large_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V3_Large_QuantizedWeights.IMAGENET1K_QNNPACK_V1</span></code></a></p></td>
 <td><p>73.004</p></td>
 <td><p>90.858</p></td>
 <td><p>5.5M</p></td>
+<td><p>0.217</p></td>
+<td><p>21.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv3">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.resnext101_32x8d.html#torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights" title="torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_32X8D_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>78.986</p></td>
 <td><p>94.48</p></td>
 <td><p>88.8M</p></td>
+<td><p>16.414</p></td>
+<td><p>86</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.resnext101_32x8d.html#torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights" title="torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_32X8D_QuantizedWeights.IMAGENET1K_FBGEMM_V2</span></code></a></p></td>
 <td><p>82.574</p></td>
 <td><p>96.132</p></td>
 <td><p>88.8M</p></td>
+<td><p>16.414</p></td>
+<td><p>86.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.resnext101_64x4d.html#torchvision.models.quantization.ResNeXt101_64X4D_QuantizedWeights" title="torchvision.models.quantization.ResNeXt101_64X4D_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_64X4D_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>82.898</p></td>
 <td><p>96.326</p></td>
 <td><p>83.5M</p></td>
+<td><p>15.46</p></td>
+<td><p>81.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5935">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.resnet18.html#torchvision.models.quantization.ResNet18_QuantizedWeights" title="torchvision.models.quantization.ResNet18_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet18_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>69.494</p></td>
 <td><p>88.882</p></td>
 <td><p>11.7M</p></td>
+<td><p>1.814</p></td>
+<td><p>11.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.resnet50.html#torchvision.models.quantization.ResNet50_QuantizedWeights" title="torchvision.models.quantization.ResNet50_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>75.92</p></td>
 <td><p>92.814</p></td>
 <td><p>25.6M</p></td>
+<td><p>4.089</p></td>
+<td><p>24.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.resnet50.html#torchvision.models.quantization.ResNet50_QuantizedWeights" title="torchvision.models.quantization.ResNet50_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2</span></code></a></p></td>
 <td><p>80.282</p></td>
 <td><p>94.976</p></td>
 <td><p>25.6M</p></td>
+<td><p>4.089</p></td>
+<td><p>25</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.shufflenet_v2_x0_5.html#torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights" title="torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>57.972</p></td>
 <td><p>79.78</p></td>
 <td><p>1.4M</p></td>
+<td><p>0.04</p></td>
+<td><p>1.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.shufflenet_v2_x1_0.html#torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights" title="torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>68.36</p></td>
 <td><p>87.582</p></td>
 <td><p>2.3M</p></td>
+<td><p>0.145</p></td>
+<td><p>2.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.shufflenet_v2_x1_5.html#torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights" title="torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X1_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>72.052</p></td>
 <td><p>90.7</p></td>
 <td><p>3.5M</p></td>
+<td><p>0.296</p></td>
+<td><p>3.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5906">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.shufflenet_v2_x2_0.html#torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights" title="torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X2_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>75.354</p></td>
 <td><p>92.488</p></td>
 <td><p>7.4M</p></td>
+<td><p>0.583</p></td>
+<td><p>7.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5906">link</a></p></td>
 </tr>
 </tbody>
@@ -1491,17 +1757,21 @@ The output format of the models is illustrated in <a class="reference internal" 
 <p>All models are evaluated a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:</p>
 <table class="table-weights docutils align-default">
 <colgroup>
-<col style="width: 59%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 6%" />
+<col style="width: 52%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 5%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p><strong>Weight</strong></p></th>
 <th class="head"><p><strong>Mean IoU</strong></p></th>
 <th class="head"><p><strong>pixelwise Acc</strong></p></th>
 <th class="head"><p><strong>Params</strong></p></th>
+<th class="head"><p><strong>GFLOPS</strong></p></th>
+<th class="head"><p><strong>Size (MB)</strong></p></th>
 <th class="head"><p><strong>Recipe</strong></p></th>
 </tr>
 </thead>
@@ -1510,36 +1780,48 @@ The output format of the models is illustrated in <a class="reference internal" 
 <td><p>60.3</p></td>
 <td><p>91.2</p></td>
 <td><p>11.0M</p></td>
+<td><p>10.452</p></td>
+<td><p>42.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_mobilenet_v3_large">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.segmentation.deeplabv3_resnet101.html#torchvision.models.segmentation.DeepLabV3_ResNet101_Weights" title="torchvision.models.segmentation.DeepLabV3_ResNet101_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1</span></code></a></p></td>
 <td><p>67.4</p></td>
 <td><p>92.4</p></td>
 <td><p>61.0M</p></td>
+<td><p>258.743</p></td>
+<td><p>233.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet101">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.segmentation.deeplabv3_resnet50.html#torchvision.models.segmentation.DeepLabV3_ResNet50_Weights" title="torchvision.models.segmentation.DeepLabV3_ResNet50_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1</span></code></a></p></td>
 <td><p>66.4</p></td>
 <td><p>92.4</p></td>
 <td><p>42.0M</p></td>
+<td><p>178.722</p></td>
+<td><p>160.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet50">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.segmentation.fcn_resnet101.html#torchvision.models.segmentation.FCN_ResNet101_Weights" title="torchvision.models.segmentation.FCN_ResNet101_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1</span></code></a></p></td>
 <td><p>63.7</p></td>
 <td><p>91.9</p></td>
 <td><p>54.3M</p></td>
+<td><p>232.738</p></td>
+<td><p>207.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.segmentation.fcn_resnet50.html#torchvision.models.segmentation.FCN_ResNet50_Weights" title="torchvision.models.segmentation.FCN_ResNet50_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1</span></code></a></p></td>
 <td><p>60.5</p></td>
 <td><p>91.4</p></td>
 <td><p>35.3M</p></td>
+<td><p>152.717</p></td>
+<td><p>135</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.segmentation.lraspp_mobilenet_v3_large.html#torchvision.models.segmentation.LRASPP_MobileNet_V3_Large_Weights" title="torchvision.models.segmentation.LRASPP_MobileNet_V3_Large_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">LRASPP_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1</span></code></a></p></td>
 <td><p>57.9</p></td>
 <td><p>91.2</p></td>
 <td><p>3.2M</p></td>
+<td><p>2.086</p></td>
+<td><p>12.5</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large">link</a></p></td>
 </tr>
 </tbody>
@@ -1609,15 +1891,19 @@ For details on how to plot the bounding boxes of the models, you may refer to <a
 <p>Box MAPs are reported on COCO val2017:</p>
 <table class="table-weights docutils align-default">
 <colgroup>
-<col style="width: 67%" />
-<col style="width: 13%" />
-<col style="width: 13%" />
-<col style="width: 7%" />
+<col style="width: 57%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 5%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p><strong>Weight</strong></p></th>
 <th class="head"><p><strong>Box MAP</strong></p></th>
 <th class="head"><p><strong>Params</strong></p></th>
+<th class="head"><p><strong>GFLOPS</strong></p></th>
+<th class="head"><p><strong>Size (MB)</strong></p></th>
 <th class="head"><p><strong>Recipe</strong></p></th>
 </tr>
 </thead>
@@ -1625,46 +1911,64 @@ For details on how to plot the bounding boxes of the models, you may refer to <a
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.fcos_resnet50_fpn.html#torchvision.models.detection.FCOS_ResNet50_FPN_Weights" title="torchvision.models.detection.FCOS_ResNet50_FPN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">FCOS_ResNet50_FPN_Weights.COCO_V1</span></code></a></p></td>
 <td><p>39.2</p></td>
 <td><p>32.3M</p></td>
+<td><p>128.207</p></td>
+<td><p>123.6</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn.html#torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights" title="torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1</span></code></a></p></td>
 <td><p>22.8</p></td>
 <td><p>19.4M</p></td>
+<td><p>0.719</p></td>
+<td><p>74.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn.html#torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_FPN_Weights" title="torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_FPN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">FasterRCNN_MobileNet_V3_Large_FPN_Weights.COCO_V1</span></code></a></p></td>
 <td><p>32.8</p></td>
 <td><p>19.4M</p></td>
+<td><p>4.494</p></td>
+<td><p>74.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn_v2.html#torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights" title="torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">FasterRCNN_ResNet50_FPN_V2_Weights.COCO_V1</span></code></a></p></td>
 <td><p>46.7</p></td>
 <td><p>43.7M</p></td>
+<td><p>280.371</p></td>
+<td><p>167.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5763">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn.html#torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights" title="torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">FasterRCNN_ResNet50_FPN_Weights.COCO_V1</span></code></a></p></td>
 <td><p>37</p></td>
 <td><p>41.8M</p></td>
+<td><p>134.38</p></td>
+<td><p>159.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.retinanet_resnet50_fpn_v2.html#torchvision.models.detection.RetinaNet_ResNet50_FPN_V2_Weights" title="torchvision.models.detection.RetinaNet_ResNet50_FPN_V2_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RetinaNet_ResNet50_FPN_V2_Weights.COCO_V1</span></code></a></p></td>
 <td><p>41.5</p></td>
 <td><p>38.2M</p></td>
+<td><p>152.238</p></td>
+<td><p>146</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5756">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.retinanet_resnet50_fpn.html#torchvision.models.detection.RetinaNet_ResNet50_FPN_Weights" title="torchvision.models.detection.RetinaNet_ResNet50_FPN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">RetinaNet_ResNet50_FPN_Weights.COCO_V1</span></code></a></p></td>
 <td><p>36.4</p></td>
 <td><p>34.0M</p></td>
+<td><p>151.54</p></td>
+<td><p>130.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#retinanet">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.ssd300_vgg16.html#torchvision.models.detection.SSD300_VGG16_Weights" title="torchvision.models.detection.SSD300_VGG16_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">SSD300_VGG16_Weights.COCO_V1</span></code></a></p></td>
 <td><p>25.1</p></td>
 <td><p>35.6M</p></td>
+<td><p>34.858</p></td>
+<td><p>136</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.ssdlite320_mobilenet_v3_large.html#torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights" title="torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">SSDLite320_MobileNet_V3_Large_Weights.COCO_V1</span></code></a></p></td>
 <td><p>21.3</p></td>
 <td><p>3.4M</p></td>
+<td><p>0.583</p></td>
+<td><p>13.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large">link</a></p></td>
 </tr>
 </tbody>
@@ -1689,17 +1993,21 @@ weights:</p>
 <p>Box and Mask MAPs are reported on COCO val2017:</p>
 <table class="table-weights docutils align-default">
 <colgroup>
-<col style="width: 59%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 6%" />
+<col style="width: 52%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 5%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p><strong>Weight</strong></p></th>
 <th class="head"><p><strong>Box MAP</strong></p></th>
 <th class="head"><p><strong>Mask MAP</strong></p></th>
 <th class="head"><p><strong>Params</strong></p></th>
+<th class="head"><p><strong>GFLOPS</strong></p></th>
+<th class="head"><p><strong>Size (MB)</strong></p></th>
 <th class="head"><p><strong>Recipe</strong></p></th>
 </tr>
 </thead>
@@ -1708,12 +2016,16 @@ weights:</p>
 <td><p>47.4</p></td>
 <td><p>41.8</p></td>
 <td><p>46.4M</p></td>
+<td><p>333.577</p></td>
+<td><p>177.2</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5773">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn.html#torchvision.models.detection.MaskRCNN_ResNet50_FPN_Weights" title="torchvision.models.detection.MaskRCNN_ResNet50_FPN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MaskRCNN_ResNet50_FPN_Weights.COCO_V1</span></code></a></p></td>
 <td><p>37.9</p></td>
 <td><p>34.6</p></td>
 <td><p>44.4M</p></td>
+<td><p>134.38</p></td>
+<td><p>169.8</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#mask-r-cnn">link</a></p></td>
 </tr>
 </tbody>
@@ -1739,17 +2051,21 @@ For details on how to plot the bounding boxes of the models, you may refer to <a
 <p>Box and Keypoint MAPs are reported on COCO val2017:</p>
 <table class="table-weights docutils align-default">
 <colgroup>
-<col style="width: 59%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 6%" />
+<col style="width: 52%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 5%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p><strong>Weight</strong></p></th>
 <th class="head"><p><strong>Box MAP</strong></p></th>
 <th class="head"><p><strong>Keypoint MAP</strong></p></th>
 <th class="head"><p><strong>Params</strong></p></th>
+<th class="head"><p><strong>GFLOPS</strong></p></th>
+<th class="head"><p><strong>Size (MB)</strong></p></th>
 <th class="head"><p><strong>Recipe</strong></p></th>
 </tr>
 </thead>
@@ -1758,12 +2074,16 @@ For details on how to plot the bounding boxes of the models, you may refer to <a
 <td><p>50.6</p></td>
 <td><p>61.1</p></td>
 <td><p>59.1M</p></td>
+<td><p>133.924</p></td>
+<td><p>226.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/issues/1606">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.detection.keypointrcnn_resnet50_fpn.html#torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights" title="torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeypointRCNN_ResNet50_FPN_Weights.COCO_V1</span></code></a></p></td>
 <td><p>54.6</p></td>
 <td><p>65</p></td>
 <td><p>59.1M</p></td>
+<td><p>137.42</p></td>
+<td><p>226.1</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection#keypoint-r-cnn">link</a></p></td>
 </tr>
 </tbody>
@@ -1821,17 +2141,21 @@ pre-trained weights:</p>
 <p>Accuracies are reported on Kinetics-400 using single crops for clip length 16:</p>
 <table class="table-weights docutils align-default">
 <colgroup>
-<col style="width: 59%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 12%" />
-<col style="width: 6%" />
+<col style="width: 52%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 5%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p><strong>Weight</strong></p></th>
 <th class="head"><p><strong>Acc&#64;1</strong></p></th>
 <th class="head"><p><strong>Acc&#64;5</strong></p></th>
 <th class="head"><p><strong>Params</strong></p></th>
+<th class="head"><p><strong>GFLOPS</strong></p></th>
+<th class="head"><p><strong>Size (MB)</strong></p></th>
 <th class="head"><p><strong>Recipe</strong></p></th>
 </tr>
 </thead>
@@ -1840,36 +2164,48 @@ pre-trained weights:</p>
 <td><p>63.96</p></td>
 <td><p>84.13</p></td>
 <td><p>11.7M</p></td>
+<td><p>43.343</p></td>
+<td><p>44.7</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/video_classification">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.video.mvit_v1_b.html#torchvision.models.video.MViT_V1_B_Weights" title="torchvision.models.video.MViT_V1_B_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MViT_V1_B_Weights.KINETICS400_V1</span></code></a></p></td>
 <td><p>78.477</p></td>
 <td><p>93.582</p></td>
 <td><p>36.6M</p></td>
+<td><p>70.599</p></td>
+<td><p>139.8</p></td>
 <td><p><a class="reference external" href="https://github.com/facebookresearch/pytorchvideo/blob/main/docs/source/model_zoo.md">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.video.mvit_v2_s.html#torchvision.models.video.MViT_V2_S_Weights" title="torchvision.models.video.MViT_V2_S_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MViT_V2_S_Weights.KINETICS400_V1</span></code></a></p></td>
 <td><p>80.757</p></td>
 <td><p>94.665</p></td>
 <td><p>34.5M</p></td>
+<td><p>64.224</p></td>
+<td><p>131.9</p></td>
 <td><p><a class="reference external" href="https://github.com/facebookresearch/SlowFast/blob/main/MODEL_ZOO.md">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.video.r2plus1d_18.html#torchvision.models.video.R2Plus1D_18_Weights" title="torchvision.models.video.R2Plus1D_18_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">R2Plus1D_18_Weights.KINETICS400_V1</span></code></a></p></td>
 <td><p>67.463</p></td>
 <td><p>86.175</p></td>
 <td><p>31.5M</p></td>
+<td><p>40.519</p></td>
+<td><p>120.3</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/video_classification">link</a></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.video.r3d_18.html#torchvision.models.video.R3D_18_Weights" title="torchvision.models.video.R3D_18_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">R3D_18_Weights.KINETICS400_V1</span></code></a></p></td>
 <td><p>63.2</p></td>
 <td><p>83.479</p></td>
 <td><p>33.4M</p></td>
+<td><p>40.697</p></td>
+<td><p>127.4</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/video_classification">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.video.s3d.html#torchvision.models.video.S3D_Weights" title="torchvision.models.video.S3D_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">S3D_Weights.KINETICS400_V1</span></code></a></p></td>
 <td><p>68.368</p></td>
 <td><p>88.05</p></td>
 <td><p>8.3M</p></td>
+<td><p>17.979</p></td>
+<td><p>32</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/video_classification#s3d">link</a></p></td>
 </tr>
 </tbody>

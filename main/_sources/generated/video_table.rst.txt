@@ -1,15 +1,15 @@
 .. rst-class:: table-weights
 .. table::
-    :widths: 100 20 20  20 10
+    :widths: 110 18 18 18 18 18 10 
 
-    =================================================================  ===========  ===========  ============  ==============================================================================================
-    **Weight**                                                           **Acc@1**    **Acc@5**  **Params**    **Recipe**
-    =================================================================  ===========  ===========  ============  ==============================================================================================
-    :class:`MC3_18_Weights.KINETICS400_V1 <MC3_18_Weights>`                 63.96        84.13   11.7M         `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
-    :class:`MViT_V1_B_Weights.KINETICS400_V1 <MViT_V1_B_Weights>`           78.477       93.582  36.6M         `link <https://github.com/facebookresearch/pytorchvideo/blob/main/docs/source/model_zoo.md>`__
-    :class:`MViT_V2_S_Weights.KINETICS400_V1 <MViT_V2_S_Weights>`           80.757       94.665  34.5M         `link <https://github.com/facebookresearch/SlowFast/blob/main/MODEL_ZOO.md>`__
-    :class:`R2Plus1D_18_Weights.KINETICS400_V1 <R2Plus1D_18_Weights>`       67.463       86.175  31.5M         `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
-    :class:`R3D_18_Weights.KINETICS400_V1 <R3D_18_Weights>`                 63.2         83.479  33.4M         `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
-    :class:`S3D_Weights.KINETICS400_V1 <S3D_Weights>`                       68.368       88.05   8.3M          `link <https://github.com/pytorch/vision/tree/main/references/video_classification#s3d>`__
-    =================================================================  ===========  ===========  ============  ==============================================================================================
+    =================================================================  ===========  ===========  ============  ============  ===============  ==============================================================================================
+    **Weight**                                                           **Acc@1**    **Acc@5**  **Params**      **GFLOPS**    **Size (MB)**  **Recipe**
+    =================================================================  ===========  ===========  ============  ============  ===============  ==============================================================================================
+    :class:`MC3_18_Weights.KINETICS400_V1 <MC3_18_Weights>`                 63.96        84.13   11.7M               43.343             44.7  `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
+    :class:`MViT_V1_B_Weights.KINETICS400_V1 <MViT_V1_B_Weights>`           78.477       93.582  36.6M               70.599            139.8  `link <https://github.com/facebookresearch/pytorchvideo/blob/main/docs/source/model_zoo.md>`__
+    :class:`MViT_V2_S_Weights.KINETICS400_V1 <MViT_V2_S_Weights>`           80.757       94.665  34.5M               64.224            131.9  `link <https://github.com/facebookresearch/SlowFast/blob/main/MODEL_ZOO.md>`__
+    :class:`R2Plus1D_18_Weights.KINETICS400_V1 <R2Plus1D_18_Weights>`       67.463       86.175  31.5M               40.519            120.3  `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
+    :class:`R3D_18_Weights.KINETICS400_V1 <R3D_18_Weights>`                 63.2         83.479  33.4M               40.697            127.4  `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
+    :class:`S3D_Weights.KINETICS400_V1 <S3D_Weights>`                       68.368       88.05   8.3M                17.979             32    `link <https://github.com/pytorch/vision/tree/main/references/video_classification#s3d>`__
+    =================================================================  ===========  ===========  ============  ============  ===============  ==============================================================================================
 
