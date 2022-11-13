@@ -67,6 +67,8 @@ class AlexNet_Weights(WeightsEnum):
                     "acc@5": 79.066,
                 }
             },
+            "_ops": 0.714,
+            "_weight_size": 233.087,
             "_docs": """
                 These weights reproduce closely the results of the paper using a simplified training recipe.
             """,

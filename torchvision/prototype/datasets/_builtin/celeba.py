@@ -3,7 +3,7 @@ import pathlib
 from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper, Zipper
-from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -11,7 +11,7 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     path_accessor,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
+from torchvision.prototype.features import _Feature, BoundingBox, Label
 
 from .._api import register_dataset, register_info
 
