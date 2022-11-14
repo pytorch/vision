@@ -163,6 +163,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(torch.uint8),
         ],
         supports_pil=False,
+        # Use default tolerances of `torch.testing.assert_close`
+        closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
         prototype_transforms.ToPILImage,
