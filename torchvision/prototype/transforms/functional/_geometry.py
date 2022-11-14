@@ -369,7 +369,7 @@ def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[in
 
 
 def _apply_grid_transform(
-    float_img: torch.Tensor, grid: torch.Tensor, mode: str, fill: Optional[Union[int, float, List[float]]]
+    float_img: torch.Tensor, grid: torch.Tensor, mode: str, fill: features.FillTypeJIT
 ) -> torch.Tensor:
 
     shape = float_img.shape
@@ -405,7 +405,7 @@ def _assert_grid_transform_inputs(
     img: torch.Tensor,
     matrix: Optional[List[float]],
     interpolation: str,
-    fill: Optional[Union[int, float, List[float]]],
+    fill: features.FillTypeJIT,
     supported_interpolation_modes: List[str],
     coeffs: Optional[List[float]] = None,
 ) -> None:
@@ -434,6 +434,34 @@ def _assert_grid_transform_inputs(
         raise ValueError(f"Interpolation mode '{interpolation}' is unsupported with Tensor input")
 
 
+def _affine_grid(
+    theta: torch.Tensor,
+    w: int,
+    h: int,
+    ow: int,
+    oh: int,
+) -> torch.Tensor:
+    # https://github.com/pytorch/pytorch/blob/74b65c32be68b15dc7c9e8bb62459efbfbde33d8/aten/src/ATen/native/
+    # AffineGridGenerator.cpp#L18
+    # Difference with AffineGridGenerator is that:
+    # 1) we normalize grid values after applying theta
+    # 2) we can normalize by other image size, such that it covers "extend" option like in PIL.Image.rotate
+    dtype = theta.dtype
+    device = theta.device
+
+    d = 0.5
+    base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
+    x_grid = torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow, device=device)
+    base_grid[..., 0].copy_(x_grid)
+    y_grid = torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh, device=device).unsqueeze_(-1)
+    base_grid[..., 1].copy_(y_grid)
+    base_grid[..., 2].fill_(1)
+
+    rescaled_theta = theta.transpose(1, 2).div_(torch.tensor([0.5 * w, 0.5 * h], dtype=dtype, device=device))
+    output_grid = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta)
+    return output_grid.view(1, oh, ow, 2)
+
+
 def affine_image_tensor(
     image: torch.Tensor,
     angle: Union[int, float],
@@ -448,9 +476,19 @@ def affine_image_tensor(
         return image
 
     shape = image.shape
-    num_channels, height, width = shape[-3:]
-    image = image.reshape(-1, num_channels, height, width)
+    ndim = image.ndim
+    fp = torch.is_floating_point(image)
 
+    if ndim > 4:
+        image = image.reshape((-1,) + shape[-3:])
+        needs_unsquash = True
+    elif ndim == 3:
+        image = image.unsqueeze(0)
+        needs_unsquash = True
+    else:
+        needs_unsquash = False
+
+    height, width = shape[-2:]
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
 
     center_f = [0.0, 0.0]
@@ -461,9 +499,20 @@ def affine_image_tensor(
     translate_f = [float(t) for t in translate]
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
 
-    output = _FT.affine(image, matrix, interpolation=interpolation.value, fill=fill)
-    return output.reshape(shape)
+    _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
 
+    dtype = image.dtype if fp else torch.float32
+    theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
+    grid = _affine_grid(theta, w=width, h=height, ow=width, oh=height)
+    output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
+
+    if not fp:
+        output = output.round_().to(image.dtype)
+
+    if needs_unsquash:
+        output = output.reshape(shape)
+
+    return output
 
 @torch.jit.unused
 def affine_image_pil(
