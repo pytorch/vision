@@ -402,7 +402,7 @@ def _apply_grid_transform(
 
 
 def _assert_grid_transform_inputs(
-    img: torch.Tensor,
+    image: torch.Tensor,
     matrix: Optional[List[float]],
     interpolation: str,
     fill: features.FillTypeJIT,
@@ -421,7 +421,7 @@ def _assert_grid_transform_inputs(
     if fill is not None:
         if isinstance(fill, (tuple, list)):
             length = len(fill)
-            num_channels = img.shape[-3]
+            num_channels = image.shape[-3]
             if length > 1 and length != num_channels:
                 raise ValueError(
                     "The number of elements in 'fill' cannot broadcast to match the number of "
@@ -754,18 +754,26 @@ def rotate_image_tensor(
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
 
     if image.numel() > 0:
-        image = _FT.rotate(
-            image.reshape(-1, num_channels, height, width),
-            matrix,
-            interpolation=interpolation.value,
-            expand=expand,
-            fill=fill,
-        )
-        new_height, new_width = image.shape[-2:]
+        fp = torch.is_floating_point(image)
+        image = image.reshape(-1, num_channels, height, width)
+
+        _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
+
+        ow, oh = _compute_affine_output_size(matrix, width, height) if expand else (width, height)
+        dtype = image.dtype if fp else torch.float32
+        theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
+        grid = _affine_grid(theta, w=width, h=height, ow=ow, oh=oh)
+        output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
+
+        if not fp:
+            output = output.round_().to(image.dtype)
+
+        new_height, new_width = output.shape[-2:]
     else:
+        output = image
         new_width, new_height = _compute_affine_output_size(matrix, width, height) if expand else (width, height)
 
-    return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
+    return output.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
 
 @torch.jit.unused
