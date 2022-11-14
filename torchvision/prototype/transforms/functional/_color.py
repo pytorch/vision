@@ -388,7 +388,7 @@ def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
     maximum = float_image.amax(dim=(-2, -1), keepdim=True)
 
     eq_idxs = maximum == minimum
-    inv_scale = maximum.sub_(minimum).div_(bound)
+    inv_scale = maximum.sub_(minimum).mul_(1.0 / bound)
     minimum[eq_idxs] = 0.0
     inv_scale[eq_idxs] = 1.0
 
