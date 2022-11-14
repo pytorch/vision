@@ -49,7 +49,7 @@ class Mask(_Feature):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Mask:
         output = self._F.resize_mask(self.as_subclass(torch.Tensor), size, max_size=max_size)
         return Mask.wrap_like(self, output)
@@ -70,7 +70,7 @@ class Mask(_Feature):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Mask:
         output = self._F.resized_crop_mask(self.as_subclass(torch.Tensor), top, left, height, width, size=size)
         return Mask.wrap_like(self, output)

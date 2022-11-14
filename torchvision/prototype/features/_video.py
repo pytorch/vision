@@ -79,7 +79,7 @@ class Video(_Feature):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Video:
         output = self._F.resize_video(
             self.as_subclass(torch.Tensor),
@@ -106,7 +106,7 @@ class Video(_Feature):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Video:
         output = self._F.resized_crop_video(
             self.as_subclass(torch.Tensor),
