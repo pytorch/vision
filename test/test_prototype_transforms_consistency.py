@@ -401,6 +401,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=1, distortion_scale=0.1, fill=1),
             ArgsKwargs(p=1, distortion_scale=0.4, fill=(1, 2, 3)),
         ],
+        closeness_kwargs={"atol": 1e-6, "rtol": 1e-6},
     ),
     ConsistencyConfig(
         prototype_transforms.RandomRotation,
