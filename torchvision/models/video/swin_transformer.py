@@ -531,6 +531,8 @@ class Swin3D_T_Weights(WeightsEnum):
                     "acc@5": 93.519,
                 }
             },
+            "_ops": 43.882,
+            "_weight_size": 121.543,
         },
     )
     DEFAULT = KINETICS400_V1
@@ -560,6 +562,8 @@ class Swin3D_S_Weights(WeightsEnum):
                     "acc@5": 94.158,
                 }
             },
+            "_ops": 82.841,
+            "_weight_size": 218.288,
         },
     )
     DEFAULT = KINETICS400_V1
@@ -589,10 +593,12 @@ class Swin3D_B_Weights(WeightsEnum):
                     "acc@5": 94.386,
                 }
             },
+            "_ops": 140.667,
+            "_weight_size": 364.134,
         },
     )
     KINETICS400_IMAGENET22K_V1 = Weights(
-        url="httIps://download.pytorch.org/models/swin3d_b_22k-7c6ae6fa.pth",
+        url="https://download.pytorch.org/models/swin3d_b_22k-7c6ae6fa.pth",
         transforms=partial(
             VideoClassification,
             crop_size=(224, 224),
@@ -614,6 +620,8 @@ class Swin3D_B_Weights(WeightsEnum):
                     "acc@5": 95.574,
                 }
             },
+            "_ops": 140.667,
+            "_weight_size": 364.134,
         },
     )
     DEFAULT = KINETICS400_V1
