@@ -82,6 +82,8 @@ def resnet_fpn_backbone(
         trainable_layers: int = 3,
         returned_layers: Optional[List[int]] = None,
         extra_blocks: Optional[ExtraFPNBlock] = None,
+        num_of_layers_in_pyramid=4,
+        two_sides=False
 ) -> BackboneWithFPN:
     """
     Constructs a specified ResNet backbone with FPN on top. Freezes the specified number of layers in the backbone.
@@ -119,7 +121,8 @@ def resnet_fpn_backbone(
             default a ``LastLevelMaxPool`` is used.
     """
     backbone = resnet.__dict__[backbone_name](weights=weights, norm_layer=norm_layer)
-    return _resnet_fpn_extractor(backbone, trainable_layers, returned_layers, extra_blocks)
+    return _resnet_fpn_extractor(backbone, trainable_layers, returned_layers, extra_blocks,
+                                 num_of_layers_in_pyramid=num_of_layers_in_pyramid, two_sides=two_sides)
 
 
 def _resnet_fpn_extractor(
@@ -128,8 +131,10 @@ def _resnet_fpn_extractor(
         returned_layers: Optional[List[int]] = None,
         extra_blocks: Optional[ExtraFPNBlock] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
+        num_of_layers_in_pyramid=4,
+        two_sides=False
 ) -> BackboneWithFPN:
-    # select layers that wont be frozen
+    # select layers that won't be frozen
     if trainable_layers < 0 or trainable_layers > 5:
         raise ValueError(f"Trainable layers should be in the range [0,5], got {trainable_layers}")
     layers_to_train = ["layer4", "layer3", "layer2", "layer1", "conv1"][:trainable_layers]
@@ -144,6 +149,8 @@ def _resnet_fpn_extractor(
 
     if returned_layers is None:
         returned_layers = [1, 2, 3, 4]
+    if num_of_layers_in_pyramid is not None:
+        returned_layers = returned_layers[:num_of_layers_in_pyramid]
     if min(returned_layers) <= 0 or max(returned_layers) >= 5:
         raise ValueError(f"Each returned layer should be in the range [1,4]. Got {returned_layers}")
     return_layers = {f"layer{k}": str(v) for v, k in enumerate(returned_layers)}
@@ -152,7 +159,8 @@ def _resnet_fpn_extractor(
     in_channels_list = [in_channels_stage2 * 2 ** (i - 1) for i in returned_layers]
     out_channels = 256
     return BackboneWithFPN(
-        backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks, norm_layer=norm_layer
+        backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks, norm_layer=norm_layer,
+        two_sides=two_sides
     )
 
 
