@@ -311,7 +311,7 @@ def _get_inverse_affine_matrix(
 
     # RSS without scaling
     a = math.cos(rot_sy) / cossy
-    b = -math.sin(rot) - a * tansx
+    b = -(a * tansx + math.sin(rot))
     c = math.sin(rot_sy) / cossy
     d = math.cos(rot) - c * tansx
 
@@ -1179,13 +1179,13 @@ def perspective_image_tensor(
         coeffs=perspective_coeffs,
     )
 
-    oh, ow = image.shape[-2:]
+    oh, ow = shape[-2:]
     dtype = image.dtype if fp else torch.float32
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=image.device)
     output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
 
     if not fp:
-        output = output.to(image.dtype)
+        output = output.round_().to(image.dtype)
 
     if needs_unsquash:
         output = output.reshape(shape)
@@ -1380,7 +1380,7 @@ def elastic_image_tensor(
     output = _apply_grid_transform(image if fp else image.to(torch.float32), grid, interpolation.value, fill=fill)
 
     if not fp:
-        output = output.to(image.dtype)
+        output = output.round_().to(image.dtype)
 
     if needs_unsquash:
         output = output.reshape(shape)
