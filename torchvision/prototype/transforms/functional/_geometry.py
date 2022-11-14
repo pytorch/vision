@@ -514,6 +514,7 @@ def affine_image_tensor(
 
     return output
 
+
 @torch.jit.unused
 def affine_image_pil(
     image: PIL.Image.Image,
