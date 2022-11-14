@@ -303,17 +303,17 @@ def _get_inverse_affine_matrix(
     tx, ty = translate
 
     # Cached results
-    cossy = math.cos(sy)
-    tansx = math.tan(sx)
-    rot_sy = rot - sy
+    cos_sy = math.cos(sy)
+    tan_sx = math.tan(sx)
+    rot_minus_sy = rot - sy
     cx_plus_tx = cx + tx
     cy_plus_ty = cy + ty
 
-    # RSS without scaling
-    a = math.cos(rot_sy) / cossy
-    b = -(a * tansx + math.sin(rot))
-    c = math.sin(rot_sy) / cossy
-    d = math.cos(rot) - c * tansx
+    # Rotate Scale Shear (RSS) without scaling
+    a = math.cos(rot_minus_sy) / cos_sy
+    b = -(a * tan_sx + math.sin(rot))
+    c = math.sin(rot_minus_sy) / cos_sy
+    d = math.cos(rot) - c * tan_sx
 
     if inverted:
         # Inverted rotation matrix with scale and shear
@@ -449,11 +449,10 @@ def _affine_grid(
     dtype = theta.dtype
     device = theta.device
 
-    d = 0.5
     base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
-    x_grid = torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow, device=device)
+    x_grid = torch.linspace((1.0 - ow) * 0.5, (ow - 1.0) * 0.5, steps=ow, device=device)
     base_grid[..., 0].copy_(x_grid)
-    y_grid = torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh, device=device).unsqueeze_(-1)
+    y_grid = torch.linspace((1.0 - oh) * 0.5, (oh - 1.0) * 0.5, steps=oh, device=device).unsqueeze_(-1)
     base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
