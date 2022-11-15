@@ -14,7 +14,7 @@ from torchdata.datapipes.iter import (
     Mapper,
 )
 from torchdata.datapipes.map import IterToMapConverter
-from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -25,7 +25,7 @@ from torchvision.prototype.datasets.utils._internal import (
     read_categories_file,
     read_mat,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
+from torchvision.prototype.features import _Feature, BoundingBox, Label
 
 from .._api import register_dataset, register_info
 
