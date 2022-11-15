@@ -785,6 +785,8 @@ class MaxVit_T_Weights(WeightsEnum):
                     "acc@5": 96.722,
                 }
             },
+            "_ops": 5.558,
+            "_weight_size": 118.769,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
