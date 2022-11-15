@@ -389,8 +389,8 @@ scalar_t get_coordinate_weight(
     scalar_t x,
     bool is_y_direction) {
   if (y <= -1 || height <= y || x <= -1 || width <= x) {
-￼    return 0;
-￼  }
+￼   return 0;
+￼ }
 ￼
   int y_l = floor(y);
   int x_l = floor(x);
