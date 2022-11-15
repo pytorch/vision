@@ -12,12 +12,6 @@ try:
 except ImportError:
     pass
 
-try:
-    _load_library("Decoder")
-    _HAS_GPU_VIDEO_DECODER = True
-except (ImportError, OSError, ModuleNotFoundError):
-    _HAS_GPU_VIDEO_DECODER = False
-
 
 # Check if torchvision is being imported within the root folder
 if not _HAS_OPS and os.path.dirname(os.path.realpath(__file__)) == os.path.join(
@@ -80,7 +74,7 @@ def set_video_backend(backend):
         # TODO: better messages
         message = "video_reader video backend is not available. Please compile torchvision from source and try again"
         raise RuntimeError(message)
-    elif backend == "cuda" and not _HAS_GPU_VIDEO_DECODER:
+    elif backend == "cuda" and not io._HAS_GPU_VIDEO_DECODER:
         # TODO: better messages
         message = "cuda video backend is not available."
         raise RuntimeError(message)

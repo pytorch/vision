@@ -28,7 +28,7 @@ from .image import (
     write_jpeg,
     write_png,
 )
-from .video import read_video, read_video_timestamps, write_video
+from .video import _HAS_GPU_VIDEO_DECODER, read_video, read_video_timestamps, write_video
 from .video_reader import VideoReader
 
 
@@ -43,6 +43,7 @@ __all__ = [
     "_read_video_timestamps_from_memory",
     "_probe_video_from_memory",
     "_HAS_VIDEO_OPT",
+    "_HAS_GPU_VIDEO_DECODER",
     "_read_video_clip_from_memory",
     "_read_video_meta_data",
     "VideoMetaData",
