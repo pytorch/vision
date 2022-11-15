@@ -241,7 +241,6 @@ class ShiftedWindowAttention3d(nn.Module):
         attention_dropout: float = 0.0,
         dropout: float = 0.0,
     ) -> None:
-
         super().__init__()
         if len(window_size) != 3 or len(shift_size) != 3:
             raise ValueError("window_size and shift_size must be of length 2")
@@ -288,11 +287,11 @@ class ShiftedWindowAttention3d(nn.Module):
         self.register_buffer("relative_position_index", relative_position_index)
 
     def get_relative_position_bias(self, window_size: List[int]) -> torch.Tensor:
-        return _get_relative_position_bias(self.relative_position_bias_table, self.relative_position_index, window_size)
+        return _get_relative_position_bias(self.relative_position_bias_table, self.relative_position_index, window_size)  # type: ignore
 
     def forward(self, x: Tensor) -> Tensor:
         _, t, h, w, _ = x.shape
-        size_dhw = (t, h, w)
+        size_dhw = [t, h, w]
         window_size, shift_size = self.window_size.copy(), self.shift_size.copy()
         # Handle case where window_size is larger than the input tensor
         window_size, shift_size = _get_window_and_shift_size(shift_size, size_dhw, window_size)
