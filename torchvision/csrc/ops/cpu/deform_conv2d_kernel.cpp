@@ -392,7 +392,6 @@ scalar_t get_coordinate_weight(
 ￼    return 0;
 ￼  }
 ￼
-￼
   int y_l = floor(y);
   int x_l = floor(x);
   int y_h = y_l + 1;
