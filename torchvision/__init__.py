@@ -5,7 +5,7 @@ from modulefinder import Module
 import torch
 from torchvision import datasets, io, models, ops, transforms, utils
 
-from .extension import _HAS_OPS, _load_library
+from .extension import _HAS_OPS
 
 try:
     from .version import __version__  # noqa: F401
