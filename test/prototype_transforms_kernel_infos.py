@@ -915,7 +915,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_rotate_image_tensor,
             float32_vs_uint8=True,
             # TODO: investigate
-            closeness_kwargs=pil_reference_pixel_difference(100, agg_method="mean"),
+            closeness_kwargs=pil_reference_pixel_difference(110, agg_method="mean"),
             test_marks=[
                 xfail_jit_tuple_instead_of_list("fill"),
                 # TODO: check if this is a regression since it seems that should be supported if `int` is ok

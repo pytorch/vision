@@ -1004,7 +1004,7 @@ def _get_inverse_affine_matrix(
     #       RotateScaleShear(a, s, (sx, sy)) =
     #       = R(a) * S(s) * SHy(sy) * SHx(sx)
     #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(sx)/cos(sy) - sin(a)), 0 ]
-    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
+    #         [ s*sin(a - sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
     #         [ 0                    , 0                                      , 1 ]
     # where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:
     # SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]
