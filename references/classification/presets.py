@@ -17,7 +17,10 @@ class ClassificationPresetTrain:
         augmix_severity=3,
         random_erase_prob=0.0,
     ):
-        trans = [transforms.RandomResizedCrop(crop_size, interpolation=interpolation)]
+        trans = [
+            transforms.PILToTensor(),
+            transforms.RandomResizedCrop(crop_size, interpolation=interpolation),
+        ]
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(hflip_prob))
         if auto_augment_policy is not None:
@@ -32,7 +35,6 @@ class ClassificationPresetTrain:
                 trans.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))
         trans.extend(
             [
-                transforms.PILToTensor(),
                 transforms.ConvertImageDtype(torch.float),
                 transforms.Normalize(mean=mean, std=std),
             ]

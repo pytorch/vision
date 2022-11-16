@@ -193,6 +193,7 @@ def main(args):
 
     utils.init_distributed_mode(args)
     print(args)
+    print(torch.__version__, torch.version.cuda, torchvision.__version__)
 
     device = torch.device(args.device)
 
