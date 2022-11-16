@@ -1,6 +1,6 @@
 import math
-from functools import partial
 from collections import OrderedDict
+from functools import partial
 from typing import Any, Callable, List, Optional, Sequence, Tuple
 
 import numpy as np
