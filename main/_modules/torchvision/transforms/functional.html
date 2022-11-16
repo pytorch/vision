@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+3a6abb4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+f0720ce ) &#x25BC</a>
     </div>
     
 
@@ -1349,7 +1349,7 @@
     <span class="c1">#       RotateScaleShear(a, s, (sx, sy)) =</span>
     <span class="c1">#       = R(a) * S(s) * SHy(sy) * SHx(sx)</span>
     <span class="c1">#       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(sx)/cos(sy) - sin(a)), 0 ]</span>
-    <span class="c1">#         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]</span>
+    <span class="c1">#         [ s*sin(a - sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]</span>
     <span class="c1">#         [ 0                    , 0                                      , 1 ]</span>
     <span class="c1"># where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:</span>
     <span class="c1"># SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]</span>
