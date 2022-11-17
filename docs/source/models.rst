@@ -518,6 +518,7 @@ pre-trained weights:
    models/video_mvit
    models/video_resnet
    models/video_s3d
+   models/video_swin_transformer
 
 |
 
