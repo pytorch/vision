@@ -142,7 +142,7 @@ retry () {
 }
 
 # Inputs:
-#   PYTHON_VERSION (3.7, 3.8, 3.9)
+#   PYTHON_VERSION (3.7, 3.8, 3.9, 3.10, 3.11)
 #   UNICODE_ABI (bool)
 #
 # Outputs:
@@ -165,6 +165,7 @@ setup_wheel_python() {
       3.8) python_abi=cp38-cp38 ;;
       3.9) python_abi=cp39-cp39 ;;
       3.10) python_abi=cp310-cp310 ;;
+      3.11) python_abi=cp311-cp311 ;;
       *)
         echo "Unrecognized PYTHON_VERSION=$PYTHON_VERSION"
         exit 1
