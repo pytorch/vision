@@ -15,7 +15,7 @@ Model builders
 --------------
 
 The following model builders can be used to instantiate an SwinTransformer model (original and V2) with and without pre-trained weights.
-All the model builders internally rely on the ``torchvision.models.swin_transformer.SwinTransformer`` 
+All the model builders internally rely on the ``torchvision.models.swin_transformer.SwinTransformer``
 base class. Please refer to the `source code
 <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py>`_ for
 more details about this class.
