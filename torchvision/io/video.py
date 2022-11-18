@@ -9,9 +9,16 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 
+from ..extension import _load_library
+
 from ..utils import _log_api_usage_once
 from . import _video_opt
 
+try:
+    _load_library("Decoder")
+    _HAS_GPU_VIDEO_DECODER = True
+except (ImportError, OSError, ModuleNotFoundError):
+    _HAS_GPU_VIDEO_DECODER = False
 
 try:
     import av
