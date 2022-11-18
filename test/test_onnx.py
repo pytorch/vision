@@ -27,7 +27,6 @@ class TestONNXExporter:
         self,
         model,
         inputs_list,
-        tolerate_small_mismatch=False,
         do_constant_folding=True,
         dynamic_axes=None,
         output_names=None,
@@ -64,9 +63,9 @@ class TestONNXExporter:
                 test_ouputs = model(*test_inputs)
                 if isinstance(test_ouputs, torch.Tensor):
                     test_ouputs = (test_ouputs,)
-            self.ort_validate(onnx_io, test_inputs, test_ouputs, tolerate_small_mismatch)
+            self.ort_validate(onnx_io, test_inputs, test_ouputs)
 
-    def ort_validate(self, onnx_io, inputs, outputs, tolerate_small_mismatch=False):
+    def ort_validate(self, onnx_io, inputs, outputs):
 
         inputs, _ = torch.jit._flatten(inputs)
         outputs, _ = torch.jit._flatten(outputs)
@@ -86,13 +85,7 @@ class TestONNXExporter:
         ort_outs = ort_session.run(None, ort_inputs)
 
         for i in range(0, len(outputs)):
-            try:
-                torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
-            except AssertionError as error:
-                if tolerate_small_mismatch:
-                    assert "(0.00%)" in str(error), str(error)
-                else:
-                    raise
+            torch.testing.assert_close(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
 
     def test_nms(self):
         num_boxes = 100
@@ -325,7 +318,6 @@ class TestONNXExporter:
         self.run_model(
             model,
             [(images, features), (images2, test_features)],
-            tolerate_small_mismatch=True,
             input_names=["input1", "input2", "input3", "input4", "input5", "input6"],
             dynamic_axes={
                 "input1": [0, 1, 2, 3],
@@ -401,7 +393,6 @@ class TestONNXExporter:
         self.run_model(
             model,
             [(images, features), (images2, test_features)],
-            tolerate_small_mismatch=True,
             input_names=["input1", "input2", "input3", "input4", "input5", "input6"],
             dynamic_axes={
                 "input1": [0, 1, 2, 3],
@@ -447,7 +438,6 @@ class TestONNXExporter:
             input_names=["images_tensors"],
             output_names=["outputs"],
             dynamic_axes={"images_tensors": [0, 1, 2], "outputs": [0, 1, 2]},
-            tolerate_small_mismatch=True,
         )
         # Test exported model for an image with no detections on other images
         self.run_model(
@@ -456,7 +446,6 @@ class TestONNXExporter:
             input_names=["images_tensors"],
             output_names=["outputs"],
             dynamic_axes={"images_tensors": [0, 1, 2], "outputs": [0, 1, 2]},
-            tolerate_small_mismatch=True,
         )
 
     # Verify that paste_mask_in_image beahves the same in tracing.
@@ -511,7 +500,6 @@ class TestONNXExporter:
                 "scores": [0],
                 "masks": [0, 1, 2],
             },
-            tolerate_small_mismatch=True,
         )
         # Test exported model for an image with no detections on other images
         self.run_model(
@@ -526,7 +514,6 @@ class TestONNXExporter:
                 "scores": [0],
                 "masks": [0, 1, 2],
             },
-            tolerate_small_mismatch=True,
         )
 
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
@@ -568,7 +555,6 @@ class TestONNXExporter:
             input_names=["images_tensors"],
             output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
             dynamic_axes={"images_tensors": [0, 1, 2]},
-            tolerate_small_mismatch=True,
         )
 
         self.run_model(
@@ -577,7 +563,6 @@ class TestONNXExporter:
             input_names=["images_tensors"],
             output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
             dynamic_axes={"images_tensors": [0, 1, 2]},
-            tolerate_small_mismatch=True,
         )
 
     def test_shufflenet_v2_dynamic_axes(self):
@@ -591,7 +576,6 @@ class TestONNXExporter:
             input_names=["input_images"],
             output_names=["output"],
             dynamic_axes={"input_images": {0: "batch_size"}, "output": {0: "batch_size"}},
-            tolerate_small_mismatch=True,
         )
 
 

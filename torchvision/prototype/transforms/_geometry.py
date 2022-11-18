@@ -305,8 +305,8 @@ class RandomRotation(Transform):
             **params,
             interpolation=self.interpolation,
             expand=self.expand,
-            fill=fill,
             center=self.center,
+            fill=fill,
         )
 
 
@@ -524,15 +524,17 @@ class RandomPerspective(_RandomApplyTransform):
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
         perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
-        return dict(perspective_coeffs=perspective_coeffs)
+        return dict(coefficients=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
         return F.perspective(
             inpt,
-            **params,
+            None,
+            None,
             fill=fill,
             interpolation=self.interpolation,
+            **params,
         )
 
 

@@ -49,7 +49,7 @@ class Mask(_Feature):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Mask:
         output = self._F.resize_mask(self.as_subclass(torch.Tensor), size, max_size=max_size)
         return Mask.wrap_like(self, output)
@@ -70,7 +70,7 @@ class Mask(_Feature):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Mask:
         output = self._F.resized_crop_mask(self.as_subclass(torch.Tensor), top, left, height, width, size=size)
         return Mask.wrap_like(self, output)
@@ -89,8 +89,8 @@ class Mask(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
+        fill: FillTypeJIT = None,
     ) -> Mask:
         output = self._F.rotate_mask(self.as_subclass(torch.Tensor), angle, expand=expand, center=center, fill=fill)
         return Mask.wrap_like(self, output)
@@ -118,11 +118,15 @@ class Mask(_Feature):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> Mask:
-        output = self._F.perspective_mask(self.as_subclass(torch.Tensor), perspective_coeffs, fill=fill)
+        output = self._F.perspective_mask(
+            self.as_subclass(torch.Tensor), startpoints, endpoints, fill=fill, coefficients=coefficients
+        )
         return Mask.wrap_like(self, output)
 
     def elastic(

@@ -362,6 +362,14 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                     max_visible = 3
                     v_sample = ", ".join(v[:max_visible])
                     v = f"{v_sample}, ... ({len(v)-max_visible} omitted)" if len(v) > max_visible else v_sample
+                elif k == "_ops":
+                    if obj.__name__.endswith("_QuantizedWeights"):
+                        v = f"{v} giga instructions per sec"
+                    else:
+                        v = f"{v} giga floating-point operations per sec"
+                elif k == "_weight_size":
+                    v = f"{v} MB (file size)"
+
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
             lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
@@ -385,19 +393,30 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
     if exclude_patterns is not None:
         weights = [w for w in weights if all(p not in str(w) for p in exclude_patterns)]
 
+    ops_name = "GIPS" if "QuantizedWeights" in weights_endswith else "GFLOPS"
+
     metrics_keys, metrics_names = zip(*metrics)
-    column_names = ["Weight"] + list(metrics_names) + ["Params", "Recipe"]
+    column_names = (
+        ["Weight"] + list(metrics_names) + ["Params"] + [ops_name, "Size (MB)", "Recipe"]
+    )  # Final column order
     column_names = [f"**{name}**" for name in column_names]  # Add bold
 
-    content = [
-        (
+    content = []
+    for w in weights:
+        row = [
             f":class:`{w} <{type(w).__name__}>`",
             *(w.meta["_metrics"][dataset][metric] for metric in metrics_keys),
             f"{w.meta['num_params']/1e6:.1f}M",
+            f"{w.meta['_ops']:.3f}",
+            f"{round(w.meta['_weight_size'], 1):.1f}",
             f"`link <{w.meta['recipe']}>`__",
-        )
-        for w in weights
-    ]
+        ]
+
+        content.append(row)
+
+    column_widths = ["110"] + ["18"] * len(metrics_names) + ["18"] * 3 + ["10"]
+    widths_table = " ".join(column_widths)
+
     table = tabulate(content, headers=column_names, tablefmt="rst")
 
     generated_dir = Path("generated")
@@ -405,7 +424,7 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
     with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
         table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
         table_file.write(".. table::\n")
-        table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
+        table_file.write(f"    :widths: {widths_table} \n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
 
