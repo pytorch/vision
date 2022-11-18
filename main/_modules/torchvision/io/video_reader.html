@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+78f42dc ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+2964a88 ) &#x25BC</a>
     </div>
     
 
@@ -343,17 +343,15 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.io.video_reader</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span></span><span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">._load_gpu_decoder</span> <span class="kn">import</span> <span class="n">_HAS_GPU_VIDEO_DECODER</span>
-<span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-    <span class="n">_HAS_GPU_VIDEO_DECODER</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="kn">from</span> <span class="nn">._video_opt</span> <span class="kn">import</span> <span class="n">_HAS_VIDEO_OPT</span>
 
 <span class="k">if</span> <span class="n">_HAS_VIDEO_OPT</span><span class="p">:</span>
@@ -367,11 +365,37 @@
         <span class="k">return</span> <span class="kc">False</span>
 
 
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">av</span>
+
+    <span class="n">av</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">set_level</span><span class="p">(</span><span class="n">av</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">av</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">VideoFrame</span><span class="p">,</span> <span class="s2">&quot;pict_type&quot;</span><span class="p">):</span>
+        <span class="n">av</span> <span class="o">=</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="sd">&quot;&quot;&quot;\</span>
+<span class="sd">Your version of PyAV is too old for the necessary video operations in torchvision.</span>
+<span class="sd">If you are on Python 3.5, you will have to build from source (the conda-forge</span>
+<span class="sd">packages are not up-to-date).  See</span>
+<span class="sd">https://github.com/mikeboers/PyAV#installation for instructions on how to</span>
+<span class="sd">install PyAV on your system.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">av</span> <span class="o">=</span> <span class="ne">ImportError</span><span class="p">(</span>
+        <span class="sd">&quot;&quot;&quot;\</span>
+<span class="sd">PyAV is not installed, and is necessary for the video operations in torchvision.</span>
+<span class="sd">See https://github.com/mikeboers/PyAV#installation for instructions on how to</span>
+<span class="sd">install PyAV on your system.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+
 <div class="viewcode-block" id="VideoReader"><a class="viewcode-back" href="../../../generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader">[docs]</a><span class="k">class</span> <span class="nc">VideoReader</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Fine-grained video-reading API.</span>
 <span class="sd">    Supports frame-by-frame reading of various streams from a single video</span>
-<span class="sd">    container.</span>
+<span class="sd">    container. Much like previous video_reader API it supports the following</span>
+<span class="sd">    backends: video_reader, pyav, and cuda.</span>
+<span class="sd">    Backends can be set via `torchvision.set_video_backend` function.</span>
 
 <span class="sd">    .. betastatus:: VideoReader class</span>
 
@@ -433,16 +457,11 @@
 <span class="sd">            Default value (0) enables multithreading with codec-dependent heuristic. The performance</span>
 <span class="sd">            will depend on the version of FFMPEG codecs supported.</span>
 
-<span class="sd">        device (str, optional): Device to be used for decoding. Defaults to ``&quot;cpu&quot;``.</span>
-<span class="sd">            To use GPU decoding, pass ``device=&quot;cuda&quot;``.</span>
 
 <span class="sd">        path (str, optional):</span>
 <span class="sd">            .. warning:</span>
 <span class="sd">                This parameter was deprecated in ``0.15`` and will be removed in ``0.17``.</span>
 <span class="sd">                Please use ``src`` instead.</span>
-
-
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -450,44 +469,58 @@
         <span class="n">src</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
         <span class="n">stream</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;video&quot;</span><span class="p">,</span>
         <span class="n">num_threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
         <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_cuda</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">_HAS_GPU_VIDEO_DECODER</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Not compiled with GPU decoder support.&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">is_cuda</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">GPUDecoder</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">_has_video_opt</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="s2">&quot;Not compiled with video_reader support, &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;to enable video_reader support, please install &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;ffmpeg (version 4.2 is currently supported) and &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;build torchvision from source.&quot;</span>
-            <span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">get_video_backend</span>
 
-        <span class="k">if</span> <span class="n">src</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;src cannot be empty&quot;</span><span class="p">)</span>
-            <span class="n">src</span> <span class="o">=</span> <span class="n">path</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;path is deprecated and will be removed in 0.17. Please use src instead&quot;</span><span class="p">)</span>
-
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
-            <span class="n">src</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">get_video_backend</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">Video</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">num_threads</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">src</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;src cannot be empty&quot;</span><span class="p">)</span>
+                <span class="n">src</span> <span class="o">=</span> <span class="n">path</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;path is deprecated and will be removed in 0.17. Please use src instead&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;cuda&quot;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s2">&quot;VideoReader cannot be initialized from bytes object when using cuda or pyav backend.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;pyav&quot;</span><span class="p">:</span>
+                <span class="n">src</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">src</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_cuda</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;GPU VideoReader cannot be initialized from Tensor or bytes object.&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">Video</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">init_from_memory</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">num_threads</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="s2">&quot;pyav&quot;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s2">&quot;VideoReader cannot be initialized from Tensor object when using cuda or pyav backend.&quot;</span>
+                <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;`src` must be either string, Tensor or bytes object.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">GPUDecoder</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;video_reader&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">Video</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">num_threads</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">Video</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">init_from_memory</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">num_threads</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;pyav&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">container</span> <span class="o">=</span> <span class="n">av</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">metadata_errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+            <span class="c1"># TODO: load metadata</span>
+            <span class="n">stream_type</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">stream_id</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pyav_stream</span> <span class="o">=</span> <span class="p">{</span><span class="n">stream_type</span><span class="p">:</span> <span class="n">stream_id</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">pyav_stream</span><span class="p">)</span>
+
+            <span class="c1"># TODO: add extradata exception</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Unknown video backend: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Decodes and returns the next frame of the current stream.</span>
@@ -501,14 +534,29 @@
 <span class="sd">            and corresponding timestamp (``pts``) in seconds</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_cuda</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
             <span class="n">frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">frame</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">StopIteration</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">frame</span><span class="p">}</span>
-        <span class="n">frame</span><span class="p">,</span> <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">frame</span><span class="p">,</span> <span class="s2">&quot;pts&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;video_reader&quot;</span><span class="p">:</span>
+            <span class="n">frame</span><span class="p">,</span> <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">frame</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="p">)</span>
+                <span class="n">pts</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">pts</span> <span class="o">*</span> <span class="n">frame</span><span class="o">.</span><span class="n">time_base</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">&quot;video&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pyav_stream</span><span class="p">:</span>
+                    <span class="n">frame</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">to_rgb</span><span class="p">()</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">())</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s2">&quot;audio&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pyav_stream</span><span class="p">:</span>
+                    <span class="n">frame</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">())</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">frame</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">except</span> <span class="n">av</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">EOFError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">StopIteration</span>
+
         <span class="k">if</span> <span class="n">frame</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">StopIteration</span>
+
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">frame</span><span class="p">,</span> <span class="s2">&quot;pts&quot;</span><span class="p">:</span> <span class="n">pts</span><span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
@@ -527,7 +575,18 @@
 <span class="sd">            frame with the exact timestamp if it exists or</span>
 <span class="sd">            the first frame with timestamp larger than ``time_s``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">time_s</span><span class="p">,</span> <span class="n">keyframes_only</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="s2">&quot;video_reader&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">time_s</span><span class="p">,</span> <span class="n">keyframes_only</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># handle special case as pyav doesn&#39;t catch it</span>
+            <span class="k">if</span> <span class="n">time_s</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">time_s</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">temp_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">streams</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">pyav_stream</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">time_s</span> <span class="o">/</span> <span class="n">temp_str</span><span class="o">.</span><span class="n">time_base</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">keyframes_only</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Accurate seek is not implemented for pyav backend&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">backward</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">any_frame</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">temp_str</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">pyav_stream</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 <div class="viewcode-block" id="VideoReader.get_metadata"><a class="viewcode-back" href="../../../generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader.get_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
@@ -536,6 +595,21 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            (dict): dictionary containing duration and frame rate for every stream</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;pyav&quot;</span><span class="p">:</span>
+            <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># type:  Dict[str, Any]</span>
+            <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">streams</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">stream</span><span class="o">.</span><span class="n">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">stream</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;video&quot;</span><span class="p">:</span>
+                        <span class="n">rate_n</span> <span class="o">=</span> <span class="s2">&quot;fps&quot;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">rate_n</span> <span class="o">=</span> <span class="s2">&quot;framerate&quot;</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="n">stream</span><span class="o">.</span><span class="n">type</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">rate_n</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+
+                <span class="n">rate</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">average_rate</span> <span class="k">if</span> <span class="n">stream</span><span class="o">.</span><span class="n">average_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">stream</span><span class="o">.</span><span class="n">sample_rate</span>
+
+                <span class="n">metadata</span><span class="p">[</span><span class="n">stream</span><span class="o">.</span><span class="n">type</span><span class="p">][</span><span class="s2">&quot;duration&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">duration</span> <span class="o">*</span> <span class="n">stream</span><span class="o">.</span><span class="n">time_base</span><span class="p">))</span>
+                <span class="n">metadata</span><span class="p">[</span><span class="n">stream</span><span class="o">.</span><span class="n">type</span><span class="p">][</span><span class="n">rate_n</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">rate</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">metadata</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="VideoReader.set_current_stream"><a class="viewcode-back" href="../../../generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader.set_current_stream">[docs]</a>    <span class="k">def</span> <span class="nf">set_current_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -555,8 +629,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            (bool): True on succes, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_cuda</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;GPU decoding only works with video stream.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;GPU decoding only works with video stream.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;pyav&quot;</span><span class="p">:</span>
+            <span class="n">stream_type</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">stream_id</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pyav_stream</span> <span class="o">=</span> <span class="p">{</span><span class="n">stream_type</span><span class="p">:</span> <span class="n">stream_id</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">pyav_stream</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">set_current_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span></div></div>
 </pre></div>
 

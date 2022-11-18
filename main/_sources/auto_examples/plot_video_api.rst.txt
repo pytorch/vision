@@ -49,7 +49,7 @@ Chosen video statistics:
         - sample rate: 48K Hz
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 31-44
+.. GENERATED FROM PYTHON SOURCE LINES 31-45
 
 .. code-block:: default
 
@@ -57,6 +57,7 @@ Chosen video statistics:
     import torch
     import torchvision
     from torchvision.datasets.utils import download_url
+    torchvision.set_video_backend("video_reader")
 
     # Download the sample video
     download_url(
@@ -80,14 +81,14 @@ Chosen video statistics:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 45-49
+.. GENERATED FROM PYTHON SOURCE LINES 46-50
 
 Streams are defined in a similar fashion as torch devices. We encode them as strings in a form
 of ``stream_type:stream_id`` where ``stream_type`` is a string and ``stream_id`` a long int.
 The constructor accepts passing a ``stream_type`` only, in which case the stream is auto-discovered.
 Firstly, let's get the metadata for our particular video:
 
-.. GENERATED FROM PYTHON SOURCE LINES 49-54
+.. GENERATED FROM PYTHON SOURCE LINES 50-55
 
 .. code-block:: default
 
@@ -109,7 +110,7 @@ Firstly, let's get the metadata for our particular video:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 55-62
+.. GENERATED FROM PYTHON SOURCE LINES 56-63
 
 Here we can see that video has two streams - a video and an audio stream.
 Currently available stream types include ['video', 'audio'].
@@ -119,7 +120,7 @@ In this way, if the video container contains multiple streams of the same type,
 users can access the one they want.
 If only stream type is passed, the decoder auto-detects first stream of that type and returns it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 64-71
+.. GENERATED FROM PYTHON SOURCE LINES 65-72
 
 Let's read all the frames from the video stream. By default, the return value of
 ``next(video_reader)`` is a dict containing the following fields.
@@ -129,7 +130,7 @@ The return fields are:
 - ``data``: containing a torch.tensor
 - ``pts``: containing a float timestamp of this particular frame
 
-.. GENERATED FROM PYTHON SOURCE LINES 71-87
+.. GENERATED FROM PYTHON SOURCE LINES 72-88
 
 .. code-block:: default
 
@@ -165,7 +166,7 @@ The return fields are:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 88-96
+.. GENERATED FROM PYTHON SOURCE LINES 89-97
 
 But what if we only want to read certain time segment of the video?
 That can be done easily using the combination of our ``seek`` function, and the fact that each call
@@ -176,7 +177,7 @@ we can leverage itertools to simplify the process and make it more pythonic.
 
 For example, if we wanted to read ten frames from second second:
 
-.. GENERATED FROM PYTHON SOURCE LINES 96-109
+.. GENERATED FROM PYTHON SOURCE LINES 97-110
 
 .. code-block:: default
 
@@ -206,14 +207,14 @@ For example, if we wanted to read ten frames from second second:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 110-114
+.. GENERATED FROM PYTHON SOURCE LINES 111-115
 
 Or if we wanted to read from 2nd to 5th second,
 We seek into a second second of the video,
 then we utilize the itertools takewhile to get the
 correct number of frames:
 
-.. GENERATED FROM PYTHON SOURCE LINES 114-127
+.. GENERATED FROM PYTHON SOURCE LINES 115-128
 
 .. code-block:: default
 
@@ -245,14 +246,14 @@ correct number of frames:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 128-132
+.. GENERATED FROM PYTHON SOURCE LINES 129-133
 
 2. Building a sample read_video function
 ----------------------------------------------------------------------------------------
 We can utilize the methods above to build the read video function that follows
 the same API to the existing ``read_video`` function.
 
-.. GENERATED FROM PYTHON SOURCE LINES 132-172
+.. GENERATED FROM PYTHON SOURCE LINES 133-173
 
 .. code-block:: default
 
@@ -309,7 +310,7 @@ the same API to the existing ``read_video`` function.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 173-178
+.. GENERATED FROM PYTHON SOURCE LINES 174-179
 
 3. Building an example randomly sampled dataset (can be applied to training dataset of kinetics400)
 -------------------------------------------------------------------------------------------------------
@@ -317,11 +318,11 @@ Cool, so now we can use the same principle to make the sample dataset.
 We suggest trying out iterable dataset for this purpose.
 Here, we are going to build an example dataset that reads randomly selected 10 frames of video.
 
-.. GENERATED FROM PYTHON SOURCE LINES 180-181
+.. GENERATED FROM PYTHON SOURCE LINES 181-182
 
 Make sample dataset
 
-.. GENERATED FROM PYTHON SOURCE LINES 181-186
+.. GENERATED FROM PYTHON SOURCE LINES 182-187
 
 .. code-block:: default
 
@@ -337,11 +338,11 @@ Make sample dataset
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 187-188
+.. GENERATED FROM PYTHON SOURCE LINES 188-189
 
 Download the videos
 
-.. GENERATED FROM PYTHON SOURCE LINES 188-214
+.. GENERATED FROM PYTHON SOURCE LINES 189-215
 
 .. code-block:: default
 
@@ -393,11 +394,11 @@ Download the videos
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 215-216
+.. GENERATED FROM PYTHON SOURCE LINES 216-217
 
 Housekeeping and utilities
 
-.. GENERATED FROM PYTHON SOURCE LINES 216-234
+.. GENERATED FROM PYTHON SOURCE LINES 217-235
 
 .. code-block:: default
 
@@ -426,7 +427,7 @@ Housekeeping and utilities
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 235-245
+.. GENERATED FROM PYTHON SOURCE LINES 236-246
 
 We are going to define the dataset and some basic arguments.
 We assume the structure of the FolderDataset, and add the following parameters:
@@ -439,7 +440,7 @@ We assume the structure of the FolderDataset, and add the following parameters:
   We actually add epoch size as using :func:`~torch.utils.data.IterableDataset`
   class allows us to naturally oversample clips or images from each video if needed.
 
-.. GENERATED FROM PYTHON SOURCE LINES 245-289
+.. GENERATED FROM PYTHON SOURCE LINES 246-290
 
 .. code-block:: default
 
@@ -494,7 +495,7 @@ We assume the structure of the FolderDataset, and add the following parameters:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 290-304
+.. GENERATED FROM PYTHON SOURCE LINES 291-305
 
 Given a path of videos in a folder structure, i.e:
 
@@ -511,7 +512,7 @@ Given a path of videos in a folder structure, i.e:
 
 We can generate a dataloader and test the dataset.
 
-.. GENERATED FROM PYTHON SOURCE LINES 304-311
+.. GENERATED FROM PYTHON SOURCE LINES 305-312
 
 .. code-block:: default
 
@@ -529,7 +530,7 @@ We can generate a dataloader and test the dataset.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 312-323
+.. GENERATED FROM PYTHON SOURCE LINES 313-324
 
 .. code-block:: default
 
@@ -552,18 +553,18 @@ We can generate a dataloader and test the dataset.
 
  .. code-block:: none
 
-    {'video': ['./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/2/SOX5yA1l24A.mp4', './dataset/2/v_SoccerJuggling_g24_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/2/v_SoccerJuggling_g23_c01.avi'], 'start': [1.4134174407027953, 8.902518803762653, 2.1540581479268437, 0.5988187251429907, 6.353627892160076], 'end': [1.933333, 9.4094, 2.669333, 1.0999999999999999, 6.873533], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+    {'video': ['./dataset/2/SOX5yA1l24A.mp4', './dataset/1/WUzgd7C1pWA.mp4', './dataset/2/SOX5yA1l24A.mp4', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi'], 'start': [0.8189630228665843, 5.939012832502338, 6.996125123445596, 5.680361828577023, 0.8075878019330834], 'end': [1.334667, 6.439767, 7.507499999999999, 6.2062, 1.3333329999999999], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 324-327
+.. GENERATED FROM PYTHON SOURCE LINES 325-328
 
 4. Data Visualization
 ----------------------------------
 Example of visualized video
 
-.. GENERATED FROM PYTHON SOURCE LINES 327-336
+.. GENERATED FROM PYTHON SOURCE LINES 328-337
 
 .. code-block:: default
 
@@ -588,11 +589,11 @@ Example of visualized video
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 337-338
+.. GENERATED FROM PYTHON SOURCE LINES 338-339
 
 Cleanup the video and dataset:
 
-.. GENERATED FROM PYTHON SOURCE LINES 338-342
+.. GENERATED FROM PYTHON SOURCE LINES 339-343
 
 .. code-block:: default
 
@@ -610,7 +611,7 @@ Cleanup the video and dataset:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.514 seconds)
+   **Total running time of the script:** ( 0 minutes  4.000 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_video_api.py:
