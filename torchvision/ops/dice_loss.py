@@ -1,6 +1,8 @@
 import torch
 import torch.nn.functional as F
 
+from ..utils import _log_api_usage_once
+
 
 def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "none", eps: float = 1e-8) -> torch.Tensor:
     r"""Criterion that computes Sørensen-Dice Coefficient loss.
@@ -36,17 +38,9 @@ def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "non
     Return:
         Tensor: Loss tensor with the reduction option applied.
     """
-    if not isinstance(inputs, torch.Tensor):
-        raise TypeError(f"Input type is not a torch.Tensor. Got {type(inputs)}")
 
-    if not len(inputs.shape) == 4:
-        raise ValueError(f"Invalid input shape, we expect BxNxHxW. Got: {inputs.shape}")
-
-    if not inputs.shape[-2:] == targets.shape[-2:]:
-        raise ValueError(f"input and target shapes must be the same. Got: {inputs.shape} and {targets.shape}")
-
-    if not inputs.device == targets.device:
-        raise ValueError(f"input and target must be in the same device. Got: {inputs.device} and {targets.device}")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(dice_loss)
 
     # compute softmax over the classes axis
     p = F.softmax(inputs, dim=1)
