@@ -1,8 +1,9 @@
 import torch
 import torch.nn.functional as F
 
+
 def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "none", eps: float = 1e-8) -> torch.Tensor:
-    """Criterion that computes Sørensen-Dice Coefficient loss.
+    r"""Criterion that computes Sørensen-Dice Coefficient loss.
 
     We compute the Sørensen-Dice Coefficient as follows:
 
