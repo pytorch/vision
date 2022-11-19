@@ -4,6 +4,11 @@ import torch
 
 from ..utils import _log_api_usage_once
 
+try:
+    from ._load_gpu_decoder import _HAS_GPU_VIDEO_DECODER
+except ModuleNotFoundError:
+    _HAS_GPU_VIDEO_DECODER = False
+
 from ._video_opt import (
     _HAS_VIDEO_OPT,
     _probe_video_from_file,
@@ -28,7 +33,7 @@ from .image import (
     write_jpeg,
     write_png,
 )
-from .video import _HAS_GPU_VIDEO_DECODER, read_video, read_video_timestamps, write_video
+from .video import read_video, read_video_timestamps, write_video
 from .video_reader import VideoReader
 
 
