@@ -32,6 +32,7 @@ videos, together with the examples on how to build datasets and more.
 import torch
 import torchvision
 from torchvision.datasets.utils import download_url
+torchvision.set_video_backend("video_reader")
 
 # Download the sample video
 download_url(
