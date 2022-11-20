@@ -108,8 +108,6 @@ class EncoderBlock(nn.Module):
         self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
 
     def forward(self, input: torch.Tensor):
-        # By default, these values are (*, 32, 512) for the original Transformer paper...
-        # So need some reshaping to get to this shape.
         torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
         x = self.ln_1(input)
         x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
