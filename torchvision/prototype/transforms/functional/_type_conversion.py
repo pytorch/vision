@@ -1,27 +1,10 @@
-import unittest.mock
-from typing import Any, Dict, Tuple, Union
+from typing import Union
 
 import numpy as np
 import PIL.Image
 import torch
-from torchvision.io.video import read_video
 from torchvision.prototype import features
-from torchvision.prototype.utils._internal import ReadOnlyTensorBuffer
 from torchvision.transforms import functional as _F
-
-
-@torch.jit.unused
-def decode_image_with_pil(encoded_image: torch.Tensor) -> features.Image:
-    image = torch.as_tensor(np.array(PIL.Image.open(ReadOnlyTensorBuffer(encoded_image)), copy=True))
-    if image.ndim == 2:
-        image = image.unsqueeze(2)
-    return features.Image(image.permute(2, 0, 1))
-
-
-@torch.jit.unused
-def decode_video_with_av(encoded_video: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
-    with unittest.mock.patch("torchvision.io.video.os.path.exists", return_value=True):
-        return read_video(ReadOnlyTensorBuffer(encoded_video))  # type: ignore[arg-type]
 
 
 @torch.jit.unused
