@@ -15,6 +15,7 @@ else
   pushd ext_libraries
   popd
   export PATH="$(pwd)/ext_libraries/bin:$PATH"
+  pip install auditwheel
   # Point to custom libraries
   export LD_LIBRARY_PATH=$(pwd)/ext_libraries/lib:$LD_LIBRARY_PATH
   export TORCHVISION_INCLUDE=$(pwd)/ext_libraries/include
