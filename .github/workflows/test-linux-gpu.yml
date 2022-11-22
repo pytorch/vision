@@ -30,7 +30,8 @@ jobs:
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
         
-        nvidia-smi
+        modinfo nvidia || true
+        nvidia-smi || true
         exit 0
 
         # Set up Environment Variables
