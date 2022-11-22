@@ -22,7 +22,7 @@ jobs:
       matrix:
         include:
           - repository: pytorch/vision
-            pre-script: ""
+            pre-script: packaging/pre_build_script.sh
             post-script: ""
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
