@@ -1,3 +1,6 @@
+pip install numpy pyyaml future ninja
+pip install --upgrade setuptools
+
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   # Install libpng from Anaconda (defaults)
   conda install ${CONDA_CHANNEL_FLAGS} libpng "jpeg<=9b" -y
