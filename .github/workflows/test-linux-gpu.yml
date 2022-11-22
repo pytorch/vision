@@ -29,6 +29,9 @@ jobs:
       script: |
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
+        
+        nvidia-smi
+        exit 0
 
         # Set up Environment Variables
         export PYTHON_VERSION="${{ matrix.python_version }}"
