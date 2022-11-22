@@ -46,16 +46,18 @@ jobs:
         conda create -yp ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy
         conda activate /work/ci_env
         
-        # Install PyTorch, Torchvision, and testing libraries
-        set -ex
-        conda install \
-          --yes \
-          -c "pytorch-${CHANNEL}" \
-          -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
-          "${CUDATOOLKIT}"
-        python3 setup.py develop
-        python3 -m pip install pytest pytest-mock 'av<10'
-
-        # Run Tests
-        python3 -m torch.utils.collect_env
-        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
+        python3 -c "import os; print('\n'.join(f'{key}: {value}' for key, value in sorted(os.environ.items())))"
+        
+#        # Install PyTorch, Torchvision, and testing libraries
+#        set -ex
+#        conda install \
+#          --yes \
+#          -c "pytorch-${CHANNEL}" \
+#          -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
+#          "${CUDATOOLKIT}"
+#        python3 setup.py develop
+#        python3 -m pip install pytest pytest-mock 'av<10'
+#
+#        # Run Tests
+#        python3 -m torch.utils.collect_env
+#        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
