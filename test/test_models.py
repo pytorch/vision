@@ -193,7 +193,8 @@ def _check_fx_compatible(model, inputs, eager_out=None):
     model_fx = torch.fx.symbolic_trace(model)
     if eager_out is None:
         eager_out = model(inputs)
-    fx_out = model_fx(inputs)
+    with torch.no_grad(), freeze_rng_state():
+        fx_out = model_fx(inputs)
     torch.testing.assert_close(eager_out, fx_out)
 
 
@@ -718,7 +719,8 @@ def test_segmentation_model(model_fn, dev):
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
-    out = model(x)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(x)
 
     def check_out(out):
         prec = 0.01
@@ -746,7 +748,7 @@ def test_segmentation_model(model_fn, dev):
     _check_fx_compatible(model, x, eager_out=out)
 
     if dev == "cuda":
-        with torch.cuda.amp.autocast():
+        with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
@@ -845,7 +847,7 @@ def test_detection_model(model_fn, dev):
     _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
 
     if dev == "cuda":
-        with torch.cuda.amp.autocast():
+        with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
             out = model(model_input)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
