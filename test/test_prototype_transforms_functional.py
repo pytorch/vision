@@ -61,12 +61,7 @@ def make_info_args_kwargs_params(info, *, args_kwargs_fn, test_id=None):
     ]
 
 
-def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None):
-    if condition is None:
-
-        def condition(info):
-            return True
-
+def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn):
     def decorator(test_fn):
         parts = test_fn.__qualname__.split(".")
         if len(parts) == 1:
@@ -81,9 +76,6 @@ def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=No
         argnames = ("info", "args_kwargs")
         argvalues = []
         for info in infos:
-            if not condition(info):
-                continue
-
             argvalues.extend(make_info_args_kwargs_params(info, args_kwargs_fn=args_kwargs_fn, test_id=test_id))
 
         return pytest.mark.parametrize(argnames, argvalues)(test_fn)
@@ -110,9 +102,8 @@ class TestKernels:
         args_kwargs_fn=lambda kernel_info: kernel_info.sample_inputs_fn(),
     )
     reference_inputs = make_info_args_kwargs_parametrization(
-        KERNEL_INFOS,
+        [info for info in KERNEL_INFOS if info.reference_fn is not None],
         args_kwargs_fn=lambda info: info.reference_inputs_fn(),
-        condition=lambda info: info.reference_fn is not None,
     )
 
     @ignore_jit_warning_no_profile
@@ -131,7 +122,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*other_args, *kwargs),
+            msg=parametrized_error_message(*other_args, **kwargs),
         )
 
     def _unbatch(self, batch, *, data_dims):
@@ -188,7 +179,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=batched_input.dtype, device=batched_input.device),
-            msg=parametrized_error_message(*other_args, *kwargs),
+            msg=parametrized_error_message(*other_args, **kwargs),
         )
 
     @sample_inputs
@@ -218,7 +209,7 @@ class TestKernels:
             output_cpu,
             check_device=False,
             **info.get_closeness_kwargs(test_id, dtype=input_cuda.dtype, device=input_cuda.device),
-            msg=parametrized_error_message(*other_args, *kwargs),
+            msg=parametrized_error_message(*other_args, **kwargs),
         )
 
     @sample_inputs
@@ -245,7 +236,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*other_args, *kwargs),
+            msg=parametrized_error_message(*other_args, **kwargs),
         )
 
     @make_info_args_kwargs_parametrization(
@@ -272,7 +263,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=torch.float32, device=input.device),
-            msg=parametrized_error_message(*other_args, *kwargs),
+            msg=parametrized_error_message(*other_args, **kwargs),
         )
 
 
@@ -290,9 +281,8 @@ def spy_on(mocker):
 
 class TestDispatchers:
     image_sample_inputs = make_info_args_kwargs_parametrization(
-        DISPATCHER_INFOS,
+        [info for info in DISPATCHER_INFOS if features.Image in info.kernels],
         args_kwargs_fn=lambda info: info.sample_inputs(features.Image),
-        condition=lambda info: features.Image in info.kernels,
     )
 
     @ignore_jit_warning_no_profile
@@ -341,9 +331,8 @@ class TestDispatchers:
         spy.assert_called_once()
 
     @make_info_args_kwargs_parametrization(
-        DISPATCHER_INFOS,
+        [info for info in DISPATCHER_INFOS if info.pil_kernel_info is not None],
         args_kwargs_fn=lambda info: info.sample_inputs(features.Image),
-        condition=lambda info: info.pil_kernel_info is not None,
     )
     def test_dispatch_pil(self, info, args_kwargs, spy_on):
         (image_feature, *other_args), kwargs = args_kwargs.load()

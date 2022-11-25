@@ -174,11 +174,13 @@ class ArgsKwargs:
         yield self.kwargs
 
     def load(self, device="cpu"):
-        args = tuple(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self.args)
-        kwargs = {
-            keyword: arg.load(device) if isinstance(arg, TensorLoader) else arg for keyword, arg in self.kwargs.items()
-        }
-        return args, kwargs
+        return ArgsKwargs(
+            *(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self.args),
+            **{
+                keyword: arg.load(device) if isinstance(arg, TensorLoader) else arg
+                for keyword, arg in self.kwargs.items()
+            },
+        )
 
 
 DEFAULT_SQUARE_SPATIAL_SIZE = 15

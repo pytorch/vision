@@ -52,7 +52,7 @@ class KernelInfo(InfoBase):
         # values to be tested. If not specified, `sample_inputs_fn` will be used.
         reference_inputs_fn=None,
         # If true-ish, triggers a test that checks the kernel for consistency between uint8 and float32 inputs with the
-        # the reference inputs. This is usually used whenever we use a PIL kernel as reference.
+        # reference inputs. This is usually used whenever we use a PIL kernel as reference.
         # Can be a callable in which case it will be called with `other_args, kwargs`. It should return the same
         # structure, but with adapted parameters. This is useful in case a parameter value is closely tied to the input
         # dtype.
