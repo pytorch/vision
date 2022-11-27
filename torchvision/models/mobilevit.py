@@ -22,8 +22,6 @@ _COMMON_META = {
 }
 
 
-
-
 # The EncoderBlock and Encoder from vision_transformer.py
 # TODO: Maybe refactor later...
 class TransformerEncoderBlock(nn.Module):
@@ -262,9 +260,7 @@ class MobileViT(nn.Module):
         self.avgpool = nn.AvgPool2d(8, 1)
         # 1 x 1 convolution as an output layer (before fc)
         self.conv_last = nn.Sequential(nn.Conv2d(c[9], c[10], 1, 1, 0, bias=False), nn.BatchNorm2d(c[10]), nn.SiLU())
-        self.classifier = nn.Sequential( 
-            nn.Flatten(1), nn.Linear(c[10], self.num_classes) 
-        )
+        self.classifier = nn.Sequential(nn.Flatten(1), nn.Linear(c[10], self.num_classes))
 
     def forward(self, x):
         x = self.conv_first(x)
@@ -408,7 +404,6 @@ def mobile_vit_xxs(*, weights: Optional[MobileViT_Weights] = None, progress: boo
     xxs_d = [64, 80, 96]
     weights = MobileViT_XXS_Weights.verify(weights)
     return _mobile_vit(c=xxs_c, d=xxs_d, weights=weights, progress=progress, expand_ratio=2, **kwargs)
-
 
 
 if __name__ == "__main__":
