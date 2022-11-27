@@ -15,88 +15,13 @@ from torchvision.ops.misc import MLP
 from torchvision.transforms._presets import ImageClassification
 from torchvision.utils import _log_api_usage_once
 
-__all__ = ["MobileViT", "MobileViT_Weights", "MobileViT_V2_Weights", "MobileViTV2"]
+__all__ = ["MobileViT", "MobileViT_Weights"]
 
 _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
 }
 
 
-# For V1, we have 3 sets of weights xx_small (1.3M parameters), x_small (2.3M parameters), and small (5.6M parameters)
-# For V2, we have one set of weights.
-# Paper link: v1 https://arxiv.org/abs/2110.02178.
-# Paper link: v2 https://arxiv.org/pdf/2206.02680.pdf.
-# v2 (what the difference with the V1 paper?)
-# Things to be done: write the V1, MobileViTblock, MobileViTV2block, weights (for V1 and V2), documentation...
-# TODO: What about multi-scale sampler? Check later for V2 training...
-
-
-class MobileViT_Weights(WeightsEnum):
-    IMAGENET1K_V1 = Weights(
-        # TODO: Update the URL once the model has been trained...
-        url="https://download.pytorch.org/models/mobilevit.pth",
-        transforms=partial(ImageClassification, crop_size=256),
-        meta={
-            **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
-            "_metrics": {
-                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
-                "ImageNet-1K": {
-                    "acc@1": 78.4,
-                    "acc@5": 94.1,
-                }
-            },
-            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
-        },
-    )
-    DEFAULT = IMAGENET1K_V1
-
-
-class MobileViT_XS_Weights(WeightsEnum):
-    IMAGENET1K_V1 = Weights(
-        # TODO: Update the URL once the model has been trained...
-        url="https://download.pytorch.org/models/mobilevit_xs.pth",
-        transforms=partial(ImageClassification, crop_size=256),
-        meta={
-            **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
-            "_metrics": {
-                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
-                "ImageNet-1K": {
-                    "acc@1": 74.8,
-                    "acc@5": 92.3,
-                }
-            },
-            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
-        },
-    )
-    DEFAULT = IMAGENET1K_V1
-
-
-class MobileViT_XXS_Weights(WeightsEnum):
-    IMAGENET1K_V1 = Weights(
-        # TODO: Update the URL once the model has been trained...
-        url="https://download.pytorch.org/models/mobilevit_xxs.pth",
-        transforms=partial(ImageClassification, crop_size=256),
-        meta={
-            **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
-            "_metrics": {
-                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
-                "ImageNet-1K": {
-                    "acc@1": 69.0,
-                    "acc@5": 88.9,
-                }
-            },
-            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
-        },
-    )
-    DEFAULT = IMAGENET1K_V1
-
-
-# TODO: Take inspiration from the V1 weights... In progress...
-class MobileViT_V2_Weights(WeightsEnum):
-    pass
 
 
 # The EncoderBlock and Encoder from vision_transformer.py
@@ -193,6 +118,7 @@ class MobileViTBlock(nn.Module):
         attention_dropout: float = 0.5,
     ):
         super().__init__()
+        _log_api_usage_once(self)
         self.patch_size = patch_size
         self.conv1 = nn.Sequential(
             nn.Conv2d(channel, channel, kernel_size, 1, 1, bias=False), nn.BatchNorm2d(channel), nn.SiLU()
@@ -273,13 +199,6 @@ class MobileViTBlock(nn.Module):
         return x
 
 
-# TODO: Is this separable self-attention?
-# TODO: Is this necessary? Probably for the V2 version...
-class MobileViTV2Block(MobileViTBlock):
-    def forward(self, x: Tensor):
-        return x
-
-
 class MobileViT(nn.Module):
     """
     Implements MobileViT from the `"MobileViT: Light-Weight, General-Purpose, and Mobile-Friendly Vision Transfomer" <https://arxiv.org/abs/2110.02178>`_ paper.
@@ -343,15 +262,16 @@ class MobileViT(nn.Module):
         self.avgpool = nn.AvgPool2d(8, 1)
         # 1 x 1 convolution as an output layer (before fc)
         self.conv_last = nn.Sequential(nn.Conv2d(c[9], c[10], 1, 1, 0, bias=False), nn.BatchNorm2d(c[10]), nn.SiLU())
-        self.fc = nn.Linear(c[10], self.num_classes)
+        self.classifier = nn.Sequential( 
+            nn.Flatten(1), nn.Linear(c[10], self.num_classes) 
+        )
 
     def forward(self, x):
         x = self.conv_first(x)
         x = self.features(x)
         x = self.avgpool(x)
         x = self.conv_last(x)
-        x = torch.flatten(x, 1)
-        x = self.fc(x)
+        x = self.classifier(x)
         return x
 
 
@@ -379,6 +299,69 @@ def _mobile_vit(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+class MobileViT_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        # TODO: Update the URL once the model has been trained...
+        url="https://download.pytorch.org/models/mobilevit.pth",
+        transforms=partial(ImageClassification, crop_size=256),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
+            "_metrics": {
+                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
+                "ImageNet-1K": {
+                    "acc@1": 78.4,
+                    "acc@5": 94.1,
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class MobileViT_XS_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        # TODO: Update the URL once the model has been trained...
+        url="https://download.pytorch.org/models/mobilevit_xs.pth",
+        transforms=partial(ImageClassification, crop_size=256),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
+            "_metrics": {
+                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
+                "ImageNet-1K": {
+                    "acc@1": 74.8,
+                    "acc@5": 92.3,
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class MobileViT_XXS_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        # TODO: Update the URL once the model has been trained...
+        url="https://download.pytorch.org/models/mobilevit_xxs.pth",
+        transforms=partial(ImageClassification, crop_size=256),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilevit",
+            "_metrics": {
+                # TODO: Update with the correct values. For now, these are the expected ones from the paper.
+                "ImageNet-1K": {
+                    "acc@1": 69.0,
+                    "acc@5": 88.9,
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 @register_model()
@@ -426,17 +409,6 @@ def mobile_vit_xxs(*, weights: Optional[MobileViT_Weights] = None, progress: boo
     weights = MobileViT_XXS_Weights.verify(weights)
     return _mobile_vit(c=xxs_c, d=xxs_d, weights=weights, progress=progress, expand_ratio=2, **kwargs)
 
-
-# TODO: Implement this...
-def _mobile_vit_v2():
-    pass
-
-
-@register_model()
-def mobile_vit_v2():
-    # TODO: Finish and add documentation.
-    weights = MobileViT_V2_Weights.verify(weights)
-    return _mobile_vit_v2(weights=weights)
 
 
 if __name__ == "__main__":

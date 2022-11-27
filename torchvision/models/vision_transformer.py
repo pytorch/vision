@@ -113,7 +113,6 @@ class EncoderBlock(nn.Module):
         x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
         x = self.dropout(x)
         x = x + input
-
         y = self.ln_2(x)
         y = self.mlp(y)
         return x + y
