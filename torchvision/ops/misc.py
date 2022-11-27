@@ -286,7 +286,6 @@ class MLP(torch.nn.Sequential):
         # The addition of `norm_layer` is inspired from the implementation of TorchMultimodal:
         # https://github.com/facebookresearch/multimodal/blob/5dec8a/torchmultimodal/modules/layers/mlp.py
         params = {} if inplace is None else {"inplace": inplace}
-        
         layers = []
         in_dim = in_channels
         for hidden_dim in hidden_channels[:-1]:
