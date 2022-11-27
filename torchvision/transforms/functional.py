@@ -1375,7 +1375,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
     return output
 
 
-def gaussian_noise(img: Tensor, mean: float, sigma: List[float]) -> Tensor:
+def gaussian_noise(img: Tensor, mean: float, sigma: float) -> Tensor:
     """Performs Gaussian blurring on the image by given kernel.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -1383,8 +1383,7 @@ def gaussian_noise(img: Tensor, mean: float, sigma: List[float]) -> Tensor:
     Args:
         img (PIL Image or Tensor): Image to be blurred
         mean (float): Mean of the desired noise corruption.
-        sigma (sequence of floats or float): Gaussian noise standard deviation. Can be a
-            sequence of floats like ``(sigma_x, sigma_y)`` or a single float.
+        sigma (float): Gaussian noise standard deviation. Can be a single float.
 
             .. note::
                 In torchscript mode sigma as single float is
@@ -1399,12 +1398,8 @@ def gaussian_noise(img: Tensor, mean: float, sigma: List[float]) -> Tensor:
     if sigma is None:
         raise ValueError("The value of sigma cannot be None.")
 
-    if sigma is not None and not isinstance(sigma, (int, float, list, tuple)):
-        raise TypeError(f"sigma should be either float or sequence of floats. Got {type(sigma)}")
-    if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
-        sigma = [sigma[0], sigma[0]]
-    if isinstance(sigma, (list, tuple)) and len(sigma) == 2:
-        sigma = torch.empty(1).uniform_(sigma[0], sigma[1]).item()
+    if sigma is not None and not isinstance(sigma, (int, float)):
+        raise TypeError(f"sigma should be a float. Got {type(sigma)}")
     if sigma <= 0.0:
         raise ValueError(f"sigma should have positive values. Got {sigma}")
 

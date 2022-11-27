@@ -124,7 +124,7 @@ plot(blurred_imgs)
 # ~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.GaussianNoise` transform
 # perturbs the input image with gaussian noise.
-noisy = T.GaussianNoise(mean=0, sigma=(0.1, 2.0))
+noisy = T.GaussianNoise(mean=0, sigma=(5., 50.))
 noisy_imgs = [noisy(orig_img) for _ in range(2)]
 plot(noisy_imgs)
 
