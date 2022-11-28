@@ -203,13 +203,14 @@ Citing TorchVision
 ==================
 
 If you find TorchVision useful in your work, please consider citing the following BibTeX entry:
-```BibTeX
-@software{torchvision2016,
-	title        = {TorchVision: PyTorch's Computer Vision library},
-	author       = {TorchVision maintainers and contributors},
-	year         = 2016,
-	journal      = {GitHub repository},
-	publisher    = {GitHub},
-	howpublished = {\url{https://github.com/pytorch/vision}}
-}
-```
+
+.. code:: bibtex
+
+    @software{torchvision2016,
+        title        = {TorchVision: PyTorch's Computer Vision library},
+        author       = {TorchVision maintainers and contributors},
+        year         = 2016,
+        journal      = {GitHub repository},
+        publisher    = {GitHub},
+        howpublished = {\url{https://github.com/pytorch/vision}}
+    }
