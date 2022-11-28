@@ -8,7 +8,6 @@ from collections import defaultdict
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 import PIL.Image
-import PIL.ImageDraw
 import pytest
 import torch
 import torch.testing
