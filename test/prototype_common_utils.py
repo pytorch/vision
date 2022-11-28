@@ -3,6 +3,7 @@
 import collections.abc
 import dataclasses
 import functools
+import pathlib
 from collections import defaultdict
 from typing import Callable, Optional, Sequence, Tuple, Union
 
@@ -14,7 +15,7 @@ from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
 from torch.testing._comparison import assert_equal as _assert_equal, BooleanPair, NonePair, NumberPair, TensorLikePair
 from torchvision.prototype import features
-from torchvision.prototype.transforms.functional import to_image_tensor
+from torchvision.prototype.transforms.functional import convert_dtype_image_tensor, to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 __all__ = [
@@ -69,6 +70,7 @@ class ImagePair(TensorLikePair):
         self._compare_attributes(actual, expected)
 
         actual, expected = self._equalize_attributes(actual, expected)
+        actual, expected = self._promote_for_comparison(actual, expected)
         abs_diff = torch.abs(actual - expected)
 
         if self.allowed_percentage_diff is not None:
@@ -311,6 +313,42 @@ def make_image_loaders(
 
 
 make_images = from_loaders(make_image_loaders)
+
+
+def make_image_loader_for_interpolation(size="random", *, color_space=features.ColorSpace.RGB, dtype=torch.uint8):
+    size = _parse_spatial_size(size)
+    num_channels = get_num_channels(color_space)
+
+    def fn(shape, dtype, device):
+        height, width = shape[-2:]
+
+        image_pil = (
+            PIL.Image.open(pathlib.Path(__file__).parent / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg")
+            .resize((width, height))
+            .convert(
+                {
+                    features.ColorSpace.GRAY: "L",
+                    features.ColorSpace.GRAY_ALPHA: "LA",
+                    features.ColorSpace.RGB: "RGB",
+                    features.ColorSpace.RGB_ALPHA: "RGBA",
+                }[color_space]
+            )
+        )
+
+        image_tensor = convert_dtype_image_tensor(to_image_tensor(image_pil).to(device=device), dtype=dtype)
+
+        return features.Image(image_tensor, color_space=color_space)
+
+    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype, color_space=color_space)
+
+
+def make_image_loaders_for_interpolation(
+    sizes=((233, 147),),
+    color_spaces=(features.ColorSpace.RGB,),
+    dtypes=(torch.uint8,),
+):
+    for params in combinations_grid(size=sizes, color_space=color_spaces, dtype=dtypes):
+        yield make_image_loader_for_interpolation(**params)
 
 
 @dataclasses.dataclass
