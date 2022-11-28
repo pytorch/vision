@@ -1,6 +1,11 @@
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   # Install libpng from Anaconda (defaults)
-  conda install ${CONDA_CHANNEL_FLAGS} libpng "jpeg<=9b" -y
+  conda install ${CONDA_CHANNEL_FLAGS} libpng -y
+  if [[ "${PYTHON_VERSION}" = "3.9" || "${PYTHON_VERSION}" = "3.10" ]]; then
+    conda install ${CONDA_CHANNEL_FLAGS} "jpeg=8" -y
+  else
+    conda install ${CONDA_CHANNEL_FLAGS} "jpeg<=9b" -y
+  fi
   conda install -yq ffmpeg=4.2 -c pytorch
   conda install -yq wget
 else
