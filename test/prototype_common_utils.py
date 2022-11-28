@@ -3,6 +3,7 @@
 import collections.abc
 import dataclasses
 import functools
+import pathlib
 from collections import defaultdict
 from typing import Callable, Optional, Sequence, Tuple, Union
 
@@ -15,7 +16,7 @@ from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
 from torch.testing._comparison import assert_equal as _assert_equal, BooleanPair, NonePair, NumberPair, TensorLikePair
 from torchvision.prototype import features
-from torchvision.prototype.transforms.functional import to_image_tensor
+from torchvision.prototype.transforms.functional import convert_dtype_image_tensor, to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 __all__ = [
@@ -320,20 +321,24 @@ def make_image_loader_for_interpolation(size="random", *, color_space=features.C
     num_channels = get_num_channels(color_space)
 
     def fn(shape, dtype, device):
-        num_channels, height, width = shape
+        height, width = shape[-2:]
 
-        top = int((0.8 * height) // 2)
-        left = int((0.8 * width) // 2)
-        bottom = height - top
-        right = width - left
-
-        image_pil = PIL.Image.new("L", (width, height))
-        draw = PIL.ImageDraw.Draw(image_pil)
-        draw.ellipse(((left, top), (right, bottom)), fill=255)
-
-        return features.Image(to_image_tensor(image_pil).repeat(num_channels, 1, 1), color_space=color_space).to(
-            dtype=dtype, device=device
+        image_pil = (
+            PIL.Image.open(pathlib.Path(__file__).parent / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg")
+            .resize((width, height))
+            .convert(
+                {
+                    features.ColorSpace.GRAY: "L",
+                    features.ColorSpace.GRAY_ALPHA: "LA",
+                    features.ColorSpace.RGB: "RGB",
+                    features.ColorSpace.RGB_ALPHA: "RGBA",
+                }[color_space]
+            )
         )
+
+        image_tensor = convert_dtype_image_tensor(to_image_tensor(image_pil).to(device=device), dtype=dtype)
+
+        return features.Image(image_tensor, color_space=color_space)
 
     return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype, color_space=color_space)
 

@@ -359,7 +359,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
-                **pil_reference_pixel_difference(1, agg_method="mean"),
+                **pil_reference_pixel_difference(10, agg_method="mean"),
                 **cuda_vs_cpu_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(1, agg_method="mean"),
             },
@@ -869,7 +869,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.rotate_image_pil),
             reference_inputs_fn=reference_inputs_rotate_image_tensor,
             float32_vs_uint8=True,
-            closeness_kwargs=pil_reference_pixel_difference(0, agg_method="mean"),
+            closeness_kwargs=pil_reference_pixel_difference(1, agg_method="mean"),
             test_marks=[
                 xfail_jit_tuple_instead_of_list("fill"),
                 # TODO: check if this is a regression since it seems that should be supported if `int` is ok
@@ -1052,7 +1052,11 @@ KERNEL_INFOS.extend(
             reference_fn=reference_resized_crop_image_tensor,
             reference_inputs_fn=reference_inputs_resized_crop_image_tensor,
             float32_vs_uint8=True,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
+            closeness_kwargs={
+                **cuda_vs_cpu_pixel_difference(),
+                **pil_reference_pixel_difference(3, agg_method="mean"),
+                **float32_vs_uint8_pixel_difference(3, agg_method="mean"),
+            },
         ),
         KernelInfo(
             F.resized_crop_bounding_box,
