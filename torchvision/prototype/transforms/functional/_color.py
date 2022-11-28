@@ -1,7 +1,8 @@
 import torch
 from torch.nn.functional import conv2d
 from torchvision.prototype import features
-from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
+from torchvision.transforms import functional_pil as _FP
+from torchvision.transforms.functional_tensor import _max_value
 
 from ._meta import _num_value_bits, _rgb_to_gray, convert_dtype_image_tensor
 
@@ -9,7 +10,7 @@ from ._meta import _num_value_bits, _rgb_to_gray, convert_dtype_image_tensor
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
     ratio = float(ratio)
     fp = image1.is_floating_point()
-    bound = _FT._max_value(image1.dtype)
+    bound = _max_value(image1.dtype)
     output = image1.mul(ratio).add_(image2, alpha=(1.0 - ratio)).clamp_(0, bound)
     return output if fp else output.to(image1.dtype)
 
@@ -18,10 +19,12 @@ def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float
     if brightness_factor < 0:
         raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")
 
-    _FT._assert_channels(image, [1, 3])
+    c = image.shape[-3]
+    if c not in [1, 3]:
+        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
 
     fp = image.is_floating_point()
-    bound = _FT._max_value(image.dtype)
+    bound = _max_value(image.dtype)
     output = image.mul(brightness_factor).clamp_(0, bound)
     return output if fp else output.to(image.dtype)
 
@@ -121,7 +124,7 @@ def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) 
     if image.numel() == 0 or height <= 2 or width <= 2:
         return image
 
-    bound = _FT._max_value(image.dtype)
+    bound = _max_value(image.dtype)
     fp = image.is_floating_point()
     shape = image.shape
 
@@ -350,7 +353,7 @@ def posterize(inpt: features.InputTypeJIT, bits: int) -> features.InputTypeJIT:
 
 
 def solarize_image_tensor(image: torch.Tensor, threshold: float) -> torch.Tensor:
-    if threshold > _FT._max_value(image.dtype):
+    if threshold > _max_value(image.dtype):
         raise TypeError(f"Threshold should be less or equal the maximum value of the dtype, but got {threshold}")
 
     return torch.where(image >= threshold, invert_image_tensor(image), image)
@@ -381,7 +384,7 @@ def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
         # exit earlier on empty images
         return image
 
-    bound = _FT._max_value(image.dtype)
+    bound = _max_value(image.dtype)
     fp = image.is_floating_point()
     float_image = image if fp else image.to(torch.float32)
 

@@ -4,7 +4,8 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
-from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
+from torchvision.transforms import functional_pil as _FP
+from torchvision.transforms.functional_tensor import _max_value
 
 
 def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
@@ -193,7 +194,7 @@ def clamp_bounding_box(
 
 def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
     image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
-    if not torch.all(alpha == _FT._max_value(alpha.dtype)):
+    if not torch.all(alpha == _max_value(alpha.dtype)):
         raise RuntimeError(
             "Stripping the alpha channel if it contains values other than the max value is not supported."
         )
@@ -204,7 +205,7 @@ def _add_alpha(image: torch.Tensor, alpha: Optional[torch.Tensor] = None) -> tor
     if alpha is None:
         shape = list(image.shape)
         shape[-3] = 1
-        alpha = torch.full(shape, _FT._max_value(image.dtype), dtype=image.dtype, device=image.device)
+        alpha = torch.full(shape, _max_value(image.dtype), dtype=image.dtype, device=image.device)
     return torch.cat((image, alpha), dim=-3)
 
 
@@ -363,14 +364,14 @@ def convert_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.f
         # Instead, we can also multiply by the maximum value plus something close to `1`. See
         # https://github.com/pytorch/vision/pull/2078#issuecomment-613524965 for details.
         eps = 1e-3
-        max_value = float(_FT._max_value(dtype))
+        max_value = float(_max_value(dtype))
         # We need to scale first since the conversion would otherwise turn the input range `[0.0, 1.0]` into the
         # discrete set `{0, 1}`.
         return image.mul(max_value + 1.0 - eps).to(dtype)
     else:
         # int to float
         if float_output:
-            return image.to(dtype).mul_(1.0 / _FT._max_value(image.dtype))
+            return image.to(dtype).mul_(1.0 / _max_value(image.dtype))
 
         # int to int
         num_value_bits_input = _num_value_bits(image.dtype)
