@@ -295,6 +295,10 @@ def get_extensions():
 
     # Locating libjpeg
     (jpeg_found, jpeg_conda, jpeg_include, jpeg_lib) = find_library("jpeglib", vision_include)
+    print("jpeg_found: " + str(jpeg_found)) 
+    print("jpeg_conda: " + str(jpeg_conda)) 
+    print("jpeg_include: " + str(jpeg_include)) 
+    print("jpeg_lib: " + str(jpeg_lib)) 
 
     use_jpeg = use_jpeg and jpeg_found
     if use_jpeg:
