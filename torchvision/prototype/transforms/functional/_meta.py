@@ -379,15 +379,7 @@ def convert_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.f
         if num_value_bits_input > num_value_bits_output:
             return image.bitwise_right_shift(num_value_bits_input - num_value_bits_output).to(dtype)
         else:
-            # The bitshift kernel is not vectorized
-            #  https://github.com/pytorch/pytorch/blob/703c19008df4700b6a522b0ae5c4b6d5ffc0906f/aten/src/ATen/native/cpu/BinaryOpsKernel.cpp#L315-L322
-            #  This results in the multiplication actually being faster.
-            # TODO: If the bitshift kernel is optimized in core, replace the computation below with
-            #  `image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)`
-            max_value_input = float(_FT._max_value(dtype))
-            max_value_output = float(_FT._max_value(image.dtype))
-            factor = int((max_value_input + 1) // (max_value_output + 1))
-            return image.to(dtype).mul_(factor)
+            return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
 
 
 # We changed the name to align it with the new naming scheme. Still, `convert_image_dtype` is
