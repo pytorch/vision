@@ -198,3 +198,19 @@ Pre-trained Model License
 The pre-trained models provided in this library may have their own licenses or terms and conditions derived from the dataset used for training. It is your responsibility to determine whether you have permission to use the models for your use case.
 
 More specifically, SWAG models are released under the CC-BY-NC 4.0 license. See `SWAG LICENSE <https://github.com/facebookresearch/SWAG/blob/main/LICENSE>`_ for additional details.
+
+Citing TorchVision
+==================
+
+If you find TorchVision useful in your work, please consider citing the following BibTeX entry:
+
+.. code:: bibtex
+
+    @software{torchvision2016,
+        title        = {TorchVision: PyTorch's Computer Vision library},
+        author       = {TorchVision maintainers and contributors},
+        year         = 2016,
+        journal      = {GitHub repository},
+        publisher    = {GitHub},
+        howpublished = {\url{https://github.com/pytorch/vision}}
+    }
