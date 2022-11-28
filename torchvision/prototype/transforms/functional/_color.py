@@ -21,7 +21,7 @@ def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float
 
     c = image.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
     fp = image.is_floating_point()
     bound = _max_value(image.dtype)
@@ -51,7 +51,7 @@ def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float
 
     c = image.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
     if c == 1:  # Match PIL behaviour
         return image
@@ -85,7 +85,7 @@ def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) ->
 
     c = image.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
     fp = image.is_floating_point()
     if c == 3:
         grayscale_image = _rgb_to_gray(image, cast=False)
@@ -251,7 +251,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
 
     c = image.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
     if c == 1:  # Match PIL behaviour
         return image
@@ -378,7 +378,7 @@ def solarize(inpt: features.InputTypeJIT, threshold: float) -> features.InputTyp
 def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
     c = image.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
     if image.numel() == 0:
         # exit earlier on empty images
