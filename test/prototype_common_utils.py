@@ -2,6 +2,7 @@
 
 import collections.abc
 import dataclasses
+import enum
 import functools
 import pathlib
 from collections import defaultdict
@@ -128,6 +129,8 @@ def parametrized_error_message(*args, **kwargs):
     def to_str(obj):
         if isinstance(obj, torch.Tensor) and obj.numel() > 10:
             return f"tensor(shape={list(obj.shape)}, dtype={obj.dtype}, device={obj.device})"
+        elif isinstance(obj, enum.Enum):
+            return f"{type(obj).__name__}.{obj.name}"
         else:
             return repr(obj)
 
