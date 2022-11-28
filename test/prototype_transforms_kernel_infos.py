@@ -52,7 +52,7 @@ class KernelInfo(InfoBase):
         # values to be tested. If not specified, `sample_inputs_fn` will be used.
         reference_inputs_fn=None,
         # If true-ish, triggers a test that checks the kernel for consistency between uint8 and float32 inputs with the
-        # the reference inputs. This is usually used whenever we use a PIL kernel as reference.
+        # reference inputs. This is usually used whenever we use a PIL kernel as reference.
         # Can be a callable in which case it will be called with `other_args, kwargs`. It should return the same
         # structure, but with adapted parameters. This is useful in case a parameter value is closely tied to the input
         # dtype.
@@ -73,8 +73,8 @@ class KernelInfo(InfoBase):
         self.float32_vs_uint8 = float32_vs_uint8
 
 
-def _pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, agg_method=None):
-    return dict(atol=uint8_atol / 255 * get_max_value(dtype), rtol=0, agg_method=agg_method)
+def _pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, mae=False):
+    return dict(atol=uint8_atol / 255 * get_max_value(dtype), rtol=0, mae=mae)
 
 
 def cuda_vs_cpu_pixel_difference(atol=1):
@@ -84,21 +84,21 @@ def cuda_vs_cpu_pixel_difference(atol=1):
     }
 
 
-def pil_reference_pixel_difference(atol=1, agg_method=None):
+def pil_reference_pixel_difference(atol=1, mae=False):
     return {
         (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): _pixel_difference_closeness_kwargs(
-            atol, agg_method=agg_method
+            atol, mae=mae
         )
     }
 
 
-def float32_vs_uint8_pixel_difference(atol=1, agg_method=None):
+def float32_vs_uint8_pixel_difference(atol=1, mae=False):
     return {
         (
             ("TestKernels", "test_float32_vs_uint8"),
             torch.float32,
             "cpu",
-        ): _pixel_difference_closeness_kwargs(atol, dtype=torch.float32, agg_method=agg_method)
+        ): _pixel_difference_closeness_kwargs(atol, dtype=torch.float32, mae=mae)
     }
 
 
@@ -359,9 +359,9 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
-                **pil_reference_pixel_difference(10, agg_method="mean"),
+                **pil_reference_pixel_difference(10, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
-                **float32_vs_uint8_pixel_difference(1, agg_method="mean"),
+                **float32_vs_uint8_pixel_difference(1, mae=True),
             },
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
@@ -613,7 +613,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.affine_image_pil),
             reference_inputs_fn=reference_inputs_affine_image_tensor,
             float32_vs_uint8=True,
-            closeness_kwargs=pil_reference_pixel_difference(10, agg_method="mean"),
+            closeness_kwargs=pil_reference_pixel_difference(10, mae=True),
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
                 xfail_jit_tuple_instead_of_list("fill"),
@@ -869,7 +869,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.rotate_image_pil),
             reference_inputs_fn=reference_inputs_rotate_image_tensor,
             float32_vs_uint8=True,
-            closeness_kwargs=pil_reference_pixel_difference(1, agg_method="mean"),
+            closeness_kwargs=pil_reference_pixel_difference(1, mae=True),
             test_marks=[
                 xfail_jit_tuple_instead_of_list("fill"),
                 # TODO: check if this is a regression since it seems that should be supported if `int` is ok
@@ -1054,8 +1054,8 @@ KERNEL_INFOS.extend(
             float32_vs_uint8=True,
             closeness_kwargs={
                 **cuda_vs_cpu_pixel_difference(),
-                **pil_reference_pixel_difference(3, agg_method="mean"),
-                **float32_vs_uint8_pixel_difference(3, agg_method="mean"),
+                **pil_reference_pixel_difference(3, mae=True),
+                **float32_vs_uint8_pixel_difference(3, mae=True),
             },
         ),
         KernelInfo(
@@ -1288,7 +1288,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_perspective_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
             closeness_kwargs={
-                **pil_reference_pixel_difference(2, agg_method="mean"),
+                **pil_reference_pixel_difference(2, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(),
             },
@@ -1371,7 +1371,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_elastic_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
             closeness_kwargs={
-                **float32_vs_uint8_pixel_difference(6, agg_method="mean"),
+                **float32_vs_uint8_pixel_difference(6, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
             },
         ),
@@ -2028,7 +2028,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_adjust_hue_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
-                **pil_reference_pixel_difference(2, agg_method="mean"),
+                **pil_reference_pixel_difference(2, mae=True),
                 **float32_vs_uint8_pixel_difference(),
             },
         ),
