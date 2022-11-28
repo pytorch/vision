@@ -494,6 +494,8 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
         )
 
     def forward(self, x: Tensor):
+        # Here is the difference, we apply norm after the attention in V2.
+        # In V1 we applied norm before the attention.
         x = x + self.stochastic_depth(self.norm1(self.attn(x)))
         x = x + self.stochastic_depth(self.norm2(self.mlp(x)))
         return x
@@ -587,7 +589,7 @@ class SwinTransformer(nn.Module):
 
         num_features = embed_dim * 2 ** (len(depths) - 1)
         self.norm = norm_layer(num_features)
-        self.permute = Permute([0, 3, 1, 2])
+        self.permute = Permute([0, 3, 1, 2])  # B H W C -> B C H W
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.flatten = nn.Flatten(1)
         self.head = nn.Linear(num_features, num_classes)
@@ -660,6 +662,8 @@ class Swin_T_Weights(WeightsEnum):
                     "acc@5": 95.776,
                 }
             },
+            "_ops": 4.491,
+            "_weight_size": 108.19,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -683,6 +687,8 @@ class Swin_S_Weights(WeightsEnum):
                     "acc@5": 96.360,
                 }
             },
+            "_ops": 8.741,
+            "_weight_size": 189.786,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -706,6 +712,8 @@ class Swin_B_Weights(WeightsEnum):
                     "acc@5": 96.640,
                 }
             },
+            "_ops": 15.431,
+            "_weight_size": 335.364,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -729,6 +737,8 @@ class Swin_V2_T_Weights(WeightsEnum):
                     "acc@5": 96.132,
                 }
             },
+            "_ops": 5.94,
+            "_weight_size": 108.626,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -752,6 +762,8 @@ class Swin_V2_S_Weights(WeightsEnum):
                     "acc@5": 96.816,
                 }
             },
+            "_ops": 11.546,
+            "_weight_size": 190.675,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -775,6 +787,8 @@ class Swin_V2_B_Weights(WeightsEnum):
                     "acc@5": 96.864,
                 }
             },
+            "_ops": 20.325,
+            "_weight_size": 336.372,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )

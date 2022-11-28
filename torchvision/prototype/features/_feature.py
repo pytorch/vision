@@ -6,6 +6,7 @@ from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Type
 import PIL.Image
 import torch
 from torch._C import DisableTorchFunction
+from torch.types import _device, _dtype, _size
 from torchvision.transforms import InterpolationMode
 
 
@@ -21,48 +22,39 @@ def is_simple_tensor(inpt: Any) -> bool:
 class _Feature(torch.Tensor):
     __F: Optional[ModuleType] = None
 
-    def __new__(
-        cls: Type[F],
+    @staticmethod
+    def _to_tensor(
         data: Any,
-        *,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
-    ) -> F:
-        return (
-            torch.as_tensor(  # type: ignore[return-value]
-                data,
-                dtype=dtype,  # type: ignore[arg-type]
-                device=device,  # type: ignore[arg-type]
-            )
-            .as_subclass(cls)  # type: ignore[arg-type]
-            .requires_grad_(requires_grad)
-        )
+    ) -> torch.Tensor:
+        return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
 
-    @classmethod
-    def new_like(
-        cls: Type[F],
-        other: F,
+    # FIXME: this is just here for BC with the prototype datasets. Some datasets use the _Feature directly to have a
+    #  a no-op input for the prototype transforms. For this use case, we can't use plain tensors, since they will be
+    #  interpreted as images. We should decide if we want a public no-op feature like `GenericFeature` or make this one
+    #  public again.
+    def __new__(
+        cls,
         data: Any,
-        *,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> F:
-        return cls(
-            data,
-            dtype=dtype if dtype is not None else other.dtype,
-            device=device if device is not None else other.device,
-            requires_grad=requires_grad if requires_grad is not None else other.requires_grad,
-            **kwargs,
-        )
+        requires_grad: bool = False,
+    ) -> _Feature:
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        return tensor.as_subclass(_Feature)
+
+    @classmethod
+    def wrap_like(cls: Type[F], other: F, tensor: torch.Tensor) -> F:
+        # FIXME: this is just here for BC with the prototype datasets. See __new__ for details. If that is resolved,
+        #  this method should be made abstract
+        # raise NotImplementedError
+        return tensor.as_subclass(cls)
 
     _NO_WRAPPING_EXCEPTIONS = {
-        torch.Tensor.clone: lambda cls, input, output: cls.new_like(input, output),
-        torch.Tensor.to: lambda cls, input, output: cls.new_like(
-            input, output, dtype=output.dtype, device=output.device
-        ),
+        torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
+        torch.Tensor.to: lambda cls, input, output: cls.wrap_like(input, output),
         # We don't need to wrap the output of `Tensor.requires_grad_`, since it is an inplace operation and thus
         # retains the type automatically
         torch.Tensor.requires_grad_: lambda cls, input, output: output,
@@ -115,7 +107,7 @@ class _Feature(torch.Tensor):
             # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
             # will retain the input type. Thus, we need to unwrap here.
             if isinstance(output, cls):
-                return output.as_subclass(torch.Tensor)  # type: ignore[arg-type]
+                return output.as_subclass(torch.Tensor)
 
             return output
 
@@ -137,6 +129,28 @@ class _Feature(torch.Tensor):
             _Feature.__F = functional
         return _Feature.__F
 
+    # Add properties for common attributes like shape, dtype, device, ndim etc
+    # this way we return the result without passing into __torch_function__
+    @property
+    def shape(self) -> _size:  # type: ignore[override]
+        with DisableTorchFunction():
+            return super().shape
+
+    @property
+    def ndim(self) -> int:  # type: ignore[override]
+        with DisableTorchFunction():
+            return super().ndim
+
+    @property
+    def device(self, *args: Any, **kwargs: Any) -> _device:  # type: ignore[override]
+        with DisableTorchFunction():
+            return super().device
+
+    @property
+    def dtype(self) -> _dtype:  # type: ignore[override]
+        with DisableTorchFunction():
+            return super().dtype
+
     def horizontal_flip(self) -> _Feature:
         return self
 
@@ -150,7 +164,7 @@ class _Feature(torch.Tensor):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> _Feature:
         return self
 
@@ -168,7 +182,7 @@ class _Feature(torch.Tensor):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> _Feature:
         return self
 
@@ -185,8 +199,8 @@ class _Feature(torch.Tensor):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
+        fill: FillTypeJIT = None,
     ) -> _Feature:
         return self
 
@@ -204,9 +218,11 @@ class _Feature(torch.Tensor):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> _Feature:
         return self
 
