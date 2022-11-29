@@ -22,7 +22,7 @@ from jinja2 import select_autoescape
 
 
 # PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
-PYTHON_VERSIONS = ["3.9"]
+PYTHON_VERSIONS = ["3.8"]
 
 RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
