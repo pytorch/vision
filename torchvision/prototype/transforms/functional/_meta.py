@@ -332,6 +332,8 @@ def convert_color_space(
             inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
         )
         return features.Video.wrap_like(inpt, output, color_space=color_space)
+    elif isinstance(inpt, PIL.Image.Image):
+        return convert_color_space_image_pil(inpt, color_space=color_space)
     else:
         raise TypeError(
             f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
