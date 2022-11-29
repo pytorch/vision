@@ -30,6 +30,10 @@ jobs:
       - name: Install PyTorch nightly builds
         run: pip install --progress-bar=off --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
 
+      - name: debug
+        shell: bash
+        run: ls -la torchvision
+
       - name: Restore C source from cache
         uses: actions/cache@v3
         with:
