@@ -30,6 +30,12 @@ jobs:
       - name: Install PyTorch nightly builds
         run: pip install --progress-bar=off --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
 
+      - name: Restore C source from cache
+        uses: actions/cache@v3
+        with:
+          path: torchvision/*.so
+          key: ${{ runner.os }}-${{ hashFiles('setup.py', 'torchvision/csrc/**/*') }}
+
       - name: Install torchvision
         run: pip install --progress-bar=off --no-build-isolation --editable .
 
