@@ -33,7 +33,7 @@ jobs:
       - name: Restore C source from cache
         uses: actions/cache@v3
         with:
-          path: torchvision/*.so
+          path: torchvision/*.{so,dll}
           key: ${{ runner.os }}-${{ hashFiles('setup.py', 'torchvision/csrc/**/*') }}
 
       - name: Install torchvision
