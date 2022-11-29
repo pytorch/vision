@@ -338,7 +338,7 @@ def get_extensions():
     print(f"image_macros: {image_macros}") 
     print(f"image_path: {image_path}") 
     print(f"image_src: {image_src}") 
-    print(f"inlcude_dirs: {inlcude_dirs}") 
+    print(f"include_dirs: {include_dirs}") 
     print(f"library_dirs: {library_dirs}") 
 
     if use_png or use_jpeg:
