@@ -115,6 +115,11 @@ def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
         return list(inpt.spatial_size)
     elif isinstance(inpt, PIL.Image.Image):
         return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def get_num_frames_video(video: torch.Tensor) -> int:
