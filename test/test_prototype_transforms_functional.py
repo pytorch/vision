@@ -422,6 +422,14 @@ class TestDispatchers:
 
         assert dispatcher_params == feature_params
 
+    @pytest.mark.parametrize("info", DISPATCHER_INFOS, ids=lambda info: info.id)
+    def test_unkown_type(self, info):
+        unkown_input = object()
+        (_, *other_args), kwargs = next(iter(info.sample_inputs())).load("cpu")
+
+        with pytest.raises(TypeError, match=re.escape(str(type(unkown_input)))):
+            info.dispatcher(unkown_input, *other_args, **kwargs)
+
 
 @pytest.mark.parametrize(
     ("alias", "target"),
