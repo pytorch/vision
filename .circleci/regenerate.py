@@ -64,7 +64,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                         # since those will now be done through Nova. We'll keep
                         # around the py3.7 Linux Wheels build since the docs
                         # job depends on it.
-                        if os_type == "linux" and btype == "wheel" and (python_version != "3.7" and python_version != "3.10"):
+                        if os_type == "linux" and btype == "wheel" and python_version != "3.7":
                             continue
 
                         w += workflow_pair(

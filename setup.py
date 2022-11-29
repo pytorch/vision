@@ -333,6 +333,13 @@ def get_extensions():
         + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
         + glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
     )
+    print(f"image_library: {image_library}") 
+    print(f"image_include: {image_include}") 
+    print(f"image_macros: {image_macros}") 
+    print(f"image_path: {image_path}") 
+    print(f"image_src: {image_src}") 
+    print(f"inlcude_dirs: {inlcude_dirs}") 
+    print(f"library_dirs: {library_dirs}") 
 
     if use_png or use_jpeg:
         ext_modules.append(
