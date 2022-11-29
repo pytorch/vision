@@ -55,6 +55,6 @@ def erase(
         return erase_image_pil(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, one of the subclasses TorchVision provides, or a PIL image, "
-            f"but got {inpt} instead."
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
         )
