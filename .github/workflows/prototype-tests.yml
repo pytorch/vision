@@ -30,10 +30,14 @@ jobs:
       - name: Install PyTorch nightly builds
         run: pip install --progress-bar=off --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
 
+      - name: debug
+        shell: bash
+        run: ls -la ./torchvision
+
       - name: Restore C source from cache
         uses: actions/cache@v3
         with:
-          path: torchvision/*.{so,dll}
+          path: ./torchvision/*.{so,pyd}
           key: ${{ runner.os }}-${{ hashFiles('setup.py', 'torchvision/csrc/**/*') }}
 
       - name: Install torchvision
@@ -41,7 +45,7 @@ jobs:
 
       - name: debug
         shell: bash
-        run: ls -la torchvision
+        run: ls -la ./torchvision
 
       - name: Install other prototype dependencies
         run: pip install --progress-bar=off scipy pycocotools h5py
