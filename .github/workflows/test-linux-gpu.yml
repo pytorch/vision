@@ -58,4 +58,4 @@ jobs:
 
         # Run Tests
         python3 -m torch.utils.collect_env
-        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
+      python3 -m pytest --junitxml=test-results/junit.xml -v --durations 5000
