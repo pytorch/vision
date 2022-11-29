@@ -295,10 +295,6 @@ def get_extensions():
 
     # Locating libjpeg
     (jpeg_found, jpeg_conda, jpeg_include, jpeg_lib) = find_library("jpeglib", vision_include)
-    print("jpeg_found: " + str(jpeg_found)) 
-    print("jpeg_conda: " + str(jpeg_conda)) 
-    print("jpeg_include: " + str(jpeg_include)) 
-    print("jpeg_lib: " + str(jpeg_lib)) 
 
     use_jpeg = use_jpeg and jpeg_found
     if use_jpeg:
@@ -333,13 +329,6 @@ def get_extensions():
         + glob.glob(os.path.join(image_path, "cpu", "*.cpp"))
         + glob.glob(os.path.join(image_path, "cuda", "*.cpp"))
     )
-    print(f"image_library: {image_library}") 
-    print(f"image_include: {image_include}") 
-    print(f"image_macros: {image_macros}") 
-    print(f"image_path: {image_path}") 
-    print(f"image_src: {image_src}") 
-    print(f"include_dirs: {include_dirs}") 
-    print(f"library_dirs: {library_dirs}") 
 
     if use_png or use_jpeg:
         ext_modules.append(
