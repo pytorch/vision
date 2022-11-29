@@ -221,10 +221,15 @@ def resize(
         return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, features._Feature):
         return inpt.resize(size, interpolation=interpolation, max_size=max_size, antialias=antialias)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         if antialias is not None and not antialias:
             warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
         return resize_image_pil(inpt, size, interpolation=interpolation, max_size=max_size)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the subclasses TorchVision provides, or a PIL image, "
+            f"but got {inpt} instead."
+        )
 
 
 def _affine_parse_args(
