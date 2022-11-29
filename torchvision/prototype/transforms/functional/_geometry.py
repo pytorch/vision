@@ -8,7 +8,7 @@ import torch
 from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
 
 from torchvision.prototype import features
-from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
+from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional import (
     _compute_resized_output_size as __compute_resized_output_size,
     _get_perspective_coeffs,
@@ -17,10 +17,15 @@ from torchvision.transforms.functional import (
     pil_to_tensor,
     to_pil_image,
 )
+from torchvision.transforms.functional_tensor import _pad_symmetric
 
 from ._meta import convert_format_bounding_box, get_spatial_size_image_pil
 
-horizontal_flip_image_tensor = _FT.hflip
+
+def horizontal_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
+    return image.flip(-1)
+
+
 horizontal_flip_image_pil = _FP.hflip
 
 
@@ -58,7 +63,10 @@ def horizontal_flip(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
         return horizontal_flip_image_pil(inpt)
 
 
-vertical_flip_image_tensor = _FT.vflip
+def vertical_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
+    return image.flip(-2)
+
+
 vertical_flip_image_pil = _FP.vflip
 
 
@@ -975,7 +983,7 @@ def _pad_with_scalar_fill(
         if needs_cast:
             image = image.to(dtype)
     else:  # padding_mode == "symmetric"
-        image = _FT._pad_symmetric(image, torch_padding)
+        image = _pad_symmetric(image, torch_padding)
 
     new_height, new_width = image.shape[-2:]
 

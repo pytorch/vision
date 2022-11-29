@@ -19,6 +19,7 @@ from prototype_common_utils import (
     make_bounding_box_loaders,
     make_image_loader,
     make_image_loaders,
+    make_image_loaders_for_interpolation,
     make_mask_loaders,
     make_video_loaders,
     mark_framework_limitation,
@@ -51,7 +52,7 @@ class KernelInfo(InfoBase):
         # values to be tested. If not specified, `sample_inputs_fn` will be used.
         reference_inputs_fn=None,
         # If true-ish, triggers a test that checks the kernel for consistency between uint8 and float32 inputs with the
-        # the reference inputs. This is usually used whenever we use a PIL kernel as reference.
+        # reference inputs. This is usually used whenever we use a PIL kernel as reference.
         # Can be a callable in which case it will be called with `other_args, kwargs`. It should return the same
         # structure, but with adapted parameters. This is useful in case a parameter value is closely tied to the input
         # dtype.
@@ -72,8 +73,8 @@ class KernelInfo(InfoBase):
         self.float32_vs_uint8 = float32_vs_uint8
 
 
-def _pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, agg_method=None):
-    return dict(atol=uint8_atol / 255 * get_max_value(dtype), rtol=0, agg_method=agg_method)
+def _pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, mae=False):
+    return dict(atol=uint8_atol / 255 * get_max_value(dtype), rtol=0, mae=mae)
 
 
 def cuda_vs_cpu_pixel_difference(atol=1):
@@ -83,21 +84,21 @@ def cuda_vs_cpu_pixel_difference(atol=1):
     }
 
 
-def pil_reference_pixel_difference(atol=1, agg_method=None):
+def pil_reference_pixel_difference(atol=1, mae=False):
     return {
         (("TestKernels", "test_against_reference"), torch.uint8, "cpu"): _pixel_difference_closeness_kwargs(
-            atol, agg_method=agg_method
+            atol, mae=mae
         )
     }
 
 
-def float32_vs_uint8_pixel_difference(atol=1, agg_method=None):
+def float32_vs_uint8_pixel_difference(atol=1, mae=False):
     return {
         (
             ("TestKernels", "test_float32_vs_uint8"),
             torch.float32,
             "cpu",
-        ): _pixel_difference_closeness_kwargs(atol, dtype=torch.float32, agg_method=agg_method)
+        ): _pixel_difference_closeness_kwargs(atol, dtype=torch.float32, mae=mae)
     }
 
 
@@ -287,7 +288,7 @@ def reference_resize_image_tensor(*args, **kwargs):
 
 def reference_inputs_resize_image_tensor():
     for image_loader, interpolation in itertools.product(
-        make_image_loaders(extra_dims=[()], dtypes=[torch.uint8]),
+        make_image_loaders_for_interpolation(),
         [
             F.InterpolationMode.NEAREST,
             F.InterpolationMode.NEAREST_EXACT,
@@ -317,17 +318,6 @@ def sample_inputs_resize_bounding_box():
 def sample_inputs_resize_mask():
     for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
         yield ArgsKwargs(mask_loader, size=[min(mask_loader.shape[-2:]) + 1])
-
-
-@pil_reference_wrapper
-def reference_resize_mask(*args, **kwargs):
-    return F.resize_image_pil(*args, interpolation=F.InterpolationMode.NEAREST, **kwargs)
-
-
-def reference_inputs_resize_mask():
-    for mask_loader in make_mask_loaders(extra_dims=[()], num_objects=[1]):
-        for size in _get_resize_sizes(mask_loader.shape[-2:]):
-            yield ArgsKwargs(mask_loader, size=size)
 
 
 def sample_inputs_resize_video():
@@ -369,11 +359,9 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resize_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
-                # TODO: investigate
-                **pil_reference_pixel_difference(110, agg_method="mean"),
+                **pil_reference_pixel_difference(10, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
-                # TODO: investigate
-                **float32_vs_uint8_pixel_difference(50),
+                **float32_vs_uint8_pixel_difference(1, mae=True),
             },
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
@@ -391,9 +379,6 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.resize_mask,
             sample_inputs_fn=sample_inputs_resize_mask,
-            reference_fn=reference_resize_mask,
-            reference_inputs_fn=reference_inputs_resize_mask,
-            float32_vs_uint8=True,
             closeness_kwargs=pil_reference_pixel_difference(10),
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
@@ -501,9 +486,7 @@ def sample_inputs_affine_image_tensor():
 
 
 def reference_inputs_affine_image_tensor():
-    for image_loader, affine_kwargs in itertools.product(
-        make_image_loaders(extra_dims=[()], dtypes=[torch.uint8]), _AFFINE_KWARGS
-    ):
+    for image_loader, affine_kwargs in itertools.product(make_image_loaders_for_interpolation(), _AFFINE_KWARGS):
         yield ArgsKwargs(
             image_loader,
             interpolation=F.InterpolationMode.NEAREST,
@@ -617,18 +600,6 @@ def sample_inputs_affine_mask():
         yield ArgsKwargs(mask_loader, **_full_affine_params())
 
 
-@pil_reference_wrapper
-def reference_affine_mask(*args, **kwargs):
-    return F.affine_image_pil(*args, interpolation=F.InterpolationMode.NEAREST, **kwargs)
-
-
-def reference_inputs_resize_mask():
-    for mask_loader, affine_kwargs in itertools.product(
-        make_mask_loaders(extra_dims=[()], num_objects=[1]), _AFFINE_KWARGS
-    ):
-        yield ArgsKwargs(mask_loader, **affine_kwargs)
-
-
 def sample_inputs_affine_video():
     for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
         yield ArgsKwargs(video_loader, **_full_affine_params())
@@ -642,7 +613,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.affine_image_pil),
             reference_inputs_fn=reference_inputs_affine_image_tensor,
             float32_vs_uint8=True,
-            closeness_kwargs=pil_reference_pixel_difference(10, agg_method="mean"),
+            closeness_kwargs=pil_reference_pixel_difference(10, mae=True),
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
                 xfail_jit_tuple_instead_of_list("fill"),
@@ -665,10 +636,6 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.affine_mask,
             sample_inputs_fn=sample_inputs_affine_mask,
-            reference_fn=reference_affine_mask,
-            reference_inputs_fn=reference_inputs_resize_mask,
-            closeness_kwargs=pil_reference_pixel_difference(10),
-            float32_vs_uint8=True,
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
             ],
@@ -870,9 +837,7 @@ def sample_inputs_rotate_image_tensor():
 
 
 def reference_inputs_rotate_image_tensor():
-    for image_loader, angle in itertools.product(
-        make_image_loaders(extra_dims=[()], dtypes=[torch.uint8]), _ROTATE_ANGLES
-    ):
+    for image_loader, angle in itertools.product(make_image_loaders_for_interpolation(), _ROTATE_ANGLES):
         yield ArgsKwargs(image_loader, angle=angle)
 
 
@@ -891,16 +856,6 @@ def sample_inputs_rotate_mask():
         yield ArgsKwargs(mask_loader, angle=15.0)
 
 
-@pil_reference_wrapper
-def reference_rotate_mask(*args, **kwargs):
-    return F.rotate_image_pil(*args, interpolation=F.InterpolationMode.NEAREST, **kwargs)
-
-
-def reference_inputs_rotate_mask():
-    for mask_loader, angle in itertools.product(make_mask_loaders(extra_dims=[()], num_objects=[1]), _ROTATE_ANGLES):
-        yield ArgsKwargs(mask_loader, angle=angle)
-
-
 def sample_inputs_rotate_video():
     for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
         yield ArgsKwargs(video_loader, angle=15.0)
@@ -914,8 +869,7 @@ KERNEL_INFOS.extend(
             reference_fn=pil_reference_wrapper(F.rotate_image_pil),
             reference_inputs_fn=reference_inputs_rotate_image_tensor,
             float32_vs_uint8=True,
-            # TODO: investigate
-            closeness_kwargs=pil_reference_pixel_difference(110, agg_method="mean"),
+            closeness_kwargs=pil_reference_pixel_difference(1, mae=True),
             test_marks=[
                 xfail_jit_tuple_instead_of_list("fill"),
                 # TODO: check if this is a regression since it seems that should be supported if `int` is ok
@@ -929,10 +883,6 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.rotate_mask,
             sample_inputs_fn=sample_inputs_rotate_mask,
-            reference_fn=reference_rotate_mask,
-            reference_inputs_fn=reference_inputs_rotate_mask,
-            float32_vs_uint8=True,
-            closeness_kwargs=pil_reference_pixel_difference(10),
         ),
         KernelInfo(
             F.rotate_video,
@@ -1058,7 +1008,7 @@ def reference_resized_crop_image_tensor(*args, **kwargs):
 
 def reference_inputs_resized_crop_image_tensor():
     for image_loader, interpolation, params in itertools.product(
-        make_image_loaders(extra_dims=[()], dtypes=[torch.uint8]),
+        make_image_loaders_for_interpolation(),
         [
             F.InterpolationMode.NEAREST,
             F.InterpolationMode.NEAREST_EXACT,
@@ -1089,13 +1039,6 @@ def sample_inputs_resized_crop_mask():
         yield ArgsKwargs(mask_loader, **_RESIZED_CROP_PARAMS[0])
 
 
-def reference_inputs_resized_crop_mask():
-    for mask_loader, params in itertools.product(
-        make_mask_loaders(extra_dims=[()], num_objects=[1]), _RESIZED_CROP_PARAMS
-    ):
-        yield ArgsKwargs(mask_loader, **params)
-
-
 def sample_inputs_resized_crop_video():
     for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
         yield ArgsKwargs(video_loader, **_RESIZED_CROP_PARAMS[0])
@@ -1110,11 +1053,9 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_resized_crop_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
-                # TODO: investigate
-                **pil_reference_pixel_difference(60, agg_method="mean"),
                 **cuda_vs_cpu_pixel_difference(),
-                # TODO: investigate
-                **float32_vs_uint8_pixel_difference(50),
+                **pil_reference_pixel_difference(3, mae=True),
+                **float32_vs_uint8_pixel_difference(3, mae=True),
             },
         ),
         KernelInfo(
@@ -1124,10 +1065,6 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.resized_crop_mask,
             sample_inputs_fn=sample_inputs_resized_crop_mask,
-            reference_fn=pil_reference_wrapper(F.resized_crop_image_pil),
-            reference_inputs_fn=reference_inputs_resized_crop_mask,
-            float32_vs_uint8=True,
-            closeness_kwargs=pil_reference_pixel_difference(10),
         ),
         KernelInfo(
             F.resized_crop_video,
@@ -1298,12 +1235,24 @@ def sample_inputs_perspective_image_tensor():
 
 
 def reference_inputs_perspective_image_tensor():
-    for image_loader, coefficients in itertools.product(
-        make_image_loaders(extra_dims=[()], dtypes=[torch.uint8]), _PERSPECTIVE_COEFFS
+    for image_loader, coefficients, interpolation in itertools.product(
+        make_image_loaders_for_interpolation(),
+        _PERSPECTIVE_COEFFS,
+        [
+            F.InterpolationMode.NEAREST,
+            F.InterpolationMode.BILINEAR,
+        ],
     ):
         # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
-            yield ArgsKwargs(image_loader, None, None, fill=fill, coefficients=coefficients)
+            yield ArgsKwargs(
+                image_loader,
+                startpoints=None,
+                endpoints=None,
+                interpolation=interpolation,
+                fill=fill,
+                coefficients=coefficients,
+            )
 
 
 def sample_inputs_perspective_bounding_box():
@@ -1339,8 +1288,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_perspective_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
             closeness_kwargs={
-                # TODO: investigate
-                **pil_reference_pixel_difference(160, agg_method="mean"),
+                **pil_reference_pixel_difference(2, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(),
             },
@@ -1381,7 +1329,7 @@ def sample_inputs_elastic_image_tensor():
 
 def reference_inputs_elastic_image_tensor():
     for image_loader, interpolation in itertools.product(
-        make_image_loaders(extra_dims=[()], dtypes=[torch.uint8]),
+        make_image_loaders_for_interpolation(),
         [
             F.InterpolationMode.NEAREST,
             F.InterpolationMode.BILINEAR,
@@ -1409,12 +1357,6 @@ def sample_inputs_elastic_mask():
         yield ArgsKwargs(mask_loader, displacement=displacement)
 
 
-def reference_inputs_elastic_mask():
-    for mask_loader in make_mask_loaders(extra_dims=[()], num_objects=[1]):
-        displacement = _get_elastic_displacement(mask_loader.shape[-2:])
-        yield ArgsKwargs(mask_loader, displacement=displacement)
-
-
 def sample_inputs_elastic_video():
     for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
         displacement = _get_elastic_displacement(video_loader.shape[-2:])
@@ -1426,11 +1368,12 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.elastic_image_tensor,
             sample_inputs_fn=sample_inputs_elastic_image_tensor,
-            reference_fn=pil_reference_wrapper(F.elastic_image_pil),
             reference_inputs_fn=reference_inputs_elastic_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
-            # TODO: investigate
-            closeness_kwargs=float32_vs_uint8_pixel_difference(60, agg_method="mean"),
+            closeness_kwargs={
+                **float32_vs_uint8_pixel_difference(6, mae=True),
+                **cuda_vs_cpu_pixel_difference(),
+            },
         ),
         KernelInfo(
             F.elastic_bounding_box,
@@ -1439,15 +1382,11 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.elastic_mask,
             sample_inputs_fn=sample_inputs_elastic_mask,
-            reference_fn=pil_reference_wrapper(F.elastic_image_pil),
-            reference_inputs_fn=reference_inputs_elastic_mask,
-            float32_vs_uint8=True,
-            # TODO: investigate
-            closeness_kwargs=pil_reference_pixel_difference(80, agg_method="mean"),
         ),
         KernelInfo(
             F.elastic_video,
             sample_inputs_fn=sample_inputs_elastic_video,
+            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
         ),
     ]
 )
@@ -2089,8 +2028,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_adjust_hue_image_tensor,
             float32_vs_uint8=True,
             closeness_kwargs={
-                # TODO: investigate
-                **pil_reference_pixel_difference(20),
+                **pil_reference_pixel_difference(2, mae=True),
                 **float32_vs_uint8_pixel_difference(),
             },
         ),
