@@ -10,7 +10,8 @@ from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F,
 from torchvision.prototype.transforms.functional._meta import get_spatial_size
 from torchvision.transforms import functional_tensor as _FT
 
-from ._utils import _isinstance, _setup_fill_arg
+from ._utils import _setup_fill_arg
+from .utils import _isinstance
 
 
 class _AutoAugmentBase(Transform):

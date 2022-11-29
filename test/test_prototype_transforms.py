@@ -23,7 +23,7 @@ from prototype_common_utils import (
 )
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features, transforms
-from torchvision.prototype.transforms._utils import _isinstance
+from torchvision.prototype.transforms.utils import _isinstance
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
