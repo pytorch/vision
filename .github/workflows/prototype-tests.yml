@@ -37,7 +37,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('setup.py', 'torchvision/csrc/**/*') }}
 
       - name: Install torchvision
-        run: pip install --progress-bar=off --no-build-isolation --editable .
+        run: python setup.py develop
 
       - name: Install other prototype dependencies
         run: pip install --progress-bar=off scipy pycocotools h5py
