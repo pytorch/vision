@@ -1046,6 +1046,7 @@ workflows:
       - unittest_torchhub
       - unittest_onnx
       - unittest_extended
+      - unittest_models
       - unittest_linux_cpu:
           cu_version: cpu
           name: unittest_linux_cpu_py3.8
