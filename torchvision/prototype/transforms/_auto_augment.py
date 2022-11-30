@@ -10,7 +10,8 @@ from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F,
 from torchvision.prototype.transforms.functional._meta import get_spatial_size
 from torchvision.transforms import functional_tensor as _FT
 
-from ._utils import _isinstance, _setup_fill_arg
+from ._utils import _setup_fill_arg
+from .utils import check_type
 
 
 class _AutoAugmentBase(Transform):
@@ -38,7 +39,7 @@ class _AutoAugmentBase(Transform):
 
         image_or_videos = []
         for idx, inpt in enumerate(flat_inputs):
-            if _isinstance(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)):
+            if check_type(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)):
                 image_or_videos.append((idx, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
