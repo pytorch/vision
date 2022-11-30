@@ -8,13 +8,15 @@ from torchvision.transforms import functional as _F
 
 
 @torch.jit.unused
-def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> features.Image:
-    if isinstance(image, np.ndarray):
-        output = torch.from_numpy(image).permute((2, 0, 1)).contiguous()
-    elif isinstance(image, PIL.Image.Image):
-        output = pil_to_tensor(image)
-    else:  # isinstance(inpt, torch.Tensor):
-        output = image
+def to_image_tensor(inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> features.Image:
+    if isinstance(inpt, np.ndarray):
+        output = torch.from_numpy(inpt).permute((2, 0, 1)).contiguous()
+    elif isinstance(inpt, PIL.Image.Image):
+        output = pil_to_tensor(inpt)
+    elif isinstance(inpt, torch.Tensor):
+        output = inpt
+    else:
+        raise TypeError(f"Input can either be a numpy array or a PIL image, but got {type(inpt)} instead.")
     return features.Image(output)
 
 

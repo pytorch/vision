@@ -23,17 +23,22 @@ def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-def get_dimensions(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> List[int]:
-    if isinstance(image, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+def get_dimensions(inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> List[int]:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
     ):
-        return get_dimensions_image_tensor(image)
-    elif isinstance(image, (features.Image, features.Video)):
-        channels = image.num_channels
-        height, width = image.spatial_size
+        return get_dimensions_image_tensor(inpt)
+    elif isinstance(inpt, (features.Image, features.Video)):
+        channels = inpt.num_channels
+        height, width = inpt.spatial_size
         return [channels, height, width]
+    elif isinstance(inpt, PIL.Image.Image):
+        return get_dimensions_image_pil(inpt)
     else:
-        return get_dimensions_image_pil(image)
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def get_num_channels_image_tensor(image: torch.Tensor) -> int:
@@ -54,15 +59,20 @@ def get_num_channels_video(video: torch.Tensor) -> int:
     return get_num_channels_image_tensor(video)
 
 
-def get_num_channels(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> int:
-    if isinstance(image, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+def get_num_channels(inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> int:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
     ):
-        return get_num_channels_image_tensor(image)
-    elif isinstance(image, (features.Image, features.Video)):
-        return image.num_channels
+        return get_num_channels_image_tensor(inpt)
+    elif isinstance(inpt, (features.Image, features.Video)):
+        return inpt.num_channels
+    elif isinstance(inpt, PIL.Image.Image):
+        return get_num_channels_image_pil(inpt)
     else:
-        return get_num_channels_image_pil(image)
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
@@ -103,8 +113,13 @@ def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
         return get_spatial_size_image_tensor(inpt)
     elif isinstance(inpt, (features.Image, features.Video, features.BoundingBox, features.Mask)):
         return list(inpt.spatial_size)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def get_num_frames_video(video: torch.Tensor) -> int:
@@ -117,7 +132,9 @@ def get_num_frames(inpt: features.VideoTypeJIT) -> int:
     elif isinstance(inpt, features.Video):
         return inpt.num_frames
     else:
-        raise TypeError(f"The video should be a Tensor. Got {type(inpt)}")
+        raise TypeError(
+            f"Input can either be a plain tensor or a `Video` tensor subclass, but got {type(inpt)} instead."
+        )
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
@@ -315,8 +332,13 @@ def convert_color_space(
             inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
         )
         return features.Video.wrap_like(inpt, output, color_space=color_space)
+    elif isinstance(inpt, PIL.Image.Image):
+        return convert_color_space_image_pil(inpt, color_space=color_space)
     else:
-        return convert_color_space_image_pil(inpt, color_space)
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def _num_value_bits(dtype: torch.dtype) -> int:
@@ -402,6 +424,11 @@ def convert_dtype(
     elif isinstance(inpt, features.Image):
         output = convert_dtype_image_tensor(inpt.as_subclass(torch.Tensor), dtype)
         return features.Image.wrap_like(inpt, output)
-    else:  # isinstance(inpt, features.Video):
+    elif isinstance(inpt, features.Video):
         output = convert_dtype_video(inpt.as_subclass(torch.Tensor), dtype)
         return features.Video.wrap_like(inpt, output)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor or an `Image` or `Video` tensor subclass, "
+            f"but got {type(inpt)} instead."
+        )

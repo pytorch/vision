@@ -1488,22 +1488,6 @@ workflows:
       - unittest_torchhub
       - unittest_onnx
       - unittest_extended
-      - unittest_linux_cpu:
-          cu_version: cpu
-          name: unittest_linux_cpu_py3.7
-          python_version: '3.7'
-      - unittest_linux_cpu:
-          cu_version: cpu
-          name: unittest_linux_cpu_py3.8
-          python_version: '3.8'
-      - unittest_linux_cpu:
-          cu_version: cpu
-          name: unittest_linux_cpu_py3.9
-          python_version: '3.9'
-      - unittest_linux_cpu:
-          cu_version: cpu
-          name: unittest_linux_cpu_py3.10
-          python_version: '3.10'
       - unittest_linux_gpu:
           cu_version: cu116
           filters:

@@ -144,7 +144,10 @@ class VideoReader:
             elif self.backend == "pyav":
                 src = io.BytesIO(src)
             else:
-                src = torch.frombuffer(src, dtype=torch.uint8)
+                with warnings.catch_warnings():
+                    # Ignore the warning because we actually dont modify the buffer in this function
+                    warnings.filterwarnings("ignore", message="The given buffer is not writable")
+                    src = torch.frombuffer(src, dtype=torch.uint8)
         elif isinstance(src, torch.Tensor):
             if self.backend in ["cuda", "pyav"]:
                 raise RuntimeError(
