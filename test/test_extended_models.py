@@ -212,9 +212,6 @@ def test_schema_meta_validation(model_fn):
         if missing_fields or unsupported_fields:
             problematic_weights[w] = {"missing": missing_fields, "unsupported": unsupported_fields}
         if w == weights_enum.DEFAULT:
-            # loading the model and using it for parameter and ops verification
-            kwargs = {"quantize": True} if module_name == "quantization" else {}
-            model = model_fn(weights=w, **kwargs)
 
             if module_name == "quantization":
                 # parameters() count doesn't work well with quantization, so we check against the non-quantized
@@ -223,8 +220,13 @@ def test_schema_meta_validation(model_fn):
                     incorrect_params.append(w)
 
                 # the methodology for quantized ops count doesn't work as well, so we take unquantized FLOPs instead
-                calculated_ops = get_ops(model=model, module_name="models", model_name=model_name, weight=unquantized_w)
+                calculated_ops = get_ops(model=None, module_name="models", model_name=model_name, weight=unquantized_w)
             else:
+
+                # loading the model and using it for parameter and ops verification
+                kwargs = {"quantize": True} if module_name == "quantization" else {}
+                model = model_fn(weights=w, **kwargs)
+
                 if w.meta.get("num_params") != sum(p.numel() for p in model.parameters()):
                     incorrect_params.append(w)
 

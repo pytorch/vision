@@ -8,6 +8,7 @@ from torch.utils._python_dispatch import TorchDispatchMode
 
 from torch.utils._pytree import tree_map
 
+from torchvision import models
 from torchvision.models._api import Weights
 
 aten = torch.ops.aten
@@ -274,6 +275,9 @@ def get_ops(model: torch.nn.Module, module_name: str, model_name: str, weight: W
         # hack to enable mod(*inp) for optical_flow models
         inp = [preprocess(input_tensor)]
 
+    if model is None:
+        kwargs = {"quantize": True} if module_name == "quantization" else {}
+        model = models.get_model(model_name, weights=weight, **kwargs)
     model.eval()
 
     flop_counter = FlopCounterMode(model)
