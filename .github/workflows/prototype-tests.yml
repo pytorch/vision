@@ -55,41 +55,41 @@ jobs:
           echo '#######################################################################'
           ls -la torchvision
 
-      - name: Install other prototype dependencies
-        run: pip install --progress-bar=off scipy pycocotools h5py
-
-      - name: Install test requirements
-        run: pip install --progress-bar=off pytest pytest-mock pytest-cov
-
-      - name: Mark setup as complete
-        id: setup
-        run: exit 0
-
-      - name: Run prototype features tests
-        shell: bash
-        run: |
-          pytest \
-            --durations=20 \
-            --cov=torchvision/prototype/features \
-            --cov-report=term-missing \
-            test/test_prototype_features*.py
-
-      - name: Run prototype transforms tests
-        if: success() || ( failure() && steps.setup.conclusion == 'success' )
-        shell: bash
-        run: |
-          pytest \
-            --durations=20 \
-            --cov=torchvision/prototype/transforms \
-            --cov-report=term-missing \
-            test/test_prototype_transforms*.py
-
-      - name: Run prototype models tests
-        if: success() || ( failure() && steps.setup.conclusion == 'success' )
-        shell: bash
-        run: |
-          pytest \
-            --durations=20 \
-            --cov=torchvision/prototype/models \
-            --cov-report=term-missing \
-            test/test_prototype_models*.py
+#      - name: Install other prototype dependencies
+#        run: pip install --progress-bar=off scipy pycocotools h5py
+#
+#      - name: Install test requirements
+#        run: pip install --progress-bar=off pytest pytest-mock pytest-cov
+#
+#      - name: Mark setup as complete
+#        id: setup
+#        run: exit 0
+#
+#      - name: Run prototype features tests
+#        shell: bash
+#        run: |
+#          pytest \
+#            --durations=20 \
+#            --cov=torchvision/prototype/features \
+#            --cov-report=term-missing \
+#            test/test_prototype_features*.py
+#
+#      - name: Run prototype transforms tests
+#        if: success() || ( failure() && steps.setup.conclusion == 'success' )
+#        shell: bash
+#        run: |
+#          pytest \
+#            --durations=20 \
+#            --cov=torchvision/prototype/transforms \
+#            --cov-report=term-missing \
+#            test/test_prototype_transforms*.py
+#
+#      - name: Run prototype models tests
+#        if: success() || ( failure() && steps.setup.conclusion == 'success' )
+#        shell: bash
+#        run: |
+#          pytest \
+#            --durations=20 \
+#            --cov=torchvision/prototype/models \
+#            --cov-report=term-missing \
+#            test/test_prototype_models*.py
