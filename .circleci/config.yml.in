@@ -740,7 +740,7 @@ jobs:
     <<: *binary_common
     docker:
       - image: "pytorch/manylinux-cpu"
-    resource_class: xlarge
+    resource_class: << parameters.resource_class >>
     steps:
       - checkout
       - designate_upload_channel
@@ -768,7 +768,7 @@ jobs:
           command: .circleci/unittest/linux/scripts/install.sh
       - run:
           name: Run tests
-          command: .circleci/unittest/linux/scripts/run_test.sh
+          command: .circleci/unittest/linux/scripts/run_test.sh "<< parameters.pytest_additional_args >>"
       - run:
           name: Post process
           command: .circleci/unittest/linux/scripts/post_process.sh
@@ -779,7 +779,7 @@ jobs:
     <<: *binary_common
     machine:
       image: ubuntu-2004-cuda-11.4:202110-01
-    resource_class: gpu.nvidia.medium
+    resource_class: << parameters.resource_class >>
     environment:
       image_name: "pytorch/manylinux-cuda116"
       CU_VERSION: << parameters.cu_version >>
@@ -819,7 +819,7 @@ jobs:
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL -e CU_VERSION "${image_name}" .circleci/unittest/linux/scripts/install.sh
       - run:
           name: Run tests
-          command: docker run --env-file ./env.list -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
+          command: docker run --env-file ./env.list -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" ".circleci/unittest/linux/scripts/run_test.sh \"<< parameters.pytest_additional_args >>\""
       - run:
           name: Post Process
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/post_process.sh

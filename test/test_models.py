@@ -21,6 +21,9 @@ from torchvision import models, transforms
 from torchvision.models import get_model_builder, list_models
 
 
+pytestmark = pytest.mark.slow
+
+
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 

@@ -16,13 +16,14 @@ https://github.com/pytorch/vision/pull/1321#issuecomment-531033978
 
 import os.path
 
+import copy
 import jinja2
 import yaml
 from jinja2 import select_autoescape
 
 
 # PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
-PYTHON_VERSIONS = ["3.8"]
+PYTHON_VERSIONS = ["3.8", "3.9"]
 
 RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
@@ -262,10 +263,22 @@ def unittest_workflows(indentation=6):
                     if python_version != "3.8":
                         job["filters"] = gen_filter_branch_tree("main", "nightly")
                     job["cu_version"] = "cu116"
+                    if os_type == "linux":
+                        job["resource_class"] = "gpu.nvidia.medium"
                 else:
                     job["cu_version"] = "cpu"
+                    if os_type == "linux":
+                        job["resource_class"] = "xlarge"
 
                 jobs.append({f"unittest_{os_type}_{device_type}": job})
+
+                # Add slow_only job for python 3.8:
+                if python_version == "3.8":
+                    slow_only_job = copy.deepcopy(job)
+                    slow_only_job["pytest_additional_args"] = "-m slow"
+                    if os_type == "linux" and device_type == "cpu":
+                        slow_only_job["resource_class"] = "2xlarge+"
+                    jobs.append({f"unittest_{os_type}_{device_type}": slow_only_job})
 
     return indent(indentation, jobs)
 
