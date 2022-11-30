@@ -276,6 +276,7 @@ def unittest_workflows(indentation=6):
                 if python_version == "3.8":
                     slow_only_job = copy.deepcopy(job)
                     slow_only_job["pytest_additional_args"] = "-m slow"
+                    slow_only_job["name"] = f"{slow_only_job['name']}_slow_only"
                     if os_type == "linux" and device_type == "cpu":
                         slow_only_job["machine_type"] = "2xlarge+"
                     jobs.append({f"unittest_{os_type}_{device_type}": slow_only_job})

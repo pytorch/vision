@@ -1063,7 +1063,7 @@ workflows:
       - unittest_linux_cpu:
           cu_version: cpu
           machine_type: 2xlarge+
-          name: unittest_linux_cpu_py3.8
+          name: unittest_linux_cpu_py3.8_slow_only
           pytest_additional_args: -m slow
           python_version: '3.8'
       - unittest_linux_cpu:
@@ -1079,7 +1079,7 @@ workflows:
       - unittest_linux_gpu:
           cu_version: cu116
           machine_type: gpu.nvidia.medium
-          name: unittest_linux_gpu_py3.8
+          name: unittest_linux_gpu_py3.8_slow_only
           pytest_additional_args: -m slow
           python_version: '3.8'
       - unittest_linux_gpu:
