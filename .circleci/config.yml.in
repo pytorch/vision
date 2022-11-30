@@ -359,6 +359,20 @@ jobs:
       - run_tests_selective:
           file_or_dir: test/test_extended_*.py
 
+  unittest_models:
+    docker:
+      - image: cimg/python:3.7
+    resource_class: 2xlarge+
+    steps:
+      - checkout
+      - download_model_weights
+      - install_torchvision
+      - run:
+          name: Enable extended tests
+          command: echo 'export PYTORCH_TEST_WITH_EXTENDED=1' >> $BASH_ENV
+      - run_tests_selective:
+          file_or_dir: "test/test_models.py test/test_backbone_utils.py"
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -726,7 +740,7 @@ jobs:
     <<: *binary_common
     docker:
       - image: "pytorch/manylinux-cpu"
-    resource_class: 2xlarge+
+    resource_class: xlarge
     steps:
       - checkout
       - designate_upload_channel
