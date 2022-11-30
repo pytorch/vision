@@ -11,6 +11,8 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macos-latest
+        python-version:
+          - "3.7"
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -19,7 +21,7 @@ jobs:
       - name: Set up python
         uses: actions/setup-python@v3
         with:
-          python-version: 3.7
+          python-version: ${{ matrix.python-version }}
 
       - name: Upgrade system packages
         run: python -m pip install --upgrade pip setuptools wheel
@@ -30,30 +32,44 @@ jobs:
       - name: Install PyTorch nightly builds
         run: pip install --progress-bar=off --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
 
-      - name: debug
+      - name: debug before cache
         shell: bash
         run: |
           ls -la
           echo '#######################################################################'
           ls -la torchvision
+          echo '#######################################################################'
+          ls -la build
 
       - name: Restore C source from cache
         uses: actions/cache@v3
         with:
           path: |
+            build/**/*
             torchvision/*.so
             torchvision/*.pyd
-          key: ${{ runner.os }}-${{ hashFiles('setup.py', 'torchvision/csrc/**/*') }}
+          key: ${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('setup.py', 'torchvision/csrc/**/*') }}
 
-      - name: Install torchvision
-        run: pip install --progress-bar=off --no-build-isolation --editable .
-
-      - name: debug
+      - name: debug after cache
         shell: bash
         run: |
           ls -la
           echo '#######################################################################'
           ls -la torchvision
+          echo '#######################################################################'
+          ls -la build
+
+      - name: Install torchvision
+        run: pip install --progress-bar=off --no-build-isolation --editable .
+
+      - name: debug after installation
+        shell: bash
+        run: |
+          ls -la
+          echo '#######################################################################'
+          ls -la torchvision
+          echo '#######################################################################'
+          ls -la build
 
       - name: Install other prototype dependencies
         run: pip install --progress-bar=off scipy pycocotools h5py
