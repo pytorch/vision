@@ -5,7 +5,7 @@ import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.prototype.transforms._utils import _isinstance
+from torchvision.prototype.transforms.utils import check_type
 from torchvision.utils import _log_api_usage_once
 
 
@@ -36,8 +36,7 @@ class Transform(nn.Module):
         params = self._get_params(flat_inputs)
 
         flat_outputs = [
-            self._transform(inpt, params) if _isinstance(inpt, self._transformed_types) else inpt
-            for inpt in flat_inputs
+            self._transform(inpt, params) if check_type(inpt, self._transformed_types) else inpt for inpt in flat_inputs
         ]
 
         return tree_unflatten(flat_outputs, spec)
@@ -80,8 +79,7 @@ class _RandomApplyTransform(Transform):
         params = self._get_params(flat_inputs)
 
         flat_outputs = [
-            self._transform(inpt, params) if _isinstance(inpt, self._transformed_types) else inpt
-            for inpt in flat_inputs
+            self._transform(inpt, params) if check_type(inpt, self._transformed_types) else inpt for inpt in flat_inputs
         ]
 
         return tree_unflatten(flat_outputs, spec)

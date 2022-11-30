@@ -7,7 +7,8 @@ from torchvision.ops import remove_small_boxes
 from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
-from ._utils import _get_defaultdict, _setup_float_or_seq, _setup_size, has_any, query_bounding_box
+from ._utils import _get_defaultdict, _setup_float_or_seq, _setup_size
+from .utils import has_any, query_bounding_box
 
 
 class Identity(Transform):

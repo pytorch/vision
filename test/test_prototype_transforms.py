@@ -23,7 +23,7 @@ from prototype_common_utils import (
 )
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import features, transforms
-from torchvision.prototype.transforms._utils import _isinstance
+from torchvision.prototype.transforms.utils import check_type
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
@@ -1860,7 +1860,7 @@ def test_permute_dimensions(dims, inverse_dims):
         value_type = type(value)
         transformed_value = transformed_sample[key]
 
-        if _isinstance(value, (features.Image, features.is_simple_tensor, features.Video)):
+        if check_type(value, (features.Image, features.is_simple_tensor, features.Video)):
             if transform.dims.get(value_type) is not None:
                 assert transformed_value.permute(inverse_dims[value_type]).equal(value)
             assert type(transformed_value) == torch.Tensor
@@ -1893,7 +1893,7 @@ def test_transpose_dimensions(dims):
         transformed_value = transformed_sample[key]
 
         transposed_dims = transform.dims.get(value_type)
-        if _isinstance(value, (features.Image, features.is_simple_tensor, features.Video)):
+        if check_type(value, (features.Image, features.is_simple_tensor, features.Video)):
             if transposed_dims is not None:
                 assert transformed_value.transpose(*transposed_dims).equal(value)
             assert type(transformed_value) == torch.Tensor

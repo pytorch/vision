@@ -26,8 +26,8 @@ from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import features, transforms as prototype_transforms
 from torchvision.prototype.transforms import functional as prototype_F
-from torchvision.prototype.transforms._utils import query_spatial_size
 from torchvision.prototype.transforms.functional import to_image_pil
+from torchvision.prototype.transforms.utils import query_spatial_size
 from torchvision.transforms import functional as legacy_F
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])

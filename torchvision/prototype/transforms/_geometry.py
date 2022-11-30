@@ -21,11 +21,8 @@ from ._utils import (
     _setup_fill_arg,
     _setup_float_or_seq,
     _setup_size,
-    has_all,
-    has_any,
-    query_bounding_box,
-    query_spatial_size,
 )
+from .utils import has_all, has_any, query_bounding_box, query_spatial_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
