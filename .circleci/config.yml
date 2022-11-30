@@ -209,9 +209,11 @@ binary_common: &binary_common
       default: "cpu"
     pytest_additional_args:
       description: "Additional arguments to be given to pytest call"
+      type: string
       default: ""
-    resource_class:
-      description: "The resource class (machine type) that used to run the test"
+    machine_type:
+      description: "The machine type (or resource class) that used to run the test"
+      type: string
       default: "xlarge"
     unicode_abi:
       description: "Python 2.7 wheel only: whether or not we are cp27mu (default: no)"
@@ -746,7 +748,7 @@ jobs:
     <<: *binary_common
     docker:
       - image: "pytorch/manylinux-cpu"
-    resource_class: << parameters.resource_class >>
+    resource_class: << parameters.machine_type >>
     steps:
       - checkout
       - designate_upload_channel
@@ -785,7 +787,7 @@ jobs:
     <<: *binary_common
     machine:
       image: ubuntu-2004-cuda-11.4:202110-01
-    resource_class: << parameters.resource_class >>
+    resource_class: << parameters.machine_type >>
     environment:
       image_name: "pytorch/manylinux-cuda116"
       CU_VERSION: << parameters.cu_version >>
@@ -1055,31 +1057,31 @@ workflows:
       - unittest_models
       - unittest_linux_cpu:
           cu_version: cpu
+          machine_type: xlarge
           name: unittest_linux_cpu_py3.8
           python_version: '3.8'
-          resource_class: xlarge
       - unittest_linux_cpu:
           cu_version: cpu
+          machine_type: 2xlarge+
           name: unittest_linux_cpu_py3.8
           pytest_additional_args: -m slow
           python_version: '3.8'
-          resource_class: 2xlarge+
       - unittest_linux_cpu:
           cu_version: cpu
+          machine_type: xlarge
           name: unittest_linux_cpu_py3.9
           python_version: '3.9'
-          resource_class: xlarge
       - unittest_linux_gpu:
           cu_version: cu116
+          machine_type: gpu.nvidia.medium
           name: unittest_linux_gpu_py3.8
           python_version: '3.8'
-          resource_class: gpu.nvidia.medium
       - unittest_linux_gpu:
           cu_version: cu116
+          machine_type: gpu.nvidia.medium
           name: unittest_linux_gpu_py3.8
           pytest_additional_args: -m slow
           python_version: '3.8'
-          resource_class: gpu.nvidia.medium
       - unittest_linux_gpu:
           cu_version: cu116
           filters:
@@ -1087,9 +1089,9 @@ workflows:
               only:
               - main
               - nightly
+          machine_type: gpu.nvidia.medium
           name: unittest_linux_gpu_py3.9
           python_version: '3.9'
-          resource_class: gpu.nvidia.medium
 
   cmake:
     jobs:

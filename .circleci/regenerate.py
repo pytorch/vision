@@ -264,11 +264,11 @@ def unittest_workflows(indentation=6):
                         job["filters"] = gen_filter_branch_tree("main", "nightly")
                     job["cu_version"] = "cu116"
                     if os_type == "linux":
-                        job["resource_class"] = "gpu.nvidia.medium"
+                        job["machine_type"] = "gpu.nvidia.medium"
                 else:
                     job["cu_version"] = "cpu"
                     if os_type == "linux":
-                        job["resource_class"] = "xlarge"
+                        job["machine_type"] = "xlarge"
 
                 jobs.append({f"unittest_{os_type}_{device_type}": job})
 
@@ -277,7 +277,7 @@ def unittest_workflows(indentation=6):
                     slow_only_job = copy.deepcopy(job)
                     slow_only_job["pytest_additional_args"] = "-m slow"
                     if os_type == "linux" and device_type == "cpu":
-                        slow_only_job["resource_class"] = "2xlarge+"
+                        slow_only_job["machine_type"] = "2xlarge+"
                     jobs.append({f"unittest_{os_type}_{device_type}": slow_only_job})
 
     return indent(indentation, jobs)
