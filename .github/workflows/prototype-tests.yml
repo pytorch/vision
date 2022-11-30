@@ -39,7 +39,7 @@ jobs:
           echo '#######################################################################'
           ls -la torchvision
           echo '#######################################################################'
-          ls -la build
+          ls -la build || true
 
       - name: Restore C source from cache
         uses: actions/cache@v3
@@ -57,7 +57,7 @@ jobs:
           echo '#######################################################################'
           ls -la torchvision
           echo '#######################################################################'
-          ls -la build
+          ls -la build || true
 
       - name: Install torchvision
         run: pip install --progress-bar=off --no-build-isolation --editable .
