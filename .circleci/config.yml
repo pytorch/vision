@@ -207,6 +207,12 @@ binary_common: &binary_common
       description: "CUDA version to build against, in CU format (e.g., cpu or cu100)"
       type: string
       default: "cpu"
+    pytest_additional_args:
+      description: "Additional arguments to be given to pytest call"
+      default: ""
+    resource_class:
+      description: "The resource class (machine type) that used to run the test"
+      default: "xlarge"
     unicode_abi:
       description: "Python 2.7 wheel only: whether or not we are cp27mu (default: no)"
       type: string
