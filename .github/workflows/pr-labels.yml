@@ -1,0 +1,35 @@
+name: pr-labels
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  is-properly-labeled:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up python
+        uses: actions/setup-python@v2
+
+      - name: Install requests
+        run: pip install requests
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Process commit and find merger responsible for labeling
+        id: commit
+        run: echo "::set-output name=merger::$(python .github/process_commit.py ${{ github.sha }})"
+
+      - name: Ping merger responsible for labeling if necessary
+        if: ${{ steps.commit.outputs.merger != '' }}
+        uses: mshick/add-pr-comment@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          message: |
+            Hey ${{ steps.commit.outputs.merger }}!
+
+            You merged this PR, but no labels were added. The list of valid labels is available at https://github.com/pytorch/vision/blob/main/.github/process_commit.py
