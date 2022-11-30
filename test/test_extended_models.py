@@ -4,6 +4,7 @@ import os
 import pytest
 import test_models as TM
 import torch
+from common_extended_utils import get_ops, get_weight_size_mb
 from torchvision import models
 from torchvision.models._api import get_model_weights, Weights, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface
@@ -201,9 +202,18 @@ def test_schema_meta_validation(model_fn):
                 unquantized_w = w.meta.get("unquantized")
                 if unquantized_w is not None and w.meta.get("num_params") != unquantized_w.meta.get("num_params"):
                     incorrect_params.append(w)
+
+                # the methodology for quantized ops count doesn't work as well  so we take unquantized FLOPs instead
+                calculated_ops = get_ops("models", model_name, unquantized_w)
             else:
                 if w.meta.get("num_params") != sum(p.numel() for p in model_fn(weights=w).parameters()):
                     incorrect_params.append(w)
+
+                calculated_ops = get_ops(module_name, model_name, w)
+
+            # assert that weight flops are correctly pasted to metadata
+            assert calculated_ops == w.meta["_ops"]
+
         else:
             if w.meta.get("num_params") != weights_enum.DEFAULT.meta.get("num_params"):
                 if w.meta.get("num_params") != sum(p.numel() for p in model_fn(weights=w).parameters()):
@@ -211,9 +221,12 @@ def test_schema_meta_validation(model_fn):
         if not w.name.isupper():
             bad_names.append(w)
 
+        weight_size_mb = get_weight_size_mb(w)
+
     assert not problematic_weights
     assert not incorrect_params
     assert not bad_names
+    assert weight_size_mb == w.meta["_weight_size"]
 
 
 @pytest.mark.parametrize(
