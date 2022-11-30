@@ -45,7 +45,7 @@ def query_spatial_size(flat_inputs: List[Any]) -> Tuple[int, int]:
     return h, w
 
 
-def _isinstance(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]) -> bool:
+def check_type(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]) -> bool:
     for type_or_check in types_or_checks:
         if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
             return True
@@ -54,7 +54,7 @@ def _isinstance(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], boo
 
 def has_any(flat_inputs: List[Any], *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
     for inpt in flat_inputs:
-        if _isinstance(inpt, types_or_checks):
+        if check_type(inpt, types_or_checks):
             return True
     return False
 
