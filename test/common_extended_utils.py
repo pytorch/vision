@@ -4,10 +4,11 @@ from numbers import Number
 from typing import Any, List
 
 import torch
-import torchvision.models as models
 from torch.utils._python_dispatch import TorchDispatchMode
 
 from torch.utils._pytree import tree_map
+
+from torchvision.models._api import Weights
 
 aten = torch.ops.aten
 quantized = torch.ops.quantized
@@ -252,28 +253,10 @@ class FlopCounterMode(TorchDispatchMode):
         return sum(self.flop_counts["Global"].values()) / 1e9
 
 
-detection_models_input_dims = {
-    "fasterrcnn_mobilenet_v3_large_320_fpn": (320, 320),
-    "fasterrcnn_mobilenet_v3_large_fpn": (800, 800),
-    "fasterrcnn_resnet50_fpn": (800, 800),
-    "fasterrcnn_resnet50_fpn_v2": (800, 800),
-    "fcos_resnet50_fpn": (800, 800),
-    "keypointrcnn_resnet50_fpn": (1333, 1333),
-    "maskrcnn_resnet50_fpn": (800, 800),
-    "maskrcnn_resnet50_fpn_v2": (800, 800),
-    "retinanet_resnet50_fpn": (800, 800),
-    "retinanet_resnet50_fpn_v2": (800, 800),
-    "ssd300_vgg16": (300, 300),
-    "ssdlite320_mobilenet_v3_large": (320, 320),
-}
-
-
-def get_ops(module_name, model_name, weight, h=512, w=512):
-
+def get_ops(model: torch.nn.Module, module_name: str, model_name: str, weight: Weights, h=512, w=512):
     # detection models have curated input sizes
-    if model_name in detection_models_input_dims:
+    if module_name == "detection":
         # we can feed a batch of 1 for detection model instead of a list of 1 image
-        h, w = detection_models_input_dims[model_name]
         dims = (3, h, w)
     elif module_name == "video":
         # hardcoding the time dimension to size 16
@@ -290,20 +273,16 @@ def get_ops(module_name, model_name, weight, h=512, w=512):
     else:
         # hack to enable mod(*inp) for optical_flow models
         inp = [preprocess(input_tensor)]
-    # todo: else: add the variant with (c, h, w) for detection , list[tensor]
 
-    kwargs = {"quantize": True} if module_name == "quantization" else {}
-    mod = models.get_model(model_name, weights=weight, **kwargs)
-    mod.eval()
+    model.eval()
 
-    flop_counter = FlopCounterMode(mod)
+    flop_counter = FlopCounterMode(model)
     with flop_counter:
-
         # detection models expect a list of 3d tensors as inputs
-        if model_name in detection_models_input_dims:
-            mod(inp)
+        if module_name == "detection":
+            model(inp)
         else:
-            mod(*inp)
+            model(*inp)
 
         flops = flop_counter.get_flops()
 
