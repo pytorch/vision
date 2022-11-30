@@ -90,7 +90,7 @@ test_module_nodes = [
 
 
 class TestFxFeatureExtraction:
-    inp = torch.rand(1, 3, 224, 224, dtype=torch.float32, device="cpu")
+    inp = torch.rand(1, 3, 112, 112, dtype=torch.float32, device="cpu")
     model_defaults = {"num_classes": 1}
     leaf_modules = []
 
