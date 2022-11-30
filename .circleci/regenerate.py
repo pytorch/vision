@@ -14,9 +14,9 @@ See this comment for design rationale:
 https://github.com/pytorch/vision/pull/1321#issuecomment-531033978
 """
 
+import copy
 import os.path
 
-import copy
 import jinja2
 import yaml
 from jinja2 import select_autoescape
