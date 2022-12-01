@@ -270,7 +270,7 @@ def unittest_workflows(indentation=6):
                 else:
                     job["cu_version"] = "cpu"
                     if os_type == "linux":
-                        job["machine_type"] = "xlarge"
+                        job["machine_type"] = "2xlarge+"
                     elif os_type == "macos":
                         job["machine_type"] = "large"
 
