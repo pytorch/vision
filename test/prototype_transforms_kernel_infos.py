@@ -372,6 +372,9 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_resize_bounding_box,
             reference_fn=reference_resize_bounding_box,
             reference_inputs_fn=reference_inputs_resize_bounding_box,
+            closeness_kwargs={
+                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
+            },
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
             ],
