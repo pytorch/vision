@@ -7,7 +7,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_chw
+from .utils import query_chw
 
 
 class ColorJitter(Transform):

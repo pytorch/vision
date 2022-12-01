@@ -11,7 +11,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, InterpolationMode
 
 from ._transform import _RandomApplyTransform
-from ._utils import has_any, query_chw, query_spatial_size
+from .utils import has_any, query_chw, query_spatial_size
 
 
 class RandomErasing(_RandomApplyTransform):

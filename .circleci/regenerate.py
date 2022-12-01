@@ -67,6 +67,10 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                         if os_type == "linux" and btype == "wheel" and python_version != "3.7":
                             continue
 
+                        # Disable all Macos Wheels Workflows from CircleCI.
+                        if os_type == "macos" and btype == "wheel":
+                            continue
+
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version, unicode, prefix, upload, filter_branch=fb
                         )
@@ -249,6 +253,8 @@ def unittest_workflows(indentation=6):
     for os_type in ["linux", "windows", "macos"]:
         for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
+                continue
+            if os_type == "linux" and device_type == "cpu":
                 continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
                 job = {

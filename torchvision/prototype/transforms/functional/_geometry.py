@@ -59,8 +59,13 @@ def horizontal_flip(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
         return horizontal_flip_image_tensor(inpt)
     elif isinstance(inpt, features._Feature):
         return inpt.horizontal_flip()
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return horizontal_flip_image_pil(inpt)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def vertical_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
@@ -100,8 +105,13 @@ def vertical_flip(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
         return vertical_flip_image_tensor(inpt)
     elif isinstance(inpt, features._Feature):
         return inpt.vertical_flip()
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return vertical_flip_image_pil(inpt)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 # We changed the names to align them with the transforms, i.e. `RandomHorizontalFlip`. Still, `hflip` and `vflip` are
@@ -221,10 +231,15 @@ def resize(
         return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, features._Feature):
         return inpt.resize(size, interpolation=interpolation, max_size=max_size, antialias=antialias)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         if antialias is not None and not antialias:
             warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
         return resize_image_pil(inpt, size, interpolation=interpolation, max_size=max_size)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def _affine_parse_args(
@@ -725,7 +740,7 @@ def affine(
         return inpt.affine(
             angle, translate=translate, scale=scale, shear=shear, interpolation=interpolation, fill=fill, center=center
         )
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return affine_image_pil(
             inpt,
             angle,
@@ -735,6 +750,11 @@ def affine(
             interpolation=interpolation,
             fill=fill,
             center=center,
+        )
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
         )
 
 
@@ -889,8 +909,13 @@ def rotate(
         return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
     elif isinstance(inpt, features._Feature):
         return inpt.rotate(angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return rotate_image_pil(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
@@ -1090,8 +1115,13 @@ def pad(
 
     elif isinstance(inpt, features._Feature):
         return inpt.pad(padding, fill=fill, padding_mode=padding_mode)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return pad_image_pil(inpt, padding, fill=fill, padding_mode=padding_mode)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def crop_image_tensor(image: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
@@ -1159,8 +1189,13 @@ def crop(inpt: features.InputTypeJIT, top: int, left: int, height: int, width: i
         return crop_image_tensor(inpt, top, left, height, width)
     elif isinstance(inpt, features._Feature):
         return inpt.crop(top, left, height, width)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return crop_image_pil(inpt, top, left, height, width)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
@@ -1411,9 +1446,14 @@ def perspective(
         return inpt.perspective(
             startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
         )
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return perspective_image_pil(
             inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
+        )
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
         )
 
 
@@ -1560,8 +1600,13 @@ def elastic(
         return elastic_image_tensor(inpt, displacement, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, features._Feature):
         return inpt.elastic(displacement, interpolation=interpolation, fill=fill)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return elastic_image_pil(inpt, displacement, interpolation=interpolation, fill=fill)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 elastic_transform = elastic
@@ -1665,8 +1710,13 @@ def center_crop(inpt: features.InputTypeJIT, output_size: List[int]) -> features
         return center_crop_image_tensor(inpt, output_size)
     elif isinstance(inpt, features._Feature):
         return inpt.center_crop(output_size)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return center_crop_image_pil(inpt, output_size)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def resized_crop_image_tensor(
@@ -1753,8 +1803,13 @@ def resized_crop(
         )
     elif isinstance(inpt, features._Feature):
         return inpt.resized_crop(top, left, height, width, antialias=antialias, size=size, interpolation=interpolation)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return resized_crop_image_pil(inpt, top, left, height, width, size=size, interpolation=interpolation)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def _parse_five_crop_size(size: List[int]) -> List[int]:
@@ -1831,8 +1886,13 @@ def five_crop(
     elif isinstance(inpt, features.Video):
         output = five_crop_video(inpt.as_subclass(torch.Tensor), size)
         return tuple(features.Video.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
-    else:  # isinstance(inpt, PIL.Image.Image):
+    elif isinstance(inpt, PIL.Image.Image):
         return five_crop_image_pil(inpt, size)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def ten_crop_image_tensor(image: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
@@ -1879,5 +1939,10 @@ def ten_crop(
     elif isinstance(inpt, features.Video):
         output = ten_crop_video(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)
         return [features.Video.wrap_like(inpt, item) for item in output]
-    else:  # isinstance(inpt, PIL.Image.Image):
+    elif isinstance(inpt, PIL.Image.Image):
         return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )

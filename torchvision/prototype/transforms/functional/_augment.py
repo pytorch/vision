@@ -51,5 +51,10 @@ def erase(
     elif isinstance(inpt, features.Video):
         output = erase_video(inpt.as_subclass(torch.Tensor), i=i, j=j, h=h, w=w, v=v, inplace=inplace)
         return features.Video.wrap_like(inpt, output)
-    else:  # isinstance(inpt, PIL.Image.Image):
+    elif isinstance(inpt, PIL.Image.Image):
         return erase_image_pil(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
