@@ -1,14 +1,12 @@
+import io
 import warnings
+
 from typing import Any, Dict, Iterator, Optional
 
 import torch
 
 from ..utils import _log_api_usage_once
 
-try:
-    from ._load_gpu_decoder import _HAS_GPU_VIDEO_DECODER
-except ModuleNotFoundError:
-    _HAS_GPU_VIDEO_DECODER = False
 from ._video_opt import _HAS_VIDEO_OPT
 
 if _HAS_VIDEO_OPT:
@@ -22,11 +20,37 @@ else:
         return False
 
 
+try:
+    import av
+
+    av.logging.set_level(av.logging.ERROR)
+    if not hasattr(av.video.frame.VideoFrame, "pict_type"):
+        av = ImportError(
+            """\
+Your version of PyAV is too old for the necessary video operations in torchvision.
+If you are on Python 3.5, you will have to build from source (the conda-forge
+packages are not up-to-date).  See
+https://github.com/mikeboers/PyAV#installation for instructions on how to
+install PyAV on your system.
+"""
+        )
+except ImportError:
+    av = ImportError(
+        """\
+PyAV is not installed, and is necessary for the video operations in torchvision.
+See https://github.com/mikeboers/PyAV#installation for instructions on how to
+install PyAV on your system.
+"""
+    )
+
+
 class VideoReader:
     """
     Fine-grained video-reading API.
     Supports frame-by-frame reading of various streams from a single video
-    container.
+    container. Much like previous video_reader API it supports the following
+    backends: video_reader, pyav, and cuda.
+    Backends can be set via `torchvision.set_video_backend` function.
 
     .. betastatus:: VideoReader class
 
@@ -88,16 +112,11 @@ class VideoReader:
             Default value (0) enables multithreading with codec-dependent heuristic. The performance
             will depend on the version of FFMPEG codecs supported.
 
-        device (str, optional): Device to be used for decoding. Defaults to ``"cpu"``.
-            To use GPU decoding, pass ``device="cuda"``.
 
         path (str, optional):
             .. warning:
                 This parameter was deprecated in ``0.15`` and will be removed in ``0.17``.
                 Please use ``src`` instead.
-
-
-
     """
 
     def __init__(
@@ -105,44 +124,61 @@ class VideoReader:
         src: str = "",
         stream: str = "video",
         num_threads: int = 0,
-        device: str = "cpu",
         path: Optional[str] = None,
     ) -> None:
         _log_api_usage_once(self)
-        self.is_cuda = False
-        device = torch.device(device)
-        if device.type == "cuda":
-            if not _HAS_GPU_VIDEO_DECODER:
-                raise RuntimeError("Not compiled with GPU decoder support.")
-            self.is_cuda = True
-            self._c = torch.classes.torchvision.GPUDecoder(src, device)
-            return
-        if not _has_video_opt():
-            raise RuntimeError(
-                "Not compiled with video_reader support, "
-                + "to enable video_reader support, please install "
-                + "ffmpeg (version 4.2 is currently supported) and "
-                + "build torchvision from source."
-            )
+        from .. import get_video_backend
 
-        if src == "":
-            if path is None:
-                raise TypeError("src cannot be empty")
-            src = path
-            warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
-
-        elif isinstance(src, bytes):
-            src = torch.frombuffer(src, dtype=torch.uint8)
-
+        self.backend = get_video_backend()
         if isinstance(src, str):
-            self._c = torch.classes.torchvision.Video(src, stream, num_threads)
+            if src == "":
+                if path is None:
+                    raise TypeError("src cannot be empty")
+                src = path
+                warnings.warn("path is deprecated and will be removed in 0.17. Please use src instead")
+        elif isinstance(src, bytes):
+            if self.backend in ["cuda"]:
+                raise RuntimeError(
+                    "VideoReader cannot be initialized from bytes object when using cuda or pyav backend."
+                )
+            elif self.backend == "pyav":
+                src = io.BytesIO(src)
+            else:
+                with warnings.catch_warnings():
+                    # Ignore the warning because we actually dont modify the buffer in this function
+                    warnings.filterwarnings("ignore", message="The given buffer is not writable")
+                    src = torch.frombuffer(src, dtype=torch.uint8)
         elif isinstance(src, torch.Tensor):
-            if self.is_cuda:
-                raise RuntimeError("GPU VideoReader cannot be initialized from Tensor or bytes object.")
-            self._c = torch.classes.torchvision.Video("", "", 0)
-            self._c.init_from_memory(src, stream, num_threads)
+            if self.backend in ["cuda", "pyav"]:
+                raise RuntimeError(
+                    "VideoReader cannot be initialized from Tensor object when using cuda or pyav backend."
+                )
         else:
             raise TypeError("`src` must be either string, Tensor or bytes object.")
+
+        if self.backend == "cuda":
+            device = torch.device("cuda")
+            self._c = torch.classes.torchvision.GPUDecoder(src, device)
+
+        elif self.backend == "video_reader":
+            if isinstance(src, str):
+                self._c = torch.classes.torchvision.Video(src, stream, num_threads)
+            elif isinstance(src, torch.Tensor):
+                self._c = torch.classes.torchvision.Video("", "", 0)
+                self._c.init_from_memory(src, stream, num_threads)
+
+        elif self.backend == "pyav":
+            self.container = av.open(src, metadata_errors="ignore")
+            # TODO: load metadata
+            stream_type = stream.split(":")[0]
+            stream_id = 0 if len(stream.split(":")) == 1 else int(stream.split(":")[1])
+            self.pyav_stream = {stream_type: stream_id}
+            self._c = self.container.decode(**self.pyav_stream)
+
+            # TODO: add extradata exception
+
+        else:
+            raise RuntimeError("Unknown video backend: {}".format(self.backend))
 
     def __next__(self) -> Dict[str, Any]:
         """Decodes and returns the next frame of the current stream.
@@ -156,14 +192,29 @@ class VideoReader:
             and corresponding timestamp (``pts``) in seconds
 
         """
-        if self.is_cuda:
+        if self.backend == "cuda":
             frame = self._c.next()
             if frame.numel() == 0:
                 raise StopIteration
-            return {"data": frame}
-        frame, pts = self._c.next()
+            return {"data": frame, "pts": None}
+        elif self.backend == "video_reader":
+            frame, pts = self._c.next()
+        else:
+            try:
+                frame = next(self._c)
+                pts = float(frame.pts * frame.time_base)
+                if "video" in self.pyav_stream:
+                    frame = torch.tensor(frame.to_rgb().to_ndarray()).permute(2, 0, 1)
+                elif "audio" in self.pyav_stream:
+                    frame = torch.tensor(frame.to_ndarray()).permute(1, 0)
+                else:
+                    frame = None
+            except av.error.EOFError:
+                raise StopIteration
+
         if frame.numel() == 0:
             raise StopIteration
+
         return {"data": frame, "pts": pts}
 
     def __iter__(self) -> Iterator[Dict[str, Any]]:
@@ -182,7 +233,18 @@ class VideoReader:
             frame with the exact timestamp if it exists or
             the first frame with timestamp larger than ``time_s``.
         """
-        self._c.seek(time_s, keyframes_only)
+        if self.backend in ["cuda", "video_reader"]:
+            self._c.seek(time_s, keyframes_only)
+        else:
+            # handle special case as pyav doesn't catch it
+            if time_s < 0:
+                time_s = 0
+            temp_str = self.container.streams.get(**self.pyav_stream)[0]
+            offset = int(round(time_s / temp_str.time_base))
+            if not keyframes_only:
+                warnings.warn("Accurate seek is not implemented for pyav backend")
+            self.container.seek(offset, backward=True, any_frame=False, stream=temp_str)
+            self._c = self.container.decode(**self.pyav_stream)
         return self
 
     def get_metadata(self) -> Dict[str, Any]:
@@ -191,6 +253,21 @@ class VideoReader:
         Returns:
             (dict): dictionary containing duration and frame rate for every stream
         """
+        if self.backend == "pyav":
+            metadata = {}  # type:  Dict[str, Any]
+            for stream in self.container.streams:
+                if stream.type not in metadata:
+                    if stream.type == "video":
+                        rate_n = "fps"
+                    else:
+                        rate_n = "framerate"
+                    metadata[stream.type] = {rate_n: [], "duration": []}
+
+                rate = stream.average_rate if stream.average_rate is not None else stream.sample_rate
+
+                metadata[stream.type]["duration"].append(float(stream.duration * stream.time_base))
+                metadata[stream.type][rate_n].append(float(rate))
+            return metadata
         return self._c.get_metadata()
 
     def set_current_stream(self, stream: str) -> bool:
@@ -210,6 +287,12 @@ class VideoReader:
         Returns:
             (bool): True on succes, False otherwise
         """
-        if self.is_cuda:
-            print("GPU decoding only works with video stream.")
+        if self.backend == "cuda":
+            warnings.warn("GPU decoding only works with video stream.")
+        if self.backend == "pyav":
+            stream_type = stream.split(":")[0]
+            stream_id = 0 if len(stream.split(":")) == 1 else int(stream.split(":")[1])
+            self.pyav_stream = {stream_type: stream_id}
+            self._c = self.container.decode(**self.pyav_stream)
+            return True
         return self._c.set_current_stream(stream)

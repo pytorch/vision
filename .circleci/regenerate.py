@@ -59,6 +59,18 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                         ):
                             # the fields must match the build_docs "requires" dependency
                             fb = "/.*/"
+
+                        # Disable all Linux Wheels Workflows from CircleCI
+                        # since those will now be done through Nova. We'll keep
+                        # around the py3.7 Linux Wheels build since the docs
+                        # job depends on it.
+                        if os_type == "linux" and btype == "wheel" and python_version != "3.7":
+                            continue
+
+                        # Disable all Macos Wheels Workflows from CircleCI.
+                        if os_type == "macos" and btype == "wheel":
+                            continue
+
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version, unicode, prefix, upload, filter_branch=fb
                         )
@@ -81,6 +93,11 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=""
             base_workflow_name, python_version, cu_version, unicode, os_type, btype, filter_branch=filter_branch
         )
     )
+
+    # For the remaining py3.7 Linux Wheels job left around for the docs build,
+    # we'll disable uploads.
+    if os_type == "linux" and btype == "wheel":
+        upload = False
 
     if upload:
         w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
@@ -236,6 +253,8 @@ def unittest_workflows(indentation=6):
     for os_type in ["linux", "windows", "macos"]:
         for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
+                continue
+            if os_type == "linux" and device_type == "cpu":
                 continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
                 job = {

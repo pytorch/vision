@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: "TorchVision: PyTorch's Computer Vision library"
+message: >-
+  If you find TorchVision useful in your work, please
+  consider citing the following BibTeX entry.
+type: software
+authors:
+  - given-names: TorchVision maintainers and contributors
+url: "https://github.com/pytorch/vision"
+license: "BSD-3-Clause"
+date-released: "2016-11-06"
+journal: "GitHub repository"
+publisher: "GitHub"
+key: "torchvision2016"

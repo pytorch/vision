@@ -11,7 +11,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, InterpolationMode
 
 from ._transform import _RandomApplyTransform
-from ._utils import _isinstance, has_any, query_chw, query_spatial_size
+from .utils import check_type, has_any, query_chw, query_spatial_size
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -220,7 +220,7 @@ def flatten_and_extract_data(
                 break
 
             for key, types_or_checks_ in sample_types_or_checks.items():
-                if _isinstance(item, types_or_checks_):
+                if check_type(item, types_or_checks_):
                     break
             else:
                 continue

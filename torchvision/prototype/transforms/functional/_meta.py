@@ -4,7 +4,8 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
-from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
+from torchvision.transforms import functional_pil as _FP
+from torchvision.transforms.functional_tensor import _max_value
 
 
 def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
@@ -22,17 +23,22 @@ def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-def get_dimensions(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> List[int]:
-    if isinstance(image, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+def get_dimensions(inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> List[int]:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
     ):
-        return get_dimensions_image_tensor(image)
-    elif isinstance(image, (features.Image, features.Video)):
-        channels = image.num_channels
-        height, width = image.spatial_size
+        return get_dimensions_image_tensor(inpt)
+    elif isinstance(inpt, (features.Image, features.Video)):
+        channels = inpt.num_channels
+        height, width = inpt.spatial_size
         return [channels, height, width]
+    elif isinstance(inpt, PIL.Image.Image):
+        return get_dimensions_image_pil(inpt)
     else:
-        return get_dimensions_image_pil(image)
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def get_num_channels_image_tensor(image: torch.Tensor) -> int:
@@ -53,15 +59,20 @@ def get_num_channels_video(video: torch.Tensor) -> int:
     return get_num_channels_image_tensor(video)
 
 
-def get_num_channels(image: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> int:
-    if isinstance(image, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(image, (features.Image, features.Video))
+def get_num_channels(inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> int:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
     ):
-        return get_num_channels_image_tensor(image)
-    elif isinstance(image, (features.Image, features.Video)):
-        return image.num_channels
+        return get_num_channels_image_tensor(inpt)
+    elif isinstance(inpt, (features.Image, features.Video)):
+        return inpt.num_channels
+    elif isinstance(inpt, PIL.Image.Image):
+        return get_num_channels_image_pil(inpt)
     else:
-        return get_num_channels_image_pil(image)
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 # We changed the names to ensure it can be used not only for images but also videos. Thus, we just alias it without
@@ -102,8 +113,13 @@ def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
         return get_spatial_size_image_tensor(inpt)
     elif isinstance(inpt, (features.Image, features.Video, features.BoundingBox, features.Mask)):
         return list(inpt.spatial_size)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def get_num_frames_video(video: torch.Tensor) -> int:
@@ -116,7 +132,9 @@ def get_num_frames(inpt: features.VideoTypeJIT) -> int:
     elif isinstance(inpt, features.Video):
         return inpt.num_frames
     else:
-        raise TypeError(f"The video should be a Tensor. Got {type(inpt)}")
+        raise TypeError(
+            f"Input can either be a plain tensor or a `Video` tensor subclass, but got {type(inpt)} instead."
+        )
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
@@ -164,6 +182,7 @@ def convert_format_bounding_box(
     if new_format == old_format:
         return bounding_box
 
+    # TODO: Add _xywh_to_cxcywh and _cxcywh_to_xywh to improve performance
     if old_format == BoundingBoxFormat.XYWH:
         bounding_box = _xywh_to_xyxy(bounding_box, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:
@@ -192,7 +211,7 @@ def clamp_bounding_box(
 
 def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
     image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
-    if not torch.all(alpha == _FT._max_value(alpha.dtype)):
+    if not torch.all(alpha == _max_value(alpha.dtype)):
         raise RuntimeError(
             "Stripping the alpha channel if it contains values other than the max value is not supported."
         )
@@ -203,7 +222,7 @@ def _add_alpha(image: torch.Tensor, alpha: Optional[torch.Tensor] = None) -> tor
     if alpha is None:
         shape = list(image.shape)
         shape[-3] = 1
-        alpha = torch.full(shape, _FT._max_value(image.dtype), dtype=image.dtype, device=image.device)
+        alpha = torch.full(shape, _max_value(image.dtype), dtype=image.dtype, device=image.device)
     return torch.cat((image, alpha), dim=-3)
 
 
@@ -213,10 +232,12 @@ def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
     return grayscale.repeat(repeats)
 
 
-def _rgb_to_gray(image: torch.Tensor) -> torch.Tensor:
+def _rgb_to_gray(image: torch.Tensor, cast: bool = True) -> torch.Tensor:
     r, g, b = image.unbind(dim=-3)
-    l_img = (0.2989 * r).add_(g, alpha=0.587).add_(b, alpha=0.114)
-    l_img = l_img.to(image.dtype).unsqueeze(dim=-3)
+    l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
+    if cast:
+        l_img = l_img.to(image.dtype)
+    l_img = l_img.unsqueeze(dim=-3)
     return l_img
 
 
@@ -311,8 +332,13 @@ def convert_color_space(
             inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
         )
         return features.Video.wrap_like(inpt, output, color_space=color_space)
+    elif isinstance(inpt, PIL.Image.Image):
+        return convert_color_space_image_pil(inpt, color_space=color_space)
     else:
-        return convert_color_space_image_pil(inpt, color_space)
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def _num_value_bits(dtype: torch.dtype) -> int:
@@ -360,14 +386,14 @@ def convert_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.f
         # Instead, we can also multiply by the maximum value plus something close to `1`. See
         # https://github.com/pytorch/vision/pull/2078#issuecomment-613524965 for details.
         eps = 1e-3
-        max_value = float(_FT._max_value(dtype))
+        max_value = float(_max_value(dtype))
         # We need to scale first since the conversion would otherwise turn the input range `[0.0, 1.0]` into the
         # discrete set `{0, 1}`.
         return image.mul(max_value + 1.0 - eps).to(dtype)
     else:
         # int to float
         if float_output:
-            return image.to(dtype).mul_(1.0 / _FT._max_value(image.dtype))
+            return image.to(dtype).mul_(1.0 / _max_value(image.dtype))
 
         # int to int
         num_value_bits_input = _num_value_bits(image.dtype)
@@ -376,15 +402,7 @@ def convert_dtype_image_tensor(image: torch.Tensor, dtype: torch.dtype = torch.f
         if num_value_bits_input > num_value_bits_output:
             return image.bitwise_right_shift(num_value_bits_input - num_value_bits_output).to(dtype)
         else:
-            # The bitshift kernel is not vectorized
-            #  https://github.com/pytorch/pytorch/blob/703c19008df4700b6a522b0ae5c4b6d5ffc0906f/aten/src/ATen/native/cpu/BinaryOpsKernel.cpp#L315-L322
-            #  This results in the multiplication actually being faster.
-            # TODO: If the bitshift kernel is optimized in core, replace the computation below with
-            #  `image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)`
-            max_value_input = float(_FT._max_value(dtype))
-            max_value_output = float(_FT._max_value(image.dtype))
-            factor = int((max_value_input + 1) // (max_value_output + 1))
-            return image.to(dtype).mul_(factor)
+            return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
 
 
 # We changed the name to align it with the new naming scheme. Still, `convert_image_dtype` is
@@ -406,6 +424,11 @@ def convert_dtype(
     elif isinstance(inpt, features.Image):
         output = convert_dtype_image_tensor(inpt.as_subclass(torch.Tensor), dtype)
         return features.Image.wrap_like(inpt, output)
-    else:  # isinstance(inpt, features.Video):
+    elif isinstance(inpt, features.Video):
         output = convert_dtype_video(inpt.as_subclass(torch.Tensor), dtype)
         return features.Video.wrap_like(inpt, output)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor or an `Image` or `Video` tensor subclass, "
+            f"but got {type(inpt)} instead."
+        )

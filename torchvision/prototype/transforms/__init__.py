@@ -1,6 +1,6 @@
 from torchvision.transforms import AutoAugmentPolicy, InterpolationMode  # usort: skip
 
-from . import functional  # usort: skip
+from . import functional, utils  # usort: skip
 
 from ._transform import Transform  # usort: skip
 from ._presets import StereoMatching  # usort: skip
@@ -53,6 +53,6 @@ from ._misc import (
 )
 from ._mixup_detection import MixupDetection
 from ._temporal import UniformTemporalSubsample
-from ._type_conversion import DecodeImage, LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
+from ._type_conversion import LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
 from ._deprecated import Grayscale, RandomGrayscale, ToTensor  # usort: skip
