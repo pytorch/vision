@@ -222,8 +222,7 @@ def test_schema_meta_validation(model_fn):
 
                     # the methodology for quantized ops count doesn't work as well, so we take unquantized FLOPs
                     # instead
-                    calculated_ops = unquantized_w.meta.get("_ops")
-                    if calculated_ops != w.meta["_ops"]:
+                    if w.meta["_ops"] != unquantized_w.meta.get("_ops"):
                         incorrect_meta.append((w, "_ops"))
 
             else:
