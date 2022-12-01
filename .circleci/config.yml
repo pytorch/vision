@@ -214,7 +214,7 @@ binary_common: &binary_common
     machine_type:
       description: "The machine type (or resource class) that used to run the test"
       type: string
-      default: "xlarge"
+      default: "large"
     unicode_abi:
       description: "Python 2.7 wheel only: whether or not we are cp27mu (default: no)"
       type: string
@@ -865,7 +865,7 @@ jobs:
           command: .circleci/unittest/windows/scripts/install.sh
       - run:
           name: Run tests
-          command: .circleci/unittest/windows/scripts/run_test.sh
+          command: .circleci/unittest/windows/scripts/run_test.sh "<< parameters.pytest_additional_args >>"
       - run:
           name: Post process
           command: .circleci/unittest/windows/scripts/post_process.sh
@@ -912,7 +912,7 @@ jobs:
           command: .circleci/unittest/windows/scripts/install.sh
       - run:
           name: Run tests
-          command: .circleci/unittest/windows/scripts/run_test.sh
+          command: .circleci/unittest/windows/scripts/run_test.sh "<< parameters.pytest_additional_args >>"
       - run:
           name: Post process
           command: .circleci/unittest/windows/scripts/post_process.sh
@@ -923,7 +923,7 @@ jobs:
     <<: *binary_common
     macos:
       xcode: "14.0"
-    resource_class: large
+    resource_class: << parameters.machine_type >>
     steps:
       - checkout
       - designate_upload_channel
@@ -955,7 +955,7 @@ jobs:
           command: .circleci/unittest/linux/scripts/install.sh
       - run:
           name: Run tests
-          command: .circleci/unittest/linux/scripts/run_test.sh
+          command: .circleci/unittest/linux/scripts/run_test.sh "<< parameters.pytest_additional_args >>"
       - run:
           name: Post process
           command: .circleci/unittest/linux/scripts/post_process.sh
@@ -1057,7 +1057,7 @@ workflows:
       - unittest_models
       - unittest_linux_cpu:
           cu_version: cpu
-          machine_type: xlarge
+          machine_type: large
           name: unittest_linux_cpu_py3.8
           python_version: '3.8'
       - unittest_linux_cpu:
@@ -1068,19 +1068,14 @@ workflows:
           python_version: '3.8'
       - unittest_linux_cpu:
           cu_version: cpu
-          machine_type: xlarge
+          machine_type: large
           name: unittest_linux_cpu_py3.9
           python_version: '3.9'
       - unittest_linux_gpu:
           cu_version: cu116
           machine_type: gpu.nvidia.medium
           name: unittest_linux_gpu_py3.8
-          python_version: '3.8'
-      - unittest_linux_gpu:
-          cu_version: cu116
-          machine_type: gpu.nvidia.medium
-          name: unittest_linux_gpu_py3.8_slow_only
-          pytest_additional_args: -m slow
+          pytest_additional_args: -m "slow or not slow"
           python_version: '3.8'
       - unittest_linux_gpu:
           cu_version: cu116
@@ -1091,6 +1086,49 @@ workflows:
               - nightly
           machine_type: gpu.nvidia.medium
           name: unittest_linux_gpu_py3.9
+          python_version: '3.9'
+      - unittest_windows_cpu:
+          cu_version: cpu
+          name: unittest_windows_cpu_py3.8
+          python_version: '3.8'
+      - unittest_windows_cpu:
+          cu_version: cpu
+          name: unittest_windows_cpu_py3.8_slow_only
+          pytest_additional_args: -m slow
+          python_version: '3.8'
+      - unittest_windows_cpu:
+          cu_version: cpu
+          name: unittest_windows_cpu_py3.9
+          python_version: '3.9'
+      - unittest_windows_gpu:
+          cu_version: cu116
+          name: unittest_windows_gpu_py3.8
+          pytest_additional_args: -m "slow or not slow"
+          python_version: '3.8'
+      - unittest_windows_gpu:
+          cu_version: cu116
+          filters:
+            branches:
+              only:
+              - main
+              - nightly
+          name: unittest_windows_gpu_py3.9
+          python_version: '3.9'
+      - unittest_macos_cpu:
+          cu_version: cpu
+          machine_type: medium
+          name: unittest_macos_cpu_py3.8
+          python_version: '3.8'
+      - unittest_macos_cpu:
+          cu_version: cpu
+          machine_type: large
+          name: unittest_macos_cpu_py3.8_slow_only
+          pytest_additional_args: -m slow
+          python_version: '3.8'
+      - unittest_macos_cpu:
+          cu_version: cpu
+          machine_type: medium
+          name: unittest_macos_cpu_py3.9
           python_version: '3.9'
 
   cmake:

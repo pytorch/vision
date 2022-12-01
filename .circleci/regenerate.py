@@ -248,8 +248,8 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    # for os_type in ["linux", "windows", "macos"]:
-    for os_type in ["linux"]:
+    # for os_type in ["linux"]:
+    for os_type in ["linux", "windows", "macos"]:
         for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
@@ -262,23 +262,30 @@ def unittest_workflows(indentation=6):
                 if device_type == "gpu":
                     if python_version != "3.8":
                         job["filters"] = gen_filter_branch_tree("main", "nightly")
+                    elif python_version == "3.8":
+                        job["pytest_additional_args"] = '-m "slow or not slow"'
                     job["cu_version"] = "cu116"
                     if os_type == "linux":
                         job["machine_type"] = "gpu.nvidia.medium"
                 else:
                     job["cu_version"] = "cpu"
                     if os_type == "linux":
-                        job["machine_type"] = "xlarge"
+                        job["machine_type"] = "large"
+                    elif os_type == "macos":
+                        job["machine_type"] = "medium"
 
                 jobs.append({f"unittest_{os_type}_{device_type}": job})
 
                 # Add slow_only job for python 3.8:
-                if python_version == "3.8":
+                if python_version == "3.8" and device_type == "cpu":
                     slow_only_job = copy.deepcopy(job)
                     slow_only_job["pytest_additional_args"] = "-m slow"
                     slow_only_job["name"] = f"{slow_only_job['name']}_slow_only"
-                    if os_type == "linux" and device_type == "cpu":
-                        slow_only_job["machine_type"] = "2xlarge+"
+                    if device_type == "cpu":
+                        if os_type == "linux":
+                            slow_only_job["machine_type"] = "2xlarge+"
+                        elif os_type == "macos":
+                            slow_only_job["machine_type"] = "large"
                     jobs.append({f"unittest_{os_type}_{device_type}": slow_only_job})
 
     return indent(indentation, jobs)
