@@ -1607,12 +1607,17 @@ def test_trivialaugmentwide(fill, num_magnitude_bins, grayscale):
     transform.__repr__()
 
 
-@pytest.mark.parametrize("fill", [None, 85, (128, 128, 128)])
-@pytest.mark.parametrize("severity", [1, 10])
-@pytest.mark.parametrize("mixture_width", [1, 2])
-@pytest.mark.parametrize("chain_depth", [-1, 2])
-@pytest.mark.parametrize("all_ops", [True, False])
-@pytest.mark.parametrize("grayscale", [True, False])
+@pytest.mark.parametrize(
+    "fill,severity,mixture_width,chain_depth,all_ops,grayscale",
+    [
+        (None, 1, 1, -1, True, True),
+        (85, 10, 2, 2, False, False),
+        ((128, 128, 128), 1, 2, -1, False, True),
+        (None, 10, 1, 2, True, False),
+        (85, 1, 1, -1, False, False),
+        ((128, 128, 128), 10, 2, -1, True, False),
+    ],
+)
 def test_augmix(fill, severity, mixture_width, chain_depth, all_ops, grayscale):
     random.seed(42)
     img = Image.open(GRACE_HOPPER)

@@ -512,7 +512,8 @@ def test_resnet_dilation(dilate_layer_2, dilate_layer_3, dilate_layer_4):
     model = _make_sliced_model(model, stop_layer="layer4")
     model.eval()
     x = torch.rand(1, 3, 224, 224)
-    out = model(x)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(x)
     f = 2 ** sum((dilate_layer_2, dilate_layer_3, dilate_layer_4))
     assert out.shape == (1, 2048, 7 * f, 7 * f)
 
@@ -521,7 +522,8 @@ def test_mobilenet_v2_residual_setting():
     model = models.mobilenet_v2(inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
     model.eval()
     x = torch.rand(1, 3, 224, 224)
-    out = model(x)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(x)
     assert out.shape[-1] == 1000
 
 
@@ -560,7 +562,8 @@ def test_fasterrcnn_double():
     input_shape = (3, 300, 300)
     x = torch.rand(input_shape, dtype=torch.float64)
     model_input = [x]
-    out = model(model_input)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(model_input)
     assert model_input[0] is x
     assert len(out) == 1
     assert "boxes" in out[0]
@@ -599,7 +602,8 @@ def test_fasterrcnn_switch_devices():
     input_shape = (3, 300, 300)
     x = torch.rand(input_shape, device="cuda")
     model_input = [x]
-    out = model(model_input)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(model_input)
     assert model_input[0] is x
 
     checkOut(out)
@@ -688,14 +692,15 @@ def test_classification_model(model_fn, dev):
     model = model_fn(**kwargs)
     model.eval().to(device=dev)
     x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
-    out = model(x)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(x)
     _assert_expected(out.cpu(), model_name, prec=1e-3)
     assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
     if dev == "cuda":
-        with torch.cuda.amp.autocast():
+        with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
@@ -919,7 +924,8 @@ def test_video_model(model_fn, dev):
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
-    out = model(x)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(x)
     _assert_expected(out.cpu(), model_name, prec=1e-5)
     assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
@@ -960,7 +966,8 @@ def test_quantized_classification_model(model_fn):
     model = model_fn(**kwargs)
     model.eval()
     x = torch.rand(input_shape)
-    out = model(x)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(x)
 
     if model_name not in quantized_flaky_models:
         _assert_expected(out.cpu(), model_name + "_quantized", prec=2e-2)
