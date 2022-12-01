@@ -114,7 +114,7 @@ class Coco(Dataset):
         labels = [ann["category_id"] for ann in anns]
         return dict(
             # TODO: create a segmentation feature
-            segmentations=Mask(
+            segmentations=_Feature(
                 torch.stack(
                     [
                         self._segmentation_to_mask(
