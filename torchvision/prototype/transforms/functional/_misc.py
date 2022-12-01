@@ -53,13 +53,14 @@ def normalize(
     std: List[float],
     inplace: bool = False,
 ) -> torch.Tensor:
-    if torch.jit.is_scripting():
-        correct_type = isinstance(inpt, torch.Tensor)
-    else:
-        correct_type = features.is_simple_tensor(inpt) or isinstance(inpt, (features.Image, features.Video))
-        inpt = inpt.as_subclass(torch.Tensor)
-    if not correct_type:
-        raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
+    if not torch.jit.is_scripting():
+        if features.is_simple_tensor(inpt) or isinstance(inpt, (features.Image, features.Video)):
+            inpt = inpt.as_subclass(torch.Tensor)
+        else:
+            raise TypeError(
+                f"Input can either be a plain tensor or an `Image` or `Video` tensor subclass, "
+                f"but got {type(inpt)} instead."
+            )
 
     # Image or Video type should not be retained after normalization due to unknown data range
     # Thus we return Tensor for input Image
@@ -168,5 +169,10 @@ def gaussian_blur(
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
     elif isinstance(inpt, features._Feature):
         return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
