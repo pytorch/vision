@@ -8,7 +8,6 @@ from torch.utils._python_dispatch import TorchDispatchMode
 
 from torch.utils._pytree import tree_map
 
-from torchvision import models
 from torchvision.models._api import Weights
 
 aten = torch.ops.aten
@@ -254,16 +253,23 @@ class FlopCounterMode(TorchDispatchMode):
         return sum(self.flop_counts["Global"].values()) / 1e9
 
 
-def get_ops(model: torch.nn.Module, module_name: str, model_name: str, weight: Weights, h=512, w=512):
+def get_dims(module_name, height, width):
     # detection models have curated input sizes
     if module_name == "detection":
         # we can feed a batch of 1 for detection model instead of a list of 1 image
-        dims = (3, h, w)
+        dims = (3, height, width)
     elif module_name == "video":
-        # hardcoding the time dimension to size 16
-        dims = (1, 16, 3, h, w)
+        # hard-coding the time dimension to size 16
+        dims = (1, 16, 3, height, width)
     else:
-        dims = (1, 3, h, w)
+        dims = (1, 3, height, width)
+
+    return dims
+
+
+def get_ops(model: torch.nn.Module, weight: Weights, height=512, width=512):
+    module_name = model.__module__.split(".")[-2]
+    dims = get_dims(module_name=module_name, height=height, width=width)
 
     input_tensor = torch.randn(dims)
 
@@ -275,9 +281,6 @@ def get_ops(model: torch.nn.Module, module_name: str, model_name: str, weight: W
         # hack to enable mod(*inp) for optical_flow models
         inp = [preprocess(input_tensor)]
 
-    if model is None:
-        kwargs = {"quantize": True} if module_name == "quantization" else {}
-        model = models.get_model(model_name, weights=weight, **kwargs)
     model.eval()
 
     flop_counter = FlopCounterMode(model)

@@ -198,7 +198,7 @@ def test_schema_meta_validation(model_fn):
         pytest.skip(f"Model '{model_name}' doesn't have any pre-trained weights.")
 
     problematic_weights = {}
-    incorrect_params = []
+    incorrect_meta = []
     bad_names = []
     for w in weights_enum:
         actual_fields = set(w.meta.keys())
@@ -212,49 +212,48 @@ def test_schema_meta_validation(model_fn):
         if missing_fields or unsupported_fields:
             problematic_weights[w] = {"missing": missing_fields, "unsupported": unsupported_fields}
         if w == weights_enum.DEFAULT:
-
             if module_name == "quantization":
                 # parameters() count doesn't work well with quantization, so we check against the non-quantized
                 unquantized_w = w.meta.get("unquantized")
                 if unquantized_w is not None and w.meta.get("num_params") != unquantized_w.meta.get("num_params"):
-                    incorrect_params.append(w)
+                    incorrect_meta.append((w, "num_params"))
 
                 # the methodology for quantized ops count doesn't work as well, so we take unquantized FLOPs instead
-                calculated_ops = get_ops(model=None, module_name="models", model_name=model_name, weight=unquantized_w)
-            else:
+                if unquantized_w is not None:
+                    calculated_ops = unquantized_w.meta.get("_ops")
+                    if calculated_ops != w.meta["_ops"]:
+                        incorrect_meta.append((w, "_ops"))
 
+            else:
                 # loading the model and using it for parameter and ops verification
-                kwargs = {"quantize": True} if module_name == "quantization" else {}
-                model = model_fn(weights=w, **kwargs)
+                model = model_fn(weights=w)
 
                 if w.meta.get("num_params") != sum(p.numel() for p in model.parameters()):
-                    incorrect_params.append(w)
+                    incorrect_meta.append((w, "num_params"))
 
                 kwargs = {}
                 if model_name in detection_models_input_dims:
                     # detection models have non default height and width
                     height, width = detection_models_input_dims[model_name]
-                    kwargs = {"h": height, "w": width}
-                calculated_ops = get_ops(
-                    model=model, module_name=module_name, model_name=model_name, weight=w, **kwargs
-                )
+                    kwargs = {"height": height, "width": width}
 
-            # assert that weight flops are correctly pasted to metadata
-            assert calculated_ops == w.meta["_ops"]
+                calculated_ops = get_ops(model=model, weight=w, **kwargs)
+                if calculated_ops != w.meta["_ops"]:
+                    incorrect_meta.append((w, "_ops"))
 
         else:
             if w.meta.get("num_params") != weights_enum.DEFAULT.meta.get("num_params"):
                 if w.meta.get("num_params") != sum(p.numel() for p in model_fn(weights=w).parameters()):
-                    incorrect_params.append(w)
+                    incorrect_meta.append((w, "num_params"))
         if not w.name.isupper():
             bad_names.append(w)
 
-        weight_size_mb = get_weight_size_mb(w)
+        if get_weight_size_mb(w) != w.meta.get("_weight_size"):
+            incorrect_meta.append((w, "_weight_size"))
 
     assert not problematic_weights
-    assert not incorrect_params
+    assert not incorrect_meta
     assert not bad_names
-    assert weight_size_mb == w.meta["_weight_size"]
 
 
 @pytest.mark.parametrize(
