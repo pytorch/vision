@@ -2,6 +2,7 @@
 
 import collections.abc
 import dataclasses
+import enum
 import functools
 import pathlib
 from collections import defaultdict
@@ -53,45 +54,31 @@ class ImagePair(TensorLikePair):
         actual,
         expected,
         *,
-        agg_method=None,
-        allowed_percentage_diff=None,
+        mae=False,
         **other_parameters,
     ):
         if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
             actual, expected = [to_image_tensor(input) for input in [actual, expected]]
 
         super().__init__(actual, expected, **other_parameters)
-        self.agg_method = getattr(torch, agg_method) if isinstance(agg_method, str) else agg_method
-        self.allowed_percentage_diff = allowed_percentage_diff
+        self.mae = mae
 
     def compare(self) -> None:
         actual, expected = self.actual, self.expected
 
         self._compare_attributes(actual, expected)
-
         actual, expected = self._equalize_attributes(actual, expected)
-        actual, expected = self._promote_for_comparison(actual, expected)
-        abs_diff = torch.abs(actual - expected)
 
-        if self.allowed_percentage_diff is not None:
-            percentage_diff = float((abs_diff.ne(0).to(torch.float64).mean()))
-            if percentage_diff > self.allowed_percentage_diff:
+        if self.mae:
+            actual, expected = self._promote_for_comparison(actual, expected)
+            mae = float(torch.abs(actual - expected).float().mean())
+            if mae > self.atol:
                 raise self._make_error_meta(
                     AssertionError,
-                    f"{percentage_diff:.1%} elements differ, "
-                    f"but only {self.allowed_percentage_diff:.1%} is allowed",
+                    f"The MAE of the images is {mae}, but only {self.atol} is allowed.",
                 )
-
-        if self.agg_method is None:
-            super()._compare_values(actual, expected)
         else:
-            agg_abs_diff = float(self.agg_method(abs_diff.to(torch.float64)))
-            if agg_abs_diff > self.atol:
-                raise self._make_error_meta(
-                    AssertionError,
-                    f"The '{self.agg_method.__name__}' of the absolute difference is {agg_abs_diff}, "
-                    f"but only {self.atol} is allowed.",
-                )
+            super()._compare_values(actual, expected)
 
 
 def assert_close(
@@ -142,6 +129,8 @@ def parametrized_error_message(*args, **kwargs):
     def to_str(obj):
         if isinstance(obj, torch.Tensor) and obj.numel() > 10:
             return f"tensor(shape={list(obj.shape)}, dtype={obj.dtype}, device={obj.device})"
+        elif isinstance(obj, enum.Enum):
+            return f"{type(obj).__name__}.{obj.name}"
         else:
             return repr(obj)
 
@@ -174,11 +163,13 @@ class ArgsKwargs:
         yield self.kwargs
 
     def load(self, device="cpu"):
-        args = tuple(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self.args)
-        kwargs = {
-            keyword: arg.load(device) if isinstance(arg, TensorLoader) else arg for keyword, arg in self.kwargs.items()
-        }
-        return args, kwargs
+        return ArgsKwargs(
+            *(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self.args),
+            **{
+                keyword: arg.load(device) if isinstance(arg, TensorLoader) else arg
+                for keyword, arg in self.kwargs.items()
+            },
+        )
 
 
 DEFAULT_SQUARE_SPATIAL_SIZE = 15
