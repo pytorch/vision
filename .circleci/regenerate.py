@@ -272,7 +272,7 @@ def unittest_workflows(indentation=6):
                     if os_type == "linux":
                         job["machine_type"] = "xlarge"
                     elif os_type == "macos":
-                        job["machine_type"] = "medium"
+                        job["machine_type"] = "large"
 
                 jobs.append({f"unittest_{os_type}_{device_type}": job})
 

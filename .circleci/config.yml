@@ -1101,7 +1101,7 @@ workflows:
           python_version: '3.9'
       - unittest_macos_cpu:
           cu_version: cpu
-          machine_type: medium
+          machine_type: large
           name: unittest_macos_cpu_py3.8
           python_version: '3.8'
       - unittest_macos_cpu:
@@ -1112,7 +1112,7 @@ workflows:
           python_version: '3.8'
       - unittest_macos_cpu:
           cu_version: cpu
-          machine_type: medium
+          machine_type: large
           name: unittest_macos_cpu_py3.9
           python_version: '3.9'
 
