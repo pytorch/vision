@@ -1,6 +1,7 @@
 import math
+from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, List, Optional, OrderedDict, Sequence, Tuple
+from typing import Any, Callable, List, Optional, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -426,7 +427,7 @@ class MaxVitLayer(nn.Module):
     ) -> None:
         super().__init__()
 
-        layers: OrderedDict[str, Any] = OrderedDict()  # type: ignore
+        layers: OrderedDict = OrderedDict()
 
         # convolutional layer
         layers["MBconv"] = MBConv(

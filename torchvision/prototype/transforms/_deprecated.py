@@ -11,7 +11,7 @@ from torchvision.transforms import functional as _F
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_chw
+from .utils import query_chw
 
 
 class ToTensor(Transform):

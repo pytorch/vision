@@ -4,10 +4,17 @@ import PIL.Image
 
 import torch
 from torchvision.prototype import features
-from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
-erase_image_tensor = _FT.erase
+
+def erase_image_tensor(
+    image: torch.Tensor, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
+) -> torch.Tensor:
+    if not inplace:
+        image = image.clone()
+
+    image[..., i : i + h, j : j + w] = v
+    return image
 
 
 @torch.jit.unused
@@ -44,5 +51,10 @@ def erase(
     elif isinstance(inpt, features.Video):
         output = erase_video(inpt.as_subclass(torch.Tensor), i=i, j=j, h=h, w=w, v=v, inplace=inplace)
         return features.Video.wrap_like(inpt, output)
-    else:  # isinstance(inpt, PIL.Image.Image):
+    elif isinstance(inpt, PIL.Image.Image):
         return erase_image_pil(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
