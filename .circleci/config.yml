@@ -1043,11 +1043,6 @@ workflows:
       - unittest_linux_cpu:
           cu_version: cpu
           machine_type: xlarge
-          name: unittest_linux_cpu_py3.7
-          python_version: '3.7'
-      - unittest_linux_cpu:
-          cu_version: cpu
-          machine_type: xlarge
           name: unittest_linux_cpu_py3.8
           python_version: '3.8'
       - unittest_linux_cpu:
@@ -1061,21 +1056,6 @@ workflows:
           machine_type: xlarge
           name: unittest_linux_cpu_py3.9
           python_version: '3.9'
-      - unittest_linux_cpu:
-          cu_version: cpu
-          machine_type: xlarge
-          name: unittest_linux_cpu_py3.10
-          python_version: '3.10'
-      - unittest_linux_gpu:
-          cu_version: cu116
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          machine_type: gpu.nvidia.medium
-          name: unittest_linux_gpu_py3.7
-          python_version: '3.7'
       - unittest_linux_gpu:
           cu_version: cu116
           machine_type: gpu.nvidia.medium
@@ -1092,20 +1072,6 @@ workflows:
           machine_type: gpu.nvidia.medium
           name: unittest_linux_gpu_py3.9
           python_version: '3.9'
-      - unittest_linux_gpu:
-          cu_version: cu116
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          machine_type: gpu.nvidia.medium
-          name: unittest_linux_gpu_py3.10
-          python_version: '3.10'
-      - unittest_windows_cpu:
-          cu_version: cpu
-          name: unittest_windows_cpu_py3.7
-          python_version: '3.7'
       - unittest_windows_cpu:
           cu_version: cpu
           name: unittest_windows_cpu_py3.8
@@ -1119,19 +1085,6 @@ workflows:
           cu_version: cpu
           name: unittest_windows_cpu_py3.9
           python_version: '3.9'
-      - unittest_windows_cpu:
-          cu_version: cpu
-          name: unittest_windows_cpu_py3.10
-          python_version: '3.10'
-      - unittest_windows_gpu:
-          cu_version: cu116
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          name: unittest_windows_gpu_py3.7
-          python_version: '3.7'
       - unittest_windows_gpu:
           cu_version: cu116
           name: unittest_windows_gpu_py3.8
@@ -1146,20 +1099,6 @@ workflows:
               - nightly
           name: unittest_windows_gpu_py3.9
           python_version: '3.9'
-      - unittest_windows_gpu:
-          cu_version: cu116
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          name: unittest_windows_gpu_py3.10
-          python_version: '3.10'
-      - unittest_macos_cpu:
-          cu_version: cpu
-          machine_type: medium
-          name: unittest_macos_cpu_py3.7
-          python_version: '3.7'
       - unittest_macos_cpu:
           cu_version: cpu
           machine_type: medium
@@ -1176,11 +1115,6 @@ workflows:
           machine_type: medium
           name: unittest_macos_cpu_py3.9
           python_version: '3.9'
-      - unittest_macos_cpu:
-          cu_version: cpu
-          machine_type: medium
-          name: unittest_macos_cpu_py3.10
-          python_version: '3.10'
 
   cmake:
     jobs:
