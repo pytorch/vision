@@ -22,8 +22,8 @@ import yaml
 from jinja2 import select_autoescape
 
 
-# PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
-PYTHON_VERSIONS = ["3.8", "3.9"]
+PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
+# PYTHON_VERSIONS = ["3.8", "3.9"]
 
 RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
@@ -270,9 +270,9 @@ def unittest_workflows(indentation=6):
                 else:
                     job["cu_version"] = "cpu"
                     if os_type == "linux":
-                        job["machine_type"] = "2xlarge+"
+                        job["machine_type"] = "xlarge"
                     elif os_type == "macos":
-                        job["machine_type"] = "large"
+                        job["machine_type"] = "medium"
 
                 jobs.append({f"unittest_{os_type}_{device_type}": job})
 
