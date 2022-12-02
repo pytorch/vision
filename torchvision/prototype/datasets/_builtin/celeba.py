@@ -3,7 +3,7 @@ import pathlib
 from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper, Zipper
-from torchvision.prototype.datapoints import _Datapoint, BoundingBox, Label
+from torchvision.prototype.datapoints import BoundingBox, Datapoint, Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
@@ -147,7 +147,7 @@ class CelebA(Dataset):
                 spatial_size=image.spatial_size,
             ),
             landmarks={
-                landmark: _Datapoint((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
+                landmark: Datapoint((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
                 for landmark in {key[:-2] for key in landmarks.keys()}
             },
         )

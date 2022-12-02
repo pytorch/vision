@@ -6,11 +6,11 @@ from typing import Any, List, Optional, Tuple, Union
 import torch
 from torchvision.transforms.functional import InterpolationMode
 
-from ._datapoint import _Datapoint, FillTypeJIT
+from ._datapoint import Datapoint, FillTypeJIT
 from ._image import ColorSpace
 
 
-class Video(_Datapoint):
+class Video(Datapoint):
     color_space: ColorSpace
 
     @classmethod

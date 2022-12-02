@@ -4,7 +4,7 @@ from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
-from torchvision.prototype.datapoints import _Datapoint
+from torchvision.prototype.datapoints import Datapoint
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
@@ -92,8 +92,8 @@ class SBD(Dataset):
             image=EncodedImage.from_file(image_buffer),
             ann_path=ann_path,
             # the boundaries are stored in sparse CSC format, which is not supported by PyTorch
-            boundaries=_Datapoint(np.stack([raw_boundary.toarray() for raw_boundary in anns["Boundaries"].item()])),
-            segmentation=_Datapoint(anns["Segmentation"].item()),
+            boundaries=Datapoint(np.stack([raw_boundary.toarray() for raw_boundary in anns["Boundaries"].item()])),
+            segmentation=Datapoint(anns["Segmentation"].item()),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

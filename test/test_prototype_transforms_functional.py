@@ -403,7 +403,7 @@ class TestDispatchers:
     @pytest.mark.parametrize("info", DISPATCHER_INFOS, ids=lambda info: info.id)
     def test_dispatcher_feature_signatures_consistency(self, info):
         try:
-            feature_method = getattr(datapoints._Datapoint, info.id)
+            feature_method = getattr(datapoints.Datapoint, info.id)
         except AttributeError:
             pytest.skip("Dispatcher doesn't support arbitrary feature dispatch.")
 

@@ -109,7 +109,7 @@ def get_spatial_size_bounding_box(bounding_box: datapoints.BoundingBox) -> List[
 
 
 def get_spatial_size(inpt: datapoints.InputTypeJIT) -> List[int]:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, datapoints._Datapoint)):
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, datapoints.Datapoint)):
         return get_spatial_size_image_tensor(inpt)
     elif isinstance(inpt, (datapoints.Image, datapoints.Video, datapoints.BoundingBox, datapoints.Mask)):
         return list(inpt.spatial_size)

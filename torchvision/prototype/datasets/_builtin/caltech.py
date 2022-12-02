@@ -4,7 +4,7 @@ from typing import Any, BinaryIO, Dict, List, Tuple, Union
 
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper
-from torchvision.prototype.datapoints import _Datapoint, BoundingBox, Label
+from torchvision.prototype.datapoints import BoundingBox, Datapoint, Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
@@ -114,7 +114,7 @@ class Caltech101(Dataset):
                 format="xyxy",
                 spatial_size=image.spatial_size,
             ),
-            contour=_Datapoint(ann["obj_contour"].T),
+            contour=Datapoint(ann["obj_contour"].T),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
