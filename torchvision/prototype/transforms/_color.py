@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
-from torchvision.prototype import features
+from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
@@ -82,7 +82,7 @@ class ColorJitter(Transform):
 
 
 class RandomPhotometricDistort(Transform):
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
+    _transformed_types = (datapoints.Image, PIL.Image.Image, datapoints.is_simple_tensor, datapoints.Video)
 
     def __init__(
         self,
@@ -111,15 +111,15 @@ class RandomPhotometricDistort(Transform):
         )
 
     def _permute_channels(
-        self, inpt: Union[features.ImageType, features.VideoType], permutation: torch.Tensor
-    ) -> Union[features.ImageType, features.VideoType]:
+        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], permutation: torch.Tensor
+    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         if isinstance(inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)
 
         output = inpt[..., permutation, :, :]
 
-        if isinstance(inpt, (features.Image, features.Video)):
-            output = inpt.wrap_like(inpt, output, color_space=features.ColorSpace.OTHER)  # type: ignore[arg-type]
+        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
+            output = inpt.wrap_like(inpt, output, color_space=datapoints.ColorSpace.OTHER)  # type: ignore[arg-type]
 
         elif isinstance(inpt, PIL.Image.Image):
             output = F.to_image_pil(output)
@@ -127,8 +127,8 @@ class RandomPhotometricDistort(Transform):
         return output
 
     def _transform(
-        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
-    ) -> Union[features.ImageType, features.VideoType]:
+        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
+    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])

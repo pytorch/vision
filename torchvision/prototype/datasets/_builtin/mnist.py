@@ -7,9 +7,9 @@ from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Sequence
 
 import torch
 from torchdata.datapipes.iter import Decompressor, Demultiplexer, IterDataPipe, Mapper, Zipper
+from torchvision.prototype.datapoints import Image, Label
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, INFINITE_BUFFER_SIZE
-from torchvision.prototype.features import Image, Label
 from torchvision.prototype.utils._internal import fromfile
 
 from .._api import register_dataset, register_info

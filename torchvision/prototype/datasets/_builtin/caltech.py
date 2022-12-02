@@ -4,6 +4,7 @@ from typing import Any, BinaryIO, Dict, List, Tuple, Union
 
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper
+from torchvision.prototype.datapoints import _Datapoint, BoundingBox, Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
@@ -12,7 +13,6 @@ from torchvision.prototype.datasets.utils._internal import (
     read_categories_file,
     read_mat,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, Label
 
 from .._api import register_dataset, register_info
 
@@ -114,7 +114,7 @@ class Caltech101(Dataset):
                 format="xyxy",
                 spatial_size=image.spatial_size,
             ),
-            contour=_Feature(ann["obj_contour"].T),
+            contour=_Datapoint(ann["obj_contour"].T),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
