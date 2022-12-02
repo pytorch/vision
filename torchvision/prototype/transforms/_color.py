@@ -3,11 +3,12 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
+
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
-from .utils import query_chw
+from .utils import is_simple_tensor, query_chw
 
 
 class ColorJitter(Transform):
@@ -82,7 +83,12 @@ class ColorJitter(Transform):
 
 
 class RandomPhotometricDistort(Transform):
-    _transformed_types = (datapoints.Image, PIL.Image.Image, datapoints.is_simple_tensor, datapoints.Video)
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(
         self,

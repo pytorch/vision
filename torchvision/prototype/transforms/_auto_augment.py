@@ -5,13 +5,14 @@ import PIL.Image
 import torch
 
 from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
+
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.prototype.transforms.functional._meta import get_spatial_size
 from torchvision.transforms import functional_tensor as _FT
 
 from ._utils import _setup_fill_arg
-from .utils import check_type
+from .utils import check_type, is_simple_tensor
 
 
 class _AutoAugmentBase(Transform):
@@ -39,7 +40,15 @@ class _AutoAugmentBase(Transform):
 
         image_or_videos = []
         for idx, inpt in enumerate(flat_inputs):
-            if check_type(inpt, (datapoints.Image, PIL.Image.Image, datapoints.is_simple_tensor, datapoints.Video)):
+            if check_type(
+                inpt,
+                (
+                    datapoints.Image,
+                    PIL.Image.Image,
+                    is_simple_tensor,
+                    datapoints.Video,
+                ),
+            ):
                 image_or_videos.append((idx, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")

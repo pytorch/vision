@@ -15,10 +15,6 @@ FillType = Union[int, float, Sequence[int], Sequence[float], None]
 FillTypeJIT = Union[int, float, List[float], None]
 
 
-def is_simple_tensor(inpt: Any) -> bool:
-    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, Datapoint)
-
-
 class Datapoint(torch.Tensor):
     __F: Optional[ModuleType] = None
 

@@ -6,6 +6,8 @@ import PIL.Image
 
 import pytest
 import torch
+
+import torchvision.prototype.transforms.utils
 from common_utils import assert_equal, cpu_and_gpu
 from prototype_common_utils import (
     DEFAULT_EXTRA_DIMS,
@@ -1860,7 +1862,9 @@ def test_permute_dimensions(dims, inverse_dims):
         value_type = type(value)
         transformed_value = transformed_sample[key]
 
-        if check_type(value, (datapoints.Image, datapoints.is_simple_tensor, datapoints.Video)):
+        if check_type(
+            value, (datapoints.Image, torchvision.prototype.transforms.utils.is_simple_tensor, datapoints.Video)
+        ):
             if transform.dims.get(value_type) is not None:
                 assert transformed_value.permute(inverse_dims[value_type]).equal(value)
             assert type(transformed_value) == torch.Tensor
@@ -1893,7 +1897,9 @@ def test_transpose_dimensions(dims):
         transformed_value = transformed_sample[key]
 
         transposed_dims = transform.dims.get(value_type)
-        if check_type(value, (datapoints.Image, datapoints.is_simple_tensor, datapoints.Video)):
+        if check_type(
+            value, (datapoints.Image, torchvision.prototype.transforms.utils.is_simple_tensor, datapoints.Video)
+        ):
             if transposed_dims is not None:
                 assert transformed_value.transpose(*transposed_dims).equal(value)
             assert type(transformed_value) == torch.Tensor

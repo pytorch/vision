@@ -5,8 +5,11 @@ import PIL.Image
 import torch
 
 from torch.nn.functional import one_hot
+
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
+
+from torchvision.prototype.transforms.utils import is_simple_tensor
 
 
 class LabelToOneHot(Transform):
@@ -38,7 +41,7 @@ class PILToTensor(Transform):
 
 
 class ToImageTensor(Transform):
-    _transformed_types = (datapoints.is_simple_tensor, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, PIL.Image.Image, np.ndarray)
 
     def _transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
@@ -47,7 +50,7 @@ class ToImageTensor(Transform):
 
 
 class ToImagePIL(Transform):
-    _transformed_types = (datapoints.is_simple_tensor, datapoints.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, datapoints.Image, np.ndarray)
 
     def __init__(self, mode: Optional[str] = None) -> None:
         super().__init__()

@@ -4,8 +4,11 @@ from typing import List, Optional, Union
 import PIL.Image
 import torch
 from torch.nn.functional import conv2d, pad as torch_pad
+
 from torchvision.prototype import datapoints
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
+
+from ..utils import is_simple_tensor
 
 
 def normalize_image_tensor(
@@ -54,7 +57,7 @@ def normalize(
     inplace: bool = False,
 ) -> torch.Tensor:
     if not torch.jit.is_scripting():
-        if datapoints.is_simple_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video)):
+        if is_simple_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video)):
             inpt = inpt.as_subclass(torch.Tensor)
         else:
             raise TypeError(

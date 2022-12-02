@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 import torch
+
+import torchvision.prototype.transforms.utils
 from builtin_dataset_mocks import DATASET_MOCKS, parametrize_dataset_mocks
 from torch.testing._comparison import assert_equal, ObjectPair, TensorLikePair
 from torch.utils.data import DataLoader
@@ -131,7 +133,9 @@ class TestCommon:
         dataset, _ = dataset_mock.load(config)
 
         simple_tensors = {
-            key for key, value in next_consume(iter(dataset)).items() if datapoints.is_simple_tensor(value)
+            key
+            for key, value in next_consume(iter(dataset)).items()
+            if torchvision.prototype.transforms.utils.is_simple_tensor(value)
         }
         if simple_tensors:
             raise AssertionError(

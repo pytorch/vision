@@ -5,6 +5,7 @@ from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
+
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
@@ -22,7 +23,7 @@ from ._utils import (
     _setup_float_or_seq,
     _setup_size,
 )
-from .utils import has_all, has_any, query_bounding_box, query_spatial_size
+from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_spatial_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -170,7 +171,12 @@ class FiveCrop(Transform):
         torch.Size([5])
     """
 
-    _transformed_types = (datapoints.Image, PIL.Image.Image, datapoints.is_simple_tensor, datapoints.Video)
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
@@ -191,7 +197,12 @@ class TenCrop(Transform):
     See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
     """
 
-    _transformed_types = (datapoints.Image, PIL.Image.Image, datapoints.is_simple_tensor, datapoints.Video)
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
@@ -607,7 +618,7 @@ class RandomIoUCrop(Transform):
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
             has_all(flat_inputs, datapoints.BoundingBox)
-            and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, datapoints.is_simple_tensor)
+            and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
             and has_any(flat_inputs, datapoints.Label, datapoints.OneHotLabel)
         ):
             raise TypeError(
@@ -764,7 +775,13 @@ class FixedSizeCrop(Transform):
         self.padding_mode = padding_mode
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if not has_any(flat_inputs, PIL.Image.Image, datapoints.Image, datapoints.is_simple_tensor, datapoints.Video):
+        if not has_any(
+            flat_inputs,
+            PIL.Image.Image,
+            datapoints.Image,
+            is_simple_tensor,
+            datapoints.Video,
+        ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
             )

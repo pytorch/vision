@@ -3,6 +3,7 @@ import pytest
 
 import torch
 
+import torchvision.prototype.transforms.utils
 from prototype_common_utils import make_bounding_box, make_detection_mask, make_image
 
 from torchvision.prototype import datapoints
@@ -36,9 +37,17 @@ MASK = make_detection_mask(size=IMAGE.spatial_size)
         ((IMAGE, BOUNDING_BOX, MASK), (lambda obj: isinstance(obj, datapoints.Image),), True),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda _: False,), False),
         ((IMAGE, BOUNDING_BOX, MASK), (lambda _: True,), True),
-        ((IMAGE,), (datapoints.Image, PIL.Image.Image, datapoints.is_simple_tensor), True),
-        ((torch.Tensor(IMAGE),), (datapoints.Image, PIL.Image.Image, datapoints.is_simple_tensor), True),
-        ((to_image_pil(IMAGE),), (datapoints.Image, PIL.Image.Image, datapoints.is_simple_tensor), True),
+        ((IMAGE,), (datapoints.Image, PIL.Image.Image, torchvision.prototype.transforms.utils.is_simple_tensor), True),
+        (
+            (torch.Tensor(IMAGE),),
+            (datapoints.Image, PIL.Image.Image, torchvision.prototype.transforms.utils.is_simple_tensor),
+            True,
+        ),
+        (
+            (to_image_pil(IMAGE),),
+            (datapoints.Image, PIL.Image.Image, torchvision.prototype.transforms.utils.is_simple_tensor),
+            True,
+        ),
     ],
 )
 def test_has_any(sample, types, expected):

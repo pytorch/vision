@@ -3,8 +3,11 @@ from typing import Any, Dict, Optional, Union
 import PIL.Image
 
 import torch
+
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
+
+from .utils import is_simple_tensor
 
 
 class ConvertBoundingBoxFormat(Transform):
@@ -26,7 +29,7 @@ class ConvertBoundingBoxFormat(Transform):
 
 
 class ConvertDtype(Transform):
-    _transformed_types = (datapoints.is_simple_tensor, datapoints.Image, datapoints.Video)
+    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
 
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
@@ -44,7 +47,12 @@ ConvertImageDtype = ConvertDtype
 
 
 class ConvertColorSpace(Transform):
-    _transformed_types = (datapoints.is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
+    _transformed_types = (
+        is_simple_tensor,
+        datapoints.Image,
+        PIL.Image.Image,
+        datapoints.Video,
+    )
 
     def __init__(
         self,

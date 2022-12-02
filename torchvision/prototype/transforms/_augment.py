@@ -6,16 +6,17 @@ from typing import Any, cast, Dict, List, Optional, Tuple, Union
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
+
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, InterpolationMode
 
 from ._transform import _RandomApplyTransform
-from .utils import has_any, query_chw, query_spatial_size
+from .utils import has_any, is_simple_tensor, query_chw, query_spatial_size
 
 
 class RandomErasing(_RandomApplyTransform):
-    _transformed_types = (datapoints.is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
+    _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
 
     def __init__(
         self,
@@ -107,7 +108,7 @@ class _BaseMixupCutmix(_RandomApplyTransform):
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
-            has_any(flat_inputs, datapoints.Image, datapoints.Video, datapoints.is_simple_tensor)
+            has_any(flat_inputs, datapoints.Image, datapoints.Video, is_simple_tensor)
             and has_any(flat_inputs, datapoints.OneHotLabel)
         ):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
@@ -129,7 +130,7 @@ class RandomMixup(_BaseMixupCutmix):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)) or datapoints.is_simple_tensor(inpt):
+        if isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_simple_tensor(inpt):
             expected_ndim = 5 if isinstance(inpt, datapoints.Video) else 4
             if inpt.ndim < expected_ndim:
                 raise ValueError("The transform expects a batched input")
@@ -169,7 +170,7 @@ class RandomCutmix(_BaseMixupCutmix):
         return dict(box=box, lam_adjusted=lam_adjusted)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)) or datapoints.is_simple_tensor(inpt):
+        if isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_simple_tensor(inpt):
             box = params["box"]
             expected_ndim = 5 if isinstance(inpt, datapoints.Video) else 4
             if inpt.ndim < expected_ndim:
@@ -290,7 +291,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # with List[image], List[BoundingBox], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
         for obj in flat_sample:
-            if isinstance(obj, datapoints.Image) or datapoints.is_simple_tensor(obj):
+            if isinstance(obj, datapoints.Image) or is_simple_tensor(obj):
                 images.append(obj)
             elif isinstance(obj, PIL.Image.Image):
                 images.append(F.to_image_tensor(obj))
@@ -327,7 +328,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
             elif isinstance(obj, PIL.Image.Image):
                 flat_sample[i] = F.to_image_pil(output_images[c0])
                 c0 += 1
-            elif datapoints.is_simple_tensor(obj):
+            elif is_simple_tensor(obj):
                 flat_sample[i] = output_images[c0]
                 c0 += 1
             elif isinstance(obj, datapoints.BoundingBox):

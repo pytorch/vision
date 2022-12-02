@@ -3,12 +3,13 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, U
 import PIL.Image
 
 import torch
+
 from torchvision.ops import remove_small_boxes
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
 
 from ._utils import _get_defaultdict, _setup_float_or_seq, _setup_size
-from .utils import has_any, query_bounding_box
+from .utils import has_any, is_simple_tensor, query_bounding_box
 
 
 class Identity(Transform):
@@ -38,7 +39,7 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
-    _transformed_types = (datapoints.is_simple_tensor, datapoints.Image, datapoints.Video)
+    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
 
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
         super().__init__()
@@ -93,7 +94,7 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    _transformed_types = (datapoints.Image, datapoints.is_simple_tensor, datapoints.Video)
+    _transformed_types = (datapoints.Image, is_simple_tensor, datapoints.Video)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()
@@ -158,7 +159,7 @@ class ToDtype(Transform):
 
 
 class PermuteDimensions(Transform):
-    _transformed_types = (datapoints.is_simple_tensor, datapoints.Image, datapoints.Video)
+    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
 
     def __init__(self, dims: Union[Sequence[int], Dict[Type, Optional[Sequence[int]]]]) -> None:
         super().__init__()
@@ -176,7 +177,7 @@ class PermuteDimensions(Transform):
 
 
 class TransposeDimensions(Transform):
-    _transformed_types = (datapoints.is_simple_tensor, datapoints.Image, datapoints.Video)
+    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
 
     def __init__(self, dims: Union[Tuple[int, int], Dict[Type, Optional[Tuple[int, int]]]]) -> None:
         super().__init__()

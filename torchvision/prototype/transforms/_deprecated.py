@@ -11,7 +11,7 @@ from torchvision.transforms import functional as _F
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from .utils import query_chw
+from .utils import is_simple_tensor, query_chw
 
 
 class ToTensor(Transform):
@@ -29,7 +29,12 @@ class ToTensor(Transform):
 
 
 class Grayscale(Transform):
-    _transformed_types = (datapoints.Image, PIL.Image.Image, datapoints.is_simple_tensor, datapoints.Video)
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(self, num_output_channels: Literal[1, 3] = 1) -> None:
         deprecation_msg = (
@@ -62,7 +67,12 @@ class Grayscale(Transform):
 
 
 class RandomGrayscale(_RandomApplyTransform):
-    _transformed_types = (datapoints.Image, PIL.Image.Image, datapoints.is_simple_tensor, datapoints.Video)
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(self, p: float = 0.1) -> None:
         warnings.warn(

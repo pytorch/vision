@@ -10,6 +10,8 @@ import PIL.Image
 import pytest
 
 import torch
+
+import torchvision.prototype.transforms.utils
 from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
 from prototype_common_utils import assert_close, make_bounding_boxes, make_image, parametrized_error_message
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
@@ -147,7 +149,11 @@ class TestKernels:
     def test_batched_vs_single(self, test_id, info, args_kwargs, device):
         (batched_input, *other_args), kwargs = args_kwargs.load(device)
 
-        feature_type = datapoints.Image if datapoints.is_simple_tensor(batched_input) else type(batched_input)
+        feature_type = (
+            datapoints.Image
+            if torchvision.prototype.transforms.utils.is_simple_tensor(batched_input)
+            else type(batched_input)
+        )
         # This dictionary contains the number of rightmost dimensions that contain the actual data.
         # Everything to the left is considered a batch dimension.
         data_dims = {

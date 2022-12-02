@@ -1,10 +1,18 @@
+from __future__ import annotations
+
 from typing import Any, Callable, List, Tuple, Type, Union
 
 import PIL.Image
+import torch
 
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datapoints
+from torchvision.prototype.datapoints import Datapoint
 from torchvision.prototype.transforms.functional import get_dimensions, get_spatial_size
+
+
+def is_simple_tensor(inpt: Any) -> bool:
+    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, Datapoint)
 
 
 def query_bounding_box(flat_inputs: List[Any]) -> datapoints.BoundingBox:
@@ -20,7 +28,7 @@ def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
     chws = {
         tuple(get_dimensions(inpt))
         for inpt in flat_inputs
-        if isinstance(inpt, (datapoints.Image, PIL.Image.Image, datapoints.Video)) or datapoints.is_simple_tensor(inpt)
+        if isinstance(inpt, (datapoints.Image, PIL.Image.Image, datapoints.Video)) or is_simple_tensor(inpt)
     }
     if not chws:
         raise TypeError("No image or video was found in the sample")
@@ -37,7 +45,7 @@ def query_spatial_size(flat_inputs: List[Any]) -> Tuple[int, int]:
         if isinstance(
             inpt, (datapoints.Image, PIL.Image.Image, datapoints.Video, datapoints.Mask, datapoints.BoundingBox)
         )
-        or datapoints.is_simple_tensor(inpt)
+        or is_simple_tensor(inpt)
     }
     if not sizes:
         raise TypeError("No image, video, mask or bounding box was found in the sample")
