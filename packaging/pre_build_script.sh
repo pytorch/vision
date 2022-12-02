@@ -1,3 +1,4 @@
+#!/bin/bash
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   # Uninstall Conflicting jpeg brew formulae
   jpeg_packages=$(brew list | grep jpeg)
