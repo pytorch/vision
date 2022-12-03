@@ -152,15 +152,6 @@ commands:
           args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
           descr: Install torchvision <<# parameters.editable >> in editable mode <</ parameters.editable >>
 
-  install_prototype_dependencies:
-    steps:
-      - pip_install:
-          args: iopath
-          descr: Install third-party dependencies
-      - pip_install:
-          args: --pre torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu
-          descr: Install torchdata from nightly releases
-
   # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
   # This command can be used if only a selection of tests need to be run, for ad-hoc files.
   run_tests_selective:
@@ -223,7 +214,7 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "pytorch/manylinux-cuda102"
+      default: ""
     conda_docker_image:
       description: "Conda only: what docker image to use"
       type: string
@@ -326,7 +317,6 @@ jobs:
       - checkout
       - install_torchvision:
           editable: true
-      - install_prototype_dependencies
       - pip_install:
           args: mypy
           descr: Install Python type check utilities
@@ -377,7 +367,12 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - run: packaging/build_wheel.sh
+      - run:
+          name: Build conda packages
+          no_output_timeout: 30m
+          command: |
+              set -ex
+              packaging/build_wheel.sh
       - store_artifacts:
           path: dist
       - persist_to_workspace:
@@ -393,7 +388,12 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - run: packaging/build_conda.sh
+      - run:
+          name: Build conda packages
+          no_output_timeout: 30m
+          command: |
+              set -ex
+              packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
       - persist_to_workspace:
@@ -411,7 +411,7 @@ jobs:
       - designate_upload_channel
       - run:
           name: Build conda packages
-          no_output_timeout: 20m
+          no_output_timeout: 30m
           command: |
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
@@ -438,6 +438,7 @@ jobs:
       - designate_upload_channel
       - run:
           name: Build wheel packages
+          no_output_timeout: 30m
           command: |
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
@@ -724,7 +725,7 @@ jobs:
   unittest_linux_cpu:
     <<: *binary_common
     docker:
-      - image: "pytorch/manylinux-cuda102"
+      - image: "pytorch/manylinux-cpu"
     resource_class: 2xlarge+
     steps:
       - checkout
@@ -766,7 +767,8 @@ jobs:
       image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.medium
     environment:
-      image_name: "pytorch/manylinux-cuda102"
+      image_name: "pytorch/manylinux-cuda116"
+      CU_VERSION: << parameters.cu_version >>
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -941,7 +943,7 @@ jobs:
   cmake_linux_cpu:
     <<: *binary_common
     docker:
-      - image: "pytorch/manylinux-cuda102"
+      - image: "pytorch/manylinux-cpu"
     resource_class: 2xlarge+
     steps:
       - checkout_merge

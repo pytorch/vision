@@ -6,13 +6,13 @@ import torch
 from prototype_common_utils import make_bounding_box, make_detection_mask, make_image
 
 from torchvision.prototype import features
-from torchvision.prototype.transforms._utils import has_all, has_any
 from torchvision.prototype.transforms.functional import to_image_pil
+from torchvision.prototype.transforms.utils import has_all, has_any
 
 
 IMAGE = make_image(color_space=features.ColorSpace.RGB)
-BOUNDING_BOX = make_bounding_box(format=features.BoundingBoxFormat.XYXY, image_size=IMAGE.image_size)
-MASK = make_detection_mask(size=IMAGE.image_size)
+BOUNDING_BOX = make_bounding_box(format=features.BoundingBoxFormat.XYXY, spatial_size=IMAGE.spatial_size)
+MASK = make_detection_mask(size=IMAGE.spatial_size)
 
 
 @pytest.mark.parametrize(

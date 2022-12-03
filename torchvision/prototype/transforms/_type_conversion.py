@@ -9,13 +9,6 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import functional as F, Transform
 
 
-class DecodeImage(Transform):
-    _transformed_types = (features.EncodedImage,)
-
-    def _transform(self, inpt: torch.Tensor, params: Dict[str, Any]) -> features.Image:
-        return F.decode_image_with_pil(inpt)
-
-
 class LabelToOneHot(Transform):
     _transformed_types = (features.Label,)
 
@@ -27,7 +20,7 @@ class LabelToOneHot(Transform):
         num_categories = self.num_categories
         if num_categories == -1 and inpt.categories is not None:
             num_categories = len(inpt.categories)
-        output = one_hot(inpt, num_classes=num_categories)
+        output = one_hot(inpt.as_subclass(torch.Tensor), num_classes=num_categories)
         return features.OneHotLabel(output, categories=inpt.categories)
 
     def extra_repr(self) -> str:
@@ -50,7 +43,7 @@ class ToImageTensor(Transform):
     def _transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
     ) -> features.Image:
-        return F.to_image_tensor(inpt)
+        return F.to_image_tensor(inpt)  # type: ignore[no-any-return]
 
 
 class ToImagePIL(Transform):

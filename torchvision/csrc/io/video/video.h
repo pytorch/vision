@@ -19,7 +19,19 @@ struct Video : torch::CustomClassHolder {
   int64_t numThreads_{0};
 
  public:
-  Video(std::string videoPath, std::string stream, int64_t numThreads);
+  Video(
+      std::string videoPath = std::string(),
+      std::string stream = std::string("video"),
+      int64_t numThreads = 0);
+  void initFromFile(
+      std::string videoPath,
+      std::string stream,
+      int64_t numThreads);
+  void initFromMemory(
+      torch::Tensor videoTensor,
+      std::string stream,
+      int64_t numThreads);
+
   std::tuple<std::string, int64_t> getCurrentStream() const;
   c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>>
   getStreamMetadata() const;
@@ -33,6 +45,12 @@ struct Video : torch::CustomClassHolder {
   // retruns the next frame. If it's set, we look at the global seek
   // time in comination with any_frame settings
   double seekTS = -1;
+
+  bool initialized = false;
+
+  void _init(
+      std::string stream,
+      int64_t numThreads); // expects params.uri OR callback to be set
 
   void _getDecoderParams(
       double videoStartS,

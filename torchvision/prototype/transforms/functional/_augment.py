@@ -4,34 +4,57 @@ import PIL.Image
 
 import torch
 from torchvision.prototype import features
-from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 
-erase_image_tensor = _FT.erase
+def erase_image_tensor(
+    image: torch.Tensor, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
+) -> torch.Tensor:
+    if not inplace:
+        image = image.clone()
+
+    image[..., i : i + h, j : j + w] = v
+    return image
 
 
+@torch.jit.unused
 def erase_image_pil(
-    img: PIL.Image.Image, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
+    image: PIL.Image.Image, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
 ) -> PIL.Image.Image:
-    t_img = pil_to_tensor(img)
+    t_img = pil_to_tensor(image)
     output = erase_image_tensor(t_img, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-    return to_pil_image(output, mode=img.mode)
+    return to_pil_image(output, mode=image.mode)
+
+
+def erase_video(
+    video: torch.Tensor, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
+) -> torch.Tensor:
+    return erase_image_tensor(video, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
 
 
 def erase(
-    inpt: Union[torch.Tensor, PIL.Image.Image, features.Image],
+    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT],
     i: int,
     j: int,
     h: int,
     w: int,
     v: torch.Tensor,
     inplace: bool = False,
-) -> Union[torch.Tensor, PIL.Image.Image, features.Image]:
-    if isinstance(inpt, torch.Tensor):
-        output = erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-        if isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output)
-        return output
-    else:  # isinstance(inpt, PIL.Image.Image):
+) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+    ):
+        return erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+    elif isinstance(inpt, features.Image):
+        output = erase_image_tensor(inpt.as_subclass(torch.Tensor), i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+        return features.Image.wrap_like(inpt, output)
+    elif isinstance(inpt, features.Video):
+        output = erase_video(inpt.as_subclass(torch.Tensor), i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+        return features.Video.wrap_like(inpt, output)
+    elif isinstance(inpt, PIL.Image.Image):
         return erase_image_pil(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )

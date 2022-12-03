@@ -32,7 +32,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu102", "cu116", "cu117", "rocm5.1.1", "rocm5.2"],
+                "linux": ["cpu", "cu116", "cu117", "rocm5.1.1", "rocm5.2"],
                 "win": ["cpu", "cu116", "cu117"],
                 "macos": ["cpu"],
             }
@@ -59,6 +59,18 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                         ):
                             # the fields must match the build_docs "requires" dependency
                             fb = "/.*/"
+
+                        # Disable all Linux Wheels Workflows from CircleCI
+                        # since those will now be done through Nova. We'll keep
+                        # around the py3.7 Linux Wheels build since the docs
+                        # job depends on it.
+                        if os_type == "linux" and btype == "wheel" and python_version != "3.7":
+                            continue
+
+                        # Disable all Macos Wheels Workflows from CircleCI.
+                        if os_type == "macos" and btype == "wheel":
+                            continue
+
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version, unicode, prefix, upload, filter_branch=fb
                         )
@@ -81,6 +93,11 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=""
             base_workflow_name, python_version, cu_version, unicode, os_type, btype, filter_branch=filter_branch
         )
     )
+
+    # For the remaining py3.7 Linux Wheels job left around for the docs build,
+    # we'll disable uploads.
+    if os_type == "linux" and btype == "wheel":
+        upload = False
 
     if upload:
         w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
@@ -122,7 +139,6 @@ def upload_doc_job(filter_branch):
 
 
 manylinux_images = {
-    "cu102": "pytorch/manylinux-cuda102",
     "cu116": "pytorch/manylinux-cuda116",
     "cu117": "pytorch/manylinux-cuda117",
 }
@@ -130,7 +146,7 @@ manylinux_images = {
 
 def get_manylinux_image(cu_version):
     if cu_version == "cpu":
-        return "pytorch/manylinux-cuda102"
+        return "pytorch/manylinux-cpu"
     elif cu_version.startswith("cu"):
         cu_suffix = cu_version[len("cu") :]
         return f"pytorch/manylinux-cuda{cu_suffix}"
@@ -238,6 +254,8 @@ def unittest_workflows(indentation=6):
         for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
+            if os_type == "linux" and device_type == "cpu":
+                continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
                 job = {
                     "name": f"unittest_{os_type}_{device_type}_py{python_version}",
@@ -247,7 +265,7 @@ def unittest_workflows(indentation=6):
                 if device_type == "gpu":
                     if python_version != "3.8":
                         job["filters"] = gen_filter_branch_tree("main", "nightly")
-                    job["cu_version"] = "cu102"
+                    job["cu_version"] = "cu116"
                 else:
                     job["cu_version"] = "cpu"
 

@@ -20,10 +20,12 @@ from . import functional_pil as F_pil, functional_tensor as F_t
 
 class InterpolationMode(Enum):
     """Interpolation modes
-    Available interpolation methods are ``nearest``, ``bilinear``, ``bicubic``, ``box``, ``hamming``, and ``lanczos``.
+    Available interpolation methods are ``nearest``, ``nearest-exact``, ``bilinear``, ``bicubic``, ``box``, ``hamming``,
+    and ``lanczos``.
     """
 
     NEAREST = "nearest"
+    NEAREST_EXACT = "nearest-exact"
     BILINEAR = "bilinear"
     BICUBIC = "bicubic"
     # For PIL compatibility
@@ -50,6 +52,7 @@ pil_modes_mapping = {
     InterpolationMode.NEAREST: 0,
     InterpolationMode.BILINEAR: 2,
     InterpolationMode.BICUBIC: 3,
+    InterpolationMode.NEAREST_EXACT: 0,
     InterpolationMode.BOX: 4,
     InterpolationMode.HAMMING: 5,
     InterpolationMode.LANCZOS: 1,
@@ -164,7 +167,7 @@ def to_tensor(pic) -> Tensor:
 
     if pic.mode == "1":
         img = 255 * img
-    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+    img = img.view(pic.size[1], pic.size[0], F_pil.get_image_num_channels(pic))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1)).contiguous()
     if isinstance(img, torch.ByteTensor):
@@ -202,7 +205,7 @@ def pil_to_tensor(pic: Any) -> Tensor:
 
     # handle PIL Image
     img = torch.as_tensor(np.array(pic, copy=True))
-    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+    img = img.view(pic.size[1], pic.size[0], F_pil.get_image_num_channels(pic))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1))
     return img
@@ -416,7 +419,8 @@ def resize(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
+            supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         max_size (int, optional): The maximum allowed for the longer edge of
@@ -617,7 +621,8 @@ def resized_crop(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
+            supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
@@ -999,7 +1004,7 @@ def _get_inverse_affine_matrix(
     #       RotateScaleShear(a, s, (sx, sy)) =
     #       = R(a) * S(s) * SHy(sy) * SHx(sx)
     #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(sx)/cos(sy) - sin(a)), 0 ]
-    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
+    #         [ s*sin(a - sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
     #         [ 0                    , 0                                      , 1 ]
     # where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:
     # SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]
@@ -1051,7 +1056,6 @@ def rotate(
     expand: bool = False,
     center: Optional[List[int]] = None,
     fill: Optional[List[float]] = None,
-    resample: Optional[int] = None,
 ) -> Tensor:
     """Rotate the image by angle.
     If the image is torch Tensor, it is expected
@@ -1077,11 +1081,6 @@ def rotate(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
-        resample (int, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
-                instead.
-
     Returns:
         PIL Image or Tensor: Rotated image.
 
@@ -1090,12 +1089,6 @@ def rotate(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(rotate)
-    if resample is not None:
-        warnings.warn(
-            "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
-            "Please use 'interpolation' instead."
-        )
-        interpolation = _interpolation_modes_from_int(resample)
 
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
@@ -1138,8 +1131,6 @@ def affine(
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
-    resample: Optional[int] = None,
-    fillcolor: Optional[List[float]] = None,
     center: Optional[List[int]] = None,
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
@@ -1165,13 +1156,6 @@ def affine(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
-        fillcolor (sequence or number, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.
-        resample (int, optional):
-            .. warning::
-                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
-                instead.
         center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
 
@@ -1180,12 +1164,6 @@ def affine(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(affine)
-    if resample is not None:
-        warnings.warn(
-            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
-            "Please use 'interpolation' instead."
-        )
-        interpolation = _interpolation_modes_from_int(resample)
 
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
@@ -1194,13 +1172,6 @@ def affine(
             "Please use InterpolationMode enum."
         )
         interpolation = _interpolation_modes_from_int(interpolation)
-
-    if fillcolor is not None:
-        warnings.warn(
-            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
-            "Please use 'fill' instead."
-        )
-        fill = fillcolor
 
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")

@@ -25,7 +25,12 @@ from common_utils import (
 )
 from torchvision.transforms import InterpolationMode
 
-NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
+NEAREST, NEAREST_EXACT, BILINEAR, BICUBIC = (
+    InterpolationMode.NEAREST,
+    InterpolationMode.NEAREST_EXACT,
+    InterpolationMode.BILINEAR,
+    InterpolationMode.BICUBIC,
+)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -138,20 +143,6 @@ class TestRotate:
 
         center = (20, 22)
         _test_fn_on_batch(batch_tensors, F.rotate, angle=32, interpolation=NEAREST, expand=True, center=center)
-
-    def test_rotate_deprecation_resample(self):
-        tensor, _ = _create_data(26, 26)
-        # assert deprecation warning and non-BC
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
-                "Please use 'interpolation' instead."
-            ),
-        ):
-            res1 = F.rotate(tensor, 45, resample=2)
-            res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
-            assert_equal(res1, res2)
 
     def test_rotate_interpolation_type(self):
         tensor, _ = _create_data(26, 26)
@@ -377,18 +368,6 @@ class TestAffine:
     def test_warnings(self, device):
         tensor, pil_img = _create_data(26, 26, device=device)
 
-        # assert deprecation warning and non-BC
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
-                "Please use 'interpolation' instead."
-            ),
-        ):
-            res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=2)
-            res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
-            assert_equal(res1, res2)
-
         # assert changed type warning
         with pytest.warns(
             UserWarning,
@@ -400,18 +379,6 @@ class TestAffine:
             res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
             res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
             assert_equal(res1, res2)
-
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
-                "Please use 'fill' instead."
-            ),
-        ):
-            res1 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fillcolor=10)
-            res2 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fill=10)
-            # we convert the PIL images to numpy as assert_equal doesn't work on PIL images.
-            assert_equal(np.asarray(res1), np.asarray(res2))
 
 
 def _get_data_dims_and_points_for_perspective():
@@ -544,7 +511,7 @@ def test_perspective_interpolation_warning():
     ],
 )
 @pytest.mark.parametrize("max_size", [None, 34, 40, 1000])
-@pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST])
+@pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST, NEAREST_EXACT])
 def test_resize(device, dt, size, max_size, interpolation):
 
     if dt == torch.float16 and device == "cpu":
@@ -823,32 +790,40 @@ def test_solarize2(device, dtype, config, channels):
     )
 
 
+@pytest.mark.parametrize(
+    ("dtype", "threshold"),
+    [
+        *[
+            (dtype, threshold)
+            for dtype, threshold in itertools.product(
+                [torch.float32, torch.float16],
+                [0.0, 0.25, 0.5, 0.75, 1.0],
+            )
+        ],
+        *[(torch.uint8, threshold) for threshold in [0, 64, 128, 192, 255]],
+        *[(torch.int64, threshold) for threshold in [0, 2**32, 2**63 - 1]],
+    ],
+)
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("threshold", [0.0, 0.25, 0.5, 0.75, 1.0])
-def test_solarize_threshold1_bound(threshold, device):
-    img = torch.rand((3, 12, 23)).to(device)
+def test_solarize_threshold_within_bound(threshold, dtype, device):
+    make_img = torch.rand if dtype.is_floating_point else partial(torch.randint, 0, torch.iinfo(dtype).max)
+    img = make_img((3, 12, 23), dtype=dtype, device=device)
     F_t.solarize(img, threshold)
 
 
+@pytest.mark.parametrize(
+    ("dtype", "threshold"),
+    [
+        (torch.float32, 1.5),
+        (torch.float16, 1.5),
+        (torch.uint8, 260),
+        (torch.int64, 2**64),
+    ],
+)
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("threshold", [1.5])
-def test_solarize_threshold1_upper_bound(threshold, device):
-    img = torch.rand((3, 12, 23)).to(device)
-    with pytest.raises(TypeError, match="Threshold should be less than bound of img."):
-        F_t.solarize(img, threshold)
-
-
-@pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("threshold", [0, 64, 128, 192, 255])
-def test_solarize_threshold2_bound(threshold, device):
-    img = torch.randint(0, 256, (3, 12, 23)).to(device)
-    F_t.solarize(img, threshold)
-
-
-@pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("threshold", [260])
-def test_solarize_threshold2_upper_bound(threshold, device):
-    img = torch.randint(0, 256, (3, 12, 23)).to(device)
+def test_solarize_threshold_above_bound(threshold, dtype, device):
+    make_img = torch.rand if dtype.is_floating_point else partial(torch.randint, 0, torch.iinfo(dtype).max)
+    img = make_img((3, 12, 23), dtype=dtype, device=device)
     with pytest.raises(TypeError, match="Threshold should be less than bound of img."):
         F_t.solarize(img, threshold)
 
@@ -1004,7 +979,7 @@ def test_pad(device, dt, pad, config):
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("mode", [NEAREST, BILINEAR, BICUBIC])
+@pytest.mark.parametrize("mode", [NEAREST, NEAREST_EXACT, BILINEAR, BICUBIC])
 def test_resized_crop(device, mode):
     # test values of F.resized_crop in several cases:
     # 1) resize to the same size, crop to the same size => should be identity
@@ -1104,6 +1079,8 @@ def test_hflip(device):
         (2, 12, 3, 4),  # crop inside top-right corner
         (8, 3, 5, 6),  # crop inside bottom-left corner
         (8, 11, 4, 3),  # crop inside bottom-right corner
+        (50, 50, 10, 10),  # crop outside the image
+        (-50, -50, 10, 10),  # crop outside the image
     ],
 )
 def test_crop(device, top, left, height, width):

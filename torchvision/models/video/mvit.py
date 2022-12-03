@@ -147,7 +147,7 @@ def _add_rel_pos(
     k_t_ratio = max(q_t / k_t, 1.0)
     dist_t = torch.arange(q_t)[:, None] * q_t_ratio - (torch.arange(k_t)[None, :] + (1.0 - k_t)) * k_t_ratio
 
-    # Intepolate rel pos if needed.
+    # Interpolate rel pos if needed.
     rel_pos_h = _interpolate(rel_pos_h, dh)
     rel_pos_w = _interpolate(rel_pos_w, dw)
     rel_pos_t = _interpolate(rel_pos_t, dt)
@@ -624,6 +624,8 @@ class MViT_V1_B_Weights(WeightsEnum):
                     "acc@5": 93.582,
                 }
             },
+            "_ops": 70.599,
+            "_weight_size": 139.764,
         },
     )
     DEFAULT = KINETICS400_V1
@@ -655,6 +657,8 @@ class MViT_V2_S_Weights(WeightsEnum):
                     "acc@5": 94.665,
                 }
             },
+            "_ops": 64.224,
+            "_weight_size": 131.884,
         },
     )
     DEFAULT = KINETICS400_V1

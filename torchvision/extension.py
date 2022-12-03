@@ -16,6 +16,22 @@ def _has_ops():
 
 
 try:
+    # On Windows Python-3.8.x has `os.add_dll_directory` call,
+    # which is called to configure dll search path.
+    # To find cuda related dlls we need to make sure the
+    # conda environment/bin path is configured Please take a look:
+    # https://stackoverflow.com/questions/59330863/cant-import-dll-module-in-python
+    # Please note: if some path can't be added using add_dll_directory we simply ignore this path
+    if os.name == "nt" and sys.version_info >= (3, 8) and sys.version_info < (3, 9):
+        env_path = os.environ["PATH"]
+        path_arr = env_path.split(";")
+        for path in path_arr:
+            if os.path.exists(path):
+                try:
+                    os.add_dll_directory(path)  # type: ignore[attr-defined]
+                except Exception:
+                    pass
+
     lib_path = _get_extension_path("_C")
     torch.ops.load_library(lib_path)
     _HAS_OPS = True

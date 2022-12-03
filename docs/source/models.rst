@@ -207,6 +207,7 @@ weights:
    models/efficientnetv2
    models/googlenet
    models/inception
+   models/maxvit
    models/mnasnet
    models/mobilenetv2
    models/mobilenetv3
@@ -517,6 +518,7 @@ pre-trained weights:
    models/video_mvit
    models/video_resnet
    models/video_s3d
+   models/video_swin_transformer
 
 |
 

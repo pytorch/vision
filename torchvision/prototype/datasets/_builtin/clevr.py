@@ -2,7 +2,7 @@ import pathlib
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, JsonParser, Mapper, UnBatcher
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -11,7 +11,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     path_comparator,
 )
-from torchvision.prototype.features import EncodedImage, Label
+from torchvision.prototype.features import Label
 
 from .._api import register_dataset, register_info
 
@@ -97,6 +97,8 @@ class CLEVR(Dataset):
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
         else:
+            for _, file in scenes_dp:
+                file.close()
             dp = Mapper(images_dp, self._add_empty_anns)
 
         return Mapper(dp, self._prepare_sample)

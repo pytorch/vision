@@ -2,9 +2,9 @@ import pathlib
 from typing import Any, Dict, List, Tuple, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
-from torchvision.prototype.features import EncodedImage, Label
+from torchvision.prototype.features import Label
 
 from .._api import register_dataset, register_info
 
@@ -19,7 +19,8 @@ def _info() -> Dict[str, Any]:
             "Forest",
             "HerbaceousVegetation",
             "Highway",
-            "Industrial," "Pasture",
+            "Industrial",
+            "Pasture",
             "PermanentCrop",
             "Residential",
             "River",

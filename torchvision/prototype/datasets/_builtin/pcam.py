@@ -28,10 +28,13 @@ class PCAMH5Reader(IterDataPipe[Tuple[str, io.IOBase]]):
         import h5py
 
         for _, handle in self.datapipe:
-            with h5py.File(handle) as data:
-                if self.key is not None:
-                    data = data[self.key]
-                yield from data
+            try:
+                with h5py.File(handle) as data:
+                    if self.key is not None:
+                        data = data[self.key]
+                    yield from data
+            finally:
+                handle.close()
 
 
 _Resource = namedtuple("_Resource", ("file_name", "gdrive_id", "sha256"))
