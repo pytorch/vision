@@ -30,25 +30,26 @@ class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
 
     def __iter__(self) -> Iterator[Tuple[str, Dict[str, str]]]:
         for _, file in self.datapipe:
-            lines = (line.decode() for line in file)
+            try:
+                lines = (line.decode() for line in file)
 
-            if self.fieldnames:
-                fieldnames = self.fieldnames
-            else:
-                # The first row is skipped, because it only contains the number of samples
-                next(lines)
+                if self.fieldnames:
+                    fieldnames = self.fieldnames
+                else:
+                    # The first row is skipped, because it only contains the number of samples
+                    next(lines)
 
-                # Empty field names are filtered out, because some files have an extra white space after the header
-                # line, which is recognized as extra column
-                fieldnames = [name for name in next(csv.reader([next(lines)], dialect="celeba")) if name]
-                # Some files do not include a label for the image ID column
-                if fieldnames[0] != "image_id":
-                    fieldnames.insert(0, "image_id")
+                    # Empty field names are filtered out, because some files have an extra white space after the header
+                    # line, which is recognized as extra column
+                    fieldnames = [name for name in next(csv.reader([next(lines)], dialect="celeba")) if name]
+                    # Some files do not include a label for the image ID column
+                    if fieldnames[0] != "image_id":
+                        fieldnames.insert(0, "image_id")
 
-            for line in csv.DictReader(lines, fieldnames=fieldnames, dialect="celeba"):
-                yield line.pop("image_id"), line
-
-            file.close()
+                for line in csv.DictReader(lines, fieldnames=fieldnames, dialect="celeba"):
+                    yield line.pop("image_id"), line
+            finally:
+                file.close()
 
 
 NAME = "celeba"
