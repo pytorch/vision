@@ -1,4 +1,4 @@
-name: Unit-tests on Linux CPU
+name: Unit-tests on Linux CPU - Model Test
 
 on:
   pull_request:
