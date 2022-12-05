@@ -16,7 +16,7 @@ jobs:
   tests:
     strategy:
       matrix:
-        python_version: ["3.7", "3.8", "3.9", "3.10"]
+        python_version: ["3.8"]
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
@@ -30,7 +30,6 @@ jobs:
         export PYTHON_VERSION="${{ matrix.python_version }}"
         export VERSION="cpu"
         export CUDATOOLKIT="cpuonly"
-        export PYTEST_ADDITIONAL_ARGS="${{ matrix.pytest_additional_args }}"
 
         # Set CHANNEL
         if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
@@ -55,4 +54,4 @@ jobs:
 
         # Run Tests
         python3 -m torch.utils.collect_env
-        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20 -m "not model_test"
+        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20 -m "model_test"
