@@ -14,7 +14,8 @@ from torchdata.datapipes.iter import (
     Mapper,
 )
 from torchdata.datapipes.map import IterToMapConverter
-from torchvision.prototype.datapoints import BoundingBox, Datapoint, Label
+from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datapoints._datapoint import Datapoint
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,

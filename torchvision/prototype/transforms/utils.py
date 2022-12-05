@@ -7,7 +7,7 @@ import torch
 
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datapoints
-from torchvision.prototype.datapoints import Datapoint
+from torchvision.prototype.datapoints._datapoint import Datapoint
 from torchvision.prototype.transforms.functional import get_dimensions, get_spatial_size
 
 

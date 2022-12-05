@@ -4,7 +4,8 @@ from typing import Any, BinaryIO, Dict, List, Tuple, Union
 
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper
-from torchvision.prototype.datapoints import BoundingBox, Datapoint, Label
+from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datapoints._datapoint import Datapoint
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,

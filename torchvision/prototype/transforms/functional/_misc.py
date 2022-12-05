@@ -168,9 +168,11 @@ def gaussian_blur_video(
 def gaussian_blur(
     inpt: datapoints.InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> datapoints.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, datapoints.Datapoint)):
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
-    elif isinstance(inpt, datapoints.Datapoint):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)
     elif isinstance(inpt, PIL.Image.Image):
         return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)

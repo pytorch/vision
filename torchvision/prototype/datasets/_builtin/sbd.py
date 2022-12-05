@@ -4,7 +4,7 @@ from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
-from torchvision.prototype.datapoints import Datapoint
+from torchvision.prototype.datapoints._datapoint import Datapoint
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,

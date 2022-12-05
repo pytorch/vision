@@ -14,7 +14,8 @@ from torchdata.datapipes.iter import (
     Mapper,
     UnBatcher,
 )
-from torchvision.prototype.datapoints import BoundingBox, Datapoint, Label, Mask
+from torchvision.prototype.datapoints import BoundingBox, Label, Mask
+from torchvision.prototype.datapoints._datapoint import Datapoint
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,

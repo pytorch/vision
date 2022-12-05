@@ -3,7 +3,8 @@ import pathlib
 from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper, Zipper
-from torchvision.prototype.datapoints import BoundingBox, Datapoint, Label
+from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datapoints._datapoint import Datapoint
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
