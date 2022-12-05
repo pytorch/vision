@@ -1121,15 +1121,15 @@ workflows:
           python_version: '3.7'
           wheel_docker_image: pytorch/manylinux-cuda117
       - binary_linux_wheel:
-          cu_version: rocm5.1.1
-          name: binary_linux_wheel_py3.7_rocm5.1.1
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-rocm:5.1.1
-      - binary_linux_wheel:
           cu_version: rocm5.2
           name: binary_linux_wheel_py3.7_rocm5.2
           python_version: '3.7'
           wheel_docker_image: pytorch/manylinux-rocm:5.2
+      - binary_linux_wheel:
+          cu_version: rocm5.3
+          name: binary_linux_wheel_py3.7_rocm5.3
+          python_version: '3.7'
+          wheel_docker_image: pytorch/manylinux-rocm:5.3
       - binary_win_wheel:
           cu_version: cpu
           filters:
@@ -1655,16 +1655,6 @@ workflows:
           python_version: '3.7'
           wheel_docker_image: pytorch/manylinux-cuda117
       - binary_linux_wheel:
-          cu_version: rocm5.1.1
-          filters:
-            branches:
-              only: nightly
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: nightly_binary_linux_wheel_py3.7_rocm5.1.1
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-rocm:5.1.1
-      - binary_linux_wheel:
           cu_version: rocm5.2
           filters:
             branches:
@@ -1674,6 +1664,16 @@ workflows:
           name: nightly_binary_linux_wheel_py3.7_rocm5.2
           python_version: '3.7'
           wheel_docker_image: pytorch/manylinux-rocm:5.2
+      - binary_linux_wheel:
+          cu_version: rocm5.3
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.7_rocm5.3
+          python_version: '3.7'
+          wheel_docker_image: pytorch/manylinux-rocm:5.3
       - binary_win_wheel:
           cu_version: cpu
           filters:
