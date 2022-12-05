@@ -1,4 +1,4 @@
-name: Unit-tests on Linux CPU - Model Test
+name: Unit-tests on Linux CPU
 
 on:
   pull_request:
@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
-      runner: linux.4xlarge
+      runner: linux.xlarge
       repository: pytorch/vision
       script: |
         # Mark Build Directory Safe
@@ -54,4 +54,4 @@ jobs:
 
         # Run Tests
         python3 -m torch.utils.collect_env
-        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20 -m "slow"
+        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
