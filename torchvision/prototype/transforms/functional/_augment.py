@@ -3,7 +3,7 @@ from typing import Union
 import PIL.Image
 
 import torch
-from torchvision.prototype import features
+from torchvision.prototype import datapoints
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 
@@ -33,28 +33,28 @@ def erase_video(
 
 
 def erase(
-    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT],
+    inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT],
     i: int,
     j: int,
     h: int,
     w: int,
     v: torch.Tensor,
     inplace: bool = False,
-) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
+) -> Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]:
     if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):
         return erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-    elif isinstance(inpt, features.Image):
+    elif isinstance(inpt, datapoints.Image):
         output = erase_image_tensor(inpt.as_subclass(torch.Tensor), i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-        return features.Image.wrap_like(inpt, output)
-    elif isinstance(inpt, features.Video):
+        return datapoints.Image.wrap_like(inpt, output)
+    elif isinstance(inpt, datapoints.Video):
         output = erase_video(inpt.as_subclass(torch.Tensor), i=i, j=j, h=h, w=w, v=v, inplace=inplace)
-        return features.Video.wrap_like(inpt, output)
+        return datapoints.Video.wrap_like(inpt, output)
     elif isinstance(inpt, PIL.Image.Image):
         return erase_image_pil(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
             f"but got {type(inpt)} instead."
         )

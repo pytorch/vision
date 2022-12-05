@@ -5,23 +5,26 @@ import PIL.Image
 import torch
 
 from torch.nn.functional import one_hot
-from torchvision.prototype import features
+
+from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
+
+from torchvision.prototype.transforms.utils import is_simple_tensor
 
 
 class LabelToOneHot(Transform):
-    _transformed_types = (features.Label,)
+    _transformed_types = (datapoints.Label,)
 
     def __init__(self, num_categories: int = -1):
         super().__init__()
         self.num_categories = num_categories
 
-    def _transform(self, inpt: features.Label, params: Dict[str, Any]) -> features.OneHotLabel:
+    def _transform(self, inpt: datapoints.Label, params: Dict[str, Any]) -> datapoints.OneHotLabel:
         num_categories = self.num_categories
         if num_categories == -1 and inpt.categories is not None:
             num_categories = len(inpt.categories)
         output = one_hot(inpt.as_subclass(torch.Tensor), num_classes=num_categories)
-        return features.OneHotLabel(output, categories=inpt.categories)
+        return datapoints.OneHotLabel(output, categories=inpt.categories)
 
     def extra_repr(self) -> str:
         if self.num_categories == -1:
@@ -38,16 +41,16 @@ class PILToTensor(Transform):
 
 
 class ToImageTensor(Transform):
-    _transformed_types = (features.is_simple_tensor, PIL.Image.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, PIL.Image.Image, np.ndarray)
 
     def _transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
-    ) -> features.Image:
+    ) -> datapoints.Image:
         return F.to_image_tensor(inpt)  # type: ignore[no-any-return]
 
 
 class ToImagePIL(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Image, np.ndarray)
+    _transformed_types = (is_simple_tensor, datapoints.Image, np.ndarray)
 
     def __init__(self, mode: Optional[str] = None) -> None:
         super().__init__()

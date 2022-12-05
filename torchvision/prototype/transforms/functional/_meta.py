@@ -2,8 +2,8 @@ from typing import List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
-from torchvision.prototype import features
-from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
+from torchvision.prototype import datapoints
+from torchvision.prototype.datapoints import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional_tensor import _max_value
 
@@ -23,12 +23,12 @@ def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-def get_dimensions(inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> List[int]:
+def get_dimensions(inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]) -> List[int]:
     if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):
         return get_dimensions_image_tensor(inpt)
-    elif isinstance(inpt, (features.Image, features.Video)):
+    elif isinstance(inpt, (datapoints.Image, datapoints.Video)):
         channels = inpt.num_channels
         height, width = inpt.spatial_size
         return [channels, height, width]
@@ -36,7 +36,7 @@ def get_dimensions(inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT]) ->
         return get_dimensions_image_pil(inpt)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
             f"but got {type(inpt)} instead."
         )
 
@@ -59,18 +59,18 @@ def get_num_channels_video(video: torch.Tensor) -> int:
     return get_num_channels_image_tensor(video)
 
 
-def get_num_channels(inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT]) -> int:
+def get_num_channels(inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]) -> int:
     if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):
         return get_num_channels_image_tensor(inpt)
-    elif isinstance(inpt, (features.Image, features.Video)):
+    elif isinstance(inpt, (datapoints.Image, datapoints.Video)):
         return inpt.num_channels
     elif isinstance(inpt, PIL.Image.Image):
         return get_num_channels_image_pil(inpt)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
             f"but got {type(inpt)} instead."
         )
 
@@ -104,20 +104,22 @@ def get_spatial_size_mask(mask: torch.Tensor) -> List[int]:
 
 
 @torch.jit.unused
-def get_spatial_size_bounding_box(bounding_box: features.BoundingBox) -> List[int]:
+def get_spatial_size_bounding_box(bounding_box: datapoints.BoundingBox) -> List[int]:
     return list(bounding_box.spatial_size)
 
 
-def get_spatial_size(inpt: features.InputTypeJIT) -> List[int]:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def get_spatial_size(inpt: datapoints.InputTypeJIT) -> List[int]:
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return get_spatial_size_image_tensor(inpt)
-    elif isinstance(inpt, (features.Image, features.Video, features.BoundingBox, features.Mask)):
+    elif isinstance(inpt, (datapoints.Image, datapoints.Video, datapoints.BoundingBox, datapoints.Mask)):
         return list(inpt.spatial_size)
     elif isinstance(inpt, PIL.Image.Image):
         return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, one of the tensor subclasses TorchVision provides, or a PIL image, "
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
             f"but got {type(inpt)} instead."
         )
 
@@ -126,15 +128,13 @@ def get_num_frames_video(video: torch.Tensor) -> int:
     return video.shape[-4]
 
 
-def get_num_frames(inpt: features.VideoTypeJIT) -> int:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Video)):
+def get_num_frames(inpt: datapoints.VideoTypeJIT) -> int:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, datapoints.Video)):
         return get_num_frames_video(inpt)
-    elif isinstance(inpt, features.Video):
+    elif isinstance(inpt, datapoints.Video):
         return inpt.num_frames
     else:
-        raise TypeError(
-            f"Input can either be a plain tensor or a `Video` tensor subclass, but got {type(inpt)} instead."
-        )
+        raise TypeError(f"Input can either be a plain tensor or a `Video` datapoint, but got {type(inpt)} instead.")
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
@@ -202,7 +202,7 @@ def clamp_bounding_box(
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
     xyxy_boxes = convert_format_bounding_box(
-        bounding_box.clone(), old_format=format, new_format=features.BoundingBoxFormat.XYXY, inplace=True
+        bounding_box.clone(), old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
     )
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
@@ -309,12 +309,12 @@ def convert_color_space_video(
 
 
 def convert_color_space(
-    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT],
+    inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT],
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
-) -> Union[features.ImageTypeJIT, features.VideoTypeJIT]:
+) -> Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]:
     if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):
         if old_color_space is None:
             raise RuntimeError(
@@ -322,21 +322,21 @@ def convert_color_space(
                 "the `old_color_space=...` parameter needs to be passed."
             )
         return convert_color_space_image_tensor(inpt, old_color_space=old_color_space, new_color_space=color_space)
-    elif isinstance(inpt, features.Image):
+    elif isinstance(inpt, datapoints.Image):
         output = convert_color_space_image_tensor(
             inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
         )
-        return features.Image.wrap_like(inpt, output, color_space=color_space)
-    elif isinstance(inpt, features.Video):
+        return datapoints.Image.wrap_like(inpt, output, color_space=color_space)
+    elif isinstance(inpt, datapoints.Video):
         output = convert_color_space_video(
             inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
         )
-        return features.Video.wrap_like(inpt, output, color_space=color_space)
+        return datapoints.Video.wrap_like(inpt, output, color_space=color_space)
     elif isinstance(inpt, PIL.Image.Image):
         return convert_color_space_image_pil(inpt, color_space=color_space)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor, an `Image` or `Video` tensor subclass, or a PIL image, "
+            f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
             f"but got {type(inpt)} instead."
         )
 
@@ -415,20 +415,19 @@ def convert_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float) -
 
 
 def convert_dtype(
-    inpt: Union[features.ImageTypeJIT, features.VideoTypeJIT], dtype: torch.dtype = torch.float
+    inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], dtype: torch.dtype = torch.float
 ) -> torch.Tensor:
     if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (features.Image, features.Video))
+        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):
         return convert_dtype_image_tensor(inpt, dtype)
-    elif isinstance(inpt, features.Image):
+    elif isinstance(inpt, datapoints.Image):
         output = convert_dtype_image_tensor(inpt.as_subclass(torch.Tensor), dtype)
-        return features.Image.wrap_like(inpt, output)
-    elif isinstance(inpt, features.Video):
+        return datapoints.Image.wrap_like(inpt, output)
+    elif isinstance(inpt, datapoints.Video):
         output = convert_dtype_video(inpt.as_subclass(torch.Tensor), dtype)
-        return features.Video.wrap_like(inpt, output)
+        return datapoints.Video.wrap_like(inpt, output)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor or an `Image` or `Video` tensor subclass, "
-            f"but got {type(inpt)} instead."
+            f"Input can either be a plain tensor or an `Image` or `Video` datapoint, " f"but got {type(inpt)} instead."
         )

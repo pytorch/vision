@@ -5,8 +5,9 @@ from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
+
 from torchvision.ops.boxes import box_iou
-from torchvision.prototype import features
+from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
 from torchvision.transforms.functional import _get_perspective_coeffs
 
@@ -22,7 +23,7 @@ from ._utils import (
     _setup_float_or_seq,
     _setup_size,
 )
-from .utils import has_all, has_any, query_bounding_box, query_spatial_size
+from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_spatial_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -145,23 +146,23 @@ class RandomResizedCrop(Transform):
         )
 
 
-ImageOrVideoTypeJIT = Union[features.ImageTypeJIT, features.VideoTypeJIT]
+ImageOrVideoTypeJIT = Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]
 
 
 class FiveCrop(Transform):
     """
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[Tuple[Union[features.Image, features.Video], ...], features.Label]):
+        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], datapoints.Label]):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
         ...         image_or_video = images_or_videos[0]
         ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
-        ...         labels = features.Label.wrap_like(labels, labels.repeat(batch_size))
+        ...         labels = datapoints.Label.wrap_like(labels, labels.repeat(batch_size))
         ...         return images_or_videos, labels
         ...
-        >>> image = features.Image(torch.rand(3, 256, 256))
-        >>> label = features.Label(0)
+        >>> image = datapoints.Image(torch.rand(3, 256, 256))
+        >>> label = datapoints.Label(0)
         >>> transform = transforms.Compose([transforms.FiveCrop(), BatchMultiCrop()])
         >>> images, labels = transform(image, label)
         >>> images.shape
@@ -170,7 +171,12 @@ class FiveCrop(Transform):
         torch.Size([5])
     """
 
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
@@ -182,7 +188,7 @@ class FiveCrop(Transform):
         return F.five_crop(inpt, self.size)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, features.BoundingBox, features.Mask):
+        if has_any(flat_inputs, datapoints.BoundingBox, datapoints.Mask):
             raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
 
 
@@ -191,7 +197,12 @@ class TenCrop(Transform):
     See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
     """
 
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
@@ -199,12 +210,12 @@ class TenCrop(Transform):
         self.vertical_flip = vertical_flip
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, features.BoundingBox, features.Mask):
+        if has_any(flat_inputs, datapoints.BoundingBox, datapoints.Mask):
             raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
 
     def _transform(
-        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
-    ) -> Union[List[features.ImageTypeJIT], List[features.VideoTypeJIT]]:
+        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
+    ) -> Union[List[datapoints.ImageTypeJIT], List[datapoints.VideoTypeJIT]]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
 
@@ -212,7 +223,7 @@ class Pad(Transform):
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -235,7 +246,7 @@ class Pad(Transform):
 class RandomZoomOut(_RandomApplyTransform):
     def __init__(
         self,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -276,7 +287,7 @@ class RandomRotation(Transform):
         degrees: Union[numbers.Number, Sequence],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -315,7 +326,7 @@ class RandomAffine(Transform):
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -390,7 +401,7 @@ class RandomCrop(Transform):
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -480,7 +491,7 @@ class RandomPerspective(_RandomApplyTransform):
     def __init__(
         self,
         distortion_scale: float = 0.5,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         p: float = 0.5,
     ) -> None:
@@ -540,7 +551,7 @@ class ElasticTransform(Transform):
         self,
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
@@ -606,9 +617,9 @@ class RandomIoUCrop(Transform):
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
-            has_all(flat_inputs, features.BoundingBox)
-            and has_any(flat_inputs, PIL.Image.Image, features.Image, features.is_simple_tensor)
-            and has_any(flat_inputs, features.Label, features.OneHotLabel)
+            has_all(flat_inputs, datapoints.BoundingBox)
+            and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
+            and has_any(flat_inputs, datapoints.Label, datapoints.OneHotLabel)
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
@@ -646,7 +657,7 @@ class RandomIoUCrop(Transform):
 
                 # check for any valid boxes with centers within the crop area
                 xyxy_bboxes = F.convert_format_bounding_box(
-                    bboxes.as_subclass(torch.Tensor), bboxes.format, features.BoundingBoxFormat.XYXY
+                    bboxes.as_subclass(torch.Tensor), bboxes.format, datapoints.BoundingBoxFormat.XYXY
                 )
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])
                 cy = 0.5 * (xyxy_bboxes[..., 1] + xyxy_bboxes[..., 3])
@@ -671,19 +682,19 @@ class RandomIoUCrop(Transform):
 
         is_within_crop_area = params["is_within_crop_area"]
 
-        if isinstance(inpt, (features.Label, features.OneHotLabel)):
+        if isinstance(inpt, (datapoints.Label, datapoints.OneHotLabel)):
             return inpt.wrap_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
-        if isinstance(output, features.BoundingBox):
+        if isinstance(output, datapoints.BoundingBox):
             bboxes = output[is_within_crop_area]
             bboxes = F.clamp_bounding_box(bboxes, output.format, output.spatial_size)
-            output = features.BoundingBox.wrap_like(output, bboxes)
-        elif isinstance(output, features.Mask):
+            output = datapoints.BoundingBox.wrap_like(output, bboxes)
+        elif isinstance(output, datapoints.Mask):
             # apply is_within_crop_area if mask is one-hot encoded
             masks = output[is_within_crop_area]
-            output = features.Mask.wrap_like(output, masks)
+            output = datapoints.Mask.wrap_like(output, masks)
 
         return output
 
@@ -751,7 +762,7 @@ class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()
@@ -764,13 +775,19 @@ class FixedSizeCrop(Transform):
         self.padding_mode = padding_mode
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if not has_any(flat_inputs, PIL.Image.Image, features.Image, features.is_simple_tensor, features.Video):
+        if not has_any(
+            flat_inputs,
+            PIL.Image.Image,
+            datapoints.Image,
+            is_simple_tensor,
+            datapoints.Video,
+        ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
             )
 
-        if has_any(flat_inputs, features.BoundingBox) and not has_any(
-            flat_inputs, features.Label, features.OneHotLabel
+        if has_any(flat_inputs, datapoints.BoundingBox) and not has_any(
+            flat_inputs, datapoints.Label, datapoints.OneHotLabel
         ):
             raise TypeError(
                 f"If a BoundingBox is contained in the input sample, "
@@ -809,7 +826,7 @@ class FixedSizeCrop(Transform):
             )
             bounding_boxes = F.clamp_bounding_box(bounding_boxes, format=format, spatial_size=spatial_size)
             height_and_width = F.convert_format_bounding_box(
-                bounding_boxes, old_format=format, new_format=features.BoundingBoxFormat.XYWH
+                bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYWH
             )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
         else:
@@ -842,10 +859,10 @@ class FixedSizeCrop(Transform):
             )
 
         if params["is_valid"] is not None:
-            if isinstance(inpt, (features.Label, features.OneHotLabel, features.Mask)):
+            if isinstance(inpt, (datapoints.Label, datapoints.OneHotLabel, datapoints.Mask)):
                 inpt = inpt.wrap_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
-            elif isinstance(inpt, features.BoundingBox):
-                inpt = features.BoundingBox.wrap_like(
+            elif isinstance(inpt, datapoints.BoundingBox):
+                inpt = datapoints.BoundingBox.wrap_like(
                     inpt,
                     F.clamp_bounding_box(inpt[params["is_valid"]], format=inpt.format, spatial_size=inpt.spatial_size),
                 )
