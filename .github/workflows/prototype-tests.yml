@@ -11,14 +11,6 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macos-latest
-        python-version:
-          - "3.7"
-          - "3.8"
-          - "3.9"
-          - "3.10"
-        flag:
-          - "--pre"
-          - ""
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -27,7 +19,7 @@ jobs:
       - name: Set up python
         uses: actions/setup-python@v3
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.7
 
       - name: Upgrade system packages
         run: python -m pip install --upgrade pip setuptools wheel
@@ -36,10 +28,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install PyTorch nightly builds
-        run: pip install --progress-bar=off --pre torchdata torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
-
-      - name: Upgrade numpy
-        run: pip install --upgrade ${{ matrix.flag }} numpy
+        run: pip install --progress-bar=off --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
 
       - name: Install torchvision
         run: pip install --progress-bar=off --no-build-isolation --editable .
@@ -54,11 +43,31 @@ jobs:
         id: setup
         run: exit 0
 
-      - name: Run prototype datasets tests
+      - name: Run prototype datapoints tests
         shell: bash
         run: |
           pytest \
             --durations=20 \
             --cov=torchvision/prototype/datapoints \
             --cov-report=term-missing \
-            test/test_prototype_datasets*.py
+            test/test_prototype_datapoints*.py
+
+      - name: Run prototype transforms tests
+        if: success() || ( failure() && steps.setup.conclusion == 'success' )
+        shell: bash
+        run: |
+          pytest \
+            --durations=20 \
+            --cov=torchvision/prototype/transforms \
+            --cov-report=term-missing \
+            test/test_prototype_transforms*.py
+
+      - name: Run prototype models tests
+        if: success() || ( failure() && steps.setup.conclusion == 'success' )
+        shell: bash
+        run: |
+          pytest \
+            --durations=20 \
+            --cov=torchvision/prototype/models \
+            --cov-report=term-missing \
+            test/test_prototype_models*.py
