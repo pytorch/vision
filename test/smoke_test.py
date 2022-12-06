@@ -1,7 +1,6 @@
 """Run smoke tests"""
 
 import os
-
 import torchvision
 from torchvision.io import read_image
 
