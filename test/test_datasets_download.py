@@ -127,7 +127,7 @@ def log_download_attempts(
                 urls_and_md5s.add((url, md5))
 
 
-def retry(fn, times=1, wait=0.0):
+def retry(fn, times=1, wait=5.0):
     tbs = []
     for _ in range(times + 1):
         try:
@@ -455,7 +455,6 @@ def make_parametrize_kwargs(download_configs):
             omniglot(),
             phototour(),
             sbdataset(),
-            sbu(),
             semeion(),
             stl10(),
             svhn(),
@@ -479,6 +478,7 @@ def test_url_is_accessible(url, md5):
     **make_parametrize_kwargs(
         itertools.chain(
             places365(),  # https://github.com/pytorch/vision/issues/6268
+            sbu(),  # https://github.com/pytorch/vision/issues/7005
         )
     )
 )
