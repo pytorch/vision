@@ -191,15 +191,8 @@ class RandomCutmix(_BaseMixupCutmix):
 
 
 def flatten_and_extract_data(
-    inputs: Any, **target_types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]
-) -> Tuple[Tuple[List[Any], TreeSpec, List[Dict[str, int]]], List[datapoints.TensorImageType], List[Dict[str, Any]]]:
-    # Images are special in the sense that they will always be extracted and returned
-    # separately. Internally however, they behave just as the other datapoints.
-    types_or_checks: Dict[str, Tuple[Union[Type, Callable[[Any], bool]], ...]] = {
-        "images": (datapoints.Image, PIL.Image.Image, is_simple_tensor),
-        **target_types_or_checks,
-    }
-
+    inputs: Any, **types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]
+) -> Tuple[Tuple[List[Any], TreeSpec, List[Dict[str, int]]], List[Dict[str, Any]]]:
     batch = inputs if len(inputs) > 1 else inputs[0]
     flat_batch = []
     sample_specs = []
@@ -239,35 +232,25 @@ def flatten_and_extract_data(
 
     batch_spec = TreeSpec(list, context=None, children_specs=sample_specs)
 
-    targets = batch_data
-    batch_data = []
-    for target in targets:
-        image = target.pop("images")
-        if isinstance(image, datapoints.Image):
-            image = image.as_subclass(torch.Tensor)
-        elif isinstance(image, PIL.Image.Image):
-            image = F.pil_to_tensor(image)
-        batch_data.append(image)
-
-    return (flat_batch, batch_spec, batch_idcs), batch_data, targets
+    return (flat_batch, batch_spec, batch_idcs), batch_data
 
 
 def unflatten_and_insert_data(
     flat_batch_with_spec: Tuple[List[Any], TreeSpec, List[Dict[str, int]]],
-    images: List[datapoints.TensorImageType],
-    targets: List[Dict[str, Any]],
+    batch: List[Dict[str, Any]],
 ) -> Any:
     flat_batch, batch_spec, batch_idcs = flat_batch_with_spec
 
     for sample_idx, sample_idcs in enumerate(batch_idcs):
         for key, flat_idx in sample_idcs.items():
-            item = images[sample_idx] if key == "images" else targets[sample_idx][key]
-
             inpt = flat_batch[flat_idx]
-            if isinstance(inpt, datapoints._datapoint.Datapoint):
-                item = type(inpt).wrap_like(inpt, item)
-            elif isinstance(inpt, PIL.Image.Image):
-                item = F.to_image_pil(item)
+            item = batch[sample_idx][key]
+
+            if not is_simple_tensor(inpt) and is_simple_tensor(item):
+                if isinstance(inpt, datapoints._datapoint.Datapoint):
+                    item = type(inpt).wrap_like(inpt, item)
+                elif isinstance(inpt, PIL.Image.Image):
+                    item = F.to_image_pil(item)
 
             flat_batch[flat_idx] = item
 
@@ -434,70 +417,54 @@ class MixupDetection(Transform):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images and bounding boxes.")
 
     def forward(self, *inputs: Any) -> Any:
-        flat_batch_with_spec, images, targets = flatten_and_extract_data(
+        flat_batch_with_spec, batch = flatten_and_extract_data(
             inputs,
+            image=(datapoints.Image, PIL.Image.Image, is_simple_tensor),
             boxes=(datapoints.BoundingBox,),
             labels=(datapoints.Label, datapoints.OneHotLabel),
         )
         # TODO: refactor this since we have already extracted the images and boxes
         self._check_inputs(flat_batch_with_spec[0])
 
-        # images = [t1, t2, ..., tN]
-        # Let's define paste_images as shifted list of input images
-        # paste_images = [tN, t1, ..., tN-1,]
-        images_rolled = images[-1:] + images[:-1]
-        targets_rolled = targets[-1:] + targets[:-1]
+        batch_output = [
+            self._mixup(sample, sample_rolled) for sample, sample_rolled in zip(batch, batch[-1:] + batch[:-1])
+        ]
 
-        output_images, output_targets = [], []
-        for image_1, target_1, image_2, target_2 in zip(images, targets, images_rolled, targets_rolled):
-            output_image, output_target = self._mixup(
-                image_1,
-                target_1,
-                image_2,
-                target_2,
-            )
-            output_images.append(output_image)
-            output_targets.append(output_target)
+        return unflatten_and_insert_data(flat_batch_with_spec, batch_output)
 
-        return unflatten_and_insert_data(flat_batch_with_spec, output_images, output_targets)
-
-    def _mixup(
-        self,
-        image_1: datapoints.TensorImageType,
-        target_1: Dict[str, Any],
-        image_2: datapoints.TensorImageType,
-        target_2: Dict[str, Any],
-    ) -> Tuple[datapoints.TensorImageType, Dict[str, Any]]:
-        """
-        Performs mixup on the given images and targets.
-        """
+    def _mixup(self, sample_1: Dict[str, Any], sample_2: Dict[str, Any]) -> Dict[str, Any]:
         mixup_ratio = self._dist.sample().item()
-        print(mixup_ratio)
 
-        c_1, h_1, w_1 = image_1.shape
-        c_2, h_2, w_2 = image_2.shape
+        if mixup_ratio >= 1.0:
+            return sample_1
+
+        image_1 = sample_1["image"]
+        if isinstance(image_1, PIL.Image.Image):
+            image_1 = F.pil_to_tensor(image_1)
+
+        image_2 = sample_2["image"]
+        if isinstance(image_2, PIL.Image.Image):
+            image_2 = F.pil_to_tensor(image_2)
+
+        h_1, w_1 = image_1.shape[-2:]
+        h_2, w_2 = image_2.shape[-2:]
         h_mixup = max(h_1, h_2)
         w_mixup = max(w_1, w_2)
 
-        if mixup_ratio >= 1.0:
-            return image_1, target_1
+        # TODO: add the option to fill this with something else than 0
+        mix_image = F.pad_image_tensor(image_1 * mixup_ratio, padding=[0, 0, h_mixup - h_1, w_mixup - w_1], fill=None)
+        mix_image[:, :h_2, :w_2] += image_2 * (1.0 - mixup_ratio)
+        mix_image = mix_image.to(image_1)
 
-        # mixup images and prevent the object aspect ratio from changing
-        mix_img = torch.zeros(c_1, h_mixup, w_mixup, dtype=torch.float32)
-        mix_img[:, : image_1.shape[1], : image_1.shape[2]] = image_1 * mixup_ratio
-        mix_img[:, : image_2.shape[1], : image_2.shape[2]] += image_2 * (1.0 - mixup_ratio)
-        # mixup targets
-        mix_target = {**target_1, **target_2}
-        box_format = target_1["boxes"].format
-        mixed_boxes = {
-            "boxes": datapoints.BoundingBox(
-                torch.vstack((target_1["boxes"], target_2["boxes"])),
-                format=box_format,
-                spatial_size=(h_mixup, w_mixup),
-            )
-        }
-        mix_labels = {"labels": torch.cat((target_1["labels"], target_2["labels"]))}
-        mix_target.update(mixed_boxes)
-        mix_target.update(mix_labels)
+        mix_boxes = datapoints.BoundingBox.wrap_like(
+            sample_1["boxes"],
+            torch.cat([sample_1["boxes"], sample_2["boxes"]], dim=-2),
+            spatial_size=(h_mixup, w_mixup),
+        )
 
-        return mix_img, mix_target
+        mix_labels = datapoints.Label.wrap_like(
+            sample_1["labels"],
+            torch.cat([sample_1["labels"], sample_2["labels"]], dim=-1),
+        )
+
+        return dict(image=mix_image, boxes=mix_boxes, labels=mix_labels)
