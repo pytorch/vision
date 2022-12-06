@@ -5,6 +5,7 @@ import PIL.Image
 import torch
 from torchvision.prototype import datapoints
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
+from torchvision.utils import _log_api_usage_once
 
 
 def erase_image_tensor(
@@ -41,6 +42,9 @@ def erase(
     v: torch.Tensor,
     inplace: bool = False,
 ) -> Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(erase)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):

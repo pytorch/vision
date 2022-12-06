@@ -8,6 +8,8 @@ from torch.nn.functional import conv2d, pad as torch_pad
 from torchvision.prototype import datapoints
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
+from torchvision.utils import _log_api_usage_once
+
 from ..utils import is_simple_tensor
 
 
@@ -57,6 +59,8 @@ def normalize(
     inplace: bool = False,
 ) -> torch.Tensor:
     if not torch.jit.is_scripting():
+        _log_api_usage_once(normalize)
+
         if is_simple_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video)):
             inpt = inpt.as_subclass(torch.Tensor)
         else:
@@ -168,6 +172,9 @@ def gaussian_blur_video(
 def gaussian_blur(
     inpt: datapoints.InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
 ) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(gaussian_blur)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):

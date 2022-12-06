@@ -2,6 +2,8 @@ import torch
 
 from torchvision.prototype import datapoints
 
+from torchvision.utils import _log_api_usage_once
+
 
 def uniform_temporal_subsample_video(video: torch.Tensor, num_samples: int, temporal_dim: int = -4) -> torch.Tensor:
     # Reference: https://github.com/facebookresearch/pytorchvideo/blob/a0a131e/pytorchvideo/transforms/functional.py#L19
@@ -13,6 +15,9 @@ def uniform_temporal_subsample_video(video: torch.Tensor, num_samples: int, temp
 def uniform_temporal_subsample(
     inpt: datapoints.VideoTypeJIT, num_samples: int, temporal_dim: int = -4
 ) -> datapoints.VideoTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(uniform_temporal_subsample)
+
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, datapoints.Video)):
         return uniform_temporal_subsample_video(inpt, num_samples, temporal_dim=temporal_dim)
     elif isinstance(inpt, datapoints.Video):

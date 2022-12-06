@@ -5,6 +5,8 @@ from torchvision.prototype import datapoints
 from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional_tensor import _max_value
 
+from torchvision.utils import _log_api_usage_once
+
 from ._meta import _num_value_bits, _rgb_to_gray, convert_dtype_image_tensor
 
 
@@ -38,6 +40,9 @@ def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> to
 
 
 def adjust_brightness(inpt: datapoints.InputTypeJIT, brightness_factor: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_brightness)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -79,6 +84,9 @@ def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> to
 
 
 def adjust_saturation(inpt: datapoints.InputTypeJIT, saturation_factor: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_saturation)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -120,6 +128,9 @@ def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.
 
 
 def adjust_contrast(inpt: datapoints.InputTypeJIT, contrast_factor: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_contrast)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -195,6 +206,9 @@ def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torc
 
 
 def adjust_sharpness(inpt: datapoints.InputTypeJIT, sharpness_factor: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_sharpness)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -309,6 +323,9 @@ def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
 
 
 def adjust_hue(inpt: datapoints.InputTypeJIT, hue_factor: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_hue)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -351,6 +368,9 @@ def adjust_gamma_video(video: torch.Tensor, gamma: float, gain: float = 1) -> to
 
 
 def adjust_gamma(inpt: datapoints.InputTypeJIT, gamma: float, gain: float = 1) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_gamma)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -387,6 +407,9 @@ def posterize_video(video: torch.Tensor, bits: int) -> torch.Tensor:
 
 
 def posterize(inpt: datapoints.InputTypeJIT, bits: int) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(posterize)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -417,6 +440,9 @@ def solarize_video(video: torch.Tensor, threshold: float) -> torch.Tensor:
 
 
 def solarize(inpt: datapoints.InputTypeJIT, threshold: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(solarize)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -469,6 +495,9 @@ def autocontrast_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def autocontrast(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(autocontrast)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -561,6 +590,9 @@ def equalize_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def equalize(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(equalize)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -594,6 +626,9 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def invert(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(invert)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):

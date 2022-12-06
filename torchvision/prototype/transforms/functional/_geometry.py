@@ -19,6 +19,8 @@ from torchvision.transforms.functional import (
 )
 from torchvision.transforms.functional_tensor import _pad_symmetric
 
+from torchvision.utils import _log_api_usage_once
+
 from ._meta import convert_format_bounding_box, get_spatial_size_image_pil
 
 
@@ -55,6 +57,9 @@ def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def horizontal_flip(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(horizontal_flip)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -103,6 +108,9 @@ def vertical_flip_video(video: torch.Tensor) -> torch.Tensor:
 
 
 def vertical_flip(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(vertical_flip)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -231,6 +239,8 @@ def resize(
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,
 ) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(resize)
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -730,6 +740,9 @@ def affine(
     fill: datapoints.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(affine)
+
     # TODO: consider deprecating integers from angle and shear on the future
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
@@ -913,6 +926,9 @@ def rotate(
     center: Optional[List[float]] = None,
     fill: datapoints.FillTypeJIT = None,
 ) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(rotate)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -1120,6 +1136,9 @@ def pad(
     fill: datapoints.FillTypeJIT = None,
     padding_mode: str = "constant",
 ) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(pad)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -1197,6 +1216,9 @@ def crop_video(video: torch.Tensor, top: int, left: int, height: int, width: int
 
 
 def crop(inpt: datapoints.InputTypeJIT, top: int, left: int, height: int, width: int) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(crop)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -1452,6 +1474,8 @@ def perspective(
     fill: datapoints.FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(perspective)
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -1612,6 +1636,9 @@ def elastic(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: datapoints.FillTypeJIT = None,
 ) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(elastic)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -1724,6 +1751,9 @@ def center_crop_video(video: torch.Tensor, output_size: List[int]) -> torch.Tens
 
 
 def center_crop(inpt: datapoints.InputTypeJIT, output_size: List[int]) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(center_crop)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -1817,6 +1847,9 @@ def resized_crop(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     antialias: Optional[bool] = None,
 ) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(resized_crop)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -1897,6 +1930,9 @@ ImageOrVideoTypeJIT = Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]
 def five_crop(
     inpt: ImageOrVideoTypeJIT, size: List[int]
 ) -> Tuple[ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT, ImageOrVideoTypeJIT]:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(five_crop)
+
     # TODO: consider breaking BC here to return List[datapoints.ImageTypeJIT/VideoTypeJIT] to align this op with
     #  `ten_crop`
     if isinstance(inpt, torch.Tensor) and (
@@ -1952,6 +1988,9 @@ def ten_crop_video(video: torch.Tensor, size: List[int], vertical_flip: bool = F
 def ten_crop(
     inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], size: List[int], vertical_flip: bool = False
 ) -> Union[List[datapoints.ImageTypeJIT], List[datapoints.VideoTypeJIT]]:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(ten_crop)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):

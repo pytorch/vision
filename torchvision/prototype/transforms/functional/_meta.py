@@ -7,6 +7,8 @@ from torchvision.prototype.datapoints import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional_tensor import _max_value
 
+from torchvision.utils import _log_api_usage_once
+
 
 def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
     chw = list(image.shape[-3:])
@@ -24,6 +26,9 @@ get_dimensions_image_pil = _FP.get_dimensions
 
 
 def get_dimensions(inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]) -> List[int]:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(get_dimensions)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):
@@ -60,6 +65,9 @@ def get_num_channels_video(video: torch.Tensor) -> int:
 
 
 def get_num_channels(inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]) -> int:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(get_num_channels)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):
@@ -109,6 +117,9 @@ def get_spatial_size_bounding_box(bounding_box: datapoints.BoundingBox) -> List[
 
 
 def get_spatial_size(inpt: datapoints.InputTypeJIT) -> List[int]:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(get_spatial_size)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
@@ -129,6 +140,9 @@ def get_num_frames_video(video: torch.Tensor) -> int:
 
 
 def get_num_frames(inpt: datapoints.VideoTypeJIT) -> int:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(get_num_frames)
+
     if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, datapoints.Video)):
         return get_num_frames_video(inpt)
     elif isinstance(inpt, datapoints.Video):
@@ -179,6 +193,9 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
 def convert_format_bounding_box(
     bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(convert_format_bounding_box)
+
     if new_format == old_format:
         return bounding_box
 
@@ -199,6 +216,9 @@ def convert_format_bounding_box(
 def clamp_bounding_box(
     bounding_box: torch.Tensor, format: BoundingBoxFormat, spatial_size: Tuple[int, int]
 ) -> torch.Tensor:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(clamp_bounding_box)
+
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
     xyxy_boxes = convert_format_bounding_box(
@@ -313,6 +333,9 @@ def convert_color_space(
     color_space: ColorSpace,
     old_color_space: Optional[ColorSpace] = None,
 ) -> Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(convert_color_space)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):
@@ -417,6 +440,9 @@ def convert_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float) -
 def convert_dtype(
     inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], dtype: torch.dtype = torch.float
 ) -> torch.Tensor:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(convert_dtype)
+
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
     ):
