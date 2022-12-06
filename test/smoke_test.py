@@ -2,13 +2,9 @@
 
 import os
 import torchvision
-import torch
 from torchvision.io import read_image
 from torchvision.models import resnet50, ResNet50_Weights
 
-
-def smoke_test_torchvision() -> None:
-    print("Is torchvision useable?", all(x is not None for x in [torch.ops.image.decode_png, torch.ops.torchvision.roi_align]))
 
 def smoke_test_torchvision_read_decode() -> None:
     img_jpg = read_image(str(SCRIPT_DIR / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg"))
@@ -45,7 +41,6 @@ def smoke_test_torchvision_resnet50_classify() -> None:
 
 def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
-    smoke_test_torchvision()
     smoke_test_torchvision_read_decode()
     smoke_test_torchvision_resnet50_classify()
 
