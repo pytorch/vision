@@ -7,15 +7,15 @@ import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
 from torchvision.ops import masks_to_boxes
-from torchvision.prototype import features
+from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
 
 from ._transform import _RandomApplyTransform
-from .utils import check_type, has_any, query_chw, query_spatial_size
+from .utils import check_type, has_any, is_simple_tensor, query_chw, query_spatial_size
 
 
 class RandomErasing(_RandomApplyTransform):
-    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image.Image, features.Video)
+    _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
 
     def __init__(
         self,
@@ -91,8 +91,8 @@ class RandomErasing(_RandomApplyTransform):
         return dict(i=i, j=j, h=h, w=w, v=v)
 
     def _transform(
-        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
-    ) -> Union[features.ImageType, features.VideoType]:
+        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
+    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         if params["v"] is not None:
             inpt = F.erase(inpt, **params, inplace=self.inplace)
 
@@ -107,20 +107,20 @@ class _BaseMixupCutmix(_RandomApplyTransform):
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
-            has_any(flat_inputs, features.Image, features.Video, features.is_simple_tensor)
-            and has_any(flat_inputs, features.OneHotLabel)
+            has_any(flat_inputs, datapoints.Image, datapoints.Video, is_simple_tensor)
+            and has_any(flat_inputs, datapoints.OneHotLabel)
         ):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
-        if has_any(flat_inputs, PIL.Image.Image, features.BoundingBox, features.Mask, features.Label):
+        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support PIL images, bounding boxes, masks and plain labels."
             )
 
-    def _mixup_onehotlabel(self, inpt: features.OneHotLabel, lam: float) -> features.OneHotLabel:
+    def _mixup_onehotlabel(self, inpt: datapoints.OneHotLabel, lam: float) -> datapoints.OneHotLabel:
         if inpt.ndim < 2:
             raise ValueError("Need a batch of one hot labels")
         output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
-        return features.OneHotLabel.wrap_like(inpt, output)
+        return datapoints.OneHotLabel.wrap_like(inpt, output)
 
 
 class RandomMixup(_BaseMixupCutmix):
@@ -129,17 +129,17 @@ class RandomMixup(_BaseMixupCutmix):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
-        if isinstance(inpt, (features.Image, features.Video)) or features.is_simple_tensor(inpt):
-            expected_ndim = 5 if isinstance(inpt, features.Video) else 4
+        if isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_simple_tensor(inpt):
+            expected_ndim = 5 if isinstance(inpt, datapoints.Video) else 4
             if inpt.ndim < expected_ndim:
                 raise ValueError("The transform expects a batched input")
             output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
 
-            if isinstance(inpt, (features.Image, features.Video)):
+            if isinstance(inpt, (datapoints.Image, datapoints.Video)):
                 output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
-        elif isinstance(inpt, features.OneHotLabel):
+        elif isinstance(inpt, datapoints.OneHotLabel):
             return self._mixup_onehotlabel(inpt, lam)
         else:
             return inpt
@@ -169,9 +169,9 @@ class RandomCutmix(_BaseMixupCutmix):
         return dict(box=box, lam_adjusted=lam_adjusted)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(inpt, (features.Image, features.Video)) or features.is_simple_tensor(inpt):
+        if isinstance(inpt, (datapoints.Image, datapoints.Video)) or is_simple_tensor(inpt):
             box = params["box"]
-            expected_ndim = 5 if isinstance(inpt, features.Video) else 4
+            expected_ndim = 5 if isinstance(inpt, datapoints.Video) else 4
             if inpt.ndim < expected_ndim:
                 raise ValueError("The transform expects a batched input")
             x1, y1, x2, y2 = box
@@ -179,11 +179,11 @@ class RandomCutmix(_BaseMixupCutmix):
             output = inpt.clone()
             output[..., y1:y2, x1:x2] = rolled[..., y1:y2, x1:x2]
 
-            if isinstance(inpt, (features.Image, features.Video)):
+            if isinstance(inpt, (datapoints.Image, datapoints.Video)):
                 output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
-        elif isinstance(inpt, features.OneHotLabel):
+        elif isinstance(inpt, datapoints.OneHotLabel):
             lam_adjusted = params["lam_adjusted"]
             return self._mixup_onehotlabel(inpt, lam_adjusted)
         else:
@@ -192,11 +192,11 @@ class RandomCutmix(_BaseMixupCutmix):
 
 def flatten_and_extract_data(
     inputs: Any, **target_types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]
-) -> Tuple[Tuple[List[Any], TreeSpec, List[Dict[str, int]]], List[features.TensorImageType], List[Dict[str, Any]]]:
+) -> Tuple[Tuple[List[Any], TreeSpec, List[Dict[str, int]]], List[datapoints.TensorImageType], List[Dict[str, Any]]]:
     # Images are special in the sense that they will always be extracted and returned
-    # separately. Internally however, they behave just as the other features.
+    # separately. Internally however, they behave just as the other datapoints.
     types_or_checks: Dict[str, Tuple[Union[Type, Callable[[Any], bool]], ...]] = {
-        "images": (features.Image, PIL.Image.Image, features.is_simple_tensor),
+        "images": (datapoints.Image, PIL.Image.Image, is_simple_tensor),
         **target_types_or_checks,
     }
 
@@ -243,7 +243,7 @@ def flatten_and_extract_data(
     batch_data = []
     for target in targets:
         image = target.pop("images")
-        if isinstance(image, features.Image):
+        if isinstance(image, datapoints.Image):
             image = image.as_subclass(torch.Tensor)
         elif isinstance(image, PIL.Image.Image):
             image = F.pil_to_tensor(image)
@@ -254,7 +254,7 @@ def flatten_and_extract_data(
 
 def unflatten_and_insert_data(
     flat_batch_with_spec: Tuple[List[Any], TreeSpec, List[Dict[str, int]]],
-    images: List[features.TensorImageType],
+    images: List[datapoints.TensorImageType],
     targets: List[Dict[str, Any]],
 ) -> Any:
     flat_batch, batch_spec, batch_idcs = flat_batch_with_spec
@@ -264,7 +264,7 @@ def unflatten_and_insert_data(
             item = images[sample_idx] if key == "images" else targets[sample_idx][key]
 
             inpt = flat_batch[flat_idx]
-            if isinstance(inpt, features._Feature):
+            if isinstance(inpt, datapoints._datapoint.Datapoint):
                 item = type(inpt).wrap_like(inpt, item)
             elif isinstance(inpt, PIL.Image.Image):
                 item = F.to_image_pil(item)
@@ -289,15 +289,15 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
     def _copy_paste(
         self,
-        image: features.TensorImageType,
+        image: datapoints.TensorImageType,
         target: Dict[str, Any],
-        paste_image: features.TensorImageType,
+        paste_image: datapoints.TensorImageType,
         paste_target: Dict[str, Any],
         random_selection: torch.Tensor,
         blending: bool,
         resize_interpolation: F.InterpolationMode,
         antialias: Optional[bool],
-    ) -> Tuple[features.TensorImageType, Dict[str, Any]]:
+    ) -> Tuple[datapoints.TensorImageType, Dict[str, Any]]:
         paste_masks = paste_target["masks"].wrap_like(paste_target["masks"], paste_target["masks"][random_selection])
         paste_boxes = paste_target["boxes"].wrap_like(paste_target["boxes"], paste_target["boxes"][random_selection])
         paste_labels = paste_target["labels"].wrap_like(
@@ -345,7 +345,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
         # https://github.com/pytorch/vision/blob/b6feccbc4387766b76a3e22b13815dbbbfa87c0f/torchvision/models/detection/roi_heads.py#L418-L422
         xyxy_boxes[:, 2:] += 1
         boxes = F.convert_format_bounding_box(
-            xyxy_boxes, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, inplace=True
+            xyxy_boxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox_format, inplace=True
         )
         out_target["boxes"] = torch.cat([boxes, paste_boxes])
 
@@ -354,7 +354,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
         # Check for degenerated boxes and remove them
         boxes = F.convert_format_bounding_box(
-            out_target["boxes"], old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY
+            out_target["boxes"], old_format=bbox_format, new_format=datapoints.BoundingBoxFormat.XYXY
         )
         degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
         if degenerate_boxes.any():
@@ -369,9 +369,9 @@ class SimpleCopyPaste(_RandomApplyTransform):
     def forward(self, *inputs: Any) -> Any:
         flat_batch_with_spec, images, targets = flatten_and_extract_data(
             inputs,
-            boxes=(features.BoundingBox,),
-            masks=(features.Mask,),
-            labels=(features.Label, features.OneHotLabel),
+            boxes=(datapoints.BoundingBox,),
+            masks=(datapoints.Mask,),
+            labels=(datapoints.Label, datapoints.OneHotLabel),
         )
 
         # images = [t1, t2, ..., tN]
@@ -413,7 +413,7 @@ class SimpleCopyPaste(_RandomApplyTransform):
 
 
 class MixupDetection(Transform):
-    _transformed_types = (features.is_simple_tensor, features.Image, PIL.Image)
+    _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image)
 
     def __init__(
         self,
@@ -424,20 +424,20 @@ class MixupDetection(Transform):
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, features.Mask, features.Video):
+        if has_any(flat_inputs, datapoints.Mask, datapoints.Video):
             raise TypeError(f"{type(self).__name__}() is only supported for images and bounding boxes.")
 
         if not (
-            has_any(flat_inputs, features.Image, PIL.Image.Image, features.is_simple_tensor)
-            and has_any(flat_inputs, features.BoundingBox)
+            has_any(flat_inputs, datapoints.Image, PIL.Image.Image, is_simple_tensor)
+            and has_any(flat_inputs, datapoints.BoundingBox)
         ):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images and bounding boxes.")
 
     def forward(self, *inputs: Any) -> Any:
         flat_batch_with_spec, images, targets = flatten_and_extract_data(
             inputs,
-            boxes=(features.BoundingBox,),
-            labels=(features.Label, features.OneHotLabel),
+            boxes=(datapoints.BoundingBox,),
+            labels=(datapoints.Label, datapoints.OneHotLabel),
         )
         # TODO: refactor this since we have already extracted the images and boxes
         self._check_inputs(flat_batch_with_spec[0])
@@ -463,11 +463,11 @@ class MixupDetection(Transform):
 
     def _mixup(
         self,
-        image_1: features.TensorImageType,
+        image_1: datapoints.TensorImageType,
         target_1: Dict[str, Any],
-        image_2: features.TensorImageType,
+        image_2: datapoints.TensorImageType,
         target_2: Dict[str, Any],
-    ) -> Tuple[features.TensorImageType, Dict[str, Any]]:
+    ) -> Tuple[datapoints.TensorImageType, Dict[str, Any]]:
         """
         Performs mixup on the given images and targets.
         """
@@ -490,7 +490,7 @@ class MixupDetection(Transform):
         mix_target = {**target_1, **target_2}
         box_format = target_1["boxes"].format
         mixed_boxes = {
-            "boxes": features.BoundingBox(
+            "boxes": datapoints.BoundingBox(
                 torch.vstack((target_1["boxes"], target_2["boxes"])),
                 format=box_format,
                 spatial_size=(h_mixup, w_mixup),
