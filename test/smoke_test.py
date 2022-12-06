@@ -1,20 +1,31 @@
 """Run smoke tests"""
 
 import os
-import torchvision
 from pathlib import Path
+
+import torch
+import torchvision
 from torchvision.io import read_image
 from torchvision.models import resnet50, ResNet50_Weights
 
 SCRIPT_DIR = Path(__file__).parent
 
+
+def smoke_test_torchvision() -> None:
+    print(
+        "Is torchvision useable?",
+        all(x is not None for x in [torch.ops.image.decode_png, torch.ops.torchvision.roi_align]),
+    )
+
+
 def smoke_test_torchvision_read_decode() -> None:
     img_jpg = read_image(str(SCRIPT_DIR / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg"))
     if img_jpg.ndim != 3 or img_jpg.numel() < 100:
-      raise RuntimeError(f"Unexpected shape of img_jpg: {img_jpg.shape}")
-    img_png = read_image(str(SCRIPT_DIR  / "assets" / "interlaced_png" / "wizard_low.png"))
+        raise RuntimeError(f"Unexpected shape of img_jpg: {img_jpg.shape}")
+    img_png = read_image(str(SCRIPT_DIR / "assets" / "interlaced_png" / "wizard_low.png"))
     if img_png.ndim != 3 or img_png.numel() < 100:
-      raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
+        raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
+
 
 def smoke_test_torchvision_resnet50_classify() -> None:
     img = read_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg"))
@@ -37,14 +48,16 @@ def smoke_test_torchvision_resnet50_classify() -> None:
     category_name = weights.meta["categories"][class_id]
     expected_category = "German shepherd"
     print(f"{category_name}: {100 * score:.1f}%")
-    if(category_name != expected_category):
+    if category_name != expected_category:
         raise RuntimeError(f"Failed ResNet50 classify {category_name} Expected: {expected_category}")
 
 
 def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
+    smoke_test_torchvision()
     smoke_test_torchvision_read_decode()
     smoke_test_torchvision_resnet50_classify()
+
 
 if __name__ == "__main__":
     main()
