@@ -1,6 +1,6 @@
 import torch
 
-from torchvision.prototype import features
+from torchvision.prototype import datapoints
 
 
 def uniform_temporal_subsample_video(video: torch.Tensor, num_samples: int, temporal_dim: int = -4) -> torch.Tensor:
@@ -11,18 +11,16 @@ def uniform_temporal_subsample_video(video: torch.Tensor, num_samples: int, temp
 
 
 def uniform_temporal_subsample(
-    inpt: features.VideoTypeJIT, num_samples: int, temporal_dim: int = -4
-) -> features.VideoTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features.Video)):
+    inpt: datapoints.VideoTypeJIT, num_samples: int, temporal_dim: int = -4
+) -> datapoints.VideoTypeJIT:
+    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, datapoints.Video)):
         return uniform_temporal_subsample_video(inpt, num_samples, temporal_dim=temporal_dim)
-    elif isinstance(inpt, features.Video):
+    elif isinstance(inpt, datapoints.Video):
         if temporal_dim != -4 and inpt.ndim - 4 != temporal_dim:
             raise ValueError("Video inputs must have temporal_dim equivalent to -4")
         output = uniform_temporal_subsample_video(
             inpt.as_subclass(torch.Tensor), num_samples, temporal_dim=temporal_dim
         )
-        return features.Video.wrap_like(inpt, output)
+        return datapoints.Video.wrap_like(inpt, output)
     else:
-        raise TypeError(
-            f"Input can either be a plain tensor or a `Video` tensor subclass, but got {type(inpt)} instead."
-        )
+        raise TypeError(f"Input can either be a plain tensor or a `Video` datapoint, but got {type(inpt)} instead.")

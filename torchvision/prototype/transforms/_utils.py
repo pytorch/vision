@@ -3,8 +3,8 @@ import numbers
 from collections import defaultdict
 from typing import Any, Dict, Sequence, Type, TypeVar, Union
 
-from torchvision.prototype import features
-from torchvision.prototype.features._feature import FillType, FillTypeJIT
+from torchvision.prototype import datapoints
+from torchvision.prototype.datapoints._datapoint import FillType, FillTypeJIT
 
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
 
@@ -54,7 +54,7 @@ def _get_defaultdict(default: T) -> Dict[Any, T]:
     return defaultdict(functools.partial(_default_arg, default))
 
 
-def _convert_fill_arg(fill: features.FillType) -> features.FillTypeJIT:
+def _convert_fill_arg(fill: datapoints.FillType) -> datapoints.FillTypeJIT:
     # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
     # So, we can't reassign fill to 0
     # if fill is None:

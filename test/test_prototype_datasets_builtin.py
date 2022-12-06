@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 import torch
+
+import torchvision.prototype.transforms.utils
 from builtin_dataset_mocks import DATASET_MOCKS, parametrize_dataset_mocks
 from torch.testing._comparison import assert_equal, ObjectPair, TensorLikePair
 from torch.utils.data import DataLoader
@@ -14,7 +16,7 @@ from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 from torchvision._utils import sequence_to_str
-from torchvision.prototype import datasets, features, transforms
+from torchvision.prototype import datapoints, datasets, transforms
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
 
@@ -130,7 +132,11 @@ class TestCommon:
     def test_no_simple_tensors(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
 
-        simple_tensors = {key for key, value in next_consume(iter(dataset)).items() if features.is_simple_tensor(value)}
+        simple_tensors = {
+            key
+            for key, value in next_consume(iter(dataset)).items()
+            if torchvision.prototype.transforms.utils.is_simple_tensor(value)
+        }
         if simple_tensors:
             raise AssertionError(
                 f"The values of key(s) "
@@ -258,7 +264,7 @@ class TestUSPS:
             assert "image" in sample
             assert "label" in sample
 
-            assert isinstance(sample["image"], features.Image)
-            assert isinstance(sample["label"], features.Label)
+            assert isinstance(sample["image"], datapoints.Image)
+            assert isinstance(sample["label"], datapoints.Label)
 
             assert sample["image"].shape == (1, 16, 16)
