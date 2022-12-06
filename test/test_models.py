@@ -960,8 +960,7 @@ def test_quantized_classification_model(model_fn):
     model = model_fn(**kwargs)
     model.eval()
     x = torch.rand(input_shape)
-    with torch.no_grad(), freeze_rng_state():
-        out = model(x)
+    out = model(x)
 
     if model_name not in quantized_flaky_models:
         _assert_expected(out.cpu(), model_name + "_quantized", prec=2e-2)
