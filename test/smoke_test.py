@@ -2,6 +2,7 @@
 
 import os
 import torchvision
+import torch
 from torchvision.io import read_image
 from torchvision.models import resnet50, ResNet50_Weights
 
