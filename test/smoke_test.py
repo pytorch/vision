@@ -2,9 +2,11 @@
 
 import os
 import torchvision
+from pathlib import Path
 from torchvision.io import read_image
 from torchvision.models import resnet50, ResNet50_Weights
 
+SCRIPT_DIR = Path(__file__).parent
 
 def smoke_test_torchvision_read_decode() -> None:
     img_jpg = read_image(str(SCRIPT_DIR / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg"))
