@@ -108,6 +108,19 @@ class TestKernels:
         args_kwargs_fn=lambda info: info.reference_inputs_fn(),
     )
 
+    @make_info_args_kwargs_parametrization(
+        [info for info in KERNEL_INFOS if info.logs_usage],
+        args_kwargs_fn=lambda info: info.sample_inputs_fn(),
+    )
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_logging(self, spy_on, info, args_kwargs, device):
+        spy = spy_on(torch._C._log_api_usage_once)
+
+        args, kwargs = args_kwargs.load(device)
+        info.kernel(*args, **kwargs)
+
+        spy.assert_any_call(f"{info.kernel.__module__}.{info.id}")
+
     @ignore_jit_warning_no_profile
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -290,6 +303,19 @@ class TestDispatchers:
         [info for info in DISPATCHER_INFOS if datapoints.Image in info.kernels],
         args_kwargs_fn=lambda info: info.sample_inputs(datapoints.Image),
     )
+
+    @make_info_args_kwargs_parametrization(
+        DISPATCHER_INFOS,
+        args_kwargs_fn=lambda info: info.sample_inputs(),
+    )
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_logging(self, spy_on, info, args_kwargs, device):
+        spy = spy_on(torch._C._log_api_usage_once)
+
+        args, kwargs = args_kwargs.load(device)
+        info.dispatcher(*args, **kwargs)
+
+        spy.assert_any_call(f"{info.dispatcher.__module__}.{info.id}")
 
     @ignore_jit_warning_no_profile
     @image_sample_inputs
