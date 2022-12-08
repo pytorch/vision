@@ -53,6 +53,9 @@ jobs:
           -c "pytorch-${CHANNEL}" \
           -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] torchdata \
           "${CUDATOOLKIT}"
+          
+        python3 -c "import torch; exit(not torch.cuda.is_available())"
+          
         python3 setup.py develop
         python3 -m pip install pytest pytest-mock pytest-cov
 
