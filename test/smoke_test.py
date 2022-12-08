@@ -26,10 +26,7 @@ def smoke_test_torchvision_read_decode() -> None:
         raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
 
 def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
-    from torchvision.io import read_image
-    from torchvision.models import resnet50, ResNet50_Weights
-
-    img = read_image(str(SCRIPT_DIR / "assets" / "dog2.jpg")).to(device)
+    img = read_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg")).to(device)
 
     # Step 1: Initialize model with the best available weights
     weights = ResNet50_Weights.DEFAULT
