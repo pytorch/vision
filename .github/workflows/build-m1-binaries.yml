@@ -81,16 +81,6 @@ jobs:
         with:
           name: torchvision-py${{ matrix.py_vers }}-macos11-m1
           path: dist/
-      - name: Upload wheel to S3
-        if: ${{ github.event_name == 'push' && (github.event.ref == 'refs/heads/nightly' || startsWith(github.event.ref, 'refs/tags/')) }}
-        shell: arch -arch arm64 bash {0}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY }}
-        run: |
-          for pkg in dist/*; do
-            aws s3 cp "$pkg" "s3://pytorch/whl/${CHANNEL}/cpu/" --acl public-read
-          done
   build_conda:
     name: "Build TorchVision M1 conda packages"
     runs-on: macos-m1-12
@@ -148,13 +138,3 @@ jobs:
         with:
           name: torchvision-py${{ matrix.py_vers }}-macos11-m1-conda
           path: dist/
-      - name: Upload package to conda
-        if: ${{ github.event_name == 'push' && (github.event.ref == 'refs/heads/nightly' || startsWith(github.event.ref, 'refs/tags/')) }}
-        shell: arch -arch arm64 bash {0}
-        env:
-          CONDA_PYTORCHBOT_TOKEN: ${{ secrets.CONDA_PYTORCHBOT_TOKEN }}
-        run: |
-          conda install -yq anaconda-client
-          set -x
-          export ANACONDA_PATH=$(conda info --base)/bin
-          $ANACONDA_PATH/anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload dist/osx-arm64/*.tar.bz2 -u "pytorch-${CHANNEL}" --label main --no-progress --force

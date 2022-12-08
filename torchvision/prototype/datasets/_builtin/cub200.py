@@ -14,6 +14,8 @@ from torchdata.datapipes.iter import (
     Mapper,
 )
 from torchdata.datapipes.map import IterToMapConverter
+from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datapoints._datapoint import Datapoint
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
@@ -25,7 +27,6 @@ from torchvision.prototype.datasets.utils._internal import (
     read_categories_file,
     read_mat,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, Label
 
 from .._api import register_dataset, register_info
 
@@ -161,7 +162,7 @@ class CUB200(Dataset):
                 format="xyxy",
                 spatial_size=spatial_size,
             ),
-            segmentation=_Feature(content["seg"]),
+            segmentation=Datapoint(content["seg"]),
         )
 
     def _prepare_sample(

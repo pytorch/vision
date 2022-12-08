@@ -43,14 +43,14 @@ jobs:
         id: setup
         run: exit 0
 
-      - name: Run prototype features tests
+      - name: Run prototype datapoints tests
         shell: bash
         run: |
           pytest \
             --durations=20 \
-            --cov=torchvision/prototype/features \
+            --cov=torchvision/prototype/datapoints \
             --cov-report=term-missing \
-            test/test_prototype_features*.py
+            test/test_prototype_datapoints*.py
 
       - name: Run prototype transforms tests
         if: success() || ( failure() && steps.setup.conclusion == 'success' )
