@@ -1,7 +1,7 @@
 name: Build Linux Conda
 
 on:
-  # pull_request:
+  pull_request:
   push:
     branches:
       - nightly
@@ -28,13 +28,13 @@ jobs:
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_conda_linux.yml@main
+    uses: pytorch/test-infra/.github/workflows/build_conda_linux.yml@anaconda_upload_again
     with:
       conda-package-directory: ${{ matrix.conda-package-directory }}
       repository: ${{ matrix.repository }}
       ref: ""
       test-infra-repository: pytorch/test-infra
-      test-infra-ref: main
+      test-infra-ref: anaconda_upload_again
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
       post-script: ${{ matrix.post-script }}
