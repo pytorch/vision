@@ -19,7 +19,7 @@ jobs:
         python_version: ["3.8"]
         cuda_arch_version: ["11.6"]
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@weiwangmeta/install_nvidia_gpu_driver
+    uses: pytorch/test-infra/.github/workflows/linux_job.yml@weiwangmeta/install_nvidia_gpu_driver_for_vision
     with:
       runner: linux.g5.4xlarge.nvidia.gpu
       repository: pytorch/vision
