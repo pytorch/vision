@@ -585,8 +585,9 @@ class TestNMS:
     def _reference_nms(self, boxes, scores, iou_threshold):
         """
         Args:
-            box_scores (N, 5): boxes in corner-form and probabilities.
-            iou_threshold: intersection over union threshold.
+            boxes: boxes in corner-form
+            scores: probabilities
+            iou_threshold: intersection over union threshold
         Returns:
              picked: a list of indexes of the kept boxes
         """
