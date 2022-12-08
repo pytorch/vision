@@ -14,7 +14,9 @@ from torchdata.datapipes.iter import (
     Mapper,
     UnBatcher,
 )
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datapoints import BoundingBox, Label, Mask
+from torchvision.prototype.datapoints._datapoint import Datapoint
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -24,7 +26,6 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     read_categories_file,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
 
 from .._api import register_dataset, register_info
 
@@ -113,8 +114,7 @@ class Coco(Dataset):
         spatial_size = (image_meta["height"], image_meta["width"])
         labels = [ann["category_id"] for ann in anns]
         return dict(
-            # TODO: create a segmentation feature
-            segmentations=_Feature(
+            segmentations=Mask(
                 torch.stack(
                     [
                         self._segmentation_to_mask(
@@ -124,8 +124,8 @@ class Coco(Dataset):
                     ]
                 )
             ),
-            areas=_Feature([ann["area"] for ann in anns]),
-            crowds=_Feature([ann["iscrowd"] for ann in anns], dtype=torch.bool),
+            areas=Datapoint([ann["area"] for ann in anns]),
+            crowds=Datapoint([ann["iscrowd"] for ann in anns], dtype=torch.bool),
             bounding_boxes=BoundingBox(
                 [ann["bbox"] for ann in anns],
                 format="xywh",

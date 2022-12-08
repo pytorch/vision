@@ -3,7 +3,9 @@ import pathlib
 from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper, Zipper
-from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
+from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datapoints._datapoint import Datapoint
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -11,7 +13,6 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     path_accessor,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
 
 from .._api import register_dataset, register_info
 
@@ -30,25 +31,26 @@ class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
 
     def __iter__(self) -> Iterator[Tuple[str, Dict[str, str]]]:
         for _, file in self.datapipe:
-            lines = (line.decode() for line in file)
+            try:
+                lines = (line.decode() for line in file)
 
-            if self.fieldnames:
-                fieldnames = self.fieldnames
-            else:
-                # The first row is skipped, because it only contains the number of samples
-                next(lines)
+                if self.fieldnames:
+                    fieldnames = self.fieldnames
+                else:
+                    # The first row is skipped, because it only contains the number of samples
+                    next(lines)
 
-                # Empty field names are filtered out, because some files have an extra white space after the header
-                # line, which is recognized as extra column
-                fieldnames = [name for name in next(csv.reader([next(lines)], dialect="celeba")) if name]
-                # Some files do not include a label for the image ID column
-                if fieldnames[0] != "image_id":
-                    fieldnames.insert(0, "image_id")
+                    # Empty field names are filtered out, because some files have an extra white space after the header
+                    # line, which is recognized as extra column
+                    fieldnames = [name for name in next(csv.reader([next(lines)], dialect="celeba")) if name]
+                    # Some files do not include a label for the image ID column
+                    if fieldnames[0] != "image_id":
+                        fieldnames.insert(0, "image_id")
 
-            for line in csv.DictReader(lines, fieldnames=fieldnames, dialect="celeba"):
-                yield line.pop("image_id"), line
-
-            file.close()
+                for line in csv.DictReader(lines, fieldnames=fieldnames, dialect="celeba"):
+                    yield line.pop("image_id"), line
+            finally:
+                file.close()
 
 
 NAME = "celeba"
@@ -147,7 +149,7 @@ class CelebA(Dataset):
                 spatial_size=image.spatial_size,
             ),
             landmarks={
-                landmark: _Feature((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
+                landmark: Datapoint((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
                 for landmark in {key[:-2] for key in landmarks.keys()}
             },
         )

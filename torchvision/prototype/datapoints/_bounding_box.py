@@ -6,7 +6,7 @@ import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms import InterpolationMode  # TODO: this needs to be moved out of transforms
 
-from ._feature import _Feature, FillTypeJIT
+from ._datapoint import Datapoint, FillTypeJIT
 
 
 class BoundingBoxFormat(StrEnum):
@@ -15,7 +15,7 @@ class BoundingBoxFormat(StrEnum):
     CXCYWH = StrEnum.auto()
 
 
-class BoundingBox(_Feature):
+class BoundingBox(Datapoint):
     format: BoundingBoxFormat
     spatial_size: Tuple[int, int]
 
@@ -132,8 +132,8 @@ class BoundingBox(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
+        fill: FillTypeJIT = None,
     ) -> BoundingBox:
         output, spatial_size = self._F.rotate_bounding_box(
             self.as_subclass(torch.Tensor),

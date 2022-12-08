@@ -1,38 +1,23 @@
-import unittest.mock
-from typing import Any, Dict, Tuple, Union
+from typing import Union
 
 import numpy as np
 import PIL.Image
 import torch
-from torchvision.io.video import read_video
-from torchvision.prototype import features
-from torchvision.prototype.utils._internal import ReadOnlyTensorBuffer
+from torchvision.prototype import datapoints
 from torchvision.transforms import functional as _F
 
 
 @torch.jit.unused
-def decode_image_with_pil(encoded_image: torch.Tensor) -> features.Image:
-    image = torch.as_tensor(np.array(PIL.Image.open(ReadOnlyTensorBuffer(encoded_image)), copy=True))
-    if image.ndim == 2:
-        image = image.unsqueeze(2)
-    return features.Image(image.permute(2, 0, 1))
-
-
-@torch.jit.unused
-def decode_video_with_av(encoded_video: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
-    with unittest.mock.patch("torchvision.io.video.os.path.exists", return_value=True):
-        return read_video(ReadOnlyTensorBuffer(encoded_video))  # type: ignore[arg-type]
-
-
-@torch.jit.unused
-def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> features.Image:
-    if isinstance(image, np.ndarray):
-        output = torch.from_numpy(image).permute((2, 0, 1)).contiguous()
-    elif isinstance(image, PIL.Image.Image):
-        output = pil_to_tensor(image)
-    else:  # isinstance(inpt, torch.Tensor):
-        output = image
-    return features.Image(output)
+def to_image_tensor(inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray]) -> datapoints.Image:
+    if isinstance(inpt, np.ndarray):
+        output = torch.from_numpy(inpt).permute((2, 0, 1)).contiguous()
+    elif isinstance(inpt, PIL.Image.Image):
+        output = pil_to_tensor(inpt)
+    elif isinstance(inpt, torch.Tensor):
+        output = inpt
+    else:
+        raise TypeError(f"Input can either be a numpy array or a PIL image, but got {type(inpt)} instead.")
+    return datapoints.Image(output)
 
 
 to_image_pil = _F.to_pil_image
