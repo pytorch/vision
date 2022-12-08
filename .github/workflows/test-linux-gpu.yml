@@ -51,7 +51,8 @@ jobs:
         conda install \
           --yes \
           -c "pytorch-${CHANNEL}" \
-          -c nvidia pytorch \
+          -c nvidia \
+          pytorch \
           "${CUDATOOLKIT}"
           
         python3 -c "import torch; exit(not torch.cuda.is_available())"
