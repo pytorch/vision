@@ -45,12 +45,11 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
     score = prediction[class_id].item()
     category_name = weights.meta["categories"][class_id]
     expected_category = "German shepherd"
-    print(f"{category_name}: {100 * score:.1f}%")
+    print(f"{category_name} ({device}): {100 * score:.1f}%")
     if category_name != expected_category:
         raise RuntimeError(
             f"Failed ResNet50 classify {category_name} Expected: {expected_category}"
         )
-
 
 def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
@@ -59,7 +58,6 @@ def main() -> None:
     smoke_test_torchvision_resnet50_classify()
     if torch.cuda.is_available():
         smoke_test_torchvision_resnet50_classify("cuda")
-
 
 if __name__ == "__main__":
     main()
