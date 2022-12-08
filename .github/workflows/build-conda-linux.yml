@@ -1,7 +1,7 @@
 name: Build Linux Conda
 
 on:
-  pull_request:
+  # pull_request:
   push:
     branches:
       - nightly

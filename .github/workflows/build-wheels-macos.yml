@@ -1,7 +1,7 @@
 name: Build Macos Wheels
 
 on:
-  pull_request:
+  # pull_request:
   push:
     branches:
       - nightly
