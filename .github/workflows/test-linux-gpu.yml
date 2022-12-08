@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
-      runner: linux.g5.4xlarge.nvidia.gpu
+      runner: linux.4xlarge.nvidia.gpu
       repository: pytorch/vision
       gpu-arch-type: cuda
       gpu-arch-version: ${{ matrix.cuda_arch_version }}
@@ -51,8 +51,11 @@ jobs:
         conda install \
           --yes \
           -c "pytorch-${CHANNEL}" \
-          -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
+          -c nvidia pytorch \
           "${CUDATOOLKIT}"
+          
+        python3 -c "import torch; exit(not torch.cuda.is_available())"
+          
         python3 setup.py develop
         python3 -m pip install pytest pytest-mock 'av<10'
 
