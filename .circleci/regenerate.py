@@ -32,7 +32,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu116", "cu117", "rocm5.2", "rocm5.3"],
+                "linux": ["cpu", "cu116", "cu117", "rocm5.3", "rocm5.4"],
                 "win": ["cpu", "cu116", "cu117"],
                 "macos": ["cpu"],
             }
