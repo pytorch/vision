@@ -1,14 +1,19 @@
+import PIL.Image
 import torch
-from torchvision.prototype import features
-from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
+from torch.nn.functional import conv2d
+from torchvision.prototype import datapoints
+from torchvision.transforms import functional_pil as _FP
+from torchvision.transforms.functional_tensor import _max_value
 
-from ._meta import _rgb_to_gray, convert_dtype_image_tensor, get_dimensions_image_tensor, get_num_channels_image_tensor
+from torchvision.utils import _log_api_usage_once
+
+from ._meta import _num_value_bits, _rgb_to_gray, convert_dtype_image_tensor
 
 
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
     ratio = float(ratio)
     fp = image1.is_floating_point()
-    bound = 1.0 if fp else 255.0
+    bound = _max_value(image1.dtype)
     output = image1.mul(ratio).add_(image2, alpha=(1.0 - ratio)).clamp_(0, bound)
     return output if fp else output.to(image1.dtype)
 
@@ -17,10 +22,12 @@ def adjust_brightness_image_tensor(image: torch.Tensor, brightness_factor: float
     if brightness_factor < 0:
         raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")
 
-    _FT._assert_channels(image, [1, 3])
+    c = image.shape[-3]
+    if c not in [1, 3]:
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
     fp = image.is_floating_point()
-    bound = 1.0 if fp else 255.0
+    bound = _max_value(image.dtype)
     output = image.mul(brightness_factor).clamp_(0, bound)
     return output if fp else output.to(image.dtype)
 
@@ -32,27 +39,41 @@ def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> to
     return adjust_brightness_image_tensor(video, brightness_factor=brightness_factor)
 
 
-def adjust_brightness(inpt: features.InputTypeJIT, brightness_factor: float) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def adjust_brightness(inpt: datapoints.InputTypeJIT, brightness_factor: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_brightness)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return adjust_brightness_image_tensor(inpt, brightness_factor=brightness_factor)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.adjust_brightness(brightness_factor=brightness_factor)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return adjust_brightness_image_pil(inpt, brightness_factor=brightness_factor)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     if saturation_factor < 0:
         raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
-    c = get_num_channels_image_tensor(image)
+    c = image.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
     if c == 1:  # Match PIL behaviour
         return image
 
-    return _blend(image, _rgb_to_gray(image), saturation_factor)
+    grayscale_image = _rgb_to_gray(image, cast=False)
+    if not image.is_floating_point():
+        grayscale_image = grayscale_image.floor_()
+
+    return _blend(image, grayscale_image, saturation_factor)
 
 
 adjust_saturation_image_pil = _FP.adjust_saturation
@@ -62,25 +83,40 @@ def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> to
     return adjust_saturation_image_tensor(video, saturation_factor=saturation_factor)
 
 
-def adjust_saturation(inpt: features.InputTypeJIT, saturation_factor: float) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def adjust_saturation(inpt: datapoints.InputTypeJIT, saturation_factor: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_saturation)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return adjust_saturation_image_tensor(inpt, saturation_factor=saturation_factor)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.adjust_saturation(saturation_factor=saturation_factor)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return adjust_saturation_image_pil(inpt, saturation_factor=saturation_factor)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) -> torch.Tensor:
     if contrast_factor < 0:
         raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
 
-    c = get_num_channels_image_tensor(image)
+    c = image.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
-    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
-    grayscale_image = _rgb_to_gray(image) if c == 3 else image
-    mean = torch.mean(grayscale_image.to(dtype), dim=(-3, -2, -1), keepdim=True)
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
+    fp = image.is_floating_point()
+    if c == 3:
+        grayscale_image = _rgb_to_gray(image, cast=False)
+        if not fp:
+            grayscale_image = grayscale_image.floor_()
+    else:
+        grayscale_image = image if fp else image.to(torch.float32)
+    mean = torch.mean(grayscale_image, dim=(-3, -2, -1), keepdim=True)
     return _blend(image, mean, contrast_factor)
 
 
@@ -91,17 +127,27 @@ def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.
     return adjust_contrast_image_tensor(video, contrast_factor=contrast_factor)
 
 
-def adjust_contrast(inpt: features.InputTypeJIT, contrast_factor: float) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def adjust_contrast(inpt: datapoints.InputTypeJIT, contrast_factor: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_contrast)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return adjust_contrast_image_tensor(inpt, contrast_factor=contrast_factor)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.adjust_contrast(contrast_factor=contrast_factor)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return adjust_contrast_image_pil(inpt, contrast_factor=contrast_factor)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
-    num_channels, height, width = get_dimensions_image_tensor(image)
+    num_channels, height, width = image.shape[-3:]
     if num_channels not in (1, 3):
         raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {num_channels}")
 
@@ -111,6 +157,8 @@ def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) 
     if image.numel() == 0 or height <= 2 or width <= 2:
         return image
 
+    bound = _max_value(image.dtype)
+    fp = image.is_floating_point()
     shape = image.shape
 
     if image.ndim > 4:
@@ -119,7 +167,30 @@ def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) 
     else:
         needs_unsquash = False
 
-    output = _blend(image, _FT._blurred_degenerate_image(image), sharpness_factor)
+    # The following is a normalized 3x3 kernel with 1s in the edges and a 5 in the middle.
+    kernel_dtype = image.dtype if fp else torch.float32
+    a, b = 1.0 / 13.0, 5.0 / 13.0
+    kernel = torch.tensor([[a, a, a], [a, b, a], [a, a, a]], dtype=kernel_dtype, device=image.device)
+    kernel = kernel.expand(num_channels, 1, 3, 3)
+
+    # We copy and cast at the same time to avoid modifications on the original data
+    output = image.to(dtype=kernel_dtype, copy=True)
+    blurred_degenerate = conv2d(output, kernel, groups=num_channels)
+    if not fp:
+        # it is better to round before cast
+        blurred_degenerate = blurred_degenerate.round_()
+
+    # Create a view on the underlying output while pointing at the same data. We do this to avoid indexing twice.
+    view = output[..., 1:-1, 1:-1]
+
+    # We speed up blending by minimizing flops and doing in-place. The 2 blend options are mathematically equivalent:
+    # x+(1-r)*(y-x) = x + (1-r)*y - (1-r)*x = x*r + y*(1-r)
+    view.add_(blurred_degenerate.sub_(view), alpha=(1.0 - sharpness_factor))
+
+    # The actual data of ouput have been modified by the above. We only need to clamp and cast now.
+    output = output.clamp_(0, bound)
+    if not fp:
+        output = output.to(image.dtype)
 
     if needs_unsquash:
         output = output.reshape(shape)
@@ -134,13 +205,23 @@ def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torc
     return adjust_sharpness_image_tensor(video, sharpness_factor=sharpness_factor)
 
 
-def adjust_sharpness(inpt: features.InputTypeJIT, sharpness_factor: float) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def adjust_sharpness(inpt: datapoints.InputTypeJIT, sharpness_factor: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_sharpness)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return adjust_sharpness_image_tensor(inpt, sharpness_factor=sharpness_factor)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.adjust_sharpness(sharpness_factor=sharpness_factor)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return adjust_sharpness_image_pil(inpt, sharpness_factor=sharpness_factor)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
@@ -173,27 +254,28 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
 
     mask_maxc_neq_r = maxc != r
     mask_maxc_eq_g = maxc == g
-    mask_maxc_neq_g = ~mask_maxc_eq_g
 
-    hr = (bc - gc).mul_(~mask_maxc_neq_r)
-    hg = (2.0 + rc).sub_(bc).mul_(mask_maxc_eq_g & mask_maxc_neq_r)
-    hb = (4.0 + gc).sub_(rc).mul_(mask_maxc_neq_g & mask_maxc_neq_r)
+    hg = rc.add(2.0).sub_(bc).mul_(mask_maxc_eq_g & mask_maxc_neq_r)
+    hr = bc.sub_(gc).mul_(~mask_maxc_neq_r)
+    hb = gc.add_(4.0).sub_(rc).mul_(mask_maxc_neq_r.logical_and_(mask_maxc_eq_g.logical_not_()))
 
     h = hr.add_(hg).add_(hb)
-    h = h.div_(6.0).add_(1.0).fmod_(1.0)
+    h = h.mul_(1.0 / 6.0).add_(1.0).fmod_(1.0)
     return torch.stack((h, s, maxc), dim=-3)
 
 
 def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
     h, s, v = img.unbind(dim=-3)
-    h6 = h * 6
+    h6 = h.mul(6)
     i = torch.floor(h6)
-    f = h6 - i
+    f = h6.sub_(i)
     i = i.to(dtype=torch.int32)
 
-    p = (v * (1.0 - s)).clamp_(0.0, 1.0)
-    q = (v * (1.0 - s * f)).clamp_(0.0, 1.0)
-    t = (v * (1.0 - s * (1.0 - f))).clamp_(0.0, 1.0)
+    sxf = s * f
+    one_minus_s = 1.0 - s
+    q = (1.0 - sxf).mul_(v).clamp_(0.0, 1.0)
+    t = sxf.add_(one_minus_s).mul_(v).clamp_(0.0, 1.0)
+    p = one_minus_s.mul_(v).clamp_(0.0, 1.0)
     i.remainder_(6)
 
     mask = i.unsqueeze(dim=-3) == torch.arange(6, device=i.device).view(-1, 1, 1)
@@ -203,17 +285,16 @@ def _hsv_to_rgb(img: torch.Tensor) -> torch.Tensor:
     a3 = torch.stack((p, p, t, v, v, q), dim=-3)
     a4 = torch.stack((a1, a2, a3), dim=-4)
 
-    return (a4.mul_(mask.to(dtype=img.dtype).unsqueeze(dim=-4))).sum(dim=-3)
+    return (a4.mul_(mask.unsqueeze(dim=-4))).sum(dim=-3)
 
 
 def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
 
-    c = get_num_channels_image_tensor(image)
-
+    c = image.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
     if c == 1:  # Match PIL behaviour
         return image
@@ -223,8 +304,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
         return image
 
     orig_dtype = image.dtype
-    if image.dtype == torch.uint8:
-        image = image / 255.0
+    image = convert_dtype_image_tensor(image, torch.float32)
 
     image = _rgb_to_hsv(image)
     h, s, v = image.unbind(dim=-3)
@@ -232,10 +312,7 @@ def adjust_hue_image_tensor(image: torch.Tensor, hue_factor: float) -> torch.Ten
     image = torch.stack((h, s, v), dim=-3)
     image_hue_adj = _hsv_to_rgb(image)
 
-    if orig_dtype == torch.uint8:
-        image_hue_adj = image_hue_adj.mul_(255.0).to(dtype=orig_dtype)
-
-    return image_hue_adj
+    return convert_dtype_image_tensor(image_hue_adj, orig_dtype)
 
 
 adjust_hue_image_pil = _FP.adjust_hue
@@ -245,13 +322,23 @@ def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
     return adjust_hue_image_tensor(video, hue_factor=hue_factor)
 
 
-def adjust_hue(inpt: features.InputTypeJIT, hue_factor: float) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def adjust_hue(inpt: datapoints.InputTypeJIT, hue_factor: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_hue)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return adjust_hue_image_tensor(inpt, hue_factor=hue_factor)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.adjust_hue(hue_factor=hue_factor)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return adjust_hue_image_pil(inpt, hue_factor=hue_factor)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def adjust_gamma_image_tensor(image: torch.Tensor, gamma: float, gain: float = 1.0) -> torch.Tensor:
@@ -280,24 +367,35 @@ def adjust_gamma_video(video: torch.Tensor, gamma: float, gain: float = 1) -> to
     return adjust_gamma_image_tensor(video, gamma=gamma, gain=gain)
 
 
-def adjust_gamma(inpt: features.InputTypeJIT, gamma: float, gain: float = 1) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def adjust_gamma(inpt: datapoints.InputTypeJIT, gamma: float, gain: float = 1) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(adjust_gamma)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return adjust_gamma_image_tensor(inpt, gamma=gamma, gain=gain)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.adjust_gamma(gamma=gamma, gain=gain)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return adjust_gamma_image_pil(inpt, gamma=gamma, gain=gain)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def posterize_image_tensor(image: torch.Tensor, bits: int) -> torch.Tensor:
-    if bits > 8:
-        return image
-
     if image.is_floating_point():
         levels = 1 << bits
-        return image.mul(levels).floor_().clamp_(0, levels - 1).div_(levels)
+        return image.mul(levels).floor_().clamp_(0, levels - 1).mul_(1.0 / levels)
     else:
-        mask = ((1 << bits) - 1) << (8 - bits)
+        num_value_bits = _num_value_bits(image.dtype)
+        if bits >= num_value_bits:
+            return image
+
+        mask = ((1 << bits) - 1) << (num_value_bits - bits)
         return image & mask
 
 
@@ -308,18 +406,27 @@ def posterize_video(video: torch.Tensor, bits: int) -> torch.Tensor:
     return posterize_image_tensor(video, bits=bits)
 
 
-def posterize(inpt: features.InputTypeJIT, bits: int) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def posterize(inpt: datapoints.InputTypeJIT, bits: int) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(posterize)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return posterize_image_tensor(inpt, bits=bits)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.posterize(bits=bits)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return posterize_image_pil(inpt, bits=bits)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def solarize_image_tensor(image: torch.Tensor, threshold: float) -> torch.Tensor:
-    bound = 1 if image.is_floating_point() else 255
-    if threshold > bound:
+    if threshold > _max_value(image.dtype):
         raise TypeError(f"Threshold should be less or equal the maximum value of the dtype, but got {threshold}")
 
     return torch.where(image >= threshold, invert_image_tensor(image), image)
@@ -332,37 +439,52 @@ def solarize_video(video: torch.Tensor, threshold: float) -> torch.Tensor:
     return solarize_image_tensor(video, threshold=threshold)
 
 
-def solarize(inpt: features.InputTypeJIT, threshold: float) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def solarize(inpt: datapoints.InputTypeJIT, threshold: float) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(solarize)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return solarize_image_tensor(inpt, threshold=threshold)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.solarize(threshold=threshold)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return solarize_image_pil(inpt, threshold=threshold)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def autocontrast_image_tensor(image: torch.Tensor) -> torch.Tensor:
-    c = get_num_channels_image_tensor(image)
-
+    c = image.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(f"Input image tensor permitted channel values are {[1, 3]}, but found {c}")
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
     if image.numel() == 0:
         # exit earlier on empty images
         return image
 
-    bound = 1.0 if image.is_floating_point() else 255.0
-    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    bound = _max_value(image.dtype)
+    fp = image.is_floating_point()
+    float_image = image if fp else image.to(torch.float32)
 
-    minimum = image.amin(dim=(-2, -1), keepdim=True).to(dtype)
-    maximum = image.amax(dim=(-2, -1), keepdim=True).to(dtype)
+    minimum = float_image.amin(dim=(-2, -1), keepdim=True)
+    maximum = float_image.amax(dim=(-2, -1), keepdim=True)
 
-    scale = bound / (maximum - minimum)
     eq_idxs = maximum == minimum
+    inv_scale = maximum.sub_(minimum).mul_(1.0 / bound)
     minimum[eq_idxs] = 0.0
-    scale[eq_idxs] = 1.0
+    inv_scale[eq_idxs] = 1.0
 
-    return (image - minimum).mul_(scale).clamp_(0, bound).to(image.dtype)
+    if fp:
+        diff = float_image.sub(minimum)
+    else:
+        diff = float_image.sub_(minimum)
+
+    return diff.div_(inv_scale).clamp_(0, bound).to(image.dtype)
 
 
 autocontrast_image_pil = _FP.autocontrast
@@ -372,27 +494,41 @@ def autocontrast_video(video: torch.Tensor) -> torch.Tensor:
     return autocontrast_image_tensor(video)
 
 
-def autocontrast(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def autocontrast(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(autocontrast)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return autocontrast_image_tensor(inpt)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.autocontrast()
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return autocontrast_image_pil(inpt)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def equalize_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.numel() == 0:
         return image
 
+    # 1. The algorithm below can easily be extended to support arbitrary integer dtypes. However, the histogram that
+    #    would be needed to computed will have at least `torch.iinfo(dtype).max + 1` values. That is perfectly fine for
+    #    `torch.int8`, `torch.uint8`, and `torch.int16`, at least questionable for `torch.int32` and completely
+    #    unfeasible for `torch.int64`.
+    # 2. Floating point inputs need to be binned for this algorithm. Apart from converting them to an integer dtype, we
+    #    could also use PyTorch's builtin histogram functionality. However, that has its own set of issues: in addition
+    #    to being slow in general, PyTorch's implementation also doesn't support batches. In total, that makes it slower
+    #    and more complicated to implement than a simple conversion and a fast histogram implementation for integers.
+    # Since we need to convert in most cases anyway and out of the acceptable dtypes mentioned in 1. `torch.uint8` is
+    # by far the most common, we choose it as base.
     output_dtype = image.dtype
-    if image.is_floating_point():
-        # Floating point inputs need to be binned for this algorithm. Apart from converting them to an integer dtype, we
-        # could also use PyTorch's builtin histogram functionality. However, that has its own set of issues: in addition
-        # to being slow in general, PyTorch's implementation also doesn't support batches. In total, that makes it
-        # slower and more complicated to implement than a simple conversion and a fast histogram implementation for
-        # integers.
-        image = convert_dtype_image_tensor(image, torch.uint8)
+    image = convert_dtype_image_tensor(image, torch.uint8)
 
     # The histogram is computed by using the flattened image as index. For example, a pixel value of 127 in the image
     # corresponds to adding 1 to index 127 in the histogram.
@@ -453,20 +589,33 @@ def equalize_video(video: torch.Tensor) -> torch.Tensor:
     return equalize_image_tensor(video)
 
 
-def equalize(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def equalize(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(equalize)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return equalize_image_tensor(inpt)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.equalize()
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return equalize_image_pil(inpt)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
 
 
 def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
-    if image.dtype == torch.uint8:
+    if image.is_floating_point():
+        return 1.0 - image  # type: ignore[no-any-return]
+    elif image.dtype == torch.uint8:
         return image.bitwise_not()
-    else:
-        return (1 if image.is_floating_point() else 255) - image  # type: ignore[no-any-return]
+    else:  # signed integer dtypes
+        # We can't use `Tensor.bitwise_not` here, since we want to retain the leading zero bit that encodes the sign
+        return image.bitwise_xor((1 << _num_value_bits(image.dtype)) - 1)
 
 
 invert_image_pil = _FP.invert
@@ -476,10 +625,20 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
     return invert_image_tensor(video)
 
 
-def invert(inpt: features.InputTypeJIT) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+def invert(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(invert)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return invert_image_tensor(inpt)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.invert()
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return invert_image_pil(inpt)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )

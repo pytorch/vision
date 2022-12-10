@@ -4,8 +4,7 @@ import os
 import pytest
 import torch
 import torchvision
-from torchvision import _HAS_GPU_VIDEO_DECODER
-from torchvision.io import VideoReader
+from torchvision.io import _HAS_GPU_VIDEO_DECODER, VideoReader
 
 try:
     import av

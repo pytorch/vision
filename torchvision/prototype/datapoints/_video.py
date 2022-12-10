@@ -6,11 +6,11 @@ from typing import Any, List, Optional, Tuple, Union
 import torch
 from torchvision.transforms.functional import InterpolationMode
 
-from ._feature import _Feature, FillTypeJIT
+from ._datapoint import Datapoint, FillTypeJIT
 from ._image import ColorSpace
 
 
-class Video(_Feature):
+class Video(Datapoint):
     color_space: ColorSpace
 
     @classmethod
@@ -79,7 +79,7 @@ class Video(_Feature):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Video:
         output = self._F.resize_video(
             self.as_subclass(torch.Tensor),
@@ -106,7 +106,7 @@ class Video(_Feature):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Video:
         output = self._F.resized_crop_video(
             self.as_subclass(torch.Tensor),
@@ -134,8 +134,8 @@ class Video(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
+        fill: FillTypeJIT = None,
     ) -> Video:
         output = self._F.rotate_video(
             self.as_subclass(torch.Tensor), angle, interpolation=interpolation, expand=expand, fill=fill, center=center
@@ -166,12 +166,19 @@ class Video(_Feature):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> Video:
         output = self._F.perspective_video(
-            self.as_subclass(torch.Tensor), perspective_coeffs, interpolation=interpolation, fill=fill
+            self.as_subclass(torch.Tensor),
+            startpoints,
+            endpoints,
+            interpolation=interpolation,
+            fill=fill,
+            coefficients=coefficients,
         )
         return Video.wrap_like(self, output)
 

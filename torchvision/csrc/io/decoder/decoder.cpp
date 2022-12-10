@@ -312,6 +312,8 @@ bool Decoder::init(
     }
   }
 
+  av_dict_set_int(&options, "probesize", params_.probeSize, 0);
+
   interrupted_ = false;
 
   // ffmpeg avformat_open_input call can hang if media source doesn't respond

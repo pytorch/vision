@@ -10,16 +10,12 @@ from torch.types import _device, _dtype, _size
 from torchvision.transforms import InterpolationMode
 
 
-F = TypeVar("F", bound="_Feature")
+D = TypeVar("D", bound="Datapoint")
 FillType = Union[int, float, Sequence[int], Sequence[float], None]
 FillTypeJIT = Union[int, float, List[float], None]
 
 
-def is_simple_tensor(inpt: Any) -> bool:
-    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, _Feature)
-
-
-class _Feature(torch.Tensor):
+class Datapoint(torch.Tensor):
     __F: Optional[ModuleType] = None
 
     @staticmethod
@@ -31,22 +27,22 @@ class _Feature(torch.Tensor):
     ) -> torch.Tensor:
         return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
 
-    # FIXME: this is just here for BC with the prototype datasets. Some datasets use the _Feature directly to have a
+    # FIXME: this is just here for BC with the prototype datasets. Some datasets use the Datapoint directly to have a
     #  a no-op input for the prototype transforms. For this use case, we can't use plain tensors, since they will be
-    #  interpreted as images. We should decide if we want a public no-op feature like `GenericFeature` or make this one
-    #  public again.
+    #  interpreted as images. We should decide if we want a public no-op datapoint like `GenericDatapoint` or make this
+    #  one public again.
     def __new__(
         cls,
         data: Any,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
-    ) -> _Feature:
+    ) -> Datapoint:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return tensor.as_subclass(_Feature)
+        return tensor.as_subclass(Datapoint)
 
     @classmethod
-    def wrap_like(cls: Type[F], other: F, tensor: torch.Tensor) -> F:
+    def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
         # FIXME: this is just here for BC with the prototype datasets. See __new__ for details. If that is resolved,
         #  this method should be made abstract
         # raise NotImplementedError
@@ -75,15 +71,15 @@ class _Feature(torch.Tensor):
         ``__torch_function__`` method. If one is found, it is invoked with the operator as ``func`` as well as the
         ``args`` and ``kwargs`` of the original call.
 
-        The default behavior of :class:`~torch.Tensor`'s is to retain a custom tensor type. For the :class:`_Feature`
+        The default behavior of :class:`~torch.Tensor`'s is to retain a custom tensor type. For the :class:`Datapoint`
         use case, this has two downsides:
 
-        1. Since some :class:`Feature`'s require metadata to be constructed, the default wrapping, i.e.
+        1. Since some :class:`Datapoint`'s require metadata to be constructed, the default wrapping, i.e.
            ``return cls(func(*args, **kwargs))``, will fail for them.
         2. For most operations, there is no way of knowing if the input type is still valid for the output.
 
         For these reasons, the automatic output wrapping is turned off for most operators. The only exceptions are
-        listed in :attr:`~_Feature._NO_WRAPPING_EXCEPTIONS`
+        listed in :attr:`Datapoint._NO_WRAPPING_EXCEPTIONS`
         """
         # Since super().__torch_function__ has no hook to prevent the coercing of the output into the input type, we
         # need to reimplement the functionality.
@@ -98,9 +94,9 @@ class _Feature(torch.Tensor):
             # Apart from `func` needing to be an exception, we also require the primary operand, i.e. `args[0]`, to be
             # an instance of the class that `__torch_function__` was invoked on. The __torch_function__ protocol will
             # invoke this method on *all* types involved in the computation by walking the MRO upwards. For example,
-            # `torch.Tensor(...).to(features.Image(...))` will invoke `features.Image.__torch_function__` with
-            # `args = (torch.Tensor(), features.Image())` first. Without this guard, the original `torch.Tensor` would
-            # be wrapped into a `features.Image`.
+            # `torch.Tensor(...).to(datapoints.Image(...))` will invoke `datapoints.Image.__torch_function__` with
+            # `args = (torch.Tensor(), datapoints.Image())` first. Without this guard, the original `torch.Tensor` would
+            # be wrapped into a `datapoints.Image`.
             if wrapper and isinstance(args[0], cls):
                 return wrapper(cls, args[0], output)  # type: ignore[no-any-return]
 
@@ -123,11 +119,11 @@ class _Feature(torch.Tensor):
         # until the first time we need reference to the functional module and it's shared across all instances of
         # the class. This approach avoids the DataLoader issue described at
         # https://github.com/pytorch/vision/pull/6476#discussion_r953588621
-        if _Feature.__F is None:
+        if Datapoint.__F is None:
             from ..transforms import functional
 
-            _Feature.__F = functional
-        return _Feature.__F
+            Datapoint.__F = functional
+        return Datapoint.__F
 
     # Add properties for common attributes like shape, dtype, device, ndim etc
     # this way we return the result without passing into __torch_function__
@@ -151,10 +147,10 @@ class _Feature(torch.Tensor):
         with DisableTorchFunction():
             return super().dtype
 
-    def horizontal_flip(self) -> _Feature:
+    def horizontal_flip(self) -> Datapoint:
         return self
 
-    def vertical_flip(self) -> _Feature:
+    def vertical_flip(self) -> Datapoint:
         return self
 
     # TODO: We have to ignore override mypy error as there is torch.Tensor built-in deprecated op: Tensor.resize
@@ -164,14 +160,14 @@ class _Feature(torch.Tensor):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: bool = False,
-    ) -> _Feature:
+        antialias: Optional[bool] = None,
+    ) -> Datapoint:
         return self
 
-    def crop(self, top: int, left: int, height: int, width: int) -> _Feature:
+    def crop(self, top: int, left: int, height: int, width: int) -> Datapoint:
         return self
 
-    def center_crop(self, output_size: List[int]) -> _Feature:
+    def center_crop(self, output_size: List[int]) -> Datapoint:
         return self
 
     def resized_crop(
@@ -182,8 +178,8 @@ class _Feature(torch.Tensor):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: bool = False,
-    ) -> _Feature:
+        antialias: Optional[bool] = None,
+    ) -> Datapoint:
         return self
 
     def pad(
@@ -191,7 +187,7 @@ class _Feature(torch.Tensor):
         padding: Union[int, List[int]],
         fill: FillTypeJIT = None,
         padding_mode: str = "constant",
-    ) -> _Feature:
+    ) -> Datapoint:
         return self
 
     def rotate(
@@ -199,9 +195,9 @@ class _Feature(torch.Tensor):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
-    ) -> _Feature:
+        fill: FillTypeJIT = None,
+    ) -> Datapoint:
         return self
 
     def affine(
@@ -213,15 +209,17 @@ class _Feature(torch.Tensor):
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
-    ) -> _Feature:
+    ) -> Datapoint:
         return self
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
-    ) -> _Feature:
+        coefficients: Optional[List[float]] = None,
+    ) -> Datapoint:
         return self
 
     def elastic(
@@ -229,45 +227,45 @@ class _Feature(torch.Tensor):
         displacement: torch.Tensor,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
-    ) -> _Feature:
+    ) -> Datapoint:
         return self
 
-    def adjust_brightness(self, brightness_factor: float) -> _Feature:
+    def adjust_brightness(self, brightness_factor: float) -> Datapoint:
         return self
 
-    def adjust_saturation(self, saturation_factor: float) -> _Feature:
+    def adjust_saturation(self, saturation_factor: float) -> Datapoint:
         return self
 
-    def adjust_contrast(self, contrast_factor: float) -> _Feature:
+    def adjust_contrast(self, contrast_factor: float) -> Datapoint:
         return self
 
-    def adjust_sharpness(self, sharpness_factor: float) -> _Feature:
+    def adjust_sharpness(self, sharpness_factor: float) -> Datapoint:
         return self
 
-    def adjust_hue(self, hue_factor: float) -> _Feature:
+    def adjust_hue(self, hue_factor: float) -> Datapoint:
         return self
 
-    def adjust_gamma(self, gamma: float, gain: float = 1) -> _Feature:
+    def adjust_gamma(self, gamma: float, gain: float = 1) -> Datapoint:
         return self
 
-    def posterize(self, bits: int) -> _Feature:
+    def posterize(self, bits: int) -> Datapoint:
         return self
 
-    def solarize(self, threshold: float) -> _Feature:
+    def solarize(self, threshold: float) -> Datapoint:
         return self
 
-    def autocontrast(self) -> _Feature:
+    def autocontrast(self) -> Datapoint:
         return self
 
-    def equalize(self) -> _Feature:
+    def equalize(self) -> Datapoint:
         return self
 
-    def invert(self) -> _Feature:
+    def invert(self) -> Datapoint:
         return self
 
-    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> _Feature:
+    def gaussian_blur(self, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Datapoint:
         return self
 
 
-InputType = Union[torch.Tensor, PIL.Image.Image, _Feature]
+InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
 InputTypeJIT = torch.Tensor

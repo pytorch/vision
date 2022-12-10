@@ -8,7 +8,7 @@ import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms.functional import InterpolationMode
 
-from ._feature import _Feature, FillTypeJIT
+from ._datapoint import Datapoint, FillTypeJIT
 
 
 class ColorSpace(StrEnum):
@@ -57,7 +57,7 @@ def _from_tensor_shape(shape: List[int]) -> ColorSpace:
         return ColorSpace.OTHER
 
 
-class Image(_Feature):
+class Image(Datapoint):
     color_space: ColorSpace
 
     @classmethod
@@ -123,7 +123,7 @@ class Image(_Feature):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Image:
         output = self._F.resize_image_tensor(
             self.as_subclass(torch.Tensor), size, interpolation=interpolation, max_size=max_size, antialias=antialias
@@ -146,7 +146,7 @@ class Image(_Feature):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> Image:
         output = self._F.resized_crop_image_tensor(
             self.as_subclass(torch.Tensor),
@@ -174,8 +174,8 @@ class Image(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
+        fill: FillTypeJIT = None,
     ) -> Image:
         output = self._F.rotate_image_tensor(
             self.as_subclass(torch.Tensor), angle, interpolation=interpolation, expand=expand, fill=fill, center=center
@@ -206,12 +206,19 @@ class Image(_Feature):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> Image:
         output = self._F.perspective_image_tensor(
-            self.as_subclass(torch.Tensor), perspective_coeffs, interpolation=interpolation, fill=fill
+            self.as_subclass(torch.Tensor),
+            startpoints,
+            endpoints,
+            interpolation=interpolation,
+            fill=fill,
+            coefficients=coefficients,
         )
         return Image.wrap_like(self, output)
 
