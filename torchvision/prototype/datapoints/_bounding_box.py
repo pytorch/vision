@@ -6,7 +6,7 @@ import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms import InterpolationMode  # TODO: this needs to be moved out of transforms
 
-from ._feature import _Feature, FillTypeJIT
+from ._datapoint import Datapoint, FillTypeJIT
 
 
 class BoundingBoxFormat(StrEnum):
@@ -15,7 +15,7 @@ class BoundingBoxFormat(StrEnum):
     CXCYWH = StrEnum.auto()
 
 
-class BoundingBox(_Feature):
+class BoundingBox(Datapoint):
     format: BoundingBoxFormat
     spatial_size: Tuple[int, int]
 
@@ -78,7 +78,7 @@ class BoundingBox(_Feature):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> BoundingBox:
         output, spatial_size = self._F.resize_bounding_box(
             self.as_subclass(torch.Tensor), spatial_size=self.spatial_size, size=size, max_size=max_size
@@ -105,7 +105,7 @@ class BoundingBox(_Feature):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: bool = False,
+        antialias: Optional[bool] = None,
     ) -> BoundingBox:
         output, spatial_size = self._F.resized_crop_bounding_box(
             self.as_subclass(torch.Tensor), self.format, top, left, height, width, size=size
@@ -132,8 +132,8 @@ class BoundingBox(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
+        fill: FillTypeJIT = None,
     ) -> BoundingBox:
         output, spatial_size = self._F.rotate_bounding_box(
             self.as_subclass(torch.Tensor),
@@ -169,11 +169,15 @@ class BoundingBox(_Feature):
 
     def perspective(
         self,
-        perspective_coeffs: List[float],
+        startpoints: Optional[List[List[int]]],
+        endpoints: Optional[List[List[int]]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
+        coefficients: Optional[List[float]] = None,
     ) -> BoundingBox:
-        output = self._F.perspective_bounding_box(self.as_subclass(torch.Tensor), self.format, perspective_coeffs)
+        output = self._F.perspective_bounding_box(
+            self.as_subclass(torch.Tensor), startpoints, endpoints, self.format, coefficients=coefficients
+        )
         return BoundingBox.wrap_like(self, output)
 
     def elastic(

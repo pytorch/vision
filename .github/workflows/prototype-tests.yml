@@ -28,13 +28,13 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install PyTorch nightly builds
-        run: pip install --progress-bar=off --pre torch torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
+        run: pip install --progress-bar=off --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
 
       - name: Install torchvision
         run: pip install --progress-bar=off --no-build-isolation --editable .
 
       - name: Install other prototype dependencies
-        run: pip install --progress-bar=off scipy pycocotools h5py iopath
+        run: pip install --progress-bar=off scipy pycocotools h5py
 
       - name: Install test requirements
         run: pip install --progress-bar=off pytest pytest-mock pytest-cov
@@ -43,24 +43,14 @@ jobs:
         id: setup
         run: exit 0
 
-      - name: Run prototype features tests
+      - name: Run prototype datapoints tests
         shell: bash
         run: |
           pytest \
             --durations=20 \
-            --cov=torchvision/prototype/features \
+            --cov=torchvision/prototype/datapoints \
             --cov-report=term-missing \
-            test/test_prototype_features*.py
-
-      - name: Run prototype datasets tests
-        if: success() || ( failure() && steps.setup.conclusion == 'success' )
-        shell: bash
-        run: |
-          pytest \
-            --durations=20 \
-            --cov=torchvision/prototype/datasets \
-            --cov-report=term-missing \
-            test/test_prototype_datasets*.py
+            test/test_prototype_datapoints*.py
 
       - name: Run prototype transforms tests
         if: success() || ( failure() && steps.setup.conclusion == 'success' )

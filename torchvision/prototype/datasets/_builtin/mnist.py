@@ -7,9 +7,9 @@ from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Sequence
 
 import torch
 from torchdata.datapipes.iter import Decompressor, Demultiplexer, IterDataPipe, Mapper, Zipper
+from torchvision.prototype.datapoints import Image, Label
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, INFINITE_BUFFER_SIZE
-from torchvision.prototype.features import Image, Label
 from torchvision.prototype.utils._internal import fromfile
 
 from .._api import register_dataset, register_info
@@ -37,27 +37,28 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
 
     def __iter__(self) -> Iterator[torch.Tensor]:
         for _, file in self.datapipe:
-            read = functools.partial(fromfile, file, byte_order="big")
+            try:
+                read = functools.partial(fromfile, file, byte_order="big")
 
-            magic = int(read(dtype=torch.int32, count=1))
-            dtype = self._DTYPE_MAP[magic // 256]
-            ndim = magic % 256 - 1
+                magic = int(read(dtype=torch.int32, count=1))
+                dtype = self._DTYPE_MAP[magic // 256]
+                ndim = magic % 256 - 1
 
-            num_samples = int(read(dtype=torch.int32, count=1))
-            shape = cast(List[int], read(dtype=torch.int32, count=ndim).tolist()) if ndim else []
-            count = prod(shape) if shape else 1
+                num_samples = int(read(dtype=torch.int32, count=1))
+                shape = cast(List[int], read(dtype=torch.int32, count=ndim).tolist()) if ndim else []
+                count = prod(shape) if shape else 1
 
-            start = self.start or 0
-            stop = min(self.stop, num_samples) if self.stop else num_samples
+                start = self.start or 0
+                stop = min(self.stop, num_samples) if self.stop else num_samples
 
-            if start:
-                num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
-                file.seek(num_bytes_per_value * count * start, 1)
+                if start:
+                    num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
+                    file.seek(num_bytes_per_value * count * start, 1)
 
-            for _ in range(stop - start):
-                yield read(dtype=dtype, count=count).reshape(shape)
-
-            file.close()
+                for _ in range(stop - start):
+                    yield read(dtype=dtype, count=count).reshape(shape)
+            finally:
+                file.close()
 
 
 class _MNISTBase(Dataset):

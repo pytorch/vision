@@ -167,7 +167,7 @@ def to_tensor(pic) -> Tensor:
 
     if pic.mode == "1":
         img = 255 * img
-    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+    img = img.view(pic.size[1], pic.size[0], F_pil.get_image_num_channels(pic))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1)).contiguous()
     if isinstance(img, torch.ByteTensor):
@@ -205,7 +205,7 @@ def pil_to_tensor(pic: Any) -> Tensor:
 
     # handle PIL Image
     img = torch.as_tensor(np.array(pic, copy=True))
-    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+    img = img.view(pic.size[1], pic.size[0], F_pil.get_image_num_channels(pic))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1))
     return img
@@ -1004,7 +1004,7 @@ def _get_inverse_affine_matrix(
     #       RotateScaleShear(a, s, (sx, sy)) =
     #       = R(a) * S(s) * SHy(sy) * SHx(sx)
     #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(sx)/cos(sy) - sin(a)), 0 ]
-    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
+    #         [ s*sin(a - sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
     #         [ 0                    , 0                                      , 1 ]
     # where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:
     # SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]

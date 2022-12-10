@@ -1,12 +1,13 @@
+import copy
 import os
 
 import pytest
 import test_models as TM
 import torch
+from common_extended_utils import get_ops, get_weight_size_mb
 from torchvision import models
 from torchvision.models._api import get_model_weights, Weights, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface
-
 
 run_if_test_with_extended = pytest.mark.skipif(
     os.getenv("PYTORCH_TEST_WITH_EXTENDED", "0") != "1",
@@ -57,6 +58,25 @@ def test_get_model_builder(name, model_fn):
 )
 def test_get_model_weights(name, weight):
     assert models.get_model_weights(name) == weight
+
+
+@pytest.mark.parametrize("copy_fn", [copy.copy, copy.deepcopy])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "resnet50",
+        "retinanet_resnet50_fpn_v2",
+        "raft_large",
+        "quantized_resnet50",
+        "lraspp_mobilenet_v3_large",
+        "mvit_v1_b",
+    ],
+)
+def test_weights_copyable(copy_fn, name):
+    model_weights = models.get_model_weights(name)
+    for weights in list(model_weights):
+        copied_weights = copy_fn(weights)
+        assert copied_weights is weights
 
 
 @pytest.mark.parametrize(
@@ -111,6 +131,22 @@ def test_naming_conventions(model_fn):
     assert len(weights_enum) == 0 or hasattr(weights_enum, "DEFAULT")
 
 
+detection_models_input_dims = {
+    "fasterrcnn_mobilenet_v3_large_320_fpn": (320, 320),
+    "fasterrcnn_mobilenet_v3_large_fpn": (800, 800),
+    "fasterrcnn_resnet50_fpn": (800, 800),
+    "fasterrcnn_resnet50_fpn_v2": (800, 800),
+    "fcos_resnet50_fpn": (800, 800),
+    "keypointrcnn_resnet50_fpn": (1333, 1333),
+    "maskrcnn_resnet50_fpn": (800, 800),
+    "maskrcnn_resnet50_fpn_v2": (800, 800),
+    "retinanet_resnet50_fpn": (800, 800),
+    "retinanet_resnet50_fpn_v2": (800, 800),
+    "ssd300_vgg16": (300, 300),
+    "ssdlite320_mobilenet_v3_large": (320, 320),
+}
+
+
 @pytest.mark.parametrize(
     "model_fn",
     TM.list_model_fns(models)
@@ -135,11 +171,13 @@ def test_schema_meta_validation(model_fn):
         "recipe",
         "unquantized",
         "_docs",
+        "_ops",
+        "_weight_size",
     }
     # mandatory fields for each computer vision task
     classification_fields = {"categories", ("_metrics", "ImageNet-1K", "acc@1"), ("_metrics", "ImageNet-1K", "acc@5")}
     defaults = {
-        "all": {"_metrics", "min_size", "num_params", "recipe", "_docs"},
+        "all": {"_metrics", "min_size", "num_params", "recipe", "_docs", "_weight_size", "_ops"},
         "models": classification_fields,
         "detection": {"categories", ("_metrics", "COCO-val2017", "box_map")},
         "quantization": classification_fields | {"backend", "unquantized"},
@@ -160,7 +198,7 @@ def test_schema_meta_validation(model_fn):
         pytest.skip(f"Model '{model_name}' doesn't have any pre-trained weights.")
 
     problematic_weights = {}
-    incorrect_params = []
+    incorrect_meta = []
     bad_names = []
     for w in weights_enum:
         actual_fields = set(w.meta.keys())
@@ -173,24 +211,45 @@ def test_schema_meta_validation(model_fn):
         unsupported_fields = set(w.meta.keys()) - permitted_fields
         if missing_fields or unsupported_fields:
             problematic_weights[w] = {"missing": missing_fields, "unsupported": unsupported_fields}
-        if w == weights_enum.DEFAULT:
+
+        if w == weights_enum.DEFAULT or any(w.meta[k] != weights_enum.DEFAULT.meta[k] for k in ["num_params", "_ops"]):
             if module_name == "quantization":
                 # parameters() count doesn't work well with quantization, so we check against the non-quantized
                 unquantized_w = w.meta.get("unquantized")
-                if unquantized_w is not None and w.meta.get("num_params") != unquantized_w.meta.get("num_params"):
-                    incorrect_params.append(w)
+                if unquantized_w is not None:
+                    if w.meta.get("num_params") != unquantized_w.meta.get("num_params"):
+                        incorrect_meta.append((w, "num_params"))
+
+                    # the methodology for quantized ops count doesn't work as well, so we take unquantized FLOPs
+                    # instead
+                    if w.meta["_ops"] != unquantized_w.meta.get("_ops"):
+                        incorrect_meta.append((w, "_ops"))
+
             else:
-                if w.meta.get("num_params") != sum(p.numel() for p in model_fn(weights=w).parameters()):
-                    incorrect_params.append(w)
-        else:
-            if w.meta.get("num_params") != weights_enum.DEFAULT.meta.get("num_params"):
-                if w.meta.get("num_params") != sum(p.numel() for p in model_fn(weights=w).parameters()):
-                    incorrect_params.append(w)
+                # loading the model and using it for parameter and ops verification
+                model = model_fn(weights=w)
+
+                if w.meta.get("num_params") != sum(p.numel() for p in model.parameters()):
+                    incorrect_meta.append((w, "num_params"))
+
+                kwargs = {}
+                if model_name in detection_models_input_dims:
+                    # detection models have non default height and width
+                    height, width = detection_models_input_dims[model_name]
+                    kwargs = {"height": height, "width": width}
+
+                calculated_ops = get_ops(model=model, weight=w, **kwargs)
+                if calculated_ops != w.meta["_ops"]:
+                    incorrect_meta.append((w, "_ops"))
+
         if not w.name.isupper():
             bad_names.append(w)
 
+        if get_weight_size_mb(w) != w.meta.get("_weight_size"):
+            incorrect_meta.append((w, "_weight_size"))
+
     assert not problematic_weights
-    assert not incorrect_params
+    assert not incorrect_meta
     assert not bad_names
 
 

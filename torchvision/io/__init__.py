@@ -4,6 +4,11 @@ import torch
 
 from ..utils import _log_api_usage_once
 
+try:
+    from ._load_gpu_decoder import _HAS_GPU_VIDEO_DECODER
+except ModuleNotFoundError:
+    _HAS_GPU_VIDEO_DECODER = False
+
 from ._video_opt import (
     _HAS_VIDEO_OPT,
     _probe_video_from_file,
@@ -43,6 +48,7 @@ __all__ = [
     "_read_video_timestamps_from_memory",
     "_probe_video_from_memory",
     "_HAS_VIDEO_OPT",
+    "_HAS_GPU_VIDEO_DECODER",
     "_read_video_clip_from_memory",
     "_read_video_meta_data",
     "VideoMetaData",
