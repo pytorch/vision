@@ -17,6 +17,7 @@ def smoke_test_torchvision() -> None:
         all(x is not None for x in [torch.ops.image.decode_png, torch.ops.torchvision.roi_align]),
     )
 
+
 def smoke_test_torchvision_read_decode() -> None:
     img_jpg = read_image(str(SCRIPT_DIR / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg"))
     if img_jpg.ndim != 3 or img_jpg.numel() < 100:
@@ -24,6 +25,7 @@ def smoke_test_torchvision_read_decode() -> None:
     img_png = read_image(str(SCRIPT_DIR / "assets" / "interlaced_png" / "wizard_low.png"))
     if img_png.ndim != 3 or img_png.numel() < 100:
         raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
+
 
 def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
     img = read_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg")).to(device)
@@ -47,9 +49,8 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
     expected_category = "German shepherd"
     print(f"{category_name} ({device}): {100 * score:.1f}%")
     if category_name != expected_category:
-        raise RuntimeError(
-            f"Failed ResNet50 classify {category_name} Expected: {expected_category}"
-        )
+        raise RuntimeError(f"Failed ResNet50 classify {category_name} Expected: {expected_category}")
+
 
 def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
@@ -58,6 +59,7 @@ def main() -> None:
     smoke_test_torchvision_resnet50_classify()
     if torch.cuda.is_available():
         smoke_test_torchvision_resnet50_classify("cuda")
+
 
 if __name__ == "__main__":
     main()
