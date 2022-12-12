@@ -5,13 +5,13 @@ import numpy as np
 import PIL.Image
 import torch
 
-from torchvision.prototype import features
+from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import Transform
 from torchvision.transforms import functional as _F
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_chw
+from .utils import is_simple_tensor, query_chw
 
 
 class ToTensor(Transform):
@@ -29,7 +29,12 @@ class ToTensor(Transform):
 
 
 class Grayscale(Transform):
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(self, num_output_channels: Literal[1, 3] = 1) -> None:
         deprecation_msg = (
@@ -53,16 +58,21 @@ class Grayscale(Transform):
         self.num_output_channels = num_output_channels
 
     def _transform(
-        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
-    ) -> Union[features.ImageType, features.VideoType]:
+        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
+    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         output = _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
-        if isinstance(inpt, (features.Image, features.Video)):
-            output = inpt.wrap_like(inpt, output, color_space=features.ColorSpace.GRAY)  # type: ignore[arg-type]
+        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
+            output = inpt.wrap_like(inpt, output, color_space=datapoints.ColorSpace.GRAY)  # type: ignore[arg-type]
         return output
 
 
 class RandomGrayscale(_RandomApplyTransform):
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(self, p: float = 0.1) -> None:
         warnings.warn(
@@ -84,9 +94,9 @@ class RandomGrayscale(_RandomApplyTransform):
         return dict(num_input_channels=num_input_channels)
 
     def _transform(
-        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
-    ) -> Union[features.ImageType, features.VideoType]:
+        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
+    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         output = _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
-        if isinstance(inpt, (features.Image, features.Video)):
-            output = inpt.wrap_like(inpt, output, color_space=features.ColorSpace.GRAY)  # type: ignore[arg-type]
+        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
+            output = inpt.wrap_like(inpt, output, color_space=datapoints.ColorSpace.GRAY)  # type: ignore[arg-type]
         return output

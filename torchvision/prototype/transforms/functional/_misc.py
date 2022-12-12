@@ -4,8 +4,13 @@ from typing import List, Optional, Union
 import PIL.Image
 import torch
 from torch.nn.functional import conv2d, pad as torch_pad
-from torchvision.prototype import features
+
+from torchvision.prototype import datapoints
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
+
+from torchvision.utils import _log_api_usage_once
+
+from ..utils import is_simple_tensor
 
 
 def normalize_image_tensor(
@@ -48,18 +53,21 @@ def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], in
 
 
 def normalize(
-    inpt: Union[features.TensorImageTypeJIT, features.TensorVideoTypeJIT],
+    inpt: Union[datapoints.TensorImageTypeJIT, datapoints.TensorVideoTypeJIT],
     mean: List[float],
     std: List[float],
     inplace: bool = False,
 ) -> torch.Tensor:
-    if torch.jit.is_scripting():
-        correct_type = isinstance(inpt, torch.Tensor)
-    else:
-        correct_type = features.is_simple_tensor(inpt) or isinstance(inpt, (features.Image, features.Video))
-        inpt = inpt.as_subclass(torch.Tensor)
-    if not correct_type:
-        raise TypeError(f"img should be Tensor Image. Got {type(inpt)}")
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(normalize)
+
+        if is_simple_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video)):
+            inpt = inpt.as_subclass(torch.Tensor)
+        else:
+            raise TypeError(
+                f"Input can either be a plain tensor or an `Image` or `Video` datapoint, "
+                f"but got {type(inpt)} instead."
+            )
 
     # Image or Video type should not be retained after normalization due to unknown data range
     # Thus we return Tensor for input Image
@@ -162,11 +170,21 @@ def gaussian_blur_video(
 
 
 def gaussian_blur(
-    inpt: features.InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
-) -> features.InputTypeJIT:
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, features._Feature)):
+    inpt: datapoints.InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
+) -> datapoints.InputTypeJIT:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(gaussian_blur)
+
+    if isinstance(inpt, torch.Tensor) and (
+        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
+    ):
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
-    elif isinstance(inpt, features._Feature):
+    elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)
-    else:
+    elif isinstance(inpt, PIL.Image.Image):
         return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+            f"but got {type(inpt)} instead."
+        )
