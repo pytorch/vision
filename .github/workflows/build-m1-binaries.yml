@@ -138,13 +138,3 @@ jobs:
         with:
           name: torchvision-py${{ matrix.py_vers }}-macos11-m1-conda
           path: dist/
-      - name: Upload package to conda
-        if: ${{ github.event_name == 'push' && (github.event.ref == 'refs/heads/nightly' || startsWith(github.event.ref, 'refs/tags/')) }}
-        shell: arch -arch arm64 bash {0}
-        env:
-          CONDA_PYTORCHBOT_TOKEN: ${{ secrets.CONDA_PYTORCHBOT_TOKEN }}
-        run: |
-          conda install -yq anaconda-client
-          set -x
-          export ANACONDA_PATH=$(conda info --base)/bin
-          $ANACONDA_PATH/anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload dist/osx-arm64/*.tar.bz2 -u "pytorch-${CHANNEL}" --label main --no-progress --force

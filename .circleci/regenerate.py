@@ -71,6 +71,10 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                         if os_type == "macos" and btype == "wheel":
                             continue
 
+                        # Disable all non-Windows Conda workflows
+                        if os_type != "win" and btype == "conda":
+                            continue
+
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version, unicode, prefix, upload, filter_branch=fb
                         )
