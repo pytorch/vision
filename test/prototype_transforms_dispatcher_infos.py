@@ -4,7 +4,7 @@ import pytest
 import torchvision.prototype.transforms.functional as F
 from prototype_common_utils import InfoBase, TestMark
 from prototype_transforms_kernel_infos import KERNEL_INFOS
-from torchvision.prototype import features
+from torchvision.prototype import datapoints
 
 __all__ = ["DispatcherInfo", "DISPATCHER_INFOS"]
 
@@ -139,20 +139,20 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.horizontal_flip,
         kernels={
-            features.Image: F.horizontal_flip_image_tensor,
-            features.Video: F.horizontal_flip_video,
-            features.BoundingBox: F.horizontal_flip_bounding_box,
-            features.Mask: F.horizontal_flip_mask,
+            datapoints.Image: F.horizontal_flip_image_tensor,
+            datapoints.Video: F.horizontal_flip_video,
+            datapoints.BoundingBox: F.horizontal_flip_bounding_box,
+            datapoints.Mask: F.horizontal_flip_mask,
         },
         pil_kernel_info=PILKernelInfo(F.horizontal_flip_image_pil, kernel_name="horizontal_flip_image_pil"),
     ),
     DispatcherInfo(
         F.resize,
         kernels={
-            features.Image: F.resize_image_tensor,
-            features.Video: F.resize_video,
-            features.BoundingBox: F.resize_bounding_box,
-            features.Mask: F.resize_mask,
+            datapoints.Image: F.resize_image_tensor,
+            datapoints.Video: F.resize_video,
+            datapoints.BoundingBox: F.resize_bounding_box,
+            datapoints.Mask: F.resize_mask,
         },
         pil_kernel_info=PILKernelInfo(F.resize_image_pil),
         test_marks=[
@@ -162,10 +162,10 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.affine,
         kernels={
-            features.Image: F.affine_image_tensor,
-            features.Video: F.affine_video,
-            features.BoundingBox: F.affine_bounding_box,
-            features.Mask: F.affine_mask,
+            datapoints.Image: F.affine_image_tensor,
+            datapoints.Video: F.affine_video,
+            datapoints.BoundingBox: F.affine_bounding_box,
+            datapoints.Mask: F.affine_mask,
         },
         pil_kernel_info=PILKernelInfo(F.affine_image_pil),
         test_marks=[
@@ -179,20 +179,20 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.vertical_flip,
         kernels={
-            features.Image: F.vertical_flip_image_tensor,
-            features.Video: F.vertical_flip_video,
-            features.BoundingBox: F.vertical_flip_bounding_box,
-            features.Mask: F.vertical_flip_mask,
+            datapoints.Image: F.vertical_flip_image_tensor,
+            datapoints.Video: F.vertical_flip_video,
+            datapoints.BoundingBox: F.vertical_flip_bounding_box,
+            datapoints.Mask: F.vertical_flip_mask,
         },
         pil_kernel_info=PILKernelInfo(F.vertical_flip_image_pil, kernel_name="vertical_flip_image_pil"),
     ),
     DispatcherInfo(
         F.rotate,
         kernels={
-            features.Image: F.rotate_image_tensor,
-            features.Video: F.rotate_video,
-            features.BoundingBox: F.rotate_bounding_box,
-            features.Mask: F.rotate_mask,
+            datapoints.Image: F.rotate_image_tensor,
+            datapoints.Video: F.rotate_video,
+            datapoints.BoundingBox: F.rotate_bounding_box,
+            datapoints.Mask: F.rotate_mask,
         },
         pil_kernel_info=PILKernelInfo(F.rotate_image_pil),
         test_marks=[
@@ -204,30 +204,30 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.crop,
         kernels={
-            features.Image: F.crop_image_tensor,
-            features.Video: F.crop_video,
-            features.BoundingBox: F.crop_bounding_box,
-            features.Mask: F.crop_mask,
+            datapoints.Image: F.crop_image_tensor,
+            datapoints.Video: F.crop_video,
+            datapoints.BoundingBox: F.crop_bounding_box,
+            datapoints.Mask: F.crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.crop_image_pil, kernel_name="crop_image_pil"),
     ),
     DispatcherInfo(
         F.resized_crop,
         kernels={
-            features.Image: F.resized_crop_image_tensor,
-            features.Video: F.resized_crop_video,
-            features.BoundingBox: F.resized_crop_bounding_box,
-            features.Mask: F.resized_crop_mask,
+            datapoints.Image: F.resized_crop_image_tensor,
+            datapoints.Video: F.resized_crop_video,
+            datapoints.BoundingBox: F.resized_crop_bounding_box,
+            datapoints.Mask: F.resized_crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.resized_crop_image_pil),
     ),
     DispatcherInfo(
         F.pad,
         kernels={
-            features.Image: F.pad_image_tensor,
-            features.Video: F.pad_video,
-            features.BoundingBox: F.pad_bounding_box,
-            features.Mask: F.pad_mask,
+            datapoints.Image: F.pad_image_tensor,
+            datapoints.Video: F.pad_video,
+            datapoints.BoundingBox: F.pad_bounding_box,
+            datapoints.Mask: F.pad_mask,
         },
         pil_kernel_info=PILKernelInfo(F.pad_image_pil, kernel_name="pad_image_pil"),
         test_marks=[
@@ -251,10 +251,10 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.perspective,
         kernels={
-            features.Image: F.perspective_image_tensor,
-            features.Video: F.perspective_video,
-            features.BoundingBox: F.perspective_bounding_box,
-            features.Mask: F.perspective_mask,
+            datapoints.Image: F.perspective_image_tensor,
+            datapoints.Video: F.perspective_video,
+            datapoints.BoundingBox: F.perspective_bounding_box,
+            datapoints.Mask: F.perspective_mask,
         },
         pil_kernel_info=PILKernelInfo(F.perspective_image_pil),
         test_marks=[
@@ -264,20 +264,20 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.elastic,
         kernels={
-            features.Image: F.elastic_image_tensor,
-            features.Video: F.elastic_video,
-            features.BoundingBox: F.elastic_bounding_box,
-            features.Mask: F.elastic_mask,
+            datapoints.Image: F.elastic_image_tensor,
+            datapoints.Video: F.elastic_video,
+            datapoints.BoundingBox: F.elastic_bounding_box,
+            datapoints.Mask: F.elastic_mask,
         },
         pil_kernel_info=PILKernelInfo(F.elastic_image_pil),
     ),
     DispatcherInfo(
         F.center_crop,
         kernels={
-            features.Image: F.center_crop_image_tensor,
-            features.Video: F.center_crop_video,
-            features.BoundingBox: F.center_crop_bounding_box,
-            features.Mask: F.center_crop_mask,
+            datapoints.Image: F.center_crop_image_tensor,
+            datapoints.Video: F.center_crop_video,
+            datapoints.BoundingBox: F.center_crop_bounding_box,
+            datapoints.Mask: F.center_crop_mask,
         },
         pil_kernel_info=PILKernelInfo(F.center_crop_image_pil),
         test_marks=[
@@ -287,8 +287,8 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.gaussian_blur,
         kernels={
-            features.Image: F.gaussian_blur_image_tensor,
-            features.Video: F.gaussian_blur_video,
+            datapoints.Image: F.gaussian_blur_image_tensor,
+            datapoints.Video: F.gaussian_blur_video,
         },
         pil_kernel_info=PILKernelInfo(F.gaussian_blur_image_pil),
         test_marks=[
@@ -299,56 +299,56 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.equalize,
         kernels={
-            features.Image: F.equalize_image_tensor,
-            features.Video: F.equalize_video,
+            datapoints.Image: F.equalize_image_tensor,
+            datapoints.Video: F.equalize_video,
         },
         pil_kernel_info=PILKernelInfo(F.equalize_image_pil, kernel_name="equalize_image_pil"),
     ),
     DispatcherInfo(
         F.invert,
         kernels={
-            features.Image: F.invert_image_tensor,
-            features.Video: F.invert_video,
+            datapoints.Image: F.invert_image_tensor,
+            datapoints.Video: F.invert_video,
         },
         pil_kernel_info=PILKernelInfo(F.invert_image_pil, kernel_name="invert_image_pil"),
     ),
     DispatcherInfo(
         F.posterize,
         kernels={
-            features.Image: F.posterize_image_tensor,
-            features.Video: F.posterize_video,
+            datapoints.Image: F.posterize_image_tensor,
+            datapoints.Video: F.posterize_video,
         },
         pil_kernel_info=PILKernelInfo(F.posterize_image_pil, kernel_name="posterize_image_pil"),
     ),
     DispatcherInfo(
         F.solarize,
         kernels={
-            features.Image: F.solarize_image_tensor,
-            features.Video: F.solarize_video,
+            datapoints.Image: F.solarize_image_tensor,
+            datapoints.Video: F.solarize_video,
         },
         pil_kernel_info=PILKernelInfo(F.solarize_image_pil, kernel_name="solarize_image_pil"),
     ),
     DispatcherInfo(
         F.autocontrast,
         kernels={
-            features.Image: F.autocontrast_image_tensor,
-            features.Video: F.autocontrast_video,
+            datapoints.Image: F.autocontrast_image_tensor,
+            datapoints.Video: F.autocontrast_video,
         },
         pil_kernel_info=PILKernelInfo(F.autocontrast_image_pil, kernel_name="autocontrast_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_sharpness,
         kernels={
-            features.Image: F.adjust_sharpness_image_tensor,
-            features.Video: F.adjust_sharpness_video,
+            datapoints.Image: F.adjust_sharpness_image_tensor,
+            datapoints.Video: F.adjust_sharpness_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_sharpness_image_pil, kernel_name="adjust_sharpness_image_pil"),
     ),
     DispatcherInfo(
         F.erase,
         kernels={
-            features.Image: F.erase_image_tensor,
-            features.Video: F.erase_video,
+            datapoints.Image: F.erase_image_tensor,
+            datapoints.Video: F.erase_video,
         },
         pil_kernel_info=PILKernelInfo(F.erase_image_pil),
         test_marks=[
@@ -358,48 +358,48 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.adjust_brightness,
         kernels={
-            features.Image: F.adjust_brightness_image_tensor,
-            features.Video: F.adjust_brightness_video,
+            datapoints.Image: F.adjust_brightness_image_tensor,
+            datapoints.Video: F.adjust_brightness_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_brightness_image_pil, kernel_name="adjust_brightness_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_contrast,
         kernels={
-            features.Image: F.adjust_contrast_image_tensor,
-            features.Video: F.adjust_contrast_video,
+            datapoints.Image: F.adjust_contrast_image_tensor,
+            datapoints.Video: F.adjust_contrast_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_contrast_image_pil, kernel_name="adjust_contrast_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_gamma,
         kernels={
-            features.Image: F.adjust_gamma_image_tensor,
-            features.Video: F.adjust_gamma_video,
+            datapoints.Image: F.adjust_gamma_image_tensor,
+            datapoints.Video: F.adjust_gamma_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_gamma_image_pil, kernel_name="adjust_gamma_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_hue,
         kernels={
-            features.Image: F.adjust_hue_image_tensor,
-            features.Video: F.adjust_hue_video,
+            datapoints.Image: F.adjust_hue_image_tensor,
+            datapoints.Video: F.adjust_hue_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_hue_image_pil, kernel_name="adjust_hue_image_pil"),
     ),
     DispatcherInfo(
         F.adjust_saturation,
         kernels={
-            features.Image: F.adjust_saturation_image_tensor,
-            features.Video: F.adjust_saturation_video,
+            datapoints.Image: F.adjust_saturation_image_tensor,
+            datapoints.Video: F.adjust_saturation_video,
         },
         pil_kernel_info=PILKernelInfo(F.adjust_saturation_image_pil, kernel_name="adjust_saturation_image_pil"),
     ),
     DispatcherInfo(
         F.five_crop,
         kernels={
-            features.Image: F.five_crop_image_tensor,
-            features.Video: F.five_crop_video,
+            datapoints.Image: F.five_crop_image_tensor,
+            datapoints.Video: F.five_crop_video,
         },
         pil_kernel_info=PILKernelInfo(F.five_crop_image_pil),
         test_marks=[
@@ -410,8 +410,8 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.ten_crop,
         kernels={
-            features.Image: F.ten_crop_image_tensor,
-            features.Video: F.ten_crop_video,
+            datapoints.Image: F.ten_crop_image_tensor,
+            datapoints.Video: F.ten_crop_video,
         },
         test_marks=[
             xfail_jit_python_scalar_arg("size"),
@@ -422,8 +422,8 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.normalize,
         kernels={
-            features.Image: F.normalize_image_tensor,
-            features.Video: F.normalize_video,
+            datapoints.Image: F.normalize_image_tensor,
+            datapoints.Video: F.normalize_video,
         },
         test_marks=[
             skip_dispatch_feature,
@@ -434,8 +434,8 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.convert_dtype,
         kernels={
-            features.Image: F.convert_dtype_image_tensor,
-            features.Video: F.convert_dtype_video,
+            datapoints.Image: F.convert_dtype_image_tensor,
+            datapoints.Video: F.convert_dtype_video,
         },
         test_marks=[
             skip_dispatch_feature,
@@ -444,7 +444,7 @@ DISPATCHER_INFOS = [
     DispatcherInfo(
         F.uniform_temporal_subsample,
         kernels={
-            features.Video: F.uniform_temporal_subsample_video,
+            datapoints.Video: F.uniform_temporal_subsample_video,
         },
         test_marks=[
             skip_dispatch_feature,

@@ -8,7 +8,7 @@ import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms.functional import InterpolationMode
 
-from ._feature import _Feature, FillTypeJIT
+from ._datapoint import Datapoint, FillTypeJIT
 
 
 class ColorSpace(StrEnum):
@@ -57,7 +57,7 @@ def _from_tensor_shape(shape: List[int]) -> ColorSpace:
         return ColorSpace.OTHER
 
 
-class Image(_Feature):
+class Image(Datapoint):
     color_space: ColorSpace
 
     @classmethod

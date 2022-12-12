@@ -15,7 +15,7 @@ import torch.testing
 from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
 from torch.testing._comparison import assert_equal as _assert_equal, BooleanPair, NonePair, NumberPair, TensorLikePair
-from torchvision.prototype import features
+from torchvision.prototype import datapoints
 from torchvision.prototype.transforms.functional import convert_dtype_image_tensor, to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
@@ -238,7 +238,7 @@ class TensorLoader:
 
 @dataclasses.dataclass
 class ImageLoader(TensorLoader):
-    color_space: features.ColorSpace
+    color_space: datapoints.ColorSpace
     spatial_size: Tuple[int, int] = dataclasses.field(init=False)
     num_channels: int = dataclasses.field(init=False)
 
@@ -248,10 +248,10 @@ class ImageLoader(TensorLoader):
 
 
 NUM_CHANNELS_MAP = {
-    features.ColorSpace.GRAY: 1,
-    features.ColorSpace.GRAY_ALPHA: 2,
-    features.ColorSpace.RGB: 3,
-    features.ColorSpace.RGB_ALPHA: 4,
+    datapoints.ColorSpace.GRAY: 1,
+    datapoints.ColorSpace.GRAY_ALPHA: 2,
+    datapoints.ColorSpace.RGB: 3,
+    datapoints.ColorSpace.RGB_ALPHA: 4,
 }
 
 
@@ -265,7 +265,7 @@ def get_num_channels(color_space):
 def make_image_loader(
     size="random",
     *,
-    color_space=features.ColorSpace.RGB,
+    color_space=datapoints.ColorSpace.RGB,
     extra_dims=(),
     dtype=torch.float32,
     constant_alpha=True,
@@ -276,9 +276,9 @@ def make_image_loader(
     def fn(shape, dtype, device):
         max_value = get_max_value(dtype)
         data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
-        if color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
+        if color_space in {datapoints.ColorSpace.GRAY_ALPHA, datapoints.ColorSpace.RGB_ALPHA} and constant_alpha:
             data[..., -1, :, :] = max_value
-        return features.Image(data, color_space=color_space)
+        return datapoints.Image(data, color_space=color_space)
 
     return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype, color_space=color_space)
 
@@ -290,10 +290,10 @@ def make_image_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        features.ColorSpace.GRAY,
-        features.ColorSpace.GRAY_ALPHA,
-        features.ColorSpace.RGB,
-        features.ColorSpace.RGB_ALPHA,
+        datapoints.ColorSpace.GRAY,
+        datapoints.ColorSpace.GRAY_ALPHA,
+        datapoints.ColorSpace.RGB,
+        datapoints.ColorSpace.RGB_ALPHA,
     ),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.float32, torch.uint8),
@@ -306,7 +306,7 @@ def make_image_loaders(
 make_images = from_loaders(make_image_loaders)
 
 
-def make_image_loader_for_interpolation(size="random", *, color_space=features.ColorSpace.RGB, dtype=torch.uint8):
+def make_image_loader_for_interpolation(size="random", *, color_space=datapoints.ColorSpace.RGB, dtype=torch.uint8):
     size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
 
@@ -318,24 +318,24 @@ def make_image_loader_for_interpolation(size="random", *, color_space=features.C
             .resize((width, height))
             .convert(
                 {
-                    features.ColorSpace.GRAY: "L",
-                    features.ColorSpace.GRAY_ALPHA: "LA",
-                    features.ColorSpace.RGB: "RGB",
-                    features.ColorSpace.RGB_ALPHA: "RGBA",
+                    datapoints.ColorSpace.GRAY: "L",
+                    datapoints.ColorSpace.GRAY_ALPHA: "LA",
+                    datapoints.ColorSpace.RGB: "RGB",
+                    datapoints.ColorSpace.RGB_ALPHA: "RGBA",
                 }[color_space]
             )
         )
 
         image_tensor = convert_dtype_image_tensor(to_image_tensor(image_pil).to(device=device), dtype=dtype)
 
-        return features.Image(image_tensor, color_space=color_space)
+        return datapoints.Image(image_tensor, color_space=color_space)
 
     return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype, color_space=color_space)
 
 
 def make_image_loaders_for_interpolation(
     sizes=((233, 147),),
-    color_spaces=(features.ColorSpace.RGB,),
+    color_spaces=(datapoints.ColorSpace.RGB,),
     dtypes=(torch.uint8,),
 ):
     for params in combinations_grid(size=sizes, color_space=color_spaces, dtype=dtypes):
@@ -344,7 +344,7 @@ def make_image_loaders_for_interpolation(
 
 @dataclasses.dataclass
 class BoundingBoxLoader(TensorLoader):
-    format: features.BoundingBoxFormat
+    format: datapoints.BoundingBoxFormat
     spatial_size: Tuple[int, int]
 
 
@@ -362,11 +362,11 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
 
 def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dtype=torch.float32):
     if isinstance(format, str):
-        format = features.BoundingBoxFormat[format]
+        format = datapoints.BoundingBoxFormat[format]
     if format not in {
-        features.BoundingBoxFormat.XYXY,
-        features.BoundingBoxFormat.XYWH,
-        features.BoundingBoxFormat.CXCYWH,
+        datapoints.BoundingBoxFormat.XYXY,
+        datapoints.BoundingBoxFormat.XYWH,
+        datapoints.BoundingBoxFormat.CXCYWH,
     }:
         raise pytest.UsageError(f"Can't make bounding box in format {format}")
 
@@ -378,19 +378,19 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dt
             raise pytest.UsageError()
 
         if any(dim == 0 for dim in extra_dims):
-            return features.BoundingBox(
+            return datapoints.BoundingBox(
                 torch.empty(*extra_dims, 4, dtype=dtype, device=device), format=format, spatial_size=spatial_size
             )
 
         height, width = spatial_size
 
-        if format == features.BoundingBoxFormat.XYXY:
+        if format == datapoints.BoundingBoxFormat.XYXY:
             x1 = torch.randint(0, width // 2, extra_dims)
             y1 = torch.randint(0, height // 2, extra_dims)
             x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
             y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
             parts = (x1, y1, x2, y2)
-        elif format == features.BoundingBoxFormat.XYWH:
+        elif format == datapoints.BoundingBoxFormat.XYWH:
             x = torch.randint(0, width // 2, extra_dims)
             y = torch.randint(0, height // 2, extra_dims)
             w = randint_with_tensor_bounds(1, width - x)
@@ -403,7 +403,7 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dt
             h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
             parts = (cx, cy, w, h)
 
-        return features.BoundingBox(
+        return datapoints.BoundingBox(
             torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=spatial_size
         )
 
@@ -416,7 +416,7 @@ make_bounding_box = from_loader(make_bounding_box_loader)
 def make_bounding_box_loaders(
     *,
     extra_dims=DEFAULT_EXTRA_DIMS,
-    formats=tuple(features.BoundingBoxFormat),
+    formats=tuple(datapoints.BoundingBoxFormat),
     spatial_size="random",
     dtypes=(torch.float32, torch.int64),
 ):
@@ -456,7 +456,7 @@ def make_label_loader(*, extra_dims=(), categories=None, dtype=torch.int64):
         # The idiom `make_tensor(..., dtype=torch.int64).to(dtype)` is intentional to only get integer values,
         # regardless of the requested dtype, e.g. 0 or 0.0 rather than 0 or 0.123
         data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=torch.int64, device=device).to(dtype)
-        return features.Label(data, categories=categories)
+        return datapoints.Label(data, categories=categories)
 
     return LabelLoader(fn, shape=extra_dims, dtype=dtype, categories=categories)
 
@@ -480,7 +480,7 @@ def make_one_hot_label_loader(*, categories=None, extra_dims=(), dtype=torch.int
             # since `one_hot` only supports int64
             label = make_label_loader(extra_dims=extra_dims, categories=num_categories, dtype=torch.int64).load(device)
             data = one_hot(label, num_classes=num_categories).to(dtype)
-        return features.OneHotLabel(data, categories=categories)
+        return datapoints.OneHotLabel(data, categories=categories)
 
     return OneHotLabelLoader(fn, shape=(*extra_dims, num_categories), dtype=dtype, categories=categories)
 
@@ -509,7 +509,7 @@ def make_detection_mask_loader(size="random", *, num_objects="random", extra_dim
 
     def fn(shape, dtype, device):
         data = torch.testing.make_tensor(shape, low=0, high=2, dtype=dtype, device=device)
-        return features.Mask(data)
+        return datapoints.Mask(data)
 
     return MaskLoader(fn, shape=(*extra_dims, num_objects, *size), dtype=dtype)
 
@@ -537,7 +537,7 @@ def make_segmentation_mask_loader(size="random", *, num_categories="random", ext
 
     def fn(shape, dtype, device):
         data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=dtype, device=device)
-        return features.Mask(data)
+        return datapoints.Mask(data)
 
     return MaskLoader(fn, shape=(*extra_dims, *size), dtype=dtype)
 
@@ -583,7 +583,7 @@ class VideoLoader(ImageLoader):
 def make_video_loader(
     size="random",
     *,
-    color_space=features.ColorSpace.RGB,
+    color_space=datapoints.ColorSpace.RGB,
     num_frames="random",
     extra_dims=(),
     dtype=torch.uint8,
@@ -593,7 +593,7 @@ def make_video_loader(
 
     def fn(shape, dtype, device):
         video = make_image(size=shape[-2:], color_space=color_space, extra_dims=shape[:-3], dtype=dtype, device=device)
-        return features.Video(video, color_space=color_space)
+        return datapoints.Video(video, color_space=color_space)
 
     return VideoLoader(
         fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype, color_space=color_space
@@ -607,8 +607,8 @@ def make_video_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        features.ColorSpace.GRAY,
-        features.ColorSpace.RGB,
+        datapoints.ColorSpace.GRAY,
+        datapoints.ColorSpace.RGB,
     ),
     num_frames=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,

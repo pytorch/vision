@@ -5,13 +5,14 @@ import PIL.Image
 import torch
 
 from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
-from torchvision.prototype import features
+
+from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.prototype.transforms.functional._meta import get_spatial_size
 from torchvision.transforms import functional_tensor as _FT
 
 from ._utils import _setup_fill_arg
-from .utils import check_type
+from .utils import check_type, is_simple_tensor
 
 
 class _AutoAugmentBase(Transform):
@@ -19,7 +20,7 @@ class _AutoAugmentBase(Transform):
         self,
         *,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ) -> None:
         super().__init__()
         self.interpolation = interpolation
@@ -33,13 +34,21 @@ class _AutoAugmentBase(Transform):
     def _flatten_and_extract_image_or_video(
         self,
         inputs: Any,
-        unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.Mask),
-    ) -> Tuple[Tuple[List[Any], TreeSpec, int], Union[features.ImageType, features.VideoType]]:
+        unsupported_types: Tuple[Type, ...] = (datapoints.BoundingBox, datapoints.Mask),
+    ) -> Tuple[Tuple[List[Any], TreeSpec, int], Union[datapoints.ImageType, datapoints.VideoType]]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
         image_or_videos = []
         for idx, inpt in enumerate(flat_inputs):
-            if check_type(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)):
+            if check_type(
+                inpt,
+                (
+                    datapoints.Image,
+                    PIL.Image.Image,
+                    is_simple_tensor,
+                    datapoints.Video,
+                ),
+            ):
                 image_or_videos.append((idx, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
@@ -58,7 +67,7 @@ class _AutoAugmentBase(Transform):
     def _unflatten_and_insert_image_or_video(
         self,
         flat_inputs_with_spec: Tuple[List[Any], TreeSpec, int],
-        image_or_video: Union[features.ImageType, features.VideoType],
+        image_or_video: Union[datapoints.ImageType, datapoints.VideoType],
     ) -> Any:
         flat_inputs, spec, idx = flat_inputs_with_spec
         flat_inputs[idx] = image_or_video
@@ -66,12 +75,12 @@ class _AutoAugmentBase(Transform):
 
     def _apply_image_or_video_transform(
         self,
-        image: Union[features.ImageType, features.VideoType],
+        image: Union[datapoints.ImageType, datapoints.VideoType],
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Dict[Type, features.FillTypeJIT],
-    ) -> Union[features.ImageType, features.VideoType]:
+        fill: Dict[Type, datapoints.FillTypeJIT],
+    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         fill_ = fill[type(image)]
 
         if transform_id == "Identity":
@@ -182,7 +191,7 @@ class AutoAugment(_AutoAugmentBase):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -338,7 +347,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -390,7 +399,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         self,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -446,7 +455,7 @@ class AugMix(_AutoAugmentBase):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10
@@ -474,7 +483,7 @@ class AugMix(_AutoAugmentBase):
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
         orig_dims = list(image_or_video.shape)
-        expected_ndim = 5 if isinstance(orig_image_or_video, features.Video) else 4
+        expected_ndim = 5 if isinstance(orig_image_or_video, datapoints.Video) else 4
         batch = image_or_video.reshape([1] * max(expected_ndim - image_or_video.ndim, 0) + orig_dims)
         batch_dims = [batch.size(0)] + [1] * (batch.ndim - 1)
 
@@ -511,7 +520,7 @@ class AugMix(_AutoAugmentBase):
             mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
-        if isinstance(orig_image_or_video, (features.Image, features.Video)):
+        if isinstance(orig_image_or_video, (datapoints.Image, datapoints.Video)):
             mix = orig_image_or_video.wrap_like(orig_image_or_video, mix)  # type: ignore[arg-type]
         elif isinstance(orig_image_or_video, PIL.Image.Image):
             mix = F.to_image_pil(mix)
