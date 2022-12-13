@@ -6,7 +6,7 @@ import shutil
 from abc import ABC, abstractmethod
 from glob import glob
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Union
+from typing import cast, Callable, List, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image
@@ -184,7 +184,7 @@ class CarlaStereo(StereoMatchingDataset):
         valid_mask = None
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Union[T1, T2]:
+    def __getitem__(self, index: int) -> T1:
         """Return example at given index.
 
         Args:
@@ -196,7 +196,7 @@ class CarlaStereo(StereoMatchingDataset):
             If a ``valid_mask`` is generated within the ``transforms`` parameter,
             a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
         """
-        return super().__getitem__(index)
+        return cast(T1, super().__getitem__(index))
 
 
 class Kitti2012Stereo(StereoMatchingDataset):
@@ -268,7 +268,7 @@ class Kitti2012Stereo(StereoMatchingDataset):
         valid_mask = None
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Union[T1, T2]:
+    def __getitem__(self, index: int) -> T1:
         """Return example at given index.
 
         Args:
@@ -281,7 +281,7 @@ class Kitti2012Stereo(StereoMatchingDataset):
             generate a valid mask.
             Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.
         """
-        return super().__getitem__(index)
+        return cast(T1, super().__getitem__(index))
 
 
 class Kitti2015Stereo(StereoMatchingDataset):
@@ -356,7 +356,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
         valid_mask = None
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Union[T1, T2]:
+    def __getitem__(self, index: int) -> T1:
         """Return example at given index.
 
         Args:
@@ -369,7 +369,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
             generate a valid mask.
             Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.
         """
-        return super().__getitem__(index)
+        return cast(T1, super().__getitem__(index))
 
 
 class Middlebury2014Stereo(StereoMatchingDataset):
@@ -615,7 +615,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
                 # cleanup MiddEval3 directory
                 shutil.rmtree(str(root / "MiddEval3"))
 
-    def __getitem__(self, index: int) -> Union[T1, T2]:
+    def __getitem__(self, index: int) -> T2:
         """Return example at given index.
 
         Args:
@@ -626,7 +626,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
             The disparity is a numpy array of shape (1, H, W) and the images are PIL images.
             ``valid_mask`` is implicitly ``None`` for `split=test`.
         """
-        return super().__getitem__(index)
+        return cast(T2, super().__getitem__(index))
 
 
 class CREStereo(StereoMatchingDataset):
@@ -702,7 +702,7 @@ class CREStereo(StereoMatchingDataset):
         valid_mask = None
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Union[T1, T2]:
+    def __getitem__(self, index: int) -> T1:
         """Return example at given index.
 
         Args:
@@ -714,7 +714,7 @@ class CREStereo(StereoMatchingDataset):
             ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not
             generate a valid mask.
         """
-        return super().__getitem__(index)
+        return cast(T1, super().__getitem__(index))
 
 
 class FallingThingsStereo(StereoMatchingDataset):
@@ -806,7 +806,7 @@ class FallingThingsStereo(StereoMatchingDataset):
             valid_mask = None
             return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Union[T1, T2]:
+    def __getitem__(self, index: int) -> T1:
         """Return example at given index.
 
         Args:
@@ -818,7 +818,7 @@ class FallingThingsStereo(StereoMatchingDataset):
             If a ``valid_mask`` is generated within the ``transforms`` parameter,
             a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
         """
-        return super().__getitem__(index)
+        return cast(T1, super().__getitem__(index))
 
 
 class SceneFlowStereo(StereoMatchingDataset):
@@ -918,7 +918,7 @@ class SceneFlowStereo(StereoMatchingDataset):
         valid_mask = None
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Union[T1, T2]:
+    def __getitem__(self, index: int) -> T1:
         """Return example at given index.
 
         Args:
@@ -930,7 +930,7 @@ class SceneFlowStereo(StereoMatchingDataset):
             If a ``valid_mask`` is generated within the ``transforms`` parameter,
             a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
         """
-        return super().__getitem__(index)
+        return cast(T1, super().__getitem__(index))
 
 
 class SintelStereo(StereoMatchingDataset):
@@ -1041,7 +1041,7 @@ class SintelStereo(StereoMatchingDataset):
         valid_mask = np.logical_and(off_mask, valid_mask)
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Union[T1, T2]:
+    def __getitem__(self, index: int) -> T2:
         """Return example at given index.
 
         Args:
@@ -1052,7 +1052,7 @@ class SintelStereo(StereoMatchingDataset):
             The disparity is a numpy array of shape (1, H, W) and the images are PIL images whilst
             the valid_mask is a numpy array of shape (H, W).
         """
-        return super().__getitem__(index)
+        return cast(T2, super().__getitem__(index))
 
 
 class InStereo2k(StereoMatchingDataset):
@@ -1109,7 +1109,7 @@ class InStereo2k(StereoMatchingDataset):
         valid_mask = None
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Union[T1, T2]:
+    def __getitem__(self, index: int) -> T1:
         """Return example at given index.
 
         Args:
@@ -1121,7 +1121,7 @@ class InStereo2k(StereoMatchingDataset):
             If a ``valid_mask`` is generated within the ``transforms`` parameter,
             a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.
         """
-        return super().__getitem__(index)
+        return cast(T1, super().__getitem__(index))
 
 
 class ETH3DStereo(StereoMatchingDataset):
@@ -1208,7 +1208,7 @@ class ETH3DStereo(StereoMatchingDataset):
         valid_mask = np.asarray(valid_mask).astype(bool)
         return disparity_map, valid_mask
 
-    def __getitem__(self, index: int) -> Union[T1, T2]:
+    def __getitem__(self, index: int) -> T2:
         """Return example at given index.
 
         Args:
@@ -1221,4 +1221,4 @@ class ETH3DStereo(StereoMatchingDataset):
             generate a valid mask.
             Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.
         """
-        return super().__getitem__(index)
+        return cast(T2, super().__getitem__(index))
