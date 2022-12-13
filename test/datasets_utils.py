@@ -951,7 +951,7 @@ def create_random_string(length: int, *digits: str) -> str:
 
     Args:
         length (int): Number of characters in the generated string.
-        *characters (str): Characters to sample from. If omitted defaults to :attr:`string.ascii_lowercase`.
+        *digits (str): Characters to sample from. If omitted defaults to :attr:`string.ascii_lowercase`.
     """
     if not digits:
         digits = string.ascii_lowercase

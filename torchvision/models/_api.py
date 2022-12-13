@@ -117,7 +117,7 @@ def get_weight(name: str) -> WeightsEnum:
 
 def get_model_weights(name: Union[Callable, str]) -> WeightsEnum:
     """
-    Retuns the weights enum class associated to the given model.
+    Returns the weights enum class associated to the given model.
 
     .. betastatus:: function
 
@@ -137,7 +137,6 @@ def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
 
     Args:
         fn (Callable): The builder method used to create the model.
-        weight_name (str): The name of the weight enum entry of the specific model.
     Returns:
         WeightsEnum: The requested weight enum.
     """
