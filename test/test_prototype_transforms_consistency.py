@@ -24,13 +24,13 @@ from prototype_common_utils import (
 )
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
-from torchvision.prototype import features, transforms as prototype_transforms
+from torchvision.prototype import datapoints, transforms as prototype_transforms
 from torchvision.prototype.transforms import functional as prototype_F
 from torchvision.prototype.transforms.functional import to_image_pil
 from torchvision.prototype.transforms.utils import query_spatial_size
 from torchvision.transforms import functional as legacy_F
 
-DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[features.ColorSpace.RGB], extra_dims=[(4,)])
+DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[datapoints.ColorSpace.RGB], extra_dims=[(4,)])
 
 
 class ConsistencyConfig:
@@ -138,7 +138,7 @@ CONSISTENCY_CONFIGS = [
         # Make sure that the product of the height, width and number of channels matches the number of elements in
         # `LINEAR_TRANSFORMATION_MEAN`. For example 2 * 6 * 3 == 4 * 3 * 3 == 36.
         make_images_kwargs=dict(
-            DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=[features.ColorSpace.RGB]
+            DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=[datapoints.ColorSpace.RGB]
         ),
         supports_pil=False,
     ),
@@ -150,7 +150,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(num_output_channels=3),
         ],
         make_images_kwargs=dict(
-            DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=[features.ColorSpace.RGB, features.ColorSpace.GRAY]
+            DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=[datapoints.ColorSpace.RGB, datapoints.ColorSpace.GRAY]
         ),
     ),
     ConsistencyConfig(
@@ -173,10 +173,10 @@ CONSISTENCY_CONFIGS = [
         [ArgsKwargs()],
         make_images_kwargs=dict(
             color_spaces=[
-                features.ColorSpace.GRAY,
-                features.ColorSpace.GRAY_ALPHA,
-                features.ColorSpace.RGB,
-                features.ColorSpace.RGB_ALPHA,
+                datapoints.ColorSpace.GRAY,
+                datapoints.ColorSpace.GRAY_ALPHA,
+                datapoints.ColorSpace.RGB,
+                datapoints.ColorSpace.RGB_ALPHA,
             ],
             extra_dims=[()],
         ),
@@ -733,7 +733,7 @@ class TestAATransforms:
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
             PIL.Image.new("RGB", (256, 256), 123),
-            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
     @pytest.mark.parametrize(
@@ -771,7 +771,7 @@ class TestAATransforms:
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
             PIL.Image.new("RGB", (256, 256), 123),
-            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
     @pytest.mark.parametrize(
@@ -819,7 +819,7 @@ class TestAATransforms:
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
             PIL.Image.new("RGB", (256, 256), 123),
-            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
     @pytest.mark.parametrize(
@@ -868,7 +868,7 @@ class TestAATransforms:
         [
             torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8),
             PIL.Image.new("RGB", (256, 256), 123),
-            features.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
+            datapoints.Image(torch.randint(0, 256, size=(1, 3, 256, 256), dtype=torch.uint8)),
         ],
     )
     @pytest.mark.parametrize(
@@ -902,7 +902,7 @@ class TestRefDetTransforms:
         size = (600, 800)
         num_objects = 22
 
-        pil_image = to_image_pil(make_image(size=size, color_space=features.ColorSpace.RGB))
+        pil_image = to_image_pil(make_image(size=size, color_space=datapoints.ColorSpace.RGB))
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -912,7 +912,7 @@ class TestRefDetTransforms:
 
         yield (pil_image, target)
 
-        tensor_image = torch.Tensor(make_image(size=size, color_space=features.ColorSpace.RGB))
+        tensor_image = torch.Tensor(make_image(size=size, color_space=datapoints.ColorSpace.RGB))
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -922,7 +922,7 @@ class TestRefDetTransforms:
 
         yield (tensor_image, target)
 
-        feature_image = make_image(size=size, color_space=features.ColorSpace.RGB)
+        feature_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB)
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -1006,7 +1006,7 @@ class TestRefSegTransforms:
         conv_fns.extend([torch.Tensor, lambda x: x])
 
         for conv_fn in conv_fns:
-            feature_image = make_image(size=size, color_space=features.ColorSpace.RGB, dtype=image_dtype)
+            feature_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB, dtype=image_dtype)
             feature_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
 
             dp = (conv_fn(feature_image), feature_mask)
@@ -1053,7 +1053,7 @@ class TestRefSegTransforms:
                 seg_transforms.RandomCrop(size=480),
                 prototype_transforms.Compose(
                     [
-                        PadIfSmaller(size=480, fill=defaultdict(lambda: 0, {features.Mask: 255})),
+                        PadIfSmaller(size=480, fill=defaultdict(lambda: 0, {datapoints.Mask: 255})),
                         prototype_transforms.RandomCrop(size=480),
                     ]
                 ),

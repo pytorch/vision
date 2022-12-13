@@ -32,7 +32,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu116", "cu117", "rocm5.1.1", "rocm5.2"],
+                "linux": ["cpu", "cu116", "cu117", "rocm5.2", "rocm5.3"],
                 "win": ["cpu", "cu116", "cu117"],
                 "macos": ["cpu"],
             }
@@ -69,6 +69,10 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
 
                         # Disable all Macos Wheels Workflows from CircleCI.
                         if os_type == "macos" and btype == "wheel":
+                            continue
+
+                        # Disable all non-Windows Conda workflows
+                        if os_type != "win" and btype == "conda":
                             continue
 
                         w += workflow_pair(
