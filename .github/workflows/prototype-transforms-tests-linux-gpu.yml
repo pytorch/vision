@@ -1,4 +1,4 @@
-name: Prototype transforms unit-tests on Linux GPU
+name: Prototype Unit-tests on Linux
 
 on:
   pull_request:
@@ -34,7 +34,6 @@ jobs:
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       runner: ${{ matrix.python-version }}
-      job-name: Foo-${{ matrix.python-version }}
       timeout: 45
       script: |
         # Mark Build Directory Safe
