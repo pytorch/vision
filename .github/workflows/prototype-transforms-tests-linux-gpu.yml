@@ -22,11 +22,11 @@ jobs:
           - ""
         runner:
           - linux.2xlarge
-      include:
-        - python-version: "3.8"
-          gpu-arch-type: cuda
-          gpu-arch-version: "11.6"
-          runner: linux.4xlarge.nvidia.gpu
+        include:
+          - python-version: "3.8"
+            gpu-arch-type: cuda
+            gpu-arch-version: "11.6"
+            runner: linux.4xlarge.nvidia.gpu
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
