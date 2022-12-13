@@ -275,7 +275,7 @@ class SmoothnessLoss(nn.Module):
         """
         Args:
             images: tensor of shape (D1, D2, ..., DN, C, H, W)
-            depths: tensor of shape (D1, D2, ..., DN, 1, H, W)
+            vals: tensor of shape (D1, D2, ..., DN, 1, H, W)
 
         Returns:
             smoothness loss of shape (D1, D2, ..., DN)
