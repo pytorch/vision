@@ -16,12 +16,9 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
-        gpu-arch-type:
-          - cpu
-        gpu-arch-version:
-          - ""
-        runner:
-          - linux.2xlarge
+        gpu-arch-type: ["cpu"]
+        gpu-arch-version: [""]
+        runner: ["linux.2xlarge"]
         include:
           - python-version: "3.8"
             gpu-arch-type: cuda
