@@ -6,81 +6,95 @@ on:
     branches:
       - nightly
       - main
-      - release/*
-  workflow_dispatch:
-
-env:
-  CHANNEL: "nightly"
 
 jobs:
   tests:
     strategy:
       matrix:
-        python_version:
+        python-version:
+          - "3.7"
           - "3.8"
-        cuda_arch_version:
-          - "11.6"
+          - "3.9"
+          - "3.10"
+        gpu-arch-type:
+          - cpu
+        gpu-arch-version:
+          - ""
+        runner:
+          - linux.2xlarge
+      include:
+        - python-version: "3.8"
+          gpu-arch-type: cuda
+          gpu-arch-version: "11.6"
+          runner: linux.4xlarge.nvidia.gpu
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
-      runner: linux.4xlarge.nvidia.gpu
       repository: pytorch/vision
-      gpu-arch-type: cuda
-      gpu-arch-version: ${{ matrix.cuda_arch_version }}
-      timeout: 120
+      gpu-arch-type: ${{ matrix.gpu-arch-type }}
+      gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      runner: ${{ matrix.python-version }}
+      job-name: Foo-${{ matrix.python-version }}
+      timeout: 45
       script: |
-        echo '::group::Mark Build Directory Safe'
+        # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
-        echo '::endgroup::'
 
-        echo '::group::Set up Environment Variables'
-        export PYTHON_VERSION="${{ matrix.python_version }}"
-        export VERSION="${{ matrix.cuda_arch_version }}"
-        export CUDATOOLKIT="pytorch-cuda=${VERSION}"
-        echo '::endgroup::'
-
-        echo '::group::Set CHANNEL'
+        echo '::group::Set PyTorch conda channel'
         if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
-          export CHANNEL=test
+          POSTFIX=test
         else
-          export CHANNEL=nightly
+          POSTFIX=nightly
         fi
+        PYTORCH_CHANNEL=pytorch-"${POSTFIX}"
+        echo "${PYTORCH_CHANNEL}"
         echo '::endgroup::'
-
-        echo '::group::Create Conda Env'
-        conda create --prefix ci_env \
+                
+        echo '::group::Set PyTorch conda mutex'
+        if [[ ${{ matrix.gpu-arch-type }} = 'cuda' ]]; then
+          PYTORCH_MUTEX="pytorch-cuda=${{ matrix.gpu-arch-version }}"
+        else
+          PYTORCH_MUTEX=cpuonly
+        fi
+        echo $"{MUTEX}"
+        echo '::endgroup::'
+        
+        echo '::group::Create conda environment'
+        conda create --prefix $PWD/ci \
           --quiet --yes \
-          python="${PYTHON_VERSION}" numpy libpng jpeg scipy
-        conda activate /work/ci_env
+          python=${{ matrix.python-version }} \
+          numpy libpng jpeg scipy
+        conda activate $PWD/ci
         echo '::endgroup::'
 
         echo '::group::Install PyTorch'
-        set -ex
         conda install \
           --quiet --yes \
-          -c "pytorch-${CHANNEL}" \
+          -c "${PYTORCH_CHANNEL}" \
           -c nvidia \
           pytorch \
-          "${CUDATOOLKIT}"
-        python3 -c "import torch; exit(not torch.cuda.is_available())"
+          "${PYTORCH_MUTEX}"
+        if [[ ${{ matrix.gpu-arch-type }} = 'cuda' ]]; then
+          python3 -c "import torch; exit(not torch.cuda.is_available())"
+        fi
         echo '::endgroup::'
           
         echo '::group::Install TorchVision'
-        python3 setup.py develop
+        python setup.py develop
         echo '::endgroup::'
         
-        echo '::group::Collect environment information'
-        python3 -m torch.utils.collect_env
+        echo '::group::Collect PyTorch environment information'
+        python -m torch.utils.collect_env
         echo '::endgroup::'
         
         echo '::group::Install testing utilities'
-        python3 -m pip install pytest pytest-mock pytest-cov
+        python -m pip install pytest pytest-mock pytest-cov
         echo '::endgroup::'
 
         echo '::group::Run Tests'
-        python3 -m pytest \
-            --durations=20 \
-            --cov=torchvision/prototype/transforms \
-            --cov-report=term-missing \
-            test/test_prototype_transforms*.py
+        pytest \
+          --durations=20 \
+          --cov=torchvision/prototype/transforms \
+          --cov-report=term-missing \
+          test/test_prototype_transforms*.py
         echo '::endgroup::'
