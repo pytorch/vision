@@ -16,8 +16,10 @@ jobs:
   tests:
     strategy:
       matrix:
-        python_version: ["3.8"]
-        cuda_arch_version: ["11.6"]
+        python_version:
+          - "3.8"
+        cuda_arch_version:
+          - "11.6"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
@@ -27,43 +29,58 @@ jobs:
       gpu-arch-version: ${{ matrix.cuda_arch_version }}
       timeout: 120
       script: |
-        # Mark Build Directory Safe
+        echo '::group::Mark Build Directory Safe'
         git config --global --add safe.directory /__w/vision/vision
+        echo '::endgroup::'
 
-        # Set up Environment Variables
+        echo '::group::Set up Environment Variables'
         export PYTHON_VERSION="${{ matrix.python_version }}"
         export VERSION="${{ matrix.cuda_arch_version }}"
         export CUDATOOLKIT="pytorch-cuda=${VERSION}"
+        echo '::endgroup::'
 
-        # Set CHANNEL
+        echo '::group::Set CHANNEL'
         if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
           export CHANNEL=test
         else
           export CHANNEL=nightly
         fi
+        echo '::endgroup::'
 
-        # Create Conda Env
-        conda create -yp ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy
+        echo '::group::Create Conda Env'
+        conda create --prefix ci_env \
+          --quiet --yes \
+          python="${PYTHON_VERSION}" numpy libpng jpeg scipy
         conda activate /work/ci_env
+        echo '::endgroup::'
 
-        # Install PyTorch, Torchvision, and testing libraries
+        echo '::group::Install PyTorch'
         set -ex
         conda install \
-          --yes \
+          --quiet --yes \
           -c "pytorch-${CHANNEL}" \
           -c nvidia \
           pytorch \
           "${CUDATOOLKIT}"
-
         python3 -c "import torch; exit(not torch.cuda.is_available())"
+        echo '::endgroup::'
           
+        echo '::group::Install TorchVision'
         python3 setup.py develop
-        python3 -m pip install pytest pytest-mock pytest-cov
-
-        # Run Tests
+        echo '::endgroup::'
+        
+        echo '::group::Collect environment information'
         python3 -m torch.utils.collect_env
+        echo '::endgroup::'
+        
+        echo '::group::Install testing utilities'
+        python3 -m pip install pytest pytest-mock pytest-cov
+        echo '::endgroup::'
+
+        echo '::group::Run Tests'
         python3 -m pytest \
             --durations=20 \
             --cov=torchvision/prototype/transforms \
             --cov-report=term-missing \
             test/test_prototype_transforms*.py
+        echo '::endgroup::'
