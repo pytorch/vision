@@ -88,10 +88,10 @@ jobs:
         python -m pip install pytest pytest-mock pytest-cov
         echo '::endgroup::'
 
-        echo '::group::Run Tests'
+        echo '::group::Run prototype tests'
         pytest \
-          --durations=20 \
-          --cov=torchvision/prototype/transforms \
+          --durations=25 \
+          --cov=torchvision/prototype \
           --cov-report=term-missing \
-          test/test_prototype_transforms*.py
+          test/test_prototype*.py
         echo '::endgroup::'
