@@ -1,4 +1,4 @@
-name: Prototype Unit-tests on Linux
+name: Prototype tests on Linux
 
 on:
   pull_request:
@@ -85,6 +85,9 @@ jobs:
         echo '::endgroup::'
 
         echo '::group::Run prototype tests'
+        # We don't want to run the prototype datasets tests. Since the positional glob into `pytest`, i.e. 
+        # `test/test_prototype*.py` takes the highest priority, neither `--ignore` nor `--ignore-glob` can help us here.
+        rm test/test_prototype_datasets*.py
         pytest \
           --durations=25 \
           --cov=torchvision/prototype \
