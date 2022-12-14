@@ -1053,6 +1053,8 @@ def _pad_with_vector_fill(
 
     output = _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode="constant")
     left, right, top, bottom = torch_padding
+    if not image.is_floating_point():
+        fill = [int(f) for f in fill]
     fill = torch.tensor(fill, dtype=image.dtype, device=image.device).reshape(-1, 1, 1)
 
     if top > 0:
