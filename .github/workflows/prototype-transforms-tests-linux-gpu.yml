@@ -30,7 +30,7 @@ jobs:
       repository: pytorch/vision
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
-      runner: ${{ matrix.python-version }}
+      runner: ${{ matrix.runner }}
       timeout: 45
       script: |
         # Mark Build Directory Safe
