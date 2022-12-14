@@ -127,7 +127,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
             ) = self.transforms(imgs, dsp_maps, valid_masks)
 
         if self._has_built_in_disparity_mask or valid_masks[0] is not None:
-            return imgs[0], imgs[1], dsp_maps[0], valid_masks[0]  # type: ignore[return-value]
+            return imgs[0], imgs[1], dsp_maps[0], cast(np.ndarray, valid_masks[0])
         else:
             return imgs[0], imgs[1], dsp_maps[0]
 
