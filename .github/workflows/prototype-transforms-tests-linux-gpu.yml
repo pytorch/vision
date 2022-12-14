@@ -53,7 +53,7 @@ jobs:
         else
           PYTORCH_MUTEX=cpuonly
         fi
-        echo $"{PYTORCH_MUTEX}"
+        echo "${PYTORCH_MUTEX}"
         echo '::endgroup::'
         
         echo '::group::Create conda environment'
