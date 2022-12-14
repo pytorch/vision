@@ -27,6 +27,7 @@ jobs:
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
+      job-name: Python ${{ matrix.python-version }}, ${{ matrix.gpu-arch-type }}
       repository: pytorch/vision
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
