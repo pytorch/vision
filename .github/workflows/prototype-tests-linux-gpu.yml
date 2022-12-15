@@ -89,7 +89,6 @@ jobs:
         # `test/test_prototype*.py` takes the highest priority, neither `--ignore` nor `--ignore-glob` can help us here.
         rm test/test_prototype_datasets*.py
         pytest \
-          -Werror \
           --durations=25 \
           --cov=torchvision/prototype \
           --cov-report=term-missing \
