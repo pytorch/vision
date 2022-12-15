@@ -1,9 +1,10 @@
 import enum
+import importlib.machinery
+import importlib.util
 import inspect
 import random
 import re
 from collections import defaultdict
-from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 import numpy as np
@@ -890,8 +891,16 @@ class TestAATransforms:
 
 
 def import_transforms_from_references(reference):
-    ref_det_filepath = Path(__file__).parent.parent / "references" / reference / "transforms.py"
-    return SourceFileLoader(ref_det_filepath.stem, ref_det_filepath.as_posix()).load_module()
+    HERE = Path(__file__).parent
+    PROJECT_ROOT = HERE.parent
+
+    loader = importlib.machinery.SourceFileLoader(
+        "transforms", str(PROJECT_ROOT / "references" / reference / "transforms.py")
+    )
+    spec = importlib.util.spec_from_loader("transforms", loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
 
 
 det_transforms = import_transforms_from_references("detection")
