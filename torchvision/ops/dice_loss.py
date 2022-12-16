@@ -4,18 +4,18 @@ import torch.nn.functional as F
 from ..utils import _log_api_usage_once
 
 
-def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "none", eps: float = 1e-8) -> torch.Tensor:
+def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "none", eps: float = 1e-7) -> torch.Tensor:
     r"""Criterion that computes Sørensen-Dice Coefficient loss.
 
     We compute the Sørensen-Dice Coefficient as follows:
 
     .. math::
 
-        \text{Dice}(x, class) = \frac{2 |X \cap Y|}{|X| + |Y|}
+        \text{Dice\_Loss}(X, Y) = 1 - \frac{2 |X \cap Y|}{|X| + |Y|}
 
     Where:
        - :math:`X` expects to be the scores of each class.
-       - :math:`Y` expects to be thess tensor with the class labels.
+       - :math:`Y` expects to be the one hot tensor with the class labels.
 
     the loss, is finally computed as:
 
@@ -24,12 +24,13 @@ def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "non
         \text{loss}(x, class) = 1 - \text{Dice}(x, class)
 
     Args:
-        inputs: (Tensor): A float tensor of arbitrary shape.
+        inputs: (Tensor): A float tensor with rank >= 2 and shape (B, N1, .... NK, C)
+                where B is the Batch Size and C is the number of classes.
                 The predictions for each example.
-        targets: (Tensor): A float tensor with the same shape as inputs. Stores the binary
-                classification label for each element in inputs
+        targets: (Tensor): A float tensor with the same shape as inputs. Stores the one-hot
+                 labes for each element in inputs.
                 (0 for the negative class and 1 for the positive class).
-        eps: (float, optional): Scalar to enforce numerical stabiliy.
+        eps: (float, optional): Scalar to enforce numerical stability.
         reduction (string, optional): ``'none'`` | ``'mean'`` | ``'sum'``
                 ``'none'``: No reduction will be applied to the output.
                 ``'mean'``: The output will be averaged.
@@ -43,12 +44,13 @@ def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "non
         _log_api_usage_once(dice_loss)
 
     # compute softmax over the classes axis
-    p = F.softmax(inputs, dim=1)
+    p = F.softmax(inputs, dim=-1)
+    p = p.flatten(start_dim=1)
 
-    # compute the actual dice score
-    dims = (1, 2, 3)
-    intersection = torch.sum(p * targets, dims)
-    cardinality = torch.sum(p + targets, dims)
+    targets = targets.flatten(start_dim=1)
+
+    intersection = torch.sum(p * targets, dim=-1)
+    cardinality = torch.sum(p + targets, dim=-1)
 
     dice_score = 2.0 * intersection / (cardinality + eps)
 
