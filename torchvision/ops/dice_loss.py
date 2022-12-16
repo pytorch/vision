@@ -27,9 +27,9 @@ def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "non
         inputs: (Tensor): A float tensor with rank >= 2 and shape (B, N1, .... NK, C)
                 where B is the Batch Size and C is the number of classes.
                 The predictions for each example.
-        targets: (Tensor): A float tensor with the same shape as inputs. Stores the one-hot
-                 labes for each element in inputs.
-                (0 for the negative class and 1 for the positive class).
+        targets: (Tensor): A one-hot tensor with the same shape as inputs.
+                The first dimension is the batch size and last dimension is the
+                number of classes.
         eps: (float, optional): Scalar to enforce numerical stability.
         reduction (string, optional): ``'none'`` | ``'mean'`` | ``'sum'``
                 ``'none'``: No reduction will be applied to the output.
