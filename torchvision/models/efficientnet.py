@@ -779,7 +779,9 @@ def efficientnet_b0(
     weights = EfficientNet_B0_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b0", width_mult=1.0, depth_mult=1.0)
-    return _efficientnet(inverted_residual_setting, 0.2, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting, kwargs.pop("dropout", 0.2), last_channel, weights, progress, **kwargs
+    )
 
 
 @register_model()
@@ -808,7 +810,9 @@ def efficientnet_b1(
     weights = EfficientNet_B1_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b1", width_mult=1.0, depth_mult=1.1)
-    return _efficientnet(inverted_residual_setting, 0.2, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting, kwargs.pop("dropout", 0.2), last_channel, weights, progress, **kwargs
+    )
 
 
 @register_model()
@@ -837,7 +841,9 @@ def efficientnet_b2(
     weights = EfficientNet_B2_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b2", width_mult=1.1, depth_mult=1.2)
-    return _efficientnet(inverted_residual_setting, 0.3, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting, kwargs.pop("dropout", 0.3), last_channel, weights, progress, **kwargs
+    )
 
 
 @register_model()
@@ -866,7 +872,14 @@ def efficientnet_b3(
     weights = EfficientNet_B3_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b3", width_mult=1.2, depth_mult=1.4)
-    return _efficientnet(inverted_residual_setting, 0.3, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting,
+        kwargs.pop("dropout", 0.3),
+        last_channel,
+        weights,
+        progress,
+        **kwargs,
+    )
 
 
 @register_model()
@@ -895,7 +908,14 @@ def efficientnet_b4(
     weights = EfficientNet_B4_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b4", width_mult=1.4, depth_mult=1.8)
-    return _efficientnet(inverted_residual_setting, 0.4, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting,
+        kwargs.pop("dropout", 0.4),
+        last_channel,
+        weights,
+        progress,
+        **kwargs,
+    )
 
 
 @register_model()
@@ -926,7 +946,7 @@ def efficientnet_b5(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b5", width_mult=1.6, depth_mult=2.2)
     return _efficientnet(
         inverted_residual_setting,
-        0.4,
+        kwargs.pop("dropout", 0.4),
         last_channel,
         weights,
         progress,
@@ -963,7 +983,7 @@ def efficientnet_b6(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b6", width_mult=1.8, depth_mult=2.6)
     return _efficientnet(
         inverted_residual_setting,
-        0.5,
+        kwargs.pop("dropout", 0.5),
         last_channel,
         weights,
         progress,
@@ -1000,7 +1020,7 @@ def efficientnet_b7(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b7", width_mult=2.0, depth_mult=3.1)
     return _efficientnet(
         inverted_residual_setting,
-        0.5,
+        kwargs.pop("dropout", 0.5),
         last_channel,
         weights,
         progress,
@@ -1038,7 +1058,7 @@ def efficientnet_v2_s(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_s")
     return _efficientnet(
         inverted_residual_setting,
-        0.2,
+        kwargs.pop("dropout", 0.2),
         last_channel,
         weights,
         progress,
@@ -1076,7 +1096,7 @@ def efficientnet_v2_m(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_m")
     return _efficientnet(
         inverted_residual_setting,
-        0.3,
+        kwargs.pop("dropout", 0.3),
         last_channel,
         weights,
         progress,
@@ -1114,7 +1134,7 @@ def efficientnet_v2_l(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_l")
     return _efficientnet(
         inverted_residual_setting,
-        0.4,
+        kwargs.pop("dropout", 0.4),
         last_channel,
         weights,
         progress,
