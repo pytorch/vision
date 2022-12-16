@@ -1940,11 +1940,13 @@ KERNEL_INFOS.extend(
             closeness_kwargs={
                 **pil_reference_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(2),
+                **cuda_vs_cpu_pixel_difference(),
             },
         ),
         KernelInfo(
             F.adjust_contrast_video,
             sample_inputs_fn=sample_inputs_adjust_contrast_video,
+            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
         ),
     ]
 )
