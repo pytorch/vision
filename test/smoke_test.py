@@ -27,12 +27,12 @@ def smoke_test_torchvision_read_decode() -> None:
         raise RuntimeError(f"Unexpected shape of img_png: {img_png.shape}")
 
 
-def smoke_test_torchvision_resnet50_classify() -> None:
-    img = read_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg"))
+def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
+    img = read_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg")).to(device)
 
     # Step 1: Initialize model with the best available weights
     weights = ResNet50_Weights.DEFAULT
-    model = resnet50(weights=weights)
+    model = resnet50(weights=weights).to(device)
     model.eval()
 
     # Step 2: Initialize the inference transforms
@@ -47,7 +47,7 @@ def smoke_test_torchvision_resnet50_classify() -> None:
     score = prediction[class_id].item()
     category_name = weights.meta["categories"][class_id]
     expected_category = "German shepherd"
-    print(f"{category_name}: {100 * score:.1f}%")
+    print(f"{category_name} ({device}): {100 * score:.1f}%")
     if category_name != expected_category:
         raise RuntimeError(f"Failed ResNet50 classify {category_name} Expected: {expected_category}")
 
@@ -57,6 +57,8 @@ def main() -> None:
     smoke_test_torchvision()
     smoke_test_torchvision_read_decode()
     smoke_test_torchvision_resnet50_classify()
+    if torch.cuda.is_available():
+        smoke_test_torchvision_resnet50_classify("cuda")
 
 
 if __name__ == "__main__":
