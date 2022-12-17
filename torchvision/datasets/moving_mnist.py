@@ -1,11 +1,6 @@
-import codecs
 import os
 import os.path
-import shutil
-import string
-import sys
-import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Callable, Optional
 from urllib.error import URLError
 
 import numpy as np
