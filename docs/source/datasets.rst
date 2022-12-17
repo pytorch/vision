@@ -149,6 +149,14 @@ Video classification
     Kinetics
     UCF101
 
+Video classification
+~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :toctree: generated/
+    :template: class_dataset.rst
+
+    MovingMNIST
 
 .. _base_classes_datasets:
 

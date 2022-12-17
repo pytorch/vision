@@ -36,6 +36,7 @@ from .kitti import Kitti
 from .lfw import LFWPairs, LFWPeople
 from .lsun import LSUN, LSUNClass
 from .mnist import EMNIST, FashionMNIST, KMNIST, MNIST, QMNIST
+from .moving_mnist import MovingMNIST
 from .omniglot import Omniglot
 from .oxford_iiit_pet import OxfordIIITPet
 from .pcam import PCAM

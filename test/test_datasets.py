@@ -1494,6 +1494,27 @@ class QMNISTTestCase(MNISTTestCase):
             assert len(dataset) == info["num_examples"] - 10000
 
 
+class MovingMNISTTestCase(datasets_utils.DatasetTestCase):
+    DATASET_CLASS = datasets.MovingMNIST
+    FEATURE_TYPES = (torch.Tensor,)
+
+    def inject_fake_data(self, tmpdir, config):
+        raw_dir = os.path.join(tmpdir, self.DATASET_CLASS.__name__, "raw")
+        os.makedirs(raw_dir, exist_ok=True)
+        self._create_npy_file(raw_dir, "mnist_test_seq.npy")
+        return self._num_batch_size()
+
+    def _create_npy_file(self, root: str, filename: str) -> None:
+        batch_size = self._num_batch_size()
+        with open(os.path.join(root, filename), "wb") as fh:
+            np.save(
+                fh, np.random.rand(20, batch_size, 64, 64)
+            )  # The shape is (sequece lenth, batch_size, height, widht)
+
+    def _num_batch_size(self):
+        return 10
+
+
 class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.DatasetFolder
 
