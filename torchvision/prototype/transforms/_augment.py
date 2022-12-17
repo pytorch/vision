@@ -410,12 +410,6 @@ class MixupDetection(Transform):
         if has_any(flat_inputs, datapoints.Mask, datapoints.Video):
             raise TypeError(f"{type(self).__name__}() is only supported for images and bounding boxes.")
 
-        if not (
-            has_any(flat_inputs, datapoints.Image, PIL.Image.Image, is_simple_tensor)
-            and has_any(flat_inputs, datapoints.BoundingBox)
-        ):
-            raise TypeError(f"{type(self).__name__}() is only defined for tensor images and bounding boxes.")
-
     def forward(self, *inputs: Any) -> Any:
         flat_batch_with_spec, batch = flatten_and_extract_data(
             inputs,
@@ -446,15 +440,19 @@ class MixupDetection(Transform):
         if isinstance(image_2, PIL.Image.Image):
             image_2 = F.pil_to_tensor(image_2)
 
-        h_1, w_1 = image_1.shape[-2:]
+        c_1, h_1, w_1 = image_1.shape
         h_2, w_2 = image_2.shape[-2:]
         h_mixup = max(h_1, h_2)
         w_mixup = max(w_1, w_2)
 
         # TODO: add the option to fill this with something else than 0
-        mix_image = F.pad_image_tensor(image_1 * mixup_ratio, padding=[0, 0, h_mixup - h_1, w_mixup - w_1], fill=None)
+        # mix_image = F.pad_image_tensor(image_1 * mixup_ratio, padding=[0, 0, h_mixup - h_1, w_mixup - w_1], fill=None)
+        # mix_image[:, :h_2, :w_2] += image_2 * (1.0 - mixup_ratio)
+        # mix_image = mix_image.to(image_1)
+
+        mix_image = torch.zeros(c_1, h_mixup, w_mixup, dtype=torch.float32)
+        mix_image[:, :h_1, :w_1] = image_1 * mixup_ratio
         mix_image[:, :h_2, :w_2] += image_2 * (1.0 - mixup_ratio)
-        mix_image = mix_image.to(image_1)
 
         mix_boxes = datapoints.BoundingBox.wrap_like(
             sample_1["boxes"],

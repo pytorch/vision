@@ -27,7 +27,7 @@ from torchvision.ops.boxes import box_iou
 from torchvision.prototype import datapoints, transforms
 from torchvision.prototype.transforms.utils import check_type
 
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image, to_tensor
+from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
 
@@ -1437,63 +1437,6 @@ class TestSimpleCopyPaste:
             return PIL.Image.new("RGB", (32, 32), 123)
         return mocker.MagicMock(spec=image_type)
 
-    def test__extract_image_targets_assertion(self, mocker):
-        transform = transforms.SimpleCopyPaste()
-
-        flat_sample = [
-            # images, batch size = 2
-            self.create_fake_image(mocker, datapoints.Image),
-            # labels, bboxes, masks
-            mocker.MagicMock(spec=datapoints.Label),
-            mocker.MagicMock(spec=datapoints.BoundingBox),
-            mocker.MagicMock(spec=datapoints.Mask),
-            # labels, bboxes, masks
-            mocker.MagicMock(spec=datapoints.BoundingBox),
-            mocker.MagicMock(spec=datapoints.Mask),
-        ]
-
-        with pytest.raises(TypeError, match="requires input sample to contain equal sized list of Images"):
-            transform._extract_image_targets(flat_sample)
-
-    @pytest.mark.parametrize("image_type", [datapoints.Image, PIL.Image.Image, torch.Tensor])
-    @pytest.mark.parametrize("label_type", [datapoints.Label, datapoints.OneHotLabel])
-    def test__extract_image_targets(self, image_type, label_type, mocker):
-        transform = transforms.SimpleCopyPaste()
-
-        flat_sample = [
-            # images, batch size = 2
-            self.create_fake_image(mocker, image_type),
-            self.create_fake_image(mocker, image_type),
-            # labels, bboxes, masks
-            mocker.MagicMock(spec=label_type),
-            mocker.MagicMock(spec=datapoints.BoundingBox),
-            mocker.MagicMock(spec=datapoints.Mask),
-            # labels, bboxes, masks
-            mocker.MagicMock(spec=label_type),
-            mocker.MagicMock(spec=datapoints.BoundingBox),
-            mocker.MagicMock(spec=datapoints.Mask),
-        ]
-
-        images, targets = transform._extract_image_targets(flat_sample)
-
-        assert len(images) == len(targets) == 2
-        if image_type == PIL.Image.Image:
-            torch.testing.assert_close(images[0], pil_to_tensor(flat_sample[0]))
-            torch.testing.assert_close(images[1], pil_to_tensor(flat_sample[1]))
-        else:
-            assert images[0] == flat_sample[0]
-            assert images[1] == flat_sample[1]
-
-        for target in targets:
-            for key, type_ in [
-                ("boxes", datapoints.BoundingBox),
-                ("masks", datapoints.Mask),
-                ("labels", label_type),
-            ]:
-                assert key in target
-                assert isinstance(target[key], type_)
-                assert target[key] in flat_sample
-
     @pytest.mark.parametrize("label_type", [datapoints.Label, datapoints.OneHotLabel])
     def test__copy_paste(self, label_type):
         image = 2 * torch.ones(3, 32, 32)
@@ -1933,72 +1876,41 @@ class TestMixupDetection:
             return PIL.Image.new("RGB", (32, 32), 123)
         return mocker.MagicMock(spec=image_type)
 
-    def test__extract_image_targets_assertion(self, mocker):
-        transform = transforms.MixupDetection()
-
-        flat_sample = [
-            # images, batch size = 2
-            self.create_fake_image(mocker, features.Image),
-            # labels, bboxes, masks
-            mocker.MagicMock(spec=features.Label),
-            mocker.MagicMock(spec=features.BoundingBox),
-            # labels, bboxes, masks
-            mocker.MagicMock(spec=features.BoundingBox),
-        ]
-
-        with pytest.raises(TypeError, match="requires input sample to contain equal-sized list of Images"):
-            transform._extract_image_targets(flat_sample)
-
-    @pytest.mark.parametrize("image_type", [features.Image, PIL.Image.Image, torch.Tensor])
-    def test__extract_image_targets(self, image_type, mocker):
-        transform = transforms.MixupDetection()
-
-        flat_sample = [
-            # images, batch size = 2
-            self.create_fake_image(mocker, image_type),
-            self.create_fake_image(mocker, image_type),
-            # labels, bboxes
-            mocker.MagicMock(spec=features.Label),
-            mocker.MagicMock(spec=features.BoundingBox),
-            # labels, bboxes
-            mocker.MagicMock(spec=features.Label),
-            mocker.MagicMock(spec=features.BoundingBox),
-        ]
-
-        images, targets = transform._extract_image_targets(flat_sample)
-
-        assert len(images) == len(targets) == 2
-        if image_type == PIL.Image.Image:
-            torch.testing.assert_close(images[0], to_tensor(flat_sample[0]))
-            torch.testing.assert_close(images[1], to_tensor(flat_sample[1]))
-        else:
-            assert images[0] == flat_sample[0]
-            assert images[1] == flat_sample[1]
-
     def test__mixup(self):
         image1 = 2 * torch.ones(3, 32, 64)
         target_1 = {
-            "boxes": features.BoundingBox(
+            "boxes": datapoints.BoundingBox(
                 torch.tensor([[0.0, 0.0, 10.0, 10.0], [20.0, 20.0, 30.0, 30.0]]),
                 format="XYXY",
                 spatial_size=(32, 64),
             ),
-            "labels": features.Label(torch.tensor([1, 2])),
+            "labels": datapoints.Label(torch.tensor([1, 2])),
         }
 
         image2 = 10 * torch.ones(3, 64, 32)
         target_2 = {
-            "boxes": features.BoundingBox(
+            "boxes": datapoints.BoundingBox(
                 torch.tensor([[10.0, 0.0, 20.0, 20.0], [10.0, 20.0, 30.0, 30.0]]),
                 format="XYXY",
                 spatial_size=(64, 32),
             ),
-            "labels": features.Label(torch.tensor([2, 3])),
+            "labels": datapoints.Label(torch.tensor([2, 3])),
+        }
+
+        sample_1 = {
+            "image": image1,
+            "boxes": target_1["boxes"],
+            "labels": target_1["labels"],
+        }
+        sample_2 = {
+            "image": image2,
+            "boxes": target_2["boxes"],
+            "labels": target_2["labels"],
         }
 
         transform = transforms.MixupDetection()
-        output_image, output_target = transform._mixup(image1, target_1, image2, target_2)
-        assert output_image.shape == (3, 64, 64)
-        assert output_target["boxes"].spatial_size == (64, 64)
-        assert len(output_target["boxes"]) == 4
-        assert len(output_target["labels"]) == 4
+        output = transform._mixup(sample_1, sample_2)
+        assert output["image"].shape == (3, 64, 64)
+        assert output["boxes"].spatial_size == (64, 64)
+        assert len(output["boxes"]) == 4
+        assert len(output["labels"]) == 4
