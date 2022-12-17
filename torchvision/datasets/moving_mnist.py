@@ -13,7 +13,7 @@ class MovingMNIST(VisionDataset):
     """`MovingMNIST <http://www.cs.toronto.edu/~nitish/unsupervised_video/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``raw/mnist_test_seq.npy`` exists.
+        root (string): Root directory of dataset where ``MovingMNIST/raw/mnist_test_seq.npy`` exists.
         transform (callable, optional): A function/transform that takes in an torch Tensor
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         download (bool, optional): If true, downloads the dataset from the internet and
@@ -43,7 +43,8 @@ class MovingMNIST(VisionDataset):
     def _load_data(self) -> torch.Tensor:
         """
         Returns:
-            torch.Tensor: Tensor which has the shape like (batch_size, channel, sequence_length, height, width).
+            torch.Tensor: Batch of video frames (torch Tensor[B, C, T, H, W]).
+                            The `B` is a batch size and `T` is the number of frames.
         """
         data = torch.from_numpy(
             np.load(os.path.join(self.raw_folder, self.raw_filename))
@@ -57,8 +58,7 @@ class MovingMNIST(VisionDataset):
         Args:
             index (int): Index
         Returns:
-            tuple: (data, targets) where sampled sequences are splitted into a data
-                    and targets part
+            torch.Tensor: Video frames (torch Tensor[C, T, H, W]). The `T` is the number of frames.
         """
         data = self.data[idx]
         if self.transform is not None:
@@ -66,17 +66,17 @@ class MovingMNIST(VisionDataset):
 
         return data
 
-    def _transform_sequences(self, img_sequences: torch.Tensor, transform: Callable) -> torch.Tensor:
+    def _transform_sequences(self, frames: torch.Tensor, transform: Callable) -> torch.Tensor:
         """
         Args:
-            img_sequences (torch.Tensor): Tensor of image sequences (channel, sequence_length, height, width)
-            transform (Calllable): transform function.
+            frames (torch.Tensor): Tensor[C, T, H, W]. The `T` is the number of frames.
+            transform (Calllable): A transform function.
         Returns:
-            torch.Tensor: Transformed tensors (channel, sequence_length, height, width)
+            torch.Tensor: Transformed Tensor[C, T, H, W]. The `T` is the number of frames.
         """
-        for seq_idx in range(img_sequences.size(1)):
-            img_sequences[:, seq_idx] = transform(img_sequences[:, seq_idx])
-        return img_sequences
+        for frame_idx in range(frames.size(1)):
+            frames[:, frame_idx] = transform(frames[:, frame_idx])
+        return frames
 
     def __len__(self) -> int:
         return len(self.data)

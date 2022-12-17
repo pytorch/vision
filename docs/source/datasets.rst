@@ -149,7 +149,7 @@ Video classification
     Kinetics
     UCF101
 
-Video classification
+Video prediction
 ~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
