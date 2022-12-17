@@ -11,12 +11,11 @@ from torchvision.datasets.vision import VisionDataset
 
 class MovingMNIST(VisionDataset):
     """`MovingMNIST <http://www.cs.toronto.edu/~nitish/unsupervised_video/>`_ Dataset.
+
     Args:
         root (string): Root directory of dataset where ``raw/mnist_test_seq.npy`` exists.
-        transform (callable, optional): A function/transform that takes in an PIL image
+        transform (callable, optional): A function/transform that takes in an torch Tensor
             and returns a transformed version. E.g, ``transforms.RandomCrop``
-        target_transform (callable, optional): A function/transform that takes in an PIL
-            image and returns a transformed version. E.g, ``transforms.RandomCrop``
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
@@ -28,8 +27,8 @@ class MovingMNIST(VisionDataset):
     def __init__(
         self,
         root: str,
-        transform: Optional[Callable] = None,
         download: bool = False,
+        transform: Optional[Callable] = None,
     ) -> None:
         super().__init__(root, transform=transform)
 
