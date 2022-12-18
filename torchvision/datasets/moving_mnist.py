@@ -1,7 +1,6 @@
 import os
 import os.path
 from typing import Callable, Optional
-from urllib.error import URLError
 
 import numpy as np
 import torch
