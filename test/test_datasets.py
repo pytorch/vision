@@ -1498,8 +1498,10 @@ class MovingMNISTTestCase(datasets_utils.DatasetTestCase):
     DATASET_CLASS = datasets.MovingMNIST
     FEATURE_TYPES = (torch.Tensor,)
 
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=(None, "train", "test"), split_ratio=(10,))
+
     def inject_fake_data(self, tmpdir, config):
-        raw_dir = os.path.join(tmpdir, self.DATASET_CLASS.__name__, "raw")
+        raw_dir = os.path.join(tmpdir, self.DATASET_CLASS.__name__)
         os.makedirs(raw_dir, exist_ok=True)
         self._create_npy_file(raw_dir, "mnist_test_seq.npy")
         return self._num_batch_size()
@@ -1512,7 +1514,19 @@ class MovingMNISTTestCase(datasets_utils.DatasetTestCase):
             )  # The shape is (sequece lenth, batch_size, height, widht)
 
     def _num_batch_size(self):
-        return 10
+        return 100
+
+    @datasets_utils.test_all_configs
+    def test_num_examples(self, config):
+        with self.create_dataset(config) as (dataset, info):
+            if config["split"] is None:
+                expect_dataset_len = self._num_batch_size()
+            elif config["split"] == "train":
+                expect_dataset_len = config["split_ratio"]
+            else:
+                expect_dataset_len = self._num_batch_size() - config["split_ratio"]
+
+            assert len(dataset) == expect_dataset_len
 
 
 class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
