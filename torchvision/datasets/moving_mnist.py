@@ -39,7 +39,7 @@ class MovingMNIST(VisionDataset):
     ) -> None:
         super().__init__(root, transform=transform)
 
-        if isinstance(split, str):
+        if split is not None:
             verify_str_arg(split, "split", ("train", "test"))
         self.split = split
         self.split_ratio = split_ratio
