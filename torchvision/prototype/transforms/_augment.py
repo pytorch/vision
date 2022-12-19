@@ -366,7 +366,7 @@ class MixupDetection(_DetectionBatchTransform):
     def _mixup(self, sample_1: Dict[str, Any], sample_2: Dict[str, Any], ratio: float) -> Dict[str, Any]:
         if ratio >= 1.0:
             return sample_1
-        elif ratio == 0:
+        elif ratio == 0.0:
             return sample_2
 
         h_1, w_1 = sample_1["image"].shape[-2:]
@@ -375,9 +375,10 @@ class MixupDetection(_DetectionBatchTransform):
         w_mixup = max(w_1, w_2)
 
         # TODO: add the option to fill this with something else than 0
-        mix_image = F.pad_image_tensor(sample_1["image"], padding=[0, 0, w_mixup - w_1, h_mixup - h_1], fill=None).mul_(
-            ratio
-        )
+        dtype = sample_1["image"].dtype if sample_1["image"].is_floating_point() else torch.float32
+        mix_image = F.pad_image_tensor(
+            sample_1["image"].to(dtype), padding=[0, 0, w_mixup - w_1, h_mixup - h_1], fill=None
+        ).mul_(ratio)
         mix_image[..., :h_2, :w_2] = sample_2["image"] * (1.0 - ratio)
         mix_image = mix_image.to(sample_1["image"])
 
