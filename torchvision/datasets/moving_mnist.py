@@ -105,4 +105,4 @@ class MovingMNIST(VisionDataset):
 
     @property
     def raw_filename(self) -> str:
-        return self.url.split("/")[-1]
+        return "mnist_test_seq.npy"
