@@ -1909,7 +1909,7 @@ class TestMixupDetection:
         }
 
         transform = transforms.MixupDetection()
-        output = transform._mixup(sample_1, sample_2)
+        output = transform._mixup(sample_1, sample_2, 0.5)
         assert output["image"].shape == (3, 64, 64)
         assert output["boxes"].spatial_size == (64, 64)
         assert len(output["boxes"]) == 4

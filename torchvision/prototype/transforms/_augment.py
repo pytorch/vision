@@ -410,6 +410,9 @@ class MixupDetection(Transform):
         if has_any(flat_inputs, datapoints.Mask, datapoints.Video):
             raise TypeError(f"{type(self).__name__}() is only supported for images and bounding boxes.")
 
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        return dict(ratio=float(self._dist.sample()))
+
     def forward(self, *inputs: Any) -> Any:
         flat_batch_with_spec, batch = flatten_and_extract_data(
             inputs,
@@ -417,19 +420,17 @@ class MixupDetection(Transform):
             boxes=(datapoints.BoundingBox,),
             labels=(datapoints.Label, datapoints.OneHotLabel),
         )
-        # TODO: refactor this since we have already extracted the images and boxes
         self._check_inputs(flat_batch_with_spec[0])
 
         batch_output = [
-            self._mixup(sample, sample_rolled) for sample, sample_rolled in zip(batch, batch[-1:] + batch[:-1])
+            self._mixup(sample, sample_rolled, self._get_params([])["ratio"])
+            for sample, sample_rolled in zip(batch, batch[-1:] + batch[:-1])
         ]
 
         return unflatten_and_insert_data(flat_batch_with_spec, batch_output)
 
-    def _mixup(self, sample_1: Dict[str, Any], sample_2: Dict[str, Any]) -> Dict[str, Any]:
-        mixup_ratio = self._dist.sample().item()
-
-        if mixup_ratio >= 1.0:
+    def _mixup(self, sample_1: Dict[str, Any], sample_2: Dict[str, Any], ratio: float) -> Dict[str, Any]:
+        if ratio >= 1.0:
             return sample_1
 
         image_1 = sample_1["image"]
@@ -446,13 +447,13 @@ class MixupDetection(Transform):
         w_mixup = max(w_1, w_2)
 
         # TODO: add the option to fill this with something else than 0
-        # mix_image = F.pad_image_tensor(image_1 * mixup_ratio, padding=[0, 0, h_mixup - h_1, w_mixup - w_1], fill=None)
-        # mix_image[:, :h_2, :w_2] += image_2 * (1.0 - mixup_ratio)
+        # mix_image = F.pad_image_tensor(image_1 * ratio, padding=[0, 0, h_mixup - h_1, w_mixup - w_1], fill=None)
+        # mix_image[:, :h_2, :w_2] += image_2 * (1.0 - ratio)
         # mix_image = mix_image.to(image_1)
 
         mix_image = torch.zeros(c_1, h_mixup, w_mixup, dtype=torch.float32)
-        mix_image[:, :h_1, :w_1] = image_1 * mixup_ratio
-        mix_image[:, :h_2, :w_2] += image_2 * (1.0 - mixup_ratio)
+        mix_image[:, :h_1, :w_1] = image_1 * ratio
+        mix_image[:, :h_2, :w_2] += image_2 * (1.0 - ratio)
 
         mix_boxes = datapoints.BoundingBox.wrap_like(
             sample_1["boxes"],
