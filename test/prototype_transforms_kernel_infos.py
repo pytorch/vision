@@ -57,6 +57,9 @@ class KernelInfo(InfoBase):
         # structure, but with adapted parameters. This is useful in case a parameter value is closely tied to the input
         # dtype.
         float32_vs_uint8=False,
+        # Some kernels don't have dispatchers that would handle logging the usage. Thus, the kernel has to do it
+        # manually. If set, triggers a test that makes sure this happens.
+        logs_usage=False,
         # See InfoBase
         test_marks=None,
         # See InfoBase
@@ -71,6 +74,7 @@ class KernelInfo(InfoBase):
         if float32_vs_uint8 and not callable(float32_vs_uint8):
             float32_vs_uint8 = lambda other_args, kwargs: (other_args, kwargs)  # noqa: E731
         self.float32_vs_uint8 = float32_vs_uint8
+        self.logs_usage = logs_usage
 
 
 def _pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, mae=False):
@@ -675,6 +679,7 @@ KERNEL_INFOS.append(
         sample_inputs_fn=sample_inputs_convert_format_bounding_box,
         reference_fn=reference_convert_format_bounding_box,
         reference_inputs_fn=reference_inputs_convert_format_bounding_box,
+        logs_usage=True,
     ),
 )
 
@@ -1935,11 +1940,13 @@ KERNEL_INFOS.extend(
             closeness_kwargs={
                 **pil_reference_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(2),
+                **cuda_vs_cpu_pixel_difference(),
             },
         ),
         KernelInfo(
             F.adjust_contrast_video,
             sample_inputs_fn=sample_inputs_adjust_contrast_video,
+            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
         ),
     ]
 )
@@ -2100,6 +2107,7 @@ KERNEL_INFOS.append(
     KernelInfo(
         F.clamp_bounding_box,
         sample_inputs_fn=sample_inputs_clamp_bounding_box,
+        logs_usage=True,
     )
 )
 
