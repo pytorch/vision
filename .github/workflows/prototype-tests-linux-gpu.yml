@@ -31,7 +31,6 @@ jobs:
       timeout: 45
       script: |
         # Mark Build Directory Safe
-        git config --global --add safe.directory /__w/vision/vision
 
         echo '::group::Set PyTorch conda channel'
         if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
