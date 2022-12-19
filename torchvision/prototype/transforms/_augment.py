@@ -422,6 +422,14 @@ class MixupDetection(Transform):
         )
         self._check_inputs(flat_batch_with_spec[0])
 
+        for sample in batch:
+            image = sample.pop("image")
+            if isinstance(image, PIL.Image.Image):
+                image = F.pil_to_tensor(image)
+            elif isinstance(image, datapoints.Image):
+                image = image.as_subclass(torch.Tensor)
+            sample["image"] = image
+
         batch_output = [
             self._mixup(sample, sample_rolled, self._get_params([])["ratio"])
             for sample, sample_rolled in zip(batch, batch[-1:] + batch[:-1])
@@ -433,23 +441,17 @@ class MixupDetection(Transform):
         if ratio >= 1.0:
             return sample_1
 
-        image_1 = sample_1["image"]
-        if isinstance(image_1, PIL.Image.Image):
-            image_1 = F.pil_to_tensor(image_1)
-
-        image_2 = sample_2["image"]
-        if isinstance(image_2, PIL.Image.Image):
-            image_2 = F.pil_to_tensor(image_2)
-
-        h_1, w_1 = image_1.shape[-2:]
-        h_2, w_2 = image_2.shape[-2:]
+        h_1, w_1 = sample_1["image"].shape[-2:]
+        h_2, w_2 = sample_2["image"].shape[-2:]
         h_mixup = max(h_1, h_2)
         w_mixup = max(w_1, w_2)
 
         # TODO: add the option to fill this with something else than 0
-        mix_image = F.pad_image_tensor(image_1, padding=[0, 0, w_mixup - w_1, h_mixup - h_1], fill=None).mul_(ratio)
-        mix_image[..., :h_2, :w_2] = image_2 * (1.0 - ratio)
-        mix_image = mix_image.to(image_1)
+        mix_image = F.pad_image_tensor(sample_1["image"], padding=[0, 0, w_mixup - w_1, h_mixup - h_1], fill=None).mul_(
+            ratio
+        )
+        mix_image[..., :h_2, :w_2] = sample_2["image"] * (1.0 - ratio)
+        mix_image = mix_image.to(sample_1["image"])
 
         mix_boxes = datapoints.BoundingBox.wrap_like(
             sample_1["boxes"],
