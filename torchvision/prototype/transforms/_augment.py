@@ -366,6 +366,8 @@ class MixupDetection(_DetectionBatchTransform):
     def _mixup(self, sample_1: Dict[str, Any], sample_2: Dict[str, Any], ratio: float) -> Dict[str, Any]:
         if ratio >= 1.0:
             return sample_1
+        elif ratio == 0:
+            return sample_2
 
         h_1, w_1 = sample_1["image"].shape[-2:]
         h_2, w_2 = sample_2["image"].shape[-2:]
