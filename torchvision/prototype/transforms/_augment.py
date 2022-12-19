@@ -441,19 +441,15 @@ class MixupDetection(Transform):
         if isinstance(image_2, PIL.Image.Image):
             image_2 = F.pil_to_tensor(image_2)
 
-        c_1, h_1, w_1 = image_1.shape
+        h_1, w_1 = image_1.shape[-2:]
         h_2, w_2 = image_2.shape[-2:]
         h_mixup = max(h_1, h_2)
         w_mixup = max(w_1, w_2)
 
         # TODO: add the option to fill this with something else than 0
-        # mix_image = F.pad_image_tensor(image_1 * ratio, padding=[0, 0, h_mixup - h_1, w_mixup - w_1], fill=None)
-        # mix_image[:, :h_2, :w_2] += image_2 * (1.0 - ratio)
-        # mix_image = mix_image.to(image_1)
-
-        mix_image = torch.zeros(c_1, h_mixup, w_mixup, dtype=torch.float32)
-        mix_image[:, :h_1, :w_1] = image_1 * ratio
-        mix_image[:, :h_2, :w_2] += image_2 * (1.0 - ratio)
+        mix_image = F.pad_image_tensor(image_1, padding=[0, 0, w_mixup - w_1, h_mixup - h_1], fill=None).mul_(ratio)
+        mix_image[..., :h_2, :w_2] = image_2 * (1.0 - ratio)
+        mix_image = mix_image.to(image_1)
 
         mix_boxes = datapoints.BoundingBox.wrap_like(
             sample_1["boxes"],
