@@ -25,9 +25,6 @@ class MovingMNIST(VisionDataset):
             downloaded again.
     """
 
-    url = "http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"
-    md5 = "be083ec986bfe91a449d63653c411eb2"
-
     def __init__(
         self,
         root: str,
