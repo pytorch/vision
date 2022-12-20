@@ -194,8 +194,8 @@ class TestSmoke:
                 itertools.chain.from_iterable(
                     fn(
                         color_spaces=[
-                            features.ColorSpace.GRAY,
-                            features.ColorSpace.RGB,
+                            datapoints.ColorSpace.GRAY,
+                            datapoints.ColorSpace.RGB,
                         ],
                         dtypes=[torch.uint8],
                         extra_dims=[(), (4,)],
