@@ -6,11 +6,11 @@ from typing import Any, List, Optional, Tuple, Union
 import torch
 from torchvision.transforms.functional import InterpolationMode
 
-from ._feature import _Feature, FillTypeJIT
+from ._datapoint import Datapoint, FillTypeJIT
 from ._image import ColorSpace
 
 
-class Video(_Feature):
+class Video(Datapoint):
     color_space: ColorSpace
 
     @classmethod
@@ -134,8 +134,8 @@ class Video(_Feature):
         angle: float,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
+        fill: FillTypeJIT = None,
     ) -> Video:
         output = self._F.rotate_video(
             self.as_subclass(torch.Tensor), angle, interpolation=interpolation, expand=expand, fill=fill, center=center
