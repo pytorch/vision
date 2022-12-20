@@ -1,4 +1,3 @@
-import os
 import os.path
 from typing import Callable, Optional
 
@@ -12,10 +11,10 @@ class MovingMNIST(VisionDataset):
     """`MovingMNIST <http://www.cs.toronto.edu/~nitish/unsupervised_video/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``MovingMNIST/raw/mnist_test_seq.npy`` exists.
+        root (string): Root directory of dataset where ``MovingMNIST/mnist_test_seq.npy`` exists.
         split (string, optional): The dataset split, supports ``None`` (default), ``"train"`` and ``"test"``.
             If ``split=None``, the full data is returned.
-        split_ratio (int, optional): The split ratio of number of flames. If ``split="train"``, the first split
+        split_ratio (int, optional): The split ratio of number of frames. If ``split="train"``, the first split
             frames ``data[:, :split_ratio]`` is returned. If ``split="test"``, the last split frames ``data[:, split_ratio:]``
             is returned. If ``split=None``, this parameter is ignored and the all frames data is returned.
         transform (callable, optional): A function/transform that takes in an torch Tensor
@@ -25,7 +24,7 @@ class MovingMNIST(VisionDataset):
             downloaded again.
     """
 
-    url = "http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"
+    _URL = "http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"
 
     def __init__(
         self,
@@ -38,7 +37,7 @@ class MovingMNIST(VisionDataset):
         super().__init__(root, transform=transform)
 
         self._base_folder = os.path.join(self.root, self.__class__.__name__)
-        self._filename = self.url.split("/")[-1]
+        self._filename = self._URL.split("/")[-1]
 
         if split is not None:
             verify_str_arg(split, "split", ("train", "test"))
@@ -56,15 +55,12 @@ class MovingMNIST(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it.")
 
-        data = torch.from_numpy(np.load(os.path.join(self._base_folder, self._filename))).transpose(0, 1)
-        num_samples, num_frames, height, width = data.shape
-        data = torch.reshape(data, (num_samples, num_frames, 1, height, width))
-        if self.split is None:
-            self.data = data
-        elif self.split == "train":
-            self.data = data[:, : self.split_ratio]
+        data = torch.from_numpy(np.load(os.path.join(self._base_folder, self._filename)))
+        if self.split == "train":
+            data = data[: self.split_ratio]
         else:
-            self.data = data[:, self.split_ratio :]
+            data = data[self.split_ratio :]
+        self.data = data.transpose(0, 1).unsqueeze(2).contiguous()
 
     def __getitem__(self, idx: int) -> torch.Tensor:
         """
@@ -90,7 +86,7 @@ class MovingMNIST(VisionDataset):
             return
 
         download_url(
-            url="http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy",
+            url=self._URL,
             root=self._base_folder,
             filename=self._filename,
             md5="be083ec986bfe91a449d63653c411eb2",

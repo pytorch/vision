@@ -1503,10 +1503,42 @@ class MovingMNISTTestCase(datasets_utils.DatasetTestCase):
     def inject_fake_data(self, tmpdir, config):
         raw_dir = os.path.join(tmpdir, self.DATASET_CLASS.__name__)
         os.makedirs(raw_dir, exist_ok=True)
-        num_samples = 20
-        with open(os.path.join(raw_dir, "mnist_test_seq.npy"), "wb") as fh:
-            np.save(fh, np.random.rand(20, num_samples, 64, 64))
+        num_samples = self._num_samples()
+        frame_size = self._frame_size()
+        data = np.concatenate(
+            [
+                np.zeros((config["split_ratio"], num_samples, *frame_size)),
+                np.ones((20 - config["split_ratio"], num_samples, *frame_size)),
+            ]
+        )
+        np.save(os.path.join(raw_dir, "mnist_test_seq.npy"), data)
         return num_samples
+
+    @datasets_utils.test_all_configs
+    def test_split(self, config):
+        if config["split"] is None:
+            return
+
+        num_samples = self._num_samples()
+        frame_size = self._frame_size()
+        with self.create_dataset(config) as (dataset, info):
+            print(dataset.data.shape)
+            print(torch.zeros(config["split_ratio"], num_samples, *frame_size).shape)
+            if config["split"] == "train":
+                assert torch.equal(dataset.data, torch.zeros(num_samples, config["split_ratio"], 1, *frame_size))
+            else:
+                assert torch.equal(
+                    dataset.data, torch.ones(num_samples, self._num_frames() - config["split_ratio"], 1, *frame_size)
+                )
+
+    def _num_samples(self) -> int:
+        return 20
+
+    def _num_frames(self) -> int:
+        return 20
+
+    def _frame_size(self) -> Tuple[int, int]:
+        return (64, 64)
 
 
 class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
