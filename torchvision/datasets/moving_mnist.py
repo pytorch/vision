@@ -15,9 +15,9 @@ class MovingMNIST(VisionDataset):
         root (string): Root directory of dataset where ``MovingMNIST/raw/mnist_test_seq.npy`` exists.
         split (string, optional): The dataset split, supports ``None`` (default), ``"train"`` and ``"test"``.
             If ``split=None``, the full data is returned.
-        split_ratio (int, optional): The split ratio of datasets. If ``split="train"``, the first split
-            ``data[:split_ratio]`` is returned. If ``split="test"``, the last split ``data[split_ratio:]``
-            is returned. If ``split=None``, this parameter is ignored and the full data is returned.
+        split_ratio (int, optional): The split ratio of number of flames. If ``split="train"``, the first split
+            frames ``data[:, :split_ratio]`` is returned. If ``split="test"``, the last split frames ``data[:, split_ratio:]``
+            is returned. If ``split=None``, this parameter is ignored and the all frames data is returned.
         transform (callable, optional): A function/transform that takes in an torch Tensor
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         download (bool, optional): If true, downloads the dataset from the internet and
