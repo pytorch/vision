@@ -532,18 +532,26 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
     def _flatten_and_extract_image_or_video_and_bboxes(
         self,
         inputs: Any,
-        unsupported_types: Tuple[Type, ...] = (features.Mask,),
+        unsupported_types: Tuple[Type, ...] = (datapoints.Mask,),
     ) -> Tuple[
-        Tuple[List[Any], TreeSpec, int, int], Union[features.ImageType, features.VideoType], features.BoundingBox
+        Tuple[List[Any], TreeSpec, int, int], Union[datapoints.ImageType, datapoints.VideoType], datapoints.BoundingBox
     ]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
         image_or_videos = []
         bboxes_list = []
         for idx, inpt in enumerate(flat_inputs):
-            if _isinstance(inpt, (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)):
+            if check_type(
+                inpt,
+                (
+                    datapoints.Image,
+                    PIL.Image.Image,
+                    is_simple_tensor,
+                    datapoints.Video,
+                ),
+            ):
                 image_or_videos.append((idx, inpt))
-            elif isinstance(inpt, features.BoundingBox):
+            elif isinstance(inpt, datapoints.BoundingBox):
                 bboxes_list.append((idx, inpt))
             elif isinstance(inpt, unsupported_types):
                 raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
@@ -570,8 +578,8 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
     def _unflatten_and_insert_image_or_video_and_bboxes(
         self,
         flat_inputs_with_spec: Tuple[List[Any], TreeSpec, int, int],
-        image_or_video: Union[features.ImageType, features.VideoType],
-        bboxes: features.BoundingBox,
+        image_or_video: Union[datapoints.ImageType, datapoints.VideoType],
+        bboxes: datapoints.BoundingBox,
     ) -> Any:
         flat_inputs, spec, idx1, idx2 = flat_inputs_with_spec
         flat_inputs[idx1] = image_or_video
@@ -592,12 +600,12 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
     def _apply_image_or_video_and_bboxes_transform(
         self,
         image: Any,
-        bboxes: features.BoundingBox,
+        bboxes: datapoints.BoundingBox,
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
-        fill: Dict[Type, features.FillTypeJIT],
-    ) -> Tuple[Any, features.BoundingBox]:
+        fill: Dict[Type, datapoints.FillTypeJIT],
+    ) -> Tuple[Any, datapoints.BoundingBox]:
         # TODO: SolarizeAdd, Cutout, BBox_Cutout, Flip_Only_BBoxes, Cutout_Only_BBoxes
 
         if transform_id.endswith("_Only_BBoxes"):
@@ -611,41 +619,29 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
             image = self._apply_image_or_video_transform(image, transform_id, magnitude, interpolation, fill)
 
             if transform_id == "Rotate":
-                bboxes.data = F.affine_bounding_box(
-                    bboxes.data,
-                    bboxes.format,
-                    bboxes.spatial_size,
-                    angle=magnitude,
-                    translate=[0, 0],
-                    scale=1.0,
-                    shear=[0.0, 0.0],
-                )
-                # bboxes.data = F.rotate_bounding_box(bboxes.data, bboxes.format, bboxes.image_size, angle=magnitude)[0]
+                bboxes = bboxes.rotate(angle=magnitude)
+                # bboxes = bboxes.affine(
+                #     angle=magnitude,
+                #     translate=[0, 0],
+                #     scale=1.0,
+                #     shear=[0.0, 0.0],
+                # )
             elif transform_id == "TranslateX":
-                bboxes.data = F.affine_bounding_box(
-                    bboxes.data,
-                    bboxes.format,
-                    bboxes.spatial_size,
+                bboxes = bboxes.affine(
                     angle=0.0,
                     translate=[int(magnitude), 0],
                     scale=1.0,
                     shear=[0.0, 0.0],
                 )
             elif transform_id == "TranslateY":
-                bboxes.data = F.affine_bounding_box(
-                    bboxes.data,
-                    bboxes.format,
-                    bboxes.spatial_size,
+                bboxes = bboxes.affine(
                     angle=0.0,
                     translate=[0, int(magnitude)],
                     scale=1.0,
                     shear=[0.0, 0.0],
                 )
             elif transform_id == "ShearX":
-                bboxes.data = F.affine_bounding_box(
-                    bboxes.data,
-                    bboxes.format,
-                    bboxes.spatial_size,
+                bboxes = bboxes.affine(
                     angle=0.0,
                     translate=[0, 0],
                     scale=1.0,
@@ -653,10 +649,7 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
                     center=[0, 0],
                 )
             elif transform_id == "ShearY":
-                bboxes.data = F.affine_bounding_box(
-                    bboxes.data,
-                    bboxes.format,
-                    bboxes.spatial_size,
+                bboxes = bboxes.affine(
                     angle=0.0,
                     translate=[0, 0],
                     scale=1.0,
@@ -725,7 +718,7 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         self,
         policy: str = "v0",
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = None,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -808,7 +801,7 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, image_or_video, bboxes = self._flatten_and_extract_image_or_video_and_bboxes(
-            inputs, unsupported_types=(features.Mask,)
+            inputs, unsupported_types=(datapoints.Mask,)
         )
         height, width = get_spatial_size(image_or_video)
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
