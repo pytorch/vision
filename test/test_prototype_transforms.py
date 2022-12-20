@@ -213,7 +213,7 @@ class TestSmoke:
         ]
     )
     def test_auto_augment_detection(self, transform, input):
-        bboxes = make_bounding_box(spatial_size=input.spatial_size, format=features.BoundingBoxFormat.XYXY)
+        bboxes = make_bounding_box(spatial_size=input.spatial_size, format=datapoints.BoundingBoxFormat.XYXY)
         transform(input, bboxes)
 
     @parametrize(
