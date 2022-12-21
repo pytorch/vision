@@ -286,8 +286,8 @@ quantized_flaky_models = ("inception_v3", "resnet50")
 # the _test_*_model methods.
 _model_params = {
     "inception_v3": {"input_shape": (1, 3, 299, 299), "init_weights": True},
-    "resnet101": {"real_image": True},
-    "resnet34": {"real_image": True},
+    "resnet101": {"real_image": True, "pretrained_weight": True, "num_classes": 1000, "num_expect": 50},
+    "resnet34": {"real_image": True, "pretrained_weight": True, "num_classes": 1000, "num_expect": 50},
     "retinanet_resnet50_fpn": {
         "num_classes": 20,
         "score_thresh": 0.01,
@@ -684,14 +684,25 @@ def test_classification_model(model_fn, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
+    num_expect = kwargs.pop("num_expect", num_classes)
     input_shape = kwargs.pop("input_shape")
     real_image = kwargs.pop("real_image", False)
-
-    model = model_fn(**kwargs)
+    pretrained_weight = kwargs.pop("pretrained_weight", False)
+    if not pretrained_weight:
+        model = model_fn(**kwargs)
+    else:
+        model = model_fn(**kwargs, weights="DEFAULT")
     model.eval().to(device=dev)
     x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
     out = model(x)
-    _assert_expected(out.cpu(), model_name, prec=1e-3)
+    if num_expect != num_classes:
+        print(f"out.shape: {out.flatten().shape}")
+        expect_out = torch.nn.functional.pad(out.flatten(), (0, out.flatten().size(0) % num_expect))
+        expect_out = expect_out.view(num_expect, -1).flatten(start_dim=1).sum(dim=1)
+    else:
+        expect_out = out
+    
+    _assert_expected(expect_out.cpu(), model_name, prec=1e-3)
     assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
