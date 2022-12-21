@@ -694,7 +694,10 @@ def test_classification_model(model_fn, dev):
         model = model_fn(**kwargs, weights="DEFAULT")
     model.eval().to(device=dev)
     x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
-    out = model(x)
+
+    with torch.no_grad(), freeze_rng_state():
+        out = model(x)
+
     if num_expect != num_classes:
         print(f"out.shape: {out.flatten().shape}")
         expect_out = torch.nn.functional.pad(out.flatten(), (0, out.flatten().size(0) % num_expect))
