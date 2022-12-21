@@ -701,7 +701,7 @@ def test_classification_model(model_fn, dev):
         expect_out = expect_out.view(num_expect, -1).flatten(start_dim=1).sum(dim=1)
     else:
         expect_out = out
-    
+
     _assert_expected(expect_out.cpu(), model_name, prec=1e-3)
     assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
