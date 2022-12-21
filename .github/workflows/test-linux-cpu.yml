@@ -16,7 +16,7 @@ jobs:
   tests:
     strategy:
       matrix:
-        python_version: ["3.7", "3.8", "3.9", "3.10"]
+        python_version: ["3.8"]
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
@@ -54,4 +54,4 @@ jobs:
 
         # Run Tests
         python3 -m torch.utils.collect_env
-        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
+        python3 -m pytest --junitxml=test-results/junit.xml -k resnet -v --durations 20
