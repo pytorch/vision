@@ -21,7 +21,7 @@ import yaml
 from jinja2 import select_autoescape
 
 
-PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
+PYTHON_VERSIONS = ["3.8"]
 
 RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
@@ -29,12 +29,10 @@ RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
     w = []
     for btype in ["wheel", "conda"]:
-        for os_type in ["linux", "macos", "win"]:
+        for os_type in ["linux"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu116", "cu117", "rocm5.2", "rocm5.3"],
-                "win": ["cpu", "cu116", "cu117"],
-                "macos": ["cpu"],
+                "linux": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
@@ -254,7 +252,7 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    for os_type in ["linux", "windows", "macos"]:
+    for os_type in ["linux"]:
         for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
