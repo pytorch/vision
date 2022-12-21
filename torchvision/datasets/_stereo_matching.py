@@ -6,7 +6,7 @@ import shutil
 from abc import ABC, abstractmethod
 from glob import glob
 from pathlib import Path
-from typing import cast, Callable, List, Optional, Tuple, Union
+from typing import Callable, cast, List, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image
