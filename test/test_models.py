@@ -55,10 +55,13 @@ def _get_image(input_shape, real_image, device):
 
         # make the image square
         img = img.crop((0, 0, original_width, original_width))
-        img = img.resize(input_shape[1:3])
+        img = img.resize(input_shape[-2:])
 
         convert_tensor = transforms.ToTensor()
         image = convert_tensor(img)
+        if len(input_shape) == 4:
+            # Add extra batch dimension
+            image = image.unsqueeze(0)
         assert tuple(image.size()) == input_shape
         return image.to(device=device)
 
@@ -142,7 +145,7 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
 
     if ACCEPT:
         filename = {os.path.basename(expected_file)}
-        print(f"Accepting updated output for {filename}:\n\n{output}")
+        # print(f"Accepting updated output for {filename}:\n\n{output}")
         torch.save(output, expected_file)
         MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
         binary_size = os.path.getsize(expected_file)
@@ -283,6 +286,8 @@ quantized_flaky_models = ("inception_v3", "resnet50")
 # the _test_*_model methods.
 _model_params = {
     "inception_v3": {"input_shape": (1, 3, 299, 299), "init_weights": True},
+    "resnet101": {"real_image": True},
+    "resnet34": {"real_image": True},
     "retinanet_resnet50_fpn": {
         "num_classes": 20,
         "score_thresh": 0.01,
