@@ -625,10 +625,10 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
         )
         transformed_points = np.matmul(points, affine_matrix.T)
         out_bbox = [
-            np.min(transformed_points[:4, 0]),
-            np.min(transformed_points[:4, 1]),
-            np.max(transformed_points[:4, 0]),
-            np.max(transformed_points[:4, 1]),
+            float(np.min(transformed_points[:4, 0])),
+            float(np.min(transformed_points[:4, 1])),
+            float(np.max(transformed_points[:4, 0])),
+            float(np.max(transformed_points[:4, 1])),
         ]
         if expand_:
             tr_x = np.min(transformed_points[4:, 0])
