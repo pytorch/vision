@@ -1770,5 +1770,53 @@ class TestDropBlock:
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
 
+class TestDiceLoss:
+    def get_reduction_method(self, reduction):
+        return {
+            "sum": torch.sum,
+            "mean": torch.mean,
+            "none": None
+        }[reduction]
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_dice_loss_one(self, device):
+        shape = (16, 4, 4, 2)
+        input_ones = torch.ones(shape, device=device)
+        label_zeros = torch.zeros(shape, device=device)
+        expected = torch.ones(16, device=device)
+        torch.testing.assert_close(ops.dice_loss(input_ones, label_zeros), expected)
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_dice_loss_all_zeros(self, device):
+        shape = (16, 4, 4, 2)
+        input_zeros = torch.zeros(shape, device=device)
+        input_zeros[:, :, :, 0] = 1.0
+        input_zeros[:, :, :, 1] = 0.0
+        label_zeros = torch.zeros(shape, device=device)
+        label_zeros.copy_(input_zeros)
+        input_zeros[:, :, :, 0] = 100.0
+        expected = torch.zeros(16, device=device)
+        torch.testing.assert_close(ops.dice_loss(input_zeros, label_zeros), expected)
+
+    @pytest.mark.parametrize("reduction", ["none", "mean", "sum"])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_reduction_methods(self, reduction, device):
+        shape = (16, 4, 4, 2)
+        input_ones = torch.ones(shape, device=device)
+        label_zeros = torch.zeros(shape, device=device)
+        expected = torch.ones(16, device=device)
+        reduction_fn = self.get_reduction_method(reduction)
+        if reduction_fn is not None:
+            expected = reduction_fn(expected)
+        torch.testing.assert_close(ops.dice_loss(input_ones, label_zeros, reduction=reduction), expected)
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_gradcheck(self, device):
+        shape = (16, 4, 4, 2)
+        input_ones = torch.ones(shape, device=device, requires_grad=True)
+        label_zeros = torch.zeros(shape, device=device, requires_grad=True)
+        assert gradcheck(ops.dice_loss, (input_ones, label_zeros), eps=1e-2, atol=1e-2, raise_exception=True, fast_mode=True)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
