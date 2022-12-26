@@ -9,7 +9,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F, InterpolationMode
+from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
 
 from ._transform import _RandomApplyTransform
 from .utils import has_any, is_simple_tensor, query_chw, query_spatial_size
@@ -191,15 +191,14 @@ class RandomCutmix(_BaseMixupCutmix):
             return inpt
 
 
-class SimpleCopyPaste(_RandomApplyTransform):
+class SimpleCopyPaste(Transform):
     def __init__(
         self,
-        p: float = 0.5,
         blending: bool = True,
         resize_interpolation: InterpolationMode = F.InterpolationMode.BILINEAR,
         antialias: Optional[bool] = None,
     ) -> None:
-        super().__init__(p=p)
+        super().__init__()
         self.resize_interpolation = resize_interpolation
         self.blending = blending
         self.antialias = antialias
