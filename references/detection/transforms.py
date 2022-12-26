@@ -594,77 +594,85 @@ class SimpleCopyPaste(torch.nn.Module):
 
 
 class Mosaic(nn.Module):
+    """
+    Mosaic Transform
+    """
+
     def __init__(self, min_frac: float = 0.25, max_frac: float = 0.75, size_limit=10) -> None:
         super().__init__()
         self.min_frac = min_frac
         self.max_frac = max_frac
         self.size_limit = size_limit
 
-    def forward(self, images, targets):
+    def forward(self, images, boxes, labels):
         """
-        images : torch.Tensor of NWHC type
-        targets: list[torch.Tensor]; bounding boxes in xyxy format.
+        images : torch.Tensor channels first image tensor;
+        boxes: bounding boxes in xyxy format.
+        labels: labels corresponding to the bounding boxes.
+
         """
 
-        # implementation  is heavily inspired from this colab notebook
-        sx, sy = images.shape[-2:]
+        # implementation  is heavily inspired from this colab notebook : https://colab.research.google.com/drive/1YWb7a_3bHqG30SoIxU5S4lHKktkRseyY?usp=sharing#scrollTo=yHsYf3Z3bujO
+        sy, sx = images.shape[-2:]
 
         num_channels = images.shape[-3]
 
         xc = torch.randint(int(sx * self.min_frac), int(sx * self.max_frac), size=(1,))
         yc = torch.randint(int(sy * self.min_frac), int(sy * self.max_frac), size=(1,))
 
-        mosaic_image = torch.zeros((num_channels, sx, sy), dtype=torch.float32)
+        mosaic_image = torch.zeros((num_channels, sy, sx), dtype=images.dtype)
 
-        x1a1, y1a1, x2a1, y2a1 = 0, 0, xc, yc
-        x1b1, y1b1, x2b1, y2b1 = sx - xc, sy - yc, sx, sy
+        x0a0, y0a0, x1a0, y1a0 = 0, 0, xc, yc
+        x0b0, y0b0, x1b0, y1b0 = sx - xc, sy - yc, sx, sy
 
-        x1a2, y1a2, x2a2, y2a2 = xc, 0, sx, yc
-        x1b2, y1b2, x2b2, y2b2 = 0, sy - yc, sx - xc, sy
+        x0a1, y0a1, x1a1, y1a1 = 0, yc, xc, sy
+        x0b1, y0b1, x1b1, y1b1 = sx - xc, 0, sx, sy - yc
 
-        x1a3, y1a3, x2a3, y2a3 = 0, yc, xc, sy
-        x1b3, y1b3, x2b3, y2b3 = sx - xc, 0, sx, sy - yc
+        x0a2, y0a2, x1a2, y1a2 = xc, 0, sx, yc
+        x0b2, y0b2, x1b2, y1b2 = 0, sy - yc, sx - xc, sy
 
-        x1a4, y1a4, x2a4, y2a4 = xc, yc, sx, sy
-        x1b4, y1b4, x2b4, y2b4 = 0, 0, sx - xc, sy - yc
+        x0a3, y0a3, x1a3, y1a3 = xc, yc, sx, sy
+        x0b3, y0b3, x1b3, y1b3 = 0, 0, sx - xc, sy - yc
 
-        # calculate and apply box offsets due to replacement
-        offset_x1 = x1a1 - x1b1
-        offset_y1 = y1a1 - y1b1
+        mosaic_image[..., y0a0:y1a0, x0a0:x1a0] = images[0][..., y0b0:y1b0, x0b0:x1b0]
+        mosaic_image[..., y0a1:y1a1, x0a1:x1a1] = images[1][..., y0b1:y1b1, x0b1:x1b1]
+        mosaic_image[..., y0a2:y1a2, x0a2:x1a2] = images[2][..., y0b2:y1b2, x0b2:x1b2]
+        mosaic_image[..., y0a3:y1a3, x0a3:x1a3] = images[3][..., y0b3:y1b3, x0b3:x1b3]
 
-        offset_y2 = y1a2 - y1b2
-        offset_x2 = x1a2 - x1b2
+        offset_y0 = y0a0 - y0b0
+        offset_x0 = x0a0 - x0b0
 
-        offset_y3 = y1a3 - y1b3
-        offset_x3 = x1a3 - x1b3
+        offset_y1 = y0a1 - y0b1
+        offset_x1 = x0a1 - x0b1
 
-        offset_y4 = y1a4 - y1b4
-        offset_x4 = x1a4 - x1b4
+        offset_y2 = y0a2 - y0b2
+        offset_x2 = x0a2 - x0b2
 
-        targets[0][:, 0::2] += offset_x1
-        targets[0][:, 1::2] += offset_y1
+        offset_y3 = y0a3 - y0b3
+        offset_x3 = x0a3 - x0b3
 
-        targets[1][:, 0::2] += offset_x2
-        targets[1][:, 1::2] += offset_y2
+        boxes[0][..., 0:4:2] += offset_x0
+        boxes[0][..., 1:4:2] += offset_y0
 
-        targets[2][:, 0::2] += offset_x3
-        targets[2][:, 1::2] += offset_y3
-        targets[3][:, 0::2] += offset_x4
-        targets[3][:, 1::2] += offset_y4
+        boxes[1][..., 0:4:2] += offset_x1
+        boxes[1][..., 1:4:2] += offset_y1
 
-        mosaic_image[:, x1a1:x2a1, y1a1:y2a1] = images[0][:, x1b1:x2b1, y1b1:y2b1]
-        mosaic_image[:, x1a2:x2a2, y1a2:y2a2] = images[1][:, x1b2:x2b2, y1b2:y2b2]
-        mosaic_image[:, x1a3:x2a3, y1a3:y2a3] = images[2][:, x1b3:x2b3, y1b3:y2b3]
-        mosaic_image[:, x1a4:x2a4, y1a4:y2a4] = images[3][:, x1b4:x2b4, y1b4:y2b4]
+        boxes[2][..., 0:4:2] += offset_x2
+        boxes[2][..., 1:4:2] += offset_y2
 
-        mosaic_target = torch.vstack(targets)
+        boxes[3][..., 0:4:2] += offset_x3
+        boxes[3][..., 1:4:2] += offset_y3
 
-        mosaic_target[:, 0::2] = torch.clip(mosaic_target[:, 0::2], 0, sx)
-        mosaic_target[:, 1::2] = torch.clip(mosaic_target[:, 1::2], 0, sy)
+        mosaic_boxes = torch.vstack(boxes)
+        mosaic_labels = torch.vstack(labels)
 
-        w = mosaic_target[:, 2] - mosaic_target[:, 0]
-        h = mosaic_target[:, 3] - mosaic_target[:, 1]
+        mosaic_boxes[..., 0::2] = torch.clip(mosaic_boxes[..., 0::2], 0, sx)
+        mosaic_boxes[..., 1::2] = torch.clip(mosaic_boxes[..., 1::2], 0, sy)
 
-        mosaic_target = mosaic_target[(w >= self.size_limit) & (h >= self.size_limit)]
+        w = mosaic_boxes[..., 2] - mosaic_boxes[..., 0]
+        h = mosaic_boxes[..., 3] - mosaic_boxes[..., 1]
 
-        return mosaic_image, mosaic_target
+        mask = (w >= self.size_limit) & (h >= self.size_limit)
+        mosaic_boxes = mosaic_boxes[mask]
+        mosaic_labels = mosaic_labels[mask]
+        return mosaic_image, mosaic_boxes, mosaic_labels
