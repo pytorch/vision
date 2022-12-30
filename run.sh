@@ -1,0 +1,1 @@
+python setup.py develop && torchrun --nproc_per_node=8 vision-1/references/classification/train.py --model mobile_vit_xxs
