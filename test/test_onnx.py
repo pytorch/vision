@@ -34,7 +34,7 @@ class TestONNXExporter:
         opset_version: Optional[int] = None,
     ):
         if opset_version is None:
-            opset_version = _register_onnx_ops.base_onnx_opset_version
+            opset_version = _register_onnx_ops.BASE_ONNX_OPSET_VERSION
 
         model.eval()
 
