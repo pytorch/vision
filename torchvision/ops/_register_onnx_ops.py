@@ -2,8 +2,8 @@ import sys
 import warnings
 
 import torch
-from torch.onnx.symbolic_helper import parse_args
 from torch.onnx import symbolic_opset11 as opset11
+from torch.onnx.symbolic_helper import parse_args
 
 _ONNX_OPSET_VERSION_11 = 11
 _ONNX_OPSET_VERSION_16 = 16
