@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+5ff3df4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a4c2ad7 ) &#x25BC</a>
     </div>
     
 
@@ -383,7 +383,7 @@
 
 
 <span class="k">class</span> <span class="nc">MLPBlock</span><span class="p">(</span><span class="n">MLP</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Transformer MLP block.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transformer MLP block.&quot;&quot;&quot;</span>
 
     <span class="n">_version</span> <span class="o">=</span> <span class="mi">2</span>
 
@@ -429,7 +429,7 @@
 
 
 <span class="k">class</span> <span class="nc">EncoderBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Transformer encoder block.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transformer encoder block.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -465,7 +465,7 @@
 
 
 <span class="k">class</span> <span class="nc">Encoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Transformer Model Encoder for sequence to sequence translation.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transformer Model Encoder for sequence to sequence translation.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -503,7 +503,7 @@
 
 
 <span class="k">class</span> <span class="nc">VisionTransformer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Vision Transformer as per https://arxiv.org/abs/2010.11929.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vision Transformer as per https://arxiv.org/abs/2010.11929.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -964,7 +964,7 @@
 <div class="viewcode-block" id="vit_b_16"><a class="viewcode-back" href="../../../models/generated/torchvision.models.vit_b_16.html#torchvision.models.vit_b_16">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ViT_B_16_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">vit_b_16</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ViT_B_16_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VisionTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a vit_b_16 architecture from</span>
 <span class="sd">    `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale &lt;https://arxiv.org/abs/2010.11929&gt;`_.</span>
 
@@ -998,7 +998,7 @@
 <div class="viewcode-block" id="vit_b_32"><a class="viewcode-back" href="../../../models/generated/torchvision.models.vit_b_32.html#torchvision.models.vit_b_32">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ViT_B_32_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">vit_b_32</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ViT_B_32_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VisionTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a vit_b_32 architecture from</span>
 <span class="sd">    `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale &lt;https://arxiv.org/abs/2010.11929&gt;`_.</span>
 
@@ -1032,7 +1032,7 @@
 <div class="viewcode-block" id="vit_l_16"><a class="viewcode-back" href="../../../models/generated/torchvision.models.vit_l_16.html#torchvision.models.vit_l_16">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ViT_L_16_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">vit_l_16</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ViT_L_16_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VisionTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a vit_l_16 architecture from</span>
 <span class="sd">    `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale &lt;https://arxiv.org/abs/2010.11929&gt;`_.</span>
 
@@ -1066,7 +1066,7 @@
 <div class="viewcode-block" id="vit_l_32"><a class="viewcode-back" href="../../../models/generated/torchvision.models.vit_l_32.html#torchvision.models.vit_l_32">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ViT_L_32_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">vit_l_32</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ViT_L_32_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VisionTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a vit_l_32 architecture from</span>
 <span class="sd">    `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale &lt;https://arxiv.org/abs/2010.11929&gt;`_.</span>
 
@@ -1100,7 +1100,7 @@
 <div class="viewcode-block" id="vit_h_14"><a class="viewcode-back" href="../../../models/generated/torchvision.models.vit_h_14.html#torchvision.models.vit_h_14">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">vit_h_14</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ViT_H_14_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VisionTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a vit_h_14 architecture from</span>
 <span class="sd">    `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale &lt;https://arxiv.org/abs/2010.11929&gt;`_.</span>
 
@@ -1138,7 +1138,7 @@
     <span class="n">interpolation_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bicubic&quot;</span><span class="p">,</span>
     <span class="n">reset_heads</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;OrderedDict[str, torch.Tensor]&quot;</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;This function helps interpolating positional embeddings during checkpoint loading,</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This function helps interpolating positional embeddings during checkpoint loading,</span>
 <span class="sd">    especially when you want to apply a pre-trained model on images with different resolution.</span>
 
 <span class="sd">    Args:</span>
@@ -1174,7 +1174,7 @@
         <span class="n">seq_length_1d</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">seq_length</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">seq_length_1d</span> <span class="o">*</span> <span class="n">seq_length_1d</span> <span class="o">!=</span> <span class="n">seq_length</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;seq_length is not a perfect square! Instead got seq_length_1d * seq_length_1d = </span><span class="si">{</span><span class="n">seq_length_1d</span> <span class="o">*</span> <span class="n">seq_length_1d</span> <span class="si">}</span><span class="s2"> and seq_length = </span><span class="si">{</span><span class="n">seq_length</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;seq_length is not a perfect square! Instead got seq_length_1d * seq_length_1d = </span><span class="si">{</span><span class="n">seq_length_1d</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">seq_length_1d</span><span class="w"> </span><span class="si">}</span><span class="s2"> and seq_length = </span><span class="si">{</span><span class="n">seq_length</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
         <span class="c1"># (1, hidden_dim, seq_length) -&gt; (1, hidden_dim, seq_l_1d, seq_l_1d)</span>

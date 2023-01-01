@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+5ff3df4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a4c2ad7 ) &#x25BC</a>
     </div>
     
 
@@ -470,7 +470,7 @@
     <span class="n">qkv_bias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">proj_bias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Window based multi-head self attention (W-MSA) module with relative position bias.</span>
 <span class="sd">    It supports both of shifted and non-shifted window.</span>
 <span class="sd">    Args:</span>
@@ -571,7 +571,7 @@
 
 
 <span class="k">class</span> <span class="nc">ShiftedWindowAttention3d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    See :func:`shifted_window_attention_3d`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -661,7 +661,7 @@
 <span class="c1"># Modified from:</span>
 <span class="c1"># https://github.com/SwinTransformer/Video-Swin-Transformer/blob/master/mmaction/models/backbones/swin_transformer.py</span>
 <span class="k">class</span> <span class="nc">PatchEmbed3d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Video to Patch Embedding.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Video to Patch Embedding.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        patch_size (List[int]): Patch token size.</span>
@@ -693,7 +693,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Forward function.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward function.&quot;&quot;&quot;</span>
         <span class="c1"># padding</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="n">pad_size</span> <span class="o">=</span> <span class="n">_compute_pad_size_3d</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">tuple_patch_size</span><span class="p">)</span>
@@ -706,7 +706,7 @@
 
 
 <span class="k">class</span> <span class="nc">SwinTransformer3d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implements 3D Swin Transformer from the `&quot;Video Swin Transformer&quot; &lt;https://arxiv.org/abs/2106.13230&gt;`_ paper.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        patch_size (List[int]): Patch size.</span>
@@ -974,7 +974,7 @@
 <div class="viewcode-block" id="swin3d_t"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_t.html#torchvision.models.video.swin3d_t">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin3D_T_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">swin3d_t</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin3D_T_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer3d</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_tiny architecture from</span>
 <span class="sd">    `Video Swin Transformer &lt;https://arxiv.org/abs/2106.13230&gt;`_.</span>
 
@@ -1012,7 +1012,7 @@
 <div class="viewcode-block" id="swin3d_s"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_s.html#torchvision.models.video.swin3d_s">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin3D_S_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">swin3d_s</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin3D_S_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer3d</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_small architecture from</span>
 <span class="sd">    `Video Swin Transformer &lt;https://arxiv.org/abs/2106.13230&gt;`_.</span>
 
@@ -1050,7 +1050,7 @@
 <div class="viewcode-block" id="swin3d_b"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_b.html#torchvision.models.video.swin3d_b">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin3D_B_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">swin3d_b</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin3D_B_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer3d</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_base architecture from</span>
 <span class="sd">    `Video Swin Transformer &lt;https://arxiv.org/abs/2106.13230&gt;`_.</span>
 

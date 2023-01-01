@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+5ff3df4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a4c2ad7 ) &#x25BC</a>
     </div>
     
 
@@ -371,7 +371,7 @@
     <span class="n">av</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">set_level</span><span class="p">(</span><span class="n">av</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">av</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">VideoFrame</span><span class="p">,</span> <span class="s2">&quot;pict_type&quot;</span><span class="p">):</span>
         <span class="n">av</span> <span class="o">=</span> <span class="ne">ImportError</span><span class="p">(</span>
-            <span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;\</span>
 <span class="sd">Your version of PyAV is too old for the necessary video operations in torchvision.</span>
 <span class="sd">If you are on Python 3.5, you will have to build from source (the conda-forge</span>
 <span class="sd">packages are not up-to-date).  See</span>
@@ -381,7 +381,7 @@
         <span class="p">)</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">av</span> <span class="o">=</span> <span class="ne">ImportError</span><span class="p">(</span>
-        <span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;\</span>
 <span class="sd">PyAV is not installed, and is necessary for the video operations in torchvision.</span>
 <span class="sd">See https://github.com/mikeboers/PyAV#installation for instructions on how to</span>
 <span class="sd">install PyAV on your system.</span>
@@ -390,7 +390,7 @@
 
 
 <div class="viewcode-block" id="VideoReader"><a class="viewcode-back" href="../../../generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader">[docs]</a><span class="k">class</span> <span class="nc">VideoReader</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Fine-grained video-reading API.</span>
 <span class="sd">    Supports frame-by-frame reading of various streams from a single video</span>
 <span class="sd">    container. Much like previous video_reader API it supports the following</span>
@@ -526,7 +526,7 @@
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Unknown video backend: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Decodes and returns the next frame of the current stream.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decodes and returns the next frame of the current stream.</span>
 <span class="sd">        Frames are encoded as a dict with mandatory</span>
 <span class="sd">        data and pts fields, where data is a tensor, and pts is a</span>
 <span class="sd">        presentation timestamp of the frame expressed in seconds</span>
@@ -566,7 +566,7 @@
         <span class="k">return</span> <span class="bp">self</span>
 
 <div class="viewcode-block" id="VideoReader.seek"><a class="viewcode-back" href="../../../generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader.seek">[docs]</a>    <span class="k">def</span> <span class="nf">seek</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_s</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">keyframes_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;VideoReader&quot;</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Seek within current stream.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Seek within current stream.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            time_s (float): seek time in seconds</span>
@@ -593,7 +593,7 @@
         <span class="k">return</span> <span class="bp">self</span></div>
 
 <div class="viewcode-block" id="VideoReader.get_metadata"><a class="viewcode-back" href="../../../generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader.get_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Returns video metadata</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns video metadata</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (dict): dictionary containing duration and frame rate for every stream</span>
@@ -616,7 +616,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="VideoReader.set_current_stream"><a class="viewcode-back" href="../../../generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader.set_current_stream">[docs]</a>    <span class="k">def</span> <span class="nf">set_current_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Set current stream.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set current stream.</span>
 <span class="sd">        Explicitly define the stream we are operating on.</span>
 
 <span class="sd">        Args:</span>

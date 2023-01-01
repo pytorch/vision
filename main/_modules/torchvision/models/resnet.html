@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+5ff3df4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a4c2ad7 ) &#x25BC</a>
     </div>
     
 
@@ -383,7 +383,7 @@
 
 
 <span class="k">def</span> <span class="nf">conv3x3</span><span class="p">(</span><span class="n">in_planes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_planes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">groups</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dilation</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;3x3 convolution with padding&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;3x3 convolution with padding&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
         <span class="n">in_planes</span><span class="p">,</span>
         <span class="n">out_planes</span><span class="p">,</span>
@@ -397,7 +397,7 @@
 
 
 <span class="k">def</span> <span class="nf">conv1x1</span><span class="p">(</span><span class="n">in_planes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_planes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;1x1 convolution&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;1x1 convolution&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_planes</span><span class="p">,</span> <span class="n">out_planes</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 
@@ -1027,7 +1027,7 @@
 <div class="viewcode-block" id="resnet18"><a class="viewcode-back" href="../../../models/generated/torchvision.models.resnet18.html#torchvision.models.resnet18">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ResNet18_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">resnet18</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNet18_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;ResNet-18 from `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/pdf/1512.03385.pdf&gt;`__.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNet-18 from `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/pdf/1512.03385.pdf&gt;`__.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        weights (:class:`~torchvision.models.ResNet18_Weights`, optional): The</span>
@@ -1053,7 +1053,7 @@
 <div class="viewcode-block" id="resnet34"><a class="viewcode-back" href="../../../models/generated/torchvision.models.resnet34.html#torchvision.models.resnet34">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ResNet34_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">resnet34</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNet34_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;ResNet-34 from `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/pdf/1512.03385.pdf&gt;`__.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNet-34 from `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/pdf/1512.03385.pdf&gt;`__.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        weights (:class:`~torchvision.models.ResNet34_Weights`, optional): The</span>
@@ -1079,7 +1079,7 @@
 <div class="viewcode-block" id="resnet50"><a class="viewcode-back" href="../../../models/generated/torchvision.models.resnet50.html#torchvision.models.resnet50">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">resnet50</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNet50_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;ResNet-50 from `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/pdf/1512.03385.pdf&gt;`__.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNet-50 from `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/pdf/1512.03385.pdf&gt;`__.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">       The bottleneck of TorchVision places the stride for downsampling to the second 3x3</span>
@@ -1111,7 +1111,7 @@
 <div class="viewcode-block" id="resnet101"><a class="viewcode-back" href="../../../models/generated/torchvision.models.resnet101.html#torchvision.models.resnet101">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ResNet101_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">resnet101</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNet101_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;ResNet-101 from `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/pdf/1512.03385.pdf&gt;`__.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNet-101 from `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/pdf/1512.03385.pdf&gt;`__.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">       The bottleneck of TorchVision places the stride for downsampling to the second 3x3</span>
@@ -1143,7 +1143,7 @@
 <div class="viewcode-block" id="resnet152"><a class="viewcode-back" href="../../../models/generated/torchvision.models.resnet152.html#torchvision.models.resnet152">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ResNet152_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">resnet152</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNet152_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;ResNet-152 from `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/pdf/1512.03385.pdf&gt;`__.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNet-152 from `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/pdf/1512.03385.pdf&gt;`__.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">       The bottleneck of TorchVision places the stride for downsampling to the second 3x3</span>
@@ -1177,7 +1177,7 @@
 <span class="k">def</span> <span class="nf">resnext50_32x4d</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNeXt50_32X4D_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;ResNeXt-50 32x4d model from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNeXt-50 32x4d model from</span>
 <span class="sd">    `Aggregated Residual Transformation for Deep Neural Networks &lt;https://arxiv.org/abs/1611.05431&gt;`_.</span>
 
 <span class="sd">    Args:</span>
@@ -1207,7 +1207,7 @@
 <span class="k">def</span> <span class="nf">resnext101_32x8d</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNeXt101_32X8D_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;ResNeXt-101 32x8d model from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNeXt-101 32x8d model from</span>
 <span class="sd">    `Aggregated Residual Transformation for Deep Neural Networks &lt;https://arxiv.org/abs/1611.05431&gt;`_.</span>
 
 <span class="sd">    Args:</span>
@@ -1237,7 +1237,7 @@
 <span class="k">def</span> <span class="nf">resnext101_64x4d</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNeXt101_64X4D_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;ResNeXt-101 64x4d model from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNeXt-101 64x4d model from</span>
 <span class="sd">    `Aggregated Residual Transformation for Deep Neural Networks &lt;https://arxiv.org/abs/1611.05431&gt;`_.</span>
 
 <span class="sd">    Args:</span>
@@ -1267,7 +1267,7 @@
 <span class="k">def</span> <span class="nf">wide_resnet50_2</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Wide_ResNet50_2_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Wide ResNet-50-2 model from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wide ResNet-50-2 model from</span>
 <span class="sd">    `Wide Residual Networks &lt;https://arxiv.org/abs/1605.07146&gt;`_.</span>
 
 <span class="sd">    The model is the same as ResNet except for the bottleneck number of channels</span>
@@ -1301,7 +1301,7 @@
 <span class="k">def</span> <span class="nf">wide_resnet101_2</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Wide_ResNet101_2_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Wide ResNet-101-2 model from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wide ResNet-101-2 model from</span>
 <span class="sd">    `Wide Residual Networks &lt;https://arxiv.org/abs/1605.07146&gt;`_.</span>
 
 <span class="sd">    The model is the same as ResNet except for the bottleneck number of channels</span>

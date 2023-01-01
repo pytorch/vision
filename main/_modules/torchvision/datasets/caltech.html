@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+5ff3df4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a4c2ad7 ) &#x25BC</a>
     </div>
     
 
@@ -354,7 +354,7 @@
 
 
 <div class="viewcode-block" id="Caltech101"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Caltech101.html#torchvision.datasets.Caltech101">[docs]</a><span class="k">class</span> <span class="nc">Caltech101</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;`Caltech 101 &lt;https://data.caltech.edu/records/20086&gt;`_ Dataset.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;`Caltech 101 &lt;https://data.caltech.edu/records/20086&gt;`_ Dataset.</span>
 
 <span class="sd">    .. warning::</span>
 
@@ -419,7 +419,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
 <div class="viewcode-block" id="Caltech101.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Caltech101.html#torchvision.datasets.Caltech101.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            index (int): Index</span>
 
@@ -491,7 +491,7 @@
 
 
 <div class="viewcode-block" id="Caltech256"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Caltech256.html#torchvision.datasets.Caltech256">[docs]</a><span class="k">class</span> <span class="nc">Caltech256</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;`Caltech 256 &lt;https://data.caltech.edu/records/20087&gt;`_ Dataset.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;`Caltech 256 &lt;https://data.caltech.edu/records/20087&gt;`_ Dataset.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (string): Root directory of dataset where directory</span>
@@ -536,7 +536,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
 <div class="viewcode-block" id="Caltech256.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Caltech256.html#torchvision.datasets.Caltech256.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            index (int): Index</span>
 
@@ -548,7 +548,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
                 <span class="s2">&quot;256_ObjectCategories&quot;</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">index</span><span class="p">]],</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">.jpg&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">.jpg&quot;</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
 

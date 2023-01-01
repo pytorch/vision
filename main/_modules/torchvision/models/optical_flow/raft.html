@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+5ff3df4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a4c2ad7 ) &#x25BC</a>
     </div>
     
 
@@ -370,7 +370,7 @@
 
 
 <span class="k">class</span> <span class="nc">ResidualBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Slightly modified Residual block with extra relu and biases.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slightly modified Residual block with extra relu and biases.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">always_project</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -417,7 +417,7 @@
 
 
 <span class="k">class</span> <span class="nc">BottleneckBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Slightly modified BottleNeck block (extra relu and biases)&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slightly modified BottleNeck block (extra relu and biases)&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -459,7 +459,7 @@
 
 
 <span class="k">class</span> <span class="nc">FeatureEncoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The feature encoder, used both as the actual feature encoder, and as the context encoder.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The feature encoder, used both as the actual feature encoder, and as the context encoder.</span>
 
 <span class="sd">    It must downsample its input by 8.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -514,7 +514,7 @@
 
 
 <span class="k">class</span> <span class="nc">MotionEncoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The motion encoder, part of the update block.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The motion encoder, part of the update block.</span>
 
 <span class="sd">    Takes the current predicted flow and the correlation features as input and returns an encoded version of these.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -557,7 +557,7 @@
 
 
 <span class="k">class</span> <span class="nc">ConvGRU</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Convolutional Gru unit.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convolutional Gru unit.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">padding</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -580,7 +580,7 @@
 
 
 <span class="k">class</span> <span class="nc">RecurrentBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Recurrent block, part of the update block.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recurrent block, part of the update block.</span>
 
 <span class="sd">    Takes the current hidden state and the concatenation of (motion encoder output, context) as input.</span>
 <span class="sd">    Returns an updated hidden state.</span>
@@ -615,7 +615,7 @@
 
 
 <span class="k">class</span> <span class="nc">FlowHead</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Flow head, part of the update block.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flow head, part of the update block.</span>
 
 <span class="sd">    Takes the hidden state of the recurrent unit as input, and outputs the predicted &quot;delta flow&quot;.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -631,7 +631,7 @@
 
 
 <span class="k">class</span> <span class="nc">UpdateBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The update block which contains the motion encoder, the recurrent block, and the flow head.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The update block which contains the motion encoder, the recurrent block, and the flow head.</span>
 
 <span class="sd">    It must expose a ``hidden_state_size`` attribute which is the hidden state size of its recurrent block.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -654,7 +654,7 @@
 
 
 <span class="k">class</span> <span class="nc">MaskPredictor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Mask predictor to be used when upsampling the predicted flow.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mask predictor to be used when upsampling the predicted flow.</span>
 
 <span class="sd">    It takes the hidden state of the recurrent unit as input and outputs the mask.</span>
 <span class="sd">    This is not used in the raft-small model.</span>
@@ -680,7 +680,7 @@
 
 
 <span class="k">class</span> <span class="nc">CorrBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The correlation block.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The correlation block.</span>
 
 <span class="sd">    Creates a correlation pyramid with ``num_levels`` levels from the outputs of the feature encoder,</span>
 <span class="sd">    and then indexes from this pyramid to create correlation features.</span>
@@ -703,7 +703,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span> <span class="o">=</span> <span class="n">num_levels</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">radius</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
 
     <span class="k">def</span> <span class="nf">build_pyramid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmap1</span><span class="p">,</span> <span class="n">fmap2</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Build the correlation pyramid from two feature maps.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the correlation pyramid from two feature maps.</span>
 
 <span class="sd">        The correlation volume is first computed as the dot product of each pair (pixel_in_fmap1, pixel_in_fmap2)</span>
 <span class="sd">        The last 2 dimensions of the correlation volume are then pooled num_levels times at different resolutions</span>
@@ -724,7 +724,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">corr_pyramid</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">corr_volume</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">index_pyramid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">centroids_coords</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return correlation features by indexing from the pyramid.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return correlation features by indexing from the pyramid.&quot;&quot;&quot;</span>
         <span class="n">neighborhood_side_len</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># see note in __init__ about out_channels</span>
         <span class="n">di</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="n">neighborhood_side_len</span><span class="p">)</span>
         <span class="n">dj</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="n">neighborhood_side_len</span><span class="p">)</span>
@@ -765,7 +765,7 @@
 
 <span class="k">class</span> <span class="nc">RAFT</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">feature_encoder</span><span class="p">,</span> <span class="n">context_encoder</span><span class="p">,</span> <span class="n">corr_block</span><span class="p">,</span> <span class="n">update_block</span><span class="p">,</span> <span class="n">mask_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;RAFT model from</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;RAFT model from</span>
 <span class="sd">        `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`_.</span>
 
 <span class="sd">        args:</span>
@@ -871,7 +871,7 @@
 
 
 <div class="viewcode-block" id="Raft_Large_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.Raft_Large_Weights">[docs]</a><span class="k">class</span> <span class="nc">Raft_Large_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The metrics reported here are as follows.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The metrics reported here are as follows.</span>
 
 <span class="sd">    ``epe`` is the &quot;end-point-error&quot; and indicates how far (in pixels) the</span>
 <span class="sd">    predicted flow is from its true value. This is averaged over all pixels</span>
@@ -1029,7 +1029,7 @@
 
 
 <div class="viewcode-block" id="Raft_Small_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_small.html#torchvision.models.optical_flow.Raft_Small_Weights">[docs]</a><span class="k">class</span> <span class="nc">Raft_Small_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The metrics reported here are as follows.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The metrics reported here are as follows.</span>
 
 <span class="sd">    ``epe`` is the &quot;end-point-error&quot; and indicates how far (in pixels) the</span>
 <span class="sd">    predicted flow is from its true value. This is averaged over all pixels</span>
@@ -1171,7 +1171,7 @@
 <div class="viewcode-block" id="raft_large"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.raft_large">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Raft_Large_Weights</span><span class="o">.</span><span class="n">C_T_SKHT_V2</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">raft_large</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Raft_Large_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RAFT</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;RAFT model from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;RAFT model from</span>
 <span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`_.</span>
 
 <span class="sd">    Please see the example below for a tutorial on how to use this model.</span>
@@ -1227,7 +1227,7 @@
 <div class="viewcode-block" id="raft_small"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_small.html#torchvision.models.optical_flow.raft_small">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Raft_Small_Weights</span><span class="o">.</span><span class="n">C_T_V2</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">raft_small</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Raft_Small_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RAFT</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;RAFT &quot;small&quot; model from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;RAFT &quot;small&quot; model from</span>
 <span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`__.</span>
 
 <span class="sd">    Please see the example below for a tutorial on how to use this model.</span>

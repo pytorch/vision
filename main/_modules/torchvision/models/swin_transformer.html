@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+5ff3df4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a4c2ad7 ) &#x25BC</a>
     </div>
     
 
@@ -405,7 +405,7 @@
 
 
 <span class="k">class</span> <span class="nc">PatchMerging</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Patch Merging Layer.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Patch Merging Layer.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        dim (int): Number of input channels.</span>
 <span class="sd">        norm_layer (nn.Module): Normalization layer. Default: nn.LayerNorm.</span>
@@ -419,7 +419,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">norm_layer</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">dim</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): input tensor with expected layout of [..., H, W, C]</span>
 <span class="sd">        Returns:</span>
@@ -432,7 +432,7 @@
 
 
 <span class="k">class</span> <span class="nc">PatchMergingV2</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Patch Merging Layer for Swin Transformer V2.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Patch Merging Layer for Swin Transformer V2.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        dim (int): Number of input channels.</span>
 <span class="sd">        norm_layer (nn.Module): Normalization layer. Default: nn.LayerNorm.</span>
@@ -446,7 +446,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">norm_layer</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">dim</span><span class="p">)</span>  <span class="c1"># difference</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): input tensor with expected layout of [..., H, W, C]</span>
 <span class="sd">        Returns:</span>
@@ -472,7 +472,7 @@
     <span class="n">proj_bias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">logit_scale</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Window based multi-head self attention (W-MSA) module with relative position bias.</span>
 <span class="sd">    It supports both of shifted and non-shifted window.</span>
 <span class="sd">    Args:</span>
@@ -575,7 +575,7 @@
 
 
 <span class="k">class</span> <span class="nc">ShiftedWindowAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    See :func:`shifted_window_attention`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -632,7 +632,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): Tensor with layout of [B, H, W, C]</span>
 <span class="sd">        Returns:</span>
@@ -655,7 +655,7 @@
 
 
 <span class="k">class</span> <span class="nc">ShiftedWindowAttentionV2</span><span class="p">(</span><span class="n">ShiftedWindowAttention</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    See :func:`shifted_window_attention_v2`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -716,7 +716,7 @@
         <span class="k">return</span> <span class="n">relative_position_bias</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): Tensor with layout of [B, H, W, C]</span>
 <span class="sd">        Returns:</span>
@@ -740,7 +740,7 @@
 
 
 <span class="k">class</span> <span class="nc">SwinTransformerBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Swin Transformer Block.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        dim (int): Number of input channels.</span>
@@ -797,7 +797,7 @@
 
 
 <span class="k">class</span> <span class="nc">SwinTransformerBlockV2</span><span class="p">(</span><span class="n">SwinTransformerBlock</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Swin Transformer V2 Block.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        dim (int): Number of input channels.</span>
@@ -847,7 +847,7 @@
 
 
 <span class="k">class</span> <span class="nc">SwinTransformer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implements Swin Transformer from the `&quot;Swin Transformer: Hierarchical Vision Transformer using</span>
 <span class="sd">    Shifted Windows&quot; &lt;https://arxiv.org/pdf/2103.14030&gt;`_ paper.</span>
 <span class="sd">    Args:</span>
@@ -1143,7 +1143,7 @@
 <div class="viewcode-block" id="swin_t"><a class="viewcode-back" href="../../../models/generated/torchvision.models.swin_t.html#torchvision.models.swin_t">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin_T_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">swin_t</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin_T_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_tiny architecture from</span>
 <span class="sd">    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows &lt;https://arxiv.org/pdf/2103.14030&gt;`_.</span>
 
@@ -1181,7 +1181,7 @@
 <div class="viewcode-block" id="swin_s"><a class="viewcode-back" href="../../../models/generated/torchvision.models.swin_s.html#torchvision.models.swin_s">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin_S_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">swin_s</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin_S_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_small architecture from</span>
 <span class="sd">    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows &lt;https://arxiv.org/pdf/2103.14030&gt;`_.</span>
 
@@ -1219,7 +1219,7 @@
 <div class="viewcode-block" id="swin_b"><a class="viewcode-back" href="../../../models/generated/torchvision.models.swin_b.html#torchvision.models.swin_b">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin_B_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">swin_b</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin_B_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_base architecture from</span>
 <span class="sd">    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows &lt;https://arxiv.org/pdf/2103.14030&gt;`_.</span>
 
@@ -1257,7 +1257,7 @@
 <div class="viewcode-block" id="swin_v2_t"><a class="viewcode-back" href="../../../models/generated/torchvision.models.swin_v2_t.html#torchvision.models.swin_v2_t">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin_V2_T_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">swin_v2_t</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin_V2_T_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_v2_tiny architecture from</span>
 <span class="sd">    `Swin Transformer V2: Scaling Up Capacity and Resolution &lt;https://arxiv.org/pdf/2111.09883&gt;`_.</span>
 
@@ -1297,7 +1297,7 @@
 <div class="viewcode-block" id="swin_v2_s"><a class="viewcode-back" href="../../../models/generated/torchvision.models.swin_v2_s.html#torchvision.models.swin_v2_s">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin_V2_S_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">swin_v2_s</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin_V2_S_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_v2_small architecture from</span>
 <span class="sd">    `Swin Transformer V2: Scaling Up Capacity and Resolution &lt;https://arxiv.org/pdf/2111.09883&gt;`_.</span>
 
@@ -1337,7 +1337,7 @@
 <div class="viewcode-block" id="swin_v2_b"><a class="viewcode-back" href="../../../models/generated/torchvision.models.swin_v2_b.html#torchvision.models.swin_v2_b">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin_V2_B_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">swin_v2_b</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin_V2_B_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_v2_base architecture from</span>
 <span class="sd">    `Swin Transformer V2: Scaling Up Capacity and Resolution &lt;https://arxiv.org/pdf/2111.09883&gt;`_.</span>
 

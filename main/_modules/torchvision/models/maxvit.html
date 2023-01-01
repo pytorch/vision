@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+5ff3df4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a4c2ad7 ) &#x25BC</a>
     </div>
     
 
@@ -375,7 +375,7 @@
 
 
 <span class="k">def</span> <span class="nf">_make_block_input_shapes</span><span class="p">(</span><span class="n">input_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">n_blocks</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
-    <span class="sd">&quot;&quot;&quot;Util function to check that the input size is correct for a MaxVit configuration.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Util function to check that the input size is correct for a MaxVit configuration.&quot;&quot;&quot;</span>
     <span class="n">shapes</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">block_input_shape</span> <span class="o">=</span> <span class="n">_get_conv_output_shape</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">):</span>
@@ -396,7 +396,7 @@
 
 
 <span class="k">class</span> <span class="nc">MBConv</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;MBConv: Mobile Inverted Residual Bottleneck.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MBConv: Mobile Inverted Residual Bottleneck.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        in_channels (int): Number of input channels.</span>
@@ -471,7 +471,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">_layers</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): Input tensor with expected layout of [B, C, H, W].</span>
 <span class="sd">        Returns:</span>
@@ -483,7 +483,7 @@
 
 
 <span class="k">class</span> <span class="nc">RelativePositionalMultiHeadAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Relative Positional Multi-Head Attention.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Relative Positional Multi-Head Attention.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        feat_dim (int): Number of input features.</span>
@@ -526,7 +526,7 @@
         <span class="k">return</span> <span class="n">relative_bias</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): Input tensor with expected layout of [B, G, P, D].</span>
 <span class="sd">        Returns:</span>
@@ -556,7 +556,7 @@
 
 
 <span class="k">class</span> <span class="nc">SwapAxes</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Permute the axes of a tensor.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Permute the axes of a tensor.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -569,7 +569,7 @@
 
 
 <span class="k">class</span> <span class="nc">WindowPartition</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Partition the input tensor into non-overlapping windows.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -577,7 +577,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): Input tensor with expected layout of [B, C, H, W].</span>
 <span class="sd">            p (int): Number of partitions.</span>
@@ -595,7 +595,7 @@
 
 
 <span class="k">class</span> <span class="nc">WindowDepartition</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Departition the input tensor of non-overlapping windows into a feature volume of layout [B, C, H, W].</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -603,7 +603,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h_partitions</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">w_partitions</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): Input tensor with expected layout of [B, (H/P * W/P), P*P, C].</span>
 <span class="sd">            p (int): Number of partitions.</span>
@@ -625,7 +625,7 @@
 
 
 <span class="k">class</span> <span class="nc">PartitionAttentionLayer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Layer for partitioning the input tensor into non-overlapping windows and applying attention to each window.</span>
 
 <span class="sd">    Args:</span>
@@ -701,7 +701,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_dropout</span> <span class="o">=</span> <span class="n">StochasticDepth</span><span class="p">(</span><span class="n">p_stochastic_dropout</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;row&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): Input tensor with expected layout of [B, C, H, W].</span>
 <span class="sd">        Returns:</span>
@@ -729,7 +729,7 @@
 
 
 <span class="k">class</span> <span class="nc">MaxVitLayer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    MaxVit layer consisting of a MBConv layer followed by a PartitionAttentionLayer with `window` and a PartitionAttentionLayer with `grid`.</span>
 
 <span class="sd">    Args:</span>
@@ -815,7 +815,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): Input tensor of shape (B, C, H, W).</span>
 <span class="sd">        Returns:</span>
@@ -826,7 +826,7 @@
 
 
 <span class="k">class</span> <span class="nc">MaxVitBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A MaxVit block consisting of `n_layers` MaxVit layers.</span>
 
 <span class="sd">     Args:</span>
@@ -899,7 +899,7 @@
             <span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): Input tensor of shape (B, C, H, W).</span>
 <span class="sd">        Returns:</span>
@@ -911,7 +911,7 @@
 
 
 <span class="k">class</span> <span class="nc">MaxVit</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implements MaxVit Transformer from the `MaxViT: Multi-Axis Vision Transformer &lt;https://arxiv.org/abs/2204.01697&gt;`_ paper.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        input_size (Tuple[int, int]): Size of the input image.</span>
@@ -1142,7 +1142,7 @@
 <div class="viewcode-block" id="maxvit_t"><a class="viewcode-back" href="../../../models/generated/torchvision.models.maxvit_t.html#torchvision.models.maxvit_t">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">MaxVit_T_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">maxvit_t</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MaxVit_T_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MaxVit</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a maxvit_t architecture from</span>
 <span class="sd">    `MaxViT: Multi-Axis Vision Transformer &lt;https://arxiv.org/abs/2204.01697&gt;`_.</span>
 

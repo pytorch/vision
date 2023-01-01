@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+5ff3df4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a4c2ad7 ) &#x25BC</a>
     </div>
     
 
@@ -370,7 +370,7 @@
 
 
 <span class="k">class</span> <span class="nc">MaskRCNN</span><span class="p">(</span><span class="n">FasterRCNN</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implements Mask R-CNN.</span>
 
 <span class="sd">    The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each</span>
@@ -614,7 +614,7 @@
     <span class="n">_version</span> <span class="o">=</span> <span class="mi">2</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">dilation</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            in_channels (int): number of input channels</span>
 <span class="sd">            layers (list): feature dimensions of each FCN layer</span>
@@ -759,7 +759,7 @@
     <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MaskRCNN</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Mask R-CNN model with a ResNet-50-FPN backbone from the `Mask R-CNN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mask R-CNN model with a ResNet-50-FPN backbone from the `Mask R-CNN</span>
 <span class="sd">    &lt;https://arxiv.org/abs/1703.06870&gt;`_ paper.</span>
 
 <span class="sd">    .. betastatus:: detection module</span>
@@ -867,7 +867,7 @@
     <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MaskRCNN</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Improved Mask R-CNN model with a ResNet-50-FPN backbone from the `Benchmarking Detection Transfer</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Improved Mask R-CNN model with a ResNet-50-FPN backbone from the `Benchmarking Detection Transfer</span>
 <span class="sd">    Learning with Vision Transformers &lt;https://arxiv.org/abs/2111.11429&gt;`_ paper.</span>
 
 <span class="sd">    .. betastatus:: detection module</span>
