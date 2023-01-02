@@ -1779,12 +1779,29 @@ class TestDiceLoss:
         }[reduction]
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_dice_loss_one(self, device):
-        shape = (16, 4, 4, 2)
+    def test_dice_loss(self, device):
+        input = torch.tensor([[[0.9409, 0.9220], [0.9524, 0.1094]],
+                              [[0.6802, 0.7949], [0.9570, 0.1499]],
+                              [[0.3298, 0.4401], [0.1094, 0.7536]],
+                              [[0.3340, 0.9895], [0.9563, 0.5045]]], device=device)
+        labels = torch.tensor([[[0, 1], [1, 0]],
+                               [[1, 0], [0, 1]],
+                               [[1, 0], [1, 0]],
+                               [[1, 0], [0, 1]]], device=device)
+        expected = torch.tensor([0.4028, 0.6101, 0.5916, 0.6347], device=device)
+        torch.testing.assert_allclose(ops.dice_loss(input, labels, eps=0), expected)
+
+    @pytest.mark.parametrize("shape", ((16, 4, 4, 2), (32, 2), (32, 4, 4, 4, 2)))
+    @pytest.mark.parametrize("reduction", ["none", "mean", "sum"])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_dice_loss_one(self, shape, reduction, device):
         input_ones = torch.ones(shape, device=device)
         label_zeros = torch.zeros(shape, device=device)
-        expected = torch.ones(16, device=device)
-        torch.testing.assert_close(ops.dice_loss(input_ones, label_zeros), expected)
+        expected = torch.ones(shape[0], device=device)
+        reduction_fn = self.get_reduction_method(reduction)
+        if reduction_fn is not None:
+            expected = reduction_fn(expected)
+        torch.testing.assert_close(ops.dice_loss(input_ones, label_zeros, reduction=reduction), expected)
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_dice_loss_all_zeros(self, device):
@@ -1797,18 +1814,6 @@ class TestDiceLoss:
         input_zeros[:, :, :, 0] = 100.0
         expected = torch.zeros(16, device=device)
         torch.testing.assert_close(ops.dice_loss(input_zeros, label_zeros), expected)
-
-    @pytest.mark.parametrize("reduction", ["none", "mean", "sum"])
-    @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_reduction_methods(self, reduction, device):
-        shape = (16, 4, 4, 2)
-        input_ones = torch.ones(shape, device=device)
-        label_zeros = torch.zeros(shape, device=device)
-        expected = torch.ones(16, device=device)
-        reduction_fn = self.get_reduction_method(reduction)
-        if reduction_fn is not None:
-            expected = reduction_fn(expected)
-        torch.testing.assert_close(ops.dice_loss(input_ones, label_zeros, reduction=reduction), expected)
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_gradcheck(self, device):
