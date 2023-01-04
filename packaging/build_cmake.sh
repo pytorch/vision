@@ -25,8 +25,6 @@ if [[ "$OSTYPE" == "msys" ]]; then
     pip install dataclasses
 fi
 
-conda install -yq python=3.9
-
 setup_visual_studio_constraint
 setup_junit_results_folder
 
