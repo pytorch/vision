@@ -54,7 +54,7 @@ def get_correlation(
 ) -> Tensor:
     """Function that computes a correlation product between the left and right features.
 
-    The correlation is computed in a sliding window fashion, namely the the left features are fixed
+    The correlation is computed in a sliding window fashion, namely the left features are fixed
     and for each ``(i, j)`` location we compute the correlation with a sliding window anchored in
     ``(i, j)`` from the right feature map. The sliding window selects pixels obtained in the range of the sliding
     window; i.e ``(i - window_size // 2, i + window_size // 2)`` respectively ``(j - window_size // 2, j + window_size // 2)``.
@@ -715,7 +715,7 @@ class CREStereo(nn.Module):
         # useful for iterating through torch.jit.script module given the network forward pass
         #
         # Ignore the largest resolution. We handle that separately due to torch.jit.script
-        # not being to able access to runtime generated keys in ModuleDicts.
+        # not being able to access to runtime generated keys in ModuleDicts.
         # This way, we can keep a generic way of processing all pyramid levels but except
         # the final one
         iterative_correlation_layer = partial(
@@ -860,7 +860,7 @@ class CREStereo(nn.Module):
                 # compute the scale difference between the first pyramid scale and the current pyramid scale
                 scale_to_base = l_pyramid[fine_grained_resolution].shape[2] // l_pyramid[resolution].shape[2]
                 for it in range(num_iters // 2):
-                    # set whether or not we want to search on (X, Y) axes for correlation or just on X axis
+                    # set whether we want to search on (X, Y) axes for correlation or just on X axis
                     window_type = self._get_window_type(it)
                     # we consider this a prior, therefore we do not want to back-propagate through it
                     flow_estimates[resolution] = flow_estimates[resolution].detach()
@@ -918,8 +918,8 @@ class CREStereo(nn.Module):
         # this coincides with the maximum resolution
 
         # we keep a separate loop here in order to avoid python control flow
-        # to decide how much iterations should we do based on the current resolution
-        # further more, if provided with an initial flow, there is no need to generate
+        # to decide how many iterations should we do based on the current resolution
+        # furthermore, if provided with an initial flow, there is no need to generate
         # a prior estimate when moving into the final refinement stage
 
         for it in range(num_iters):

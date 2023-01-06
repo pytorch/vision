@@ -274,9 +274,9 @@ class FCOS(nn.Module):
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
@@ -316,8 +316,8 @@ class FCOS(nn.Module):
             within which all anchor points are labeled positive.
         score_thresh (float): Score threshold used for postprocessing the detections.
         nms_thresh (float): NMS threshold used for postprocessing the detections.
-        detections_per_img (int): Number of best detections to keep after NMS.
-        topk_candidates (int): Number of best detections to keep before NMS.
+        detections_per_img (int): Number of the best detections to keep after NMS.
+        topk_candidates (int): Number of the best detections to keep before NMS.
 
     Example:
 
@@ -329,7 +329,7 @@ class FCOS(nn.Module):
         >>> # only the features
         >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # FCOS needs to know the number of
-        >>> # output channels in a backbone. For mobilenet_v2, it's 1280
+        >>> # output channels in a backbone. For mobilenet_v2, it's 1280,
         >>> # so we need to add it here
         >>> backbone.out_channels = 1280
         >>>
@@ -695,9 +695,9 @@ def fcos_resnet50_fpn(
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with

@@ -145,7 +145,7 @@ def save_image(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(save_image)
     grid = make_grid(tensor, **kwargs)
-    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
+    # Add 0.5 after unnormalizing to [0, 255] to round to the nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
@@ -565,7 +565,7 @@ def _log_api_usage_once(obj: Any) -> None:
 def _make_ntuple(x: Any, n: int) -> Tuple[Any, ...]:
     """
     Make n-tuple from input x. If x is an iterable, then we just convert it to tuple.
-    Otherwise we will make a tuple of length n, all with value of x.
+    Otherwise, we will make a tuple of length n, all with value of x.
     reference: https://github.com/pytorch/pytorch/blob/master/torch/nn/modules/utils.py#L8
 
     Args:

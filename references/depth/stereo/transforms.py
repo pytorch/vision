@@ -400,7 +400,7 @@ class RandomSpatialShift(torch.nn.Module):
             img_right = F.affine(
                 img_right,
                 angle=angle,
-                translate=[0, shift],  # translation only on the y axis
+                translate=[0, shift],  # translation only on the y-axis
                 center=[x, y],
                 scale=1.0,
                 shear=0.0,
@@ -533,7 +533,7 @@ class RandomRescaleAndCrop(torch.nn.Module):
         # exponential scaling will draw a random scale in (min_scale, max_scale) and then raise
         # 2 to the power of that random value. This final scale distribution will have a different
         # mean and variance than a uniform distribution. Note that a scale of 1 will result in
-        # in a rescaling of 2X the original size, whereas a scale of -1 will result in a rescaling
+        # a rescaling of 2X the original size, whereas a scale of -1 will result in a rescaling
         # of 0.5X the original size.
         if self.scaling_type == "exponential":
             scale = 2 ** torch.empty(1, dtype=torch.float32).uniform_(self.min_scale, self.max_scale).item()
@@ -577,7 +577,7 @@ class RandomRescaleAndCrop(torch.nn.Module):
 
         # Note: For sparse datasets (Kitti), the original code uses a "margin"
         # See e.g. https://github.com/princeton-vl/RAFT/blob/master/core/utils/augmentor.py#L220:L220
-        # We don't, not sure it matters much
+        # We don't, not sure if it matters much
         y0 = torch.randint(0, img_left.shape[1] - self.crop_size[0], size=(1,)).item()
         x0 = torch.randint(0, img_right.shape[2] - self.crop_size[1], size=(1,)).item()
 

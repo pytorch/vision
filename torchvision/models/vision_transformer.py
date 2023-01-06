@@ -793,7 +793,7 @@ def interpolate_embeddings(
     interpolation_mode: str = "bicubic",
     reset_heads: bool = False,
 ) -> "OrderedDict[str, torch.Tensor]":
-    """This function helps interpolating positional embeddings during checkpoint loading,
+    """This function helps interpolate positional embeddings during checkpoint loading,
     especially when you want to apply a pre-trained model on images with different resolution.
 
     Args:
@@ -818,7 +818,7 @@ def interpolate_embeddings(
     # We do this by reshaping the positions embeddings to a 2d grid, performing
     # an interpolation in the (h, w) space and then reshaping back to a 1d grid.
     if new_seq_length != seq_length:
-        # The class token embedding shouldn't be interpolated so we split it up.
+        # The class token embedding shouldn't be interpolated, so we split it up.
         seq_length -= 1
         new_seq_length -= 1
         pos_embedding_token = pos_embedding[:, :1, :]

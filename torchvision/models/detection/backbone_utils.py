@@ -102,12 +102,12 @@ def resnet_fpn_backbone(
         trainable_layers (int): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
         returned_layers (list of int): The layers of the network to return. Each entry must be in ``[1, 4]``.
-            By default all layers are returned.
+            By default, all layers are returned.
         extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
             be performed. It is expected to take the fpn features, the original
             features and the names of the original features as input, and returns
             a new list of feature maps and their corresponding names. By
-            default a ``LastLevelMaxPool`` is used.
+            default, a ``LastLevelMaxPool`` is used.
     """
     backbone = resnet.__dict__[backbone_name](weights=weights, norm_layer=norm_layer)
     return _resnet_fpn_extractor(backbone, trainable_layers, returned_layers, extra_blocks)

@@ -208,7 +208,7 @@ class RandomResizeAndCrop(torch.nn.Module):
 
         # Note: For sparse datasets (Kitti), the original code uses a "margin"
         # See e.g. https://github.com/princeton-vl/RAFT/blob/master/core/utils/augmentor.py#L220:L220
-        # We don't, not sure it matters much
+        # We don't, not sure if it matters much
         y0 = torch.randint(0, img1.shape[1] - self.crop_size[0], size=(1,)).item()
         x0 = torch.randint(0, img1.shape[2] - self.crop_size[1], size=(1,)).item()
 

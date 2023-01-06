@@ -12,8 +12,8 @@ A ratio of **88-6-6** was used in order to train a baseline weight set. We provi
 Both used 8 A100 GPUs and a batch size of 2 (so effective batch size is 16). The
 rest of the hyper-parameters loosely follow the recipe from https://github.com/megvii-research/CREStereo.
 The original recipe trains for **300000** updates (or steps) on the dataset mixture. We modify the learning rate
-schedule to one that starts decaying the weight much sooner. Throughout experiments we found that this reduces overfitting
-during evaluation time and gradient clip help stabilize the loss during a pre-mature learning rate change.
+schedule to one that starts decaying the weight much sooner. Throughout the experiments we found that this reduces 
+overfitting during evaluation time and gradient clip help stabilize the loss during a pre-mature learning rate change.
 
 ```
 torchrun --nproc_per_node 8 --nnodes 1 train.py \
@@ -135,7 +135,7 @@ Dataset: middlebury2014-train @size: [384, 512]:
 
 # Concerns when training
 
-We encourage users to be aware of the **aspect-ratio** and **disparity scale** they are targeting when doing any sort of training or fine-tuning. The model is highly sensitive to these two factors, as a consequence with naive multi-set fine-tuning one can achieve `0.2 mae` relatively fast. We recommend that users pay close attention to how they **balance dataset sizing** when training such networks.
+We encourage users to be aware of the **aspect-ratio** and **disparity scale** they are targeting when doing any sort of training or fine-tuning. The model is highly sensitive to these two factors, as a consequence of naive multi-set fine-tuning one can achieve `0.2 mae` relatively fast. We recommend that users pay close attention to how they **balance dataset sizing** when training such networks.
 
  Ideally, dataset scaling should be trated at an individual level and a thorough **EDA** of the disparity distribution in random crops at the desired training / inference size should be performed prior to any large compute investments.
 

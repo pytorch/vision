@@ -67,7 +67,7 @@ def write_video(
     Args:
         filename (str): path where the video will be saved
         video_array (Tensor[T, H, W, C]): tensor containing the individual frames,
-            as a uint8 tensor in [T, H, W, C] format
+            as an uint8 tensor in [T, H, W, C] format
         fps (Number): video frames per second
         video_codec (str): the name of the video codec, i.e. "libx264", "h264", etc.
         options (Dict): dictionary containing options to be passed into the PyAV video stream
@@ -241,8 +241,7 @@ def read_video(
     output_format: str = "THWC",
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
     """
-    Reads a video from a file, returning both the video frames as well as
-    the audio frames
+    Reads a video from a file, returning both the video frames and the audio frames
 
     Args:
         filename (str): path to the video file

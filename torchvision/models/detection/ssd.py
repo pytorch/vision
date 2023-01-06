@@ -128,12 +128,12 @@ class SSD(nn.Module):
     Implements SSD architecture from `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
-    image, and should be in 0-1 range. Different images can have different sizes but they will be resized
+    image, and should be in 0-1 range. Different images can have different sizes, but they will be resized
     to a fixed size before passing it to the backbone.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
@@ -169,10 +169,10 @@ class SSD(nn.Module):
             a classification and regression module.
         score_thresh (float): Score threshold used for postprocessing the detections.
         nms_thresh (float): NMS threshold used for postprocessing the detections.
-        detections_per_img (int): Number of best detections to keep after NMS.
+        detections_per_img (int): Number of the best detections to keep after NMS.
         iou_thresh (float): minimum IoU between the anchor and the GT box so that they can be
             considered as positive during training.
-        topk_candidates (int): Number of best detections to keep before NMS.
+        topk_candidates (int): Number of the best detections to keep before NMS.
         positive_fraction (float): a number between 0 and 1 which indicates the proportion of positive
             proposals used during the training of the classification head. It is used to estimate the negative to
             positive ratio.
@@ -590,12 +590,12 @@ def ssd300_vgg16(
     .. betastatus:: detection module
 
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
-    image, and should be in 0-1 range. Different images can have different sizes but they will be resized
+    image, and should be in 0-1 range. Different images can have different sizes, but they will be resized
     to a fixed size before passing it to the backbone.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with

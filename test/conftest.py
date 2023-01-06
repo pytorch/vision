@@ -16,7 +16,7 @@ def pytest_collection_modifyitems(items):
     # This hook is called by pytest after it has collected the tests (google its name to check out its doc!)
     # We can ignore some tests as we see fit here, or add marks, such as a skip mark.
     #
-    # Typically here, we try to optimize CI time. In particular, the GPU CI instances don't need to run the
+    # Typically, here, we try to optimize CI time. In particular, the GPU CI instances don't need to run the
     # tests that don't need CUDA, because those tests are extensively tested in the CPU CI instances already.
     # This is true for both CircleCI and the fbcode internal CI.
     # In the fbcode CI, we have an additional constraint: we try to avoid skipping tests. So instead of relying on

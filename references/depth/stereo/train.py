@@ -495,7 +495,7 @@ def main(args):
     # initialize the learning rate schedule
     scheduler = make_lr_schedule(args, optimizer)
 
-    # load them from checkpoint if need
+    # load them from checkpoint if needed
     args.start_step = 0
     if args.resume_path is not None:
         checkpoint = torch.load(args.resume_path, map_location="cpu")
@@ -531,7 +531,7 @@ def main(args):
         # the train dataset is preshuffled in order to respect the iteration order
         sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=False, drop_last=True)
     else:
-        # the train dataset is already shuffled so we can use a simple SequentialSampler
+        # the train dataset is already shuffled, so we can use a simple SequentialSampler
         sampler = torch.utils.data.SequentialSampler(train_dataset)
 
     train_loader = torch.utils.data.DataLoader(

@@ -272,7 +272,7 @@ def _rgb2hsv(img: Tensor) -> Tensor:
     #   + S channel has division by `maxc`, which is zero only if `maxc = minc`
     #   + H channel has division by `(maxc - minc)`.
     #
-    # Instead of overwriting NaN afterwards, we just prevent it from occurring so
+    # Instead of overwriting NaN afterwards, we just prevent it from occurring, so
     # we don't need to deal with it in case we save the NaN in a buffer in
     # backprop, if it is ever supported, but it doesn't hurt to do so.
     eqc = maxc == minc
@@ -416,7 +416,7 @@ def pad(
     out_dtype = img.dtype
     need_cast = False
     if (padding_mode != "constant") and img.dtype not in (torch.float32, torch.float64):
-        # Here we temporary cast input tensor to float
+        # Here we temporarily cast input tensor to float
         # until pytorch issue is resolved :
         # https://github.com/pytorch/pytorch/issues/40763
         need_cast = True

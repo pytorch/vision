@@ -119,7 +119,7 @@ def _get_google_drive_file_id(url: str) -> Optional[str]:
 def download_url(
     url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, max_redirect_hops: int = 3
 ) -> None:
-    """Download a file from a url and place it in root.
+    """Download a file from an url and place it in root.
 
     Args:
         url (str): URL to download file from

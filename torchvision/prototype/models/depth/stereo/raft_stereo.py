@@ -53,7 +53,7 @@ class BaseEncoder(raft.FeatureEncoder):
 class FeatureEncoder(nn.Module):
     """Feature Encoder for Raft-Stereo (see paper section 3.1) that may have shared weight with the Context Encoder.
 
-    The FeatureEncoder takes concatenation of left and right image as input, it produce feature embedding that later
+    The FeatureEncoder takes concatenation of left and right image as input. It produces feature embedding that later
     will be used to construct correlation volume.
     """
 
@@ -89,7 +89,7 @@ class FeatureEncoder(nn.Module):
 class MultiLevelContextEncoder(nn.Module):
     """Context Encoder for Raft-Stereo (see paper section 3.1) that may have shared weight with the Feature Encoder.
 
-    The ContextEncoder takes left image as input and it outputs concatenated hidden_states and contexts.
+    The ContextEncoder takes left image as input, and it outputs concatenated hidden_states and contexts.
     In Raft-Stereo we have multi level GRUs and this context encoder will also multi outputs (list of Tensor)
     that correspond to each GRUs.
     Take note that the length of "out_with_blocks" parameter represent the number of GRU's level.
@@ -191,8 +191,8 @@ class MultiLevelUpdateBlock(nn.Module):
         self.grus = nn.ModuleList(
             [
                 ConvGRU(input_size=gru_input_dims[i], hidden_size=hidden_dims[i], kernel_size=3, padding=1)
-                # Ideally we should reverse the direction during forward to use the gru with smallest resolution first
-                # however currently there is no way to reverse a ModuleList that is jit script compatible
+                # Ideally we should reverse the direction during forward to use the gru with the smallest resolution
+                # first however currently there is no way to reverse a ModuleList that is jit script compatible
                 # hence we reverse the ordering of self.grus on the constructor instead
                 # see: https://github.com/pytorch/pytorch/issues/31772
                 for i in reversed(list(range(len(hidden_dims))))
@@ -361,7 +361,7 @@ class RaftStereo(nn.Module):
                 It has multi-level output and each level will have 2 parts:
 
                 - one part will be used as the actual "context", passed to the recurrent unit of the ``update_block``
-                - one part will be used to initialize the hidden state of the of the recurrent unit of
+                - one part will be used to initialize the hidden state of the recurrent unit of
                   the ``update_block``
 
             corr_pyramid (CorrPyramid1d): Module to build the correlation pyramid from feature encoder output
@@ -382,7 +382,7 @@ class RaftStereo(nn.Module):
         super().__init__()
         _log_api_usage_once(self)
 
-        # This indicate that the disparity output will be only have 1 channel (represent horizontal axis).
+        # This indicates that the disparity output will be only have 1 channel (represent horizontal axis).
         # We need this because some stereo matching model like CREStereo might have 2 channel on the output
         self.output_channels = 1
 
@@ -409,7 +409,7 @@ class RaftStereo(nn.Module):
         self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor] = None, num_iters: int = 12
     ) -> List[Tensor]:
         """
-        Return disparity predictions on every iterations as a list of Tensor.
+        Return disparity predictions on every iteration as a list of Tensor.
         args:
             left_image (Tensor): The input left image with layout B, C, H, W
             right_image (Tensor): The input right image with layout B, C, H, W
@@ -655,7 +655,7 @@ class Raft_Stereo_Base_Weights(WeightsEnum):
             "recipe": "https://github.com/princeton-vl/RAFT-Stereo",
             "_metrics": {
                 # Following metrics from paper: https://arxiv.org/abs/2109.07547
-                # Using standard metrics for each datasets
+                # Using standard metrics for each dataset
                 "Kitty2015": {
                     # Ratio of pixels with difference less than 3px from ground truth
                     "3px": 0.9426,

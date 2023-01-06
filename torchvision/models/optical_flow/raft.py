@@ -318,7 +318,7 @@ class MaskPredictor(nn.Module):
     def __init__(self, *, in_channels, hidden_size, multiplier=0.25):
         super().__init__()
         self.convrelu = Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3)
-        # 8 * 8 * 9 because the predicted flow is downsampled by 8, from the downsampling of the initial FeatureEncoder
+        # 8 * 8 * 9 because the predicted flow is downsampled by 8, from the downsampling of the initial FeatureEncoder,
         # and we interpolate with all 9 surrounding neighbors. See paper and appendix B.
         self.conv = nn.Conv2d(hidden_size, 8 * 8 * 9, 1, padding=0)
 
@@ -430,7 +430,7 @@ class RAFT(nn.Module):
                 Its input is ``image1``. As in the original implementation, its output will be split into 2 parts:
 
                 - one part will be used as the actual "context", passed to the recurrent unit of the ``update_block``
-                - one part will be used to initialize the hidden state of the of the recurrent unit of
+                - one part will be used to initialize the hidden state of the recurrent unit of
                   the ``update_block``
 
                 These 2 parts are split according to the ``hidden_state_size`` of the ``update_block``, so the output

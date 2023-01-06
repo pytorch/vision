@@ -33,7 +33,7 @@ def generalized_box_iou_loss(
         Tensor: Loss tensor with the reduction option applied.
 
     Reference:
-        Hamid Rezatofighi et. al: Generalized Intersection over Union:
+        Hamid Rezatofighi et al.: Generalized Intersection over Union:
         A Metric and A Loss for Bounding Box Regression:
         https://arxiv.org/abs/1902.09630
     """
