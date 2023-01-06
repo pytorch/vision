@@ -1047,6 +1047,7 @@ jobs:
             conda activate ./env
             pushd docs
             pip install --progress-bar=off -r requirements.txt
+            pip install --progress-bar=off --user --pre torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu
             make html
             popd
       - persist_to_workspace:

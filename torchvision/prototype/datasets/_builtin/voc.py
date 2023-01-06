@@ -31,7 +31,69 @@ def _info() -> Dict[str, Any]:
 @register_dataset(NAME)
 class VOC(Dataset):
     """
+    $DESCRIPTION
+
+    Args:
+        root: Path to directory that contains the dataset files or where they will be
+            downloaded to. If omitted, defaults to
+            :func:`torchvision.prototype.datasets.home` ``/ voc``.
+        split: Can be on of ``"train"`` (default), ``"val"``, ``"trainval"``, or ``"test"``. ``"test"`` is only
+            available for ``year="2007"``.
+        year: Can be on of ``"2007"``, ``"2008"``, ``"2009"``, ``"2010"``, ``"2011"``, or ``"2012"`` (default).
+        task: Can be either ``"detection"`` (default) or ``"segmentation"``.
+        skip_integrity_check: If ``True``, skips the integrity check of dataset files after download. Defaults to
+            ``False``.
+
     - **homepage**: http://host.robots.ox.ac.uk/pascal/VOC/
+    - **license**: ADDME
+    - **citation**: ADDME
+    - **task**: object detection, semantic segmentation
+    - **number of samples**:
+
+    .. table::
+
+        ==============  ==========  ==================  ==================
+        ``split``       ``year``    ``task``            ``len(dataset)``
+        ==============  ==========  ==================  ==================
+        ``"train"``     ``"2007"``  ``"detection"``     ``2_501``
+        ``"train"``     ``"2007"``  ``"segmentation"``  ``209``
+        ``"train"``     ``"2008"``  ``"detection"``     ``2_111``
+        ``"train"``     ``"2008"``  ``"segmentation"``  ``511``
+        ``"train"``     ``"2009"``  ``"detection"``     ``3_473``
+        ``"train"``     ``"2009"``  ``"segmentation"``  ``749``
+        ``"train"``     ``"2010"``  ``"detection"``     ``4_998``
+        ``"train"``     ``"2010"``  ``"segmentation"``  ``964``
+        ``"train"``     ``"2011"``  ``"detection"``     ``5_717``
+        ``"train"``     ``"2011"``  ``"segmentation"``  ``1_112``
+        ``"train"``     ``"2012"``  ``"detection"``     ``5_717``
+        ``"train"``     ``"2012"``  ``"segmentation"``  ``1_464``
+        ``"val"``       ``"2007"``  ``"detection"``     ``2_510``
+        ``"val"``       ``"2007"``  ``"segmentation"``  ``213``
+        ``"val"``       ``"2008"``  ``"detection"``     ``2_221``
+        ``"val"``       ``"2008"``  ``"segmentation"``  ``512``
+        ``"val"``       ``"2009"``  ``"detection"``     ``3_581``
+        ``"val"``       ``"2009"``  ``"segmentation"``  ``750``
+        ``"val"``       ``"2010"``  ``"detection"``     ``5_105``
+        ``"val"``       ``"2010"``  ``"segmentation"``  ``964``
+        ``"val"``       ``"2011"``  ``"detection"``     ``5_823``
+        ``"val"``       ``"2011"``  ``"segmentation"``  ``1_111``
+        ``"val"``       ``"2012"``  ``"detection"``     ``5_823``
+        ``"val"``       ``"2012"``  ``"segmentation"``  ``1_449``
+        ``"trainval"``  ``"2007"``  ``"detection"``     ``5_011``
+        ``"trainval"``  ``"2007"``  ``"segmentation"``  ``422``
+        ``"trainval"``  ``"2008"``  ``"detection"``     ``4_332``
+        ``"trainval"``  ``"2008"``  ``"segmentation"``  ``1_023``
+        ``"trainval"``  ``"2009"``  ``"detection"``     ``7_054``
+        ``"trainval"``  ``"2009"``  ``"segmentation"``  ``1_499``
+        ``"trainval"``  ``"2010"``  ``"detection"``     ``10_103``
+        ``"trainval"``  ``"2010"``  ``"segmentation"``  ``1_928``
+        ``"trainval"``  ``"2011"``  ``"detection"``     ``11_540``
+        ``"trainval"``  ``"2011"``  ``"segmentation"``  ``2_223``
+        ``"trainval"``  ``"2012"``  ``"detection"``     ``11_540``
+        ``"trainval"``  ``"2012"``  ``"segmentation"``  ``2_913``
+        ``"test"``      ``"2007"``  ``"detection"``     ``4_952``
+        ``"test"``      ``"2007"``  ``"segmentation"``  ``210``
+        ==============  ==========  ==================  ==================
     """
 
     def __init__(

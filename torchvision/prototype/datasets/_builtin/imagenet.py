@@ -73,7 +73,38 @@ class CategoryAndWordNetIDExtractor(IterDataPipe):
 @register_dataset(NAME)
 class ImageNet(Dataset):
     """
+    $DESCRIPTION
+
+    Args:
+        root: Path to directory that contains the dataset files or where they will be
+            downloaded to. If omitted, defaults to
+            :func:`torchvision.prototype.datasets.home` ``/ imagenet``.
+        split: Can be on of ``"train"`` (default), ``"val"``, or ``"test"``.
+        skip_integrity_check: If ``True``, skips the integrity check of dataset files after download. Defaults to
+            ``False``.
+
+    .. warning::
+
+        The dataset files cannot be downloaded automatically!
+
     - **homepage**: https://www.image-net.org/
+    - **license**: ADDME
+    - **citation**: ADDME
+    - **task**: image classification
+    - **dependencies**:
+
+        - `scipy <https://pypi.org/project/scipy/>`_
+    - **number of samples**:
+
+    .. table::
+
+        ===========  ==================
+        ``split``    ``len(dataset)``
+        ===========  ==================
+        ``"train"``  ``1_281_167``
+        ``"val"``    ``50_000``
+        ``"test"``   ``100_000``
+        ===========  ==================
     """
 
     def __init__(
