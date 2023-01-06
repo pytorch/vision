@@ -1,11 +1,9 @@
-channel_sources:
-  - pytorch-nightly,pytorch,defaults
 blas_impl:
   - mkl                        # [x86_64]
 c_compiler:
-  - vs2017                     # [win]
+  - vs2019                     # [win]
 cxx_compiler:
-  - vs2017                     # [win]
+  - vs2019                     # [win]
 python:
   - 3.7
 # This differs from target_platform in that it determines what subdir the compiler
