@@ -15,7 +15,7 @@ def compute_metrics(
     metrics_dict = {}
 
     pixels_diffs = (flow_pred - flow_gt).abs()
-    # there is no Y flow in Stereo Matching, therefor flow.abs() = flow.pow(2).sum(dim=1).sqrt()
+    # there is no Y flow in Stereo Matching, therefore flow.abs() = flow.pow(2).sum(dim=1).sqrt()
     flow_norm = flow_gt.abs()
 
     if valid_flow_mask is not None:

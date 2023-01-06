@@ -253,7 +253,7 @@ class AsymetricGammaAdjust(torch.nn.Module):
 
 
 class RandomErase(torch.nn.Module):
-    # Produces multiple symetric random erasures
+    # Produces multiple symmetric random erasures
     # these can be viewed as occlusions present in both camera views.
     # Similarly to Optical Flow occlusion prediction tasks, we mask these pixels in the disparity map
     def __init__(
@@ -491,7 +491,7 @@ class RandomRescaleAndCrop(torch.nn.Module):
     # The reason we don't rely on RandomResizedCrop is because of a significant
     # difference in the parametrization of both transforms, in particular,
     # because of the way the random parameters are sampled in both transforms,
-    # which leads to fairly different resuts (and different epe). For more details see
+    # which leads to fairly different results (and different epe). For more details see
     # https://github.com/pytorch/vision/pull/5026/files#r762932579
     def __init__(
         self,

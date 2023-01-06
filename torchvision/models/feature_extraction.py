@@ -136,7 +136,7 @@ class NodePathTracer(LeafModuleAwareTracer):
 
 
 def _is_subseq(x, y):
-    """Check if y is a subseqence of x
+    """Check if y is a subsequence of x
     https://stackoverflow.com/a/24017747/4391249
     """
     iter_x = iter(x)

@@ -181,7 +181,7 @@ def sequence_loss(flow_preds, flow_gt, valid_flow_mask, gamma=0.8, max_flow=400)
     if gamma > 1:
         raise ValueError(f"Gamma should be < 1, got {gamma}.")
 
-    # exlude invalid pixels and extremely large diplacements
+    # exclude invalid pixels and extremely large diplacements
     flow_norm = torch.sum(flow_gt**2, dim=1).sqrt()
     valid_flow_mask = valid_flow_mask & (flow_norm < max_flow)
 

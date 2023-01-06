@@ -35,7 +35,7 @@ class ResidualBlock(nn.Module):
         # But in the RAFT training reference, the BatchNorm2d layers are only activated for the first dataset,
         # and frozen for the rest of the training process (i.e. set as eval()). The bias term is thus still useful
         # for the rest of the datasets. Technically, we could remove the bias for other norm layers like Instance norm
-        # because these aren't frozen, but we don't bother (also, we woudn't be able to load the original weights).
+        # because these aren't frozen, but we don't bother (also, we wouldn't be able to load the original weights).
         self.convnormrelu1 = Conv2dNormActivation(
             in_channels, out_channels, norm_layer=norm_layer, kernel_size=3, stride=stride, bias=True
         )
@@ -474,7 +474,7 @@ class RAFT(nn.Module):
         if (h, w) != image2.shape[-2:]:
             raise ValueError(f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}")
         if not (h % 8 == 0) and (w % 8 == 0):
-            raise ValueError(f"input image H and W should be divisible by 8, insted got {h} (h) and {w} (w)")
+            raise ValueError(f"input image H and W should be divisible by 8, instead got {h} (h) and {w} (w)")
 
         fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)

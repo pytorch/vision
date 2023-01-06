@@ -184,7 +184,7 @@ def test_draw_no_boxes():
     boxes = torch.full((0, 4), 0, dtype=torch.float)
     with pytest.warns(UserWarning, match=re.escape("boxes doesn't contain any box. No box was drawn")):
         res = utils.draw_bounding_boxes(img, boxes)
-        # Check that the function didnt change the image
+        # Check that the function didn't change the image
         assert res.eq(img).all()
 
 
@@ -283,7 +283,7 @@ def test_draw_no_segmention_mask():
     masks = torch.full((0, 100, 100), 0, dtype=torch.bool)
     with pytest.warns(UserWarning, match=re.escape("masks doesn't contain any mask. No mask was drawn")):
         res = utils.draw_segmentation_masks(img, masks)
-        # Check that the function didnt change the image
+        # Check that the function didn't change the image
         assert res.eq(img).all()
 
 

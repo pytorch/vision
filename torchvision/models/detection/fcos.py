@@ -70,7 +70,7 @@ class FCOSHead(nn.Module):
             else:
                 gt_classes_targets = targets_per_image["labels"][matched_idxs_per_image.clip(min=0)]
                 gt_boxes_targets = targets_per_image["boxes"][matched_idxs_per_image.clip(min=0)]
-            gt_classes_targets[matched_idxs_per_image < 0] = -1  # backgroud
+            gt_classes_targets[matched_idxs_per_image < 0] = -1  # background
             all_gt_classes_targets.append(gt_classes_targets)
             all_gt_boxes_targets.append(gt_boxes_targets)
 

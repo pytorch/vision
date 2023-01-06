@@ -53,7 +53,7 @@ class BaseEncoder(raft.FeatureEncoder):
 class FeatureEncoder(nn.Module):
     """Feature Encoder for Raft-Stereo (see paper section 3.1) that may have shared weight with the Context Encoder.
 
-    The FeatureEncoder takes concatination of left and right image as input, it produce feature embedding that later
+    The FeatureEncoder takes concatenation of left and right image as input, it produce feature embedding that later
     will be used to construct correlation volume.
     """
 
@@ -180,7 +180,7 @@ class MultiLevelUpdateBlock(nn.Module):
 
         # The GRU input size is the size of previous level hidden_dim plus next level hidden_dim
         # if this is the first gru, then we replace previous level with motion_encoder output channels
-        # for the last GRU, we dont add the next level hidden_dim
+        # for the last GRU, we don't add the next level hidden_dim
         gru_input_dims = []
         for i in range(len(hidden_dims)):
             input_dim = hidden_dims[i - 1] if i > 0 else motion_encoder.out_channels
@@ -214,7 +214,7 @@ class MultiLevelUpdateBlock(nn.Module):
         for reverse_i, gru in enumerate(self.grus):
             i = len(self.grus) - 1 - reverse_i
             if level_processed[i]:
-                # X is concatination of 2x downsampled hidden_dim (or motion_features if no bigger dim) with
+                # X is concatenation of 2x downsampled hidden_dim (or motion_features if no bigger dim) with
                 # upsampled hidden_dim (or nothing if not exist).
                 if i == 0:
                     features = self.motion_encoder(disparity, corr_features)
@@ -237,7 +237,7 @@ class MultiLevelUpdateBlock(nn.Module):
 
                 hidden_states[i] = gru(hidden_states[i], features, contexts[i])
 
-                # NOTE: For slow-fast gru, we dont always want to calculate delta disparity for every call on UpdateBlock
+                # NOTE: For slow-fast gru, we don't always want to calculate delta disparity for every call on UpdateBlock
                 # Hence we move the delta disparity calculation to the RAFT-Stereo main forward
 
         return hidden_states
@@ -364,7 +364,7 @@ class RaftStereo(nn.Module):
                 - one part will be used to initialize the hidden state of the of the recurrent unit of
                   the ``update_block``
 
-            corr_pyramid (CorrPyramid1d): Module to buid the correlation pyramid from feature encoder output
+            corr_pyramid (CorrPyramid1d): Module to build the correlation pyramid from feature encoder output
             corr_block (CorrBlock1d): The correlation block, which uses the correlation pyramid indexes
                 to create correlation features. It takes the coordinate of the centroid pixel and correlation pyramid
                 as input and returns the correlation features.
@@ -424,7 +424,7 @@ class RaftStereo(nn.Module):
 
         torch._assert(
             (h % self.base_downsampling_ratio == 0 and w % self.base_downsampling_ratio == 0),
-            f"input image H and W should be divisible by {self.base_downsampling_ratio}, insted got H={h} and W={w}",
+            f"input image H and W should be divisible by {self.base_downsampling_ratio}, instead got H={h} and W={w}",
         )
 
         fmaps = self.feature_encoder(torch.cat([left_image, right_image], dim=0))

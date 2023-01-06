@@ -556,7 +556,7 @@ def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
     stage_indices = [0] + [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)][:-1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
+    # find the index of the layer from which we won't freeze
     torch._assert(
         0 <= trainable_layers <= num_stages,
         f"trainable_layers should be in the range [0, {num_stages}]. Instead got {trainable_layers}",

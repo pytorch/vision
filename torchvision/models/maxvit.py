@@ -301,7 +301,7 @@ class PartitionAttentionLayer(nn.Module):
         self,
         in_channels: int,
         head_dim: int,
-        # partitioning parameteres
+        # partitioning parameters
         partition_size: int,
         partition_type: str,
         # grid size needs to be known at initialization time

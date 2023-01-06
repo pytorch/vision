@@ -714,7 +714,7 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     **kwargs: Any,
 ) -> FasterRCNN:
     """
-    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tunned for mobile use cases.
+    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tuned for mobile use cases.
 
     .. betastatus:: detection module
 

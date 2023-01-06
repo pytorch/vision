@@ -506,9 +506,9 @@ def _topk_min(input: Tensor, orig_kval: int, axis: int) -> int:
     In order to avoid this situation, in tracing mode, torch.min() is used instead.
 
     Args:
-        input (Tensor): The orignal input tensor.
+        input (Tensor): The original input tensor.
         orig_kval (int): The provided k-value.
-        axis(int): Axis along which we retreive the input size.
+        axis(int): Axis along which we retrieve the input size.
 
     Returns:
         min_kval (int): Appropriately selected k-value.

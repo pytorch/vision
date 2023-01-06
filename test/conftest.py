@@ -57,7 +57,7 @@ def pytest_collection_modifyitems(items):
                 item.add_marker(pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG))
 
         if item.get_closest_marker("dont_collect") is not None:
-            # currently, this is only used for some tests we're sure we dont want to run on fbcode
+            # currently, this is only used for some tests we're sure we don't want to run on fbcode
             continue
 
         out_items.append(item)

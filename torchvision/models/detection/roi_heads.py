@@ -315,7 +315,7 @@ def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched
     valid = torch.cat(valid, dim=0).to(dtype=torch.uint8)
     valid = torch.where(valid)[0]
 
-    # torch.mean (in binary_cross_entropy_with_logits) does'nt
+    # torch.mean (in binary_cross_entropy_with_logits) doesn't
     # accept empty tensors, so handle it sepaartely
     if keypoint_targets.numel() == 0 or len(valid) == 0:
         return keypoint_logits.sum() * 0

@@ -337,7 +337,7 @@ def _read_video_from_memory(
 
     if not isinstance(video_data, torch.Tensor):
         with warnings.catch_warnings():
-            # Ignore the warning because we actually dont modify the buffer in this function
+            # Ignore the warning because we actually don't modify the buffer in this function
             warnings.filterwarnings("ignore", message="The given buffer is not writable")
             video_data = torch.frombuffer(video_data, dtype=torch.uint8)
 
@@ -382,7 +382,7 @@ def _read_video_timestamps_from_memory(
     """
     if not isinstance(video_data, torch.Tensor):
         with warnings.catch_warnings():
-            # Ignore the warning because we actually dont modify the buffer in this function
+            # Ignore the warning because we actually don't modify the buffer in this function
             warnings.filterwarnings("ignore", message="The given buffer is not writable")
             video_data = torch.frombuffer(video_data, dtype=torch.uint8)
     result = torch.ops.video_reader.read_video_from_memory(
@@ -423,7 +423,7 @@ def _probe_video_from_memory(
     """
     if not isinstance(video_data, torch.Tensor):
         with warnings.catch_warnings():
-            # Ignore the warning because we actually dont modify the buffer in this function
+            # Ignore the warning because we actually don't modify the buffer in this function
             warnings.filterwarnings("ignore", message="The given buffer is not writable")
             video_data = torch.frombuffer(video_data, dtype=torch.uint8)
     result = torch.ops.video_reader.probe_video_from_memory(video_data)
