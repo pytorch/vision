@@ -21,7 +21,11 @@ supported Python versions.
 +--------------------------+--------------------------+---------------------------------+
 | ``torch``                | ``torchvision``          | ``python``                      |
 +==========================+==========================+=================================+
-| ``main`` / ``nightly``   | ``main`` / ``nightly``   | ``>=3.7``, ``<=3.10``           |
+| ``main`` / ``nightly``   | ``main`` / ``nightly``   | ``>=3.7.2``, ``<=3.10``         |
++--------------------------+--------------------------+---------------------------------+
+| ``1.13.0``               | ``0.14.0``               | ``>=3.7.2``, ``<=3.10``         |
++--------------------------+--------------------------+---------------------------------+
+| ``1.12.0``               | ``0.13.0``               | ``>=3.7``, ``<=3.10``           |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.11.0``               | ``0.12.0``               | ``>=3.7``, ``<=3.10``           |
 +--------------------------+--------------------------+---------------------------------+
@@ -87,6 +91,8 @@ From source:
     # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
 
 
+We don't officially support building from source using ``pip``, but *if* you do,
+you'll need to use the ``--no-build-isolation`` flag.
 In case building TorchVision from source fails, install the nightly version of PyTorch following
 the linked guide on the  `contributing page <https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation>`_ and retry the install.
 
@@ -192,3 +198,19 @@ Pre-trained Model License
 The pre-trained models provided in this library may have their own licenses or terms and conditions derived from the dataset used for training. It is your responsibility to determine whether you have permission to use the models for your use case.
 
 More specifically, SWAG models are released under the CC-BY-NC 4.0 license. See `SWAG LICENSE <https://github.com/facebookresearch/SWAG/blob/main/LICENSE>`_ for additional details.
+
+Citing TorchVision
+==================
+
+If you find TorchVision useful in your work, please consider citing the following BibTeX entry:
+
+.. code:: bibtex
+
+    @software{torchvision2016,
+        title        = {TorchVision: PyTorch's Computer Vision library},
+        author       = {TorchVision maintainers and contributors},
+        year         = 2016,
+        journal      = {GitHub repository},
+        publisher    = {GitHub},
+        howpublished = {\url{https://github.com/pytorch/vision}}
+    }

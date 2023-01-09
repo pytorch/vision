@@ -10,7 +10,7 @@ from torchvision.ops import Conv2dNormActivation
 
 from ...transforms._presets import OpticalFlow
 from ...utils import _log_api_usage_once
-from .._api import Weights, WeightsEnum
+from .._api import register_model, Weights, WeightsEnum
 from .._utils import handle_legacy_interface
 from ._utils import grid_sample, make_coords_grid, upsample_flow
 
@@ -27,7 +27,7 @@ __all__ = (
 class ResidualBlock(nn.Module):
     """Slightly modified Residual block with extra relu and biases."""
 
-    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
+    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1, always_project: bool = False):
         super().__init__()
 
         # Note regarding bias=True:
@@ -43,7 +43,10 @@ class ResidualBlock(nn.Module):
             out_channels, out_channels, norm_layer=norm_layer, kernel_size=3, bias=True
         )
 
-        if stride == 1:
+        # make mypy happy
+        self.downsample: nn.Module
+
+        if stride == 1 and not always_project:
             self.downsample = nn.Identity()
         else:
             self.downsample = Conv2dNormActivation(
@@ -116,7 +119,9 @@ class FeatureEncoder(nn.Module):
     It must downsample its input by 8.
     """
 
-    def __init__(self, *, block=ResidualBlock, layers=(64, 64, 96, 128, 256), norm_layer=nn.BatchNorm2d):
+    def __init__(
+        self, *, block=ResidualBlock, layers=(64, 64, 96, 128, 256), strides=(2, 1, 2, 2), norm_layer=nn.BatchNorm2d
+    ):
         super().__init__()
 
         if len(layers) != 5:
@@ -124,12 +129,12 @@ class FeatureEncoder(nn.Module):
 
         # See note in ResidualBlock for the reason behind bias=True
         self.convnormrelu = Conv2dNormActivation(
-            3, layers[0], norm_layer=norm_layer, kernel_size=7, stride=2, bias=True
+            3, layers[0], norm_layer=norm_layer, kernel_size=7, stride=strides[0], bias=True
         )
 
-        self.layer1 = self._make_2_blocks(block, layers[0], layers[1], norm_layer=norm_layer, first_stride=1)
-        self.layer2 = self._make_2_blocks(block, layers[1], layers[2], norm_layer=norm_layer, first_stride=2)
-        self.layer3 = self._make_2_blocks(block, layers[2], layers[3], norm_layer=norm_layer, first_stride=2)
+        self.layer1 = self._make_2_blocks(block, layers[0], layers[1], norm_layer=norm_layer, first_stride=strides[1])
+        self.layer2 = self._make_2_blocks(block, layers[1], layers[2], norm_layer=norm_layer, first_stride=strides[2])
+        self.layer3 = self._make_2_blocks(block, layers[2], layers[3], norm_layer=norm_layer, first_stride=strides[3])
 
         self.conv = nn.Conv2d(layers[3], layers[4], kernel_size=1)
 
@@ -141,6 +146,10 @@ class FeatureEncoder(nn.Module):
                     nn.init.constant_(m.weight, 1)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
+
+        num_downsamples = len(list(filter(lambda s: s == 2, strides)))
+        self.output_dim = layers[-1]
+        self.downsample_factor = 2**num_downsamples
 
     def _make_2_blocks(self, block, in_channels, out_channels, norm_layer, first_stride):
         block1 = block(in_channels, out_channels, norm_layer=norm_layer, stride=first_stride)
@@ -543,6 +552,8 @@ class Raft_Large_Weights(WeightsEnum):
                 "Sintel-Train-Finalpass": {"epe": 2.7894},
                 "Kitti-Train": {"per_image_epe": 5.0172, "fl_all": 17.4506},
             },
+            "_ops": 211.007,
+            "_weight_size": 20.129,
             "_docs": """These weights were ported from the original paper. They
             are trained on :class:`~torchvision.datasets.FlyingChairs` +
             :class:`~torchvision.datasets.FlyingThings3D`.""",
@@ -561,6 +572,8 @@ class Raft_Large_Weights(WeightsEnum):
                 "Sintel-Train-Finalpass": {"epe": 2.7161},
                 "Kitti-Train": {"per_image_epe": 4.5118, "fl_all": 16.0679},
             },
+            "_ops": 211.007,
+            "_weight_size": 20.129,
             "_docs": """These weights were trained from scratch on
             :class:`~torchvision.datasets.FlyingChairs` +
             :class:`~torchvision.datasets.FlyingThings3D`.""",
@@ -579,6 +592,8 @@ class Raft_Large_Weights(WeightsEnum):
                 "Sintel-Test-Cleanpass": {"epe": 1.94},
                 "Sintel-Test-Finalpass": {"epe": 3.18},
             },
+            "_ops": 211.007,
+            "_weight_size": 20.129,
             "_docs": """
                 These weights were ported from the original paper. They are
                 trained on :class:`~torchvision.datasets.FlyingChairs` +
@@ -603,6 +618,8 @@ class Raft_Large_Weights(WeightsEnum):
                 "Sintel-Test-Cleanpass": {"epe": 1.819},
                 "Sintel-Test-Finalpass": {"epe": 3.067},
             },
+            "_ops": 211.007,
+            "_weight_size": 20.129,
             "_docs": """
                 These weights were trained from scratch. They are
                 pre-trained on :class:`~torchvision.datasets.FlyingChairs` +
@@ -627,6 +644,8 @@ class Raft_Large_Weights(WeightsEnum):
             "_metrics": {
                 "Kitti-Test": {"fl_all": 5.10},
             },
+            "_ops": 211.007,
+            "_weight_size": 20.129,
             "_docs": """
                 These weights were ported from the original paper. They are
                 pre-trained on :class:`~torchvision.datasets.FlyingChairs` +
@@ -648,6 +667,8 @@ class Raft_Large_Weights(WeightsEnum):
             "_metrics": {
                 "Kitti-Test": {"fl_all": 5.19},
             },
+            "_ops": 211.007,
+            "_weight_size": 20.129,
             "_docs": """
                 These weights were trained from scratch. They are
                 pre-trained on :class:`~torchvision.datasets.FlyingChairs` +
@@ -689,6 +710,8 @@ class Raft_Small_Weights(WeightsEnum):
                 "Sintel-Train-Finalpass": {"epe": 3.2790},
                 "Kitti-Train": {"per_image_epe": 7.6557, "fl_all": 25.2801},
             },
+            "_ops": 47.655,
+            "_weight_size": 3.821,
             "_docs": """These weights were ported from the original paper. They
             are trained on :class:`~torchvision.datasets.FlyingChairs` +
             :class:`~torchvision.datasets.FlyingThings3D`.""",
@@ -706,6 +729,8 @@ class Raft_Small_Weights(WeightsEnum):
                 "Sintel-Train-Finalpass": {"epe": 3.2831},
                 "Kitti-Train": {"per_image_epe": 7.5978, "fl_all": 25.2369},
             },
+            "_ops": 47.655,
+            "_weight_size": 3.821,
             "_docs": """These weights were trained from scratch on
             :class:`~torchvision.datasets.FlyingChairs` +
             :class:`~torchvision.datasets.FlyingThings3D`.""",
@@ -798,6 +823,7 @@ def _raft(
     return model
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", Raft_Large_Weights.C_T_SKHT_V2))
 def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT model from
@@ -853,6 +879,7 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", Raft_Small_Weights.C_T_V2))
 def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT "small" model from

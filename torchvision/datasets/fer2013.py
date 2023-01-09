@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional, Tuple
 import torch
 from PIL import Image
 
-from .utils import verify_str_arg, check_integrity
+from .utils import check_integrity, verify_str_arg
 from .vision import VisionDataset
 
 

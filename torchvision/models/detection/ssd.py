@@ -9,10 +9,10 @@ from torch import nn, Tensor
 from ...ops import boxes as box_ops
 from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..vgg import VGG, VGG16_Weights, vgg16
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..vgg import VGG, vgg16, VGG16_Weights
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
@@ -39,6 +39,8 @@ class SSD300_VGG16_Weights(WeightsEnum):
                     "box_map": 25.1,
                 }
             },
+            "_ops": 34.858,
+            "_weight_size": 135.988,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
@@ -568,6 +570,7 @@ def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
     return SSDFeatureExtractorVGG(backbone, highres)
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", SSD300_VGG16_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", VGG16_Weights.IMAGENET1K_FEATURES),
@@ -583,6 +586,8 @@ def ssd300_vgg16(
 ) -> SSD:
     """The SSD300 model is based on the `SSD: Single Shot MultiBox Detector
     <https://arxiv.org/abs/1512.02325>`_ paper.
+
+    .. betastatus:: detection module
 
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes but they will be resized
@@ -646,7 +651,7 @@ def ssd300_vgg16(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 

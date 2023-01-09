@@ -2,22 +2,18 @@ import abc
 import io
 import pathlib
 import pickle
-from typing import Any, Dict, List, Optional, Tuple, Iterator, cast, BinaryIO, Union
+from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Filter,
-    Mapper,
-)
+from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
+from torchvision.prototype.datapoints import Image, Label
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
+    hint_sharding,
     hint_shuffling,
     path_comparator,
-    hint_sharding,
     read_categories_file,
 )
-from torchvision.prototype.features import Label, Image
 
 from .._api import register_dataset, register_info
 
@@ -66,7 +62,9 @@ class _CifarBase(Dataset):
 
     def _unpickle(self, data: Tuple[str, io.BytesIO]) -> Dict[str, Any]:
         _, file = data
-        return cast(Dict[str, Any], pickle.load(file, encoding="latin1"))
+        content = cast(Dict[str, Any], pickle.load(file, encoding="latin1"))
+        file.close()
+        return content
 
     def _prepare_sample(self, data: Tuple[np.ndarray, int]) -> Dict[str, Any]:
         image_array, category_idx = data

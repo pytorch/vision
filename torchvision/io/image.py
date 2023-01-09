@@ -137,13 +137,17 @@ def decode_jpeg(
             the raw bytes of the JPEG image. This tensor must be on CPU,
             regardless of the ``device`` parameter.
         mode (ImageReadMode): the read mode used for optionally
-            converting the image. Default: ``ImageReadMode.UNCHANGED``.
+            converting the image. The supported modes are: ``ImageReadMode.UNCHANGED``,
+            ``ImageReadMode.GRAY`` and ``ImageReadMode.RGB``
+            Default: ``ImageReadMode.UNCHANGED``.
             See ``ImageReadMode`` class for more information on various
             available modes.
         device (str or torch.device): The device on which the decoded image will
             be stored. If a cuda device is specified, the image will be decoded
             with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
             supported for CUDA version >= 10.1
+
+            .. betastatus:: device parameter
 
             .. warning::
                 There is a memory leak in the nvjpeg library for CUDA versions < 11.6.

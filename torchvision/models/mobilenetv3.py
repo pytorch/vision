@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Callable, List, Optional, Sequence
 
@@ -8,9 +7,9 @@ from torch import nn, Tensor
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation as SElayer
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param, _make_divisible
+from ._utils import _make_divisible, _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -20,21 +19,6 @@ __all__ = [
     "mobilenet_v3_large",
     "mobilenet_v3_small",
 ]
-
-
-class SqueezeExcitation(SElayer):
-    """DEPRECATED"""
-
-    def __init__(self, input_channels: int, squeeze_factor: int = 4):
-        squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
-        super().__init__(input_channels, squeeze_channels, scale_activation=nn.Hardsigmoid)
-        self.relu = self.activation
-        delattr(self, "activation")
-        warnings.warn(
-            "This SqueezeExcitation class is deprecated since 0.12 and will be removed in 0.14. "
-            "Use torchvision.ops.SqueezeExcitation instead.",
-            FutureWarning,
-        )
 
 
 class InvertedResidualConfig:
@@ -323,6 +307,8 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
                     "acc@5": 91.340,
                 }
             },
+            "_ops": 0.217,
+            "_weight_size": 21.114,
             "_docs": """These weights were trained from scratch by using a simple training recipe.""",
         },
     )
@@ -339,6 +325,8 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
                     "acc@5": 92.566,
                 }
             },
+            "_ops": 0.217,
+            "_weight_size": 21.107,
             "_docs": """
                 These weights improve marginally upon the results of the original paper by using a modified version of
                 TorchVision's `new training recipe
@@ -363,6 +351,8 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
                     "acc@5": 87.402,
                 }
             },
+            "_ops": 0.057,
+            "_weight_size": 9.829,
             "_docs": """
                 These weights improve upon the results of the original paper by using a simple training recipe.
             """,
@@ -371,6 +361,7 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", MobileNet_V3_Large_Weights.IMAGENET1K_V1))
 def mobilenet_v3_large(
     *, weights: Optional[MobileNet_V3_Large_Weights] = None, progress: bool = True, **kwargs: Any
@@ -401,6 +392,7 @@ def mobilenet_v3_large(
     return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", MobileNet_V3_Small_Weights.IMAGENET1K_V1))
 def mobilenet_v3_small(
     *, weights: Optional[MobileNet_V3_Small_Weights] = None, progress: bool = True, **kwargs: Any

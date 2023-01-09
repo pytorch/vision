@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, List, NamedTuple, Optional, Dict
+from typing import Any, Callable, Dict, List, NamedTuple, Optional
 
 import torch
 import torch.nn as nn
@@ -9,9 +9,9 @@ import torch.nn as nn
 from ..ops.misc import Conv2dNormActivation, MLP
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -39,6 +39,8 @@ class ConvStemConfig(NamedTuple):
 
 class MLPBlock(MLP):
     """Transformer MLP block."""
+
+    _version = 2
 
     def __init__(self, in_dim: int, mlp_dim: int, dropout: float):
         super().__init__(in_dim, [mlp_dim, in_dim], activation_layer=nn.GELU, inplace=None, dropout=dropout)
@@ -108,7 +110,7 @@ class EncoderBlock(nn.Module):
     def forward(self, input: torch.Tensor):
         torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
         x = self.ln_1(input)
-        x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
+        x, _ = self.self_attention(x, x, x, need_weights=False)
         x = self.dropout(x)
         x = x + input
 
@@ -266,8 +268,8 @@ class VisionTransformer(nn.Module):
     def _process_input(self, x: torch.Tensor) -> torch.Tensor:
         n, c, h, w = x.shape
         p = self.patch_size
-        torch._assert(h == self.image_size, "Wrong image height!")
-        torch._assert(w == self.image_size, "Wrong image width!")
+        torch._assert(h == self.image_size, f"Wrong image height! Expected {self.image_size} but got {h}!")
+        torch._assert(w == self.image_size, f"Wrong image width! Expected {self.image_size} but got {w}!")
         n_h = h // p
         n_w = w // p
 
@@ -361,6 +363,8 @@ class ViT_B_16_Weights(WeightsEnum):
                     "acc@5": 95.318,
                 }
             },
+            "_ops": 17.564,
+            "_weight_size": 330.285,
             "_docs": """
                 These weights were trained from scratch by using a modified version of `DeIT
                 <https://arxiv.org/abs/2012.12877>`_'s training recipe.
@@ -385,6 +389,8 @@ class ViT_B_16_Weights(WeightsEnum):
                     "acc@5": 97.650,
                 }
             },
+            "_ops": 55.484,
+            "_weight_size": 331.398,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
                 `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
@@ -410,6 +416,8 @@ class ViT_B_16_Weights(WeightsEnum):
                     "acc@5": 96.180,
                 }
             },
+            "_ops": 17.564,
+            "_weight_size": 330.285,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
                 weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
@@ -434,6 +442,8 @@ class ViT_B_32_Weights(WeightsEnum):
                     "acc@5": 92.466,
                 }
             },
+            "_ops": 4.409,
+            "_weight_size": 336.604,
             "_docs": """
                 These weights were trained from scratch by using a modified version of `DeIT
                 <https://arxiv.org/abs/2012.12877>`_'s training recipe.
@@ -458,6 +468,8 @@ class ViT_L_16_Weights(WeightsEnum):
                     "acc@5": 94.638,
                 }
             },
+            "_ops": 61.555,
+            "_weight_size": 1161.023,
             "_docs": """
                 These weights were trained from scratch by using a modified version of TorchVision's
                 `new training recipe
@@ -483,6 +495,8 @@ class ViT_L_16_Weights(WeightsEnum):
                     "acc@5": 98.512,
                 }
             },
+            "_ops": 361.986,
+            "_weight_size": 1164.258,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
                 `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
@@ -508,6 +522,8 @@ class ViT_L_16_Weights(WeightsEnum):
                     "acc@5": 97.422,
                 }
             },
+            "_ops": 61.555,
+            "_weight_size": 1161.023,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
                 weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
@@ -532,6 +548,8 @@ class ViT_L_32_Weights(WeightsEnum):
                     "acc@5": 93.07,
                 }
             },
+            "_ops": 15.378,
+            "_weight_size": 1169.449,
             "_docs": """
                 These weights were trained from scratch by using a modified version of `DeIT
                 <https://arxiv.org/abs/2012.12877>`_'s training recipe.
@@ -560,6 +578,8 @@ class ViT_H_14_Weights(WeightsEnum):
                     "acc@5": 98.694,
                 }
             },
+            "_ops": 1016.717,
+            "_weight_size": 2416.643,
             "_docs": """
                 These weights are learnt via transfer learning by end-to-end fine-tuning the original
                 `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
@@ -585,6 +605,8 @@ class ViT_H_14_Weights(WeightsEnum):
                     "acc@5": 97.730,
                 }
             },
+            "_ops": 167.295,
+            "_weight_size": 2411.209,
             "_docs": """
                 These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
                 weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
@@ -594,6 +616,7 @@ class ViT_H_14_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_SWAG_E2E_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.IMAGENET1K_V1))
 def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
@@ -601,8 +624,8 @@ def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = Tru
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (:class:`~torchvision.models.vision_transformer.ViT_B_16_Weights`, optional): The pretrained
-            weights to use. See :class:`~torchvision.models.vision_transformer.ViT_B_16_Weights`
+        weights (:class:`~torchvision.models.ViT_B_16_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.ViT_B_16_Weights`
             below for more details and possible values. By default, no pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to the ``torchvision.models.vision_transformer.VisionTransformer``
@@ -610,7 +633,7 @@ def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = Tru
             <https://github.com/pytorch/vision/blob/main/torchvision/models/vision_transformer.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.vision_transformer.ViT_B_16_Weights
+    .. autoclass:: torchvision.models.ViT_B_16_Weights
         :members:
     """
     weights = ViT_B_16_Weights.verify(weights)
@@ -627,6 +650,7 @@ def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = Tru
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ViT_B_32_Weights.IMAGENET1K_V1))
 def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
@@ -634,8 +658,8 @@ def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = Tru
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (:class:`~torchvision.models.vision_transformer.ViT_B_32_Weights`, optional): The pretrained
-            weights to use. See :class:`~torchvision.models.vision_transformer.ViT_B_32_Weights`
+        weights (:class:`~torchvision.models.ViT_B_32_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.ViT_B_32_Weights`
             below for more details and possible values. By default, no pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to the ``torchvision.models.vision_transformer.VisionTransformer``
@@ -643,7 +667,7 @@ def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = Tru
             <https://github.com/pytorch/vision/blob/main/torchvision/models/vision_transformer.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.vision_transformer.ViT_B_32_Weights
+    .. autoclass:: torchvision.models.ViT_B_32_Weights
         :members:
     """
     weights = ViT_B_32_Weights.verify(weights)
@@ -660,6 +684,7 @@ def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = Tru
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ViT_L_16_Weights.IMAGENET1K_V1))
 def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
@@ -667,8 +692,8 @@ def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = Tru
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (:class:`~torchvision.models.vision_transformer.ViT_L_16_Weights`, optional): The pretrained
-            weights to use. See :class:`~torchvision.models.vision_transformer.ViT_L_16_Weights`
+        weights (:class:`~torchvision.models.ViT_L_16_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.ViT_L_16_Weights`
             below for more details and possible values. By default, no pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to the ``torchvision.models.vision_transformer.VisionTransformer``
@@ -676,7 +701,7 @@ def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = Tru
             <https://github.com/pytorch/vision/blob/main/torchvision/models/vision_transformer.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.vision_transformer.ViT_L_16_Weights
+    .. autoclass:: torchvision.models.ViT_L_16_Weights
         :members:
     """
     weights = ViT_L_16_Weights.verify(weights)
@@ -693,6 +718,7 @@ def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = Tru
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ViT_L_32_Weights.IMAGENET1K_V1))
 def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
@@ -700,8 +726,8 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (:class:`~torchvision.models.vision_transformer.ViT_L_32_Weights`, optional): The pretrained
-            weights to use. See :class:`~torchvision.models.vision_transformer.ViT_L_32_Weights`
+        weights (:class:`~torchvision.models.ViT_L_32_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.ViT_L_32_Weights`
             below for more details and possible values. By default, no pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to the ``torchvision.models.vision_transformer.VisionTransformer``
@@ -709,7 +735,7 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
             <https://github.com/pytorch/vision/blob/main/torchvision/models/vision_transformer.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.vision_transformer.ViT_L_32_Weights
+    .. autoclass:: torchvision.models.ViT_L_32_Weights
         :members:
     """
     weights = ViT_L_32_Weights.verify(weights)
@@ -726,14 +752,16 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
     )
 
 
+@register_model()
+@handle_legacy_interface(weights=("pretrained", None))
 def vit_h_14(*, weights: Optional[ViT_H_14_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_h_14 architecture from
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (:class:`~torchvision.models.vision_transformer.ViT_H_14_Weights`, optional): The pretrained
-            weights to use. See :class:`~torchvision.models.vision_transformer.ViT_H_14_Weights`
+        weights (:class:`~torchvision.models.ViT_H_14_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.ViT_H_14_Weights`
             below for more details and possible values. By default, no pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to the ``torchvision.models.vision_transformer.VisionTransformer``
@@ -741,7 +769,7 @@ def vit_h_14(*, weights: Optional[ViT_H_14_Weights] = None, progress: bool = Tru
             <https://github.com/pytorch/vision/blob/main/torchvision/models/vision_transformer.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.vision_transformer.ViT_H_14_Weights
+    .. autoclass:: torchvision.models.ViT_H_14_Weights
         :members:
     """
     weights = ViT_H_14_Weights.verify(weights)

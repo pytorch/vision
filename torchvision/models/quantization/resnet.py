@@ -1,12 +1,12 @@
 from functools import partial
-from typing import Any, Type, Union, List, Optional
+from typing import Any, List, Optional, Type, Union
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 from torchvision.models.resnet import (
-    Bottleneck,
     BasicBlock,
+    Bottleneck,
     ResNet,
     ResNet18_Weights,
     ResNet50_Weights,
@@ -15,9 +15,9 @@ from torchvision.models.resnet import (
 )
 
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
@@ -175,6 +175,8 @@ class ResNet18_QuantizedWeights(WeightsEnum):
                     "acc@5": 88.882,
                 }
             },
+            "_ops": 1.814,
+            "_weight_size": 11.238,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -194,6 +196,8 @@ class ResNet50_QuantizedWeights(WeightsEnum):
                     "acc@5": 92.814,
                 }
             },
+            "_ops": 4.089,
+            "_weight_size": 24.759,
         },
     )
     IMAGENET1K_FBGEMM_V2 = Weights(
@@ -209,6 +213,8 @@ class ResNet50_QuantizedWeights(WeightsEnum):
                     "acc@5": 94.976,
                 }
             },
+            "_ops": 4.089,
+            "_weight_size": 24.953,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V2
@@ -228,6 +234,8 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
                     "acc@5": 94.480,
                 }
             },
+            "_ops": 16.414,
+            "_weight_size": 86.034,
         },
     )
     IMAGENET1K_FBGEMM_V2 = Weights(
@@ -243,6 +251,8 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
                     "acc@5": 96.132,
                 }
             },
+            "_ops": 16.414,
+            "_weight_size": 86.645,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V2
@@ -263,11 +273,14 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
                     "acc@5": 96.326,
                 }
             },
+            "_ops": 15.46,
+            "_weight_size": 81.556,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
+@register_model(name="quantized_resnet18")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -302,7 +315,7 @@ def resnet18(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNet18_QuantizedWeights
@@ -317,6 +330,7 @@ def resnet18(
     return _resnet(QuantizableBasicBlock, [2, 2, 2, 2], weights, progress, quantize, **kwargs)
 
 
+@register_model(name="quantized_resnet50")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -351,7 +365,7 @@ def resnet50(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNet50_QuantizedWeights
@@ -366,6 +380,7 @@ def resnet50(
     return _resnet(QuantizableBottleneck, [3, 4, 6, 3], weights, progress, quantize, **kwargs)
 
 
+@register_model(name="quantized_resnext101_32x8d")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -400,7 +415,7 @@ def resnext101_32x8d(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights
@@ -417,6 +432,15 @@ def resnext101_32x8d(
     return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)
 
 
+@register_model(name="quantized_resnext101_64x4d")
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ResNeXt101_64X4D_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ResNeXt101_64X4D_Weights.IMAGENET1K_V1,
+    )
+)
 def resnext101_64x4d(
     *,
     weights: Optional[Union[ResNeXt101_64X4D_QuantizedWeights, ResNeXt101_64X4D_Weights]] = None,
@@ -443,7 +467,7 @@ def resnext101_64x4d(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/resnet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.ResNeXt101_64X4D_QuantizedWeights

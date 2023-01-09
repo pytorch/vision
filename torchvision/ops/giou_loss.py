@@ -1,7 +1,7 @@
 import torch
 
 from ..utils import _log_api_usage_once
-from ._utils import _upcast_non_float, _loss_inter_union
+from ._utils import _loss_inter_union, _upcast_non_float
 
 
 def generalized_box_iou_loss(
@@ -62,9 +62,15 @@ def generalized_box_iou_loss(
 
     loss = 1 - miouk
 
-    if reduction == "mean":
+    # Check reduction option and return loss accordingly
+    if reduction == "none":
+        pass
+    elif reduction == "mean":
         loss = loss.mean() if loss.numel() > 0 else 0.0 * loss.sum()
     elif reduction == "sum":
         loss = loss.sum()
-
+    else:
+        raise ValueError(
+            f"Invalid Value for arg 'reduction': '{reduction} \n Supported reduction modes: 'none', 'mean', 'sum'"
+        )
     return loss

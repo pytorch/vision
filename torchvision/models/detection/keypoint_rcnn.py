@@ -6,10 +6,10 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
 from ...transforms._presets import ObjectDetection
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from ._utils import overwrite_eps
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .faster_rcnn import FasterRCNN
@@ -328,6 +328,8 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
                     "kp_map": 61.1,
                 }
             },
+            "_ops": 133.924,
+            "_weight_size": 226.054,
             "_docs": """
                 These weights were produced by following a similar training recipe as on the paper but use a checkpoint
                 from an early epoch.
@@ -347,12 +349,15 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
                     "kp_map": 65.0,
                 }
             },
+            "_ops": 137.42,
+            "_weight_size": 226.054,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -374,6 +379,8 @@ def keypointrcnn_resnet50_fpn(
 ) -> KeypointRCNN:
     """
     Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.
+
+    .. betastatus:: detection module
 
     Reference: `Mask R-CNN <https://arxiv.org/abs/1703.06870>`__.
 
@@ -441,8 +448,8 @@ def keypointrcnn_resnet50_fpn(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
-        num_keypoints = _ovewrite_value_param(num_keypoints, len(weights.meta["keypoint_names"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+        num_keypoints = _ovewrite_value_param("num_keypoints", num_keypoints, len(weights.meta["keypoint_names"]))
     else:
         if num_classes is None:
             num_classes = 2

@@ -3,7 +3,7 @@ import math
 import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Dict, Optional, List, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from torch import nn, Tensor
@@ -12,9 +12,9 @@ from torchvision.ops import StochasticDepth
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param, _make_divisible
+from ._utils import _make_divisible, _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -464,6 +464,8 @@ class EfficientNet_B0_Weights(WeightsEnum):
                     "acc@5": 93.532,
                 }
             },
+            "_ops": 0.386,
+            "_weight_size": 20.451,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -486,6 +488,8 @@ class EfficientNet_B1_Weights(WeightsEnum):
                     "acc@5": 94.186,
                 }
             },
+            "_ops": 0.687,
+            "_weight_size": 30.134,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -504,6 +508,8 @@ class EfficientNet_B1_Weights(WeightsEnum):
                     "acc@5": 94.934,
                 }
             },
+            "_ops": 0.687,
+            "_weight_size": 30.136,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
                 `new training recipe
@@ -530,6 +536,8 @@ class EfficientNet_B2_Weights(WeightsEnum):
                     "acc@5": 95.310,
                 }
             },
+            "_ops": 1.088,
+            "_weight_size": 35.174,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -552,6 +560,8 @@ class EfficientNet_B3_Weights(WeightsEnum):
                     "acc@5": 96.054,
                 }
             },
+            "_ops": 1.827,
+            "_weight_size": 47.184,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -574,6 +584,8 @@ class EfficientNet_B4_Weights(WeightsEnum):
                     "acc@5": 96.594,
                 }
             },
+            "_ops": 4.394,
+            "_weight_size": 74.489,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -596,6 +608,8 @@ class EfficientNet_B5_Weights(WeightsEnum):
                     "acc@5": 96.628,
                 }
             },
+            "_ops": 10.266,
+            "_weight_size": 116.864,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -618,6 +632,8 @@ class EfficientNet_B6_Weights(WeightsEnum):
                     "acc@5": 96.916,
                 }
             },
+            "_ops": 19.068,
+            "_weight_size": 165.362,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -640,6 +656,8 @@ class EfficientNet_B7_Weights(WeightsEnum):
                     "acc@5": 96.908,
                 }
             },
+            "_ops": 37.746,
+            "_weight_size": 254.675,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -664,6 +682,8 @@ class EfficientNet_V2_S_Weights(WeightsEnum):
                     "acc@5": 96.878,
                 }
             },
+            "_ops": 8.366,
+            "_weight_size": 82.704,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
                 `new training recipe
@@ -692,6 +712,8 @@ class EfficientNet_V2_M_Weights(WeightsEnum):
                     "acc@5": 97.156,
                 }
             },
+            "_ops": 24.582,
+            "_weight_size": 208.01,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
                 `new training recipe
@@ -723,12 +745,15 @@ class EfficientNet_V2_L_Weights(WeightsEnum):
                     "acc@5": 97.788,
                 }
             },
+            "_ops": 56.08,
+            "_weight_size": 454.573,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B0_Weights.IMAGENET1K_V1))
 def efficientnet_b0(
     *, weights: Optional[EfficientNet_B0_Weights] = None, progress: bool = True, **kwargs: Any
@@ -754,9 +779,12 @@ def efficientnet_b0(
     weights = EfficientNet_B0_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b0", width_mult=1.0, depth_mult=1.0)
-    return _efficientnet(inverted_residual_setting, 0.2, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting, kwargs.pop("dropout", 0.2), last_channel, weights, progress, **kwargs
+    )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B1_Weights.IMAGENET1K_V1))
 def efficientnet_b1(
     *, weights: Optional[EfficientNet_B1_Weights] = None, progress: bool = True, **kwargs: Any
@@ -782,9 +810,12 @@ def efficientnet_b1(
     weights = EfficientNet_B1_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b1", width_mult=1.0, depth_mult=1.1)
-    return _efficientnet(inverted_residual_setting, 0.2, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting, kwargs.pop("dropout", 0.2), last_channel, weights, progress, **kwargs
+    )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B2_Weights.IMAGENET1K_V1))
 def efficientnet_b2(
     *, weights: Optional[EfficientNet_B2_Weights] = None, progress: bool = True, **kwargs: Any
@@ -810,9 +841,12 @@ def efficientnet_b2(
     weights = EfficientNet_B2_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b2", width_mult=1.1, depth_mult=1.2)
-    return _efficientnet(inverted_residual_setting, 0.3, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting, kwargs.pop("dropout", 0.3), last_channel, weights, progress, **kwargs
+    )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B3_Weights.IMAGENET1K_V1))
 def efficientnet_b3(
     *, weights: Optional[EfficientNet_B3_Weights] = None, progress: bool = True, **kwargs: Any
@@ -838,9 +872,17 @@ def efficientnet_b3(
     weights = EfficientNet_B3_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b3", width_mult=1.2, depth_mult=1.4)
-    return _efficientnet(inverted_residual_setting, 0.3, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting,
+        kwargs.pop("dropout", 0.3),
+        last_channel,
+        weights,
+        progress,
+        **kwargs,
+    )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B4_Weights.IMAGENET1K_V1))
 def efficientnet_b4(
     *, weights: Optional[EfficientNet_B4_Weights] = None, progress: bool = True, **kwargs: Any
@@ -866,9 +908,17 @@ def efficientnet_b4(
     weights = EfficientNet_B4_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b4", width_mult=1.4, depth_mult=1.8)
-    return _efficientnet(inverted_residual_setting, 0.4, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting,
+        kwargs.pop("dropout", 0.4),
+        last_channel,
+        weights,
+        progress,
+        **kwargs,
+    )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B5_Weights.IMAGENET1K_V1))
 def efficientnet_b5(
     *, weights: Optional[EfficientNet_B5_Weights] = None, progress: bool = True, **kwargs: Any
@@ -896,7 +946,7 @@ def efficientnet_b5(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b5", width_mult=1.6, depth_mult=2.2)
     return _efficientnet(
         inverted_residual_setting,
-        0.4,
+        kwargs.pop("dropout", 0.4),
         last_channel,
         weights,
         progress,
@@ -905,6 +955,7 @@ def efficientnet_b5(
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B6_Weights.IMAGENET1K_V1))
 def efficientnet_b6(
     *, weights: Optional[EfficientNet_B6_Weights] = None, progress: bool = True, **kwargs: Any
@@ -932,7 +983,7 @@ def efficientnet_b6(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b6", width_mult=1.8, depth_mult=2.6)
     return _efficientnet(
         inverted_residual_setting,
-        0.5,
+        kwargs.pop("dropout", 0.5),
         last_channel,
         weights,
         progress,
@@ -941,6 +992,7 @@ def efficientnet_b6(
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B7_Weights.IMAGENET1K_V1))
 def efficientnet_b7(
     *, weights: Optional[EfficientNet_B7_Weights] = None, progress: bool = True, **kwargs: Any
@@ -968,7 +1020,7 @@ def efficientnet_b7(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b7", width_mult=2.0, depth_mult=3.1)
     return _efficientnet(
         inverted_residual_setting,
-        0.5,
+        kwargs.pop("dropout", 0.5),
         last_channel,
         weights,
         progress,
@@ -977,6 +1029,7 @@ def efficientnet_b7(
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_V2_S_Weights.IMAGENET1K_V1))
 def efficientnet_v2_s(
     *, weights: Optional[EfficientNet_V2_S_Weights] = None, progress: bool = True, **kwargs: Any
@@ -1005,7 +1058,7 @@ def efficientnet_v2_s(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_s")
     return _efficientnet(
         inverted_residual_setting,
-        0.2,
+        kwargs.pop("dropout", 0.2),
         last_channel,
         weights,
         progress,
@@ -1014,6 +1067,7 @@ def efficientnet_v2_s(
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_V2_M_Weights.IMAGENET1K_V1))
 def efficientnet_v2_m(
     *, weights: Optional[EfficientNet_V2_M_Weights] = None, progress: bool = True, **kwargs: Any
@@ -1042,7 +1096,7 @@ def efficientnet_v2_m(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_m")
     return _efficientnet(
         inverted_residual_setting,
-        0.3,
+        kwargs.pop("dropout", 0.3),
         last_channel,
         weights,
         progress,
@@ -1051,6 +1105,7 @@ def efficientnet_v2_m(
     )
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", EfficientNet_V2_L_Weights.IMAGENET1K_V1))
 def efficientnet_v2_l(
     *, weights: Optional[EfficientNet_V2_L_Weights] = None, progress: bool = True, **kwargs: Any
@@ -1079,7 +1134,7 @@ def efficientnet_v2_l(
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_l")
     return _efficientnet(
         inverted_residual_setting,
-        0.4,
+        kwargs.pop("dropout", 0.4),
         last_channel,
         weights,
         progress,

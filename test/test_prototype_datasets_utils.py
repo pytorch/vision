@@ -9,8 +9,8 @@ from datasets_utils import make_fake_flo_file, make_tar
 from torchdata.datapipes.iter import FileOpener, TarArchiveLoader
 from torchvision.datasets._optical_flow import _read_flo as read_flo_ref
 from torchvision.datasets.utils import _decompress
-from torchvision.prototype.datasets.utils import HttpResource, GDriveResource, Dataset, OnlineResource
-from torchvision.prototype.datasets.utils._internal import read_flo, fromfile
+from torchvision.prototype.datasets.utils import Dataset, GDriveResource, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils._internal import fromfile, read_flo
 
 
 @pytest.mark.filterwarnings("error:The given NumPy array is not writeable:UserWarning")

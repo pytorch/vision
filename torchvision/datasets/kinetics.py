@@ -2,7 +2,6 @@ import csv
 import os
 import time
 import urllib
-import warnings
 from functools import partial
 from multiprocessing import Pool
 from os import path
@@ -11,7 +10,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 from torch import Tensor
 
 from .folder import find_classes, make_dataset
-from .utils import download_and_extract_archive, download_url, verify_str_arg, check_integrity
+from .utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -21,7 +20,7 @@ def _dl_wrap(tarpath: str, videopath: str, line: str) -> None:
 
 
 class Kinetics(VisionDataset):
-    """`Generic Kinetics <https://deepmind.com/research/open-source/open-source-datasets/kinetics/>`_
+    """`Generic Kinetics <https://www.deepmind.com/open-source/kinetics>`_
     dataset.
 
     Kinetics-400/600/700 are action recognition video datasets.
@@ -62,11 +61,14 @@ class Kinetics(VisionDataset):
         download (bool): Download the official version of the dataset to root folder.
         num_workers (int): Use multiple workers for VideoClips creation
         num_download_workers (int): Use multiprocessing in order to speed up download.
+        output_format (str, optional): The format of the output video tensors (before transforms).
+            Can be either "THWC" or "TCHW" (default).
+            Note that in most other utils and datasets, the default is actually "THWC".
 
     Returns:
         tuple: A 3-tuple with the following entries:
 
-            - video (Tensor[T, C, H, W]): the `T` video frames in torch.uint8 tensor
+            - video (Tensor[T, C, H, W] or Tensor[T, H, W, C]): the `T` video frames in torch.uint8 tensor
             - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
               and `L` is the number of points in torch.float tensor
             - label (int): class of the video clip
@@ -106,6 +108,7 @@ class Kinetics(VisionDataset):
         _audio_samples: int = 0,
         _audio_channels: int = 0,
         _legacy: bool = False,
+        output_format: str = "TCHW",
     ) -> None:
 
         # TODO: support test
@@ -115,10 +118,12 @@ class Kinetics(VisionDataset):
 
         self.root = root
         self._legacy = _legacy
+
         if _legacy:
             print("Using legacy structure")
             self.split_folder = root
             self.split = "unknown"
+            output_format = "THWC"
             if download:
                 raise ValueError("Cannot download the videos using legacy_structure.")
         else:
@@ -145,6 +150,7 @@ class Kinetics(VisionDataset):
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
             _audio_channels=_audio_channels,
+            output_format=output_format,
         )
         self.transform = transform
 
@@ -233,92 +239,9 @@ class Kinetics(VisionDataset):
 
     def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor, int]:
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
-        if not self._legacy:
-            # [T,H,W,C] --> [T,C,H,W]
-            video = video.permute(0, 3, 1, 2)
         label = self.samples[video_idx][1]
 
         if self.transform is not None:
             video = self.transform(video)
 
         return video, audio, label
-
-
-class Kinetics400(Kinetics):
-    """
-    `Kinetics-400 <https://deepmind.com/research/open-source/open-source-datasets/kinetics/>`_
-    dataset.
-
-    .. warning::
-        This class was deprecated in ``0.12`` and will be removed in ``0.14``. Please use
-        ``Kinetics(..., num_classes='400')`` instead.
-
-    Kinetics-400 is an action recognition video dataset.
-    This dataset consider every video as a collection of video clips of fixed size, specified
-    by ``frames_per_clip``, where the step in frames between each clip is given by
-    ``step_between_clips``.
-
-    To give an example, for 2 videos with 10 and 15 frames respectively, if ``frames_per_clip=5``
-    and ``step_between_clips=5``, the dataset size will be (2 + 3) = 5, where the first two
-    elements will come from video 1, and the next three elements from video 2.
-    Note that we drop clips which do not have exactly ``frames_per_clip`` elements, so not all
-    frames in a video might be present.
-
-    Internally, it uses a VideoClips object to handle clip creation.
-
-    Args:
-        root (string): Root directory of the Kinetics-400 Dataset. Should be structured as follows:
-
-            .. code::
-
-                root/
-                ├── class1
-                │   ├── clip1.avi
-                │   ├── clip2.avi
-                │   ├── clip3.mp4
-                │   └── ...
-                └── class2
-                    ├── clipx.avi
-                    └── ...
-
-        frames_per_clip (int): number of frames in a clip
-        step_between_clips (int): number of frames between each clip
-        transform (callable, optional): A function/transform that  takes in a TxHxWxC video
-            and returns a transformed version.
-
-    Returns:
-        tuple: A 3-tuple with the following entries:
-
-            - video (Tensor[T, H, W, C]): the `T` video frames
-            - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
-              and `L` is the number of points
-            - label (int): class of the video clip
-    """
-
-    def __init__(
-        self,
-        root: str,
-        frames_per_clip: int,
-        num_classes: Any = None,
-        split: Any = None,
-        download: Any = None,
-        num_download_workers: Any = None,
-        **kwargs: Any,
-    ) -> None:
-        warnings.warn(
-            "The Kinetics400 class is deprecated since 0.12 and will be removed in 0.14."
-            "Please use Kinetics(..., num_classes='400') instead."
-            "Note that Kinetics(..., num_classes='400') returns video in a more logical Tensor[T, C, H, W] format."
-        )
-        if any(value is not None for value in (num_classes, split, download, num_download_workers)):
-            raise RuntimeError(
-                "Usage of 'num_classes', 'split', 'download', or 'num_download_workers' is not supported in "
-                "Kinetics400. Please use Kinetics instead."
-            )
-
-        super().__init__(
-            root=root,
-            frames_per_clip=frames_per_clip,
-            _legacy=True,
-            **kwargs,
-        )

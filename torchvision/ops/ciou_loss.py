@@ -14,8 +14,8 @@ def complete_box_iou_loss(
 
     """
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
-    boxes do not overlap overlap area, This loss function considers important geometrical
-    factors such as  overlap area, normalized central point distance and aspect ratio.
+    boxes do not overlap. This loss function considers important geometrical
+    factors such as overlap area, normalized central point distance and aspect ratio.
     This loss is symmetric, so the boxes1 and boxes2 arguments are interchangeable.
 
     Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
@@ -35,7 +35,7 @@ def complete_box_iou_loss(
         Tensor: Loss tensor with the reduction option applied.
 
     Reference:
-        Zhaohui Zheng et. al: Complete Intersection over Union Loss:
+        Zhaohui Zheng et al.: Complete Intersection over Union Loss:
         https://arxiv.org/abs/1911.08287
 
     """
@@ -58,14 +58,21 @@ def complete_box_iou_loss(
     h_pred = y2 - y1
     w_gt = x2g - x1g
     h_gt = y2g - y1g
-    v = (4 / (torch.pi ** 2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2)
+    v = (4 / (torch.pi**2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2)
     with torch.no_grad():
         alpha = v / (1 - iou + v + eps)
 
     loss = diou_loss + alpha * v
-    if reduction == "mean":
+
+    # Check reduction option and return loss accordingly
+    if reduction == "none":
+        pass
+    elif reduction == "mean":
         loss = loss.mean() if loss.numel() > 0 else 0.0 * loss.sum()
     elif reduction == "sum":
         loss = loss.sum()
-
+    else:
+        raise ValueError(
+            f"Invalid Value for arg 'reduction': '{reduction} \n Supported reduction modes: 'none', 'mean', 'sum'"
+        )
     return loss

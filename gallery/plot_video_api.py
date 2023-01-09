@@ -32,6 +32,7 @@ videos, together with the examples on how to build datasets and more.
 import torch
 import torchvision
 from torchvision.datasets.utils import download_url
+torchvision.set_video_backend("video_reader")
 
 # Download the sample video
 download_url(
@@ -170,7 +171,7 @@ vf, af, info, meta = example_read_video(video)
 print(vf.size(), af.size())
 
 ####################################
-# 3. Building an example randomly sampled dataset (can be applied to training dataest of kinetics400)
+# 3. Building an example randomly sampled dataset (can be applied to training dataset of kinetics400)
 # -------------------------------------------------------------------------------------------------------
 # Cool, so now we can use the same principle to make the sample dataset.
 # We suggest trying out iterable dataset for this purpose.
@@ -325,7 +326,7 @@ print(data)
 # ----------------------------------
 # Example of visualized video
 
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 
 plt.figure(figsize=(12, 12))
 for i in range(16):

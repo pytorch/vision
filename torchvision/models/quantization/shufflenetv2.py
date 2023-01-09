@@ -7,9 +7,9 @@ from torch import Tensor
 from torchvision.models import shufflenetv2
 
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from ..shufflenetv2 import (
     ShuffleNet_V2_X0_5_Weights,
     ShuffleNet_V2_X1_0_Weights,
@@ -139,6 +139,8 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
                     "acc@5": 79.780,
                 }
             },
+            "_ops": 0.04,
+            "_weight_size": 1.501,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -158,6 +160,8 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
                     "acc@5": 87.582,
                 }
             },
+            "_ops": 0.145,
+            "_weight_size": 2.334,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -178,6 +182,8 @@ class ShuffleNet_V2_X1_5_QuantizedWeights(WeightsEnum):
                     "acc@5": 90.700,
                 }
             },
+            "_ops": 0.296,
+            "_weight_size": 3.672,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -198,11 +204,14 @@ class ShuffleNet_V2_X2_0_QuantizedWeights(WeightsEnum):
                     "acc@5": 92.488,
                 }
             },
+            "_ops": 0.583,
+            "_weight_size": 7.467,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
+@register_model(name="quantized_shufflenet_v2_x0_5")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -256,6 +265,7 @@ def shufflenet_v2_x0_5(
     )
 
 
+@register_model(name="quantized_shufflenet_v2_x1_0")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -309,6 +319,15 @@ def shufflenet_v2_x1_0(
     )
 
 
+@register_model(name="quantized_shufflenet_v2_x1_5")
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ShuffleNet_V2_X1_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1,
+    )
+)
 def shufflenet_v2_x1_5(
     *,
     weights: Optional[Union[ShuffleNet_V2_X1_5_QuantizedWeights, ShuffleNet_V2_X1_5_Weights]] = None,
@@ -354,6 +373,15 @@ def shufflenet_v2_x1_5(
     )
 
 
+@register_model(name="quantized_shufflenet_v2_x2_0")
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ShuffleNet_V2_X2_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1,
+    )
+)
 def shufflenet_v2_x2_0(
     *,
     weights: Optional[Union[ShuffleNet_V2_X2_0_QuantizedWeights, ShuffleNet_V2_X2_0_Weights]] = None,

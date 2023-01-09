@@ -30,8 +30,8 @@ class TestModelsDetectionUtils:
 
         proposals = torch.tensor([0, 0, 101, 101] * 10).reshape(10, 4).float()
 
-        rel_codes = box_coder.encode_single(boxes, proposals)
-        pred_boxes = box_coder.decode_single(rel_codes, boxes)
+        rel_codes = box_coder.encode(boxes, proposals)
+        pred_boxes = box_coder.decode(rel_codes, boxes)
         torch.allclose(proposals, pred_boxes)
 
     @pytest.mark.parametrize("train_layers, exp_froz_params", [(0, 53), (1, 43), (2, 24), (3, 11), (4, 1), (5, 0)])

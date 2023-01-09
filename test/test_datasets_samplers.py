@@ -1,12 +1,8 @@
 import pytest
 import torch
-from common_utils import get_list_of_videos, assert_equal
+from common_utils import assert_equal, get_list_of_videos
 from torchvision import io
-from torchvision.datasets.samplers import (
-    DistributedSampler,
-    RandomClipSampler,
-    UniformClipSampler,
-)
+from torchvision.datasets.samplers import DistributedSampler, RandomClipSampler, UniformClipSampler
 from torchvision.datasets.video_utils import VideoClips
 
 

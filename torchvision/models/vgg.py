@@ -1,14 +1,14 @@
 from functools import partial
-from typing import Union, List, Dict, Any, Optional, cast
+from typing import Any, cast, Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -127,6 +127,8 @@ class VGG11_Weights(WeightsEnum):
                     "acc@5": 88.628,
                 }
             },
+            "_ops": 7.609,
+            "_weight_size": 506.84,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -145,6 +147,8 @@ class VGG11_BN_Weights(WeightsEnum):
                     "acc@5": 89.810,
                 }
             },
+            "_ops": 7.609,
+            "_weight_size": 506.881,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -163,6 +167,8 @@ class VGG13_Weights(WeightsEnum):
                     "acc@5": 89.246,
                 }
             },
+            "_ops": 11.308,
+            "_weight_size": 507.545,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -181,6 +187,8 @@ class VGG13_BN_Weights(WeightsEnum):
                     "acc@5": 90.374,
                 }
             },
+            "_ops": 11.308,
+            "_weight_size": 507.59,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -199,6 +207,8 @@ class VGG16_Weights(WeightsEnum):
                     "acc@5": 90.382,
                 }
             },
+            "_ops": 15.47,
+            "_weight_size": 527.796,
         },
     )
     IMAGENET1K_FEATURES = Weights(
@@ -221,6 +231,8 @@ class VGG16_Weights(WeightsEnum):
                     "acc@5": float("nan"),
                 }
             },
+            "_ops": 15.47,
+            "_weight_size": 527.802,
             "_docs": """
                 These weights can't be used for classification because they are missing values in the `classifier`
                 module. Only the `features` module has valid values and can be used for feature extraction. The weights
@@ -244,6 +256,8 @@ class VGG16_BN_Weights(WeightsEnum):
                     "acc@5": 91.516,
                 }
             },
+            "_ops": 15.47,
+            "_weight_size": 527.866,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -262,6 +276,8 @@ class VGG19_Weights(WeightsEnum):
                     "acc@5": 90.876,
                 }
             },
+            "_ops": 19.632,
+            "_weight_size": 548.051,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -280,11 +296,14 @@ class VGG19_BN_Weights(WeightsEnum):
                     "acc@5": 91.842,
                 }
             },
+            "_ops": 19.632,
+            "_weight_size": 548.143,
         },
     )
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", VGG11_Weights.IMAGENET1K_V1))
 def vgg11(*, weights: Optional[VGG11_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     """VGG-11 from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
@@ -310,6 +329,7 @@ def vgg11(*, weights: Optional[VGG11_Weights] = None, progress: bool = True, **k
     return _vgg("A", False, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", VGG11_BN_Weights.IMAGENET1K_V1))
 def vgg11_bn(*, weights: Optional[VGG11_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     """VGG-11-BN from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
@@ -335,6 +355,7 @@ def vgg11_bn(*, weights: Optional[VGG11_BN_Weights] = None, progress: bool = Tru
     return _vgg("A", True, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", VGG13_Weights.IMAGENET1K_V1))
 def vgg13(*, weights: Optional[VGG13_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     """VGG-13 from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
@@ -360,6 +381,7 @@ def vgg13(*, weights: Optional[VGG13_Weights] = None, progress: bool = True, **k
     return _vgg("B", False, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", VGG13_BN_Weights.IMAGENET1K_V1))
 def vgg13_bn(*, weights: Optional[VGG13_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     """VGG-13-BN from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
@@ -385,6 +407,7 @@ def vgg13_bn(*, weights: Optional[VGG13_BN_Weights] = None, progress: bool = Tru
     return _vgg("B", True, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", VGG16_Weights.IMAGENET1K_V1))
 def vgg16(*, weights: Optional[VGG16_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     """VGG-16 from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
@@ -410,6 +433,7 @@ def vgg16(*, weights: Optional[VGG16_Weights] = None, progress: bool = True, **k
     return _vgg("D", False, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", VGG16_BN_Weights.IMAGENET1K_V1))
 def vgg16_bn(*, weights: Optional[VGG16_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     """VGG-16-BN from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
@@ -435,6 +459,7 @@ def vgg16_bn(*, weights: Optional[VGG16_BN_Weights] = None, progress: bool = Tru
     return _vgg("D", True, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", VGG19_Weights.IMAGENET1K_V1))
 def vgg19(*, weights: Optional[VGG19_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     """VGG-19 from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
@@ -460,6 +485,7 @@ def vgg19(*, weights: Optional[VGG19_Weights] = None, progress: bool = True, **k
     return _vgg("E", False, weights, progress, **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", VGG19_BN_Weights.IMAGENET1K_V1))
 def vgg19_bn(*, weights: Optional[VGG19_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     """VGG-19_BN from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.

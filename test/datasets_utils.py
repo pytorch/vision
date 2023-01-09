@@ -16,13 +16,16 @@ import zipfile
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
+import numpy as np
+
 import PIL
 import PIL.Image
 import pytest
 import torch
 import torchvision.datasets
 import torchvision.io
-from common_utils import get_tmp_dir, disable_console_output
+from common_utils import disable_console_output, get_tmp_dir
+from torchvision.transforms.functional import get_dimensions
 
 
 __all__ = [
@@ -748,6 +751,33 @@ def create_image_folder(
     ]
 
 
+def shape_test_for_stereo(
+    left: PIL.Image.Image,
+    right: PIL.Image.Image,
+    disparity: Optional[np.ndarray] = None,
+    valid_mask: Optional[np.ndarray] = None,
+):
+    left_dims = get_dimensions(left)
+    right_dims = get_dimensions(right)
+    c, h, w = left_dims
+    # check that left and right are the same size
+    assert left_dims == right_dims
+    assert c == 3
+
+    # check that the disparity has the same spatial dimensions
+    # as the input
+    if disparity is not None:
+        assert disparity.ndim == 3
+        assert disparity.shape == (1, h, w)
+
+    if valid_mask is not None:
+        # check that valid mask is the same size as the disparity
+        _, dh, dw = disparity.shape
+        mh, mw = valid_mask.shape
+        assert dh == mh
+        assert dw == mw
+
+
 @requires_lazy_imports("av")
 def create_video_file(
     root: Union[pathlib.Path, str],
@@ -921,7 +951,7 @@ def create_random_string(length: int, *digits: str) -> str:
 
     Args:
         length (int): Number of characters in the generated string.
-        *characters (str): Characters to sample from. If omitted defaults to :attr:`string.ascii_lowercase`.
+        *digits (str): Characters to sample from. If omitted defaults to :attr:`string.ascii_lowercase`.
     """
     if not digits:
         digits = string.ascii_lowercase
