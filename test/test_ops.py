@@ -1558,7 +1558,7 @@ class TestFocalLoss:
         if device == "cpu":
             scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
         else:
-            with torch.jit.fuser("fuser2"):
+            with torch.jit.fuser("fuser1"):
                 # Use fuser2 to prevent a bug on fuser: https://github.com/pytorch/pytorch/issues/75476
                 # We may remove this condition once the bug is resolved
                 scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
