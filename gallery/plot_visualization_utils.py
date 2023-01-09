@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
 
 
-plt.rcParams["savefig.bbox"] = "tight"
+plt.rcParams["savefig.bbox"] = 'tight'
 
 
 def show(imgs):
@@ -41,8 +41,8 @@ from torchvision.utils import make_grid
 from torchvision.io import read_image
 from pathlib import Path
 
-dog1_int = read_image(str(Path("assets") / "dog1.jpg"))
-dog2_int = read_image(str(Path("assets") / "dog2.jpg"))
+dog1_int = read_image(str(Path('assets') / 'dog1.jpg'))
+dog2_int = read_image(str(Path('assets') / 'dog2.jpg'))
 dog_list = [dog1_int, dog2_int]
 
 grid = make_grid(dog_list)
@@ -89,9 +89,9 @@ print(outputs)
 # Let's plot the boxes detected by our model. We will only plot the boxes with a
 # score greater than a given threshold.
 
-score_threshold = 0.8
+score_threshold = .8
 dogs_with_boxes = [
-    draw_bounding_boxes(dog_int, boxes=output["boxes"][output["scores"] > score_threshold], width=4)
+    draw_bounding_boxes(dog_int, boxes=output['boxes'][output['scores'] > score_threshold], width=4)
     for dog_int, output in zip(dog_list, outputs)
 ]
 show(dogs_with_boxes)
@@ -122,7 +122,7 @@ model = fcn_resnet50(weights=weights, progress=False)
 model = model.eval()
 
 batch = torch.stack([transforms(d) for d in dog_list])
-output = model(batch)["out"]
+output = model(batch)['out']
 print(output.shape, output.min().item(), output.max().item())
 
 #####################################
@@ -140,7 +140,9 @@ sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categorie
 normalized_masks = torch.nn.functional.softmax(output, dim=1)
 
 dog_and_boat_masks = [
-    normalized_masks[img_idx, sem_class_to_idx[cls]] for img_idx in range(len(dog_list)) for cls in ("dog", "boat")
+    normalized_masks[img_idx, sem_class_to_idx[cls]]
+    for img_idx in range(len(dog_list))
+    for cls in ('dog', 'boat')
 ]
 
 show(dog_and_boat_masks)
@@ -155,7 +157,7 @@ show(dog_and_boat_masks)
 # 1]``. To get boolean masks, we can do the following:
 
 class_dim = 1
-boolean_dog_masks = normalized_masks.argmax(class_dim) == sem_class_to_idx["dog"]
+boolean_dog_masks = (normalized_masks.argmax(class_dim) == sem_class_to_idx['dog'])
 print(f"shape = {boolean_dog_masks.shape}, dtype = {boolean_dog_masks.dtype}")
 show([m.float() for m in boolean_dog_masks])
 
@@ -177,7 +179,8 @@ show([m.float() for m in boolean_dog_masks])
 from torchvision.utils import draw_segmentation_masks
 
 dogs_with_masks = [
-    draw_segmentation_masks(img, masks=mask, alpha=0.7) for img, mask in zip(dog_list, boolean_dog_masks)
+    draw_segmentation_masks(img, masks=mask, alpha=0.7)
+    for img, mask in zip(dog_list, boolean_dog_masks)
 ]
 show(dogs_with_masks)
 
@@ -198,7 +201,7 @@ dog1_all_classes_masks = dog1_masks.argmax(class_dim) == torch.arange(num_classe
 print(f"dog1_masks shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}")
 print(f"dog1_all_classes_masks = {dog1_all_classes_masks.shape}, dtype = {dog1_all_classes_masks.dtype}")
 
-dog_with_all_masks = draw_segmentation_masks(dog1_int, masks=dog1_all_classes_masks, alpha=0.6)
+dog_with_all_masks = draw_segmentation_masks(dog1_int, masks=dog1_all_classes_masks, alpha=.6)
 show(dog_with_all_masks)
 
 #####################################
@@ -222,7 +225,8 @@ print(f"shape = {all_classes_masks.shape}, dtype = {all_classes_masks.dtype}")
 all_classes_masks = all_classes_masks.swapaxes(0, 1)
 
 dogs_with_masks = [
-    draw_segmentation_masks(img, masks=mask, alpha=0.6) for img, mask in zip(dog_list, all_classes_masks)
+    draw_segmentation_masks(img, masks=mask, alpha=.6)
+    for img, mask in zip(dog_list, all_classes_masks)
 ]
 show(dogs_with_masks)
 
@@ -280,8 +284,9 @@ print(output)
 # models.
 
 dog1_output = output[0]
-dog1_masks = dog1_output["masks"]
-print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, " f"min = {dog1_masks.min()}, max = {dog1_masks.max()}")
+dog1_masks = dog1_output['masks']
+print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, "
+      f"min = {dog1_masks.min()}, max = {dog1_masks.max()}")
 
 #####################################
 # Here the masks correspond to probabilities indicating, for each pixel, how
@@ -290,7 +295,7 @@ print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, " f"min = {dog1_
 # Let's see which labels were predicted for the instances of the first image.
 
 print("For the first dog, the following instances were detected:")
-print([weights.meta["categories"][label] for label in dog1_output["labels"]])
+print([weights.meta["categories"][label] for label in dog1_output['labels']])
 
 #####################################
 # Interestingly, the model detects two persons in the image. Let's go ahead and
@@ -302,7 +307,7 @@ print([weights.meta["categories"][label] for label in dog1_output["labels"]])
 # (one could also choose a different threshold).
 
 proba_threshold = 0.5
-dog1_bool_masks = dog1_output["masks"] > proba_threshold
+dog1_bool_masks = dog1_output['masks'] > proba_threshold
 print(f"shape = {dog1_bool_masks.shape}, dtype = {dog1_bool_masks.dtype}")
 
 # There's an extra dimension (1) to the masks. We need to remove it
@@ -315,7 +320,7 @@ show(draw_segmentation_masks(dog1_int, dog1_bool_masks, alpha=0.9))
 # with people. Looking more closely at the scores will help us plot more
 # relevant masks:
 
-print(dog1_output["scores"])
+print(dog1_output['scores'])
 
 #####################################
 # Clearly the model is more confident about the dog detection than it is about
@@ -323,11 +328,17 @@ print(dog1_output["scores"])
 # for only those that have a good score. Let's use a score threshold of .75
 # here, and also plot the masks of the second dog.
 
-score_threshold = 0.75
+score_threshold = .75
 
-boolean_masks = [out["masks"][out["scores"] > score_threshold] > proba_threshold for out in output]
+boolean_masks = [
+    out['masks'][out['scores'] > score_threshold] > proba_threshold
+    for out in output
+]
 
-dogs_with_masks = [draw_segmentation_masks(img, mask.squeeze(1)) for img, mask in zip(dog_list, boolean_masks)]
+dogs_with_masks = [
+    draw_segmentation_masks(img, mask.squeeze(1))
+    for img, mask in zip(dog_list, boolean_masks)
+]
 show(dogs_with_masks)
 
 #####################################
@@ -371,8 +382,8 @@ print(outputs)
 # Each value associated to those keys has `num_instances` elements in it.
 # In our case above there are 2 instances detected in the image.
 
-kpts = outputs[0]["keypoints"]
-scores = outputs[0]["scores"]
+kpts = outputs[0]['keypoints']
+scores = outputs[0]['scores']
 
 print(kpts)
 print(scores)
@@ -407,23 +418,10 @@ show(res)
 # The coco keypoints for a person are ordered and represent the following list.\
 
 coco_keypoints = [
-    "nose",
-    "left_eye",
-    "right_eye",
-    "left_ear",
-    "right_ear",
-    "left_shoulder",
-    "right_shoulder",
-    "left_elbow",
-    "right_elbow",
-    "left_wrist",
-    "right_wrist",
-    "left_hip",
-    "right_hip",
-    "left_knee",
-    "right_knee",
-    "left_ankle",
-    "right_ankle",
+    "nose", "left_eye", "right_eye", "left_ear", "right_ear",
+    "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+    "left_wrist", "right_wrist", "left_hip", "right_hip",
+    "left_knee", "right_knee", "left_ankle", "right_ankle",
 ]
 
 #####################################
@@ -448,22 +446,8 @@ coco_keypoints = [
 # We will create a list containing these keypoint ids to be connected.
 
 connect_skeleton = [
-    (0, 1),
-    (0, 2),
-    (1, 3),
-    (2, 4),
-    (0, 5),
-    (0, 6),
-    (5, 7),
-    (6, 8),
-    (7, 9),
-    (8, 10),
-    (5, 11),
-    (6, 12),
-    (11, 13),
-    (12, 14),
-    (13, 15),
-    (14, 16),
+    (0, 1), (0, 2), (1, 3), (2, 4), (0, 5), (0, 6), (5, 7), (6, 8),
+    (7, 9), (8, 10), (5, 11), (6, 12), (11, 13), (12, 14), (13, 15), (14, 16)
 ]
 
 #####################################
