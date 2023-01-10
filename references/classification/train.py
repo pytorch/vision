@@ -130,8 +130,8 @@ def load_data(traindir, valdir, args):
     else:
         auto_augment_policy = getattr(args, "auto_augment", None)
         random_erase_prob = getattr(args, "random_erase", 0.0)
-        ra_magnitude = args.ra_magnitude
-        augmix_severity = args.augmix_severity
+        ra_magnitude = getattr(args, "ra_magnitude", None)
+        augmix_severity = getattr(args, "augmix_severity", None)
         dataset = torchvision.datasets.ImageFolder(
             traindir,
             presets.ClassificationPresetTrain(
