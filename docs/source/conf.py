@@ -367,7 +367,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                     k = "GIPS" if obj.__name__.endswith("_QuantizedWeights") else "GFLOPS"
                 elif k == "_file_size":
                     k = "File size"
-                    v = f"{v:.1f} MB (file size)"
+                    v = f"{v:.1f} MB"
 
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
