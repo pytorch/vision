@@ -531,7 +531,7 @@ class Swin3D_T_Weights(WeightsEnum):
                 }
             },
             "_ops": 43.882,
-            "_weight_size": 121.543,
+            "_file_size": 121.543,
         },
     )
     DEFAULT = KINETICS400_V1
@@ -562,7 +562,7 @@ class Swin3D_S_Weights(WeightsEnum):
                 }
             },
             "_ops": 82.841,
-            "_weight_size": 218.288,
+            "_file_size": 218.288,
         },
     )
     DEFAULT = KINETICS400_V1
@@ -593,7 +593,7 @@ class Swin3D_B_Weights(WeightsEnum):
                 }
             },
             "_ops": 140.667,
-            "_weight_size": 364.134,
+            "_file_size": 364.134,
         },
     )
     KINETICS400_IMAGENET22K_V1 = Weights(
@@ -620,7 +620,7 @@ class Swin3D_B_Weights(WeightsEnum):
                 }
             },
             "_ops": 140.667,
-            "_weight_size": 364.134,
+            "_file_size": 364.134,
         },
     )
     DEFAULT = KINETICS400_V1

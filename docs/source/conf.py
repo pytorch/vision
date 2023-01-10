@@ -367,7 +367,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                         v = f"{v} giga instructions per sec"
                     else:
                         v = f"{v} giga floating-point operations per sec"
-                elif k == "_weight_size":
+                elif k == "_file_size":
                     v = f"{v} MB (file size)"
 
                 table.append((str(k), str(v)))
@@ -408,7 +408,7 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
             *(w.meta["_metrics"][dataset][metric] for metric in metrics_keys),
             f"{w.meta['num_params']/1e6:.1f}M",
             f"{w.meta['_ops']:.3f}",
-            f"{round(w.meta['_weight_size'], 1):.1f}",
+            f"{round(w.meta['_file_size'], 1):.1f}",
             f"`link <{w.meta['recipe']}>`__",
         ]
 

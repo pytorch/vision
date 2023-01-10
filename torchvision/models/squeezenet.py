@@ -136,7 +136,7 @@ class SqueezeNet1_0_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.819,
-            "_weight_size": 4.778,
+            "_file_size": 4.778,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -157,7 +157,7 @@ class SqueezeNet1_1_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.349,
-            "_weight_size": 4.729,
+            "_file_size": 4.729,
         },
     )
     DEFAULT = IMAGENET1K_V1
