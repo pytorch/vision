@@ -363,12 +363,11 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                     v_sample = ", ".join(v[:max_visible])
                     v = f"{v_sample}, ... ({len(v)-max_visible} omitted)" if len(v) > max_visible else v_sample
                 elif k == "_ops":
-                    if obj.__name__.endswith("_QuantizedWeights"):
-                        v = f"{v} giga instructions per sec"
-                    else:
-                        v = f"{v} giga floating-point operations per sec"
+                    v = f"{v:.2f}"
+                    k = "GIPS" if obj.__name__.endswith("_QuantizedWeights") else "GFLOPS"
                 elif k == "_file_size":
-                    v = f"{v} MB (file size)"
+                    k = "File size"
+                    v = f"{v:.1f} MB (file size)"
 
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
