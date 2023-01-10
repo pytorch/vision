@@ -958,12 +958,15 @@ jobs:
     machine:
       image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.small
-    environment:
-      PYTHON_VERSION: << parameters.python_version >>
-      PYTORCH_VERSION: << parameters.pytorch_version >>
-      UNICODE_ABI: << parameters.unicode_abi >>
-      CU_VERSION: << parameters.cu_version >>
     steps:
+      - run:
+          name: debug
+          command: |
+            set -ex
+            echo $PYTHON_VERSION
+            echo $PYTORCH_VERSION
+            echo $UNICODE_ABI
+            echo $CU_VERSION
       - checkout_merge
       - designate_upload_channel
       - run:
@@ -986,7 +989,7 @@ jobs:
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
             sh conda.sh -b
             source $HOME/miniconda3/bin/activate
-            conda install -yq conda-build cmake python=3.9
+            conda install -yq conda-build cmake python=<< parameters.python_version >>
             packaging/build_cmake.sh
 
   cmake_windows_cpu:
@@ -999,8 +1002,12 @@ jobs:
       - run:
           command: |
             set -ex
+            echo $CONDA_PREFIX
+            conda list || true
             source packaging/windows/internal/vc_install_helper.sh
-            packaging/build_cmake.sh
+            echo $CONDA_PREFIX
+            conda list || true
+#            packaging/build_cmake.sh
 
   cmake_windows_gpu:
     <<: *binary_common
