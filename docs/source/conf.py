@@ -396,7 +396,7 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
 
     metrics_keys, metrics_names = zip(*metrics)
     column_names = (
-        ["Weight"] + list(metrics_names) + ["Params"] + [ops_name, "Size (MB)", "Recipe"]
+        ["Weight"] + list(metrics_names) + ["Params"] + [ops_name, "Recipe"]
     )  # Final column order
     column_names = [f"**{name}**" for name in column_names]  # Add bold
 
@@ -406,8 +406,7 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
             f":class:`{w} <{type(w).__name__}>`",
             *(w.meta["_metrics"][dataset][metric] for metric in metrics_keys),
             f"{w.meta['num_params']/1e6:.1f}M",
-            f"{w.meta['_ops']:.3f}",
-            f"{round(w.meta['_file_size'], 1):.1f}",
+            f"{w.meta['_ops']:.2f}",
             f"`link <{w.meta['recipe']}>`__",
         ]
 
