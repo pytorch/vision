@@ -959,14 +959,6 @@ jobs:
       image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.small
     steps:
-      - run:
-          name: debug
-          command: |
-            set -ex
-            echo $PYTHON_VERSION
-            echo $PYTORCH_VERSION
-            echo $UNICODE_ABI
-            echo $CU_VERSION
       - checkout_merge
       - designate_upload_channel
       - run:
@@ -1002,12 +994,8 @@ jobs:
       - run:
           command: |
             set -ex
-            echo $CONDA_PREFIX
-            conda list || true
             source packaging/windows/internal/vc_install_helper.sh
-            echo $CONDA_PREFIX
-            conda list || true
-#            packaging/build_cmake.sh
+            packaging/build_cmake.sh
 
   cmake_windows_gpu:
     <<: *binary_common
