@@ -109,7 +109,7 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
                 }
             },
             "_ops": 2.086,
-            "_weight_size": 12.49,
+            "_file_size": 12.49,
             "_docs": """
                 These weights were trained on a subset of COCO, using only the 20 categories that are present in the
                 Pascal VOC dataset.
