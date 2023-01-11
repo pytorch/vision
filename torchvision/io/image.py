@@ -33,7 +33,7 @@ class ImageReadMode(Enum):
 
 def read_file(path: str) -> torch.Tensor:
     """
-    Reads and outputs the bytes contents of a file as an uint8 Tensor
+    Reads and outputs the bytes contents of a file as a uint8 Tensor
     with one dimension.
 
     Args:

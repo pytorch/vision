@@ -67,7 +67,7 @@ def write_video(
     Args:
         filename (str): path where the video will be saved
         video_array (Tensor[T, H, W, C]): tensor containing the individual frames,
-            as an uint8 tensor in [T, H, W, C] format
+            as a uint8 tensor in [T, H, W, C] format
         fps (Number): video frames per second
         video_codec (str): the name of the video codec, i.e. "libx264", "h264", etc.
         options (Dict): dictionary containing options to be passed into the PyAV video stream
