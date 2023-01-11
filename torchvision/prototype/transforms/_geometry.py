@@ -40,13 +40,21 @@ class Resize(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
+        # Unrelated to V2, just interested in your thoughts on this:
+        # It'd be nice to just be able to do Resize(mode="bilinear"), i.e. accept strings.
+        # Having to import the Enum class can be inconvenient when prototyping,
+        # and the discrepancy between torchvision and torch core (which accept
+        # strings) also trips users.
+        # I don't remember if this was supported in the past and then removed?
+        # Would there be any technical challenge in supporting it? (e.g.
+        # torchscript issues?)
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: Optional[bool] = None,
     ) -> None:
         super().__init__()
 
-        self.size = (
+        self.size = (  # Isn't this check duplicated in _compute_resized_output_size()?
             [size]
             if isinstance(size, int)
             else _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")

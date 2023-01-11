@@ -1,5 +1,8 @@
 # TODO: Add _log_api_usage_once() in all mid-level kernels. If they remain not jit-scriptable we can use decorators
 
+# Do we want all these low-level kernels to be public?
+# Is it mostly because they're the only ones that are fully jit-compatible, or are there other reasons?
+
 from torchvision.transforms import InterpolationMode  # usort: skip
 from ._meta import (
     clamp_bounding_box,
@@ -126,7 +129,7 @@ from ._geometry import (
     perspective_image_tensor,
     perspective_mask,
     perspective_video,
-    resize,
+    resize,  # this is the "dispatcher layer" and the resize_xyz are the low level kernels?
     resize_bounding_box,
     resize_image_pil,
     resize_image_tensor,

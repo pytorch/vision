@@ -4,6 +4,14 @@ from typing import Sequence, Type, TypeVar
 T = TypeVar("T", bound=enum.Enum)
 
 
+
+# Could we just define 
+# class ColorSpace(enum.Enum):
+#    RGB = "RGB"  # instead of auto()
+#    ...
+# and avoid this helper class altogether?
+# I sort of remember having some issue with this class before (perhaps with the
+# WeightsEnum?)
 class StrEnumMeta(enum.EnumMeta):
     auto = enum.auto
 
@@ -16,6 +24,7 @@ class StrEnumMeta(enum.EnumMeta):
             raise ValueError(f"Unknown value '{member}' for {self.__name__}.") from None
 
 
+# Can this just be a simple class inherited from Enum (without the metaclass)?
 class StrEnum(enum.Enum, metaclass=StrEnumMeta):
     pass
 

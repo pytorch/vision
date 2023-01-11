@@ -55,8 +55,10 @@ def query_spatial_size(flat_inputs: List[Any]) -> Tuple[int, int]:
     return h, w
 
 
+# when can types_or_checks be a callable?
 def check_type(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]) -> bool:
     for type_or_check in types_or_checks:
+        # That messed with my brain for a bit - add parenthesis?
         if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
             return True
     return False

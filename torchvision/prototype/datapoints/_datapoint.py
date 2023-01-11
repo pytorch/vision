@@ -15,6 +15,8 @@ FillType = Union[int, float, Sequence[int], Sequence[float], None]
 FillTypeJIT = Union[int, float, List[float], None]
 
 
+# Perhaps it's already documented somewhere, but I think it'd be useful to
+# provide a few examples of when
 class Datapoint(torch.Tensor):
     __F: Optional[ModuleType] = None
 
@@ -41,6 +43,7 @@ class Datapoint(torch.Tensor):
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return tensor.as_subclass(Datapoint)
 
+    # Is this still needed, considering we won't be releasing the prototype datasets anytime soon?
     @classmethod
     def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
         # FIXME: this is just here for BC with the prototype datasets. See __new__ for details. If that is resolved,
@@ -48,6 +51,8 @@ class Datapoint(torch.Tensor):
         # raise NotImplementedError
         return tensor.as_subclass(cls)
 
+    # Can things go wrong with having to maintain a different set of funcs that
+    # need special care? What if we forget to handle one properly?
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
         torch.Tensor.to: lambda cls, input, output: cls.wrap_like(input, output),
@@ -81,10 +86,11 @@ class Datapoint(torch.Tensor):
         For these reasons, the automatic output wrapping is turned off for most operators. The only exceptions are
         listed in :attr:`Datapoint._NO_WRAPPING_EXCEPTIONS`
         """
+        # Is this something we've bubbled up to the core team as a potential feature request?
         # Since super().__torch_function__ has no hook to prevent the coercing of the output into the input type, we
         # need to reimplement the functionality.
 
-        if not all(issubclass(cls, t) for t in types):
+        if not all(issubclass(cls, t) for t in types):  # Curious in which cases this can be hit?
             return NotImplemented
 
         with DisableTorchFunctionSubclass():
@@ -100,6 +106,8 @@ class Datapoint(torch.Tensor):
             if wrapper and isinstance(args[0], cls):
                 return wrapper(cls, args[0], output)  # type: ignore[no-any-return]
 
+            # Does that mean that DisableTorchFunctionSubclass is ignored for `.inpace_()` functions?
+            # Or maybe I'm misunderstanding what DisableTorchFunctionSubclass is supposed to do.
             # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
             # will retain the input type. Thus, we need to unwrap here.
             if isinstance(output, cls):
@@ -107,12 +115,14 @@ class Datapoint(torch.Tensor):
 
             return output
 
+    # Is this used?
     def _make_repr(self, **kwargs: Any) -> str:
         # This is a poor man's implementation of the proposal in https://github.com/pytorch/pytorch/issues/76532.
         # If that ever gets implemented, remove this in favor of the solution on the `torch.Tensor` class.
         extra_repr = ", ".join(f"{key}={value}" for key, value in kwargs.items())
         return f"{super().__repr__()[:-1]}, {extra_repr})"
 
+    # What cyclic import is this solving? Can it be avoided somehow?
     @property
     def _F(self) -> ModuleType:
         # This implements a lazy import of the functional to get around the cyclic import. This import is deferred
@@ -124,6 +134,13 @@ class Datapoint(torch.Tensor):
 
             Datapoint.__F = functional
         return Datapoint.__F
+
+    
+    # doing some_tensor.dtype would go through __torch_function__?
+    #  - is this because it is implemented as a @property method?
+    #  - why do we want to bypass __torch_function__ in these case?
+    # Also, what happens if users access another attribute that we haven't
+    # overridden here, e.g. image.data or image.some_new_attribute_in_pytorch3.0?
 
     # Add properties for common attributes like shape, dtype, device, ndim etc
     # this way we return the result without passing into __torch_function__
@@ -147,6 +164,7 @@ class Datapoint(torch.Tensor):
         with DisableTorchFunctionSubclass():
             return super().dtype
 
+    # Are these the "no-op fallbacks"?
     def horizontal_flip(self) -> Datapoint:
         return self
 
@@ -268,4 +286,4 @@ class Datapoint(torch.Tensor):
 
 
 InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
-InputTypeJIT = torch.Tensor
+InputTypeJIT = torch.Tensor  # why alias it?

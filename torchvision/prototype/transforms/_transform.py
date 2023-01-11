@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Tuple, Type, Union
 import PIL.Image
 import torch
 from torch import nn
+# I remember that the core team is open to making it public. Is still private?
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype.transforms.utils import check_type
 from torchvision.utils import _log_api_usage_once
@@ -14,6 +15,8 @@ class Transform(nn.Module):
     # Class attribute defining transformed types. Other types are passed-through without any transformation
     # We support both Types and callables that are able to do further checks on the type of the input.
     _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor, PIL.Image.Image)
+    # Q: Apart from Tensors (or datapoints) and PIL images, what are the other
+    # types that one may pass to a transform?
 
     def __init__(self) -> None:
         super().__init__()
@@ -29,6 +32,7 @@ class Transform(nn.Module):
         raise NotImplementedError
 
     def forward(self, *inputs: Any) -> Any:
+        # TL;DR of the flatten -> unflatten thing?
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
         self._check_inputs(flat_inputs)

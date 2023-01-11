@@ -140,6 +140,8 @@ def _compute_resized_output_size(
     return __compute_resized_output_size(spatial_size, size=size, max_size=max_size)
 
 
+# IIUC this is mostly a rewrite of torchvision.transforms.functional_tensor.resize()?
+# Was this new version made for perf improvements, or some other reason?
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
@@ -182,6 +184,8 @@ def resize_image_tensor(
     return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
 
+# This looks like a shallow wrapper around the original _FP.resize()
+# Are these wrapper common or is this a one-of?
 @torch.jit.unused
 def resize_image_pil(
     image: PIL.Image.Image,
@@ -232,6 +236,7 @@ def resize_video(
     return resize_image_tensor(video, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
 
+# Is the if/elif/else/raise structure the same in (almost?) all dispatchers?
 def resize(
     inpt: datapoints.InputTypeJIT,
     size: List[int],
@@ -244,11 +249,16 @@ def resize(
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
+        # Do I understand correctly that resize_image_tensor() will be called if we're scripting and inpt is an Image()?
+        # It seems to suggests that this dispatcher is still jit-scriptable on datapoints (and not just on tensors)?
         return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
+        # IIUC we're calling the method on the datapoint object which in turn
+        # will go back in this file and call one of the low-level kernels above.
+        # According to offline chat this is to enable extensibility in the future?
         return inpt.resize(size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, PIL.Image.Image):
-        if antialias is not None and not antialias:
+        if antialias is not None and not antialias:  # just check `is False` ?
             warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
         return resize_image_pil(inpt, size, interpolation=interpolation, max_size=max_size)
     else:
