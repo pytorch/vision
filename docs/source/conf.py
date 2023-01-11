@@ -412,7 +412,7 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
 
         content.append(row)
 
-    column_widths = ["110"] + ["18"] * len(metrics_names) + ["18"] * 3 + ["10"]
+    column_widths = ["110"] + ["18"] * len(metrics_names) + ["18"] * 2 + ["10"]
     widths_table = " ".join(column_widths)
 
     table = tabulate(content, headers=column_names, tablefmt="rst")
