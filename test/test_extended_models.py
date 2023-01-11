@@ -4,7 +4,7 @@ import os
 import pytest
 import test_models as TM
 import torch
-from common_extended_utils import get_ops, get_file_size_mb
+from common_extended_utils import get_file_size_mb, get_ops
 from torchvision import models
 from torchvision.models._api import get_model_weights, Weights, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface
