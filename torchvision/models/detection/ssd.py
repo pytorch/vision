@@ -40,7 +40,7 @@ class SSD300_VGG16_Weights(WeightsEnum):
                 }
             },
             "_ops": 34.858,
-            "_weight_size": 135.988,
+            "_file_size": 135.988,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )

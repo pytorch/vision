@@ -663,7 +663,7 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
                 }
             },
             "_ops": 128.207,
-            "_weight_size": 123.608,
+            "_file_size": 123.608,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )

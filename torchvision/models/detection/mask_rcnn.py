@@ -371,7 +371,7 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
                 }
             },
             "_ops": 134.38,
-            "_weight_size": 169.84,
+            "_file_size": 169.84,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
@@ -393,7 +393,7 @@ class MaskRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
                 }
             },
             "_ops": 333.577,
-            "_weight_size": 177.219,
+            "_file_size": 177.219,
             "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )

@@ -324,7 +324,7 @@ class ResNet18_Weights(WeightsEnum):
                 }
             },
             "_ops": 1.814,
-            "_weight_size": 44.661,
+            "_file_size": 44.661,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
@@ -346,7 +346,7 @@ class ResNet34_Weights(WeightsEnum):
                 }
             },
             "_ops": 3.664,
-            "_weight_size": 83.275,
+            "_file_size": 83.275,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
@@ -368,7 +368,7 @@ class ResNet50_Weights(WeightsEnum):
                 }
             },
             "_ops": 4.089,
-            "_weight_size": 97.781,
+            "_file_size": 97.781,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
@@ -386,7 +386,7 @@ class ResNet50_Weights(WeightsEnum):
                 }
             },
             "_ops": 4.089,
-            "_weight_size": 97.79,
+            "_file_size": 97.79,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -411,7 +411,7 @@ class ResNet101_Weights(WeightsEnum):
                 }
             },
             "_ops": 7.801,
-            "_weight_size": 170.511,
+            "_file_size": 170.511,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
@@ -429,7 +429,7 @@ class ResNet101_Weights(WeightsEnum):
                 }
             },
             "_ops": 7.801,
-            "_weight_size": 170.53,
+            "_file_size": 170.53,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -454,7 +454,7 @@ class ResNet152_Weights(WeightsEnum):
                 }
             },
             "_ops": 11.514,
-            "_weight_size": 230.434,
+            "_file_size": 230.434,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
@@ -472,7 +472,7 @@ class ResNet152_Weights(WeightsEnum):
                 }
             },
             "_ops": 11.514,
-            "_weight_size": 230.474,
+            "_file_size": 230.474,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -497,7 +497,7 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
                 }
             },
             "_ops": 4.23,
-            "_weight_size": 95.789,
+            "_file_size": 95.789,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
@@ -515,7 +515,7 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
                 }
             },
             "_ops": 4.23,
-            "_weight_size": 95.833,
+            "_file_size": 95.833,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -540,7 +540,7 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
                 }
             },
             "_ops": 16.414,
-            "_weight_size": 339.586,
+            "_file_size": 339.586,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
@@ -558,7 +558,7 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
                 }
             },
             "_ops": 16.414,
-            "_weight_size": 339.673,
+            "_file_size": 339.673,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -583,7 +583,7 @@ class ResNeXt101_64X4D_Weights(WeightsEnum):
                 }
             },
             "_ops": 15.46,
-            "_weight_size": 319.318,
+            "_file_size": 319.318,
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -608,7 +608,7 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
                 }
             },
             "_ops": 11.398,
-            "_weight_size": 131.82,
+            "_file_size": 131.82,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
@@ -626,7 +626,7 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
                 }
             },
             "_ops": 11.398,
-            "_weight_size": 263.124,
+            "_file_size": 263.124,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -651,7 +651,7 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
                 }
             },
             "_ops": 22.753,
-            "_weight_size": 242.896,
+            "_file_size": 242.896,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
@@ -669,7 +669,7 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
                 }
             },
             "_ops": 22.753,
-            "_weight_size": 484.747,
+            "_file_size": 484.747,
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
