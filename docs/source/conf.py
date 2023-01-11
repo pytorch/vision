@@ -363,12 +363,11 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                     v_sample = ", ".join(v[:max_visible])
                     v = f"{v_sample}, ... ({len(v)-max_visible} omitted)" if len(v) > max_visible else v_sample
                 elif k == "_ops":
-                    if obj.__name__.endswith("_QuantizedWeights"):
-                        v = f"{v} giga instructions per sec"
-                    else:
-                        v = f"{v} giga floating-point operations per sec"
-                elif k == "_weight_size":
-                    v = f"{v} MB (file size)"
+                    v = f"{v:.2f}"
+                    k = "GIPS" if obj.__name__.endswith("_QuantizedWeights") else "GFLOPS"
+                elif k == "_file_size":
+                    k = "File size"
+                    v = f"{v:.1f} MB"
 
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
@@ -396,9 +395,7 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
     ops_name = "GIPS" if "QuantizedWeights" in weights_endswith else "GFLOPS"
 
     metrics_keys, metrics_names = zip(*metrics)
-    column_names = (
-        ["Weight"] + list(metrics_names) + ["Params"] + [ops_name, "Size (MB)", "Recipe"]
-    )  # Final column order
+    column_names = ["Weight"] + list(metrics_names) + ["Params"] + [ops_name, "Recipe"]  # Final column order
     column_names = [f"**{name}**" for name in column_names]  # Add bold
 
     content = []
@@ -407,14 +404,13 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
             f":class:`{w} <{type(w).__name__}>`",
             *(w.meta["_metrics"][dataset][metric] for metric in metrics_keys),
             f"{w.meta['num_params']/1e6:.1f}M",
-            f"{w.meta['_ops']:.3f}",
-            f"{round(w.meta['_weight_size'], 1):.1f}",
+            f"{w.meta['_ops']:.2f}",
             f"`link <{w.meta['recipe']}>`__",
         ]
 
         content.append(row)
 
-    column_widths = ["110"] + ["18"] * len(metrics_names) + ["18"] * 3 + ["10"]
+    column_widths = ["110"] + ["18"] * len(metrics_names) + ["18"] * 2 + ["10"]
     widths_table = " ".join(column_widths)
 
     table = tabulate(content, headers=column_names, tablefmt="rst")

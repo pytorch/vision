@@ -128,7 +128,7 @@ class VGG11_Weights(WeightsEnum):
                 }
             },
             "_ops": 7.609,
-            "_weight_size": 506.84,
+            "_file_size": 506.84,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -148,7 +148,7 @@ class VGG11_BN_Weights(WeightsEnum):
                 }
             },
             "_ops": 7.609,
-            "_weight_size": 506.881,
+            "_file_size": 506.881,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -168,7 +168,7 @@ class VGG13_Weights(WeightsEnum):
                 }
             },
             "_ops": 11.308,
-            "_weight_size": 507.545,
+            "_file_size": 507.545,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -188,7 +188,7 @@ class VGG13_BN_Weights(WeightsEnum):
                 }
             },
             "_ops": 11.308,
-            "_weight_size": 507.59,
+            "_file_size": 507.59,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -208,7 +208,7 @@ class VGG16_Weights(WeightsEnum):
                 }
             },
             "_ops": 15.47,
-            "_weight_size": 527.796,
+            "_file_size": 527.796,
         },
     )
     IMAGENET1K_FEATURES = Weights(
@@ -232,7 +232,7 @@ class VGG16_Weights(WeightsEnum):
                 }
             },
             "_ops": 15.47,
-            "_weight_size": 527.802,
+            "_file_size": 527.802,
             "_docs": """
                 These weights can't be used for classification because they are missing values in the `classifier`
                 module. Only the `features` module has valid values and can be used for feature extraction. The weights
@@ -257,7 +257,7 @@ class VGG16_BN_Weights(WeightsEnum):
                 }
             },
             "_ops": 15.47,
-            "_weight_size": 527.866,
+            "_file_size": 527.866,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -277,7 +277,7 @@ class VGG19_Weights(WeightsEnum):
                 }
             },
             "_ops": 19.632,
-            "_weight_size": 548.051,
+            "_file_size": 548.051,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -297,7 +297,7 @@ class VGG19_BN_Weights(WeightsEnum):
                 }
             },
             "_ops": 19.632,
-            "_weight_size": 548.143,
+            "_file_size": 548.143,
         },
     )
     DEFAULT = IMAGENET1K_V1
