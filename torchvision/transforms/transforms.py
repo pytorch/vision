@@ -967,7 +967,7 @@ class RandomResizedCrop(torch.nn.Module):
         format_string = self.__class__.__name__ + f"(size={self.size}"
         format_string += f", scale={tuple(round(s, 4) for s in self.scale)}"
         format_string += f", ratio={tuple(round(r, 4) for r in self.ratio)}"
-        format_string += f", interpolation={interpolate_str})"
+        format_string += f", interpolation={interpolate_str}"
         format_string += f", antialias={self.antialias})"
         return format_string
 
@@ -2123,7 +2123,7 @@ class ElasticTransform(torch.nn.Module):
     def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
-            img (PIL Image or Tensor): Image to be transformed.
+            tensor (PIL Image or Tensor): Image to be transformed.
 
         Returns:
             PIL Image or Tensor: Transformed image.

@@ -585,8 +585,9 @@ class TestNMS:
     def _reference_nms(self, boxes, scores, iou_threshold):
         """
         Args:
-            box_scores (N, 5): boxes in corner-form and probabilities.
-            iou_threshold: intersection over union threshold.
+            boxes: boxes in corner-form
+            scores: probabilities
+            iou_threshold: intersection over union threshold
         Returns:
              picked: a list of indexes of the kept boxes
         """
@@ -1554,13 +1555,7 @@ class TestFocalLoss:
         torch.random.manual_seed(seed)
         inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
         focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
-        if device == "cpu":
-            scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
-        else:
-            with torch.jit.fuser("fuser2"):
-                # Use fuser2 to prevent a bug on fuser: https://github.com/pytorch/pytorch/issues/75476
-                # We may remove this condition once the bug is resolved
-                scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
 
         tol = 1e-3 if dtype is torch.half else 1e-5
         torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)

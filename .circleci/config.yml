@@ -958,11 +958,6 @@ jobs:
     machine:
       image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.small
-    environment:
-      PYTHON_VERSION: << parameters.python_version >>
-      PYTORCH_VERSION: << parameters.pytorch_version >>
-      UNICODE_ABI: << parameters.unicode_abi >>
-      CU_VERSION: << parameters.cu_version >>
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -986,7 +981,7 @@ jobs:
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
             sh conda.sh -b
             source $HOME/miniconda3/bin/activate
-            conda install -yq conda-build cmake
+            conda install -yq conda-build cmake python=<< parameters.python_version >>
             packaging/build_cmake.sh
 
   cmake_windows_cpu:
@@ -1121,6 +1116,12 @@ workflows:
           python_version: '3.7'
           wheel_docker_image: pytorch/manylinux-cuda117
       - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          cu_version: cu118
+          name: binary_linux_wheel_py3.7_cu118
+          python_version: '3.7'
+          wheel_docker_image: pytorch/manylinux-cuda118
+      - binary_linux_wheel:
           cu_version: rocm5.2
           name: binary_linux_wheel_py3.7_rocm5.2
           python_version: '3.7'
@@ -1158,6 +1159,15 @@ workflows:
           name: binary_win_wheel_py3.7_cu117
           python_version: '3.7'
       - binary_win_wheel:
+          cu_version: cu118
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_wheel_py3.7_cu118
+          python_version: '3.7'
+      - binary_win_wheel:
           cu_version: cpu
           filters:
             branches:
@@ -1183,6 +1193,15 @@ workflows:
             tags:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_wheel_py3.8_cu117
+          python_version: '3.8'
+      - binary_win_wheel:
+          cu_version: cu118
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_wheel_py3.8_cu118
           python_version: '3.8'
       - binary_win_wheel:
           cu_version: cpu
@@ -1212,6 +1231,15 @@ workflows:
           name: binary_win_wheel_py3.9_cu117
           python_version: '3.9'
       - binary_win_wheel:
+          cu_version: cu118
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_wheel_py3.9_cu118
+          python_version: '3.9'
+      - binary_win_wheel:
           cu_version: cpu
           name: binary_win_wheel_py3.10_cpu
           python_version: '3.10'
@@ -1226,7 +1254,16 @@ workflows:
           python_version: '3.10'
       - binary_win_wheel:
           cu_version: cu117
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_wheel_py3.10_cu117
+          python_version: '3.10'
+      - binary_win_wheel:
+          cu_version: cu118
+          name: binary_win_wheel_py3.10_cu118
           python_version: '3.10'
       - binary_win_conda:
           cu_version: cpu
@@ -1256,6 +1293,15 @@ workflows:
           name: binary_win_conda_py3.7_cu117
           python_version: '3.7'
       - binary_win_conda:
+          cu_version: cu118
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_conda_py3.7_cu118
+          python_version: '3.7'
+      - binary_win_conda:
           cu_version: cpu
           filters:
             branches:
@@ -1281,6 +1327,15 @@ workflows:
             tags:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_conda_py3.8_cu117
+          python_version: '3.8'
+      - binary_win_conda:
+          cu_version: cu118
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_conda_py3.8_cu118
           python_version: '3.8'
       - binary_win_conda:
           cu_version: cpu
@@ -1310,6 +1365,15 @@ workflows:
           name: binary_win_conda_py3.9_cu117
           python_version: '3.9'
       - binary_win_conda:
+          cu_version: cu118
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_conda_py3.9_cu118
+          python_version: '3.9'
+      - binary_win_conda:
           cu_version: cpu
           name: binary_win_conda_py3.10_cpu
           python_version: '3.10'
@@ -1324,7 +1388,16 @@ workflows:
           python_version: '3.10'
       - binary_win_conda:
           cu_version: cu117
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_conda_py3.10_cu117
+          python_version: '3.10'
+      - binary_win_conda:
+          cu_version: cu118
+          name: binary_win_conda_py3.10_cu118
           python_version: '3.10'
       - build_docs:
           filters:
@@ -1559,6 +1632,17 @@ workflows:
           python_version: '3.7'
           wheel_docker_image: pytorch/manylinux-cuda117
       - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.7_cu118
+          python_version: '3.7'
+          wheel_docker_image: pytorch/manylinux-cuda118
+      - binary_linux_wheel:
           cu_version: rocm5.2
           filters:
             branches:
@@ -1639,6 +1723,26 @@ workflows:
           - nightly_binary_win_wheel_py3.7_cu117
           subfolder: cu117/
       - binary_win_wheel:
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.7_cu118
+          python_version: '3.7'
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.7_cu118_upload
+          requires:
+          - nightly_binary_win_wheel_py3.7_cu118
+          subfolder: cu118/
+      - binary_win_wheel:
           cu_version: cpu
           filters:
             branches:
@@ -1698,6 +1802,26 @@ workflows:
           requires:
           - nightly_binary_win_wheel_py3.8_cu117
           subfolder: cu117/
+      - binary_win_wheel:
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.8_cu118
+          python_version: '3.8'
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.8_cu118_upload
+          requires:
+          - nightly_binary_win_wheel_py3.8_cu118
+          subfolder: cu118/
       - binary_win_wheel:
           cu_version: cpu
           filters:
@@ -1759,6 +1883,26 @@ workflows:
           - nightly_binary_win_wheel_py3.9_cu117
           subfolder: cu117/
       - binary_win_wheel:
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.9_cu118
+          python_version: '3.9'
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.9_cu118_upload
+          requires:
+          - nightly_binary_win_wheel_py3.9_cu118
+          subfolder: cu118/
+      - binary_win_wheel:
           cu_version: cpu
           filters:
             branches:
@@ -1818,6 +1962,26 @@ workflows:
           requires:
           - nightly_binary_win_wheel_py3.10_cu117
           subfolder: cu117/
+      - binary_win_wheel:
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.10_cu118
+          python_version: '3.10'
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.10_cu118_upload
+          requires:
+          - nightly_binary_win_wheel_py3.10_cu118
+          subfolder: cu118/
       - binary_win_conda:
           cu_version: cpu
           filters:
@@ -1876,6 +2040,25 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.7_cu117
       - binary_win_conda:
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.7_cu118
+          python_version: '3.7'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.7_cu118_upload
+          requires:
+          - nightly_binary_win_conda_py3.7_cu118
+      - binary_win_conda:
           cu_version: cpu
           filters:
             branches:
@@ -1932,6 +2115,25 @@ workflows:
           name: nightly_binary_win_conda_py3.8_cu117_upload
           requires:
           - nightly_binary_win_conda_py3.8_cu117
+      - binary_win_conda:
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.8_cu118
+          python_version: '3.8'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.8_cu118_upload
+          requires:
+          - nightly_binary_win_conda_py3.8_cu118
       - binary_win_conda:
           cu_version: cpu
           filters:
@@ -1990,6 +2192,25 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.9_cu117
       - binary_win_conda:
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.9_cu118
+          python_version: '3.9'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.9_cu118_upload
+          requires:
+          - nightly_binary_win_conda_py3.9_cu118
+      - binary_win_conda:
           cu_version: cpu
           filters:
             branches:
@@ -2046,6 +2267,25 @@ workflows:
           name: nightly_binary_win_conda_py3.10_cu117_upload
           requires:
           - nightly_binary_win_conda_py3.10_cu117
+      - binary_win_conda:
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.10_cu118
+          python_version: '3.10'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.10_cu118_upload
+          requires:
+          - nightly_binary_win_conda_py3.10_cu118
   docker_build:
     triggers:
       - schedule:
