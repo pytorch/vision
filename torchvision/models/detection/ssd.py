@@ -169,10 +169,10 @@ class SSD(nn.Module):
             a classification and regression module.
         score_thresh (float): Score threshold used for postprocessing the detections.
         nms_thresh (float): NMS threshold used for postprocessing the detections.
-        detections_per_img (int): Number of the best detections to keep after NMS.
+        detections_per_img (int): Number of best detections to keep after NMS.
         iou_thresh (float): minimum IoU between the anchor and the GT box so that they can be
             considered as positive during training.
-        topk_candidates (int): Number of the best detections to keep before NMS.
+        topk_candidates (int): Number of best detections to keep before NMS.
         positive_fraction (float): a number between 0 and 1 which indicates the proportion of positive
             proposals used during the training of the classification head. It is used to estimate the negative to
             positive ratio.

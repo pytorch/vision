@@ -365,12 +365,12 @@ class RetinaNet(nn.Module):
             Defaults to a module containing a classification and regression module.
         score_thresh (float): Score threshold used for postprocessing the detections.
         nms_thresh (float): NMS threshold used for postprocessing the detections.
-        detections_per_img (int): Number of the best detections to keep after NMS.
+        detections_per_img (int): Number of best detections to keep after NMS.
         fg_iou_thresh (float): minimum IoU between the anchor and the GT box so that they can be
             considered as positive during training.
         bg_iou_thresh (float): maximum IoU between the anchor and the GT box so that they can be
             considered as negative during training.
-        topk_candidates (int): Number of the best detections to keep before NMS.
+        topk_candidates (int): Number of best detections to keep before NMS.
 
     Example:
 

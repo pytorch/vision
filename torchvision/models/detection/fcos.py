@@ -316,8 +316,8 @@ class FCOS(nn.Module):
             within which all anchor points are labeled positive.
         score_thresh (float): Score threshold used for postprocessing the detections.
         nms_thresh (float): NMS threshold used for postprocessing the detections.
-        detections_per_img (int): Number of the best detections to keep after NMS.
-        topk_candidates (int): Number of the best detections to keep before NMS.
+        detections_per_img (int): Number of best detections to keep after NMS.
+        topk_candidates (int): Number of best detections to keep before NMS.
 
     Example:
 
