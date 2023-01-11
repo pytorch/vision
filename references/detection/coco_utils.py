@@ -116,7 +116,7 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
         # if all boxes have close to zero area, there is no annotation
         if _has_only_empty_bbox(anno):
             return False
-        # keypoints task have a slight different critera for considering
+        # keypoints task have a slight different criteria for considering
         # if an annotation is valid
         if "keypoints" not in anno[0]:
             return True

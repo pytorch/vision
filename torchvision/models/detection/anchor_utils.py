@@ -145,7 +145,7 @@ class DefaultBoxGenerator(nn.Module):
             of the scales of each feature map. It is used only if the ``scales`` parameter is not provided.
         scales (List[float]], optional): The scales of the default boxes. If not provided it will be estimated using
             the ``min_ratio`` and ``max_ratio`` parameters.
-        steps (List[int]], optional): It's a hyper-parameter that affects the tiling of defalt boxes. If not provided
+        steps (List[int]], optional): It's a hyper-parameter that affects the tiling of default boxes. If not provided
             it will be estimated from the data.
         clip (bool): Whether the standardized values of default boxes should be clipped between 0 and 1. The clipping
             is applied while the boxes are encoded in format ``(cx, cy, w, h)``.

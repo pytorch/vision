@@ -137,7 +137,7 @@ def test_all_configs(test):
 
     .. note::
 
-        This will try to remove duplicate configurations. During this process it will not not preserve a potential
+        This will try to remove duplicate configurations. During this process it will not preserve a potential
         ordering of the configurations or an inner ordering of a configuration.
     """
 
@@ -146,7 +146,7 @@ def test_all_configs(test):
             return [dict(config_) for config_ in {tuple(sorted(config.items())) for config in configs}]
         except TypeError:
             # A TypeError will be raised if a value of any config is not hashable, e.g. a list. In that case duplicate
-            # removal would be a lot more elaborate and we simply bail out.
+            # removal would be a lot more elaborate, and we simply bail out.
             return configs
 
     @functools.wraps(test)
@@ -297,7 +297,7 @@ class DatasetTestCase(unittest.TestCase):
         .. note::
 
             The default behavior is only valid if the dataset to be tested has ``root`` as the only required parameter.
-            Otherwise you need to overwrite this method.
+            Otherwise, you need to overwrite this method.
 
         Args:
             tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
@@ -604,7 +604,7 @@ class ImageDatasetTestCase(DatasetTestCase):
             patch_checks=patch_checks,
             **kwargs,
         ) as (dataset, info):
-            # PIL.Image.open() only loads the image meta data upfront and keeps the file open until the first access
+            # PIL.Image.open() only loads the image metadata upfront and keeps the file open until the first access
             # to the pixel data occurs. Trying to delete such a file results in an PermissionError on Windows. Thus, we
             # force-load opened images.
             # This problem only occurs during testing since some tests, e.g. DatasetTestCase.test_feature_types open an
@@ -786,7 +786,7 @@ def create_video_file(
     fps: float = 25,
     **kwargs: Any,
 ) -> pathlib.Path:
-    """Create an video file from random data.
+    """Create a video file from random data.
 
     Args:
         root (Union[str, pathlib.Path]): Root directory the video file will be placed in.

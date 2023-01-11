@@ -88,7 +88,7 @@ def _round_to_multiple_of(val: float, divisor: int, round_up_bias: float = 0.9) 
 
 
 def _get_depths(alpha: float) -> List[int]:
-    """Scales tensor depths as in reference MobileNet code, prefers rouding up
+    """Scales tensor depths as in reference MobileNet code, prefers rounding up
     rather than down."""
     depths = [32, 16, 24, 40, 80, 96, 192, 320]
     return [_round_to_multiple_of(depth * alpha, 8) for depth in depths]
