@@ -227,13 +227,11 @@ class TestDatasetsUtils:
         ],
     )
     def test_flip_byte_order(self, dtype, actual_hex, expected_hex):
-        from torchvision.datasets.mnist import _flip_byte_order
-
         def to_tensor(hex):
             return torch.frombuffer(bytes.fromhex(hex), dtype=dtype)
 
         assert_equal(
-            _flip_byte_order(to_tensor(actual_hex)),
+            utils._flip_byte_order(to_tensor(actual_hex)),
             to_tensor(expected_hex),
         )
 
