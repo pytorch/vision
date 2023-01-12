@@ -503,6 +503,12 @@ SN3_PASCALVINCENT_TYPEMAP = {
 }
 
 
+def _flip_byte_order(t: torch.Tensor) -> torch.Tensor:
+    return (
+        t.contiguous().view(torch.uint8).view(*t.shape, t.element_size()).flip(-1).view(*t.shape[:-1], -1).view(t.dtype)
+    )
+
+
 def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tensor:
     """Read a SN3 file in "Pascal Vincent" format (Lush file 'libidx/idx-io.lsh').
     Argument may be a filename, compressed filename, or file object.
@@ -523,16 +529,8 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
 
     # The MNIST format uses the big endian byte order, while `torch.frombuffer` uses whatever the system uses. In case
     # that is little endian and the dtype has more than one byte, we need to flip them.
-    num_bytes_per_value = parsed.element_size()
-    if sys.byteorder == "little" and num_bytes_per_value > 1:
-        parsed = (
-            parsed.contiguous()
-            .view(torch.uint8)
-            .view(parsed.numel(), num_bytes_per_value)
-            .flip(1)
-            .flatten()
-            .view(torch_type)
-        )
+    if sys.byteorder == "little" and parsed.element_size() > 1:
+        parsed = _flip_byte_order(parsed)
 
     assert parsed.shape[0] == np.prod(s) or not strict
     return parsed.view(*s)
