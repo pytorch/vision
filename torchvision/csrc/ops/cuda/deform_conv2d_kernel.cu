@@ -300,11 +300,7 @@ void deformable_im2col(
               data_col.data_ptr<scalar_t>());
         }));
   }
-
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) {
-    printf("error in deformable_im2col: %s\n", cudaGetErrorString(err));
-  }
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 int get_greatest_divisor_below_bound(int n, int bound) {
@@ -483,11 +479,7 @@ void compute_grad_input(
               grad_im.data_ptr<scalar_t>());
         }));
   }
-
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) {
-    printf("error in compute_grad_input: %s\n", cudaGetErrorString(err));
-  }
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 template <typename scalar_t, typename index_t>
@@ -736,12 +728,7 @@ void compute_grad_offset_and_mask(
               grad_mask.data_ptr<scalar_t>());
         }));
   }
-
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) {
-    printf(
-        "error in compute_grad_offset_and_mask: %s\n", cudaGetErrorString(err));
-  }
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
