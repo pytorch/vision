@@ -38,7 +38,7 @@ class TestModelsDetectionUtils:
     def test_resnet_fpn_backbone_frozen_layers(self, train_layers, exp_froz_params):
         # we know how many initial layers and parameters of the network should
         # be frozen for each trainable_backbone_layers parameter value
-        # i.e all 53 params are frozen if trainable_backbone_layers=0
+        # i.e. all 53 params are frozen if trainable_backbone_layers=0
         # ad first 24 params are frozen if trainable_backbone_layers=2
         model = backbone_utils.resnet_fpn_backbone("resnet50", weights=None, trainable_layers=train_layers)
         # boolean list that is true if the param at that index is frozen

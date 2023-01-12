@@ -176,7 +176,7 @@ class ResNet18_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 1.814,
-            "_weight_size": 11.238,
+            "_file_size": 11.238,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -197,7 +197,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 4.089,
-            "_weight_size": 24.759,
+            "_file_size": 24.759,
         },
     )
     IMAGENET1K_FBGEMM_V2 = Weights(
@@ -214,7 +214,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 4.089,
-            "_weight_size": 24.953,
+            "_file_size": 24.953,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V2
@@ -235,7 +235,7 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 16.414,
-            "_weight_size": 86.034,
+            "_file_size": 86.034,
         },
     )
     IMAGENET1K_FBGEMM_V2 = Weights(
@@ -252,7 +252,7 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 16.414,
-            "_weight_size": 86.645,
+            "_file_size": 86.645,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V2
@@ -274,7 +274,7 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 15.46,
-            "_weight_size": 81.556,
+            "_file_size": 81.556,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1

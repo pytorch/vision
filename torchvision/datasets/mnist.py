@@ -366,7 +366,7 @@ class QMNIST(MNIST):
             that takes in the target and transforms it.
         train (bool,optional,compatibility): When argument 'what' is
             not specified, this boolean decides whether to load the
-            training set ot the testing set.  Default: True.
+            training set or the testing set.  Default: True.
     """
 
     subsets = {"train": "train", "test": "test", "test10k": "test", "test50k": "test", "nist": "nist"}
