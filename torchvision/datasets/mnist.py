@@ -519,13 +519,20 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
     torch_type = SN3_PASCALVINCENT_TYPEMAP[ty]
     s = [get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd)]
 
-    num_bytes_per_value = torch.iinfo(torch_type).bits // 8
-    # The MNIST format uses the big endian byte order. If the system uses little endian byte order by default,
-    # we need to reverse the bytes before we can read them with torch.frombuffer().
-    needs_byte_reversal = sys.byteorder == "little" and num_bytes_per_value > 1
     parsed = torch.frombuffer(bytearray(data), dtype=torch_type, offset=(4 * (nd + 1)))
-    if needs_byte_reversal:
-        parsed = parsed.flip(0)
+
+    # The MNIST format uses the big endian byte order, while `torch.frombuffer` uses whatever the system uses. In case
+    # that is little endian and the dtype has more than one byte, we need to flip them.
+    num_bytes_per_value = parsed.element_size()
+    if sys.byteorder == "little" and num_bytes_per_value > 1:
+        parsed = (
+            parsed.contiguous()
+            .view(torch.uint8)
+            .view(parsed.numel(), num_bytes_per_value)
+            .flip(1)
+            .flatten()
+            .view(torch_type)
+        )
 
     assert parsed.shape[0] == np.prod(s) or not strict
     return parsed.view(*s)
