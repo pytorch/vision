@@ -21,7 +21,6 @@ import PIL
 import pytest
 import torch
 import torch.nn.functional as F
-from common_utils import assert_equal
 from torchvision import datasets
 
 
@@ -1493,27 +1492,6 @@ class QMNISTTestCase(MNISTTestCase):
             # Since the split 'test50k' selects all images beginning from the index 10000, we subtract the number of
             # created examples by this.
             assert len(dataset) == info["num_examples"] - 10000
-
-
-@pytest.mark.parametrize(
-    ("dtype", "actual_hex", "expected_hex"),
-    [
-        (torch.uint8, "01 23 45 67 89 AB CD EF", "01 23 45 67 89 AB CD EF"),
-        (torch.float16, "01 23 45 67 89 AB CD EF", "23 01 67 45 AB 89 EF CD"),
-        (torch.int32, "01 23 45 67 89 AB CD EF", "67 45 23 01 EF CD AB 89"),
-        (torch.float64, "01 23 45 67 89 AB CD EF", "EF CD AB 89 67 45 23 01"),
-    ],
-)
-def test_flip_byte_order(dtype, actual_hex, expected_hex):
-    from torchvision.datasets.mnist import _flip_byte_order
-
-    def to_tensor(hex):
-        return torch.frombuffer(bytes.fromhex(hex), dtype=dtype)
-
-    assert_equal(
-        _flip_byte_order(to_tensor(actual_hex)),
-        to_tensor(expected_hex),
-    )
 
 
 class MovingMNISTTestCase(datasets_utils.DatasetTestCase):

@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from .utils import check_integrity, download_and_extract_archive, extract_archive, verify_str_arg
+from .utils import _flip_byte_order, check_integrity, download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -501,12 +501,6 @@ SN3_PASCALVINCENT_TYPEMAP = {
     13: torch.float32,
     14: torch.float64,
 }
-
-
-def _flip_byte_order(t: torch.Tensor) -> torch.Tensor:
-    return (
-        t.contiguous().view(torch.uint8).view(*t.shape, t.element_size()).flip(-1).view(*t.shape[:-1], -1).view(t.dtype)
-    )
 
 
 def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tensor:
