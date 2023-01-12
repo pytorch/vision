@@ -123,6 +123,7 @@ class Datapoint(torch.Tensor):
         return f"{super().__repr__()[:-1]}, {extra_repr})"
 
     # What cyclic import is this solving? Can it be avoided somehow?
+    # EDIT: is this because the dispatchers call the methods which in turn call back into the functional. namespace?
     @property
     def _F(self) -> ModuleType:
         # This implements a lazy import of the functional to get around the cyclic import. This import is deferred

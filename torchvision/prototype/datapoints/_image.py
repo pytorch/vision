@@ -58,6 +58,7 @@ def _from_tensor_shape(shape: List[int]) -> ColorSpace:
 
 
 class Image(Datapoint):
+    # Where is this used / changes apart from in ConvertColorSpace()?
     color_space: ColorSpace
 
     @classmethod

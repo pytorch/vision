@@ -38,6 +38,12 @@ def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
     return c, h, w
 
 
+# Are we deprecating get_image_size()?
+# A: yes, it's currently reporting W,H
+#
+# Also this Seems like a subset of query_chw():
+# - can we just have query_chw()?
+# - if not, can we share code between the 2?
 def query_spatial_size(flat_inputs: List[Any]) -> Tuple[int, int]:
     sizes = {
         tuple(get_spatial_size(inpt))
@@ -50,6 +56,10 @@ def query_spatial_size(flat_inputs: List[Any]) -> Tuple[int, int]:
     if not sizes:
         raise TypeError("No image, video, mask or bounding box was found in the sample")
     elif len(sizes) > 1:
+        # (This comment applies to the other query_() utils):
+        # Does this happen?
+        # What can go terribly wrong if we don't raise an error?
+        # Should we just document that this returns the size of the first inpt to avoid an error?
         raise ValueError(f"Found multiple HxW dimensions in the sample: {sequence_to_str(sorted(sizes))}")
     h, w = sizes.pop()
     return h, w
@@ -64,6 +74,7 @@ def check_type(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], bool
     return False
 
 
+# Are these public because they are needed for users to implement custom transforms?
 def has_any(flat_inputs: List[Any], *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
     for inpt in flat_inputs:
         if check_type(inpt, types_or_checks):

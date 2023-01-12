@@ -14,6 +14,8 @@ from ._transform import _RandomApplyTransform
 from .utils import is_simple_tensor, query_chw
 
 
+# Considering the widespread usage of ToTensor, could this be potentially disruptive?
+# What is the cost of keeping it around as an alias for Compose(...)?
 class ToTensor(Transform):
     _transformed_types = (PIL.Image.Image, np.ndarray)
 
@@ -41,6 +43,7 @@ class Grayscale(Transform):
             f"The transform `Grayscale(num_output_channels={num_output_channels})` "
             f"is deprecated and will be removed in a future release."
         )
+        # the name seems to be ConvertColorSpace, not ConvertImageColorSpace
         if num_output_channels == 1:
             replacement_msg = (
                 "transforms.ConvertImageColorSpace(old_color_space=ColorSpace.RGB, color_space=ColorSpace.GRAY)"

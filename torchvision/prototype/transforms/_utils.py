@@ -22,7 +22,7 @@ def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size:
                 raise ValueError(f"{name} should be a sequence of floats. Got {type(element)}")
 
     if isinstance(arg, float):
-        arg = [float(arg), float(arg)]
+        arg = [float(arg), float(arg)]  # Nit: arg is already a float
     if isinstance(arg, (list, tuple)) and len(arg) == 1:
         arg = [arg[0], arg[0]]
     return arg
@@ -68,6 +68,9 @@ def _convert_fill_arg(fill: datapoints.FillType) -> datapoints.FillTypeJIT:
     return fill
 
 
+# It is fairly obscure what this does or why this is needed - perhaps a quick
+# note summarizing the "fill" situation could be useful? (maybe it exists and
+# I'm not seeing it!)
 def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillTypeJIT]:
     _check_fill_arg(fill)
 

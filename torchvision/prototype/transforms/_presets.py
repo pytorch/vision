@@ -14,6 +14,9 @@ from . import functional as F, InterpolationMode
 __all__ = ["StereoMatching"]
 
 
+# I assume this file is actually not part of the transformsV2 work - it's just
+# that StereoMatching is still protytpe?
+
 class StereoMatching(torch.nn.Module):
     def __init__(
         self,

@@ -62,6 +62,9 @@ class ToImagePIL(Transform):
         return F.to_image_pil(inpt, mode=self.mode)
 
 
+# What is the "new naming scheme"?
+# I was going to point out that "ToTensorImage" and "ToPILImage" would look more
+# familiar
 # We changed the name to align them with the new naming scheme. Still, `ToPILImage` is
 # prevalent and well understood. Thus, we just alias it without deprecating the old name.
 ToPILImage = ToImagePIL

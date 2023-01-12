@@ -58,6 +58,7 @@ class Label(_LabelBase):
         return tree_map(lambda idx: self.categories[idx], self.tolist())
 
 
+# Remind me where this is used?
 class OneHotLabel(_LabelBase):
     def __new__(
         cls,
