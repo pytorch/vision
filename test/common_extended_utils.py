@@ -296,7 +296,7 @@ def get_ops(model: torch.nn.Module, weight: Weights, height=512, width=512):
     return round(flops, 3)
 
 
-def get_weight_size_mb(weight):
+def get_file_size_mb(weight):
     weights_path = os.path.join(os.getenv("HOME"), ".cache/torch/hub/checkpoints", weight.url.split("/")[-1])
     weights_size_mb = os.path.getsize(weights_path) / 1024 / 1024
 

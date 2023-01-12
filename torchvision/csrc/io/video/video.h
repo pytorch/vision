@@ -42,8 +42,8 @@ struct Video : torch::CustomClassHolder {
  private:
   bool succeeded = false; // decoder init flag
   // seekTS and doSeek act as a flag - if it's not set, next function simply
-  // retruns the next frame. If it's set, we look at the global seek
-  // time in comination with any_frame settings
+  // returns the next frame. If it's set, we look at the global seek
+  // time in combination with any_frame settings
   double seekTS = -1;
 
   bool initialized = false;

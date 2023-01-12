@@ -81,7 +81,7 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 0.301,
-            "_weight_size": 3.423,
+            "_file_size": 3.423,
             "_docs": """
                 These weights were produced by doing Quantization Aware Training (eager mode) on top of the unquantized
                 weights listed below.

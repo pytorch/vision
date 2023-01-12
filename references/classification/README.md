@@ -298,7 +298,7 @@ Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `re
 
 ### Quantized ShuffleNet V2
 
-Here are commands that we use to quantized the `shufflenet_v2_x1_5` and `shufflenet_v2_x2_0` models.
+Here are commands that we use to quantize the `shufflenet_v2_x1_5` and `shufflenet_v2_x2_0` models.
 ```
 # For shufflenet_v2_x1_5
 python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
