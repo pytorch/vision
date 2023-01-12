@@ -29,7 +29,7 @@ them using JIT compilation.
 
 Prior to v0.8.0, transforms in torchvision have traditionally been PIL-centric
 and presented multiple limitations due to that. Now, since v0.8.0, transforms
-implementations are Tensor and PIL compatible and we can achieve the following
+implementations are Tensor and PIL compatible, and we can achieve the following
 new features:
 
 - transform multi-band torch tensor images (with more than 3-4 channels)
@@ -267,7 +267,7 @@ Since the model is scripted, it can be easily dumped on disk and re-used
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.464 seconds)
+   **Total running time of the script:** ( 0 minutes  1.455 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_scripted_tensor_transforms.py:

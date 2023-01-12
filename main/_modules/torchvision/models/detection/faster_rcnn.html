@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+591b2c4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+1f7ed5d ) &#x25BC</a>
     </div>
     
 
@@ -392,9 +392,9 @@
 <span class="sd">    The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each</span>
 <span class="sd">    image, and should be in 0-1 range. Different images can have different sizes.</span>
 
-<span class="sd">    The behavior of the model changes depending if it is in training or evaluation mode.</span>
+<span class="sd">    The behavior of the model changes depending on if it is in training or evaluation mode.</span>
 
-<span class="sd">    During training, the model expects both the input tensors, as well as a targets (list of dictionary),</span>
+<span class="sd">    During training, the model expects both the input tensors and targets (list of dictionary),</span>
 <span class="sd">    containing:</span>
 <span class="sd">        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with</span>
 <span class="sd">          ``0 &lt;= x1 &lt; x2 &lt;= W`` and ``0 &lt;= y1 &lt; y2 &lt;= H``.</span>
@@ -413,7 +413,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        backbone (nn.Module): the network used to compute the features for the model.</span>
-<span class="sd">            It should contain a out_channels attribute, which indicates the number of output</span>
+<span class="sd">            It should contain an out_channels attribute, which indicates the number of output</span>
 <span class="sd">            channels that each feature map has (and it should be the same for all feature maps).</span>
 <span class="sd">            The backbone should return a single Tensor or and OrderedDict[Tensor].</span>
 <span class="sd">        num_classes (int): number of output classes of the model (including the background).</span>
@@ -473,7 +473,7 @@
 <span class="sd">        &gt;&gt;&gt; # only the features</span>
 <span class="sd">        &gt;&gt;&gt; backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features</span>
 <span class="sd">        &gt;&gt;&gt; # FasterRCNN needs to know the number of</span>
-<span class="sd">        &gt;&gt;&gt; # output channels in a backbone. For mobilenet_v2, it&#39;s 1280</span>
+<span class="sd">        &gt;&gt;&gt; # output channels in a backbone. For mobilenet_v2, it&#39;s 1280,</span>
 <span class="sd">        &gt;&gt;&gt; # so we need to add it here</span>
 <span class="sd">        &gt;&gt;&gt; backbone.out_channels = 1280</span>
 <span class="sd">        &gt;&gt;&gt;</span>
@@ -828,9 +828,9 @@
 <span class="sd">    The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each</span>
 <span class="sd">    image, and should be in ``0-1`` range. Different images can have different sizes.</span>
 
-<span class="sd">    The behavior of the model changes depending if it is in training or evaluation mode.</span>
+<span class="sd">    The behavior of the model changes depending on if it is in training or evaluation mode.</span>
 
-<span class="sd">    During training, the model expects both the input tensors, as well as a targets (list of dictionary),</span>
+<span class="sd">    During training, the model expects both the input tensors and a targets (list of dictionary),</span>
 <span class="sd">    containing:</span>
 
 <span class="sd">        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with</span>
@@ -1059,7 +1059,7 @@
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tunned for mobile use cases.</span>
+<span class="sd">    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tuned for mobile use cases.</span>
 
 <span class="sd">    .. betastatus:: detection module</span>
 

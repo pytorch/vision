@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+591b2c4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+1f7ed5d ) &#x25BC</a>
     </div>
     
 
@@ -476,10 +476,10 @@
 <span class="sd">        out_channels (int): Number of channels produced by the Convolution-Normalization-Activation block</span>
 <span class="sd">        kernel_size: (int, optional): Size of the convolving kernel. Default: 3</span>
 <span class="sd">        stride (int, optional): Stride of the convolution. Default: 1</span>
-<span class="sd">        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``</span>
+<span class="sd">        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will be calculated as ``padding = (kernel_size - 1) // 2 * dilation``</span>
 <span class="sd">        groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1</span>
-<span class="sd">        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm2d``</span>
-<span class="sd">        activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``</span>
+<span class="sd">        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer won&#39;t be used. Default: ``torch.nn.BatchNorm2d``</span>
+<span class="sd">        activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer won&#39;t be used. Default: ``torch.nn.ReLU``</span>
 <span class="sd">        dilation (int): Spacing between kernel elements. Default: 1</span>
 <span class="sd">        inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``</span>
 <span class="sd">        bias (bool, optional): Whether to use bias in the convolution layer. By default, biases are included if ``norm_layer is None``.</span>
@@ -526,10 +526,10 @@
 <span class="sd">        out_channels (int): Number of channels produced by the Convolution-Normalization-Activation block</span>
 <span class="sd">        kernel_size: (int, optional): Size of the convolving kernel. Default: 3</span>
 <span class="sd">        stride (int, optional): Stride of the convolution. Default: 1</span>
-<span class="sd">        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``</span>
+<span class="sd">        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will be calculated as ``padding = (kernel_size - 1) // 2 * dilation``</span>
 <span class="sd">        groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1</span>
-<span class="sd">        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm3d``</span>
-<span class="sd">        activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``</span>
+<span class="sd">        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer won&#39;t be used. Default: ``torch.nn.BatchNorm3d``</span>
+<span class="sd">        activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer won&#39;t be used. Default: ``torch.nn.ReLU``</span>
 <span class="sd">        dilation (int): Spacing between kernel elements. Default: 1</span>
 <span class="sd">        inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``</span>
 <span class="sd">        bias (bool, optional): Whether to use bias in the convolution layer. By default, biases are included if ``norm_layer is None``.</span>
@@ -611,8 +611,8 @@
 <span class="sd">    Args:</span>
 <span class="sd">        in_channels (int): Number of channels of the input</span>
 <span class="sd">        hidden_channels (List[int]): List of the hidden channel dimensions</span>
-<span class="sd">        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the linear layer. If ``None`` this layer wont be used. Default: ``None``</span>
-<span class="sd">        activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the linear layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``</span>
+<span class="sd">        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the linear layer. If ``None`` this layer won&#39;t be used. Default: ``None``</span>
+<span class="sd">        activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the linear layer. If ``None`` this layer won&#39;t be used. Default: ``torch.nn.ReLU``</span>
 <span class="sd">        inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``</span>
 <span class="sd">        bias (bool): Whether to use bias in the linear layer. Default ``True``</span>
 <span class="sd">        dropout (float): The probability for the dropout layer. Default: 0.0</span>

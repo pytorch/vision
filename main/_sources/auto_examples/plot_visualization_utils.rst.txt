@@ -375,7 +375,7 @@ original images:
 We can plot more than one mask per image! Remember that the model returned as
 many masks as there are classes. Let's ask the same query as above, but this
 time for *all* classes, not just the dog class: "For each pixel and each class
-C, is class C the most most likely class?"
+C, is class C the most likely class?"
 
 This one is a bit more involved, so we'll first show how to do it with a
 single image, and then we'll generalize to the batch
@@ -677,7 +677,7 @@ those masks into boolean values is to threshold them with the 0.5 probability
 .. GENERATED FROM PYTHON SOURCE LINES 319-322
 
 The model seems to have properly detected the dog, but it also confused trees
-with people. Looking more closely at the scores will help us plotting more
+with people. Looking more closely at the scores will help us plot more
 relevant masks:
 
 .. GENERATED FROM PYTHON SOURCE LINES 322-325
@@ -740,7 +740,7 @@ here, and also plot the masks of the second dog.
 .. GENERATED FROM PYTHON SOURCE LINES 345-348
 
 The two 'people' masks in the first image where not selected because they have
-a lower score than the score threshold. Similarly in the second image, the
+a lower score than the score threshold. Similarly, in the second image, the
 instance with class 15 (which corresponds to 'bench') was not selected.
 
 .. GENERATED FROM PYTHON SOURCE LINES 350-359
@@ -1066,7 +1066,7 @@ We pass the above list to the connectivity parameter to connect the keypoints.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.110 seconds)
+   **Total running time of the script:** ( 0 minutes  8.243 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_visualization_utils.py:

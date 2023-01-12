@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+591b2c4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+1f7ed5d ) &#x25BC</a>
     </div>
     
 
@@ -769,9 +769,9 @@
 <span class="sd">        split (string, optional): The dataset split of scenes, either &quot;train&quot; (default), &quot;test&quot;, or &quot;additional&quot;</span>
 <span class="sd">        use_ambient_views (boolean, optional): Whether to use different expose or lightning views when possible.</span>
 <span class="sd">            The dataset samples with equal probability between ``[im1.png, im1E.png, im1L.png]``.</span>
-<span class="sd">        calibration (string, optional): Wether or not to use the calibrated (default) or uncalibrated scenes.</span>
+<span class="sd">        calibration (string, optional): Whether or not to use the calibrated (default) or uncalibrated scenes.</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
-<span class="sd">        download (boolean, optional): Wether or not to download the dataset in the ``root`` directory.</span>
+<span class="sd">        download (boolean, optional): Whether or not to download the dataset in the ``root`` directory.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">splits</span> <span class="o">=</span> <span class="p">{</span>
@@ -1065,7 +1065,7 @@
 <div class="viewcode-block" id="FallingThingsStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FallingThingsStereo.html#torchvision.datasets.FallingThingsStereo">[docs]</a><span class="k">class</span> <span class="nc">FallingThingsStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;`FallingThings &lt;https://research.nvidia.com/publication/2018-06_falling-things-synthetic-dataset-3d-object-detection-and-pose-estimation&gt;`_ dataset.</span>
 
-<span class="sd">    The dataset is expected to have the following structre: ::</span>
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
 
 <span class="sd">        root</span>
 <span class="sd">            FallingThings</span>
@@ -1170,7 +1170,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset interface for `Scene Flow &lt;https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html&gt;`_ datasets.</span>
 <span class="sd">    This interface provides access to the `FlyingThings3D, `Monkaa` and `Driving` datasets.</span>
 
-<span class="sd">    The dataset is expected to have the following structre: ::</span>
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
 
 <span class="sd">        root</span>
 <span class="sd">            SceneFlow</span>
@@ -1376,7 +1376,7 @@
         <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">g</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">14</span><span class="p">)</span>
         <span class="c1"># reshape into (C, H, W) format</span>
         <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">disparity_map</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-        <span class="c1"># find the appropiate file paths</span>
+        <span class="c1"># find the appropriate file paths</span>
         <span class="n">occlued_mask_path</span><span class="p">,</span> <span class="n">out_of_frame_mask_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_occlussion_mask_paths</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
         <span class="c1"># occlusion masks</span>
         <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">occlued_mask_path</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span>
@@ -1403,7 +1403,7 @@
 <div class="viewcode-block" id="InStereo2k"><a class="viewcode-back" href="../../../generated/torchvision.datasets.InStereo2k.html#torchvision.datasets.InStereo2k">[docs]</a><span class="k">class</span> <span class="nc">InStereo2k</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;`InStereo2k &lt;https://github.com/YuhuaXu/StereoDataset&gt;`_ dataset.</span>
 
-<span class="sd">    The dataset is expected to have the following structre: ::</span>
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
 
 <span class="sd">        root</span>
 <span class="sd">            InStereo2k</span>
