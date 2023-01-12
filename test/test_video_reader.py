@@ -127,7 +127,7 @@ def _read_from_stream(container, start_pts, end_pts, stream, stream_name, buffer
             ascending order. We need to decode more frames even when we meet end
             pts
     """
-    # seeking in the stream is imprecise. Thus, seek to an ealier PTS by a margin
+    # seeking in the stream is imprecise. Thus, seek to an earlier PTS by a margin
     margin = 1
     seek_offset = max(start_pts - margin, 0)
 

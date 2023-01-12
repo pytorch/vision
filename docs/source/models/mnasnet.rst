@@ -11,7 +11,7 @@ Search for Mobile <https://arxiv.org/pdf/1807.11626.pdf>`__ paper.
 Model builders
 --------------
 
-The following model builders can be used to instanciate an MNASNet model.
+The following model builders can be used to instantiate an MNASNet model.
 All the model builders internally rely on the
 ``torchvision.models.mnasnet.MNASNet`` base class. Please refer to the `source
 code

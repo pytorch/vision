@@ -177,7 +177,7 @@ class Cityscapes(VisionDataset):
             index (int): Index
         Returns:
             tuple: (image, target) where target is a tuple of all target types if target_type is a list with more
-            than one item. Otherwise target is a json object if target_type="polygon", else the image segmentation.
+            than one item. Otherwise, target is a json object if target_type="polygon", else the image segmentation.
         """
 
         image = Image.open(self.images[index]).convert("RGB")
