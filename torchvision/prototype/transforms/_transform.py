@@ -35,6 +35,8 @@ class Transform(nn.Module):
 
         params = self._get_params(flat_inputs)
 
+        # TODO: right now, any tensor or datapoint passed to forward() will be transformed
+        # the rest is bypassed
         flat_outputs = [
             self._transform(inpt, params) if check_type(inpt, self._transformed_types) else inpt for inpt in flat_inputs
         ]

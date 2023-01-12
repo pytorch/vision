@@ -1,5 +1,6 @@
 from ._bounding_box import BoundingBox, BoundingBoxFormat
 from ._datapoint import FillType, FillTypeJIT, InputType, InputTypeJIT
+from ._datapoint import FillType, FillTypeJIT, InputType, InputTypeJIT  # TODO: these may not need to be public?
 from ._image import ColorSpace, Image, ImageType, ImageTypeJIT, TensorImageType, TensorImageTypeJIT
 from ._label import Label, OneHotLabel
 from ._mask import Mask
