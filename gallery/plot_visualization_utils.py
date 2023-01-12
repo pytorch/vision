@@ -188,7 +188,7 @@ show(dogs_with_masks)
 # We can plot more than one mask per image! Remember that the model returned as
 # many masks as there are classes. Let's ask the same query as above, but this
 # time for *all* classes, not just the dog class: "For each pixel and each class
-# C, is class C the most most likely class?"
+# C, is class C the most likely class?"
 #
 # This one is a bit more involved, so we'll first show how to do it with a
 # single image, and then we'll generalize to the batch
@@ -317,7 +317,7 @@ show(draw_segmentation_masks(dog1_int, dog1_bool_masks, alpha=0.9))
 
 #####################################
 # The model seems to have properly detected the dog, but it also confused trees
-# with people. Looking more closely at the scores will help us plotting more
+# with people. Looking more closely at the scores will help us plot more
 # relevant masks:
 
 print(dog1_output['scores'])
@@ -343,7 +343,7 @@ show(dogs_with_masks)
 
 #####################################
 # The two 'people' masks in the first image where not selected because they have
-# a lower score than the score threshold. Similarly in the second image, the
+# a lower score than the score threshold. Similarly, in the second image, the
 # instance with class 15 (which corresponds to 'bench') was not selected.
 
 #####################################

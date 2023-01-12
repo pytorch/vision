@@ -48,7 +48,7 @@ class PKSampler(Sampler):
 
         # Ensures there are enough classes to sample from
         if len(self.groups) < p:
-            raise ValueError("There are not enought classes to sample from")
+            raise ValueError("There are not enough classes to sample from")
 
     def __iter__(self):
         # Shuffle samples within groups

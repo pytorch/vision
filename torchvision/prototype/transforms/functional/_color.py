@@ -187,7 +187,7 @@ def adjust_sharpness_image_tensor(image: torch.Tensor, sharpness_factor: float) 
     # x+(1-r)*(y-x) = x + (1-r)*y - (1-r)*x = x*r + y*(1-r)
     view.add_(blurred_degenerate.sub_(view), alpha=(1.0 - sharpness_factor))
 
-    # The actual data of ouput have been modified by the above. We only need to clamp and cast now.
+    # The actual data of output have been modified by the above. We only need to clamp and cast now.
     output = output.clamp_(0, bound)
     if not fp:
         output = output.to(image.dtype)
@@ -236,7 +236,7 @@ def _rgb_to_hsv(image: torch.Tensor) -> torch.Tensor:
     #   + S channel has division by `maxc`, which is zero only if `maxc = minc`
     #   + H channel has division by `(maxc - minc)`.
     #
-    # Instead of overwriting NaN afterwards, we just prevent it from occuring so
+    # Instead of overwriting NaN afterwards, we just prevent it from occurring so
     # we don't need to deal with it in case we save the NaN in a buffer in
     # backprop, if it is ever supported, but it doesn't hurt to do so.
     eqc = maxc == minc

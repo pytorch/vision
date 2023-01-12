@@ -212,7 +212,7 @@ class BlockParams:
         **kwargs: Any,
     ) -> "BlockParams":
         """
-        Programatically compute all the per-block settings,
+        Programmatically compute all the per-block settings,
         given the RegNet parameters.
 
         The first step is to compute the quantized linear block parameters,

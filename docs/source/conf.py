@@ -331,7 +331,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
         ]
 
         if obj.__doc__ != "An enumeration.":
-            # We only show the custom enum doc if it was overriden. The default one from Python is "An enumeration"
+            # We only show the custom enum doc if it was overridden. The default one from Python is "An enumeration"
             lines.append("")
             lines.append(obj.__doc__)
 
