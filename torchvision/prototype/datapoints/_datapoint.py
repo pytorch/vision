@@ -15,8 +15,8 @@ FillType = Union[int, float, Sequence[int], Sequence[float], None]
 FillTypeJIT = Union[int, float, List[float], None]
 
 
-# Perhaps it's already documented somewhere, but I think it'd be useful to
-# provide a few examples of when
+# TODO: provide a few examples of when the Datapoint type is preserved vs when it's not
+# test_prototype_datapoints.py is a good starting point
 class Datapoint(torch.Tensor):
     __F: Optional[ModuleType] = None
 
@@ -95,6 +95,7 @@ class Datapoint(torch.Tensor):
 
         with DisableTorchFunctionSubclass():
             output = func(*args, **kwargs or dict())
+            # TODO: maybe we can exit the CM here?
 
             wrapper = cls._NO_WRAPPING_EXCEPTIONS.get(func)
             # Apart from `func` needing to be an exception, we also require the primary operand, i.e. `args[0]`, to be
@@ -104,10 +105,15 @@ class Datapoint(torch.Tensor):
             # `args = (torch.Tensor(), datapoints.Image())` first. Without this guard, the original `torch.Tensor` would
             # be wrapped into a `datapoints.Image`.
             if wrapper and isinstance(args[0], cls):
+                # TODO: figure out whether
+                # arbitrary_tensor.to(some_img)
+                # should be an Image or a Tensor
                 return wrapper(cls, args[0], output)  # type: ignore[no-any-return]
 
             # Does that mean that DisableTorchFunctionSubclass is ignored for `.inpace_()` functions?
             # Or maybe I'm misunderstanding what DisableTorchFunctionSubclass is supposed to do.
+            # TODO: figure out with torch core whether this is a bug or not
+
             # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
             # will retain the input type. Thus, we need to unwrap here.
             if isinstance(output, cls):
@@ -136,7 +142,7 @@ class Datapoint(torch.Tensor):
             Datapoint.__F = functional
         return Datapoint.__F
 
-    
+
     # doing some_tensor.dtype would go through __torch_function__?
     #  - is this because it is implemented as a @property method?
     #  - why do we want to bypass __torch_function__ in these case?

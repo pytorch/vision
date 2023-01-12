@@ -59,6 +59,8 @@ def _from_tensor_shape(shape: List[int]) -> ColorSpace:
 
 class Image(Datapoint):
     # Where is this used / changes apart from in ConvertColorSpace()?
+    # A: For now, this is somewhat redundant with number of channels.
+    # TODO: decide whether we want to keep it?
     color_space: ColorSpace
 
     @classmethod

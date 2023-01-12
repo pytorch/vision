@@ -249,8 +249,8 @@ def resize(
     if isinstance(inpt, torch.Tensor) and (
         torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
     ):
-        # Do I understand correctly that resize_image_tensor() will be called if we're scripting and inpt is an Image()?
-        # It seems to suggests that this dispatcher is still jit-scriptable on datapoints (and not just on tensors)?
+    # TODO: Figure out whether this cond could just be:
+    # if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         # IIUC we're calling the method on the datapoint object which in turn
