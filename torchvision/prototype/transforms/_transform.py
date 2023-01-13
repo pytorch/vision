@@ -35,8 +35,9 @@ class Transform(nn.Module):
 
         params = self._get_params(flat_inputs)
 
-        # TODO: right now, any tensor or datapoint passed to forward() will be transformed
-        # the rest is bypassed
+        # TODO: right now, any tensor or datapoint passed to forward() will be transformed.
+        # The rest is bypassed.
+        # What if there are tensor parameters that users don't want to be transformed? Is that a plausible scenario?
         flat_outputs = [
             self._transform(inpt, params) if check_type(inpt, self._transformed_types) else inpt for inpt in flat_inputs
         ]
