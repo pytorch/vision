@@ -7,7 +7,9 @@ import tarfile
 import zipfile
 
 import pytest
+import torch
 import torchvision.datasets.utils as utils
+from common_utils import assert_equal
 from torch._utils_internal import get_file_path_2
 from torchvision.datasets.folder import make_dataset
 from torchvision.datasets.utils import _COMPRESSED_FILE_OPENERS
@@ -214,6 +216,24 @@ class TestDatasetsUtils:
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
         pytest.raises(ValueError, utils.verify_str_arg, 0, ("a",), "arg")
         pytest.raises(ValueError, utils.verify_str_arg, "b", ("a",), "arg")
+
+    @pytest.mark.parametrize(
+        ("dtype", "actual_hex", "expected_hex"),
+        [
+            (torch.uint8, "01 23 45 67 89 AB CD EF", "01 23 45 67 89 AB CD EF"),
+            (torch.float16, "01 23 45 67 89 AB CD EF", "23 01 67 45 AB 89 EF CD"),
+            (torch.int32, "01 23 45 67 89 AB CD EF", "67 45 23 01 EF CD AB 89"),
+            (torch.float64, "01 23 45 67 89 AB CD EF", "EF CD AB 89 67 45 23 01"),
+        ],
+    )
+    def test_flip_byte_order(self, dtype, actual_hex, expected_hex):
+        def to_tensor(hex):
+            return torch.frombuffer(bytes.fromhex(hex), dtype=dtype)
+
+        assert_equal(
+            utils._flip_byte_order(to_tensor(actual_hex)),
+            to_tensor(expected_hex),
+        )
 
 
 @pytest.mark.parametrize(
