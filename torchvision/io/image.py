@@ -50,7 +50,7 @@ def read_file(path: str) -> torch.Tensor:
 
 def write_file(filename: str, data: torch.Tensor) -> None:
     """
-    Writes the contents of a uint8 tensor with one dimension to a
+    Writes the contents of an uint8 tensor with one dimension to a
     file.
 
     Args:

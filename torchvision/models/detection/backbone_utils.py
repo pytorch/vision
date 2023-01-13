@@ -102,12 +102,12 @@ def resnet_fpn_backbone(
         trainable_layers (int): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
         returned_layers (list of int): The layers of the network to return. Each entry must be in ``[1, 4]``.
-            By default all layers are returned.
+            By default, all layers are returned.
         extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
             be performed. It is expected to take the fpn features, the original
             features and the names of the original features as input, and returns
             a new list of feature maps and their corresponding names. By
-            default a ``LastLevelMaxPool`` is used.
+            default, a ``LastLevelMaxPool`` is used.
     """
     backbone = resnet.__dict__[backbone_name](weights=weights, norm_layer=norm_layer)
     return _resnet_fpn_extractor(backbone, trainable_layers, returned_layers, extra_blocks)
@@ -121,7 +121,7 @@ def _resnet_fpn_extractor(
     norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> BackboneWithFPN:
 
-    # select layers that wont be frozen
+    # select layers that won't be frozen
     if trainable_layers < 0 or trainable_layers > 5:
         raise ValueError(f"Trainable layers should be in the range [0,5], got {trainable_layers}")
     layers_to_train = ["layer4", "layer3", "layer2", "layer1", "conv1"][:trainable_layers]
@@ -208,7 +208,7 @@ def _mobilenet_extractor(
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
+    # find the index of the layer from which we won't freeze
     if trainable_layers < 0 or trainable_layers > num_stages:
         raise ValueError(f"Trainable layers should be in the range [0,{num_stages}], got {trainable_layers} ")
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
