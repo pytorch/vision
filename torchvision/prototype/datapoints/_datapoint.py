@@ -129,7 +129,7 @@ class Datapoint(torch.Tensor):
         return f"{super().__repr__()[:-1]}, {extra_repr})"
 
     # What cyclic import is this solving? Can it be avoided somehow?
-    # EDIT: is this because the dispatchers call the methods which in turn call back into the functional. namespace?
+    # A: this is because the dispatchers call the methods which in turn call back into the functional namespace
     @property
     def _F(self) -> ModuleType:
         # This implements a lazy import of the functional to get around the cyclic import. This import is deferred
@@ -145,7 +145,9 @@ class Datapoint(torch.Tensor):
 
     # doing some_tensor.dtype would go through __torch_function__?
     #  - is this because it is implemented as a @property method?
+    #    A: yes, or something like that
     #  - why do we want to bypass __torch_function__ in these case?
+    #    A: for optimization. TODO: should this be part of core already?
     # Also, what happens if users access another attribute that we haven't
     # overridden here, e.g. image.data or image.some_new_attribute_in_pytorch3.0?
 
@@ -172,6 +174,9 @@ class Datapoint(torch.Tensor):
             return super().dtype
 
     # Are these the "no-op fallbacks"?
+    # A: yes, fallback from the dispatchers. These exist in anticipation of
+    # allowing user-defined transforms.
+    # TODO: figure out design / tradeoffs
     def horizontal_flip(self) -> Datapoint:
         return self
 

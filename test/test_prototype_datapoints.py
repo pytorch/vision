@@ -29,6 +29,7 @@ def test_to_wrapping():
 
 
 def test_to_feature_reference():
+    # is "feature" now "datapoint" - or is it something else?
     tensor = torch.tensor([0, 1, 0], dtype=torch.int64)
     label = datapoints.Label(tensor, categories=["foo", "bar"]).to(torch.int32)
 
@@ -46,6 +47,9 @@ def test_clone_wrapping():
 
     assert type(label_clone) is datapoints.Label
     assert label_clone.data_ptr() != label.data_ptr()
+    # Is this expected?
+    # Does this meta-data-preserving behaviour occur for all meta-data attached to datapoints?
+    # Can things go wrong? i.e. if label_clone changes its metadata inplace, that of label gets changed too?
     assert label_clone.categories is label.categories
 
 
@@ -60,6 +64,7 @@ def test_requires_grad__wrapping():
     assert type(label_requires_grad) is datapoints.Label
     assert label.requires_grad
     assert label_requires_grad.requires_grad
+    assert label_requires_grad is label
 
 
 def test_other_op_no_wrapping():

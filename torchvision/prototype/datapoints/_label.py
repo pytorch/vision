@@ -11,6 +11,8 @@ from ._datapoint import Datapoint
 L = TypeVar("L", bound="_LabelBase")
 
 
+# Do we have transforms that change the categories?
+# Why do we need the labels to be datapoints?
 class _LabelBase(Datapoint):
     categories: Optional[Sequence[str]]
 
