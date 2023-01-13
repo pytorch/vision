@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+1f7ed5d ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+bb8149b ) &#x25BC</a>
     </div>
     
 
@@ -357,7 +357,7 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
 
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">check_integrity</span><span class="p">,</span> <span class="n">download_and_extract_archive</span><span class="p">,</span> <span class="n">extract_archive</span><span class="p">,</span> <span class="n">verify_str_arg</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">_flip_byte_order</span><span class="p">,</span> <span class="n">check_integrity</span><span class="p">,</span> <span class="n">download_and_extract_archive</span><span class="p">,</span> <span class="n">extract_archive</span><span class="p">,</span> <span class="n">verify_str_arg</span>
 <span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 
@@ -864,13 +864,12 @@
     <span class="n">torch_type</span> <span class="o">=</span> <span class="n">SN3_PASCALVINCENT_TYPEMAP</span><span class="p">[</span><span class="n">ty</span><span class="p">]</span>
     <span class="n">s</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">:</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nd</span><span class="p">)]</span>
 
-    <span class="n">num_bytes_per_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">torch_type</span><span class="p">)</span><span class="o">.</span><span class="n">bits</span> <span class="o">//</span> <span class="mi">8</span>
-    <span class="c1"># The MNIST format uses the big endian byte order. If the system uses little endian byte order by default,</span>
-    <span class="c1"># we need to reverse the bytes before we can read them with torch.frombuffer().</span>
-    <span class="n">needs_byte_reversal</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">byteorder</span> <span class="o">==</span> <span class="s2">&quot;little&quot;</span> <span class="ow">and</span> <span class="n">num_bytes_per_value</span> <span class="o">&gt;</span> <span class="mi">1</span>
     <span class="n">parsed</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch_type</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">nd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
-    <span class="k">if</span> <span class="n">needs_byte_reversal</span><span class="p">:</span>
-        <span class="n">parsed</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># The MNIST format uses the big endian byte order, while `torch.frombuffer` uses whatever the system uses. In case</span>
+    <span class="c1"># that is little endian and the dtype has more than one byte, we need to flip them.</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">byteorder</span> <span class="o">==</span> <span class="s2">&quot;little&quot;</span> <span class="ow">and</span> <span class="n">parsed</span><span class="o">.</span><span class="n">element_size</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">_flip_byte_order</span><span class="p">(</span><span class="n">parsed</span><span class="p">)</span>
 
     <span class="k">assert</span> <span class="n">parsed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">strict</span>
     <span class="k">return</span> <span class="n">parsed</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">*</span><span class="n">s</span><span class="p">)</span>
