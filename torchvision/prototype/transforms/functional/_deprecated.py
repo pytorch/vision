@@ -7,6 +7,8 @@ import torch
 from torchvision.prototype import datapoints
 from torchvision.transforms import functional as _F
 
+from ._utils import is_simple_tensor
+
 
 @torch.jit.unused
 def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Image.Image:
@@ -25,13 +27,13 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
 def rgb_to_grayscale(
     inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], num_output_channels: int = 1
 ) -> Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]:
-    if not torch.jit.is_scripting() and isinstance(inpt, (datapoints.Image, datapoints.Video)):
-        inpt = inpt.as_subclass(torch.Tensor)
-        old_color_space = None
-    elif isinstance(inpt, torch.Tensor):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         old_color_space = datapoints._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
     else:
         old_color_space = None
+
+        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
+            inpt = inpt.as_subclass(torch.Tensor)
 
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
     replacement = (
