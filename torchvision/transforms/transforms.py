@@ -1172,7 +1172,13 @@ class ColorJitter(torch.nn.Module):
             or use an interpolation that generates negative values before using this function.
     """
 
-    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+    def __init__(
+        self,
+        brightness: 'float | tuple[float, float]' = 0,
+        contrast: 'float | tuple[float, float]' = 0,
+        saturation: 'float | tuple[float, float]' = 0,
+        hue: 'float | tuple[float, float]' = 0
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.brightness = self._check_input(brightness, "brightness")
