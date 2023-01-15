@@ -92,13 +92,13 @@ class VideoReader:
         Each stream descriptor consists of two parts: stream type (e.g. 'video') and
         a unique stream id (which are determined by the video encoding).
         In this way, if the video contaner contains multiple
-        streams of the same type, users can acces the one they want.
+        streams of the same type, users can access the one they want.
         If only stream type is passed, the decoder auto-detects first stream of that type.
 
     Args:
         src (string, bytes object, or tensor): The media source.
             If string-type, it must be a file path supported by FFMPEG.
-            If bytes shoud be an in memory representatin of a file supported by FFMPEG.
+            If bytes should be an in memory representatin of a file supported by FFMPEG.
             If Tensor, it is interpreted internally as byte buffer.
             It must be one-dimensional, of type ``torch.uint8``.
 
@@ -145,7 +145,7 @@ class VideoReader:
                 src = io.BytesIO(src)
             else:
                 with warnings.catch_warnings():
-                    # Ignore the warning because we actually dont modify the buffer in this function
+                    # Ignore the warning because we actually don't modify the buffer in this function
                     warnings.filterwarnings("ignore", message="The given buffer is not writable")
                     src = torch.frombuffer(src, dtype=torch.uint8)
         elif isinstance(src, torch.Tensor):
@@ -280,12 +280,12 @@ class VideoReader:
                 Each descriptor consists of two parts: stream type (e.g. 'video') and
                 a unique stream id (which are determined by video encoding).
                 In this way, if the video contaner contains multiple
-                streams of the same type, users can acces the one they want.
+                streams of the same type, users can access the one they want.
                 If only stream type is passed, the decoder auto-detects first stream
                 of that type and returns it.
 
         Returns:
-            (bool): True on succes, False otherwise
+            (bool): True on success, False otherwise
         """
         if self.backend == "cuda":
             warnings.warn("GPU decoding only works with video stream.")

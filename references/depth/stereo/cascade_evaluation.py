@@ -9,7 +9,7 @@ from torch.nn import functional as F
 from train import make_eval_loader
 
 from utils.metrics import AVAILABLE_METRICS
-from vizualization import make_prediction_image_side_to_side
+from visualization import make_prediction_image_side_to_side
 
 
 def get_args_parser(add_help=True):
@@ -113,7 +113,7 @@ def _evaluate(
     *,
     padder_mode,
     print_freq=10,
-    writter=None,
+    writer=None,
     step=None,
     iterations=10,
     cascades=1,
@@ -180,10 +180,10 @@ def _evaluate(
             "the dataset is not divisible by the batch size. Try lowering the batch size for more accurate results."
         )
 
-    if writter is not None and args.rank == 0:
+    if writer is not None and args.rank == 0:
         for meter_name, meter_value in logger.meters.items():
             scalar_name = f"{meter_name} {header}"
-            writter.add_scalar(scalar_name, meter_value.avg, step)
+            writer.add_scalar(scalar_name, meter_value.avg, step)
 
     logger.synchronize_between_processes()
     print(header, logger)
@@ -192,7 +192,7 @@ def _evaluate(
     return logger_metrics
 
 
-def evaluate(model, loader, args, writter=None, step=None):
+def evaluate(model, loader, args, writer=None, step=None):
     os.makedirs(args.img_folder, exist_ok=True)
     checkpoint_name = os.path.basename(args.checkpoint) or args.weights
     image_checkpoint_folder = os.path.join(args.img_folder, checkpoint_name)
@@ -215,7 +215,7 @@ def evaluate(model, loader, args, writter=None, step=None):
                 padder_mode=args.padder_type,
                 header=f"{args.dataset} evaluation@ size:{args.eval_size} n_cascades:{n_cascades} n_iters:{n_iters}",
                 batch_size=args.batch_size,
-                writter=writter,
+                writer=writer,
                 step=step,
                 iterations=n_iters,
                 cascades=n_cascades,
@@ -271,7 +271,7 @@ def load_checkpoint(args):
             model = torchvision.prototype.models.depth.stereo.__dict__[args.model](weights=None)
             model.load_state_dict(checkpoint)
 
-        # set the appropiate devices
+        # set the appropriate devices
         if args.distributed and args.device == "cpu":
             raise ValueError("The device must be cuda if we want to run in distributed mode using torchrun")
         device = torch.device(args.device)

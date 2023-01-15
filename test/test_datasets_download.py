@@ -296,6 +296,10 @@ def qmnist():
     )
 
 
+def moving_mnist():
+    return collect_download_configs(lambda: datasets.MovingMNIST(ROOT, download=True), name="MovingMNIST")
+
+
 def omniglot():
     return itertools.chain(
         *[

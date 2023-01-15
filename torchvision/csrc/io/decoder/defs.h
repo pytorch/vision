@@ -301,7 +301,7 @@ struct DecoderMetadata {
 };
 /**
  * Abstract class for decoding media bytes
- * It has two diffrent modes. Internal media bytes retrieval for given uri and
+ * It has two different modes. Internal media bytes retrieval for given uri and
  * external media bytes provider in case of memory streams
  */
 class MediaDecoder {

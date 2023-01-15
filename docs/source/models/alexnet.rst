@@ -14,7 +14,7 @@ and is based on `One weird trick for parallelizing convolutional neural networks
 Model builders
 --------------
 
-The following model builders can be used to instanciate an AlexNet model, with or
+The following model builders can be used to instantiate an AlexNet model, with or
 without pre-trained weights. All the model builders internally rely on the
 ``torchvision.models.alexnet.AlexNet`` base class. Please refer to the `source
 code
