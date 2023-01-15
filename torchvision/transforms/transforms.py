@@ -1174,10 +1174,10 @@ class ColorJitter(torch.nn.Module):
 
     def __init__(
         self,
-        brightness: 'float | tuple[float, float]' = 0,
-        contrast: 'float | tuple[float, float]' = 0,
-        saturation: 'float | tuple[float, float]' = 0,
-        hue: 'float | tuple[float, float]' = 0
+        brightness: "float | tuple[float, float]" = 0,
+        contrast: "float | tuple[float, float]" = 0,
+        saturation: "float | tuple[float, float]" = 0,
+        hue: "float | tuple[float, float]" = 0
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
