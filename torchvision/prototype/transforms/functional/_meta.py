@@ -9,6 +9,8 @@ from torchvision.transforms.functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
 
+from ._utils import is_simple_tensor
+
 
 def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
     chw = list(image.shape[-3:])
@@ -29,9 +31,7 @@ def get_dimensions(inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]
     if not torch.jit.is_scripting():
         _log_api_usage_once(get_dimensions)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return get_dimensions_image_tensor(inpt)
     elif isinstance(inpt, (datapoints.Image, datapoints.Video)):
         channels = inpt.num_channels
@@ -68,9 +68,7 @@ def get_num_channels(inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJI
     if not torch.jit.is_scripting():
         _log_api_usage_once(get_num_channels)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return get_num_channels_image_tensor(inpt)
     elif isinstance(inpt, (datapoints.Image, datapoints.Video)):
         return inpt.num_channels
@@ -120,14 +118,12 @@ def get_spatial_size(inpt: datapoints.InputTypeJIT) -> List[int]:
     if not torch.jit.is_scripting():
         _log_api_usage_once(get_spatial_size)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return get_spatial_size_image_tensor(inpt)
     elif isinstance(inpt, (datapoints.Image, datapoints.Video, datapoints.BoundingBox, datapoints.Mask)):
         return list(inpt.spatial_size)
     elif isinstance(inpt, PIL.Image.Image):
-        return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
+        return get_spatial_size_image_pil(inpt)
     else:
         raise TypeError(
             f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
@@ -143,7 +139,7 @@ def get_num_frames(inpt: datapoints.VideoTypeJIT) -> int:
     if not torch.jit.is_scripting():
         _log_api_usage_once(get_num_frames)
 
-    if isinstance(inpt, torch.Tensor) and (torch.jit.is_scripting() or not isinstance(inpt, datapoints.Video)):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return get_num_frames_video(inpt)
     elif isinstance(inpt, datapoints.Video):
         return inpt.num_frames
@@ -336,9 +332,7 @@ def convert_color_space(
     if not torch.jit.is_scripting():
         _log_api_usage_once(convert_color_space)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         if old_color_space is None:
             raise RuntimeError(
                 "In order to convert the color space of simple tensors, "
@@ -443,9 +437,7 @@ def convert_dtype(
     if not torch.jit.is_scripting():
         _log_api_usage_once(convert_dtype)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return convert_dtype_image_tensor(inpt, dtype)
     elif isinstance(inpt, datapoints.Image):
         output = convert_dtype_image_tensor(inpt.as_subclass(torch.Tensor), dtype)
