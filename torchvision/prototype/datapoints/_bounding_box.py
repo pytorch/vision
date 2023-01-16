@@ -17,7 +17,9 @@ class BoundingBoxFormat(StrEnum):
 
 class BoundingBox(Datapoint):
     format: BoundingBoxFormat  # TODO: do not use a builtin?
-    spatial_size: Tuple[int, int]  # TODO: This is the size of the image, not the box
+    # TODO: This is the size of the image, not the box. Maybe make this explicit in the name?
+    # Note: if this isn't user-facing, the TODO is not critical at all
+    spatial_size: Tuple[int, int]
 
     @classmethod
     def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat, spatial_size: Tuple[int, int]) -> BoundingBox:

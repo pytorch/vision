@@ -129,7 +129,7 @@ from ._geometry import (
     perspective_image_tensor,
     perspective_mask,
     perspective_video,
-    resize,  # this is the "dispatcher layer" and the resize_xyz are the low level kernels?
+    resize,
     resize_bounding_box,
     resize_image_pil,
     resize_image_tensor,

@@ -53,6 +53,7 @@ class Datapoint(torch.Tensor):
 
     # Can things go wrong with having to maintain a different set of funcs that
     # need special care? What if we forget to handle one properly?
+    # A: This is probably fine. These are the only ones encountered so far.
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
         torch.Tensor.to: lambda cls, input, output: cls.wrap_like(input, output),
@@ -90,7 +91,10 @@ class Datapoint(torch.Tensor):
         # Since super().__torch_function__ has no hook to prevent the coercing of the output into the input type, we
         # need to reimplement the functionality.
 
-        if not all(issubclass(cls, t) for t in types):  # Curious in which cases this can be hit?
+        # Curious in which cases this can be hit?
+        # A: Still don't really know, but this comes from the parent
+        # Tensor.__torch_function__ (which we need to re-write here)
+        if not all(issubclass(cls, t) for t in types):
             return NotImplemented
 
         with DisableTorchFunctionSubclass():

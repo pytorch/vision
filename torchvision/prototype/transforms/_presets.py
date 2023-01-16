@@ -16,6 +16,7 @@ __all__ = ["StereoMatching"]
 
 # I assume this file is actually not part of the transformsV2 work - it's just
 # that StereoMatching is still protytpe?
+# A: yes
 
 class StereoMatching(torch.nn.Module):
     def __init__(

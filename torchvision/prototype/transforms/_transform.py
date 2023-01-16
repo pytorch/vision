@@ -5,6 +5,7 @@ import PIL.Image
 import torch
 from torch import nn
 # I remember that the core team is open to making it public. Is still private?
+# A: yes but core is committed to full BC
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.prototype.transforms.utils import check_type
 from torchvision.utils import _log_api_usage_once
@@ -32,7 +33,6 @@ class Transform(nn.Module):
         raise NotImplementedError
 
     def forward(self, *inputs: Any) -> Any:
-        # TL;DR of the flatten -> unflatten thing?
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
         self._check_inputs(flat_inputs)

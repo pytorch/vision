@@ -5,13 +5,6 @@ T = TypeVar("T", bound=enum.Enum)
 
 
 
-# Could we just define 
-# class ColorSpace(enum.Enum):
-#    RGB = "RGB"  # instead of auto()
-#    ...
-# and avoid this helper class altogether?
-# I sort of remember having some issue with this class before (perhaps with the
-# WeightsEnum?)
 class StrEnumMeta(enum.EnumMeta):
     auto = enum.auto
 
@@ -24,9 +17,19 @@ class StrEnumMeta(enum.EnumMeta):
             raise ValueError(f"Unknown value '{member}' for {self.__name__}.") from None
 
 
-# Can this just be a simple class inherited from Enum (without the metaclass)?
+# TODO: As agreed with Philip, we can just get rid of this class for now.
+# We can just define enums as 
+# class BoundingBoxFormat(Enum):
+#    XYXY = "XYXY"
+#    ...
+# and replace from_str with BoundingBoxFormat["XYXY"].
+#
+# We won't have a super nice error message as with add_suggestion, but this is
+# something we can think about when this is more critically needed (i.e. after
+# the migration)
 class StrEnum(enum.Enum, metaclass=StrEnumMeta):
     pass
+
 
 
 def sequence_to_str(seq: Sequence, separate_last: str = "") -> str:

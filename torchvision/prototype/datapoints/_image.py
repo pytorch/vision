@@ -120,7 +120,10 @@ class Image(Datapoint):
     def vertical_flip(self) -> Image:
         output = self._F.vertical_flip_image_tensor(self.as_subclass(torch.Tensor))
         return Image.wrap_like(self, output)
-
+    
+    # Do we want to keep these public?
+    # This is probalby related to internal customer needs. TODO for N: figure that out
+    # This is also related to allow user-defined subclasses and transforms (in anticipation of)
     def resize(  # type: ignore[override]
         self,
         size: List[int],
