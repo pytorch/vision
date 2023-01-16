@@ -15,7 +15,7 @@ class STL10(VisionDataset):
         root (string): Root directory of dataset where directory
             ``stl10_binary`` exists.
         split (string): One of {'train', 'test', 'unlabeled', 'train+unlabeled'}.
-            Accordingly dataset is selected.
+            Accordingly, dataset is selected.
         folds (int, optional): One of {0-9} or None.
             For training, loads one of the 10 pre-defined folds of 1k samples for the
             standard evaluation procedure. If no value is passed, loads the 5k samples.

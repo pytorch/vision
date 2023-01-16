@@ -10,7 +10,7 @@ paper.
 Model builders
 --------------
 
-The following model builders can be used to instanciate an EfficientNetV2 model, with or
+The following model builders can be used to instantiate an EfficientNetV2 model, with or
 without pre-trained weights. All the model builders internally rely on the
 ``torchvision.models.efficientnet.EfficientNet`` base class. Please refer to the `source
 code
