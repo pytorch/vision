@@ -69,6 +69,10 @@ def normalize(
                 f"but got {type(inpt)} instead."
             )
 
+    # Saw this from [Feedback] thread (https://github.com/pytorch/vision/issues/6753#issuecomment-1308295943)
+    # Not sure I understand the need to return a Tensor instead of and Image
+    # Is the inconsistency "worth" it? How can we make sure this isn't too unexpected?
+
     # Image or Video type should not be retained after normalization due to unknown data range
     # Thus we return Tensor for input Image
     return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)

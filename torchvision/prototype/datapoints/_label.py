@@ -13,6 +13,10 @@ L = TypeVar("L", bound="_LabelBase")
 
 # Do we have transforms that change the categories?
 # Why do we need the labels to be datapoints?
+# In these label classes, what is strictly needed vs something that was
+# historically designed with the joint dataset / transforms revamp in mind?
+# (asking because the dataset revamp is on indefinite pause, so perhaps some
+# things are now obsolete?)
 class _LabelBase(Datapoint):
     categories: Optional[Sequence[str]]
 
