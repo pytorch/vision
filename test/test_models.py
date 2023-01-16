@@ -1029,7 +1029,7 @@ def test_raft(model_fn, scripted):
     preds = model(img1, img2)
     flow_pred = preds[-1]
     # Tolerance is fairly high, but there are 2 * H * W outputs to check
-    # The .pkl were generated on the AWS cluter, on the CI it looks like the resuts are slightly different
+    # The .pkl were generated on the AWS cluter, on the CI it looks like the results are slightly different
     _assert_expected(flow_pred.cpu(), name=model_fn.__name__, atol=1e-2, rtol=1)
 
 

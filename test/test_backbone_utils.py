@@ -197,7 +197,7 @@ class TestFxFeatureExtraction:
             assert n1 == n2
             assert p1.equal(p2)
 
-        # And that ouputs match
+        # And that outputs match
         with torch.no_grad():
             ilg_out = ilg_model(self.inp)
             fgn_out = fx_model(self.inp)

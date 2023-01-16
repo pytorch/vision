@@ -663,7 +663,7 @@ class Swin_T_Weights(WeightsEnum):
                 }
             },
             "_ops": 4.491,
-            "_weight_size": 108.19,
+            "_file_size": 108.19,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -688,7 +688,7 @@ class Swin_S_Weights(WeightsEnum):
                 }
             },
             "_ops": 8.741,
-            "_weight_size": 189.786,
+            "_file_size": 189.786,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -713,7 +713,7 @@ class Swin_B_Weights(WeightsEnum):
                 }
             },
             "_ops": 15.431,
-            "_weight_size": 335.364,
+            "_file_size": 335.364,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -738,7 +738,7 @@ class Swin_V2_T_Weights(WeightsEnum):
                 }
             },
             "_ops": 5.94,
-            "_weight_size": 108.626,
+            "_file_size": 108.626,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -763,7 +763,7 @@ class Swin_V2_S_Weights(WeightsEnum):
                 }
             },
             "_ops": 11.546,
-            "_weight_size": 190.675,
+            "_file_size": 190.675,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
@@ -788,7 +788,7 @@ class Swin_V2_B_Weights(WeightsEnum):
                 }
             },
             "_ops": 20.325,
-            "_weight_size": 336.372,
+            "_file_size": 336.372,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )

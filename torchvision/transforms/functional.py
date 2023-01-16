@@ -427,7 +427,7 @@ def resize(
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
             the image is resized again so that the longer edge is equal to
-            ``max_size``. As a result, ``size`` might be overruled, i.e the
+            ``max_size``. As a result, ``size`` might be overruled, i.e. the
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
@@ -859,7 +859,7 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
         brightness_factor (float):  How much to adjust the brightness. Can be
-            any non negative number. 0 gives a black image, 1 gives the
+            any non-negative number. 0 gives a black image, 1 gives the
             original image while 2 increases the brightness by a factor of 2.
 
     Returns:
@@ -881,7 +881,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
         contrast_factor (float): How much to adjust the contrast. Can be any
-            non negative number. 0 gives a solid gray image, 1 gives the
+            non-negative number. 0 gives a solid gray image, 1 gives the
             original image while 2 increases the contrast by a factor of 2.
 
     Returns:
@@ -1143,8 +1143,8 @@ def affine(
         translate (sequence of integers): horizontal and vertical translations (post-rotation translation)
         scale (float): overall scale
         shear (float or sequence): shear angle value in degrees between -180 to 180, clockwise direction.
-            If a sequence is specified, the first value corresponds to a shear parallel to the x axis, while
-            the second value corresponds to a shear parallel to the y axis.
+            If a sequence is specified, the first value corresponds to a shear parallel to the x-axis, while
+            the second value corresponds to a shear parallel to the y-axis.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -1295,7 +1295,7 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
         h (int): Height of the erased region.
         w (int): Width of the erased region.
         v: Erasing value.
-        inplace(bool, optional): For in-place operations. By default is set False.
+        inplace(bool, optional): For in-place operations. By default, is set False.
 
     Returns:
         Tensor Image: Erased image.
@@ -1400,7 +1400,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to have its colors posterized.
-            If img is torch Tensor, it should be of type torch.uint8 and
+            If img is torch Tensor, it should be of type torch.uint8, and
             it is expected to be in [..., 1 or 3, H, W] format, where ... means
             it can have an arbitrary number of leading dimensions.
             If img is PIL Image, it is expected to be in mode "L" or "RGB".
@@ -1447,7 +1447,7 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
         sharpness_factor (float):  How much to adjust the sharpness. Can be
-            any non negative number. 0 gives a blurred image, 1 gives the
+            any non-negative number. 0 gives a blurred image, 1 gives the
             original image while 2 increases the sharpness by a factor of 2.
 
     Returns:

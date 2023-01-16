@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Tuple
 
 from PIL import Image
 
-from .utils import check_integrity, download_url
+from .utils import check_integrity, download_and_extract_archive, download_url
 from .vision import VisionDataset
 
 
@@ -90,17 +90,12 @@ class SBU(VisionDataset):
 
     def download(self) -> None:
         """Download and extract the tarball, and download each individual photo."""
-        import tarfile
 
         if self._check_integrity():
             print("Files already downloaded and verified")
             return
 
-        download_url(self.url, self.root, self.filename, self.md5_checksum)
-
-        # Extract file
-        with tarfile.open(os.path.join(self.root, self.filename), "r:gz") as tar:
-            tar.extractall(path=self.root)
+        download_and_extract_archive(self.url, self.root, self.root, self.filename, self.md5_checksum)
 
         # Download individual photos
         with open(os.path.join(self.root, "dataset", "SBU_captioned_photo_dataset_urls.txt")) as fh:

@@ -82,7 +82,7 @@ def _evaluate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
 
     def inner_loop(blob):
         if blob[0].dim() == 3:
-            # input is not batched so we add an extra dim for consistency
+            # input is not batched, so we add an extra dim for consistency
             blob = [x[None, :, :, :] if x is not None else None for x in blob]
 
         image1, image2, flow_gt = blob[:3]
@@ -150,7 +150,7 @@ def evaluate(model, args):
 
     for name in val_datasets:
         if name == "kitti":
-            # Kitti has different image sizes so we need to individually pad them, we can't batch.
+            # Kitti has different image sizes, so we need to individually pad them, we can't batch.
             # see comment in InputPadder
             if args.batch_size != 1 and (not args.distributed or args.rank == 0):
                 warnings.warn(

@@ -304,7 +304,7 @@ class Resize(torch.nn.Module):
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
             the image is resized again so that the longer edge is equal to
-            ``max_size``. As a result, ``size`` might be overruled, i.e the
+            ``max_size``. As a result, ``size`` might be overruled, i.e. the
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
@@ -967,7 +967,7 @@ class RandomResizedCrop(torch.nn.Module):
         format_string = self.__class__.__name__ + f"(size={self.size}"
         format_string += f", scale={tuple(round(s, 4) for s in self.scale)}"
         format_string += f", ratio={tuple(round(r, 4) for r in self.ratio)}"
-        format_string += f", interpolation={interpolate_str})"
+        format_string += f", interpolation={interpolate_str}"
         format_string += f", antialias={self.antialias})"
         return format_string
 
@@ -1160,7 +1160,7 @@ class ColorJitter(torch.nn.Module):
             or the given [min, max]. Should be non negative numbers.
         contrast (float or tuple of float (min, max)): How much to jitter contrast.
             contrast_factor is chosen uniformly from [max(0, 1 - contrast), 1 + contrast]
-            or the given [min, max]. Should be non negative numbers.
+            or the given [min, max]. Should be non-negative numbers.
         saturation (float or tuple of float (min, max)): How much to jitter saturation.
             saturation_factor is chosen uniformly from [max(0, 1 - saturation), 1 + saturation]
             or the given [min, max]. Should be non negative numbers.
@@ -1381,10 +1381,10 @@ class RandomAffine(torch.nn.Module):
         scale (tuple, optional): scaling factor interval, e.g (a, b), then scale is
             randomly sampled from the range a <= scale <= b. Will keep original scale by default.
         shear (sequence or number, optional): Range of degrees to select from.
-            If shear is a number, a shear parallel to the x axis in the range (-shear, +shear)
-            will be applied. Else if shear is a sequence of 2 values a shear parallel to the x axis in the
+            If shear is a number, a shear parallel to the x-axis in the range (-shear, +shear)
+            will be applied. Else if shear is a sequence of 2 values a shear parallel to the x-axis in the
             range (shear[0], shear[1]) will be applied. Else if shear is a sequence of 4 values,
-            a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
+            an x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
             Will not apply shear by default.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
@@ -1602,7 +1602,7 @@ class RandomGrayscale(torch.nn.Module):
 
 
 class RandomErasing(torch.nn.Module):
-    """Randomly selects a rectangle region in an torch Tensor image and erases its pixels.
+    """Randomly selects a rectangle region in a torch.Tensor image and erases its pixels.
     This transform does not support PIL Image.
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
 
@@ -1938,7 +1938,7 @@ class RandomAdjustSharpness(torch.nn.Module):
 
     Args:
         sharpness_factor (float):  How much to adjust the sharpness. Can be
-            any non negative number. 0 gives a blurred image, 1 gives the
+            any non-negative number. 0 gives a blurred image, 1 gives the
             original image while 2 increases the sharpness by a factor of 2.
         p (float): probability of the image being sharpened. Default value is 0.5
     """

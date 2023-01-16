@@ -10,7 +10,7 @@ paper.
 Model builders
 --------------
 
-The following model builders can be used to instanciate a quantized GoogLeNet
+The following model builders can be used to instantiate a quantized GoogLeNet
 model, with or without pre-trained weights. All the model builders internally
 rely on the ``torchvision.models.quantization.googlenet.QuantizableGoogLeNet``
 base class. Please refer to the `source code

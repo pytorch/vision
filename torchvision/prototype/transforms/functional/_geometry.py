@@ -23,6 +23,8 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import convert_format_bounding_box, get_spatial_size_image_pil
 
+from ._utils import is_simple_tensor
+
 
 def horizontal_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
     return image.flip(-1)
@@ -60,9 +62,7 @@ def horizontal_flip(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(horizontal_flip)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return horizontal_flip_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.horizontal_flip()
@@ -111,9 +111,7 @@ def vertical_flip(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(vertical_flip)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return vertical_flip_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.vertical_flip()
@@ -241,9 +239,7 @@ def resize(
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(resize)
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.resize(size, interpolation=interpolation, max_size=max_size, antialias=antialias)
@@ -744,9 +740,7 @@ def affine(
         _log_api_usage_once(affine)
 
     # TODO: consider deprecating integers from angle and shear on the future
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return affine_image_tensor(
             inpt,
             angle,
@@ -929,9 +923,7 @@ def rotate(
     if not torch.jit.is_scripting():
         _log_api_usage_once(rotate)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.rotate(angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
@@ -1139,9 +1131,7 @@ def pad(
     if not torch.jit.is_scripting():
         _log_api_usage_once(pad)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
 
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
@@ -1219,9 +1209,7 @@ def crop(inpt: datapoints.InputTypeJIT, top: int, left: int, height: int, width:
     if not torch.jit.is_scripting():
         _log_api_usage_once(crop)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return crop_image_tensor(inpt, top, left, height, width)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.crop(top, left, height, width)
@@ -1476,9 +1464,7 @@ def perspective(
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(perspective)
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return perspective_image_tensor(
             inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
         )
@@ -1639,9 +1625,7 @@ def elastic(
     if not torch.jit.is_scripting():
         _log_api_usage_once(elastic)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return elastic_image_tensor(inpt, displacement, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.elastic(displacement, interpolation=interpolation, fill=fill)
@@ -1754,9 +1738,7 @@ def center_crop(inpt: datapoints.InputTypeJIT, output_size: List[int]) -> datapo
     if not torch.jit.is_scripting():
         _log_api_usage_once(center_crop)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return center_crop_image_tensor(inpt, output_size)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.center_crop(output_size)
@@ -1850,9 +1832,7 @@ def resized_crop(
     if not torch.jit.is_scripting():
         _log_api_usage_once(resized_crop)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return resized_crop_image_tensor(
             inpt, top, left, height, width, antialias=antialias, size=size, interpolation=interpolation
         )
@@ -1935,9 +1915,7 @@ def five_crop(
 
     # TODO: consider breaking BC here to return List[datapoints.ImageTypeJIT/VideoTypeJIT] to align this op with
     #  `ten_crop`
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return five_crop_image_tensor(inpt, size)
     elif isinstance(inpt, datapoints.Image):
         output = five_crop_image_tensor(inpt.as_subclass(torch.Tensor), size)
@@ -1991,9 +1969,7 @@ def ten_crop(
     if not torch.jit.is_scripting():
         _log_api_usage_once(ten_crop)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
     elif isinstance(inpt, datapoints.Image):
         output = ten_crop_image_tensor(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)
