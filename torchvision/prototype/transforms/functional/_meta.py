@@ -127,7 +127,7 @@ def get_spatial_size(inpt: datapoints.InputTypeJIT) -> List[int]:
     elif isinstance(inpt, (datapoints.Image, datapoints.Video, datapoints.BoundingBox, datapoints.Mask)):
         return list(inpt.spatial_size)
     elif isinstance(inpt, PIL.Image.Image):
-        return get_spatial_size_image_pil(inpt)  # type: ignore[no-any-return]
+        return get_spatial_size_image_pil(inpt)
     else:
         raise TypeError(
             f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
