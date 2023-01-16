@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -1174,10 +1174,10 @@ class ColorJitter(torch.nn.Module):
 
     def __init__(
         self,
-        brightness: "float | tuple[float, float]" = 0,
-        contrast: "float | tuple[float, float]" = 0,
-        saturation: "float | tuple[float, float]" = 0,
-        hue: "float | tuple[float, float]" = 0,
+        brightness: Union[float, Tuple[float, float]] = 0,
+        contrast: Union[float, Tuple[float, float]] = 0,
+        saturation: Union[float, Tuple[float, float]] = 0,
+        hue: Union[float, Tuple[float, float]] = 0,
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
