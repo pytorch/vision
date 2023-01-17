@@ -87,7 +87,7 @@ class RoIOpTester(ABC):
         x_dtype = self.dtype if x_dtype is None else x_dtype
         rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
-        # n_channels % (pool_size ** 2) == 0 required for PS opeartions.
+        # n_channels % (pool_size ** 2) == 0 required for PS operations.
         n_channels = 2 * (pool_size**2)
         x = torch.rand(2, n_channels, 10, 10, dtype=x_dtype, device=device)
         if not contiguous:
@@ -647,11 +647,11 @@ class TestNMS:
     @pytest.mark.parametrize("scale, zero_point", ((1, 0), (2, 50), (3, 10)))
     def test_qnms(self, iou, scale, zero_point):
         # Note: we compare qnms vs nms instead of qnms vs reference implementation.
-        # This is because with the int convertion, the trick used in _create_tensors_with_iou
+        # This is because with the int conversion, the trick used in _create_tensors_with_iou
         # doesn't really work (in fact, nms vs reference implem will also fail with ints)
         err_msg = "NMS and QNMS give different results for IoU={}"
         boxes, scores = self._create_tensors_with_iou(1000, iou)
-        scores *= 100  # otherwise most scores would be 0 or 1 after int convertion
+        scores *= 100  # otherwise most scores would be 0 or 1 after int conversion
 
         qboxes = torch.quantize_per_tensor(boxes, scale=scale, zero_point=zero_point, dtype=torch.quint8)
         qscores = torch.quantize_per_tensor(scores, scale=scale, zero_point=zero_point, dtype=torch.quint8)
@@ -1555,13 +1555,7 @@ class TestFocalLoss:
         torch.random.manual_seed(seed)
         inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
         focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
-        if device == "cpu":
-            scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
-        else:
-            with torch.jit.fuser("fuser2"):
-                # Use fuser2 to prevent a bug on fuser: https://github.com/pytorch/pytorch/issues/75476
-                # We may remove this condition once the bug is resolved
-                scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
 
         tol = 1e-3 if dtype is torch.half else 1e-5
         torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)

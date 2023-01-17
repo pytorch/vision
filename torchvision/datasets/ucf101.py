@@ -93,7 +93,7 @@ class UCF101(VisionDataset):
             output_format=output_format,
         )
         # we bookkeep the full version of video clips because we want to be able
-        # to return the meta data of full version rather than the subset version of
+        # to return the metadata of full version rather than the subset version of
         # video clips
         self.full_video_clips = video_clips
         self.indices = self._select_fold(video_list, annotation_path, fold, train)

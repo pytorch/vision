@@ -136,7 +136,7 @@ class TestSmoke:
     def test_mixup_cutmix(self, transform, input):
         transform(input)
 
-        # add other data that should bypass and wont raise any error
+        # add other data that should bypass and won't raise any error
         input_copy = dict(input)
         input_copy["path"] = "/path/to/somewhere"
         input_copy["num"] = 1234

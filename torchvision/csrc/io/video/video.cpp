@@ -319,14 +319,14 @@ void Video::Seek(double ts, bool fastSeek = false) {
 std::tuple<torch::Tensor, double> Video::Next() {
   TORCH_CHECK(initialized, "Video object has to be initialized first");
   // if failing to decode simply return a null tensor (note, should we
-  // raise an exeption?)
+  // raise an exception?)
   double frame_pts_s;
   torch::Tensor outFrame = torch::zeros({0}, torch::kByte);
 
   // decode single frame
   DecoderOutputMessage out;
   int64_t res = decoder.decode(&out, decoderTimeoutMs);
-  // if successfull
+  // if successful
   if (res == 0) {
     frame_pts_s = double(double(out.header.pts) * 1e-6);
 

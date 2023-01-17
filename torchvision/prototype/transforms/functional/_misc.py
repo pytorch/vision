@@ -10,7 +10,7 @@ from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 from torchvision.utils import _log_api_usage_once
 
-from ..utils import is_simple_tensor
+from ._utils import is_simple_tensor
 
 
 def normalize_image_tensor(
@@ -61,9 +61,9 @@ def normalize(
     if not torch.jit.is_scripting():
         _log_api_usage_once(normalize)
 
-        if is_simple_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video)):
+        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
             inpt = inpt.as_subclass(torch.Tensor)
-        else:
+        elif not is_simple_tensor(inpt):
             raise TypeError(
                 f"Input can either be a plain tensor or an `Image` or `Video` datapoint, "
                 f"but got {type(inpt)} instead."
@@ -175,9 +175,7 @@ def gaussian_blur(
     if not torch.jit.is_scripting():
         _log_api_usage_once(gaussian_blur)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)

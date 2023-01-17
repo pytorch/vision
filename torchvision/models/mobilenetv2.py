@@ -23,7 +23,7 @@ class InvertedResidual(nn.Module):
         super().__init__()
         self.stride = stride
         if stride not in [1, 2]:
-            raise ValueError(f"stride should be 1 or 2 insted of {stride}")
+            raise ValueError(f"stride should be 1 or 2 instead of {stride}")
 
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -195,7 +195,7 @@ class MobileNet_V2_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.301,
-            "_weight_size": 13.555,
+            "_file_size": 13.555,
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
@@ -212,7 +212,7 @@ class MobileNet_V2_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.301,
-            "_weight_size": 13.598,
+            "_file_size": 13.598,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
                 `new training recipe

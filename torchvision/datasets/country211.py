@@ -11,7 +11,7 @@ class Country211(ImageFolder):
     This dataset was built by filtering the images from the YFCC100m dataset
     that have GPS coordinate corresponding to a ISO-3166 country code. The
     dataset is balanced by sampling 150 train images, 50 validation images, and
-    100 test images images for each country.
+    100 test images for each country.
 
     Args:
         root (string): Root directory of the dataset.
