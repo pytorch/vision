@@ -98,7 +98,7 @@ class Datapoint(torch.Tensor):
             # `args = (torch.Tensor(), datapoints.Image())` first. Without this guard, the original `torch.Tensor` would
             # be wrapped into a `datapoints.Image`.
             if wrapper and isinstance(args[0], cls):
-                return wrapper(cls, args[0], output)  # type: ignore[no-any-return]
+                return wrapper(cls, args[0], output)
 
             # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
             # will retain the input type. Thus, we need to unwrap here.
