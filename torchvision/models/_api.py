@@ -2,6 +2,7 @@ import importlib
 import inspect
 import sys
 from dataclasses import dataclass, fields
+from enum import Enum
 from inspect import signature
 from types import ModuleType
 from typing import Any, Callable, cast, Dict, List, Mapping, Optional, TypeVar, Union
@@ -38,7 +39,8 @@ class Weights:
     meta: Dict[str, Any]
 
 
-class WeightsEnum(StrEnum):
+# TODO: can't be pickled? https://github.com/pytorch/vision/issues/7099
+class WeightsEnum(Enum):
     """
     This class is the parent class of all model weights. Each model building method receives an optional `weights`
     parameter with its associated pre-trained weights. It inherits from `Enum` and its values should be of type
@@ -48,14 +50,11 @@ class WeightsEnum(StrEnum):
         value (Weights): The data class entry with the weight information.
     """
 
-    def __init__(self, value: Weights):
-        self._value_ = value
-
     @classmethod
     def verify(cls, obj: Any) -> Any:
         if obj is not None:
             if type(obj) is str:
-                obj = cls.from_str(obj.replace(cls.__name__ + ".", ""))
+                obj = cls[obj.replace(cls.__name__ + ".", "")]
             elif not isinstance(obj, cls):
                 raise TypeError(
                     f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
@@ -76,6 +75,7 @@ class WeightsEnum(StrEnum):
         return super().__getattr__(name)
 
     def __deepcopy__(self, memodict=None):
+        # TODO: this isn't a real deep-copy? https://github.com/pytorch/vision/pull/6883#discussion_r1011372296
         return self
 
 
@@ -112,7 +112,7 @@ def get_weight(name: str) -> WeightsEnum:
     if weights_enum is None:
         raise ValueError(f"The weight enum '{enum_name}' for the specific method couldn't be retrieved.")
 
-    return weights_enum.from_str(value_name)
+    return weights_enum[value_name]
 
 
 def get_model_weights(name: Union[Callable, str]) -> WeightsEnum:
