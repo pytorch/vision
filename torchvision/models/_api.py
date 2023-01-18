@@ -67,16 +67,21 @@ class WeightsEnum(Enum):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self._name_}"
 
-    def __getattr__(self, name):
-        # Be able to fetch Weights attributes directly
-        for f in fields(Weights):
-            if f.name == name:
-                return object.__getattribute__(self.value, name)
-        return super().__getattr__(name)
-
     def __deepcopy__(self, memodict=None):
         # TODO: this isn't a real deep-copy? https://github.com/pytorch/vision/pull/6883#discussion_r1011372296
         return self
+
+    @property
+    def url(self):
+        return self.value.url
+
+    @property
+    def transforms(self):
+        return self.value.transforms
+
+    @property
+    def meta(self):
+        return self.value.meta
 
 
 def get_weight(name: str) -> WeightsEnum:
