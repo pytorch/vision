@@ -17,9 +17,8 @@ which are usually well understood by users, the policy is that:
 
 - modules that can be accessed without leading underscore are public
 - objects in a public file that don't have a leading underscore are public
-- objects that start with a leading underscore are private unless they're
-  exposed / aliased as public in a public `__init__.py` file
 - class attributes are public iff they have no leading underscore
+- the rest of the modules / objects / class attributes are considered private
 
 The public API has backward-compatible (BC) guarantees defined in our
 deprecation policy (see below). The private API has not BC guarantees.
