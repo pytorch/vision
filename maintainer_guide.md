@@ -2,16 +2,18 @@
 
 This document aims at documenting user-facing policies / principles used when
 developing and maintaining torchvision. Other maintainer info (e.g. release
-process) can be found in the internal wiki.
+process) can be found in the meta-internal wiki.
 
 ### What is public and what is private?
 
 For the Python API, torchvision largely follows the [torch core
 policy](https://github.com/pytorch/pytorch/wiki/Public-API-definition-and-documentation)
-which is consistent with other major packages (numpy, scikit-learn etc.).
+which is consistent with other major packages
+([numpy](https://numpy.org/neps/nep-0023-backwards-compatibility.html),
+[scikit-learn](https://scikit-learn.org/dev/glossary.html#term-API) etc.).
 We recognize that his policy is somewhat imperfect for some edge cases, and that
 it's difficult to come up with an accurate technical definition. In broad terms,
-which are usually well understood by user, the policy is that:
+which are usually well understood by users, the policy is that:
 
 - modules that can be accessed without leading underscore are public
 - objects in a public file that don't have a leading underscore are public
@@ -22,9 +24,9 @@ which are usually well understood by user, the policy is that:
 The public API has backward-compatible (BC) guarantees defined in our
 deprecation policy (see below). The private API has not BC guarantees.
 
-For C++, code is private. If a change breaks fbcode, fix fbcode or revert the
-change. We should be careful about models running in production and relying on
-torchvision ops.
+For C++, code is private. For Meta employees: if a C++ change breaks fbcode, fix
+fbcode or revert the change. We should be careful about models running in
+production and relying on torchvision ops.
 
 The `test` folder is not importable and is **private.** Even meta-internal
 projects should *not* rely on it (it has happned in the past and is now
