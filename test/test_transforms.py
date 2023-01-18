@@ -1818,7 +1818,7 @@ def test_random_erasing(seed):
     tol = 0.05
     assert 1 / 3 - tol <= aspect_ratio <= 3 + tol
 
-    # Make sure that h > w and h < w are equaly likely (log-scale sampling)
+    # Make sure that h > w and h < w are equally likely (log-scale sampling)
     aspect_ratios = []
     random.seed(42)
     trial = 1000
@@ -2067,7 +2067,7 @@ class TestAffine:
                 # https://github.com/python-pillow/Pillow/blob/71f8ec6a0cfc1008076a023c0756542539d057ab/
                 # src/libImaging/Geometry.c#L1060
                 input_pt = np.array([x + 0.5, y + 0.5, 1.0])
-                res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(np.int)
+                res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(int)
                 _x, _y = res[:2]
                 if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                     true_result[y, x, :] = input_img[_y, _x, :]

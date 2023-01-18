@@ -48,7 +48,7 @@ class Inception3(nn.Module):
             )
             init_weights = True
         if len(inception_blocks) != 7:
-            raise ValueError(f"lenght of inception_blocks should be 7 instead of {len(inception_blocks)}")
+            raise ValueError(f"length of inception_blocks should be 7 instead of {len(inception_blocks)}")
         conv_block = inception_blocks[0]
         inception_a = inception_blocks[1]
         inception_b = inception_blocks[2]
@@ -423,7 +423,7 @@ class Inception_V3_Weights(WeightsEnum):
                 }
             },
             "_ops": 5.713,
-            "_weight_size": 103.903,
+            "_file_size": 103.903,
             "_docs": """These weights are ported from the original paper.""",
         },
     )

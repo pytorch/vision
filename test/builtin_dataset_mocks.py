@@ -12,7 +12,6 @@ import pickle
 import random
 import shutil
 import unittest.mock
-import warnings
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 
@@ -519,10 +518,22 @@ def imagenet(root, config):
         ]
         num_children = 1
         synsets.extend((0, "", "", "", num_children, [], 0, 0) for _ in range(5))
-        with warnings.catch_warnings():
-            # The warning is not for savemat, but rather for some internals savemet is using
-            warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
-            savemat(data_root / "meta.mat", dict(synsets=synsets))
+        synsets = np.array(
+            synsets,
+            dtype=np.dtype(
+                [
+                    ("ILSVRC2012_ID", "O"),
+                    ("WNID", "O"),
+                    ("words", "O"),
+                    ("gloss", "O"),
+                    ("num_children", "O"),
+                    ("children", "O"),
+                    ("wordnet_height", "O"),
+                    ("num_train_images", "O"),
+                ]
+            ),
+        )
+        savemat(data_root / "meta.mat", dict(synsets=synsets))
 
         make_tar(root, devkit_root.with_suffix(".tar.gz").name, compression="gz")
     else:  # config["split"] == "test"

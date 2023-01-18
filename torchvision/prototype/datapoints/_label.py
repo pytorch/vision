@@ -5,13 +5,13 @@ from typing import Any, Optional, Sequence, Type, TypeVar, Union
 import torch
 from torch.utils._pytree import tree_map
 
-from ._feature import _Feature
+from ._datapoint import Datapoint
 
 
 L = TypeVar("L", bound="_LabelBase")
 
 
-class _LabelBase(_Feature):
+class _LabelBase(Datapoint):
     categories: Optional[Sequence[str]]
 
     @classmethod
