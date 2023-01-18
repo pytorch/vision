@@ -1,32 +1,56 @@
 ## Torchvision maintainers guide
 
-This document aims at documenting common questions and workflows that arise when
-developing and maintaining torchvision. It does not serve as an absolute ground
-truth, but rather as a handy reference guide. The audience here mainly is the
-torchvision maintainers, not the general pool of contributors.
+This document aims at documenting user-facing policies / principles used when
+developing and maintaining torchvision. Other maintainer info (e.g. release
+process) can be found in the internal wiki.
 
-### What is public?
+### What is public and what is private?
 
-* In the torchvision folder:
-    * For Python, the [usual
-      convention](https://www.python.org/dev/peps/pep-0008/#public-and-internal-interfaces)
-      applies: anything that has a leading underscore in its name or in its path
-      is private. The rest is public, even if it’s not properly documented, and
-      even if it’s not exposed in an `__init__` file. While we discourage use of
-      undocumented public interfaces, we must still consider backwards
-      compatibility when making changes to such potentially in-use code.
-    * For C++, code is private. If a change breaks fbcode, fix fbcode or revert
-      the change. We should be careful about models running in prod and relying
-      on torchvision ops. FYI PyTorch as BC API checks for its ops.
-* The test folder is not importable and is **private.** Even fbcode projects
-  should not rely on it. 
-* The references folder serves as documentation and is treated as such: it’s
-  “private” in the sense that there are no BC guarantees here. Breaking changes
-  are possible, but we should make sure that the tutorials are still running
-  properly, and that their intended narrative is preserved (by e.g. checking
-  outputs, etc.).
-* The rest of the folders (build, android, ios) are private and have no BC
-  guarantees.
+For the Python API, torchvision largely follows the [torch core
+policy](https://github.com/pytorch/pytorch/wiki/Public-API-definition-and-documentation)
+which is consistent with other major packages (numpy, scikit-learn etc.).
+We recognize that his policy is somewhat imperfect for some edge cases, and that
+it's difficult to come up with an accurate technical definition. In broad terms,
+which are usually well understood by user, the policy is that:
+
+- modules that can be accessed without leading underscore are public
+- objects in a public file that don't have a leading underscore are public
+- objects that start with a leading underscore are private unless they're
+  exposed / aliased as public in a public `__init__.py` file
+- class attributes are public iff they have no leading underscore
+
+The public API has backward-compatible (BC) guarantees defined in our
+deprecation policy (see below). The private API has not BC guarantees.
+
+For C++, code is private. If a change breaks fbcode, fix fbcode or revert the
+change. We should be careful about models running in prod and relying on
+torchvision ops.
+
+The `test` folder is not importable and is **private.** Even meta-internal
+projects should *not* rely on it (it has happned in the past and is now
+programmatically impossible.)
+
+The training references do not have BC guarantees. Breaking changes are
+possible, but we should make sure that the tutorials are still running properly,
+and that their intended narrative is preserved (by e.g. checking outputs,
+etc.).
+
+The rest of the folders (build, android, ios) are private and have no BC
+guarantees.
+
+### Deprecation policy.
+
+Because they're disruptive, **deprecations should only be used sparingly**.
+
+We largely follow the [torch core
+policy](https://github.com/pytorch/pytorch/wiki/PyTorch's-Python-Frontend-Backward-and-Forward-Compatibility-Policy):
+breaking changes require a deprecation period of at least 2 versions.
+
+Deprecations should clearly indicate their deadline in the docs and warning
+messages. Avoid not committing to a deadline, or keeping deprecated APIs for too
+long: it gives no incentive for users to update their code, sends conflicting
+messages ("why was this API removed while this other one is still around?"), and
+accumulates debt in the project.
 
 ### Should this attribute be public? Should this function be private?
 
@@ -43,39 +67,9 @@ guidelines can be useful:
   the “public -> private” one: in doubt, keep it private.
 * When thinking about use-cases, the general API motto applies: make what’s
   simple and common easy, and make what’s complex possible (80% / 20% rule).
-  There might be a ~1% left that’s not addressed: that’s OK. Also, make what’s
-  wrong very hard, if not impossible.
-* For models, things are more subtle as we still need a way to properly enable
-  model surgery. TODO: expand on this
+  There might be a ~1% left that’s not addressed: that’s OK. Also, **make what’s
+  wrong very hard**, if not impossible.
 
 As a good practice, always create new files and even classes with a leading
 underscore in their name. This way, everything is private by default and the
-only public surface is explicitly present in an `__init__` file.
-
-### Should we deprecate X, or can we make a BC-breaking change?
-
-When a public-facing feature needs to change, we try to deprecate, but sometimes
-a BC-breaking change is possible or even warranted. Typically in the case of
-bugs, a failure is better than incorrect results. To decide whether to deprecate
-or to introduce a breaking change:
-
-1. Check whether X does something purely internal VS something that a reasonable
-   user might be interested in.
-2. Look for usages on Github for usages of X. This is often difficult due to the
-   forks, copy-pastes, and name conflicts.
-3. Look on FBcode where we can get a cleaner (but also biased) signal of the
-   usage - if you're not a fb employee, ask someone to do that for you.
-4. Weigh the pros and cons of breaking. When there is a bug involved, it’s often
-   OK to break, as we want to prevent users from doing wrong things or having
-   wrong results. See this example:
-   [_https://github.com/pytorch/vision/pull/2954_](https://github.com/pytorch/vision/pull/2954)
-5. Debate this openly among people of the team and community (e.g. open an
-   issue, ask on slack, etc.), and adapt the decision based on the feedback.
-
-Either way, make sure to let users know how to work around and adapt to the new
-change. For deprecations, this can often be done as part of the deprecation
-warning message, **and** as part of the docstring with the[_..
-deprecated::_](https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-deprecated)
-directive. For BC breaking changes, it can be directly embedded in the release
-notes for simple cases, or the notes can link to a comment in the PR with more
-detailed instructions.
+only public surface is explicitly present in an `__init__.py` file.
