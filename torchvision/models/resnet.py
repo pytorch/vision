@@ -356,7 +356,7 @@ class ResNet34_Weights(WeightsEnum):
 class ResNet50_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnet50-0676ba61.pth",
-        transforms=TransformsFactory(ImageClassification, crop_size=123),
+        transforms=TransformsFactory(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 25557032,
