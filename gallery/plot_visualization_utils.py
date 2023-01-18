@@ -4,9 +4,10 @@ Visualization utilities
 =======================
 
 This example illustrates some of the utilities that torchvision offers for
-visualizing images, bounding boxes, and segmentation masks.
+visualizing images, bounding boxes, segmentation masks and keypoints.
 """
 
+# sphinx_gallery_thumbnail_path = "../../gallery/assets/visualization_utils_thumbnail2.png"
 
 import torch
 import numpy as np
@@ -21,7 +22,7 @@ plt.rcParams["savefig.bbox"] = 'tight'
 def show(imgs):
     if not isinstance(imgs, list):
         imgs = [imgs]
-    fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
+    fig, axs = plt.subplots(ncols=len(imgs), squeeze=False)
     for i, img in enumerate(imgs):
         img = img.detach()
         img = F.to_pil_image(img)
@@ -42,8 +43,9 @@ from pathlib import Path
 
 dog1_int = read_image(str(Path('assets') / 'dog1.jpg'))
 dog2_int = read_image(str(Path('assets') / 'dog2.jpg'))
+dog_list = [dog1_int, dog2_int]
 
-grid = make_grid([dog1_int, dog2_int, dog1_int, dog2_int])
+grid = make_grid(dog_list)
 show(grid)
 
 ####################################
@@ -64,25 +66,23 @@ show(result)
 
 #####################################
 # Naturally, we can also plot bounding boxes produced by torchvision detection
-# models.  Here is demo with a Faster R-CNN model loaded from
+# models.  Here is a demo with a Faster R-CNN model loaded from
 # :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
-# model. You can also try using a RetinaNet with
-# :func:`~torchvision.models.detection.retinanet_resnet50_fpn`, an SSDlite with
-# :func:`~torchvision.models.detection.ssdlite320_mobilenet_v3_large` or an SSD with
-# :func:`~torchvision.models.detection.ssd300_vgg16`. For more details
-# on the output of such models, you may refer to :ref:`instance_seg_output`.
+# model. For more details on the output of such models, you may
+# refer to :ref:`instance_seg_output`.
 
-from torchvision.models.detection import fasterrcnn_resnet50_fpn
-from torchvision.transforms.functional import convert_image_dtype
+from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
 
 
-batch_int = torch.stack([dog1_int, dog2_int])
-batch = convert_image_dtype(batch_int, dtype=torch.float)
+weights = FasterRCNN_ResNet50_FPN_Weights.DEFAULT
+transforms = weights.transforms()
 
-model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
+images = [transforms(d) for d in dog_list]
+
+model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
 
-outputs = model(batch)
+outputs = model(images)
 print(outputs)
 
 #####################################
@@ -92,7 +92,7 @@ print(outputs)
 score_threshold = .8
 dogs_with_boxes = [
     draw_bounding_boxes(dog_int, boxes=output['boxes'][output['scores'] > score_threshold], width=4)
-    for dog_int, output in zip(batch_int, outputs)
+    for dog_int, output in zip(dog_list, outputs)
 ]
 show(dogs_with_boxes)
 
@@ -110,23 +110,19 @@ show(dogs_with_boxes)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We will see how to use it with torchvision's FCN Resnet-50, loaded with
-# :func:`~torchvision.models.segmentation.fcn_resnet50`.  You can also try using
-# DeepLabv3 (:func:`~torchvision.models.segmentation.deeplabv3_resnet50`) or
-# lraspp mobilenet models
-# (:func:`~torchvision.models.segmentation.lraspp_mobilenet_v3_large`).
-#
-# Let's start by looking at the ouput of the model. Remember that in general,
-# images must be normalized before they're passed to a semantic segmentation
-# model.
+# :func:`~torchvision.models.segmentation.fcn_resnet50`. Let's start by looking
+# at the output of the model.
 
-from torchvision.models.segmentation import fcn_resnet50
+from torchvision.models.segmentation import fcn_resnet50, FCN_ResNet50_Weights
 
+weights = FCN_ResNet50_Weights.DEFAULT
+transforms = weights.transforms(resize_size=None)
 
-model = fcn_resnet50(pretrained=True, progress=False)
+model = fcn_resnet50(weights=weights, progress=False)
 model = model.eval()
 
-normalized_batch = F.normalize(batch, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-output = model(normalized_batch)['out']
+batch = torch.stack([transforms(d) for d in dog_list])
+output = model(batch)['out']
 print(output.shape, output.min().item(), output.max().item())
 
 #####################################
@@ -139,18 +135,13 @@ print(output.shape, output.min().item(), output.max().item())
 # Let's plot the masks that have been detected for the dog class and for the
 # boat class:
 
-sem_classes = [
-    '__background__', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-    'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-    'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
-]
-sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(sem_classes)}
+sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categories"])}
 
 normalized_masks = torch.nn.functional.softmax(output, dim=1)
 
 dog_and_boat_masks = [
     normalized_masks[img_idx, sem_class_to_idx[cls]]
-    for img_idx in range(batch.shape[0])
+    for img_idx in range(len(dog_list))
     for cls in ('dog', 'boat')
 ]
 
@@ -189,7 +180,7 @@ from torchvision.utils import draw_segmentation_masks
 
 dogs_with_masks = [
     draw_segmentation_masks(img, masks=mask, alpha=0.7)
-    for img, mask in zip(batch_int, boolean_dog_masks)
+    for img, mask in zip(dog_list, boolean_dog_masks)
 ]
 show(dogs_with_masks)
 
@@ -197,7 +188,7 @@ show(dogs_with_masks)
 # We can plot more than one mask per image! Remember that the model returned as
 # many masks as there are classes. Let's ask the same query as above, but this
 # time for *all* classes, not just the dog class: "For each pixel and each class
-# C, is class C the most most likely class?"
+# C, is class C the most likely class?"
 #
 # This one is a bit more involved, so we'll first show how to do it with a
 # single image, and then we'll generalize to the batch
@@ -235,7 +226,7 @@ all_classes_masks = all_classes_masks.swapaxes(0, 1)
 
 dogs_with_masks = [
     draw_segmentation_masks(img, masks=mask, alpha=.6)
-    for img, mask in zip(batch_int, all_classes_masks)
+    for img, mask in zip(dog_list, all_classes_masks)
 ]
 show(dogs_with_masks)
 
@@ -261,11 +252,17 @@ show(dogs_with_masks)
 #     of them may not have masks, like
 #     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`.
 
-from torchvision.models.detection import maskrcnn_resnet50_fpn
-model = maskrcnn_resnet50_fpn(pretrained=True, progress=False)
+from torchvision.models.detection import maskrcnn_resnet50_fpn, MaskRCNN_ResNet50_FPN_Weights
+
+weights = MaskRCNN_ResNet50_FPN_Weights.DEFAULT
+transforms = weights.transforms()
+
+images = [transforms(d) for d in dog_list]
+
+model = maskrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
 
-output = model(batch)
+output = model(images)
 print(output)
 
 #####################################
@@ -292,30 +289,13 @@ print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, "
       f"min = {dog1_masks.min()}, max = {dog1_masks.max()}")
 
 #####################################
-# Here the masks corresponds to probabilities indicating, for each pixel, how
+# Here the masks correspond to probabilities indicating, for each pixel, how
 # likely it is to belong to the predicted label of that instance. Those
 # predicted labels correspond to the 'labels' element in the same output dict.
 # Let's see which labels were predicted for the instances of the first image.
 
-inst_classes = [
-    '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-    'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
-    'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-    'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
-    'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-    'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-    'bottle', 'N/A', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-    'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-    'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table',
-    'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
-    'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
-    'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
-]
-
-inst_class_to_idx = {cls: idx for (idx, cls) in enumerate(inst_classes)}
-
 print("For the first dog, the following instances were detected:")
-print([inst_classes[label] for label in dog1_output['labels']])
+print([weights.meta["categories"][label] for label in dog1_output['labels']])
 
 #####################################
 # Interestingly, the model detects two persons in the image. Let's go ahead and
@@ -337,13 +317,13 @@ show(draw_segmentation_masks(dog1_int, dog1_bool_masks, alpha=0.9))
 
 #####################################
 # The model seems to have properly detected the dog, but it also confused trees
-# with people. Looking more closely at the scores will help us plotting more
+# with people. Looking more closely at the scores will help us plot more
 # relevant masks:
 
 print(dog1_output['scores'])
 
 #####################################
-# Clearly the model is less confident about the dog detection than it is about
+# Clearly the model is more confident about the dog detection than it is about
 # the people detections. That's good news. When plotting the masks, we can ask
 # for only those that have a good score. Let's use a score threshold of .75
 # here, and also plot the masks of the second dog.
@@ -357,11 +337,122 @@ boolean_masks = [
 
 dogs_with_masks = [
     draw_segmentation_masks(img, mask.squeeze(1))
-    for img, mask in zip(batch_int, boolean_masks)
+    for img, mask in zip(dog_list, boolean_masks)
 ]
 show(dogs_with_masks)
 
 #####################################
 # The two 'people' masks in the first image where not selected because they have
-# a lower score than the score threshold. Similarly in the second image, the
+# a lower score than the score threshold. Similarly, in the second image, the
 # instance with class 15 (which corresponds to 'bench') was not selected.
+
+#####################################
+# .. _keypoint_output:
+#
+# Visualizing keypoints
+# ------------------------------
+# The :func:`~torchvision.utils.draw_keypoints` function can be used to
+# draw keypoints on images. We will see how to use it with
+# torchvision's KeypointRCNN loaded with :func:`~torchvision.models.detection.keypointrcnn_resnet50_fpn`.
+# We will first have a look at output of the model.
+#
+
+from torchvision.models.detection import keypointrcnn_resnet50_fpn, KeypointRCNN_ResNet50_FPN_Weights
+from torchvision.io import read_image
+
+person_int = read_image(str(Path("assets") / "person1.jpg"))
+
+weights = KeypointRCNN_ResNet50_FPN_Weights.DEFAULT
+transforms = weights.transforms()
+
+person_float = transforms(person_int)
+
+model = keypointrcnn_resnet50_fpn(weights=weights, progress=False)
+model = model.eval()
+
+outputs = model([person_float])
+print(outputs)
+
+#####################################
+# As we see the output contains a list of dictionaries.
+# The output list is of length batch_size.
+# We currently have just a single image so length of list is 1.
+# Each entry in the list corresponds to an input image,
+# and it is a dict with keys `boxes`, `labels`, `scores`, `keypoints` and `keypoint_scores`.
+# Each value associated to those keys has `num_instances` elements in it.
+# In our case above there are 2 instances detected in the image.
+
+kpts = outputs[0]['keypoints']
+scores = outputs[0]['scores']
+
+print(kpts)
+print(scores)
+
+#####################################
+# The KeypointRCNN model detects there are two instances in the image.
+# If you plot the boxes by using :func:`~draw_bounding_boxes`
+# you would recognize they are the person and the surfboard.
+# If we look at the scores, we will realize that the model is much more confident about the person than surfboard.
+# We could now set a threshold confidence and plot instances which we are confident enough.
+# Let us set a threshold of 0.75 and filter out the keypoints corresponding to the person.
+
+detect_threshold = 0.75
+idx = torch.where(scores > detect_threshold)
+keypoints = kpts[idx]
+
+print(keypoints)
+
+#####################################
+# Great, now we have the keypoints corresponding to the person.
+# Each keypoint is represented by x, y coordinates and the visibility.
+# We can now use the :func:`~torchvision.utils.draw_keypoints` function to draw keypoints.
+# Note that the utility expects uint8 images.
+
+from torchvision.utils import draw_keypoints
+
+res = draw_keypoints(person_int, keypoints, colors="blue", radius=3)
+show(res)
+
+#####################################
+# As we see the keypoints appear as colored circles over the image.
+# The coco keypoints for a person are ordered and represent the following list.\
+
+coco_keypoints = [
+    "nose", "left_eye", "right_eye", "left_ear", "right_ear",
+    "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+    "left_wrist", "right_wrist", "left_hip", "right_hip",
+    "left_knee", "right_knee", "left_ankle", "right_ankle",
+]
+
+#####################################
+# What if we are interested in joining the keypoints?
+# This is especially useful in creating pose detection or action recognition.
+# We can join the keypoints easily using the `connectivity` parameter.
+# A close observation would reveal that we would need to join the points in below
+# order to construct human skeleton.
+#
+# nose -> left_eye -> left_ear.                              (0, 1), (1, 3)
+#
+# nose -> right_eye -> right_ear.                            (0, 2), (2, 4)
+#
+# nose -> left_shoulder -> left_elbow -> left_wrist.         (0, 5), (5, 7), (7, 9)
+#
+# nose -> right_shoulder -> right_elbow -> right_wrist.      (0, 6), (6, 8), (8, 10)
+#
+# left_shoulder -> left_hip -> left_knee -> left_ankle.      (5, 11), (11, 13), (13, 15)
+#
+# right_shoulder -> right_hip -> right_knee -> right_ankle.  (6, 12), (12, 14), (14, 16)
+#
+# We will create a list containing these keypoint ids to be connected.
+
+connect_skeleton = [
+    (0, 1), (0, 2), (1, 3), (2, 4), (0, 5), (0, 6), (5, 7), (6, 8),
+    (7, 9), (8, 10), (5, 11), (6, 12), (11, 13), (12, 14), (13, 15), (14, 16)
+]
+
+#####################################
+# We pass the above list to the connectivity parameter to connect the keypoints.
+#
+
+res = draw_keypoints(person_int, keypoints, connectivity=connect_skeleton, colors="blue", radius=4, width=3)
+show(res)

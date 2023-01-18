@@ -1,28 +1,26 @@
 import contextlib
 import itertools
+import tempfile
 import time
+import traceback
 import unittest.mock
+import warnings
 from datetime import datetime
 from distutils import dir_util
 from os import path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
-from urllib.request import urlopen, Request
-import tempfile
-import warnings
+from urllib.request import Request, urlopen
 
 import pytest
-
 from torchvision import datasets
 from torchvision.datasets.utils import (
-    download_url,
+    _get_redirect_url,
     check_integrity,
     download_file_from_google_drive,
-    _get_redirect_url,
+    download_url,
     USER_AGENT,
 )
-
-from common_utils import get_tmp_dir
 
 
 def limit_requests_per_time(min_secs_between_requests=2.0):
@@ -130,19 +128,23 @@ def log_download_attempts(
 
 
 def retry(fn, times=1, wait=5.0):
-    msgs = []
+    tbs = []
     for _ in range(times + 1):
         try:
             return fn()
         except AssertionError as error:
-            msgs.append(str(error))
+            tbs.append("".join(traceback.format_exception(type(error), error, error.__traceback__)))
             time.sleep(wait)
     else:
         raise AssertionError(
             "\n".join(
                 (
-                    f"Assertion failed {times + 1} times with {wait:.1f} seconds intermediate wait time.\n",
-                    *(f"{idx}: {error}" for idx, error in enumerate(msgs, 1)),
+                    "\n",
+                    *[f"{'_' * 40}  {idx:2d}  {'_' * 40}\n\n{tb}" for idx, tb in enumerate(tbs, 1)],
+                    (
+                        f"Assertion failed {times + 1} times with {wait:.1f} seconds intermediate wait time. "
+                        f"You can find the the full tracebacks above."
+                    ),
                 )
             )
         )
@@ -152,10 +154,12 @@ def retry(fn, times=1, wait=5.0):
 def assert_server_response_ok():
     try:
         yield
-    except URLError as error:
-        raise AssertionError("The request timed out.") from error
     except HTTPError as error:
         raise AssertionError(f"The server returned {error.code}: {error.reason}.") from error
+    except URLError as error:
+        raise AssertionError(
+            "Connection not possible due to SSL." if "SSL" in str(error) else "The request timed out."
+        ) from error
     except RecursionError as error:
         raise AssertionError(str(error)) from error
 
@@ -166,16 +170,15 @@ def assert_url_is_accessible(url, timeout=5.0):
         urlopen(request, timeout=timeout)
 
 
-def assert_file_downloads_correctly(url, md5, timeout=5.0):
-    with get_tmp_dir() as root:
-        file = path.join(root, path.basename(url))
-        with assert_server_response_ok():
-            with open(file, "wb") as fh:
-                request = Request(url, headers={"User-Agent": USER_AGENT})
-                response = urlopen(request, timeout=timeout)
-                fh.write(response.read())
+def assert_file_downloads_correctly(url, md5, tmpdir, timeout=5.0):
+    file = path.join(tmpdir, path.basename(url))
+    with assert_server_response_ok():
+        with open(file, "wb") as fh:
+            request = Request(url, headers={"User-Agent": USER_AGENT})
+            response = urlopen(request, timeout=timeout)
+            fh.write(response.read())
 
-        assert check_integrity(file, md5=md5), "The MD5 checksums mismatch"
+    assert check_integrity(file, md5=md5), "The MD5 checksums mismatch"
 
 
 class DownloadConfig:
@@ -184,7 +187,7 @@ class DownloadConfig:
         self.md5 = md5
         self.id = id or url
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.id
 
 
@@ -249,6 +252,7 @@ def cifar100():
 
 
 def voc():
+    # TODO: Also test the "2007-test" key
     return itertools.chain(
         *[
             collect_download_configs(
@@ -256,7 +260,7 @@ def voc():
                 name=f"VOC, {year}",
                 file="voc",
             )
-            for year in ("2007", "2007-test", "2008", "2009", "2010", "2011", "2012")
+            for year in ("2007", "2008", "2009", "2010", "2011", "2012")
         ]
     )
 
@@ -290,6 +294,10 @@ def qmnist():
             for what in ("train", "test", "nist")
         ]
     )
+
+
+def moving_mnist():
+    return collect_download_configs(lambda: datasets.MovingMNIST(ROOT, download=True), name="MovingMNIST")
 
 
 def omniglot():
@@ -437,7 +445,6 @@ def make_parametrize_kwargs(download_configs):
 @pytest.mark.parametrize(
     **make_parametrize_kwargs(
         itertools.chain(
-            places365(),
             caltech101(),
             caltech256(),
             cifar10(),
@@ -452,7 +459,6 @@ def make_parametrize_kwargs(download_configs):
             omniglot(),
             phototour(),
             sbdataset(),
-            sbu(),
             semeion(),
             stl10(),
             svhn(),
@@ -461,10 +467,35 @@ def make_parametrize_kwargs(download_configs):
             widerface(),
             kinetics(),
             kitti(),
+            places365(),
         )
     )
 )
 def test_url_is_accessible(url, md5):
+    """
+    If you see this test failing, find the offending dataset in the parametrization and move it to
+    ``test_url_is_not_accessible`` and link an issue detailing the problem.
+    """
+    retry(lambda: assert_url_is_accessible(url))
+
+
+@pytest.mark.parametrize(
+    **make_parametrize_kwargs(
+        itertools.chain(
+            sbu(),  # https://github.com/pytorch/vision/issues/7005
+        )
+    )
+)
+@pytest.mark.xfail
+def test_url_is_not_accessible(url, md5):
+    """
+    As the name implies, this test is the 'inverse' of ``test_url_is_accessible``. Since the download servers are
+    beyond our control, some files might not be accessible for longer stretches of time. Still, we want to know if they
+    come back up, or if we need to remove the download functionality of the dataset for good.
+
+    If you see this test failing, find the offending dataset in the parametrization and move it to
+    ``test_url_is_accessible``.
+    """
     retry(lambda: assert_url_is_accessible(url))
 
 

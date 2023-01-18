@@ -7,6 +7,8 @@ This example illustrates the various transforms available in :ref:`the
 torchvision.transforms module <transforms>`.
 """
 
+# sphinx_gallery_thumbnail_path = "../../gallery/assets/transforms_thumbnail.png"
+
 from PIL import Image
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -148,6 +150,17 @@ affine_imgs = [affine_transfomer(orig_img) for _ in range(4)]
 plot(affine_imgs)
 
 ####################################
+# ElasticTransform
+# ~~~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.ElasticTransform` transform
+# (see also :func:`~torchvision.transforms.functional.elastic_transform`)
+# Randomly transforms the morphology of objects in images and produces a
+# see-through-water-like effect.
+elastic_transformer = T.ElasticTransform(alpha=250.0)
+transformed_imgs = [elastic_transformer(orig_img) for _ in range(2)]
+plot(transformed_imgs)
+
+####################################
 # RandomCrop
 # ~~~~~~~~~~
 # The :class:`~torchvision.transforms.RandomCrop` transform
@@ -244,6 +257,30 @@ imgs = [
 ]
 row_title = [str(policy).split('.')[-1] for policy in policies]
 plot(imgs, row_title=row_title)
+
+####################################
+# RandAugment
+# ~~~~~~~~~~~
+# The :class:`~torchvision.transforms.RandAugment` transform automatically augments the data.
+augmenter = T.RandAugment()
+imgs = [augmenter(orig_img) for _ in range(4)]
+plot(imgs)
+
+####################################
+# TrivialAugmentWide
+# ~~~~~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically augments the data.
+augmenter = T.TrivialAugmentWide()
+imgs = [augmenter(orig_img) for _ in range(4)]
+plot(imgs)
+
+####################################
+# AugMix
+# ~~~~~~
+# The :class:`~torchvision.transforms.AugMix` transform automatically augments the data.
+augmenter = T.AugMix()
+imgs = [augmenter(orig_img) for _ in range(4)]
+plot(imgs)
 
 ####################################
 # Randomly-applied transforms

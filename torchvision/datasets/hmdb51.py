@@ -1,6 +1,7 @@
 import glob
 import os
-from typing import Optional, Callable, Tuple, Dict, Any, List
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
 from torch import Tensor
 
 from .folder import find_classes, make_dataset
@@ -10,7 +11,7 @@ from .vision import VisionDataset
 
 class HMDB51(VisionDataset):
     """
-    `HMDB51 <http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/>`_
+    `HMDB51 <https://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/>`_
     dataset.
 
     HMDB51 is an action recognition video dataset.
@@ -36,20 +37,22 @@ class HMDB51(VisionDataset):
             otherwise from the ``test`` split.
         transform (callable, optional): A function/transform that takes in a TxHxWxC video
             and returns a transformed version.
+        output_format (str, optional): The format of the output video tensors (before transforms).
+            Can be either "THWC" (default) or "TCHW".
 
     Returns:
         tuple: A 3-tuple with the following entries:
 
-            - video (Tensor[T, H, W, C]): The `T` video frames
+            - video (Tensor[T, H, W, C] or Tensor[T, C, H, W]): The `T` video frames
             - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
               and `L` is the number of points
             - label (int): class of the video clip
     """
 
-    data_url = "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar"
+    data_url = "https://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar"
     splits = {
-        "url": "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/test_train_splits.rar",
-        "md5": "15e67781e70dcfbdce2d7dbb9b3344b5"
+        "url": "https://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/test_train_splits.rar",
+        "md5": "15e67781e70dcfbdce2d7dbb9b3344b5",
     }
     TRAIN_TAG = 1
     TEST_TAG = 2
@@ -70,12 +73,13 @@ class HMDB51(VisionDataset):
         _video_height: int = 0,
         _video_min_dimension: int = 0,
         _audio_samples: int = 0,
+        output_format: str = "THWC",
     ) -> None:
-        super(HMDB51, self).__init__(root)
+        super().__init__(root)
         if fold not in (1, 2, 3):
-            raise ValueError("fold should be between 1 and 3, got {}".format(fold))
+            raise ValueError(f"fold should be between 1 and 3, got {fold}")
 
-        extensions = ('avi',)
+        extensions = ("avi",)
         self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(
             self.root,
@@ -95,9 +99,10 @@ class HMDB51(VisionDataset):
             _video_height=_video_height,
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
+            output_format=output_format,
         )
         # we bookkeep the full version of video clips because we want to be able
-        # to return the meta data of full version rather than the subset version of
+        # to return the metadata of full version rather than the subset version of
         # video clips
         self.full_video_clips = video_clips
         self.fold = fold
@@ -112,7 +117,7 @@ class HMDB51(VisionDataset):
 
     def _select_fold(self, video_list: List[str], annotations_dir: str, fold: int, train: bool) -> List[int]:
         target_tag = self.TRAIN_TAG if train else self.TEST_TAG
-        split_pattern_name = "*test_split{}.txt".format(fold)
+        split_pattern_name = f"*test_split{fold}.txt"
         split_pattern_path = os.path.join(annotations_dir, split_pattern_name)
         annotation_paths = glob.glob(split_pattern_path)
         selected_files = set()

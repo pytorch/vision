@@ -43,21 +43,34 @@ int SubtitleStream::initFormat() {
 int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   // clean-up
   releaseSubtitle();
+
+  // FIXME: should this even be created?
+  AVPacket* avPacket;
+  avPacket = av_packet_alloc();
+  if (avPacket == nullptr) {
+    LOG(ERROR)
+        << "decoder as not able to allocate the subtitle-specific packet.";
+    // alternative to ENOMEM
+    return AVERROR_BUFFER_TOO_SMALL;
+  }
+  avPacket->data = nullptr;
+  avPacket->size = 0;
   // check flush packet
-  AVPacket avPacket;
-  av_init_packet(&avPacket);
-  avPacket.data = nullptr;
-  avPacket.size = 0;
-  auto pkt = packet ? *packet : avPacket;
+  auto pkt = packet ? packet : avPacket;
+
   int gotFramePtr = 0;
-  int result = avcodec_decode_subtitle2(codecCtx_, &sub_, &gotFramePtr, &pkt);
+  // is these a better way than cast from const?
+  int result =
+      avcodec_decode_subtitle2(codecCtx_, &sub_, &gotFramePtr, (AVPacket*)pkt);
 
   if (result < 0) {
     LOG(ERROR) << "avcodec_decode_subtitle2 failed, err: "
                << Util::generateErrorDesc(result);
+    // free the packet we've created
+    av_packet_free(&avPacket);
     return result;
   } else if (result == 0) {
-    result = pkt.size; // discard the rest of the package
+    result = pkt->size; // discard the rest of the package
   }
 
   sub_.release = gotFramePtr;
@@ -66,9 +79,10 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   // set proper pts in us
   if (gotFramePtr) {
     sub_.pts = av_rescale_q(
-        pkt.pts, inputCtx_->streams[format_.stream]->time_base, timeBaseQ);
+        pkt->pts, inputCtx_->streams[format_.stream]->time_base, timeBaseQ);
   }
 
+  av_packet_free(&avPacket);
   return result;
 }
 

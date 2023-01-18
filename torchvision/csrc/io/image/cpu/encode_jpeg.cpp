@@ -13,16 +13,26 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
 }
 
 #else
+// For libjpeg version <= 9b, the out_size parameter in jpeg_mem_dest() is
+// defined as unsigned long, whereas in later version, it is defined as size_t.
+#if !defined(JPEG_LIB_VERSION_MAJOR) || JPEG_LIB_VERSION_MAJOR < 9 || \
+    (JPEG_LIB_VERSION_MAJOR == 9 && JPEG_LIB_VERSION_MINOR <= 2)
+using JpegSizeType = unsigned long;
+#else
+using JpegSizeType = size_t;
+#endif
 
 using namespace detail;
 
 torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.image.cpu.encode_jpeg.encode_jpeg");
   // Define compression structures and error handling
   struct jpeg_compress_struct cinfo {};
   struct torch_jpeg_error_mgr jerr {};
 
   // Define buffer to write JPEG information to and its size
-  unsigned long jpegSize = 0;
+  JpegSizeType jpegSize = 0;
   uint8_t* jpegBuf = nullptr;
 
   cinfo.err = jpeg_std_error(&jerr.pub);

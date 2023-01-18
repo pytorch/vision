@@ -21,25 +21,41 @@ supported Python versions.
 +--------------------------+--------------------------+---------------------------------+
 | ``torch``                | ``torchvision``          | ``python``                      |
 +==========================+==========================+=================================+
-| ``master`` / ``nightly`` | ``master`` / ``nightly`` | ``>=3.6``                       |
+| ``main`` / ``nightly``   | ``main`` / ``nightly``   | ``>=3.7.2``, ``<=3.10``         |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.9.0``                | ``0.10.0``               | ``>=3.6``                       |
+| ``1.13.0``               | ``0.14.0``               | ``>=3.7.2``, ``<=3.10``         |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.8.1``                | ``0.9.1``                | ``>=3.6``                       |
+| ``1.12.0``               | ``0.13.0``               | ``>=3.7``, ``<=3.10``           |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.8.0``                | ``0.9.0``                | ``>=3.6``                       |
+| ``1.11.0``               | ``0.12.0``               | ``>=3.7``, ``<=3.10``           |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.7.1``                | ``0.8.2``                | ``>=3.6``                       |
+| ``1.10.2``               | ``0.11.3``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.7.0``                | ``0.8.1``                | ``>=3.6``                       |
+| ``1.10.1``               | ``0.11.2``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.7.0``                | ``0.8.0``                | ``>=3.6``                       |
+| ``1.10.0``               | ``0.11.1``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.6.0``                | ``0.7.0``                | ``>=3.6``                       |
+| ``1.9.1``                | ``0.10.1``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.5.1``                | ``0.6.1``                | ``>=3.5``                       |
+| ``1.9.0``                | ``0.10.0``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.5.0``                | ``0.6.0``                | ``>=3.5``                       |
+| ``1.8.2``                | ``0.9.2``                | ``>=3.6``, ``<=3.9``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.8.1``                | ``0.9.1``                | ``>=3.6``, ``<=3.9``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.8.0``                | ``0.9.0``                | ``>=3.6``, ``<=3.9``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.7.1``                | ``0.8.2``                | ``>=3.6``, ``<=3.9``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.7.0``                | ``0.8.1``                | ``>=3.6``, ``<=3.8``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.7.0``                | ``0.8.0``                | ``>=3.6``, ``<=3.8``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.6.0``                | ``0.7.0``                | ``>=3.6``, ``<=3.8``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.5.1``                | ``0.6.1``                | ``>=3.5``, ``<=3.8``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.5.0``                | ``0.6.0``                | ``>=3.5``, ``<=3.8``            |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.4.0``                | ``0.5.0``                | ``==2.7``, ``>=3.5``, ``<=3.8`` |
 +--------------------------+--------------------------+---------------------------------+
@@ -75,8 +91,10 @@ From source:
     # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
 
 
+We don't officially support building from source using ``pip``, but *if* you do,
+you'll need to use the ``--no-build-isolation`` flag.
 In case building TorchVision from source fails, install the nightly version of PyTorch following
-the linked guide on the  `contributing page <https://github.com/pytorch/vision/blob/master/CONTRIBUTING.md#development-installation>`_ and retry the install.
+the linked guide on the  `contributing page <https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation>`_ and retry the install.
 
 By default, GPU support is built if CUDA is found and ``torch.cuda.is_available()`` is true.
 It's possible to force building GPU support by setting ``FORCE_CUDA=1`` environment variable,
@@ -106,9 +124,25 @@ otherwise, add the include and library paths in the environment variables ``TORC
 .. _libjpeg: http://ijg.org/
 .. _libjpeg-turbo: https://libjpeg-turbo.org/
 
-C++ API
-=======
-TorchVision also offers a C++ API that contains C++ equivalent of python models.
+Video Backend
+=============
+Torchvision currently supports the following video backends:
+
+* `pyav`_ (default) - Pythonic binding for ffmpeg libraries.
+
+.. _pyav : https://github.com/PyAV-Org/PyAV
+
+* video_reader - This needs ffmpeg to be installed and torchvision to be built from source. There shouldn't be any conflicting version of ffmpeg installed. Currently, this is only supported on Linux.
+
+.. code:: bash
+
+     conda install -c conda-forge ffmpeg
+     python setup.py install
+
+
+Using the models on C++
+=======================
+TorchVision provides an example project for how to use the models on C++ using JIT Script.
 
 Installation From source:
 
@@ -133,6 +167,10 @@ so make sure that it is also available to cmake via the ``CMAKE_PREFIX_PATH``.
 
 For an example setup, take a look at ``examples/cpp/hello_world``.
 
+Python linking is disabled by default when compiling TorchVision with CMake, this allows you to run models without any Python 
+dependency. In some special cases where TorchVision's operators are used from Python code, you may need to link to Python. This 
+can be done by passing ``-DUSE_PYTHON=on`` to CMake.
+
 TorchVision Operators
 ---------------------
 In order to get the torchvision operators registered with torch (eg. for the JIT), all you need to do is to ensure that you
@@ -153,3 +191,26 @@ Disclaimer on Datasets
 This is a utility library that downloads and prepares public datasets. We do not host or distribute these datasets, vouch for their quality or fairness, or claim that you have license to use the dataset. It is your responsibility to determine whether you have permission to use the dataset under the dataset's license.
 
 If you're a dataset owner and wish to update any part of it (description, citation, etc.), or do not want your dataset to be included in this library, please get in touch through a GitHub issue. Thanks for your contribution to the ML community!
+
+Pre-trained Model License
+=========================
+
+The pre-trained models provided in this library may have their own licenses or terms and conditions derived from the dataset used for training. It is your responsibility to determine whether you have permission to use the models for your use case.
+
+More specifically, SWAG models are released under the CC-BY-NC 4.0 license. See `SWAG LICENSE <https://github.com/facebookresearch/SWAG/blob/main/LICENSE>`_ for additional details.
+
+Citing TorchVision
+==================
+
+If you find TorchVision useful in your work, please consider citing the following BibTeX entry:
+
+.. code:: bibtex
+
+    @software{torchvision2016,
+        title        = {TorchVision: PyTorch's Computer Vision library},
+        author       = {TorchVision maintainers and contributors},
+        year         = 2016,
+        journal      = {GitHub repository},
+        publisher    = {GitHub},
+        howpublished = {\url{https://github.com/pytorch/vision}}
+    }

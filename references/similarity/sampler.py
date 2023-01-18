@@ -1,7 +1,8 @@
+import random
+from collections import defaultdict
+
 import torch
 from torch.utils.data.sampler import Sampler
-from collections import defaultdict
-import random
 
 
 def create_groups(groups, k):
@@ -46,7 +47,8 @@ class PKSampler(Sampler):
         self.groups = create_groups(groups, self.k)
 
         # Ensures there are enough classes to sample from
-        assert len(self.groups) >= p
+        if len(self.groups) < p:
+            raise ValueError("There are not enough classes to sample from")
 
     def __iter__(self):
         # Shuffle samples within groups

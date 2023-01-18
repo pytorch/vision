@@ -7,6 +7,17 @@
 namespace ffmpeg {
 
 namespace {
+
+// Setup the data pointers and linesizes based on the specified image
+// parameters and the provided array. This sets up "planes" to point to a
+// "buffer"
+// NOTE: this is most likely culprit behind #3534
+//
+// Args:
+// fmt: desired output video format
+// buffer: source constant image buffer (in different format) that will contain
+// the final image after SWScale planes: destination data pointer to be filled
+// lineSize: target destination linesize (always {0})
 int preparePlanes(
     const VideoFormat& fmt,
     const uint8_t* buffer,
@@ -14,6 +25,7 @@ int preparePlanes(
     int* lineSize) {
   int result;
 
+  // NOTE: 1 at the end of av_fill_arrays is the value used for alignment
   if ((result = av_image_fill_arrays(
            planes,
            lineSize,
@@ -28,6 +40,18 @@ int preparePlanes(
   return result;
 }
 
+// Scale (and crop) the image slice in srcSlice and put the resulting scaled
+// slice to `planes` buffer, which is mapped to be `out` via preparePlanes as
+// `sws_scale` cannot access buffers directly.
+//
+// Args:
+// context: SWSContext allocated on line 119 (if crop, optional) or 163 (if
+// scale) srcSlice: frame data in YUV420P srcStride: the array containing the
+// strides for each plane of the source
+//            image (from AVFrame->linesize[0])
+// out: destination buffer
+// planes: indirect destination buffer (mapped to "out" via preparePlanes)
+// lines: destination linesize; constant {0}
 int transformImage(
     SwsContext* context,
     const uint8_t* const srcSlice[],
@@ -41,12 +65,31 @@ int transformImage(
   if ((result = preparePlanes(outFormat, out, planes, lines)) < 0) {
     return result;
   }
-
-  if ((result = sws_scale(
-           context, srcSlice, srcStride, 0, inFormat.height, planes, lines)) <
-      0) {
-    LOG(ERROR) << "sws_scale failed, err: " << Util::generateErrorDesc(result);
-    return result;
+  if (context) {
+    // NOTE: srcY stride always 0: this is a parameter of YUV format
+    if ((result = sws_scale(
+             context, srcSlice, srcStride, 0, inFormat.height, planes, lines)) <
+        0) {
+      LOG(ERROR) << "sws_scale failed, err: "
+                 << Util::generateErrorDesc(result);
+      return result;
+    }
+  } else if (
+      inFormat.width == outFormat.width &&
+      inFormat.height == outFormat.height &&
+      inFormat.format == outFormat.format) {
+    // Copy planes without using sws_scale if sws_getContext failed.
+    av_image_copy(
+        planes,
+        lines,
+        (const uint8_t**)srcSlice,
+        srcStride,
+        (AVPixelFormat)inFormat.format,
+        inFormat.width,
+        inFormat.height);
+  } else {
+    LOG(ERROR) << "Invalid scale context format " << inFormat.format;
+    return AVERROR(EINVAL);
   }
   return 0;
 }
@@ -135,6 +178,9 @@ bool VideoSampler::init(const SamplerParameters& params) {
           << params.out.video.minDimension << ", cropImage "
           << params.out.video.cropImage;
 
+  // set output format
+  params_ = params;
+
   scaleContext_ = sws_getContext(
       params.in.video.width,
       params.in.video.height,
@@ -146,13 +192,24 @@ bool VideoSampler::init(const SamplerParameters& params) {
       nullptr,
       nullptr,
       nullptr);
+  // sws_getContext might fail if in/out format == AV_PIX_FMT_PAL8 (png format)
+  // Return true if input and output formats/width/height are identical
+  // Check scaleContext_ for nullptr in transformImage to copy planes directly
 
-  // set output format
-  params_ = params;
-
+  if (params.in.video.width == scaleFormat_.width &&
+      params.in.video.height == scaleFormat_.height &&
+      params.in.video.format == scaleFormat_.format) {
+    return true;
+  }
   return scaleContext_ != nullptr;
 }
 
+// Main body of the sample function called from one of the overloads below
+//
+// Args:
+// srcSlice: decoded AVFrame->data perpared buffer
+// srcStride: linesize (usually obtained from AVFrame->linesize)
+// out: return buffer (ByteStorage*)
 int VideoSampler::sample(
     const uint8_t* const srcSlice[],
     int srcStride[],
@@ -221,6 +278,7 @@ int VideoSampler::sample(
   return outImageSize;
 }
 
+// Call from `video_stream.cpp::114` - occurs during file reads
 int VideoSampler::sample(AVFrame* frame, ByteStorage* out) {
   if (!frame) {
     return 0; // no flush for videos
@@ -229,6 +287,7 @@ int VideoSampler::sample(AVFrame* frame, ByteStorage* out) {
   return sample(frame->data, frame->linesize, out);
 }
 
+// Call from `video_stream.cpp::114` - not sure when this occurs
 int VideoSampler::sample(const ByteStorage* in, ByteStorage* out) {
   if (!in) {
     return 0; // no flush for videos

@@ -4,19 +4,38 @@ set(CMAKE_CXX_STANDARD 14)
 file(STRINGS version.txt TORCHVISION_VERSION)
 
 option(WITH_CUDA "Enable CUDA support" OFF)
+option(WITH_PNG "Enable features requiring LibPNG." ON)
+option(WITH_JPEG "Enable features requiring LibJPEG." ON)
+option(USE_PYTHON "Link to Python when building" OFF)
 
 if(WITH_CUDA)
   enable_language(CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
   add_definitions(-DWITH_CUDA)
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
+  # CUDA-11.x can not be compiled using C++14 standard on Windows
+  string(REGEX MATCH "^[0-9]+" CUDA_MAJOR ${CMAKE_CUDA_COMPILER_VERSION})
+  if(${CUDA_MAJOR} GREATER 10 AND MSVC)
+    set(CMAKE_CXX_STANDARD 17)
+  endif()
 endif()
 
-find_package(Python3 COMPONENTS Development)
-
 find_package(Torch REQUIRED)
-find_package(PNG REQUIRED)
-find_package(JPEG REQUIRED)
+
+if (WITH_PNG)
+    add_definitions(-DPNG_FOUND)
+    find_package(PNG REQUIRED)
+endif()
+
+if (WITH_JPEG)
+    add_definitions(-DJPEG_FOUND)
+    find_package(JPEG REQUIRED)
+endif()
+
+if (USE_PYTHON)
+  add_definitions(-DUSE_PYTHON)
+  find_package(Python3 REQUIRED COMPONENTS Development)
+endif()
 
 function(CUDA_CONVERT_FLAGS EXISTING_TARGET)
     get_property(old_flags TARGET ${EXISTING_TARGET} PROPERTY INTERFACE_COMPILE_OPTIONS)
@@ -71,12 +90,33 @@ FOREACH(DIR ${ALLOW_LISTED})
 ENDFOREACH()
 
 add_library(${PROJECT_NAME} SHARED ${ALL_SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
+
+if (WITH_PNG)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARY})
+endif()
+
+if (WITH_JPEG)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${JPEG_LIBRARIES})
+endif()
+
+if (USE_PYTHON)
+  target_link_libraries(${PROJECT_NAME} PRIVATE Python3::Python)
+endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
   EXPORT_NAME TorchVision
   INSTALL_RPATH ${TORCH_INSTALL_PREFIX}/lib)
 
-include_directories(torchvision/csrc ${JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS})
+include_directories(torchvision/csrc)
+
+if (WITH_PNG)
+    include_directories(${PNG_INCLUDE_DIRS})
+endif()
+
+if (WITH_JPEG)
+    include_directories(${JPEG_INCLUDE_DIRS})
+endif()
 
 set(TORCHVISION_CMAKECONFIG_INSTALL_DIR "share/cmake/TorchVision" CACHE STRING "install path for TorchVisionConfig.cmake")
 

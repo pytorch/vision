@@ -209,7 +209,6 @@ void ps_roi_align_backward_kernel_impl(
     int nthreads,
     const T* grad_output,
     const int* channel_mapping,
-    int num_rois,
     const T spatial_scale,
     int channels,
     int height,
@@ -384,7 +383,6 @@ at::Tensor ps_roi_align_backward_kernel(
   at::CheckedFrom c = "ps_roi_align_backward_kernel";
   at::checkAllSameType(c, {grad_t, rois_t});
 
-  auto num_rois = rois.size(0);
   auto grad_input =
       at::zeros({batch_size, channels, height, width}, grad.options());
 
@@ -402,7 +400,6 @@ at::Tensor ps_roi_align_backward_kernel(
             grad.numel(),
             grad_.data_ptr<scalar_t>(),
             channel_mapping.data_ptr<int>(),
-            num_rois,
             spatial_scale,
             channels,
             height,

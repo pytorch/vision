@@ -10,7 +10,7 @@ them using JIT compilation.
 
 Prior to v0.8.0, transforms in torchvision have traditionally been PIL-centric
 and presented multiple limitations due to that. Now, since v0.8.0, transforms
-implementations are Tensor and PIL compatible and we can achieve the following
+implementations are Tensor and PIL compatible, and we can achieve the following
 new features:
 
 - transform multi-band torch tensor images (with more than 3-4 channels)
@@ -85,20 +85,16 @@ show([transformed_dog1, transformed_dog2])
 # Let's define a ``Predictor`` module that transforms the input tensor and then
 # applies an ImageNet model on it.
 
-from torchvision.models import resnet18
+from torchvision.models import resnet18, ResNet18_Weights
 
 
 class Predictor(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.resnet18 = resnet18(pretrained=True, progress=False).eval()
-        self.transforms = nn.Sequential(
-            T.Resize([256, ]),  # We use single int value inside a list due to torchscript type restrictions
-            T.CenterCrop(224),
-            T.ConvertImageDtype(torch.float),
-            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        )
+        weights = ResNet18_Weights.DEFAULT
+        self.resnet18 = resnet18(weights=weights, progress=False).eval()
+        self.transforms = weights.transforms()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
@@ -125,7 +121,7 @@ res_scripted = scripted_predictor(batch)
 
 import json
 
-with open(Path('assets') / 'imagenet_class_index.json', 'r') as labels_file:
+with open(Path('assets') / 'imagenet_class_index.json') as labels_file:
     labels = json.load(labels_file)
 
 for i, (pred, pred_scripted) in enumerate(zip(res, res_scripted)):
@@ -133,7 +129,7 @@ for i, (pred, pred_scripted) in enumerate(zip(res, res_scripted)):
     print(f"Prediction for Dog {i + 1}: {labels[str(pred.item())]}")
 
 ####################################
-# Since the model is scripted, it can be easily dumped on disk an re-used
+# Since the model is scripted, it can be easily dumped on disk and re-used
 
 import tempfile
 

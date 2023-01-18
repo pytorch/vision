@@ -32,10 +32,11 @@ videos, together with the examples on how to build datasets and more.
 import torch
 import torchvision
 from torchvision.datasets.utils import download_url
+torchvision.set_video_backend("video_reader")
 
 # Download the sample video
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
     ".",
     "WUzgd7C1pWA.mp4"
 )
@@ -137,7 +138,7 @@ def example_read_video(video_object, start=0, end=None, read_video=True, read_au
     if end < start:
         raise ValueError(
             "end time should be larger than start time, got "
-            "start time={} and end time={}".format(start, end)
+            f"start time={start} and end time={end}"
         )
 
     video_frames = torch.empty(0)
@@ -158,7 +159,7 @@ def example_read_video(video_object, start=0, end=None, read_video=True, read_au
         frames = []
         for frame in itertools.takewhile(lambda x: x['pts'] <= end, video_object.seek(start)):
             frames.append(frame['data'])
-            video_pts.append(frame['pts'])
+            audio_pts.append(frame['pts'])
         if len(frames) > 0:
             audio_frames = torch.cat(frames, 0)
 
@@ -170,7 +171,7 @@ vf, af, info, meta = example_read_video(video)
 print(vf.size(), af.size())
 
 ####################################
-# 3. Building an example randomly sampled dataset (can be applied to training dataest of kinetics400)
+# 3. Building an example randomly sampled dataset (can be applied to training dataset of kinetics400)
 # -------------------------------------------------------------------------------------------------------
 # Cool, so now we can use the same principle to make the sample dataset.
 # We suggest trying out iterable dataset for this purpose.
@@ -187,26 +188,26 @@ os.makedirs("./dataset/2", exist_ok=True)
 # Download the videos
 from torchvision.datasets.utils import download_url
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
     "./dataset/1", "WUzgd7C1pWA.mp4"
 )
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/RATRACE_wave_f_nm_np1_fr_goo_37.avi?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/RATRACE_wave_f_nm_np1_fr_goo_37.avi?raw=true",
     "./dataset/1",
     "RATRACE_wave_f_nm_np1_fr_goo_37.avi"
 )
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/SOX5yA1l24A.mp4?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/SOX5yA1l24A.mp4?raw=true",
     "./dataset/2",
     "SOX5yA1l24A.mp4"
 )
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/v_SoccerJuggling_g23_c01.avi?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/v_SoccerJuggling_g23_c01.avi?raw=true",
     "./dataset/2",
     "v_SoccerJuggling_g23_c01.avi"
 )
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/v_SoccerJuggling_g24_c01.avi?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/v_SoccerJuggling_g24_c01.avi?raw=true",
     "./dataset/2",
     "v_SoccerJuggling_g24_c01.avi"
 )
@@ -325,7 +326,7 @@ print(data)
 # ----------------------------------
 # Example of visualized video
 
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 
 plt.figure(figsize=(12, 12))
 for i in range(16):

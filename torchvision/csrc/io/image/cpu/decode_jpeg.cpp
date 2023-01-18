@@ -70,6 +70,8 @@ static void torch_jpeg_set_source_mgr(
 } // namespace
 
 torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.image.cpu.decode_jpeg.decode_jpeg");
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional

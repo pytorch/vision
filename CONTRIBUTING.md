@@ -60,25 +60,64 @@ conda install libpng jpeg
 
 If you plan to modify the code or documentation, please follow the steps below:
 
-1. Fork the repository and create your branch from `master`.
+1. Fork the repository and create your branch from `main`.
 2. If you have modified the code (new feature or bug-fix), please add unit tests.
 3. If you have changed APIs, update the documentation. Make sure the documentation builds.
 4. Ensure the test suite passes.
-5. Make sure your code passes `flake8` formatting check.
+5. Make sure your code passes the formatting checks (see below).
 
 For more details about pull requests, 
 please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request). 
 
-If you would like to contribute a new model, please see [here](#New-model).
+If you would like to contribute a new model, please see [here](#New-architecture-or-improved-model-weights).
 
 If you would like to contribute a new dataset, please see [here](#New-dataset). 
 
 ### Code formatting and typing
 
-New code should be compatible with Python 3.X versions and be compliant with PEP8. To check the codebase, please run
+#### Formatting
+
+The torchvision code is formatted by [black](https://black.readthedocs.io/en/stable/),
+and checked against pep8 compliance with [flake8](https://flake8.pycqa.org/en/latest/).
+Instead of relying directly on `black` however, we rely on
+[ufmt](https://github.com/omnilib/ufmt), for compatibility reasons with Facebook
+internal infrastructure.
+
+To format your code, install `ufmt` with `pip install ufmt==1.3.2 black==22.3.0 usort==1.0.2` and use e.g.:
+
 ```bash
-flake8 --config=setup.cfg .
+ufmt format torchvision
 ```
+
+For the vast majority of cases, this is all you should need to run. For the
+formatting to be a bit faster, you can also choose to only apply `ufmt` to the
+files that were edited in your PR with e.g.:
+
+```bash
+ufmt format `git diff main --name-only`
+```
+
+Similarly, you can check for `flake8` errors with `flake8 torchvision`, although
+they should be fairly rare considering that most of the errors are automatically
+taken care of by `ufmt` already.
+
+##### Pre-commit hooks
+
+For convenience and **purely optionally**, you can rely on [pre-commit
+hooks](https://pre-commit.com/) which will run both `ufmt` and `flake8` prior to
+every commit.
+
+First install the `pre-commit` package with `pip install pre-commit`, and then
+run `pre-commit install` at the root of the repo for the hooks to be set up -
+that's it.
+
+Feel free to read the [pre-commit docs](https://pre-commit.com/#usage) to learn
+more and improve your workflow. You'll see for example that `pre-commit run
+--all-files` will run both `ufmt` and `flake8` without the need for you to
+commit anything, and that the `--no-verify` flag can be added to `git commit` to
+temporarily deactivate the hooks.
+
+#### Type annotations
 
 The codebase has type annotations, please make sure to add type hints if required. We use `mypy` tool for type checking:
 ```bash
@@ -120,7 +159,7 @@ pip install -r requirements.txt
 
 ```bash
 cd docs
-make html
+make html-noplot
 ```
 
 Then open `docs/build/html/index.html` in your favorite browser.
@@ -134,23 +173,22 @@ clean``.
 
 #### Building the example gallery - or not
 
-When you run ``make html`` for the first time, all the examples in the gallery
-will be built. Subsequent builds should be faster, and will only build the
-examples that have been modified.
+In most cases, running `make html-noplot` is enough to build the docs for your
+specific use-case. The `noplot` part tells sphinx **not** to build the examples
+in the [gallery](https://pytorch.org/vision/stable/auto_examples/index.html),
+which saves a lot of building time.
 
-You can run ``make html-noplot`` to not build the examples at all. This is
-useful after a ``make clean`` to do some quick checks that are not related to
-the examples.
+If you need to build all the examples in the gallery, then you can use `make
+html`.
 
 You can also choose to only build a subset of the examples by using the
 ``EXAMPLES_PATTERN`` env variable, which accepts a regular expression. For
 example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
 with "transforms" in their name.
 
-### New model
+### New architecture or improved model weights
 
-More details on how to add a new model will be provided later. Please, do not send any PR with a new model without discussing 
-it in an issue as, most likely, it will not be accepted.
+Please refer to the guidelines in [Contributing to Torchvision - Models](https://github.com/pytorch/vision/blob/main/CONTRIBUTING_MODELS.md).
  
 ### New dataset
 
@@ -160,7 +198,7 @@ it in an issue as, most likely, it will not be accepted.
 ### Pull Request
 
 If all previous checks (flake8, mypy, unit tests) are passing, please send a PR. Submitted PR will pass other tests on 
-different operation systems, python versions and hardwares.
+different operating systems, python versions and hardware.
 
 For more details about pull requests workflow, 
 please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).

@@ -1,76 +1,29 @@
+from functools import partial
+from typing import Any, Callable, List, Optional
+
 import torch
-from torch import nn
-from torch import Tensor
-from .._internally_replaced_utils import load_state_dict_from_url
-from typing import Callable, Any, Optional, List
+from torch import nn, Tensor
+
+from ..ops.misc import Conv2dNormActivation
+from ..transforms._presets import ImageClassification
+from ..utils import _log_api_usage_once
+from ._api import register_model, Weights, WeightsEnum
+from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _make_divisible, _ovewrite_named_param, handle_legacy_interface
 
 
-__all__ = ['MobileNetV2', 'mobilenet_v2']
-
-
-model_urls = {
-    'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
-}
-
-
-def _make_divisible(v: float, divisor: int, min_value: Optional[int] = None) -> int:
-    """
-    This function is taken from the original tf repo.
-    It ensures that all layers have a channel number that is divisible by 8
-    It can be seen here:
-    https://github.com/tensorflow/models/blob/master/research/slim/nets/mobilenet/mobilenet.py
-    """
-    if min_value is None:
-        min_value = divisor
-    new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
-    # Make sure that round down does not go down by more than 10%.
-    if new_v < 0.9 * v:
-        new_v += divisor
-    return new_v
-
-
-class ConvBNActivation(nn.Sequential):
-    def __init__(
-        self,
-        in_planes: int,
-        out_planes: int,
-        kernel_size: int = 3,
-        stride: int = 1,
-        groups: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None,
-        activation_layer: Optional[Callable[..., nn.Module]] = None,
-        dilation: int = 1,
-    ) -> None:
-        padding = (kernel_size - 1) // 2 * dilation
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
-        if activation_layer is None:
-            activation_layer = nn.ReLU6
-        super().__init__(
-            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, dilation=dilation, groups=groups,
-                      bias=False),
-            norm_layer(out_planes),
-            activation_layer(inplace=True)
-        )
-        self.out_channels = out_planes
+__all__ = ["MobileNetV2", "MobileNet_V2_Weights", "mobilenet_v2"]
 
 
 # necessary for backwards compatibility
-ConvBNReLU = ConvBNActivation
-
-
 class InvertedResidual(nn.Module):
     def __init__(
-        self,
-        inp: int,
-        oup: int,
-        stride: int,
-        expand_ratio: int,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+        self, inp: int, oup: int, stride: int, expand_ratio: int, norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
-        super(InvertedResidual, self).__init__()
+        super().__init__()
         self.stride = stride
-        assert stride in [1, 2]
+        if stride not in [1, 2]:
+            raise ValueError(f"stride should be 1 or 2 instead of {stride}")
 
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -81,14 +34,25 @@ class InvertedResidual(nn.Module):
         layers: List[nn.Module] = []
         if expand_ratio != 1:
             # pw
-            layers.append(ConvBNReLU(inp, hidden_dim, kernel_size=1, norm_layer=norm_layer))
-        layers.extend([
-            # dw
-            ConvBNReLU(hidden_dim, hidden_dim, stride=stride, groups=hidden_dim, norm_layer=norm_layer),
-            # pw-linear
-            nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
-            norm_layer(oup),
-        ])
+            layers.append(
+                Conv2dNormActivation(inp, hidden_dim, kernel_size=1, norm_layer=norm_layer, activation_layer=nn.ReLU6)
+            )
+        layers.extend(
+            [
+                # dw
+                Conv2dNormActivation(
+                    hidden_dim,
+                    hidden_dim,
+                    stride=stride,
+                    groups=hidden_dim,
+                    norm_layer=norm_layer,
+                    activation_layer=nn.ReLU6,
+                ),
+                # pw-linear
+                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                norm_layer(oup),
+            ]
+        )
         self.conv = nn.Sequential(*layers)
         self.out_channels = oup
         self._is_cn = stride > 1
@@ -108,7 +72,8 @@ class MobileNetV2(nn.Module):
         inverted_residual_setting: Optional[List[List[int]]] = None,
         round_nearest: int = 8,
         block: Optional[Callable[..., nn.Module]] = None,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+        dropout: float = 0.2,
     ) -> None:
         """
         MobileNet V2 main class
@@ -121,9 +86,11 @@ class MobileNetV2(nn.Module):
             Set to 1 to turn off rounding
             block: Module specifying inverted residual building block for mobilenet
             norm_layer: Module specifying the normalization layer to use
+            dropout (float): The droupout probability
 
         """
-        super(MobileNetV2, self).__init__()
+        super().__init__()
+        _log_api_usage_once(self)
 
         if block is None:
             block = InvertedResidual
@@ -148,13 +115,16 @@ class MobileNetV2(nn.Module):
 
         # only check the first element, assuming user knows t,c,n,s are required
         if len(inverted_residual_setting) == 0 or len(inverted_residual_setting[0]) != 4:
-            raise ValueError("inverted_residual_setting should be non-empty "
-                             "or a 4-element list, got {}".format(inverted_residual_setting))
+            raise ValueError(
+                f"inverted_residual_setting should be non-empty or a 4-element list, got {inverted_residual_setting}"
+            )
 
         # building first layer
         input_channel = _make_divisible(input_channel * width_mult, round_nearest)
         self.last_channel = _make_divisible(last_channel * max(1.0, width_mult), round_nearest)
-        features: List[nn.Module] = [ConvBNReLU(3, input_channel, stride=2, norm_layer=norm_layer)]
+        features: List[nn.Module] = [
+            Conv2dNormActivation(3, input_channel, stride=2, norm_layer=norm_layer, activation_layer=nn.ReLU6)
+        ]
         # building inverted residual blocks
         for t, c, n, s in inverted_residual_setting:
             output_channel = _make_divisible(c * width_mult, round_nearest)
@@ -163,20 +133,24 @@ class MobileNetV2(nn.Module):
                 features.append(block(input_channel, output_channel, stride, expand_ratio=t, norm_layer=norm_layer))
                 input_channel = output_channel
         # building last several layers
-        features.append(ConvBNReLU(input_channel, self.last_channel, kernel_size=1, norm_layer=norm_layer))
+        features.append(
+            Conv2dNormActivation(
+                input_channel, self.last_channel, kernel_size=1, norm_layer=norm_layer, activation_layer=nn.ReLU6
+            )
+        )
         # make it nn.Sequential
         self.features = nn.Sequential(*features)
 
         # building classifier
         self.classifier = nn.Sequential(
-            nn.Dropout(0.2),
+            nn.Dropout(p=dropout),
             nn.Linear(self.last_channel, num_classes),
         )
 
         # weight initialization
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out")
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
@@ -200,18 +174,98 @@ class MobileNetV2(nn.Module):
         return self._forward_impl(x)
 
 
-def mobilenet_v2(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV2:
-    """
-    Constructs a MobileNetV2 architecture from
-    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks" <https://arxiv.org/abs/1801.04381>`_.
+_COMMON_META = {
+    "num_params": 3504872,
+    "min_size": (1, 1),
+    "categories": _IMAGENET_CATEGORIES,
+}
+
+
+class MobileNet_V2_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 71.878,
+                    "acc@5": 90.286,
+                }
+            },
+            "_ops": 0.301,
+            "_file_size": 13.555,
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
+        },
+    )
+    IMAGENET1K_V2 = Weights(
+        url="https://download.pytorch.org/models/mobilenet_v2-7ebf99e0.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 72.154,
+                    "acc@5": 90.822,
+                }
+            },
+            "_ops": 0.301,
+            "_file_size": 13.598,
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
+        },
+    )
+    DEFAULT = IMAGENET1K_V2
+
+
+@register_model()
+@handle_legacy_interface(weights=("pretrained", MobileNet_V2_Weights.IMAGENET1K_V1))
+def mobilenet_v2(
+    *, weights: Optional[MobileNet_V2_Weights] = None, progress: bool = True, **kwargs: Any
+) -> MobileNetV2:
+    """MobileNetV2 architecture from the `MobileNetV2: Inverted Residuals and Linear
+    Bottlenecks <https://arxiv.org/abs/1801.04381>`_ paper.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.MobileNet_V2_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MobileNet_V2_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.mobilenetv2.MobileNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.MobileNet_V2_Weights
+        :members:
     """
+    weights = MobileNet_V2_Weights.verify(weights)
+
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+
     model = MobileNetV2(**kwargs)
-    if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['mobilenet_v2'],
-                                              progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "mobilenet_v2": MobileNet_V2_Weights.IMAGENET1K_V1.url,
+    }
+)

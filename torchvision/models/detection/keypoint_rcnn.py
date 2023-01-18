@@ -1,17 +1,24 @@
+from typing import Any, Optional
+
 import torch
 from torch import nn
-
 from torchvision.ops import MultiScaleRoIAlign
 
+from ...ops import misc as misc_nn_ops
+from ...transforms._presets import ObjectDetection
+from .._api import register_model, Weights, WeightsEnum
+from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from ._utils import overwrite_eps
-from ..._internally_replaced_utils import load_state_dict_from_url
-
+from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .faster_rcnn import FasterRCNN
-from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers
 
 
 __all__ = [
-    "KeypointRCNN", "keypointrcnn_resnet50_fpn"
+    "KeypointRCNN",
+    "KeypointRCNN_ResNet50_FPN_Weights",
+    "keypointrcnn_resnet50_fpn",
 ]
 
 
@@ -22,9 +29,9 @@ class KeypointRCNN(FasterRCNN):
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -48,7 +55,7 @@ class KeypointRCNN(FasterRCNN):
 
     Args:
         backbone (nn.Module): the network used to compute the features for the model.
-            It should contain a out_channels attribute, which indicates the number of output
+            It should contain an out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
             The backbone should return a single Tensor or and OrderedDict[Tensor].
         num_classes (int): number of output classes of the model (including the background).
@@ -112,9 +119,9 @@ class KeypointRCNN(FasterRCNN):
         >>>
         >>> # load a pre-trained model for classification and return
         >>> # only the features
-        >>> backbone = torchvision.models.mobilenet_v2(pretrained=True).features
+        >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # KeypointRCNN needs to know the number of
-        >>> # output channels in a backbone. For mobilenet_v2, it's 1280
+        >>> # output channels in a backbone. For mobilenet_v2, it's 1280,
         >>> # so we need to add it here
         >>> backbone.out_channels = 1280
         >>>
@@ -151,43 +158,66 @@ class KeypointRCNN(FasterRCNN):
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
     """
-    def __init__(self, backbone, num_classes=None,
-                 # transform parameters
-                 min_size=None, max_size=1333,
-                 image_mean=None, image_std=None,
-                 # RPN parameters
-                 rpn_anchor_generator=None, rpn_head=None,
-                 rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
-                 rpn_post_nms_top_n_train=2000, rpn_post_nms_top_n_test=1000,
-                 rpn_nms_thresh=0.7,
-                 rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,
-                 rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,
-                 rpn_score_thresh=0.0,
-                 # Box parameters
-                 box_roi_pool=None, box_head=None, box_predictor=None,
-                 box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
-                 box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,
-                 box_batch_size_per_image=512, box_positive_fraction=0.25,
-                 bbox_reg_weights=None,
-                 # keypoint parameters
-                 keypoint_roi_pool=None, keypoint_head=None, keypoint_predictor=None,
-                 num_keypoints=17):
 
-        assert isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None)))
+    def __init__(
+        self,
+        backbone,
+        num_classes=None,
+        # transform parameters
+        min_size=None,
+        max_size=1333,
+        image_mean=None,
+        image_std=None,
+        # RPN parameters
+        rpn_anchor_generator=None,
+        rpn_head=None,
+        rpn_pre_nms_top_n_train=2000,
+        rpn_pre_nms_top_n_test=1000,
+        rpn_post_nms_top_n_train=2000,
+        rpn_post_nms_top_n_test=1000,
+        rpn_nms_thresh=0.7,
+        rpn_fg_iou_thresh=0.7,
+        rpn_bg_iou_thresh=0.3,
+        rpn_batch_size_per_image=256,
+        rpn_positive_fraction=0.5,
+        rpn_score_thresh=0.0,
+        # Box parameters
+        box_roi_pool=None,
+        box_head=None,
+        box_predictor=None,
+        box_score_thresh=0.05,
+        box_nms_thresh=0.5,
+        box_detections_per_img=100,
+        box_fg_iou_thresh=0.5,
+        box_bg_iou_thresh=0.5,
+        box_batch_size_per_image=512,
+        box_positive_fraction=0.25,
+        bbox_reg_weights=None,
+        # keypoint parameters
+        keypoint_roi_pool=None,
+        keypoint_head=None,
+        keypoint_predictor=None,
+        num_keypoints=None,
+        **kwargs,
+    ):
+
+        if not isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None))):
+            raise TypeError(
+                "keypoint_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(keypoint_roi_pool)}"
+            )
         if min_size is None:
             min_size = (640, 672, 704, 736, 768, 800)
 
-        if num_classes is not None:
+        if num_keypoints is not None:
             if keypoint_predictor is not None:
-                raise ValueError("num_classes should be None when keypoint_predictor is specified")
+                raise ValueError("num_keypoints should be None when keypoint_predictor is specified")
+        else:
+            num_keypoints = 17
 
         out_channels = backbone.out_channels
 
         if keypoint_roi_pool is None:
-            keypoint_roi_pool = MultiScaleRoIAlign(
-                featmap_names=['0', '1', '2', '3'],
-                output_size=14,
-                sampling_ratio=2)
+            keypoint_roi_pool = MultiScaleRoIAlign(featmap_names=["0", "1", "2", "3"], output_size=14, sampling_ratio=2)
 
         if keypoint_head is None:
             keypoint_layers = tuple(512 for _ in range(8))
@@ -197,25 +227,41 @@ class KeypointRCNN(FasterRCNN):
             keypoint_dim_reduced = 512  # == keypoint_layers[-1]
             keypoint_predictor = KeypointRCNNPredictor(keypoint_dim_reduced, num_keypoints)
 
-        super(KeypointRCNN, self).__init__(
-            backbone, num_classes,
+        super().__init__(
+            backbone,
+            num_classes,
             # transform parameters
-            min_size, max_size,
-            image_mean, image_std,
+            min_size,
+            max_size,
+            image_mean,
+            image_std,
             # RPN-specific parameters
-            rpn_anchor_generator, rpn_head,
-            rpn_pre_nms_top_n_train, rpn_pre_nms_top_n_test,
-            rpn_post_nms_top_n_train, rpn_post_nms_top_n_test,
+            rpn_anchor_generator,
+            rpn_head,
+            rpn_pre_nms_top_n_train,
+            rpn_pre_nms_top_n_test,
+            rpn_post_nms_top_n_train,
+            rpn_post_nms_top_n_test,
             rpn_nms_thresh,
-            rpn_fg_iou_thresh, rpn_bg_iou_thresh,
-            rpn_batch_size_per_image, rpn_positive_fraction,
+            rpn_fg_iou_thresh,
+            rpn_bg_iou_thresh,
+            rpn_batch_size_per_image,
+            rpn_positive_fraction,
             rpn_score_thresh,
             # Box parameters
-            box_roi_pool, box_head, box_predictor,
-            box_score_thresh, box_nms_thresh, box_detections_per_img,
-            box_fg_iou_thresh, box_bg_iou_thresh,
-            box_batch_size_per_image, box_positive_fraction,
-            bbox_reg_weights)
+            box_roi_pool,
+            box_head,
+            box_predictor,
+            box_score_thresh,
+            box_nms_thresh,
+            box_detections_per_img,
+            box_fg_iou_thresh,
+            box_bg_iou_thresh,
+            box_batch_size_per_image,
+            box_positive_fraction,
+            bbox_reg_weights,
+            **kwargs,
+        )
 
         self.roi_heads.keypoint_roi_pool = keypoint_roi_pool
         self.roi_heads.keypoint_head = keypoint_head
@@ -230,7 +276,7 @@ class KeypointRCNNHeads(nn.Sequential):
             d.append(nn.Conv2d(next_feature, out_channels, 3, stride=1, padding=1))
             d.append(nn.ReLU(inplace=True))
             next_feature = out_channels
-        super(KeypointRCNNHeads, self).__init__(*d)
+        super().__init__(*d)
         for m in self.children():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -239,7 +285,7 @@ class KeypointRCNNHeads(nn.Sequential):
 
 class KeypointRCNNPredictor(nn.Module):
     def __init__(self, in_channels, num_keypoints):
-        super(KeypointRCNNPredictor, self).__init__()
+        super().__init__()
         input_features = in_channels
         deconv_kernel = 4
         self.kps_score_lowres = nn.ConvTranspose2d(
@@ -249,9 +295,7 @@ class KeypointRCNNPredictor(nn.Module):
             stride=2,
             padding=deconv_kernel // 2 - 1,
         )
-        nn.init.kaiming_normal_(
-            self.kps_score_lowres.weight, mode="fan_out", nonlinearity="relu"
-        )
+        nn.init.kaiming_normal_(self.kps_score_lowres.weight, mode="fan_out", nonlinearity="relu")
         nn.init.constant_(self.kps_score_lowres.bias, 0)
         self.up_scale = 2
         self.out_channels = num_keypoints
@@ -263,27 +307,89 @@ class KeypointRCNNPredictor(nn.Module):
         )
 
 
-model_urls = {
-    # legacy model for BC reasons, see https://github.com/pytorch/vision/issues/1606
-    'keypointrcnn_resnet50_fpn_coco_legacy':
-        'https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth',
-    'keypointrcnn_resnet50_fpn_coco':
-        'https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth',
+_COMMON_META = {
+    "categories": _COCO_PERSON_CATEGORIES,
+    "keypoint_names": _COCO_PERSON_KEYPOINT_NAMES,
+    "min_size": (1, 1),
 }
 
 
-def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
-                              num_classes=2, num_keypoints=17,
-                              pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
+class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
+    COCO_LEGACY = Weights(
+        url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth",
+        transforms=ObjectDetection,
+        meta={
+            **_COMMON_META,
+            "num_params": 59137258,
+            "recipe": "https://github.com/pytorch/vision/issues/1606",
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 50.6,
+                    "kp_map": 61.1,
+                }
+            },
+            "_ops": 133.924,
+            "_file_size": 226.054,
+            "_docs": """
+                These weights were produced by following a similar training recipe as on the paper but use a checkpoint
+                from an early epoch.
+            """,
+        },
+    )
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth",
+        transforms=ObjectDetection,
+        meta={
+            **_COMMON_META,
+            "num_params": 59137258,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#keypoint-r-cnn",
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 54.6,
+                    "kp_map": 65.0,
+                }
+            },
+            "_ops": 137.42,
+            "_file_size": 226.054,
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
+        },
+    )
+    DEFAULT = COCO_V1
+
+
+@register_model()
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: KeypointRCNN_ResNet50_FPN_Weights.COCO_LEGACY
+        if kwargs["pretrained"] == "legacy"
+        else KeypointRCNN_ResNet50_FPN_Weights.COCO_V1,
+    ),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
+)
+def keypointrcnn_resnet50_fpn(
+    *,
+    weights: Optional[KeypointRCNN_ResNet50_FPN_Weights] = None,
+    progress: bool = True,
+    num_classes: Optional[int] = None,
+    num_keypoints: Optional[int] = None,
+    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs: Any,
+) -> KeypointRCNN:
     """
     Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.
+
+    .. betastatus:: detection module
+
+    Reference: `Mask R-CNN <https://arxiv.org/abs/1703.06870>`__.
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -311,7 +417,7 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     Example::
 
-        >>> model = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=True)
+        >>> model = torchvision.models.detection.keypointrcnn_resnet50_fpn(weights=KeypointRCNN_ResNet50_FPN_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
@@ -320,28 +426,60 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
         >>> torch.onnx.export(model, x, "keypoint_rcnn.onnx", opset_version = 11)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        weights (:class:`~torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        num_keypoints (int): number of keypoints, default 17
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
-    """
-    trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3)
+        num_classes (int, optional): number of output classes of the model (including the background)
+        num_keypoints (int, optional): number of keypoints
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The
+            pretrained weights for the backbone.
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 3.
 
-    if pretrained:
-        # no need to download the backbone if pretrained is set
-        pretrained_backbone = False
-    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    .. autoclass:: torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights
+        :members:
+    """
+    weights = KeypointRCNN_ResNet50_FPN_Weights.verify(weights)
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+        num_keypoints = _ovewrite_value_param("num_keypoints", num_keypoints, len(weights.meta["keypoint_names"]))
+    else:
+        if num_classes is None:
+            num_classes = 2
+        if num_keypoints is None:
+            num_keypoints = 17
+
+    is_trained = weights is not None or weights_backbone is not None
+    trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
+    norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
+
+    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=norm_layer)
+    backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers)
     model = KeypointRCNN(backbone, num_classes, num_keypoints=num_keypoints, **kwargs)
-    if pretrained:
-        key = 'keypointrcnn_resnet50_fpn_coco'
-        if pretrained == 'legacy':
-            key += '_legacy'
-        state_dict = load_state_dict_from_url(model_urls[key],
-                                              progress=progress)
-        model.load_state_dict(state_dict)
-        overwrite_eps(model, 0.0)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+        if weights == KeypointRCNN_ResNet50_FPN_Weights.COCO_V1:
+            overwrite_eps(model, 0.0)
+
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        # legacy model for BC reasons, see https://github.com/pytorch/vision/issues/1606
+        "keypointrcnn_resnet50_fpn_coco_legacy": KeypointRCNN_ResNet50_FPN_Weights.COCO_LEGACY.url,
+        "keypointrcnn_resnet50_fpn_coco": KeypointRCNN_ResNet50_FPN_Weights.COCO_V1.url,
+    }
+)

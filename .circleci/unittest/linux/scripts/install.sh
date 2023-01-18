@@ -12,24 +12,28 @@ conda activate ./env
 
 if [ "${CU_VERSION:-}" == cpu ] ; then
     cudatoolkit="cpuonly"
+    version="cpu"
 else
     if [[ ${#CU_VERSION} -eq 4 ]]; then
         CUDA_VERSION="${CU_VERSION:2:1}.${CU_VERSION:3:1}"
     elif [[ ${#CU_VERSION} -eq 5 ]]; then
         CUDA_VERSION="${CU_VERSION:2:2}.${CU_VERSION:4:1}"
     fi
-    echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION"
+    echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION: ${CU_VERSION} "
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
-    cudatoolkit="cudatoolkit=${version}"
+    cudatoolkit="pytorch-cuda=${version}"
 fi
 
-printf "Installing PyTorch with %s\n" "${cudatoolkit}"
-conda install -y -c "pytorch-${UPLOAD_CHANNEL}" "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}" pytest
+case "$(uname -s)" in
+    Darwin*) os=MacOSX;;
+    *) os=Linux
+esac
 
-if [ $PYTHON_VERSION == "3.6" ]; then
-    printf "Installing minimal PILLOW version\n"
-    # Install the minimal PILLOW version. Otherwise, let setup.py install the latest
-    pip install pillow>=5.3.0
+printf "Installing PyTorch with %s\n" "${cudatoolkit}"
+if [ "${os}" == "MacOSX" ]; then
+    conda install -y -c "pytorch-${UPLOAD_CHANNEL}" "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}"
+else
+    conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c nvidia "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}"
 fi
 
 printf "* Installing torchvision\n"

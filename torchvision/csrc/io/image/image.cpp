@@ -1,15 +1,20 @@
 #include "image.h"
 
+#include <ATen/core/op_registration/op_registration.h>
+#ifdef USE_PYTHON
 #include <Python.h>
+#endif
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
+#ifdef USE_PYTHON
 #ifdef _WIN32
 PyMODINIT_FUNC PyInit_image(void) {
   // No need to do anything.
   return NULL;
 }
 #endif
+#endif // USE_PYTHON
 
 namespace vision {
 namespace image {

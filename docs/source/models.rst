@@ -1,585 +1,574 @@
-torchvision.models
-##################
+.. _models:
 
+Models and pre-trained weights
+##############################
 
-The models subpackage contains definitions of models for addressing
+The ``torchvision.models`` subpackage contains definitions of models for addressing
 different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
-keypoint detection and video classification.
+keypoint detection, video classification, and optical flow.
+
+General information on pre-trained weights
+==========================================
+
+TorchVision offers pre-trained weights for every provided architecture, using
+the PyTorch :mod:`torch.hub`. Instancing a pre-trained model will download its
+weights to a cache directory. This directory can be set using the `TORCH_HOME`
+environment variable. See :func:`torch.hub.load_state_dict_from_url` for details.
+
+.. note::
+
+    The pre-trained models provided in this library may have their own licenses or
+    terms and conditions derived from the dataset used for training. It is your
+    responsibility to determine whether you have permission to use the models for
+    your use case.
+
+.. note ::
+    Backward compatibility is guaranteed for loading a serialized
+    ``state_dict`` to the model created using old PyTorch version.
+    On the contrary, loading entire saved models or serialized
+    ``ScriptModules`` (serialized using older versions of PyTorch)
+    may not preserve the historic behaviour. Refer to the following
+    `documentation
+    <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_
 
 
-Classification
-==============
+Initializing pre-trained models
+-------------------------------
 
-The models subpackage contains definitions for the following model
-architectures for image classification:
-
--  `AlexNet`_
--  `VGG`_
--  `ResNet`_
--  `SqueezeNet`_
--  `DenseNet`_
--  `Inception`_ v3
--  `GoogLeNet`_
--  `ShuffleNet`_ v2
--  `MobileNetV2`_
--  `MobileNetV3`_
--  `ResNeXt`_
--  `Wide ResNet`_
--  `MNASNet`_
-
-You can construct a model with random weights by calling its constructor:
-
-.. code:: python
-
-    import torchvision.models as models
-    resnet18 = models.resnet18()
-    alexnet = models.alexnet()
-    vgg16 = models.vgg16()
-    squeezenet = models.squeezenet1_0()
-    densenet = models.densenet161()
-    inception = models.inception_v3()
-    googlenet = models.googlenet()
-    shufflenet = models.shufflenet_v2_x1_0()
-    mobilenet_v2 = models.mobilenet_v2()
-    mobilenet_v3_large = models.mobilenet_v3_large()
-    mobilenet_v3_small = models.mobilenet_v3_small()
-    resnext50_32x4d = models.resnext50_32x4d()
-    wide_resnet50_2 = models.wide_resnet50_2()
-    mnasnet = models.mnasnet1_0()
-
-We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
-These can be constructed by passing ``pretrained=True``:
+As of v0.13, TorchVision offers a new `Multi-weight support API
+<https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/>`_
+for loading different weights to the existing model builder methods:
 
 .. code:: python
 
-    import torchvision.models as models
-    resnet18 = models.resnet18(pretrained=True)
-    alexnet = models.alexnet(pretrained=True)
-    squeezenet = models.squeezenet1_0(pretrained=True)
-    vgg16 = models.vgg16(pretrained=True)
-    densenet = models.densenet161(pretrained=True)
-    inception = models.inception_v3(pretrained=True)
-    googlenet = models.googlenet(pretrained=True)
-    shufflenet = models.shufflenet_v2_x1_0(pretrained=True)
-    mobilenet_v2 = models.mobilenet_v2(pretrained=True)
-    mobilenet_v3_large = models.mobilenet_v3_large(pretrained=True)
-    mobilenet_v3_small = models.mobilenet_v3_small(pretrained=True)
-    resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
-    wide_resnet50_2 = models.wide_resnet50_2(pretrained=True)
-    mnasnet = models.mnasnet1_0(pretrained=True)
+    from torchvision.models import resnet50, ResNet50_Weights
 
-Instancing a pre-trained model will download its weights to a cache directory.
-This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
-:func:`torch.utils.model_zoo.load_url` for details.
+    # Old weights with accuracy 76.130%
+    resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+
+    # New weights with accuracy 80.858%
+    resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
+
+    # Best available weights (currently alias for IMAGENET1K_V2)
+    # Note that these weights may change across versions
+    resnet50(weights=ResNet50_Weights.DEFAULT)
+
+    # Strings are also supported
+    resnet50(weights="IMAGENET1K_V2")
+
+    # No weights - random initialization
+    resnet50(weights=None)
+
+
+Migrating to the new API is very straightforward. The following method calls between the 2 APIs are all equivalent:
+
+.. code:: python
+
+    from torchvision.models import resnet50, ResNet50_Weights
+
+    # Using pretrained weights:
+    resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+    resnet50(weights="IMAGENET1K_V1")
+    resnet50(pretrained=True)  # deprecated
+    resnet50(True)  # deprecated
+
+    # Using no weights:
+    resnet50(weights=None)
+    resnet50()
+    resnet50(pretrained=False)  # deprecated
+    resnet50(False)  # deprecated
+
+Note that the ``pretrained`` parameter is now deprecated, using it will emit warnings and will be removed on v0.15.
+
+Using the pre-trained models
+----------------------------
+
+Before using the pre-trained models, one must preprocess the image
+(resize with right resolution/interpolation, apply inference transforms,
+rescale the values etc). There is no standard way to do this as it depends on
+how a given model was trained. It can vary across model families, variants or
+even weight versions. Using the correct preprocessing method is critical and
+failing to do so may lead to decreased accuracy or incorrect outputs.
+
+All the necessary information for the inference transforms of each pre-trained
+model is provided on its weights documentation. To simplify inference, TorchVision
+bundles the necessary preprocessing transforms into each model weight. These are
+accessible via the ``weight.transforms`` attribute:
+
+.. code:: python
+
+    # Initialize the Weight Transforms
+    weights = ResNet50_Weights.DEFAULT
+    preprocess = weights.transforms()
+
+    # Apply it to the input image
+    img_transformed = preprocess(img)
+
 
 Some models use modules which have different training and evaluation
 behavior, such as batch normalization. To switch between these modes, use
 ``model.train()`` or ``model.eval()`` as appropriate. See
 :meth:`~torch.nn.Module.train` or :meth:`~torch.nn.Module.eval` for details.
 
-All pre-trained models expect input images normalized in the same way,
-i.e. mini-batches of 3-channel RGB images of shape (3 x H x W),
-where H and W are expected to be at least 224.
-The images have to be loaded in to a range of [0, 1] and then normalized
-using ``mean = [0.485, 0.456, 0.406]`` and ``std = [0.229, 0.224, 0.225]``.
-You can use the following transform to normalize::
+.. code:: python
 
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+    # Initialize model
+    weights = ResNet50_Weights.DEFAULT
+    model = resnet50(weights=weights)
 
-An example of such normalization can be found in the imagenet example
-`here <https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101>`_
+    # Set model to eval mode
+    model.eval()
 
-The process for obtaining the values of `mean` and `std` is roughly equivalent
-to::
+Model Registration Mechanism
+----------------------------
+
+.. betastatus:: registration mechanism
+
+As of v0.14, TorchVision offers a new model registration mechanism which allows retreaving models
+and weights by their names. Here are a few examples on how to use them:
+
+.. code:: python
+
+    # List available models
+    all_models = list_models()
+    classification_models = list_models(module=torchvision.models)
+
+    # Initialize models
+    m1 = get_model("mobilenet_v3_large", weights=None)
+    m2 = get_model("quantized_mobilenet_v3_large", weights="DEFAULT")
+
+    # Fetch weights
+    weights = get_weight("MobileNet_V3_Large_QuantizedWeights.DEFAULT")
+    assert weights == MobileNet_V3_Large_QuantizedWeights.DEFAULT
+
+    weights_enum = get_model_weights("quantized_mobilenet_v3_large")
+    assert weights_enum == MobileNet_V3_Large_QuantizedWeights
+
+    weights_enum2 = get_model_weights(torchvision.models.quantization.mobilenet_v3_large)
+    assert weights_enum == weights_enum2
+
+Here are the available public methods of the model registration mechanism:
+
+.. currentmodule:: torchvision.models
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    get_model
+    get_model_weights
+    get_weight
+    list_models
+
+Using models from Hub
+---------------------
+
+Most pre-trained models can be accessed directly via PyTorch Hub without having TorchVision installed:
+
+.. code:: python
 
     import torch
-    from torchvision import datasets, transforms as T
 
-    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
-    dataset = datasets.ImageNet(".", split="train", transform=transform)
+    # Option 1: passing weights param as string
+    model = torch.hub.load("pytorch/vision", "resnet50", weights="IMAGENET1K_V2")
 
-    means = []
-    stds = []
-    for img in subset(dataset):
-        means.append(torch.mean(img))
-        stds.append(torch.std(img))
+    # Option 2: passing weights param as enum
+    weights = torch.hub.load("pytorch/vision", "get_weight", weights="ResNet50_Weights.IMAGENET1K_V2")
+    model = torch.hub.load("pytorch/vision", "resnet50", weights=weights)
 
-    mean = torch.mean(torch.tensor(means))
-    std = torch.mean(torch.tensor(stds))
+You can also retrieve all the available weights of a specific model via PyTorch Hub by doing:
 
-Unfortunately, the concrete `subset` that was used is lost. For more
-information see `this discussion <https://github.com/pytorch/vision/issues/1439>`_
-or `these experiments <https://github.com/pytorch/vision/pull/1965>`_.
+.. code:: python
 
-ImageNet 1-crop error rates (224x224)
+    import torch
 
-================================  =============   =============
-Model                             Acc@1           Acc@5
-================================  =============   =============
-AlexNet                           56.522          79.066
-VGG-11                            69.020          88.628
-VGG-13                            69.928          89.246
-VGG-16                            71.592          90.382
-VGG-19                            72.376          90.876
-VGG-11 with batch normalization   70.370          89.810
-VGG-13 with batch normalization   71.586          90.374
-VGG-16 with batch normalization   73.360          91.516
-VGG-19 with batch normalization   74.218          91.842
-ResNet-18                         69.758          89.078
-ResNet-34                         73.314          91.420
-ResNet-50                         76.130          92.862
-ResNet-101                        77.374          93.546
-ResNet-152                        78.312          94.046
-SqueezeNet 1.0                    58.092          80.420
-SqueezeNet 1.1                    58.178          80.624
-Densenet-121                      74.434          91.972
-Densenet-169                      75.600          92.806
-Densenet-201                      76.896          93.370
-Densenet-161                      77.138          93.560
-Inception v3                      77.294          93.450
-GoogleNet                         69.778          89.530
-ShuffleNet V2 x1.0                69.362          88.316
-ShuffleNet V2 x0.5                60.552          81.746
-MobileNet V2                      71.878          90.286
-MobileNet V3 Large                74.042          91.340
-MobileNet V3 Small                67.668          87.402
-ResNeXt-50-32x4d                  77.618          93.698
-ResNeXt-101-32x8d                 79.312          94.526
-Wide ResNet-50-2                  78.468          94.086
-Wide ResNet-101-2                 78.848          94.284
-MNASNet 1.0                       73.456          91.510
-MNASNet 0.5                       67.734          87.490
-================================  =============   =============
+    weight_enum = torch.hub.load("pytorch/vision", "get_model_weights", name="resnet50")
+    print([weight for weight in weight_enum])
 
+The only exception to the above are the detection models included on
+:mod:`torchvision.models.detection`. These models require TorchVision
+to be installed because they depend on custom C++ operators.
 
-.. _AlexNet: https://arxiv.org/abs/1404.5997
-.. _VGG: https://arxiv.org/abs/1409.1556
-.. _ResNet: https://arxiv.org/abs/1512.03385
-.. _SqueezeNet: https://arxiv.org/abs/1602.07360
-.. _DenseNet: https://arxiv.org/abs/1608.06993
-.. _Inception: https://arxiv.org/abs/1512.00567
-.. _GoogLeNet: https://arxiv.org/abs/1409.4842
-.. _ShuffleNet: https://arxiv.org/abs/1807.11164
-.. _MobileNetV2: https://arxiv.org/abs/1801.04381
-.. _MobileNetV3: https://arxiv.org/abs/1905.02244
-.. _ResNeXt: https://arxiv.org/abs/1611.05431
-.. _MNASNet: https://arxiv.org/abs/1807.11626
+Classification
+==============
 
 .. currentmodule:: torchvision.models
 
-Alexnet
--------
+The following classification models are available, with or without pre-trained
+weights:
 
-.. autofunction:: alexnet
+.. toctree::
+   :maxdepth: 1
 
-VGG
----
+   models/alexnet
+   models/convnext
+   models/densenet
+   models/efficientnet
+   models/efficientnetv2
+   models/googlenet
+   models/inception
+   models/maxvit
+   models/mnasnet
+   models/mobilenetv2
+   models/mobilenetv3
+   models/regnet
+   models/resnet
+   models/resnext
+   models/shufflenetv2
+   models/squeezenet
+   models/swin_transformer
+   models/vgg
+   models/vision_transformer
+   models/wide_resnet
 
-.. autofunction:: vgg11
-.. autofunction:: vgg11_bn
-.. autofunction:: vgg13
-.. autofunction:: vgg13_bn
-.. autofunction:: vgg16
-.. autofunction:: vgg16_bn
-.. autofunction:: vgg19
-.. autofunction:: vgg19_bn
+|
 
+Here is an example of how to use the pre-trained image classification models:
 
-ResNet
-------
+.. code:: python
 
-.. autofunction:: resnet18
-.. autofunction:: resnet34
-.. autofunction:: resnet50
-.. autofunction:: resnet101
-.. autofunction:: resnet152
+    from torchvision.io import read_image
+    from torchvision.models import resnet50, ResNet50_Weights
 
-SqueezeNet
-----------
+    img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
 
-.. autofunction:: squeezenet1_0
-.. autofunction:: squeezenet1_1
+    # Step 1: Initialize model with the best available weights
+    weights = ResNet50_Weights.DEFAULT
+    model = resnet50(weights=weights)
+    model.eval()
 
-DenseNet
----------
+    # Step 2: Initialize the inference transforms
+    preprocess = weights.transforms()
 
-.. autofunction:: densenet121
-.. autofunction:: densenet169
-.. autofunction:: densenet161
-.. autofunction:: densenet201
+    # Step 3: Apply inference preprocessing transforms
+    batch = preprocess(img).unsqueeze(0)
 
-Inception v3
-------------
+    # Step 4: Use the model and print the predicted category
+    prediction = model(batch).squeeze(0).softmax(0)
+    class_id = prediction.argmax().item()
+    score = prediction[class_id].item()
+    category_name = weights.meta["categories"][class_id]
+    print(f"{category_name}: {100 * score:.1f}%")
 
-.. autofunction:: inception_v3
+The classes of the pre-trained model outputs can be found at ``weights.meta["categories"]``.
 
-.. note ::
-    This requires `scipy` to be installed
+Table of all available classification weights
+---------------------------------------------
 
+Accuracies are reported on ImageNet-1K using single crops:
 
-GoogLeNet
-------------
+.. include:: generated/classification_table.rst
 
-.. autofunction:: googlenet
-
-.. note ::
-    This requires `scipy` to be installed
-
-
-ShuffleNet v2
--------------
-
-.. autofunction:: shufflenet_v2_x0_5
-.. autofunction:: shufflenet_v2_x1_0
-.. autofunction:: shufflenet_v2_x1_5
-.. autofunction:: shufflenet_v2_x2_0
-
-MobileNet v2
--------------
-
-.. autofunction:: mobilenet_v2
-
-MobileNet v3
--------------
-
-.. autofunction:: mobilenet_v3_large
-.. autofunction:: mobilenet_v3_small
-
-ResNext
--------
-
-.. autofunction:: resnext50_32x4d
-.. autofunction:: resnext101_32x8d
-
-Wide ResNet
------------
-
-.. autofunction:: wide_resnet50_2
-.. autofunction:: wide_resnet101_2
-
-MNASNet
---------
-
-.. autofunction:: mnasnet0_5
-.. autofunction:: mnasnet0_75
-.. autofunction:: mnasnet1_0
-.. autofunction:: mnasnet1_3
-
-Quantized Models
+Quantized models
 ----------------
 
-The following architectures provide support for INT8 quantized models. You can get
-a model with random weights by calling its constructor:
+.. currentmodule:: torchvision.models.quantization
+
+The following architectures provide support for INT8 quantized models, with or without
+pre-trained weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/googlenet_quant
+   models/inception_quant
+   models/mobilenetv2_quant
+   models/mobilenetv3_quant
+   models/resnet_quant
+   models/resnext_quant
+   models/shufflenetv2_quant
+
+|
+
+Here is an example of how to use the pre-trained quantized image classification models:
 
 .. code:: python
 
-    import torchvision.models as models
-    googlenet = models.quantization.googlenet()
-    inception_v3 = models.quantization.inception_v3()
-    mobilenet_v2 = models.quantization.mobilenet_v2()
-    mobilenet_v3_large = models.quantization.mobilenet_v3_large()
-    resnet18 = models.quantization.resnet18()
-    resnet50 = models.quantization.resnet50()
-    resnext101_32x8d = models.quantization.resnext101_32x8d()
-    shufflenet_v2_x0_5 = models.quantization.shufflenet_v2_x0_5()
-    shufflenet_v2_x1_0 = models.quantization.shufflenet_v2_x1_0()
-    shufflenet_v2_x1_5 = models.quantization.shufflenet_v2_x1_5()
-    shufflenet_v2_x2_0 = models.quantization.shufflenet_v2_x2_0()
+    from torchvision.io import read_image
+    from torchvision.models.quantization import resnet50, ResNet50_QuantizedWeights
 
-Obtaining a pre-trained quantized model can be done with a few lines of code:
+    img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
 
-.. code:: python
-
-    import torchvision.models as models
-    model = models.quantization.mobilenet_v2(pretrained=True, quantize=True)
+    # Step 1: Initialize model with the best available weights
+    weights = ResNet50_QuantizedWeights.DEFAULT
+    model = resnet50(weights=weights, quantize=True)
     model.eval()
-    # run the model with quantized inputs and weights
-    out = model(torch.rand(1, 3, 224, 224))
 
-We provide pre-trained quantized weights for the following models:
+    # Step 2: Initialize the inference transforms
+    preprocess = weights.transforms()
 
-================================  =============  =============
-Model                             Acc@1          Acc@5
-================================  =============  =============
-MobileNet V2                      71.658         90.150
-MobileNet V3 Large                73.004         90.858
-ShuffleNet V2                     68.360         87.582
-ResNet 18                         69.494         88.882
-ResNet 50                         75.920         92.814
-ResNext 101 32x8d                 78.986         94.480
-Inception V3                      77.176         93.354
-GoogleNet                         69.826         89.404
-================================  =============  =============
+    # Step 3: Apply inference preprocessing transforms
+    batch = preprocess(img).unsqueeze(0)
 
+    # Step 4: Use the model and print the predicted category
+    prediction = model(batch).squeeze(0).softmax(0)
+    class_id = prediction.argmax().item()
+    score = prediction[class_id].item()
+    category_name = weights.meta["categories"][class_id]
+    print(f"{category_name}: {100 * score}%")
+
+The classes of the pre-trained model outputs can be found at ``weights.meta["categories"]``.
+
+
+Table of all available quantized classification weights
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Accuracies are reported on ImageNet-1K using single crops:
+
+.. include:: generated/classification_quant_table.rst
 
 Semantic Segmentation
 =====================
 
-The models subpackage contains definitions for the following model
-architectures for semantic segmentation:
+.. currentmodule:: torchvision.models.segmentation
 
-- `FCN ResNet50, ResNet101 <https://arxiv.org/abs/1411.4038>`_
-- `DeepLabV3 ResNet50, ResNet101, MobileNetV3-Large <https://arxiv.org/abs/1706.05587>`_
-- `LR-ASPP MobileNetV3-Large <https://arxiv.org/abs/1905.02244>`_
+.. betastatus:: segmentation module
 
-As with image classification models, all pre-trained models expect input images normalized in the same way.
-The images have to be loaded in to a range of ``[0, 1]`` and then normalized using
-``mean = [0.485, 0.456, 0.406]`` and ``std = [0.229, 0.224, 0.225]``.
-They have been trained on images resized such that their minimum size is 520.
+The following semantic segmentation models are available, with or without
+pre-trained weights:
 
-For details on how to plot the masks of such models, you may refer to :ref:`semantic_seg_output`.
+.. toctree::
+   :maxdepth: 1
 
-The pre-trained models have been trained on a subset of COCO train2017, on the 20 categories that are
-present in the Pascal VOC dataset. You can see more information on how the subset has been selected in
-``references/segmentation/coco_utils.py``. The classes that the pre-trained model outputs are the following,
-in order:
+   models/deeplabv3
+   models/fcn
+   models/lraspp
 
-  .. code-block:: python
+|
 
-      ['__background__', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-       'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-       'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
+Here is an example of how to use the pre-trained semantic segmentation models:
 
-The accuracies of the pre-trained models evaluated on COCO val2017 are as follows
+.. code:: python
 
-================================  =============  ====================
-Network                           mean IoU       global pixelwise acc
-================================  =============  ====================
-FCN ResNet50                      60.5           91.4
-FCN ResNet101                     63.7           91.9
-DeepLabV3 ResNet50                66.4           92.4
-DeepLabV3 ResNet101               67.4           92.4
-DeepLabV3 MobileNetV3-Large       60.3           91.2
-LR-ASPP MobileNetV3-Large         57.9           91.2
-================================  =============  ====================
+    from torchvision.io.image import read_image
+    from torchvision.models.segmentation import fcn_resnet50, FCN_ResNet50_Weights
+    from torchvision.transforms.functional import to_pil_image
 
+    img = read_image("gallery/assets/dog1.jpg")
 
-Fully Convolutional Networks
-----------------------------
+    # Step 1: Initialize model with the best available weights
+    weights = FCN_ResNet50_Weights.DEFAULT
+    model = fcn_resnet50(weights=weights)
+    model.eval()
 
-.. autofunction:: torchvision.models.segmentation.fcn_resnet50
-.. autofunction:: torchvision.models.segmentation.fcn_resnet101
+    # Step 2: Initialize the inference transforms
+    preprocess = weights.transforms()
 
+    # Step 3: Apply inference preprocessing transforms
+    batch = preprocess(img).unsqueeze(0)
 
-DeepLabV3
----------
+    # Step 4: Use the model and visualize the prediction
+    prediction = model(batch)["out"]
+    normalized_masks = prediction.softmax(dim=1)
+    class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categories"])}
+    mask = normalized_masks[0, class_to_idx["dog"]]
+    to_pil_image(mask).show()
 
-.. autofunction:: torchvision.models.segmentation.deeplabv3_resnet50
-.. autofunction:: torchvision.models.segmentation.deeplabv3_resnet101
-.. autofunction:: torchvision.models.segmentation.deeplabv3_mobilenet_v3_large
+The classes of the pre-trained model outputs can be found at ``weights.meta["categories"]``.
+The output format of the models is illustrated in :ref:`semantic_seg_output`.
 
 
-LR-ASPP
--------
+Table of all available semantic segmentation weights
+----------------------------------------------------
 
-.. autofunction:: torchvision.models.segmentation.lraspp_mobilenet_v3_large
+All models are evaluated a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:
+
+.. include:: generated/segmentation_table.rst
+
 
 .. _object_det_inst_seg_pers_keypoint_det:
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
 
-The models subpackage contains definitions for the following model
-architectures for detection:
-
-- `Faster R-CNN <https://arxiv.org/abs/1506.01497>`_
-- `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_
-- `RetinaNet <https://arxiv.org/abs/1708.02002>`_
-- `SSD <https://arxiv.org/abs/1512.02325>`_
-- `SSDlite <https://arxiv.org/abs/1801.04381>`_
-
 The pre-trained models for detection, instance segmentation and
 keypoint detection are initialized with the classification models
-in torchvision.
+in torchvision. The models expect a list of ``Tensor[C, H, W]``.
+Check the constructor of the models for more information.
 
-The models expect a list of ``Tensor[C, H, W]``, in the range ``0-1``.
-The models internally resize the images but the behaviour varies depending
-on the model. Check the constructor of the models for more information. The
-output format of such models is illustrated in :ref:`instance_seg_output`.
+.. betastatus:: detection module
 
+Object Detection
+----------------
 
-For object detection and instance segmentation, the pre-trained
-models return the predictions of the following classes:
+.. currentmodule:: torchvision.models.detection
 
-  .. code-block:: python
+The following object detection models are available, with or without pre-trained
+weights:
 
-      COCO_INSTANCE_CATEGORY_NAMES = [
-          '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-          'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
-          'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-          'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
-          'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-          'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-          'bottle', 'N/A', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-          'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-          'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table',
-          'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
-          'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
-          'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
-      ]
+.. toctree::
+   :maxdepth: 1
 
+   models/faster_rcnn
+   models/fcos
+   models/retinanet
+   models/ssd
+   models/ssdlite
 
-Here are the summary of the accuracies for the models trained on
-the instances set of COCO train2017 and evaluated on COCO val2017.
+|
 
-======================================  =======  ========  ===========
-Network                                 box AP   mask AP   keypoint AP
-======================================  =======  ========  ===========
-Faster R-CNN ResNet-50 FPN              37.0     -         -
-Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
-Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
-RetinaNet ResNet-50 FPN                 36.4     -         -
-SSD300 VGG16                            25.1     -         -
-SSDlite320 MobileNetV3-Large            21.3     -         -
-Mask R-CNN ResNet-50 FPN                37.9     34.6      -
-======================================  =======  ========  ===========
+Here is an example of how to use the pre-trained object detection models:
 
-For person keypoint detection, the accuracies for the pre-trained
-models are as follows
-
-================================  =======  ========  ===========
-Network                           box AP   mask AP   keypoint AP
-================================  =======  ========  ===========
-Keypoint R-CNN ResNet-50 FPN      54.6     -         65.0
-================================  =======  ========  ===========
-
-For person keypoint detection, the pre-trained model return the
-keypoints in the following order:
-
-  .. code-block:: python
-
-    COCO_PERSON_KEYPOINT_NAMES = [
-        'nose',
-        'left_eye',
-        'right_eye',
-        'left_ear',
-        'right_ear',
-        'left_shoulder',
-        'right_shoulder',
-        'left_elbow',
-        'right_elbow',
-        'left_wrist',
-        'right_wrist',
-        'left_hip',
-        'right_hip',
-        'left_knee',
-        'right_knee',
-        'left_ankle',
-        'right_ankle'
-    ]
-
-Runtime characteristics
------------------------
-
-The implementations of the models for object detection, instance segmentation
-and keypoint detection are efficient.
-
-In the following table, we use 8 GPUs to report the results. During training,
-we use a batch size of 2 per GPU for all models except SSD which uses 4
-and SSDlite which uses 24. During testing a batch size  of 1 is used.
-
-For test time, we report the time for the model evaluation and postprocessing
-(including mask pasting in image), but not the time for computing the
-precision-recall.
-
-======================================  ===================  ==================  ===========
-Network                                 train time (s / it)  test time (s / it)  memory (GB)
-======================================  ===================  ==================  ===========
-Faster R-CNN ResNet-50 FPN              0.2288               0.0590              5.2
-Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
-Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
-RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
-SSD300 VGG16                            0.2093               0.0744              1.5
-SSDlite320 MobileNetV3-Large            0.1773               0.0906              1.5
-Mask R-CNN ResNet-50 FPN                0.2728               0.0903              5.4
-Keypoint R-CNN ResNet-50 FPN            0.3789               0.1242              6.8
-======================================  ===================  ==================  ===========
+.. code:: python
 
 
-Faster R-CNN
-------------
+    from torchvision.io.image import read_image
+    from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2, FasterRCNN_ResNet50_FPN_V2_Weights
+    from torchvision.utils import draw_bounding_boxes
+    from torchvision.transforms.functional import to_pil_image
 
-.. autofunction:: torchvision.models.detection.fasterrcnn_resnet50_fpn
-.. autofunction:: torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn
-.. autofunction:: torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn
+    img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
+
+    # Step 1: Initialize model with the best available weights
+    weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
+    model = fasterrcnn_resnet50_fpn_v2(weights=weights, box_score_thresh=0.9)
+    model.eval()
+
+    # Step 2: Initialize the inference transforms
+    preprocess = weights.transforms()
+
+    # Step 3: Apply inference preprocessing transforms
+    batch = [preprocess(img)]
+
+    # Step 4: Use the model and visualize the prediction
+    prediction = model(batch)[0]
+    labels = [weights.meta["categories"][i] for i in prediction["labels"]]
+    box = draw_bounding_boxes(img, boxes=prediction["boxes"],
+                              labels=labels,
+                              colors="red",
+                              width=4, font_size=30)
+    im = to_pil_image(box.detach())
+    im.show()
+
+The classes of the pre-trained model outputs can be found at ``weights.meta["categories"]``.
+For details on how to plot the bounding boxes of the models, you may refer to :ref:`instance_seg_output`.
+
+Table of all available Object detection weights
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Box MAPs are reported on COCO val2017:
+
+.. include:: generated/detection_table.rst
 
 
-RetinaNet
----------
+Instance Segmentation
+---------------------
 
-.. autofunction:: torchvision.models.detection.retinanet_resnet50_fpn
+.. currentmodule:: torchvision.models.detection
 
+The following instance segmentation models are available, with or without pre-trained
+weights:
 
-SSD
----
+.. toctree::
+   :maxdepth: 1
 
-.. autofunction:: torchvision.models.detection.ssd300_vgg16
+   models/mask_rcnn
 
-
-SSDlite
--------
-
-.. autofunction:: torchvision.models.detection.ssdlite320_mobilenet_v3_large
+|
 
 
-Mask R-CNN
-----------
+For details on how to plot the masks of the models, you may refer to :ref:`instance_seg_output`.
 
-.. autofunction:: torchvision.models.detection.maskrcnn_resnet50_fpn
+Table of all available Instance segmentation weights
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Box and Mask MAPs are reported on COCO val2017:
+
+.. include:: generated/instance_segmentation_table.rst
+
+Keypoint Detection
+------------------
+
+.. currentmodule:: torchvision.models.detection
+
+The following person keypoint detection models are available, with or without
+pre-trained weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/keypoint_rcnn
+
+|
+
+The classes of the pre-trained model outputs can be found at ``weights.meta["keypoint_names"]``.
+For details on how to plot the bounding boxes of the models, you may refer to :ref:`keypoint_output`.
+
+Table of all available Keypoint detection weights
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Box and Keypoint MAPs are reported on COCO val2017:
+
+.. include:: generated/detection_keypoint_table.rst
 
 
-Keypoint R-CNN
---------------
-
-.. autofunction:: torchvision.models.detection.keypointrcnn_resnet50_fpn
-
-
-Video classification
+Video Classification
 ====================
 
-We provide models for action recognition pre-trained on Kinetics-400.
-They have all been trained with the scripts provided in ``references/video_classification``.
+.. currentmodule:: torchvision.models.video
 
-All pre-trained models expect input images normalized in the same way,
-i.e. mini-batches of 3-channel RGB videos of shape (3 x T x H x W),
-where H and W are expected to be 112, and T is a number of video frames in a clip.
-The images have to be loaded in to a range of [0, 1] and then normalized
-using ``mean = [0.43216, 0.394666, 0.37645]`` and ``std = [0.22803, 0.22145, 0.216989]``.
+.. betastatus:: video module
 
+The following video classification models are available, with or without
+pre-trained weights:
 
-.. note::
-  The normalization parameters are different from the image classification ones, and correspond
-  to the mean and std from Kinetics-400.
+.. toctree::
+   :maxdepth: 1
 
-.. note::
-  For now, normalization code can be found in ``references/video_classification/transforms.py``,
-  see the ``Normalize`` function there. Note that it differs from standard normalization for
-  images because it assumes the video is 4d.
+   models/video_mvit
+   models/video_resnet
+   models/video_s3d
+   models/video_swin_transformer
 
-Kinetics 1-crop accuracies for clip length 16 (16x112x112)
+|
 
-================================  =============   =============
-Network                           Clip acc@1      Clip acc@5
-================================  =============   =============
-ResNet 3D 18                      52.75           75.45
-ResNet MC 18                      53.90           76.29
-ResNet (2+1)D                     57.50           78.81
-================================  =============   =============
+Here is an example of how to use the pre-trained video classification models:
+
+.. code:: python
 
 
-ResNet 3D
-----------
+    from torchvision.io.video import read_video
+    from torchvision.models.video import r3d_18, R3D_18_Weights
 
-.. autofunction:: torchvision.models.video.r3d_18
+    vid, _, _ = read_video("test/assets/videos/v_SoccerJuggling_g23_c01.avi", output_format="TCHW")
+    vid = vid[:32]  # optionally shorten duration
 
-ResNet Mixed Convolution
-------------------------
+    # Step 1: Initialize model with the best available weights
+    weights = R3D_18_Weights.DEFAULT
+    model = r3d_18(weights=weights)
+    model.eval()
 
-.. autofunction:: torchvision.models.video.mc3_18
+    # Step 2: Initialize the inference transforms
+    preprocess = weights.transforms()
 
-ResNet (2+1)D
--------------
+    # Step 3: Apply inference preprocessing transforms
+    batch = preprocess(vid).unsqueeze(0)
 
-.. autofunction:: torchvision.models.video.r2plus1d_18
+    # Step 4: Use the model and print the predicted category
+    prediction = model(batch).squeeze(0).softmax(0)
+    label = prediction.argmax().item()
+    score = prediction[label].item()
+    category_name = weights.meta["categories"][label]
+    print(f"{category_name}: {100 * score}%")
+
+The classes of the pre-trained model outputs can be found at ``weights.meta["categories"]``.
+
+
+Table of all available video classification weights
+---------------------------------------------------
+
+Accuracies are reported on Kinetics-400 using single crops for clip length 16:
+
+.. include:: generated/video_table.rst
+
+Optical Flow
+============
+
+.. currentmodule:: torchvision.models.optical_flow
+
+The following Optical Flow models are available, with or without pre-trained
+
+.. toctree::
+   :maxdepth: 1
+
+   models/raft

@@ -1,30 +1,50 @@
-import torch
-import torch.nn.functional as F
 import warnings
-
 from collections import OrderedDict
-from torch import nn, Tensor
 from typing import Any, Dict, List, Optional, Tuple
 
+import torch
+import torch.nn.functional as F
+from torch import nn, Tensor
+
+from ...ops import boxes as box_ops
+from ...transforms._presets import ObjectDetection
+from ...utils import _log_api_usage_once
+from .._api import register_model, Weights, WeightsEnum
+from .._meta import _COCO_CATEGORIES
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..vgg import VGG, vgg16, VGG16_Weights
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
-from .. import vgg
-from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops import boxes as box_ops
 
-__all__ = ['SSD', 'ssd300_vgg16']
 
-model_urls = {
-    'ssd300_vgg16_coco': 'https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth',
-}
+__all__ = [
+    "SSD300_VGG16_Weights",
+    "ssd300_vgg16",
+]
 
-backbone_urls = {
-    # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses the
-    # same input standardization method as the paper. Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-    'vgg16_features': 'https://download.pytorch.org/models/vgg16_features-amdegroot.pth'
-}
+
+class SSD300_VGG16_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
+        transforms=ObjectDetection,
+        meta={
+            "num_params": 35641826,
+            "categories": _COCO_CATEGORIES,
+            "min_size": (1, 1),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 25.1,
+                }
+            },
+            "_ops": 34.858,
+            "_file_size": 135.988,
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
+        },
+    )
+    DEFAULT = COCO_V1
 
 
 def _xavier_init(conv: nn.Module):
@@ -43,8 +63,8 @@ class SSDHead(nn.Module):
 
     def forward(self, x: List[Tensor]) -> Dict[str, Tensor]:
         return {
-            'bbox_regression': self.regression_head(x),
-            'cls_logits': self.classification_head(x),
+            "bbox_regression": self.regression_head(x),
+            "cls_logits": self.classification_head(x),
         }
 
 
@@ -62,12 +82,10 @@ class SSDScoringHead(nn.Module):
         num_blocks = len(self.module_list)
         if idx < 0:
             idx += num_blocks
-        i = 0
         out = x
-        for module in self.module_list:
+        for i, module in enumerate(self.module_list):
             if i == idx:
                 out = module(x)
-            i += 1
         return out
 
     def forward(self, x: List[Tensor]) -> Tensor:
@@ -110,12 +128,12 @@ class SSD(nn.Module):
     Implements SSD architecture from `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
-    image, and should be in 0-1 range. Different images can have different sizes but they will be resized
+    image, and should be in 0-1 range. Different images can have different sizes, but they will be resized
     to a fixed size before passing it to the backbone.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
@@ -159,36 +177,48 @@ class SSD(nn.Module):
             proposals used during the training of the classification head. It is used to estimate the negative to
             positive ratio.
     """
+
     __annotations__ = {
-        'box_coder': det_utils.BoxCoder,
-        'proposal_matcher': det_utils.Matcher,
+        "box_coder": det_utils.BoxCoder,
+        "proposal_matcher": det_utils.Matcher,
     }
 
-    def __init__(self, backbone: nn.Module, anchor_generator: DefaultBoxGenerator,
-                 size: Tuple[int, int], num_classes: int,
-                 image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
-                 head: Optional[nn.Module] = None,
-                 score_thresh: float = 0.01,
-                 nms_thresh: float = 0.45,
-                 detections_per_img: int = 200,
-                 iou_thresh: float = 0.5,
-                 topk_candidates: int = 400,
-                 positive_fraction: float = 0.25):
+    def __init__(
+        self,
+        backbone: nn.Module,
+        anchor_generator: DefaultBoxGenerator,
+        size: Tuple[int, int],
+        num_classes: int,
+        image_mean: Optional[List[float]] = None,
+        image_std: Optional[List[float]] = None,
+        head: Optional[nn.Module] = None,
+        score_thresh: float = 0.01,
+        nms_thresh: float = 0.45,
+        detections_per_img: int = 200,
+        iou_thresh: float = 0.5,
+        topk_candidates: int = 400,
+        positive_fraction: float = 0.25,
+        **kwargs: Any,
+    ):
         super().__init__()
+        _log_api_usage_once(self)
 
         self.backbone = backbone
 
         self.anchor_generator = anchor_generator
 
-        self.box_coder = det_utils.BoxCoder(weights=(10., 10., 5., 5.))
+        self.box_coder = det_utils.BoxCoder(weights=(10.0, 10.0, 5.0, 5.0))
 
         if head is None:
-            if hasattr(backbone, 'out_channels'):
+            if hasattr(backbone, "out_channels"):
                 out_channels = backbone.out_channels
             else:
                 out_channels = det_utils.retrieve_out_channels(backbone, size)
 
-            assert len(out_channels) == len(anchor_generator.aspect_ratios)
+            if len(out_channels) != len(anchor_generator.aspect_ratios):
+                raise ValueError(
+                    f"The length of the output channels from the backbone ({len(out_channels)}) do not match the length of the anchor generator aspect ratios ({len(anchor_generator.aspect_ratios)})"
+                )
 
             num_anchors = self.anchor_generator.num_anchors_per_location()
             head = SSDHead(out_channels, num_anchors, num_classes)
@@ -200,8 +230,9 @@ class SSD(nn.Module):
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
-        self.transform = GeneralizedRCNNTransform(min(size), max(size), image_mean, image_std,
-                                                  size_divisible=1, fixed_size=size)
+        self.transform = GeneralizedRCNNTransform(
+            min(size), max(size), image_mean, image_std, size_divisible=1, fixed_size=size, **kwargs
+        )
 
         self.score_thresh = score_thresh
         self.nms_thresh = nms_thresh
@@ -213,45 +244,58 @@ class SSD(nn.Module):
         self._has_warned = False
 
     @torch.jit.unused
-    def eager_outputs(self, losses: Dict[str, Tensor],
-                      detections: List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+    def eager_outputs(
+        self, losses: Dict[str, Tensor], detections: List[Dict[str, Tensor]]
+    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         if self.training:
             return losses
 
         return detections
 
-    def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor], anchors: List[Tensor],
-                     matched_idxs: List[Tensor]) -> Dict[str, Tensor]:
-        bbox_regression = head_outputs['bbox_regression']
-        cls_logits = head_outputs['cls_logits']
+    def compute_loss(
+        self,
+        targets: List[Dict[str, Tensor]],
+        head_outputs: Dict[str, Tensor],
+        anchors: List[Tensor],
+        matched_idxs: List[Tensor],
+    ) -> Dict[str, Tensor]:
+        bbox_regression = head_outputs["bbox_regression"]
+        cls_logits = head_outputs["cls_logits"]
 
         # Match original targets with default boxes
         num_foreground = 0
         bbox_loss = []
         cls_targets = []
-        for (targets_per_image, bbox_regression_per_image, cls_logits_per_image, anchors_per_image,
-             matched_idxs_per_image) in zip(targets, bbox_regression, cls_logits, anchors, matched_idxs):
+        for (
+            targets_per_image,
+            bbox_regression_per_image,
+            cls_logits_per_image,
+            anchors_per_image,
+            matched_idxs_per_image,
+        ) in zip(targets, bbox_regression, cls_logits, anchors, matched_idxs):
             # produce the matching between boxes and targets
             foreground_idxs_per_image = torch.where(matched_idxs_per_image >= 0)[0]
             foreground_matched_idxs_per_image = matched_idxs_per_image[foreground_idxs_per_image]
             num_foreground += foreground_matched_idxs_per_image.numel()
 
             # Calculate regression loss
-            matched_gt_boxes_per_image = targets_per_image['boxes'][foreground_matched_idxs_per_image]
+            matched_gt_boxes_per_image = targets_per_image["boxes"][foreground_matched_idxs_per_image]
             bbox_regression_per_image = bbox_regression_per_image[foreground_idxs_per_image, :]
             anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
             target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
-            bbox_loss.append(torch.nn.functional.smooth_l1_loss(
-                bbox_regression_per_image,
-                target_regression,
-                reduction='sum'
-            ))
+            bbox_loss.append(
+                torch.nn.functional.smooth_l1_loss(bbox_regression_per_image, target_regression, reduction="sum")
+            )
 
             # Estimate ground truth for class targets
-            gt_classes_target = torch.zeros((cls_logits_per_image.size(0), ), dtype=targets_per_image['labels'].dtype,
-                                            device=targets_per_image['labels'].device)
-            gt_classes_target[foreground_idxs_per_image] = \
-                targets_per_image['labels'][foreground_matched_idxs_per_image]
+            gt_classes_target = torch.zeros(
+                (cls_logits_per_image.size(0),),
+                dtype=targets_per_image["labels"].dtype,
+                device=targets_per_image["labels"].device,
+            )
+            gt_classes_target[foreground_idxs_per_image] = targets_per_image["labels"][
+                foreground_matched_idxs_per_image
+            ]
             cls_targets.append(gt_classes_target)
 
         bbox_loss = torch.stack(bbox_loss)
@@ -259,51 +303,51 @@ class SSD(nn.Module):
 
         # Calculate classification loss
         num_classes = cls_logits.size(-1)
-        cls_loss = F.cross_entropy(
-            cls_logits.view(-1, num_classes),
-            cls_targets.view(-1),
-            reduction='none'
-        ).view(cls_targets.size())
+        cls_loss = F.cross_entropy(cls_logits.view(-1, num_classes), cls_targets.view(-1), reduction="none").view(
+            cls_targets.size()
+        )
 
         # Hard Negative Sampling
         foreground_idxs = cls_targets > 0
         num_negative = self.neg_to_pos_ratio * foreground_idxs.sum(1, keepdim=True)
         # num_negative[num_negative < self.neg_to_pos_ratio] = self.neg_to_pos_ratio
         negative_loss = cls_loss.clone()
-        negative_loss[foreground_idxs] = -float('inf')  # use -inf to detect positive values that creeped in the sample
+        negative_loss[foreground_idxs] = -float("inf")  # use -inf to detect positive values that creeped in the sample
         values, idx = negative_loss.sort(1, descending=True)
         # background_idxs = torch.logical_and(idx.sort(1)[1] < num_negative, torch.isfinite(values))
         background_idxs = idx.sort(1)[1] < num_negative
 
         N = max(1, num_foreground)
         return {
-            'bbox_regression': bbox_loss.sum() / N,
-            'classification': (cls_loss[foreground_idxs].sum() + cls_loss[background_idxs].sum()) / N,
+            "bbox_regression": bbox_loss.sum() / N,
+            "classification": (cls_loss[foreground_idxs].sum() + cls_loss[background_idxs].sum()) / N,
         }
 
-    def forward(self, images: List[Tensor],
-                targets: Optional[List[Dict[str, Tensor]]] = None) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
-        if self.training and targets is None:
-            raise ValueError("In training mode, targets should be passed")
-
+    def forward(
+        self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
+    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         if self.training:
-            assert targets is not None
-            for target in targets:
-                boxes = target["boxes"]
-                if isinstance(boxes, torch.Tensor):
-                    if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError("Expected target boxes to be a tensor"
-                                         "of shape [N, 4], got {:}.".format(
-                                             boxes.shape))
-                else:
-                    raise ValueError("Expected target boxes to be of type "
-                                     "Tensor, got {:}.".format(type(boxes)))
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                for target in targets:
+                    boxes = target["boxes"]
+                    if isinstance(boxes, torch.Tensor):
+                        torch._assert(
+                            len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                            f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
+                        )
+                    else:
+                        torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            assert len(val) == 2
+            torch._assert(
+                len(val) == 2,
+                f"expecting the last two dimensions of the Tensor to be H and W instead got {img.shape[-2:]}",
+            )
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -317,14 +361,16 @@ class SSD(nn.Module):
                 if degenerate_boxes.any():
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
-                    raise ValueError("All bounding boxes should have positive height and width."
-                                     " Found invalid box {} for target at index {}."
-                                     .format(degen_bb, target_idx))
+                    torch._assert(
+                        False,
+                        "All bounding boxes should have positive height and width."
+                        f" Found invalid box {degen_bb} for target at index {target_idx}.",
+                    )
 
         # get the features from the backbone
         features = self.backbone(images.tensors)
         if isinstance(features, torch.Tensor):
-            features = OrderedDict([('0', features)])
+            features = OrderedDict([("0", features)])
 
         features = list(features.values())
 
@@ -337,19 +383,23 @@ class SSD(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            assert targets is not None
-
             matched_idxs = []
-            for anchors_per_image, targets_per_image in zip(anchors, targets):
-                if targets_per_image['boxes'].numel() == 0:
-                    matched_idxs.append(torch.full((anchors_per_image.size(0),), -1, dtype=torch.int64,
-                                                   device=anchors_per_image.device))
-                    continue
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                for anchors_per_image, targets_per_image in zip(anchors, targets):
+                    if targets_per_image["boxes"].numel() == 0:
+                        matched_idxs.append(
+                            torch.full(
+                                (anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device
+                            )
+                        )
+                        continue
 
-                match_quality_matrix = box_ops.box_iou(targets_per_image['boxes'], anchors_per_image)
-                matched_idxs.append(self.proposal_matcher(match_quality_matrix))
+                    match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
+                    matched_idxs.append(self.proposal_matcher(match_quality_matrix))
 
-            losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
+                losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
         else:
             detections = self.postprocess_detections(head_outputs, anchors, images.image_sizes)
             detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
@@ -361,10 +411,11 @@ class SSD(nn.Module):
             return losses, detections
         return self.eager_outputs(losses, detections)
 
-    def postprocess_detections(self, head_outputs: Dict[str, Tensor], image_anchors: List[Tensor],
-                               image_shapes: List[Tuple[int, int]]) -> List[Dict[str, Tensor]]:
-        bbox_regression = head_outputs['bbox_regression']
-        pred_scores = F.softmax(head_outputs['cls_logits'], dim=-1)
+    def postprocess_detections(
+        self, head_outputs: Dict[str, Tensor], image_anchors: List[Tensor], image_shapes: List[Tuple[int, int]]
+    ) -> List[Dict[str, Tensor]]:
+        bbox_regression = head_outputs["bbox_regression"]
+        pred_scores = F.softmax(head_outputs["cls_logits"], dim=-1)
 
         num_classes = pred_scores.size(-1)
         device = pred_scores.device
@@ -386,7 +437,7 @@ class SSD(nn.Module):
                 box = boxes[keep_idxs]
 
                 # keep only topk scoring predictions
-                num_topk = min(self.topk_candidates, score.size(0))
+                num_topk = det_utils._topk_min(score, self.topk_candidates, 0)
                 score, idxs = score.topk(num_topk)
                 box = box[idxs]
 
@@ -400,13 +451,15 @@ class SSD(nn.Module):
 
             # non-maximum suppression
             keep = box_ops.batched_nms(image_boxes, image_scores, image_labels, self.nms_thresh)
-            keep = keep[:self.detections_per_img]
+            keep = keep[: self.detections_per_img]
 
-            detections.append({
-                'boxes': image_boxes[keep],
-                'scores': image_scores[keep],
-                'labels': image_labels[keep],
-            })
+            detections.append(
+                {
+                    "boxes": image_boxes[keep],
+                    "scores": image_scores[keep],
+                    "labels": image_labels[keep],
+                }
+            )
         return detections
 
 
@@ -423,45 +476,47 @@ class SSDFeatureExtractorVGG(nn.Module):
         self.scale_weight = nn.Parameter(torch.ones(512) * 20)
 
         # Multiple Feature maps - page 4, Fig 2 of SSD paper
-        self.features = nn.Sequential(
-            *backbone[:maxpool4_pos]  # until conv4_3
-        )
+        self.features = nn.Sequential(*backbone[:maxpool4_pos])  # until conv4_3
 
         # SSD300 case - page 4, Fig 2 of SSD paper
-        extra = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv2d(1024, 256, kernel_size=1),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),  # conv8_2
-                nn.ReLU(inplace=True),
-            ),
-            nn.Sequential(
-                nn.Conv2d(512, 128, kernel_size=1),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),  # conv9_2
-                nn.ReLU(inplace=True),
-            ),
-            nn.Sequential(
-                nn.Conv2d(256, 128, kernel_size=1),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(128, 256, kernel_size=3),  # conv10_2
-                nn.ReLU(inplace=True),
-            ),
-            nn.Sequential(
-                nn.Conv2d(256, 128, kernel_size=1),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(128, 256, kernel_size=3),  # conv11_2
-                nn.ReLU(inplace=True),
-            )
-        ])
+        extra = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Conv2d(1024, 256, kernel_size=1),
+                    nn.ReLU(inplace=True),
+                    nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),  # conv8_2
+                    nn.ReLU(inplace=True),
+                ),
+                nn.Sequential(
+                    nn.Conv2d(512, 128, kernel_size=1),
+                    nn.ReLU(inplace=True),
+                    nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),  # conv9_2
+                    nn.ReLU(inplace=True),
+                ),
+                nn.Sequential(
+                    nn.Conv2d(256, 128, kernel_size=1),
+                    nn.ReLU(inplace=True),
+                    nn.Conv2d(128, 256, kernel_size=3),  # conv10_2
+                    nn.ReLU(inplace=True),
+                ),
+                nn.Sequential(
+                    nn.Conv2d(256, 128, kernel_size=1),
+                    nn.ReLU(inplace=True),
+                    nn.Conv2d(128, 256, kernel_size=3),  # conv11_2
+                    nn.ReLU(inplace=True),
+                ),
+            ]
+        )
         if highres:
             # Additional layers for the SSD512 case. See page 11, footernote 5.
-            extra.append(nn.Sequential(
-                nn.Conv2d(256, 128, kernel_size=1),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(128, 256, kernel_size=4),  # conv12_2
-                nn.ReLU(inplace=True),
-            ))
+            extra.append(
+                nn.Sequential(
+                    nn.Conv2d(256, 128, kernel_size=1),
+                    nn.ReLU(inplace=True),
+                    nn.Conv2d(128, 256, kernel_size=4),  # conv12_2
+                    nn.ReLU(inplace=True),
+                )
+            )
         _xavier_init(extra)
 
         fc = nn.Sequential(
@@ -469,13 +524,16 @@ class SSDFeatureExtractorVGG(nn.Module):
             nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=6, dilation=6),  # FC6 with atrous
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=1),  # FC7
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
         _xavier_init(fc)
-        extra.insert(0, nn.Sequential(
-            *backbone[maxpool4_pos:-1],  # until conv5_3, skip maxpool5
-            fc,
-        ))
+        extra.insert(
+            0,
+            nn.Sequential(
+                *backbone[maxpool4_pos:-1],  # until conv5_3, skip maxpool5
+                fc,
+            ),
+        )
         self.extra = extra
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
@@ -492,24 +550,17 @@ class SSDFeatureExtractorVGG(nn.Module):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained: bool, trainable_layers: int):
-    if backbone_name in backbone_urls:
-        # Use custom backbones more appropriate for SSD
-        arch = backbone_name.split('_')[0]
-        backbone = vgg.__dict__[arch](pretrained=False, progress=progress).features
-        if pretrained:
-            state_dict = load_state_dict_from_url(backbone_urls[backbone_name], progress=progress)
-            backbone.load_state_dict(state_dict)
-    else:
-        # Use standard backbones from TorchVision
-        backbone = vgg.__dict__[backbone_name](pretrained=pretrained, progress=progress).features
-
+def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
+    backbone = backbone.features
     # Gather the indices of maxpools. These are the locations of output blocks.
-    stage_indices = [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)]
+    stage_indices = [0] + [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)][:-1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
-    assert 0 <= trainable_layers <= num_stages
+    # find the index of the layer from which we won't freeze
+    torch._assert(
+        0 <= trainable_layers <= num_stages,
+        f"trainable_layers should be in the range [0, {num_stages}]. Instead got {trainable_layers}",
+    )
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:
@@ -519,19 +570,32 @@ def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained
     return SSDFeatureExtractorVGG(backbone, highres)
 
 
-def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
-                 pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None, **kwargs: Any):
-    """Constructs an SSD model with input size 300x300 and a VGG16 backbone.
+@register_model()
+@handle_legacy_interface(
+    weights=("pretrained", SSD300_VGG16_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", VGG16_Weights.IMAGENET1K_FEATURES),
+)
+def ssd300_vgg16(
+    *,
+    weights: Optional[SSD300_VGG16_Weights] = None,
+    progress: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[VGG16_Weights] = VGG16_Weights.IMAGENET1K_FEATURES,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs: Any,
+) -> SSD:
+    """The SSD300 model is based on the `SSD: Single Shot MultiBox Detector
+    <https://arxiv.org/abs/1512.02325>`_ paper.
 
-    Reference: `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
+    .. betastatus:: detection module
 
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
-    image, and should be in 0-1 range. Different images can have different sizes but they will be resized
+    image, and should be in 0-1 range. Different images can have different sizes, but they will be resized
     to a fixed size before passing it to the backbone.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -552,45 +616,89 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
 
     Example:
 
-        >>> model = torchvision.models.detection.ssd300_vgg16(pretrained=True)
+        >>> model = torchvision.models.detection.ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 300), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
+        weights (:class:`~torchvision.models.detection.SSD300_VGG16_Weights`, optional): The pretrained
+                weights to use. See
+                :class:`~torchvision.models.detection.SSD300_VGG16_Weights`
+                below for more details, and possible values. By default, no
+                pre-trained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr
+            Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (:class:`~torchvision.models.VGG16_Weights`, optional): The pretrained weights for the
+            backbone
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 4.
+        **kwargs: parameters passed to the ``torchvision.models.detection.SSD``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.detection.SSD300_VGG16_Weights
+        :members:
     """
+    weights = SSD300_VGG16_Weights.verify(weights)
+    weights_backbone = VGG16_Weights.verify(weights_backbone)
+
     if "size" in kwargs:
-        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+        warnings.warn("The size of the model is already fixed; ignoring the parameter.")
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 5)
+        weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 4
+    )
 
-    if pretrained:
-        # no need to download the backbone if pretrained is set
-        pretrained_backbone = False
-
-    backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers)
-    anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]],
-                                           scales=[0.07, 0.15, 0.33, 0.51, 0.69, 0.87, 1.05],
-                                           steps=[8, 16, 32, 64, 100, 300])
+    # Use custom backbones more appropriate for SSD
+    backbone = vgg16(weights=weights_backbone, progress=progress)
+    backbone = _vgg_extractor(backbone, False, trainable_backbone_layers)
+    anchor_generator = DefaultBoxGenerator(
+        [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+        scales=[0.07, 0.15, 0.33, 0.51, 0.69, 0.87, 1.05],
+        steps=[8, 16, 32, 64, 100, 300],
+    )
 
     defaults = {
         # Rescale the input in a way compatible to the backbone
         "image_mean": [0.48235, 0.45882, 0.40784],
         "image_std": [1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0],  # undo the 0-1 scaling of toTensor
     }
-    kwargs = {**defaults, **kwargs}
+    kwargs: Any = {**defaults, **kwargs}
     model = SSD(backbone, anchor_generator, (300, 300), num_classes, **kwargs)
-    if pretrained:
-        weights_name = 'ssd300_vgg16_coco'
-        if model_urls.get(weights_name, None) is None:
-            raise ValueError("No checkpoint is available for model {}".format(weights_name))
-        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "ssd300_vgg16_coco": SSD300_VGG16_Weights.COCO_V1.url,
+    }
+)
+
+
+backbone_urls = _ModelURLs(
+    {
+        # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses
+        # the same input standardization method as the paper.
+        # Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
+        # Only the `features` weights have proper values, those on the `classifier` module are filled with nans.
+        "vgg16_features": VGG16_Weights.IMAGENET1K_FEATURES.url,
+    }
+)

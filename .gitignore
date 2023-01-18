@@ -14,6 +14,8 @@ docs/build
 # sphinx-gallery
 docs/source/auto_examples/
 docs/source/gen_modules/
+docs/source/generated/
+docs/source/models/generated/
 # pytorch-sphinx-theme gets installed here
 docs/src
 

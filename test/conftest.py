@@ -1,23 +1,22 @@
-from common_utils import IN_CIRCLE_CI, CIRCLECI_GPU_NO_CUDA_MSG, IN_FBCODE, IN_RE_WORKER, CUDA_NOT_AVAILABLE_MSG
-import torch
+import random
+
+import numpy as np
 import pytest
+import torch
+from common_utils import CIRCLECI_GPU_NO_CUDA_MSG, CUDA_NOT_AVAILABLE_MSG, IN_CIRCLE_CI, IN_FBCODE, IN_RE_WORKER
 
 
 def pytest_configure(config):
     # register an additional marker (see pytest_collection_modifyitems)
-    config.addinivalue_line(
-        "markers", "needs_cuda: mark for tests that rely on a CUDA device"
-    )
-    config.addinivalue_line(
-        "markers", "dont_collect: mark for tests that should not be collected"
-    )
+    config.addinivalue_line("markers", "needs_cuda: mark for tests that rely on a CUDA device")
+    config.addinivalue_line("markers", "dont_collect: mark for tests that should not be collected")
 
 
 def pytest_collection_modifyitems(items):
     # This hook is called by pytest after it has collected the tests (google its name to check out its doc!)
     # We can ignore some tests as we see fit here, or add marks, such as a skip mark.
     #
-    # Typically here, we try to optimize CI time. In particular, the GPU CI instances don't need to run the
+    # Typically, here, we try to optimize CI time. In particular, the GPU CI instances don't need to run the
     # tests that don't need CUDA, because those tests are extensively tested in the CPU CI instances already.
     # This is true for both CircleCI and the fbcode internal CI.
     # In the fbcode CI, we have an additional constraint: we try to avoid skipping tests. So instead of relying on
@@ -32,7 +31,7 @@ def pytest_collection_modifyitems(items):
         # @pytest.mark.parametrize('device', cpu_and_gpu())
         # the "instances" of the tests where device == 'cuda' will have the 'needs_cuda' mark,
         # and the ones with device == 'cpu' won't have the mark.
-        needs_cuda = item.get_closest_marker('needs_cuda') is not None
+        needs_cuda = item.get_closest_marker("needs_cuda") is not None
 
         if needs_cuda and not torch.cuda.is_available():
             # In general, we skip cuda tests on machines without a GPU
@@ -57,8 +56,8 @@ def pytest_collection_modifyitems(items):
                 # to run the CPU-only tests.
                 item.add_marker(pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG))
 
-        if item.get_closest_marker('dont_collect') is not None:
-            # currently, this is only used for some tests we're sure we dont want to run on fbcode
+        if item.get_closest_marker("dont_collect") is not None:
+            # currently, this is only used for some tests we're sure we don't want to run on fbcode
             continue
 
         out_items.append(item)
@@ -80,3 +79,26 @@ def pytest_sessionfinish(session, exitstatus):
     # To avoid this, we transform this 5 into a 0 to make testpilot happy.
     if exitstatus == 5:
         session.exitstatus = 0
+
+
+@pytest.fixture(autouse=True)
+def prevent_leaking_rng():
+    # Prevent each test from leaking the rng to all other test when they call
+    # torch.manual_seed() or random.seed() or np.random.seed().
+    # Note: the numpy rngs should never leak anyway, as we never use
+    # np.random.seed() and instead rely on np.random.RandomState instances (see
+    # issue #4247). We still do it for extra precaution.
+
+    torch_rng_state = torch.get_rng_state()
+    builtin_rng_state = random.getstate()
+    nunmpy_rng_state = np.random.get_state()
+    if torch.cuda.is_available():
+        cuda_rng_state = torch.cuda.get_rng_state()
+
+    yield
+
+    torch.set_rng_state(torch_rng_state)
+    random.setstate(builtin_rng_state)
+    np.random.set_state(nunmpy_rng_state)
+    if torch.cuda.is_available():
+        torch.cuda.set_rng_state(cuda_rng_state)

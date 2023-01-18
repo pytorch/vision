@@ -1,16 +1,17 @@
-from collections import defaultdict, deque, OrderedDict
 import copy
 import datetime
+import errno
 import hashlib
+import os
 import time
+from collections import defaultdict, deque, OrderedDict
+from typing import List, Optional, Tuple
+
 import torch
 import torch.distributed as dist
 
-import errno
-import os
 
-
-class SmoothedValue(object):
+class SmoothedValue:
     """Track a series of values and provide access to smoothed values over a
     window or the global series average.
     """
@@ -32,11 +33,7 @@ class SmoothedValue(object):
         """
         Warning: does not synchronize the deque!
         """
-        if not is_dist_avail_and_initialized():
-            return
-        t = torch.tensor([self.count, self.total], dtype=torch.float64, device='cuda')
-        dist.barrier()
-        dist.all_reduce(t)
+        t = reduce_across_processes([self.count, self.total])
         t = t.tolist()
         self.count = int(t[0])
         self.total = t[1]
@@ -65,14 +62,11 @@ class SmoothedValue(object):
 
     def __str__(self):
         return self.fmt.format(
-            median=self.median,
-            avg=self.avg,
-            global_avg=self.global_avg,
-            max=self.max,
-            value=self.value)
+            median=self.median, avg=self.avg, global_avg=self.global_avg, max=self.max, value=self.value
+        )
 
 
-class MetricLogger(object):
+class MetricLogger:
     def __init__(self, delimiter="\t"):
         self.meters = defaultdict(SmoothedValue)
         self.delimiter = delimiter
@@ -89,15 +83,12 @@ class MetricLogger(object):
             return self.meters[attr]
         if attr in self.__dict__:
             return self.__dict__[attr]
-        raise AttributeError("'{}' object has no attribute '{}'".format(
-            type(self).__name__, attr))
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
 
     def __str__(self):
         loss_str = []
         for name, meter in self.meters.items():
-            loss_str.append(
-                "{}: {}".format(name, str(meter))
-            )
+            loss_str.append(f"{name}: {str(meter)}")
         return self.delimiter.join(loss_str)
 
     def synchronize_between_processes(self):
@@ -110,31 +101,28 @@ class MetricLogger(object):
     def log_every(self, iterable, print_freq, header=None):
         i = 0
         if not header:
-            header = ''
+            header = ""
         start_time = time.time()
         end = time.time()
-        iter_time = SmoothedValue(fmt='{avg:.4f}')
-        data_time = SmoothedValue(fmt='{avg:.4f}')
-        space_fmt = ':' + str(len(str(len(iterable)))) + 'd'
+        iter_time = SmoothedValue(fmt="{avg:.4f}")
+        data_time = SmoothedValue(fmt="{avg:.4f}")
+        space_fmt = ":" + str(len(str(len(iterable)))) + "d"
         if torch.cuda.is_available():
-            log_msg = self.delimiter.join([
-                header,
-                '[{0' + space_fmt + '}/{1}]',
-                'eta: {eta}',
-                '{meters}',
-                'time: {time}',
-                'data: {data}',
-                'max mem: {memory:.0f}'
-            ])
+            log_msg = self.delimiter.join(
+                [
+                    header,
+                    "[{0" + space_fmt + "}/{1}]",
+                    "eta: {eta}",
+                    "{meters}",
+                    "time: {time}",
+                    "data: {data}",
+                    "max mem: {memory:.0f}",
+                ]
+            )
         else:
-            log_msg = self.delimiter.join([
-                header,
-                '[{0' + space_fmt + '}/{1}]',
-                'eta: {eta}',
-                '{meters}',
-                'time: {time}',
-                'data: {data}'
-            ])
+            log_msg = self.delimiter.join(
+                [header, "[{0" + space_fmt + "}/{1}]", "eta: {eta}", "{meters}", "time: {time}", "data: {data}"]
+            )
         MB = 1024.0 * 1024.0
         for obj in iterable:
             data_time.update(time.time() - end)
@@ -144,28 +132,51 @@ class MetricLogger(object):
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
                 if torch.cuda.is_available():
-                    print(log_msg.format(
-                        i, len(iterable), eta=eta_string,
-                        meters=str(self),
-                        time=str(iter_time), data=str(data_time),
-                        memory=torch.cuda.max_memory_allocated() / MB))
+                    print(
+                        log_msg.format(
+                            i,
+                            len(iterable),
+                            eta=eta_string,
+                            meters=str(self),
+                            time=str(iter_time),
+                            data=str(data_time),
+                            memory=torch.cuda.max_memory_allocated() / MB,
+                        )
+                    )
                 else:
-                    print(log_msg.format(
-                        i, len(iterable), eta=eta_string,
-                        meters=str(self),
-                        time=str(iter_time), data=str(data_time)))
+                    print(
+                        log_msg.format(
+                            i, len(iterable), eta=eta_string, meters=str(self), time=str(iter_time), data=str(data_time)
+                        )
+                    )
             i += 1
             end = time.time()
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-        print('{} Total time: {}'.format(header, total_time_str))
+        print(f"{header} Total time: {total_time_str}")
+
+
+class ExponentialMovingAverage(torch.optim.swa_utils.AveragedModel):
+    """Maintains moving averages of model parameters using an exponential decay.
+    ``ema_avg = decay * avg_model_param + (1 - decay) * model_param``
+    `torch.optim.swa_utils.AveragedModel <https://pytorch.org/docs/stable/optim.html#custom-averaging-strategies>`_
+    is used to compute the EMA.
+    """
+
+    def __init__(self, model, decay, device="cpu"):
+        def ema_avg(avg_model_param, model_param, num_averaged):
+            return decay * avg_model_param + (1 - decay) * model_param
+
+        super().__init__(model, device, ema_avg, use_buffers=True)
 
 
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
-    with torch.no_grad():
+    with torch.inference_mode():
         maxk = max(topk)
         batch_size = target.size(0)
+        if target.ndim == 2:
+            target = target.max(dim=1)[1]
 
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
@@ -191,10 +202,11 @@ def setup_for_distributed(is_master):
     This function disables printing when not in master process
     """
     import builtins as __builtin__
+
     builtin_print = __builtin__.print
 
     def print(*args, **kwargs):
-        force = kwargs.pop('force', False)
+        force = kwargs.pop("force", False)
         if is_master or force:
             builtin_print(*args, **kwargs)
 
@@ -231,28 +243,29 @@ def save_on_master(*args, **kwargs):
 
 
 def init_distributed_mode(args):
-    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
+    if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
         args.rank = int(os.environ["RANK"])
-        args.world_size = int(os.environ['WORLD_SIZE'])
-        args.gpu = int(os.environ['LOCAL_RANK'])
-    elif 'SLURM_PROCID' in os.environ:
-        args.rank = int(os.environ['SLURM_PROCID'])
+        args.world_size = int(os.environ["WORLD_SIZE"])
+        args.gpu = int(os.environ["LOCAL_RANK"])
+    elif "SLURM_PROCID" in os.environ:
+        args.rank = int(os.environ["SLURM_PROCID"])
         args.gpu = args.rank % torch.cuda.device_count()
     elif hasattr(args, "rank"):
         pass
     else:
-        print('Not using distributed mode')
+        print("Not using distributed mode")
         args.distributed = False
         return
 
     args.distributed = True
 
     torch.cuda.set_device(args.gpu)
-    args.dist_backend = 'nccl'
-    print('| distributed init (rank {}): {}'.format(
-        args.rank, args.dist_url), flush=True)
-    torch.distributed.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
-                                         world_size=args.world_size, rank=args.rank)
+    args.dist_backend = "nccl"
+    print(f"| distributed init (rank {args.rank}): {args.dist_url}", flush=True)
+    torch.distributed.init_process_group(
+        backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank
+    )
+    torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
 
 
@@ -275,9 +288,7 @@ def average_checkpoints(inputs):
         with open(fpath, "rb") as f:
             state = torch.load(
                 f,
-                map_location=(
-                    lambda s, _: torch.serialization.default_restore_location(s, "cpu")
-                ),
+                map_location=(lambda s, _: torch.serialization.default_restore_location(s, "cpu")),
             )
         # Copies over the settings from the first checkpoint
         if new_state is None:
@@ -288,8 +299,7 @@ def average_checkpoints(inputs):
             params_keys = model_params_keys
         elif params_keys != model_params_keys:
             raise KeyError(
-                "For checkpoint {}, expected list of params: {}, "
-                "but found: {}".format(f, params_keys, model_params_keys)
+                f"For checkpoint {f}, expected list of params: {params_keys}, but found: {model_params_keys}"
             )
         for k in params_keys:
             p = model_params[k]
@@ -311,7 +321,7 @@ def average_checkpoints(inputs):
     return new_state
 
 
-def store_model_weights(model, checkpoint_path, checkpoint_key='model', strict=True):
+def store_model_weights(model, checkpoint_path, checkpoint_key="model", strict=True):
     """
     This method can be used to prepare weights files for new models. It receives as
     input a model architecture and a checkpoint from the training script and produces
@@ -321,22 +331,22 @@ def store_model_weights(model, checkpoint_path, checkpoint_key='model', strict=T
         from torchvision import models as M
 
         # Classification
-        model = M.mobilenet_v3_large(pretrained=False)
+        model = M.mobilenet_v3_large(weights=None)
         print(store_model_weights(model, './class.pth'))
 
         # Quantized Classification
-        model = M.quantization.mobilenet_v3_large(pretrained=False, quantize=False)
-        model.fuse_model()
-        model.qconfig = torch.quantization.get_default_qat_qconfig('qnnpack')
-        _ = torch.quantization.prepare_qat(model, inplace=True)
+        model = M.quantization.mobilenet_v3_large(weights=None, quantize=False)
+        model.fuse_model(is_qat=True)
+        model.qconfig = torch.ao.quantization.get_default_qat_qconfig('qnnpack')
+        _ = torch.ao.quantization.prepare_qat(model, inplace=True)
         print(store_model_weights(model, './qat.pth'))
 
         # Object Detection
-        model = M.detection.fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, pretrained_backbone=False)
+        model = M.detection.fasterrcnn_mobilenet_v3_large_fpn(weights=None, weights_backbone=None)
         print(store_model_weights(model, './obj.pth'))
 
         # Segmentation
-        model = M.segmentation.deeplabv3_mobilenet_v3_large(pretrained=False, pretrained_backbone=False, aux_loss=True)
+        model = M.segmentation.deeplabv3_mobilenet_v3_large(weights=None, weights_backbone=None, aux_loss=True)
         print(store_model_weights(model, './segm.pth', strict=False))
 
     Args:
@@ -355,12 +365,15 @@ def store_model_weights(model, checkpoint_path, checkpoint_key='model', strict=T
     checkpoint_path = os.path.abspath(checkpoint_path)
     output_dir = os.path.dirname(checkpoint_path)
 
-    # Deep copy to avoid side-effects on the model object.
+    # Deep copy to avoid side effects on the model object.
     model = copy.deepcopy(model)
-    checkpoint = torch.load(checkpoint_path, map_location='cpu')
+    checkpoint = torch.load(checkpoint_path, map_location="cpu")
 
     # Load the weights to the model to validate that everything works
-    # and remove unnecessary weights (such as auxiliaries, etc)
+    # and remove unnecessary weights (such as auxiliaries, etc.)
+    if checkpoint_key == "model_ema":
+        del checkpoint[checkpoint_key]["n_averaged"]
+        torch.nn.modules.utils.consume_prefix_in_state_dict_if_present(checkpoint[checkpoint_key], "module.")
     model.load_state_dict(checkpoint[checkpoint_key], strict=strict)
 
     tmp_path = os.path.join(output_dir, str(model.__hash__()))
@@ -377,3 +390,76 @@ def store_model_weights(model, checkpoint_path, checkpoint_key='model', strict=T
     os.replace(tmp_path, output_path)
 
     return output_path
+
+
+def reduce_across_processes(val):
+    if not is_dist_avail_and_initialized():
+        # nothing to sync, but we still convert to tensor for consistency with the distributed case.
+        return torch.tensor(val)
+
+    t = torch.tensor(val, device="cuda")
+    dist.barrier()
+    dist.all_reduce(t)
+    return t
+
+
+def set_weight_decay(
+    model: torch.nn.Module,
+    weight_decay: float,
+    norm_weight_decay: Optional[float] = None,
+    norm_classes: Optional[List[type]] = None,
+    custom_keys_weight_decay: Optional[List[Tuple[str, float]]] = None,
+):
+    if not norm_classes:
+        norm_classes = [
+            torch.nn.modules.batchnorm._BatchNorm,
+            torch.nn.LayerNorm,
+            torch.nn.GroupNorm,
+            torch.nn.modules.instancenorm._InstanceNorm,
+            torch.nn.LocalResponseNorm,
+        ]
+    norm_classes = tuple(norm_classes)
+
+    params = {
+        "other": [],
+        "norm": [],
+    }
+    params_weight_decay = {
+        "other": weight_decay,
+        "norm": norm_weight_decay,
+    }
+    custom_keys = []
+    if custom_keys_weight_decay is not None:
+        for key, weight_decay in custom_keys_weight_decay:
+            params[key] = []
+            params_weight_decay[key] = weight_decay
+            custom_keys.append(key)
+
+    def _add_params(module, prefix=""):
+        for name, p in module.named_parameters(recurse=False):
+            if not p.requires_grad:
+                continue
+            is_custom_key = False
+            for key in custom_keys:
+                target_name = f"{prefix}.{name}" if prefix != "" and "." in key else name
+                if key == target_name:
+                    params[key].append(p)
+                    is_custom_key = True
+                    break
+            if not is_custom_key:
+                if norm_weight_decay is not None and isinstance(module, norm_classes):
+                    params["norm"].append(p)
+                else:
+                    params["other"].append(p)
+
+        for child_name, child_module in module.named_children():
+            child_prefix = f"{prefix}.{child_name}" if prefix != "" else child_name
+            _add_params(child_module, prefix=child_prefix)
+
+    _add_params(model)
+
+    param_groups = []
+    for key in params:
+        if len(params[key]) > 0:
+            param_groups.append({"params": params[key], "weight_decay": params_weight_decay[key]})
+    return param_groups

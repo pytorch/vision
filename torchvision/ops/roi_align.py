@@ -1,16 +1,20 @@
+from typing import List, Union
+
 import torch
+import torch.fx
 from torch import nn, Tensor
-
-from torch.nn.modules.utils import _pair
 from torch.jit.annotations import BroadcastingList2
-
+from torch.nn.modules.utils import _pair
 from torchvision.extension import _assert_has_ops
-from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
+
+from ..utils import _log_api_usage_once
+from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
 
 
+@torch.fx.wrap
 def roi_align(
     input: Tensor,
-    boxes: Tensor,
+    boxes: Union[Tensor, List[Tensor]],
     output_size: BroadcastingList2[int],
     spatial_scale: float = 1.0,
     sampling_ratio: int = -1,
@@ -32,8 +36,10 @@ def roi_align(
             in the batch.
         output_size (int or Tuple[int, int]): the size of the output (in bins or pixels) after the pooling
             is performed, as (height, width).
-        spatial_scale (float): a scaling factor that maps the input coordinates to
-            the box coordinates. Default: 1.0
+        spatial_scale (float): a scaling factor that maps the box coordinates to
+            the input coordinates. For example, if your boxes are defined on the scale
+            of a 224x224 image and your input is a 112x112 feature map (resulting from a 0.5x scaling of
+            the original image), you'll want to set this to 0.5. Default: 1.0
         sampling_ratio (int): number of sampling points in the interpolation grid
             used to compute the output value of each pooled output bin. If > 0,
             then exactly ``sampling_ratio x sampling_ratio`` sampling points per bin are used. If
@@ -46,21 +52,24 @@ def roi_align(
     Returns:
         Tensor[K, C, output_size[0], output_size[1]]: The pooled RoIs.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(roi_align)
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
-    return torch.ops.torchvision.roi_align(input, rois, spatial_scale,
-                                           output_size[0], output_size[1],
-                                           sampling_ratio, aligned)
+    return torch.ops.torchvision.roi_align(
+        input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned
+    )
 
 
 class RoIAlign(nn.Module):
     """
     See :func:`roi_align`.
     """
+
     def __init__(
         self,
         output_size: BroadcastingList2[int],
@@ -68,20 +77,23 @@ class RoIAlign(nn.Module):
         sampling_ratio: int,
         aligned: bool = False,
     ):
-        super(RoIAlign, self).__init__()
+        super().__init__()
+        _log_api_usage_once(self)
         self.output_size = output_size
         self.spatial_scale = spatial_scale
         self.sampling_ratio = sampling_ratio
         self.aligned = aligned
 
-    def forward(self, input: Tensor, rois: Tensor) -> Tensor:
+    def forward(self, input: Tensor, rois: Union[Tensor, List[Tensor]]) -> Tensor:
         return roi_align(input, rois, self.output_size, self.spatial_scale, self.sampling_ratio, self.aligned)
 
     def __repr__(self) -> str:
-        tmpstr = self.__class__.__name__ + '('
-        tmpstr += 'output_size=' + str(self.output_size)
-        tmpstr += ', spatial_scale=' + str(self.spatial_scale)
-        tmpstr += ', sampling_ratio=' + str(self.sampling_ratio)
-        tmpstr += ', aligned=' + str(self.aligned)
-        tmpstr += ')'
-        return tmpstr
+        s = (
+            f"{self.__class__.__name__}("
+            f"output_size={self.output_size}"
+            f", spatial_scale={self.spatial_scale}"
+            f", sampling_ratio={self.sampling_ratio}"
+            f", aligned={self.aligned}"
+            f")"
+        )
+        return s

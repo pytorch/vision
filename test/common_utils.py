@@ -1,31 +1,22 @@
+import contextlib
+import functools
 import os
+import random
 import shutil
 import tempfile
-import contextlib
-import unittest
-import pytest
-import argparse
-import sys
-import torch
-import __main__
-import random
-import inspect
-import functools
-
-from numbers import Number
-from torch._six import string_classes
-from collections import OrderedDict
 
 import numpy as np
+import torch
 from PIL import Image
+from torchvision import io
 
-IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
-PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
-PY39_SKIP = pytest.mark.skipif(IS_PY39, reason=PY39_SEGFAULT_SKIP_MSG)
-IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == 'true'
+import __main__  # noqa: 401
+
+
+IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == "true"
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
-CUDA_NOT_AVAILABLE_MSG = 'CUDA device not available'
+CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
 CIRCLECI_GPU_NO_CUDA_MSG = "We're in a CircleCI GPU machine, and this test doesn't need cuda."
 
 
@@ -46,7 +37,7 @@ def set_rng_seed(seed):
     random.seed(seed)
 
 
-class MapNestedTensorObjectImpl(object):
+class MapNestedTensorObjectImpl:
     def __init__(self, tensor_map_fn):
         self.tensor_map_fn = tensor_map_fn
 
@@ -96,16 +87,16 @@ def freeze_rng_state():
 
 def cycle_over(objs):
     for idx, obj1 in enumerate(objs):
-        for obj2 in objs[:idx] + objs[idx + 1:]:
+        for obj2 in objs[:idx] + objs[idx + 1 :]:
             yield obj1, obj2
 
 
 def int_dtypes():
-    return torch.testing.integral_types()
+    return (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64)
 
 
 def float_dtypes():
-    return torch.testing.floating_types()
+    return (torch.float32, torch.float64)
 
 
 @contextlib.contextmanager
@@ -118,33 +109,54 @@ def disable_console_output():
 
 def cpu_and_gpu():
     import pytest  # noqa
-    return ('cpu', pytest.param('cuda', marks=pytest.mark.needs_cuda))
+
+    return ("cpu", pytest.param("cuda", marks=pytest.mark.needs_cuda))
 
 
 def needs_cuda(test_func):
     import pytest  # noqa
+
     return pytest.mark.needs_cuda(test_func)
 
 
 def _create_data(height=3, width=3, channels=3, device="cpu"):
     # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
     tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
-    pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
+    data = tensor.permute(1, 2, 0).contiguous().cpu().numpy()
+    mode = "RGB"
+    if channels == 1:
+        mode = "L"
+        data = data[..., 0]
+    pil_img = Image.fromarray(data, mode=mode)
     return tensor, pil_img
 
 
 def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu"):
     # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
-    batch_tensor = torch.randint(
-        0, 256,
-        (num_samples, channels, height, width),
-        dtype=torch.uint8,
-        device=device
-    )
+    batch_tensor = torch.randint(0, 256, (num_samples, channels, height, width), dtype=torch.uint8, device=device)
     return batch_tensor
 
 
 assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+
+
+def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
+    names = []
+    for i in range(num_videos):
+        if sizes is None:
+            size = 5 * (i + 1)
+        else:
+            size = sizes[i]
+        if fps is None:
+            f = 5
+        else:
+            f = fps[i]
+        data = torch.randint(0, 256, (size, 300, 400, 3), dtype=torch.uint8)
+        name = os.path.join(tmpdir, f"{i}.mp4")
+        names.append(name)
+        io.write_video(name, data, fps=f)
+
+    return names
 
 
 def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
@@ -153,12 +165,13 @@ def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
         np_pil_image = np_pil_image[:, :, None]
     pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
     if msg is None:
-        msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
+        msg = f"tensor:\n{tensor} \ndid not equal PIL tensor:\n{pil_tensor}"
     assert_equal(tensor.cpu(), pil_tensor, msg=msg)
 
 
-def _assert_approx_equal_tensor_to_pil(tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
-                                       allowed_percentage_diff=None):
+def _assert_approx_equal_tensor_to_pil(
+    tensor, pil_image, tol=1e-5, msg=None, agg_method="mean", allowed_percentage_diff=None
+):
     # TODO: we could just merge this into _assert_equal_tensor_to_pil
     np_pil_image = np.array(pil_image)
     if np_pil_image.ndim == 2:
@@ -174,7 +187,7 @@ def _assert_approx_equal_tensor_to_pil(tensor, pil_image, tol=1e-5, msg=None, ag
     tensor = tensor.to(torch.float)
     pil_tensor = pil_tensor.to(torch.float)
     err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
-    assert err < tol
+    assert err < tol, f"{err} vs {tol}"
 
 
 def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
@@ -182,10 +195,45 @@ def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
     for i in range(len(batch_tensors)):
         img_tensor = batch_tensors[i, ...]
         transformed_img = fn(img_tensor, **fn_kwargs)
-        assert_equal(transformed_img, transformed_batch[i, ...])
+        torch.testing.assert_close(transformed_img, transformed_batch[i, ...], rtol=0, atol=1e-6)
 
     if scripted_fn_atol >= 0:
         scripted_fn = torch.jit.script(fn)
         # scriptable function test
         s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
         torch.testing.assert_close(transformed_batch, s_transformed_batch, rtol=1e-5, atol=scripted_fn_atol)
+
+
+def cache(fn):
+    """Similar to :func:`functools.cache` (Python >= 3.8) or :func:`functools.lru_cache` with infinite cache size,
+    but this also caches exceptions.
+    """
+    sentinel = object()
+    out_cache = {}
+    exc_tb_cache = {}
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        key = args + tuple(kwargs.values())
+
+        out = out_cache.get(key, sentinel)
+        if out is not sentinel:
+            return out
+
+        exc_tb = exc_tb_cache.get(key, sentinel)
+        if exc_tb is not sentinel:
+            raise exc_tb[0].with_traceback(exc_tb[1])
+
+        try:
+            out = fn(*args, **kwargs)
+        except Exception as exc:
+            # We need to cache the traceback here as well. Otherwise, each re-raise will add the internal pytest
+            # traceback frames anew, but they will only be removed once. Thus, the traceback will be ginormous hiding
+            # the actual information in the noise. See https://github.com/pytest-dev/pytest/issues/10363 for details.
+            exc_tb_cache[key] = exc, exc.__traceback__
+            raise exc
+
+        out_cache[key] = out
+        return out
+
+    return wrapper

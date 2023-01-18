@@ -1,13 +1,13 @@
-from .vision import VisionDataset
+import os
+import os.path
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
 
-import os
-import os.path
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple
+from .vision import VisionDataset
 
 
-def has_file_allowed_extension(filename: str, extensions: Tuple[str, ...]) -> bool:
+def has_file_allowed_extension(filename: str, extensions: Union[str, Tuple[str, ...]]) -> bool:
     """Checks if a file is an allowed extension.
 
     Args:
@@ -17,7 +17,7 @@ def has_file_allowed_extension(filename: str, extensions: Tuple[str, ...]) -> bo
     Returns:
         bool: True if the filename ends with one of given extensions
     """
-    return filename.lower().endswith(extensions)
+    return filename.lower().endswith(extensions if isinstance(extensions, str) else tuple(extensions))
 
 
 def is_image_file(filename: str) -> bool:
@@ -48,7 +48,7 @@ def find_classes(directory: str) -> Tuple[List[str], Dict[str, int]]:
 def make_dataset(
     directory: str,
     class_to_idx: Optional[Dict[str, int]] = None,
-    extensions: Optional[Tuple[str, ...]] = None,
+    extensions: Optional[Union[str, Tuple[str, ...]]] = None,
     is_valid_file: Optional[Callable[[str], bool]] = None,
 ) -> List[Tuple[str, int]]:
     """Generates a list of samples of a form (path_to_sample, class).
@@ -73,7 +73,7 @@ def make_dataset(
     if extensions is not None:
 
         def is_valid_file(x: str) -> bool:
-            return has_file_allowed_extension(x, cast(Tuple[str, ...], extensions))
+            return has_file_allowed_extension(x, extensions)  # type: ignore[arg-type]
 
     is_valid_file = cast(Callable[[str], bool], is_valid_file)
 
@@ -86,8 +86,8 @@ def make_dataset(
             continue
         for root, _, fnames in sorted(os.walk(target_dir, followlinks=True)):
             for fname in sorted(fnames):
-                if is_valid_file(fname):
-                    path = os.path.join(root, fname)
+                path = os.path.join(root, fname)
+                if is_valid_file(path):
                     item = path, class_index
                     instances.append(item)
 
@@ -98,7 +98,7 @@ def make_dataset(
     if empty_classes:
         msg = f"Found no valid file for the classes {', '.join(sorted(empty_classes))}. "
         if extensions is not None:
-            msg += f"Supported extensions are: {', '.join(extensions)}"
+            msg += f"Supported extensions are: {extensions if isinstance(extensions, str) else ', '.join(extensions)}"
         raise FileNotFoundError(msg)
 
     return instances
@@ -132,16 +132,15 @@ class DatasetFolder(VisionDataset):
     """
 
     def __init__(
-            self,
-            root: str,
-            loader: Callable[[str], Any],
-            extensions: Optional[Tuple[str, ...]] = None,
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            is_valid_file: Optional[Callable[[str], bool]] = None,
+        self,
+        root: str,
+        loader: Callable[[str], Any],
+        extensions: Optional[Tuple[str, ...]] = None,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        is_valid_file: Optional[Callable[[str], bool]] = None,
     ) -> None:
-        super(DatasetFolder, self).__init__(root, transform=transform,
-                                            target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         classes, class_to_idx = self.find_classes(self.root)
         samples = self.make_dataset(self.root, class_to_idx, extensions, is_valid_file)
 
@@ -186,9 +185,7 @@ class DatasetFolder(VisionDataset):
             # prevent potential bug since make_dataset() would use the class_to_idx logic of the
             # find_classes() function, instead of using that of the find_classes() method, which
             # is potentially overridden and thus could have a different logic.
-            raise ValueError(
-                "The class_to_idx parameter cannot be None."
-            )
+            raise ValueError("The class_to_idx parameter cannot be None.")
         return make_dataset(directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file)
 
     def find_classes(self, directory: str) -> Tuple[List[str], Dict[str, int]]:
@@ -241,29 +238,31 @@ class DatasetFolder(VisionDataset):
         return len(self.samples)
 
 
-IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
+IMG_EXTENSIONS = (".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif", ".tiff", ".webp")
 
 
 def pil_loader(path: str) -> Image.Image:
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         img = Image.open(f)
-        return img.convert('RGB')
+        return img.convert("RGB")
 
 
 # TODO: specify the return type
 def accimage_loader(path: str) -> Any:
     import accimage
+
     try:
         return accimage.Image(path)
-    except IOError:
+    except OSError:
         # Potentially a decoding problem, fall back to PIL.Image
         return pil_loader(path)
 
 
 def default_loader(path: str) -> Any:
     from torchvision import get_image_backend
-    if get_image_backend() == 'accimage':
+
+    if get_image_backend() == "accimage":
         return accimage_loader(path)
     else:
         return pil_loader(path)
@@ -300,15 +299,19 @@ class ImageFolder(DatasetFolder):
     """
 
     def __init__(
-            self,
-            root: str,
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            loader: Callable[[str], Any] = default_loader,
-            is_valid_file: Optional[Callable[[str], bool]] = None,
+        self,
+        root: str,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        loader: Callable[[str], Any] = default_loader,
+        is_valid_file: Optional[Callable[[str], bool]] = None,
     ):
-        super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS if is_valid_file is None else None,
-                                          transform=transform,
-                                          target_transform=target_transform,
-                                          is_valid_file=is_valid_file)
+        super().__init__(
+            root,
+            loader,
+            IMG_EXTENSIONS if is_valid_file is None else None,
+            transform=transform,
+            target_transform=target_transform,
+            is_valid_file=is_valid_file,
+        )
         self.imgs = self.samples

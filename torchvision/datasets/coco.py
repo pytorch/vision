@@ -1,18 +1,21 @@
-from .vision import VisionDataset
-from PIL import Image
-import os
 import os.path
-from typing import Any, Callable, Optional, Tuple, List
+from typing import Any, Callable, List, Optional, Tuple
+
+from PIL import Image
+
+from .vision import VisionDataset
 
 
 class CocoDetection(VisionDataset):
     """`MS Coco Detection <https://cocodataset.org/#detection-2016>`_ Dataset.
 
+    It requires the `COCO API to be installed <https://github.com/pdollar/coco/tree/master/PythonAPI>`_.
+
     Args:
         root (string): Root directory where images are downloaded to.
         annFile (string): Path to json annotation file.
         transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+            and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         transforms (callable, optional): A function/transform that takes input sample and its target as entry
@@ -57,11 +60,13 @@ class CocoDetection(VisionDataset):
 class CocoCaptions(CocoDetection):
     """`MS Coco Captions <https://cocodataset.org/#captions-2015>`_ Dataset.
 
+    It requires the `COCO API to be installed <https://github.com/pdollar/coco/tree/master/PythonAPI>`_.
+
     Args:
         root (string): Root directory where images are downloaded to.
         annFile (string): Path to json annotation file.
         transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+            and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         transforms (callable, optional): A function/transform that takes input sample and its target as entry
@@ -75,7 +80,7 @@ class CocoCaptions(CocoDetection):
             import torchvision.transforms as transforms
             cap = dset.CocoCaptions(root = 'dir where images are',
                                     annFile = 'json annotation file',
-                                    transform=transforms.ToTensor())
+                                    transform=transforms.PILToTensor())
 
             print('Number of samples: ', len(cap))
             img, target = cap[3] # load 4th sample

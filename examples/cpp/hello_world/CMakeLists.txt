@@ -6,6 +6,10 @@ project(hello-world)
 # so there is no need to also add `find_package(Torch)` here.
 find_package(TorchVision REQUIRED)
 
+# This due to LibTorch's version is the one included in the Python
+# package that links to Python.
+find_package(Python3 COMPONENTS Development)
+
 add_executable(hello-world main.cpp)
 
 # We now need to link the TorchVision library to our executable.
