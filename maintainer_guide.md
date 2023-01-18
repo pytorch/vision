@@ -23,7 +23,7 @@ The public API has backward-compatible (BC) guarantees defined in our
 deprecation policy (see below). The private API has not BC guarantees.
 
 For C++, code is private. If a change breaks fbcode, fix fbcode or revert the
-change. We should be careful about models running in prod and relying on
+change. We should be careful about models running in production and relying on
 torchvision ops.
 
 The `test` folder is not importable and is **private.** Even meta-internal
