@@ -75,7 +75,10 @@ def test_get_model_weights(name, weight):
 )
 def test_weights_copyable(copy_fn, name):
     for weights in list(models.get_model_weights(name)):
-        assert copy_fn(weights) == weights
+        # It is somewhat surprising that (deep-)copying is an identity operation here,
+        # but this is the default behavior of enums.
+        # See https://github.com/pytorch/vision/pull/7107 for details.
+        assert copy_fn(weights) is weights
 
 
 @pytest.mark.parametrize(
@@ -89,9 +92,12 @@ def test_weights_copyable(copy_fn, name):
         "mvit_v1_b",
     ],
 )
-def test_weights_de_serializable(name):
+def test_weights_deserializable(name):
     for weights in list(models.get_model_weights(name)):
-        assert pickle.loads(pickle.dumps(weights)) == weights
+        # It is somewhat surprising that deserialization is an identity operation here,
+        # but this is the default behavior of enums.
+        # See https://github.com/pytorch/vision/pull/7107 for details.
+        assert pickle.loads(pickle.dumps(weights)) is weights
 
 
 @pytest.mark.parametrize(
