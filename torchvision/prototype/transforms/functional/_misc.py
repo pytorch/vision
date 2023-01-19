@@ -58,20 +58,27 @@ def normalize(
     std: List[float],
     inplace: bool = False,
 ) -> torch.Tensor:
+    # if torch.jit.is_scripting() or is_simple_tensor(inpt):
+    #     return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
+    # elif isinstance(inpt, datapoints._datapoint.Datapoint):
+    #     return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)
+    # elif isinstance(inpt, PIL.Image.Image):
+    #     return gaussian_blur_image_pil(inpt, kernel_size=kernel_size, sigma=sigma)
+    # else:
+    #     raise TypeError(
+    #         f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
+    #         f"but got {type(inpt)} instead."
+    #     )
     if not torch.jit.is_scripting():
         _log_api_usage_once(normalize)
-
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            inpt = inpt.as_subclass(torch.Tensor)
-        elif not is_simple_tensor(inpt):
-            raise TypeError(
-                f"Input can either be a plain tensor or an `Image` or `Video` datapoint, "
-                f"but got {type(inpt)} instead."
-            )
-
-    # Image or Video type should not be retained after normalization due to unknown data range
-    # Thus we return Tensor for input Image
-    return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
+    elif isinstance(inpt, (datapoints.Image, datapoints.Video)):
+        return inpt.normalize(mean=mean, std=std, inplace=inplace)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor or an `Image` or `Video` datapoint, " f"but got {type(inpt)} instead."
+        )
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> torch.Tensor:

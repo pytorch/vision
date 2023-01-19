@@ -289,6 +289,10 @@ class Image(Datapoint):
         )
         return Image.wrap_like(self, output)
 
+    def normalize(self, mean: List[float], std: List[float], inplace: bool = False):
+        output = self._F.normalize_image_tensor(self.as_subclass(torch.Tensor), mean=mean, std=std, inplace=inplace)
+        return Image.wrap_like(self, output)
+
 
 ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
 ImageTypeJIT = torch.Tensor
