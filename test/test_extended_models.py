@@ -1,5 +1,6 @@
 import copy
 import os
+import pickle
 
 import pytest
 import test_models as TM
@@ -73,10 +74,24 @@ def test_get_model_weights(name, weight):
     ],
 )
 def test_weights_copyable(copy_fn, name):
-    model_weights = models.get_model_weights(name)
-    for weights in list(model_weights):
-        copied_weights = copy_fn(weights)
-        assert copied_weights is weights
+    for weights in list(models.get_model_weights(name)):
+        assert copy_fn(weights) == weights
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "resnet50",
+        "retinanet_resnet50_fpn_v2",
+        "raft_large",
+        "quantized_resnet50",
+        "lraspp_mobilenet_v3_large",
+        "mvit_v1_b",
+    ],
+)
+def test_weights_de_serializable(name):
+    for weights in list(models.get_model_weights(name)):
+        assert pickle.loads(pickle.dumps(weights)) == weights
 
 
 @pytest.mark.parametrize(
