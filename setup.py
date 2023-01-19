@@ -58,7 +58,6 @@ if os.getenv("PYTORCH_VERSION"):
     pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
 requirements = [
-    "typing_extensions",
     "numpy",
     "requests",
     pytorch_dep,
@@ -546,7 +545,7 @@ if __name__ == "__main__":
             "scipy": ["scipy"],
         },
         ext_modules=get_extensions(),
-        python_requires=">=3.7.2",
+        python_requires=">=3.8",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
             "clean": clean,

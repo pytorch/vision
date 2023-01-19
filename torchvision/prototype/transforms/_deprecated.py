@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union
 
 import numpy as np
 import PIL.Image
@@ -8,7 +8,6 @@ import torch
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import Transform
 from torchvision.transforms import functional as _F
-from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
 from .utils import is_simple_tensor, query_chw

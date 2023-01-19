@@ -2,7 +2,7 @@ import abc
 import hashlib
 import itertools
 import pathlib
-from typing import Any, Callable, IO, NoReturn, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Callable, IO, Literal, NoReturn, Optional, Sequence, Set, Tuple, Union
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
@@ -23,7 +23,6 @@ from torchvision.datasets.utils import (
     download_url,
     extract_archive,
 )
-from typing_extensions import Literal
 
 
 class OnlineResource(abc.ABC):
