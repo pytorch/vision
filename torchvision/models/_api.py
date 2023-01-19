@@ -41,8 +41,10 @@ class Weights:
     def __eq__(self, other: Any) -> bool:
         # We need this custom implementation for correct deep-copy and deserialization behavior.
         # TL;DR: After the definition of an enum, creating a new instance, i.e. by deep-copying or deserializing it,
-        # involves an equality check against the defined members. Unfortunately,
-        # `fn = partial(...); assert deepcopy(fn) != fn` and thus this check fails without custom handling.
+        # involves an equality check against the defined members. Unfortunately, the `transforms` attribute is often
+        # defined with `functools.partial` and `fn = partial(...); assert deepcopy(fn) != fn`. Without custom handling
+        # for it, the check against the defined members would fail and effectively prevent the weights from being
+        # deep-copied or deserialized.
         # See https://github.com/pytorch/vision/pull/7107 for details.
         if not isinstance(other, Weights):
             return NotImplemented
