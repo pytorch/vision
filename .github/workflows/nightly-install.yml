@@ -1,0 +1,31 @@
+on:
+  pull_request:
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-22.04  # ubuntu-latest
+          - ubuntu-20.04
+          - windows-2022  # windows-latest
+          - windows-2019
+          - macos-12  # macos-latest
+          - macos-11
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Try installing exclusively from PyTorch wheels indices
+        run: python -m pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cpu
