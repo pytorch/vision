@@ -683,8 +683,9 @@ def test_classification_model(model_fn, dev):
     real_image = kwargs.pop("real_image", False)
 
     model = model_fn(**kwargs)
-    model.eval().to(device=dev)
-    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
+    # We use float64 (.double()) to reduce differences between cpu and gpu result
+    model.eval().to(device=dev).double()
+    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev).double()
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=1e-3)
     assert out.shape[-1] == num_classes
@@ -782,8 +783,9 @@ def test_detection_model(model_fn, dev):
     real_image = kwargs.pop("real_image", False)
 
     model = model_fn(**kwargs)
-    model.eval().to(device=dev)
-    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
+    # We use float64 (.double()) to reduce differences between cpu and gpu result
+    model.eval().to(device=dev).double()
+    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev).double()
     model_input = [x]
     with torch.no_grad(), freeze_rng_state():
         out = model(model_input)
