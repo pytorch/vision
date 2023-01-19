@@ -1,10 +1,8 @@
-from __future__ import annotations
-
-import functools
 import importlib
 import inspect
 import sys
 from dataclasses import dataclass, fields
+from functools import partial
 from inspect import signature
 from types import ModuleType
 from typing import Any, Callable, cast, Dict, List, Mapping, Optional, TypeVar, Union
@@ -15,15 +13,7 @@ from torchvision._utils import StrEnum
 
 from .._internally_replaced_utils import load_state_dict_from_url
 
-__all__ = [
-    "WeightsEnum",
-    "Weights",
-    "get_model",
-    "get_model_builder",
-    "get_model_weights",
-    "get_weight",
-    "list_models",
-]
+__all__ = ["WeightsEnum", "Weights", "get_model", "get_model_builder", "get_model_weights", "get_weight", "list_models"]
 
 
 @dataclass
@@ -57,7 +47,7 @@ class Weights:
         if self.meta != other.meta:
             return False
 
-        if isinstance(self.transforms, functools.partial) and isinstance(other.transforms, functools.partial):
+        if isinstance(self.transforms, partial) and isinstance(other.transforms, partial):
             return (
                 self.transforms.func == other.transforms.func
                 and self.transforms.args == other.transforms.args
