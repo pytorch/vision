@@ -1,5 +1,6 @@
 import copy
 import os
+import pickle
 
 import pytest
 import test_models as TM
@@ -73,10 +74,32 @@ def test_get_model_weights(name, weight):
     ],
 )
 def test_weights_copyable(copy_fn, name):
-    model_weights = models.get_model_weights(name)
-    for weights in list(model_weights):
-        copied_weights = copy_fn(weights)
-        assert copied_weights is weights
+    for weights in list(models.get_model_weights(name)):
+        # It is somewhat surprising that (deep-)copying is an identity operation here, but this is the default behavior
+        # of enums: https://docs.python.org/3/howto/enum.html#enum-members-aka-instances
+        # Checking for equality, i.e. `==`, is sufficient (and even preferable) for our use case, should we need to drop
+        # support for the identity operation in the future.
+        assert copy_fn(weights) is weights
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "resnet50",
+        "retinanet_resnet50_fpn_v2",
+        "raft_large",
+        "quantized_resnet50",
+        "lraspp_mobilenet_v3_large",
+        "mvit_v1_b",
+    ],
+)
+def test_weights_deserializable(name):
+    for weights in list(models.get_model_weights(name)):
+        # It is somewhat surprising that deserialization is an identity operation here, but this is the default behavior
+        # of enums: https://docs.python.org/3/howto/enum.html#enum-members-aka-instances
+        # Checking for equality, i.e. `==`, is sufficient (and even preferable) for our use case, should we need to drop
+        # support for the identity operation in the future.
+        assert pickle.loads(pickle.dumps(weights)) is weights
 
 
 @pytest.mark.parametrize(
