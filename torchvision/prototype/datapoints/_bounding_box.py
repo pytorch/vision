@@ -15,6 +15,31 @@ class BoundingBoxFormat(StrEnum):
     CXCYWH = StrEnum.auto()
 
 
+# What if... we just removed the format and spatial_size meta-data?
+# A: We could, but it comes with trade-offs. For the format, this wouldn't lead
+# to much of a difference, except that users would have to convert to XYXY
+# before doing anything. All of the current stable ops expect XYXY already so
+# it's not much of a change. Worth noting as well that a few BBox transforms
+# only have an implementation for the XYXY format, and they convert / re-convert
+# internally (see e.g. affine_bounding_box, but there are others)
+# Removing spatial_size however would make the dispatcher-level more cluncky for
+# users. It wouldn't change much of the tranforms classes as long as they're
+# called with their respective image e.g.
+# T(image, bbox)
+# because the spatial_size can be known from the image param. But in a mid-level
+# dispatcher which only accept 1 kind of input like
+# dispatcher(bbox)
+# there's no way to know the spatial_size unless it's passed as a parameter.
+# Users would also need to keep track of it since some transforms actually
+# change it:
+# bbox, sz = resize(bbox, spatial_size=sz)
+# This also means the mid-level dispatchers:
+# - need to accept as input anything that was a meta-data 9in this case
+#   spatial_size
+# - need to return them as well; which means they need to return either a single
+#   image, a single video, or a tuple of (bbox, spatial_size),
+# TL;DR: things would get messy for users and for us.
+
 class BoundingBox(Datapoint):
     format: BoundingBoxFormat  # TODO: do not use a builtin?
     # TODO: This is the size of the image, not the box. Maybe make this explicit in the name?

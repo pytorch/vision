@@ -190,6 +190,7 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xyxy
 
 
+# TODO: Maybe make this available as a class transform as well?
 def convert_format_bounding_box(
     bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
@@ -437,6 +438,10 @@ def convert_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float) -
     return convert_dtype_image_tensor(video, dtype)
 
 
+# TODO: this doesn't just change the dtype, it also changes the value range.
+# This name relies on the implicit assumption that the value range is determined
+# by the dtype. Maybe think of a more descriptive name if we can (once and for
+# all)
 def convert_dtype(
     inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], dtype: torch.dtype = torch.float
 ) -> torch.Tensor:
