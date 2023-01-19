@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import functools
 import importlib
 import inspect
 import sys
 from dataclasses import dataclass, fields
 from inspect import signature
 from types import ModuleType
-from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, cast, Dict, List, Mapping, Optional, TypeVar, Union
 
 from torch import nn
 
@@ -15,7 +16,6 @@ from torchvision._utils import StrEnum
 from .._internally_replaced_utils import load_state_dict_from_url
 
 __all__ = [
-    "TransformsFactory",
     "WeightsEnum",
     "Weights",
     "get_model",
@@ -24,29 +24,6 @@ __all__ = [
     "get_weight",
     "list_models",
 ]
-
-
-@dataclass(init=False)
-class TransformsFactory:
-    fn: Callable[..., nn.Module]
-    args: Tuple[Any, ...]
-    kwargs: Dict[str, Any]
-
-    def __init__(self, fn: Callable[..., nn.Module], *args: Any, **kwargs: Any) -> None:
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-
-    def __call__(self) -> nn.Module:
-        return self.fn(*self.args, **self.kwargs)
-
-    # FIXME: it seems we don't even need this. I'll leave it here until I'm sure we don't
-    # @classmethod
-    # def __simple_new__(cls, fn, args, kwargs) -> TransformsFactory:
-    #     return cls(fn, *args, **kwargs)
-    #
-    # def __reduce_ex__(self, protocol: int):
-    #     return self.__simple_new__, (self.fn, self.args, self.kwargs)
 
 
 @dataclass
@@ -67,8 +44,27 @@ class Weights:
     """
 
     url: str
-    transforms: TransformsFactory
+    transforms: Callable
     meta: Dict[str, Any]
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Weights):
+            return NotImplemented
+
+        if self.url != other.url:
+            return False
+
+        if self.meta != other.meta:
+            return False
+
+        if isinstance(self.transforms, functools.partial) and isinstance(other.transforms, functools.partial):
+            return (
+                self.transforms.func == other.transforms.func
+                and self.transforms.args == other.transforms.args
+                and self.transforms.keywords == other.transforms.keywords
+            )
+        else:
+            return self.transforms == other.transforms
 
 
 class WeightsEnum(StrEnum):
