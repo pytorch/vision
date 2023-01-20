@@ -285,7 +285,7 @@ class TestRandomHorizontalFlip:
 
         assert_equal(expected, pil_to_tensor(actual))
 
-    def test_features_image(self, p):
+    def test_datapoints_image(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomHorizontalFlip(p=p)
 
@@ -293,7 +293,7 @@ class TestRandomHorizontalFlip:
 
         assert_equal(datapoints.Image(expected), actual)
 
-    def test_features_mask(self, p):
+    def test_datapoints_mask(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomHorizontalFlip(p=p)
 
@@ -301,7 +301,7 @@ class TestRandomHorizontalFlip:
 
         assert_equal(datapoints.Mask(expected), actual)
 
-    def test_features_bounding_box(self, p):
+    def test_datapoints_bounding_box(self, p):
         input = datapoints.BoundingBox([0, 0, 5, 5], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
         transform = transforms.RandomHorizontalFlip(p=p)
 
@@ -338,7 +338,7 @@ class TestRandomVerticalFlip:
 
         assert_equal(expected, pil_to_tensor(actual))
 
-    def test_features_image(self, p):
+    def test_datapoints_image(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomVerticalFlip(p=p)
 
@@ -346,7 +346,7 @@ class TestRandomVerticalFlip:
 
         assert_equal(datapoints.Image(expected), actual)
 
-    def test_features_mask(self, p):
+    def test_datapoints_mask(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomVerticalFlip(p=p)
 
@@ -354,7 +354,7 @@ class TestRandomVerticalFlip:
 
         assert_equal(datapoints.Mask(expected), actual)
 
-    def test_features_bounding_box(self, p):
+    def test_datapoints_bounding_box(self, p):
         input = datapoints.BoundingBox([0, 0, 5, 5], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
         transform = transforms.RandomVerticalFlip(p=p)
 
