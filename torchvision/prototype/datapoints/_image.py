@@ -58,19 +58,16 @@ def _from_tensor_shape(shape: List[int]) -> ColorSpace:
 
 
 class Image(Datapoint):
-    color_space: ColorSpace
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, color_space: ColorSpace) -> Image:
+    def _wrap(cls, tensor: torch.Tensor) -> Image:
         image = tensor.as_subclass(cls)
-        image.color_space = color_space
         return image
 
     def __new__(
         cls,
         data: Any,
         *,
-        color_space: Optional[Union[ColorSpace, str]] = None,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
@@ -81,26 +78,14 @@ class Image(Datapoint):
         elif tensor.ndim == 2:
             tensor = tensor.unsqueeze(0)
 
-        if color_space is None:
-            color_space = ColorSpace.from_tensor_shape(tensor.shape)  # type: ignore[arg-type]
-            if color_space == ColorSpace.OTHER:
-                warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
-        elif isinstance(color_space, str):
-            color_space = ColorSpace.from_str(color_space.upper())
-        elif not isinstance(color_space, ColorSpace):
-            raise ValueError
-
-        return cls._wrap(tensor, color_space=color_space)
+        return cls._wrap(tensor)
 
     @classmethod
-    def wrap_like(cls, other: Image, tensor: torch.Tensor, *, color_space: Optional[ColorSpace] = None) -> Image:
-        return cls._wrap(
-            tensor,
-            color_space=color_space if color_space is not None else other.color_space,
-        )
+    def wrap_like(cls, other: Image, tensor: torch.Tensor) -> Image:
+        return cls._wrap(tensor)
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
-        return self._make_repr(color_space=self.color_space)
+        return self._make_repr()
 
     @property
     def spatial_size(self) -> Tuple[int, int]:

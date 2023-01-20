@@ -278,7 +278,7 @@ def make_image_loader(
         data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
         if color_space in {datapoints.ColorSpace.GRAY_ALPHA, datapoints.ColorSpace.RGB_ALPHA} and constant_alpha:
             data[..., -1, :, :] = max_value
-        return datapoints.Image(data, color_space=color_space)
+        return datapoints.Image(data)
 
     return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype, color_space=color_space)
 
@@ -328,7 +328,7 @@ def make_image_loader_for_interpolation(size="random", *, color_space=datapoints
 
         image_tensor = convert_dtype_image_tensor(to_image_tensor(image_pil).to(device=device), dtype=dtype)
 
-        return datapoints.Image(image_tensor, color_space=color_space)
+        return datapoints.Image(image_tensor)
 
     return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype, color_space=color_space)
 
@@ -592,8 +592,8 @@ def make_video_loader(
     num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
 
     def fn(shape, dtype, device):
-        video = make_image(size=shape[-2:], color_space=color_space, extra_dims=shape[:-3], dtype=dtype, device=device)
-        return datapoints.Video(video, color_space=color_space)
+        video = make_image(size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device)
+        return datapoints.Video(video)
 
     return VideoLoader(
         fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype, color_space=color_space

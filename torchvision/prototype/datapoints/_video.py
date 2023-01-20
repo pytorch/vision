@@ -7,23 +7,19 @@ import torch
 from torchvision.transforms.functional import InterpolationMode
 
 from ._datapoint import Datapoint, FillTypeJIT
-from ._image import ColorSpace
 
 
 class Video(Datapoint):
-    color_space: ColorSpace
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, color_space: ColorSpace) -> Video:
+    def _wrap(cls, tensor: torch.Tensor) -> Video:
         video = tensor.as_subclass(cls)
-        video.color_space = color_space
         return video
 
     def __new__(
         cls,
         data: Any,
         *,
-        color_space: Optional[Union[ColorSpace, str]] = None,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
@@ -32,27 +28,15 @@ class Video(Datapoint):
         if data.ndim < 4:
             raise ValueError
         video = super().__new__(cls, data, requires_grad=requires_grad)
-
-        if color_space is None:
-            color_space = ColorSpace.from_tensor_shape(video.shape)  # type: ignore[arg-type]
-            if color_space == ColorSpace.OTHER:
-                warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
-        elif isinstance(color_space, str):
-            color_space = ColorSpace.from_str(color_space.upper())
-        elif not isinstance(color_space, ColorSpace):
-            raise ValueError
-
-        return cls._wrap(tensor, color_space=color_space)
+        # TODO: Should this be `video` or can we remove it?
+        return cls._wrap(tensor)
 
     @classmethod
-    def wrap_like(cls, other: Video, tensor: torch.Tensor, *, color_space: Optional[ColorSpace] = None) -> Video:
-        return cls._wrap(
-            tensor,
-            color_space=color_space if color_space is not None else other.color_space,
-        )
+    def wrap_like(cls, other: Video, tensor: torch.Tensor) -> Video:
+        return cls._wrap(tensor)
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
-        return self._make_repr(color_space=self.color_space)
+        return self._make_repr()
 
     @property
     def spatial_size(self) -> Tuple[int, int]:
