@@ -684,69 +684,6 @@ KERNEL_INFOS.append(
 )
 
 
-def sample_inputs_convert_color_space_image_tensor():
-    color_spaces = sorted(
-        set(datapoints.ColorSpace) - {datapoints.ColorSpace.OTHER}, key=lambda color_space: color_space.value
-    )
-
-    for old_color_space, new_color_space in cycle_over(color_spaces):
-        for image_loader in make_image_loaders(sizes=["random"], color_spaces=[old_color_space], constant_alpha=True):
-            yield ArgsKwargs(image_loader, old_color_space=old_color_space, new_color_space=new_color_space)
-
-    for color_space in color_spaces:
-        for image_loader in make_image_loaders(
-            sizes=["random"], color_spaces=[color_space], dtypes=[torch.float32], constant_alpha=True
-        ):
-            yield ArgsKwargs(image_loader, old_color_space=color_space, new_color_space=color_space)
-
-
-@pil_reference_wrapper
-def reference_convert_color_space_image_tensor(image_pil, old_color_space, new_color_space):
-    color_space_pil = datapoints.ColorSpace.from_pil_mode(image_pil.mode)
-    if color_space_pil != old_color_space:
-        raise pytest.UsageError(
-            f"Converting the tensor image into an PIL image changed the colorspace "
-            f"from {old_color_space} to {color_space_pil}"
-        )
-
-    return F.convert_color_space_image_pil(image_pil, color_space=new_color_space)
-
-
-def reference_inputs_convert_color_space_image_tensor():
-    for args_kwargs in sample_inputs_convert_color_space_image_tensor():
-        (image_loader, *other_args), kwargs = args_kwargs
-        if len(image_loader.shape) == 3 and image_loader.dtype == torch.uint8:
-            yield args_kwargs
-
-
-def sample_inputs_convert_color_space_video():
-    color_spaces = [datapoints.ColorSpace.GRAY, datapoints.ColorSpace.RGB]
-
-    for old_color_space, new_color_space in cycle_over(color_spaces):
-        for video_loader in make_video_loaders(sizes=["random"], color_spaces=[old_color_space], num_frames=["random"]):
-            yield ArgsKwargs(video_loader, old_color_space=old_color_space, new_color_space=new_color_space)
-
-
-KERNEL_INFOS.extend(
-    [
-        KernelInfo(
-            F.convert_color_space_image_tensor,
-            sample_inputs_fn=sample_inputs_convert_color_space_image_tensor,
-            reference_fn=reference_convert_color_space_image_tensor,
-            reference_inputs_fn=reference_inputs_convert_color_space_image_tensor,
-            closeness_kwargs={
-                **pil_reference_pixel_difference(),
-                **float32_vs_uint8_pixel_difference(),
-            },
-        ),
-        KernelInfo(
-            F.convert_color_space_video,
-            sample_inputs_fn=sample_inputs_convert_color_space_video,
-        ),
-    ]
-)
-
-
 def sample_inputs_vertical_flip_image_tensor():
     for image_loader in make_image_loaders(sizes=["random"], dtypes=[torch.float32]):
         yield ArgsKwargs(image_loader)

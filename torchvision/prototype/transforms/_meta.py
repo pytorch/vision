@@ -46,35 +46,6 @@ class ConvertDtype(Transform):
 ConvertImageDtype = ConvertDtype
 
 
-class ConvertColorSpace(Transform):
-    _transformed_types = (
-        is_simple_tensor,
-        datapoints.Image,
-        PIL.Image.Image,
-        datapoints.Video,
-    )
-
-    def __init__(
-        self,
-        color_space: Union[str, datapoints.ColorSpace],
-        old_color_space: Optional[Union[str, datapoints.ColorSpace]] = None,
-    ) -> None:
-        super().__init__()
-
-        if isinstance(color_space, str):
-            color_space = datapoints.ColorSpace.from_str(color_space)
-        self.color_space = color_space
-
-        if isinstance(old_color_space, str):
-            old_color_space = datapoints.ColorSpace.from_str(old_color_space)
-        self.old_color_space = old_color_space
-
-    def _transform(
-        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
-        return F.convert_color_space(inpt, color_space=self.color_space, old_color_space=self.old_color_space)
-
-
 class ClampBoundingBoxes(Transform):
     _transformed_types = (datapoints.BoundingBox,)
 

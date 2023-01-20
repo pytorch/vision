@@ -335,7 +335,6 @@ class TestDispatchers:
         "dispatcher",
         [
             F.clamp_bounding_box,
-            F.convert_color_space,
             F.get_dimensions,
             F.get_image_num_channels,
             F.get_image_size,

@@ -221,45 +221,6 @@ class TestSmoke:
     def test_random_resized_crop(self, transform, input):
         transform(input)
 
-    @parametrize(
-        [
-            (
-                transforms.ConvertColorSpace(color_space=new_color_space, old_color_space=old_color_space),
-                itertools.chain.from_iterable(
-                    [
-                        fn(color_spaces=[old_color_space])
-                        for fn in (
-                            make_images,
-                            make_vanilla_tensor_images,
-                            make_pil_images,
-                            make_videos,
-                        )
-                    ]
-                ),
-            )
-            for old_color_space, new_color_space in itertools.product(
-                [
-                    datapoints.ColorSpace.GRAY,
-                    datapoints.ColorSpace.GRAY_ALPHA,
-                    datapoints.ColorSpace.RGB,
-                    datapoints.ColorSpace.RGB_ALPHA,
-                ],
-                repeat=2,
-            )
-        ]
-    )
-    def test_convert_color_space(self, transform, input):
-        transform(input)
-
-    def test_convert_color_space_unsupported_types(self):
-        transform = transforms.ConvertColorSpace(
-            color_space=datapoints.ColorSpace.RGB, old_color_space=datapoints.ColorSpace.GRAY
-        )
-
-        for inpt in [make_bounding_box(format="XYXY"), make_masks()]:
-            output = transform(inpt)
-            assert output is inpt
-
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
 class TestRandomHorizontalFlip:
