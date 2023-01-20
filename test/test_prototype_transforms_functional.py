@@ -162,7 +162,7 @@ class TestKernels:
     def test_batched_vs_single(self, test_id, info, args_kwargs, device):
         (batched_input, *other_args), kwargs = args_kwargs.load(device)
 
-        feature_type = (
+        datapoint_type = (
             datapoints.Image
             if torchvision.prototype.transforms.utils.is_simple_tensor(batched_input)
             else type(batched_input)
@@ -178,10 +178,10 @@ class TestKernels:
             # common ground.
             datapoints.Mask: 2,
             datapoints.Video: 4,
-        }.get(feature_type)
+        }.get(datapoint_type)
         if data_dims is None:
             raise pytest.UsageError(
-                f"The number of data dimensions cannot be determined for input of type {feature_type.__name__}."
+                f"The number of data dimensions cannot be determined for input of type {datapoint_type.__name__}."
             ) from None
         elif batched_input.ndim <= data_dims:
             pytest.skip("Input is not batched.")
@@ -323,8 +323,8 @@ class TestDispatchers:
     def test_scripted_smoke(self, info, args_kwargs, device):
         dispatcher = script(info.dispatcher)
 
-        (image_feature, *other_args), kwargs = args_kwargs.load(device)
-        image_simple_tensor = torch.Tensor(image_feature)
+        (image_datapoint, *other_args), kwargs = args_kwargs.load(device)
+        image_simple_tensor = torch.Tensor(image_datapoint)
 
         dispatcher(image_simple_tensor, *other_args, **kwargs)
 
@@ -352,8 +352,8 @@ class TestDispatchers:
 
     @image_sample_inputs
     def test_dispatch_simple_tensor(self, info, args_kwargs, spy_on):
-        (image_feature, *other_args), kwargs = args_kwargs.load()
-        image_simple_tensor = torch.Tensor(image_feature)
+        (image_datapoint, *other_args), kwargs = args_kwargs.load()
+        image_simple_tensor = torch.Tensor(image_datapoint)
 
         kernel_info = info.kernel_infos[datapoints.Image]
         spy = spy_on(kernel_info.kernel, module=info.dispatcher.__module__, name=kernel_info.id)
@@ -367,12 +367,12 @@ class TestDispatchers:
         args_kwargs_fn=lambda info: info.sample_inputs(datapoints.Image),
     )
     def test_dispatch_pil(self, info, args_kwargs, spy_on):
-        (image_feature, *other_args), kwargs = args_kwargs.load()
+        (image_datapoint, *other_args), kwargs = args_kwargs.load()
 
-        if image_feature.ndim > 3:
+        if image_datapoint.ndim > 3:
             pytest.skip("Input is batched")
 
-        image_pil = F.to_image_pil(image_feature)
+        image_pil = F.to_image_pil(image_datapoint)
 
         pil_kernel_info = info.pil_kernel_info
         spy = spy_on(pil_kernel_info.kernel, module=info.dispatcher.__module__, name=pil_kernel_info.id)
@@ -385,37 +385,39 @@ class TestDispatchers:
         DISPATCHER_INFOS,
         args_kwargs_fn=lambda info: info.sample_inputs(),
     )
-    def test_dispatch_feature(self, info, args_kwargs, spy_on):
-        (feature, *other_args), kwargs = args_kwargs.load()
+    def test_dispatch_datapoint(self, info, args_kwargs, spy_on):
+        (datapoint, *other_args), kwargs = args_kwargs.load()
 
         method_name = info.id
-        method = getattr(feature, method_name)
-        feature_type = type(feature)
-        spy = spy_on(method, module=feature_type.__module__, name=f"{feature_type.__name__}.{method_name}")
+        method = getattr(datapoint, method_name)
+        datapoint_type = type(datapoint)
+        spy = spy_on(method, module=datapoint_type.__module__, name=f"{datapoint_type.__name__}.{method_name}")
 
-        info.dispatcher(feature, *other_args, **kwargs)
+        info.dispatcher(datapoint, *other_args, **kwargs)
 
         spy.assert_called_once()
 
     @pytest.mark.parametrize(
-        ("dispatcher_info", "feature_type", "kernel_info"),
+        ("dispatcher_info", "datapoint_type", "kernel_info"),
         [
-            pytest.param(dispatcher_info, feature_type, kernel_info, id=f"{dispatcher_info.id}-{feature_type.__name__}")
+            pytest.param(
+                dispatcher_info, datapoint_type, kernel_info, id=f"{dispatcher_info.id}-{datapoint_type.__name__}"
+            )
             for dispatcher_info in DISPATCHER_INFOS
-            for feature_type, kernel_info in dispatcher_info.kernel_infos.items()
+            for datapoint_type, kernel_info in dispatcher_info.kernel_infos.items()
         ],
     )
-    def test_dispatcher_kernel_signatures_consistency(self, dispatcher_info, feature_type, kernel_info):
+    def test_dispatcher_kernel_signatures_consistency(self, dispatcher_info, datapoint_type, kernel_info):
         dispatcher_signature = inspect.signature(dispatcher_info.dispatcher)
         dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
 
         kernel_signature = inspect.signature(kernel_info.kernel)
         kernel_params = list(kernel_signature.parameters.values())[1:]
 
-        # We filter out metadata that is implicitly passed to the dispatcher through the input feature, but has to be
+        # We filter out metadata that is implicitly passed to the dispatcher through the input datapoint, but has to be
         # explicit passed to the kernel.
-        feature_type_metadata = feature_type.__annotations__.keys()
-        kernel_params = [param for param in kernel_params if param.name not in feature_type_metadata]
+        datapoint_type_metadata = datapoint_type.__annotations__.keys()
+        kernel_params = [param for param in kernel_params if param.name not in datapoint_type_metadata]
 
         dispatcher_params = iter(dispatcher_params)
         for dispatcher_param, kernel_param in zip(dispatcher_params, kernel_params):
@@ -433,26 +435,26 @@ class TestDispatchers:
             assert dispatcher_param == kernel_param
 
     @pytest.mark.parametrize("info", DISPATCHER_INFOS, ids=lambda info: info.id)
-    def test_dispatcher_feature_signatures_consistency(self, info):
+    def test_dispatcher_datapoint_signatures_consistency(self, info):
         try:
-            feature_method = getattr(datapoints._datapoint.Datapoint, info.id)
+            datapoint_method = getattr(datapoints._datapoint.Datapoint, info.id)
         except AttributeError:
-            pytest.skip("Dispatcher doesn't support arbitrary feature dispatch.")
+            pytest.skip("Dispatcher doesn't support arbitrary datapoint dispatch.")
 
         dispatcher_signature = inspect.signature(info.dispatcher)
         dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
 
-        feature_signature = inspect.signature(feature_method)
-        feature_params = list(feature_signature.parameters.values())[1:]
+        datapoint_signature = inspect.signature(datapoint_method)
+        datapoint_params = list(datapoint_signature.parameters.values())[1:]
 
-        # Because we use `from __future__ import annotations` inside the module where `features._datapoint` is defined,
-        # the annotations are stored as strings. This makes them concrete again, so they can be compared to the natively
-        # concrete dispatcher annotations.
-        feature_annotations = get_type_hints(feature_method)
-        for param in feature_params:
-            param._annotation = feature_annotations[param.name]
+        # Because we use `from __future__ import annotations` inside the module where `datapoints._datapoint` is
+        # defined, the annotations are stored as strings. This makes them concrete again, so they can be compared to the
+        # natively concrete dispatcher annotations.
+        datapoint_annotations = get_type_hints(datapoint_method)
+        for param in datapoint_params:
+            param._annotation = datapoint_annotations[param.name]
 
-        assert dispatcher_params == feature_params
+        assert dispatcher_params == datapoint_params
 
     @pytest.mark.parametrize("info", DISPATCHER_INFOS, ids=lambda info: info.id)
     def test_unkown_type(self, info):
