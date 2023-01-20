@@ -558,15 +558,15 @@ def check_call_consistency(
             output_prototype_image = prototype_transform(image)
         except Exception as exc:
             raise AssertionError(
-                f"Transforming a feature image with shape {image_repr} failed in the prototype transform with "
+                f"Transforming a image datapoint with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
-                f"`features.Image` path in `_transform`."
+                f"`datapoints.Image` path in `_transform`."
             ) from exc
 
         assert_close(
             output_prototype_image,
             output_prototype_tensor,
-            msg=lambda msg: f"Output for feature and tensor images is not equal: \n\n{msg}",
+            msg=lambda msg: f"Output for datapoint and tensor images is not equal: \n\n{msg}",
             **closeness_kwargs,
         )
 
@@ -931,7 +931,7 @@ class TestRefDetTransforms:
 
         yield (tensor_image, target)
 
-        feature_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB)
+        datapoint_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB)
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -939,7 +939,7 @@ class TestRefDetTransforms:
         if with_mask:
             target["masks"] = make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long)
 
-        yield (feature_image, target)
+        yield (datapoint_image, target)
 
     @pytest.mark.parametrize(
         "t_ref, t, data_kwargs",
@@ -1015,13 +1015,13 @@ class TestRefSegTransforms:
         conv_fns.extend([torch.Tensor, lambda x: x])
 
         for conv_fn in conv_fns:
-            feature_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB, dtype=image_dtype)
-            feature_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
+            datapoint_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB, dtype=image_dtype)
+            datapoint_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
 
-            dp = (conv_fn(feature_image), feature_mask)
+            dp = (conv_fn(datapoint_image), datapoint_mask)
             dp_ref = (
-                to_image_pil(feature_image) if supports_pil else feature_image.as_subclass(torch.Tensor),
-                to_image_pil(feature_mask),
+                to_image_pil(datapoint_image) if supports_pil else datapoint_image.as_subclass(torch.Tensor),
+                to_image_pil(datapoint_mask),
             )
 
             yield dp, dp_ref
