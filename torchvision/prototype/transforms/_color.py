@@ -82,7 +82,7 @@ class ColorJitter(Transform):
         return output
 
 
-# TODO: Are there tests for this class?
+# TODO: This class seems to be untested
 class RandomPhotometricDistort(Transform):
     _transformed_types = (
         datapoints.Image,

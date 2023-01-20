@@ -426,7 +426,6 @@ DISPATCHER_INFOS = [
             datapoints.Video: F.normalize_video,
         },
         test_marks=[
-            skip_dispatch_feature,
             xfail_jit_python_scalar_arg("mean"),
             xfail_jit_python_scalar_arg("std"),
         ],
