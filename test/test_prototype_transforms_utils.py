@@ -4,14 +4,14 @@ import pytest
 import torch
 
 import torchvision.prototype.transforms.utils
-from prototype_common_utils import make_bounding_box, make_detection_mask, make_image
+from prototype_common_utils import make_bounding_box, make_detection_mask, make_image, ColorSpace
 
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms.functional import to_image_pil
 from torchvision.prototype.transforms.utils import has_all, has_any
 
 
-IMAGE = make_image(color_space=datapoints.ColorSpace.RGB)
+IMAGE = make_image(color_space=ColorSpace.RGB)
 BOUNDING_BOX = make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, spatial_size=IMAGE.spatial_size)
 MASK = make_detection_mask(size=IMAGE.spatial_size)
 

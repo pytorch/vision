@@ -11,52 +11,6 @@ from torchvision.transforms.functional import InterpolationMode
 from ._datapoint import Datapoint, FillTypeJIT
 
 
-class ColorSpace(StrEnum):
-    OTHER = StrEnum.auto()
-    GRAY = StrEnum.auto()
-    GRAY_ALPHA = StrEnum.auto()
-    RGB = StrEnum.auto()
-    RGB_ALPHA = StrEnum.auto()
-
-    @classmethod
-    def from_pil_mode(cls, mode: str) -> ColorSpace:
-        if mode == "L":
-            return cls.GRAY
-        elif mode == "LA":
-            return cls.GRAY_ALPHA
-        elif mode == "RGB":
-            return cls.RGB
-        elif mode == "RGBA":
-            return cls.RGB_ALPHA
-        else:
-            return cls.OTHER
-
-    @staticmethod
-    def from_tensor_shape(shape: List[int]) -> ColorSpace:
-        return _from_tensor_shape(shape)
-
-
-def _from_tensor_shape(shape: List[int]) -> ColorSpace:
-    # Needed as a standalone method for JIT
-    ndim = len(shape)
-    if ndim < 2:
-        return ColorSpace.OTHER
-    elif ndim == 2:
-        return ColorSpace.GRAY
-
-    num_channels = shape[-3]
-    if num_channels == 1:
-        return ColorSpace.GRAY
-    elif num_channels == 2:
-        return ColorSpace.GRAY_ALPHA
-    elif num_channels == 3:
-        return ColorSpace.RGB
-    elif num_channels == 4:
-        return ColorSpace.RGB_ALPHA
-    else:
-        return ColorSpace.OTHER
-
-
 class Image(Datapoint):
 
     @classmethod

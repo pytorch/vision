@@ -63,7 +63,7 @@ class Grayscale(Transform):
     ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         output = _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
         if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            output = inpt.wrap_like(inpt, output, color_space=datapoints.ColorSpace.GRAY)  # type: ignore[arg-type]
+            output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
         return output
 
 
@@ -99,5 +99,5 @@ class RandomGrayscale(_RandomApplyTransform):
     ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         output = _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
         if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            output = inpt.wrap_like(inpt, output, color_space=datapoints.ColorSpace.GRAY)  # type: ignore[arg-type]
+            output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
         return output

@@ -10,6 +10,7 @@ import torch
 import torchvision.prototype.transforms.utils
 from common_utils import assert_equal, cpu_and_gpu
 from prototype_common_utils import (
+    ColorSpace,
     DEFAULT_EXTRA_DIMS,
     make_bounding_box,
     make_bounding_boxes,
@@ -161,8 +162,8 @@ class TestSmoke:
                 itertools.chain.from_iterable(
                     fn(
                         color_spaces=[
-                            datapoints.ColorSpace.GRAY,
-                            datapoints.ColorSpace.RGB,
+                            ColorSpace.GRAY,
+                            ColorSpace.RGB,
                         ],
                         dtypes=[torch.uint8],
                         extra_dims=[(), (4,)],
@@ -192,7 +193,7 @@ class TestSmoke:
             (
                 transforms.Normalize(mean=[0.0, 0.0, 0.0], std=[1.0, 1.0, 1.0]),
                 itertools.chain.from_iterable(
-                    fn(color_spaces=[datapoints.ColorSpace.RGB], dtypes=[torch.float32])
+                    fn(color_spaces=[ColorSpace.RGB], dtypes=[torch.float32])
                     for fn in [
                         make_images,
                         make_vanilla_tensor_images,
@@ -1519,7 +1520,7 @@ class TestFixedSizeCrop:
         transform = transforms.FixedSizeCrop(size=crop_size)
 
         flat_inputs = [
-            make_image(size=spatial_size, color_space=datapoints.ColorSpace.RGB),
+            make_image(size=spatial_size, color_space=ColorSpace.RGB),
             make_bounding_box(
                 format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=batch_shape
             ),

@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Union
 import PIL.Image
 import torch
 from torchvision.prototype import datapoints
-from torchvision.prototype.datapoints import BoundingBoxFormat, ColorSpace
+from torchvision.prototype.datapoints import BoundingBoxFormat
 from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional_tensor import _max_value
 

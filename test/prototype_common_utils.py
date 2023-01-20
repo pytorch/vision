@@ -206,6 +206,14 @@ DEGENERATE_BATCH_DIMS = ((0,), (5, 0), (0, 5))
 
 DEFAULT_EXTRA_DIMS = (*VALID_EXTRA_DIMS, *DEGENERATE_BATCH_DIMS)
 
+from enum import Enum
+class ColorSpace(Enum):
+    OTHER = "OTHER"
+    GRAY = "GRAY"
+    GRAY_ALPHA = "GRAY_ALPHA"
+    RGB = "RGB"
+    RGB_ALPHA = "RGB_ALPHA"
+
 
 def from_loader(loader_fn):
     def wrapper(*args, **kwargs):
@@ -238,7 +246,7 @@ class TensorLoader:
 
 @dataclasses.dataclass
 class ImageLoader(TensorLoader):
-    color_space: datapoints.ColorSpace
+    color_space: ColorSpace
     spatial_size: Tuple[int, int] = dataclasses.field(init=False)
     num_channels: int = dataclasses.field(init=False)
 
@@ -248,10 +256,10 @@ class ImageLoader(TensorLoader):
 
 
 NUM_CHANNELS_MAP = {
-    datapoints.ColorSpace.GRAY: 1,
-    datapoints.ColorSpace.GRAY_ALPHA: 2,
-    datapoints.ColorSpace.RGB: 3,
-    datapoints.ColorSpace.RGB_ALPHA: 4,
+    ColorSpace.GRAY: 1,
+    ColorSpace.GRAY_ALPHA: 2,
+    ColorSpace.RGB: 3,
+    ColorSpace.RGB_ALPHA: 4,
 }
 
 
@@ -265,7 +273,7 @@ def get_num_channels(color_space):
 def make_image_loader(
     size="random",
     *,
-    color_space=datapoints.ColorSpace.RGB,
+    color_space=ColorSpace.RGB,
     extra_dims=(),
     dtype=torch.float32,
     constant_alpha=True,
@@ -276,7 +284,7 @@ def make_image_loader(
     def fn(shape, dtype, device):
         max_value = get_max_value(dtype)
         data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
-        if color_space in {datapoints.ColorSpace.GRAY_ALPHA, datapoints.ColorSpace.RGB_ALPHA} and constant_alpha:
+        if color_space in {ColorSpace.GRAY_ALPHA, ColorSpace.RGB_ALPHA} and constant_alpha:
             data[..., -1, :, :] = max_value
         return datapoints.Image(data)
 
@@ -290,10 +298,10 @@ def make_image_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        datapoints.ColorSpace.GRAY,
-        datapoints.ColorSpace.GRAY_ALPHA,
-        datapoints.ColorSpace.RGB,
-        datapoints.ColorSpace.RGB_ALPHA,
+        ColorSpace.GRAY,
+        ColorSpace.GRAY_ALPHA,
+        ColorSpace.RGB,
+        ColorSpace.RGB_ALPHA,
     ),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.float32, torch.uint8),
@@ -306,7 +314,7 @@ def make_image_loaders(
 make_images = from_loaders(make_image_loaders)
 
 
-def make_image_loader_for_interpolation(size="random", *, color_space=datapoints.ColorSpace.RGB, dtype=torch.uint8):
+def make_image_loader_for_interpolation(size="random", *, color_space=ColorSpace.RGB, dtype=torch.uint8):
     size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
 
@@ -318,10 +326,10 @@ def make_image_loader_for_interpolation(size="random", *, color_space=datapoints
             .resize((width, height))
             .convert(
                 {
-                    datapoints.ColorSpace.GRAY: "L",
-                    datapoints.ColorSpace.GRAY_ALPHA: "LA",
-                    datapoints.ColorSpace.RGB: "RGB",
-                    datapoints.ColorSpace.RGB_ALPHA: "RGBA",
+                    ColorSpace.GRAY: "L",
+                    ColorSpace.GRAY_ALPHA: "LA",
+                    ColorSpace.RGB: "RGB",
+                    ColorSpace.RGB_ALPHA: "RGBA",
                 }[color_space]
             )
         )
@@ -335,7 +343,7 @@ def make_image_loader_for_interpolation(size="random", *, color_space=datapoints
 
 def make_image_loaders_for_interpolation(
     sizes=((233, 147),),
-    color_spaces=(datapoints.ColorSpace.RGB,),
+    color_spaces=(ColorSpace.RGB,),
     dtypes=(torch.uint8,),
 ):
     for params in combinations_grid(size=sizes, color_space=color_spaces, dtype=dtypes):
@@ -583,7 +591,7 @@ class VideoLoader(ImageLoader):
 def make_video_loader(
     size="random",
     *,
-    color_space=datapoints.ColorSpace.RGB,
+    color_space=ColorSpace.RGB,
     num_frames="random",
     extra_dims=(),
     dtype=torch.uint8,
@@ -607,8 +615,8 @@ def make_video_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        datapoints.ColorSpace.GRAY,
-        datapoints.ColorSpace.RGB,
+        ColorSpace.GRAY,
+        ColorSpace.RGB,
     ),
     num_frames=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,

@@ -16,6 +16,7 @@ from prototype_common_utils import (
     ArgsKwargs,
     assert_close,
     assert_equal,
+    ColorSpace,
     make_bounding_box,
     make_detection_mask,
     make_image,
@@ -31,7 +32,7 @@ from torchvision.prototype.transforms.functional import to_image_pil
 from torchvision.prototype.transforms.utils import query_spatial_size
 from torchvision.transforms import functional as legacy_F
 
-DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[datapoints.ColorSpace.RGB], extra_dims=[(4,)])
+DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[ColorSpace.RGB], extra_dims=[(4,)])
 
 
 class ConsistencyConfig:
@@ -139,7 +140,7 @@ CONSISTENCY_CONFIGS = [
         # Make sure that the product of the height, width and number of channels matches the number of elements in
         # `LINEAR_TRANSFORMATION_MEAN`. For example 2 * 6 * 3 == 4 * 3 * 3 == 36.
         make_images_kwargs=dict(
-            DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=[datapoints.ColorSpace.RGB]
+            DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=[ColorSpace.RGB]
         ),
         supports_pil=False,
     ),
@@ -151,7 +152,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(num_output_channels=3),
         ],
         make_images_kwargs=dict(
-            DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=[datapoints.ColorSpace.RGB, datapoints.ColorSpace.GRAY]
+            DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=[ColorSpace.RGB, ColorSpace.GRAY]
         ),
     ),
     ConsistencyConfig(
@@ -174,10 +175,10 @@ CONSISTENCY_CONFIGS = [
         [ArgsKwargs()],
         make_images_kwargs=dict(
             color_spaces=[
-                datapoints.ColorSpace.GRAY,
-                datapoints.ColorSpace.GRAY_ALPHA,
-                datapoints.ColorSpace.RGB,
-                datapoints.ColorSpace.RGB_ALPHA,
+                ColorSpace.GRAY,
+                ColorSpace.GRAY_ALPHA,
+                ColorSpace.RGB,
+                ColorSpace.RGB_ALPHA,
             ],
             extra_dims=[()],
         ),
@@ -911,7 +912,7 @@ class TestRefDetTransforms:
         size = (600, 800)
         num_objects = 22
 
-        pil_image = to_image_pil(make_image(size=size, color_space=datapoints.ColorSpace.RGB))
+        pil_image = to_image_pil(make_image(size=size, color_space=ColorSpace.RGB))
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -921,7 +922,7 @@ class TestRefDetTransforms:
 
         yield (pil_image, target)
 
-        tensor_image = torch.Tensor(make_image(size=size, color_space=datapoints.ColorSpace.RGB))
+        tensor_image = torch.Tensor(make_image(size=size, color_space=ColorSpace.RGB))
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -931,7 +932,7 @@ class TestRefDetTransforms:
 
         yield (tensor_image, target)
 
-        datapoint_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB)
+        datapoint_image = make_image(size=size, color_space=ColorSpace.RGB)
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -1015,7 +1016,7 @@ class TestRefSegTransforms:
         conv_fns.extend([torch.Tensor, lambda x: x])
 
         for conv_fn in conv_fns:
-            datapoint_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB, dtype=image_dtype)
+            datapoint_image = make_image(size=size, color_space=ColorSpace.RGB, dtype=image_dtype)
             datapoint_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
 
             dp = (conv_fn(datapoint_image), datapoint_mask)
