@@ -13,7 +13,7 @@ import torch
 
 import torchvision.prototype.transforms.utils
 from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
-from prototype_common_utils import assert_close, make_bounding_boxes, make_image, parametrized_error_message
+from prototype_common_utils import assert_close, make_bounding_boxes, parametrized_error_message
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
 from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torch.utils._pytree import tree_map
