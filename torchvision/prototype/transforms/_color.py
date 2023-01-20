@@ -82,6 +82,7 @@ class ColorJitter(Transform):
         return output
 
 
+# TODO: This class seems to be untested
 class RandomPhotometricDistort(Transform):
     _transformed_types = (
         datapoints.Image,
@@ -119,15 +120,14 @@ class RandomPhotometricDistort(Transform):
     def _permute_channels(
         self, inpt: Union[datapoints.ImageType, datapoints.VideoType], permutation: torch.Tensor
     ) -> Union[datapoints.ImageType, datapoints.VideoType]:
-        if isinstance(inpt, PIL.Image.Image):
+
+        orig_inpt = inpt
+        if isinstance(orig_inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)
 
         output = inpt[..., permutation, :, :]
 
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            output = inpt.wrap_like(inpt, output, color_space=datapoints.ColorSpace.OTHER)  # type: ignore[arg-type]
-
-        elif isinstance(inpt, PIL.Image.Image):
+        if isinstance(orig_inpt, PIL.Image.Image):
             output = F.to_image_pil(output)
 
         return output

@@ -13,7 +13,7 @@ import torch
 
 import torchvision.prototype.transforms.utils
 from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
-from prototype_common_utils import assert_close, make_bounding_boxes, make_image, parametrized_error_message
+from prototype_common_utils import assert_close, make_bounding_boxes, parametrized_error_message
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
 from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torch.utils._pytree import tree_map
@@ -1185,18 +1185,6 @@ def test_correctness_gaussian_blur_image_tensor(device, spatial_size, dt, ksize,
 
     out = fn(image, kernel_size=ksize, sigma=sigma)
     torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
-
-
-def test_normalize_output_type():
-    inpt = torch.rand(1, 3, 32, 32)
-    output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
-    assert type(output) is torch.Tensor
-    torch.testing.assert_close(inpt - 0.5, output)
-
-    inpt = make_image(color_space=datapoints.ColorSpace.RGB)
-    output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
-    assert type(output) is torch.Tensor
-    torch.testing.assert_close(inpt - 0.5, output)
 
 
 @pytest.mark.parametrize(

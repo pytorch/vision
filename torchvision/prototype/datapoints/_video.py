@@ -241,6 +241,10 @@ class Video(Datapoint):
         output = self._F.gaussian_blur_video(self.as_subclass(torch.Tensor), kernel_size=kernel_size, sigma=sigma)
         return Video.wrap_like(self, output)
 
+    def normalize(self, mean: List[float], std: List[float], inplace: bool = False) -> Video:
+        output = self._F.normalize_video(self.as_subclass(torch.Tensor), mean=mean, std=std, inplace=inplace)
+        return Video.wrap_like(self, output)
+
 
 VideoType = Union[torch.Tensor, Video]
 VideoTypeJIT = torch.Tensor
