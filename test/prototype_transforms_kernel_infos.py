@@ -262,9 +262,7 @@ def _get_resize_sizes(spatial_size):
 
 
 def sample_inputs_resize_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=[ColorSpace.RGB], dtypes=[torch.float32]
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=[ColorSpace.RGB], dtypes=[torch.float32]):
         for size in _get_resize_sizes(image_loader.spatial_size):
             yield ArgsKwargs(image_loader, size=size)
 
@@ -1469,9 +1467,7 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_equalize_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield ArgsKwargs(image_loader)
 
 
@@ -1553,9 +1549,7 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_invert_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield ArgsKwargs(image_loader)
 
 
@@ -1593,17 +1587,13 @@ _POSTERIZE_BITS = [1, 4, 8]
 
 
 def sample_inputs_posterize_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield ArgsKwargs(image_loader, bits=_POSTERIZE_BITS[0])
 
 
 def reference_inputs_posterize_image_tensor():
     for image_loader, bits in itertools.product(
-        make_image_loaders(
-            color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
-        ),
+        make_image_loaders(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]),
         _POSTERIZE_BITS,
     ):
         yield ArgsKwargs(image_loader, bits=bits)
@@ -1640,9 +1630,7 @@ def _get_solarize_thresholds(dtype):
 
 
 def sample_inputs_solarize_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield ArgsKwargs(image_loader, threshold=next(_get_solarize_thresholds(image_loader.dtype)))
 
 
@@ -1683,9 +1671,7 @@ KERNEL_INFOS.extend(
 
 
 def sample_inputs_autocontrast_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield ArgsKwargs(image_loader)
 
 
@@ -1735,9 +1721,7 @@ def sample_inputs_adjust_sharpness_image_tensor():
 
 def reference_inputs_adjust_sharpness_image_tensor():
     for image_loader, sharpness_factor in itertools.product(
-        make_image_loaders(
-            color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
-        ),
+        make_image_loaders(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]),
         _ADJUST_SHARPNESS_FACTORS,
     ):
         yield ArgsKwargs(image_loader, sharpness_factor=sharpness_factor)
@@ -1801,17 +1785,13 @@ _ADJUST_BRIGHTNESS_FACTORS = [0.1, 0.5]
 
 
 def sample_inputs_adjust_brightness_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield ArgsKwargs(image_loader, brightness_factor=_ADJUST_BRIGHTNESS_FACTORS[0])
 
 
 def reference_inputs_adjust_brightness_image_tensor():
     for image_loader, brightness_factor in itertools.product(
-        make_image_loaders(
-            color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
-        ),
+        make_image_loaders(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]),
         _ADJUST_BRIGHTNESS_FACTORS,
     ):
         yield ArgsKwargs(image_loader, brightness_factor=brightness_factor)
@@ -1845,17 +1825,13 @@ _ADJUST_CONTRAST_FACTORS = [0.1, 0.5]
 
 
 def sample_inputs_adjust_contrast_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield ArgsKwargs(image_loader, contrast_factor=_ADJUST_CONTRAST_FACTORS[0])
 
 
 def reference_inputs_adjust_contrast_image_tensor():
     for image_loader, contrast_factor in itertools.product(
-        make_image_loaders(
-            color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
-        ),
+        make_image_loaders(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]),
         _ADJUST_CONTRAST_FACTORS,
     ):
         yield ArgsKwargs(image_loader, contrast_factor=contrast_factor)
@@ -1897,17 +1873,13 @@ _ADJUST_GAMMA_GAMMAS_GAINS = [
 
 def sample_inputs_adjust_gamma_image_tensor():
     gamma, gain = _ADJUST_GAMMA_GAMMAS_GAINS[0]
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield ArgsKwargs(image_loader, gamma=gamma, gain=gain)
 
 
 def reference_inputs_adjust_gamma_image_tensor():
     for image_loader, (gamma, gain) in itertools.product(
-        make_image_loaders(
-            color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
-        ),
+        make_image_loaders(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]),
         _ADJUST_GAMMA_GAMMAS_GAINS,
     ):
         yield ArgsKwargs(image_loader, gamma=gamma, gain=gain)
@@ -1945,17 +1917,13 @@ _ADJUST_HUE_FACTORS = [-0.1, 0.5]
 
 
 def sample_inputs_adjust_hue_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield ArgsKwargs(image_loader, hue_factor=_ADJUST_HUE_FACTORS[0])
 
 
 def reference_inputs_adjust_hue_image_tensor():
     for image_loader, hue_factor in itertools.product(
-        make_image_loaders(
-            color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
-        ),
+        make_image_loaders(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]),
         _ADJUST_HUE_FACTORS,
     ):
         yield ArgsKwargs(image_loader, hue_factor=hue_factor)
@@ -1991,17 +1959,13 @@ _ADJUST_SATURATION_FACTORS = [0.1, 0.5]
 
 
 def sample_inputs_adjust_saturation_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], color_spaces=(ColorSpace.GRAY, ColorSpace.RGB)):
         yield ArgsKwargs(image_loader, saturation_factor=_ADJUST_SATURATION_FACTORS[0])
 
 
 def reference_inputs_adjust_saturation_image_tensor():
     for image_loader, saturation_factor in itertools.product(
-        make_image_loaders(
-            color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]
-        ),
+        make_image_loaders(color_spaces=(ColorSpace.GRAY, ColorSpace.RGB), extra_dims=[()], dtypes=[torch.uint8]),
         _ADJUST_SATURATION_FACTORS,
     ):
         yield ArgsKwargs(image_loader, saturation_factor=saturation_factor)
@@ -2205,9 +2169,7 @@ def sample_inputs_convert_dtype_image_tensor():
             # conversion cannot be performed safely
             continue
 
-        for image_loader in make_image_loaders(
-            sizes=["random"], color_spaces=[ColorSpace.RGB], dtypes=[input_dtype]
-        ):
+        for image_loader in make_image_loaders(sizes=["random"], color_spaces=[ColorSpace.RGB], dtypes=[input_dtype]):
             yield ArgsKwargs(image_loader, dtype=output_dtype)
 
 

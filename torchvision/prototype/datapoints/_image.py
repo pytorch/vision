@@ -12,7 +12,6 @@ from ._datapoint import Datapoint, FillTypeJIT
 
 
 class Image(Datapoint):
-
     @classmethod
     def _wrap(cls, tensor: torch.Tensor) -> Image:
         image = tensor.as_subclass(cls)

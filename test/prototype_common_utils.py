@@ -207,6 +207,8 @@ DEGENERATE_BATCH_DIMS = ((0,), (5, 0), (0, 5))
 DEFAULT_EXTRA_DIMS = (*VALID_EXTRA_DIMS, *DEGENERATE_BATCH_DIMS)
 
 from enum import Enum
+
+
 class ColorSpace(Enum):
     OTHER = "OTHER"
     GRAY = "GRAY"

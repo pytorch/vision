@@ -139,9 +139,7 @@ CONSISTENCY_CONFIGS = [
         ],
         # Make sure that the product of the height, width and number of channels matches the number of elements in
         # `LINEAR_TRANSFORMATION_MEAN`. For example 2 * 6 * 3 == 4 * 3 * 3 == 36.
-        make_images_kwargs=dict(
-            DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=[ColorSpace.RGB]
-        ),
+        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=[ColorSpace.RGB]),
         supports_pil=False,
     ),
     ConsistencyConfig(
@@ -151,9 +149,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(num_output_channels=1),
             ArgsKwargs(num_output_channels=3),
         ],
-        make_images_kwargs=dict(
-            DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=[ColorSpace.RGB, ColorSpace.GRAY]
-        ),
+        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=[ColorSpace.RGB, ColorSpace.GRAY]),
     ),
     ConsistencyConfig(
         prototype_transforms.ConvertDtype,

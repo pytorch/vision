@@ -10,7 +10,6 @@ from ._datapoint import Datapoint, FillTypeJIT
 
 
 class Video(Datapoint):
-
     @classmethod
     def _wrap(cls, tensor: torch.Tensor) -> Video:
         video = tensor.as_subclass(cls)
