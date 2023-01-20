@@ -362,6 +362,16 @@ class TestDispatchers:
 
         spy.assert_called_once()
 
+    @image_sample_inputs
+    def test_simple_tensor_output_type(self, info, args_kwargs):
+        (image_datapoint, *other_args), kwargs = args_kwargs.load()
+        image_simple_tensor = image_datapoint.as_subclass(torch.Tensor)
+
+        output = info.dispatcher(image_simple_tensor, *other_args, **kwargs)
+
+        # We cannot use `isinstance` here since all datapoints are instances of `torch.Tensor` as well
+        assert type(output) is torch.Tensor
+
     @make_info_args_kwargs_parametrization(
         [info for info in DISPATCHER_INFOS if info.pil_kernel_info is not None],
         args_kwargs_fn=lambda info: info.sample_inputs(datapoints.Image),
@@ -382,6 +392,22 @@ class TestDispatchers:
         spy.assert_called_once()
 
     @make_info_args_kwargs_parametrization(
+        [info for info in DISPATCHER_INFOS if info.pil_kernel_info is not None],
+        args_kwargs_fn=lambda info: info.sample_inputs(datapoints.Image),
+    )
+    def test_pil_output_type(self, info, args_kwargs):
+        (image_datapoint, *other_args), kwargs = args_kwargs.load()
+
+        if image_datapoint.ndim > 3:
+            pytest.skip("Input is batched")
+
+        image_pil = F.to_image_pil(image_datapoint)
+
+        output = info.dispatcher(image_pil, *other_args, **kwargs)
+
+        assert isinstance(output, PIL.Image.Image)
+
+    @make_info_args_kwargs_parametrization(
         DISPATCHER_INFOS,
         args_kwargs_fn=lambda info: info.sample_inputs(),
     )
@@ -396,6 +422,17 @@ class TestDispatchers:
         info.dispatcher(datapoint, *other_args, **kwargs)
 
         spy.assert_called_once()
+
+    @make_info_args_kwargs_parametrization(
+        DISPATCHER_INFOS,
+        args_kwargs_fn=lambda info: info.sample_inputs(),
+    )
+    def test_datapoint_output_type(self, info, args_kwargs):
+        (datapoint, *other_args), kwargs = args_kwargs.load()
+
+        output = info.dispatcher(datapoint, *other_args, **kwargs)
+
+        assert isinstance(output, type(datapoint))
 
     @pytest.mark.parametrize(
         ("dispatcher_info", "datapoint_type", "kernel_info"),

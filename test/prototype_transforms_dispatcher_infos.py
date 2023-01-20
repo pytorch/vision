@@ -112,6 +112,15 @@ skip_dispatch_datapoint = TestMark(
     pytest.mark.skip(reason="Dispatcher doesn't support arbitrary datapoint dispatch."),
 )
 
+multi_crop_skips = [
+    TestMark(
+        ("TestDispatchers", test_name),
+        pytest.mark.skip(reason="Multi-crop dispatchers return a sequence of items rather than a single one."),
+    )
+    for test_name in ["test_simple_tensor_output_type", "test_pil_output_type", "test_datapoint_output_type"]
+]
+multi_crop_skips.append(skip_dispatch_datapoint)
+
 
 def fill_sequence_needs_broadcast(args_kwargs):
     (image_loader, *_), kwargs = args_kwargs
@@ -404,7 +413,7 @@ DISPATCHER_INFOS = [
         pil_kernel_info=PILKernelInfo(F.five_crop_image_pil),
         test_marks=[
             xfail_jit_python_scalar_arg("size"),
-            skip_dispatch_datapoint,
+            *multi_crop_skips,
         ],
     ),
     DispatcherInfo(
@@ -415,7 +424,7 @@ DISPATCHER_INFOS = [
         },
         test_marks=[
             xfail_jit_python_scalar_arg("size"),
-            skip_dispatch_datapoint,
+            *multi_crop_skips,
         ],
         pil_kernel_info=PILKernelInfo(F.ten_crop_image_pil),
     ),
