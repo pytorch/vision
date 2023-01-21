@@ -328,8 +328,6 @@ class SimpleCopyPaste(Transform):
 
 
 class MixupDetection(_DetectionBatchTransform):
-    _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image)
-
     def __init__(
         self,
         *,
