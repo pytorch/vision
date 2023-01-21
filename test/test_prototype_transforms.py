@@ -1437,6 +1437,63 @@ class TestSimpleCopyPaste:
             return PIL.Image.new("RGB", (32, 32), 123)
         return mocker.MagicMock(spec=image_type)
 
+    def test__extract_image_targets_assertion(self, mocker):
+        transform = transforms.SimpleCopyPaste()
+
+        flat_sample = [
+            # images, batch size = 2
+            self.create_fake_image(mocker, datapoints.Image),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=datapoints.Label),
+            mocker.MagicMock(spec=datapoints.BoundingBox),
+            mocker.MagicMock(spec=datapoints.Mask),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=datapoints.BoundingBox),
+            mocker.MagicMock(spec=datapoints.Mask),
+        ]
+
+        with pytest.raises(TypeError, match="requires input sample to contain equal sized list of Images"):
+            transform._extract_image_targets(flat_sample)
+
+    @pytest.mark.parametrize("image_type", [datapoints.Image, PIL.Image.Image, torch.Tensor])
+    @pytest.mark.parametrize("label_type", [datapoints.Label, datapoints.OneHotLabel])
+    def test__extract_image_targets(self, image_type, label_type, mocker):
+        transform = transforms.SimpleCopyPaste()
+
+        flat_sample = [
+            # images, batch size = 2
+            self.create_fake_image(mocker, image_type),
+            self.create_fake_image(mocker, image_type),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=label_type),
+            mocker.MagicMock(spec=datapoints.BoundingBox),
+            mocker.MagicMock(spec=datapoints.Mask),
+            # labels, bboxes, masks
+            mocker.MagicMock(spec=label_type),
+            mocker.MagicMock(spec=datapoints.BoundingBox),
+            mocker.MagicMock(spec=datapoints.Mask),
+        ]
+
+        images, targets = transform._extract_image_targets(flat_sample)
+
+        assert len(images) == len(targets) == 2
+        if image_type == PIL.Image.Image:
+            torch.testing.assert_close(images[0], pil_to_tensor(flat_sample[0]))
+            torch.testing.assert_close(images[1], pil_to_tensor(flat_sample[1]))
+        else:
+            assert images[0] == flat_sample[0]
+            assert images[1] == flat_sample[1]
+
+        for target in targets:
+            for key, type_ in [
+                ("boxes", datapoints.BoundingBox),
+                ("masks", datapoints.Mask),
+                ("labels", label_type),
+            ]:
+                assert key in target
+                assert isinstance(target[key], type_)
+                assert target[key] in flat_sample
+
     @pytest.mark.parametrize("label_type", [datapoints.Label, datapoints.OneHotLabel])
     def test__copy_paste(self, label_type):
         image = 2 * torch.ones(3, 32, 32)
