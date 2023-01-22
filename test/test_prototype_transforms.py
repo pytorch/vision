@@ -1933,9 +1933,10 @@ class TestMixupDetection:
             return PIL.Image.new("RGB", size, color)
         return mocker.MagicMock(spec=image_type)
 
-    @pytest.mark.parametrize("ratio", [0.0, 1.0])
+    @pytest.mark.parametrize("ratio", [0.0, 0.5, 1.0])
     def test__mixup(self, mocker, ratio):
         image_1 = self.create_fake_image(mocker, PIL.Image.Image, size=(128, 128), color=(124, 124, 124))
+        image_1 = pil_to_tensor(image_1)
         target_1 = {
             "boxes": datapoints.BoundingBox(
                 torch.tensor([[0.0, 0.0, 10.0, 10.0], [20.0, 20.0, 30.0, 30.0]]),
@@ -1951,6 +1952,7 @@ class TestMixupDetection:
         }
 
         image_2 = self.create_fake_image(mocker, PIL.Image.Image, size=(128, 128), color=(0, 0, 0))
+        image_2 = pil_to_tensor(image_2)
         target_2 = {
             "boxes": datapoints.BoundingBox(
                 torch.tensor([[10.0, 0.0, 20.0, 20.0], [10.0, 20.0, 30.0, 30.0]]),
@@ -1969,12 +1971,13 @@ class TestMixupDetection:
         output = transform._mixup(sample_1, sample_2, ratio)
 
         if ratio == 0:
-            assert output == sample_1
-
-        elif ratio == 1:
             assert output == sample_2
 
+        elif ratio == 1:
+            assert output == sample_1
+
         elif ratio == 0.5:
-            assert output["image"] == np.fromarray((np.asarray(image_1) + np.asarray(image_2)) / 2).astype(np.uint8)
+            # TODO: Fix this test
+            assert output["image"] == (np.asarray(image_1) + np.asarray(image_2)) / 2
             assert output["boxes"] == torch.cat([target_1["boxes"], target_2["boxes"]])
             assert output["labels"] == torch.cat([target_1["labels"], target_2["labels"]])
