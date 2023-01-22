@@ -27,7 +27,7 @@ from torchvision.ops.boxes import box_iou
 from torchvision.prototype import datapoints, transforms
 from torchvision.prototype.transforms.utils import check_type
 
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
+from torchvision.transforms.functional import get_image_size, InterpolationMode, pil_to_tensor, to_pil_image
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
 
@@ -1928,46 +1928,53 @@ class TestUniformTemporalSubsample:
 
 
 class TestMixupDetection:
-    def create_fake_image(self, mocker, image_type):
+    def create_fake_image(self, mocker, image_type, *, size=(32, 32), color=123):
         if image_type == PIL.Image.Image:
-            return PIL.Image.new("RGB", (32, 32), 123)
+            return PIL.Image.new("RGB", size, color)
         return mocker.MagicMock(spec=image_type)
 
-    def test__mixup(self):
-        image1 = 2 * torch.ones(3, 32, 64)
+    @pytest.mark.parametrize("ratio", [0.0, 1.0])
+    def test__mixup(self, mocker, ratio):
+        image_1 = self.create_fake_image(mocker, PIL.Image.Image, size=(128, 128), color=(124, 124, 124))
         target_1 = {
             "boxes": datapoints.BoundingBox(
                 torch.tensor([[0.0, 0.0, 10.0, 10.0], [20.0, 20.0, 30.0, 30.0]]),
                 format="XYXY",
-                spatial_size=(32, 64),
+                spatial_size=get_image_size(image_1),
             ),
             "labels": datapoints.Label(torch.tensor([1, 2])),
         }
+        sample_1 = {
+            "image": image_1,
+            "boxes": target_1["boxes"],
+            "labels": target_1["labels"],
+        }
 
-        image2 = 10 * torch.ones(3, 64, 32)
+        image_2 = self.create_fake_image(mocker, PIL.Image.Image, size=(128, 128), color=(0, 0, 0))
         target_2 = {
             "boxes": datapoints.BoundingBox(
                 torch.tensor([[10.0, 0.0, 20.0, 20.0], [10.0, 20.0, 30.0, 30.0]]),
                 format="XYXY",
-                spatial_size=(64, 32),
+                spatial_size=get_image_size(image_2),
             ),
             "labels": datapoints.Label(torch.tensor([2, 3])),
         }
-
-        sample_1 = {
-            "image": image1,
-            "boxes": target_1["boxes"],
-            "labels": target_1["labels"],
-        }
         sample_2 = {
-            "image": image2,
+            "image": image_2,
             "boxes": target_2["boxes"],
             "labels": target_2["labels"],
         }
 
         transform = transforms.MixupDetection()
-        output = transform._mixup(sample_1, sample_2, 0.5)
-        assert output["image"].shape == (3, 64, 64)
-        assert output["boxes"].spatial_size == (64, 64)
-        assert len(output["boxes"]) == 4
-        assert len(output["labels"]) == 4
+        output = transform._mixup(sample_1, sample_2, ratio)
+
+        if ratio == 0:
+            assert output == sample_1
+
+        elif ratio == 1:
+            assert output == sample_2
+
+        elif ratio == 0.5:
+            assert output["image"] == np.fromarray((np.asarray(image_1) + np.asarray(image_2)) / 2).astype(np.uint8)
+            assert output["boxes"] == torch.cat([target_1["boxes"], target_2["boxes"]])
+            assert output["labels"] == torch.cat([target_1["labels"], target_2["labels"]])
