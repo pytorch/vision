@@ -350,12 +350,14 @@ class MixupDetection(_DetectionBatchTransform):
             boxes=(datapoints.BoundingBox,),
             labels=(datapoints.Label, datapoints.OneHotLabel),
         )
-        self._check_inputs(flat_batch_with_spec[0])
+
+        flat_inputs = flat_batch_with_spec[0]
+        self._check_inputs(flat_inputs)
 
         batch = self._to_image_tensor(batch)
 
         batch_output = [
-            self._mixup(sample, sample_rolled, self._get_params([])["ratio"])
+            self._mixup(sample, sample_rolled, self._get_params(flat_inputs)["ratio"])
             for sample, sample_rolled in zip(batch, batch[-1:] + batch[:-1])
         ]
 
