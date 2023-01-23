@@ -377,7 +377,7 @@ class MixupDetection(_DetectionBatchTransform):
         mix_image = F.pad_image_tensor(
             sample_1["image"].to(dtype), padding=[0, 0, w_mixup - w_1, h_mixup - h_1], fill=None
         ).mul_(ratio)
-        mix_image[..., :h_2, :w_2] = sample_2["image"] * (1.0 - ratio)
+        mix_image[..., :h_2, :w_2] += sample_2["image"] * (1.0 - ratio)
         mix_image = mix_image.to(sample_1["image"])
 
         mix_boxes = datapoints.BoundingBox.wrap_like(
