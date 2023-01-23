@@ -544,7 +544,7 @@ def test_convert_dtype_image_tensor_dtype_and_device(info, args_kwargs, device):
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("num_channels", [3])
+@pytest.mark.parametrize("num_channels", [1, 3])
 def test_normalize_image_tensor_stats(device, num_channels):
     stats = pytest.importorskip("scipy.stats", reason="SciPy is not available")
 
