@@ -2133,7 +2133,7 @@ def reference_normalize_image_tensor(image, mean, std, inplace=False):
 
 def reference_inputs_normalize_image_tensor():
     yield ArgsKwargs(
-        make_image_loader(size=(32, 32), color_space=datapoints.ColorSpace.RGB, extra_dims=[1]),
+        make_image_loader(size=(32, 32), color_space="RGB", extra_dims=[1]),
         mean=[0.5, 0.5, 0.5],
         std=[1.0, 1.0, 1.0],
     )
