@@ -209,14 +209,6 @@ DEFAULT_EXTRA_DIMS = (*VALID_EXTRA_DIMS, *DEGENERATE_BATCH_DIMS)
 from enum import Enum
 
 
-class ColorSpace(Enum):
-    OTHER = "OTHER"
-    GRAY = "GRAY"
-    GRAY_ALPHA = "GRAY_ALPHA"
-    RGB = "RGB"
-    RGB_ALPHA = "RGB_ALPHA"
-
-
 def from_loader(loader_fn):
     def wrapper(*args, **kwargs):
         device = kwargs.pop("device", "cpu")
@@ -248,7 +240,6 @@ class TensorLoader:
 
 @dataclasses.dataclass
 class ImageLoader(TensorLoader):
-    color_space: ColorSpace
     spatial_size: Tuple[int, int] = dataclasses.field(init=False)
     num_channels: int = dataclasses.field(init=False)
 
@@ -258,10 +249,10 @@ class ImageLoader(TensorLoader):
 
 
 NUM_CHANNELS_MAP = {
-    ColorSpace.GRAY: 1,
-    ColorSpace.GRAY_ALPHA: 2,
-    ColorSpace.RGB: 3,
-    ColorSpace.RGB_ALPHA: 4,
+    "GRAY": 1,
+    "GRAY_ALPHA": 2,
+    "RGB": 3,
+    "RGBA": 4,
 }
 
 
@@ -275,7 +266,7 @@ def get_num_channels(color_space):
 def make_image_loader(
     size="random",
     *,
-    color_space=ColorSpace.RGB,
+    color_space="RGB",
     extra_dims=(),
     dtype=torch.float32,
     constant_alpha=True,
@@ -286,11 +277,11 @@ def make_image_loader(
     def fn(shape, dtype, device):
         max_value = get_max_value(dtype)
         data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
-        if color_space in {ColorSpace.GRAY_ALPHA, ColorSpace.RGB_ALPHA} and constant_alpha:
+        if color_space in {"GRAY_ALPHA", "RGBA"} and constant_alpha:
             data[..., -1, :, :] = max_value
         return datapoints.Image(data)
 
-    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype, color_space=color_space)
+    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype)
 
 
 make_image = from_loader(make_image_loader)
@@ -300,10 +291,10 @@ def make_image_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        ColorSpace.GRAY,
-        ColorSpace.GRAY_ALPHA,
-        ColorSpace.RGB,
-        ColorSpace.RGB_ALPHA,
+        "GRAY",
+        "GRAY_ALPHA",
+        "RGB",
+        "RGBA",
     ),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.float32, torch.uint8),
@@ -316,7 +307,7 @@ def make_image_loaders(
 make_images = from_loaders(make_image_loaders)
 
 
-def make_image_loader_for_interpolation(size="random", *, color_space=ColorSpace.RGB, dtype=torch.uint8):
+def make_image_loader_for_interpolation(size="random", *, color_space="RGB", dtype=torch.uint8):
     size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
 
@@ -328,10 +319,10 @@ def make_image_loader_for_interpolation(size="random", *, color_space=ColorSpace
             .resize((width, height))
             .convert(
                 {
-                    ColorSpace.GRAY: "L",
-                    ColorSpace.GRAY_ALPHA: "LA",
-                    ColorSpace.RGB: "RGB",
-                    ColorSpace.RGB_ALPHA: "RGBA",
+                    "GRAY": "L",
+                    "GRAY_ALPHA": "LA",
+                    "RGB": "RGB",
+                    "RGBA": "RGBA",
                 }[color_space]
             )
         )
@@ -340,12 +331,12 @@ def make_image_loader_for_interpolation(size="random", *, color_space=ColorSpace
 
         return datapoints.Image(image_tensor)
 
-    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype, color_space=color_space)
+    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype)
 
 
 def make_image_loaders_for_interpolation(
     sizes=((233, 147),),
-    color_spaces=(ColorSpace.RGB,),
+    color_spaces=("RGB",),
     dtypes=(torch.uint8,),
 ):
     for params in combinations_grid(size=sizes, color_space=color_spaces, dtype=dtypes):
@@ -593,7 +584,7 @@ class VideoLoader(ImageLoader):
 def make_video_loader(
     size="random",
     *,
-    color_space=ColorSpace.RGB,
+    color_space="RGB",
     num_frames="random",
     extra_dims=(),
     dtype=torch.uint8,
@@ -605,9 +596,7 @@ def make_video_loader(
         video = make_image(size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device)
         return datapoints.Video(video)
 
-    return VideoLoader(
-        fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype, color_space=color_space
-    )
+    return VideoLoader(fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype)
 
 
 make_video = from_loader(make_video_loader)
@@ -617,8 +606,8 @@ def make_video_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        ColorSpace.GRAY,
-        ColorSpace.RGB,
+        "GRAY",
+        "RGB",
     ),
     num_frames=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,
