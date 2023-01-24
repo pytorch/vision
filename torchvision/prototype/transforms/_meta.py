@@ -1,6 +1,4 @@
-from typing import Any, Dict, Optional, Union
-
-import PIL.Image
+from typing import Any, Dict, Union
 
 import torch
 

@@ -9,7 +9,6 @@ import pytest
 import torch.testing
 import torchvision.ops
 import torchvision.prototype.transforms.functional as F
-from common_utils import cycle_over
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,

@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import warnings
 from typing import Any, List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
-from torchvision._utils import StrEnum
 from torchvision.transforms.functional import InterpolationMode
 
 from ._datapoint import Datapoint, FillTypeJIT
