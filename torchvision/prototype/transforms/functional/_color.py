@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Union
 
 import PIL.Image
 import torch
@@ -8,6 +8,7 @@ from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
+from typing_extensions import Literal
 
 from ._meta import _num_value_bits, convert_dtype_image_tensor, get_num_channels
 from ._utils import is_simple_tensor

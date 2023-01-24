@@ -1,11 +1,12 @@
 import collections.abc
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
 
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
+from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
 from .utils import is_simple_tensor, query_chw
