@@ -13,7 +13,12 @@ import torch
 
 import torchvision.prototype.transforms.utils
 from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
-from prototype_common_utils import assert_close, make_bounding_boxes, parametrized_error_message
+from prototype_common_utils import (
+    assert_close,
+    DEFAULT_SQUARE_SPATIAL_SIZE,
+    make_bounding_boxes,
+    parametrized_error_message,
+)
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
 from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torch.utils._pytree import tree_map
@@ -536,6 +541,22 @@ def test_convert_dtype_image_tensor_dtype_and_device(info, args_kwargs, device):
 
     assert output.dtype == dtype
     assert output.device == input.device
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("num_channels", [1, 3])
+def test_normalize_image_tensor_stats(device, num_channels):
+    stats = pytest.importorskip("scipy.stats", reason="SciPy is not available")
+
+    def assert_samples_from_standard_normal(t):
+        p_value = stats.kstest(t.flatten(), cdf="norm", args=(0, 1)).pvalue
+        return p_value > 1e-4
+
+    image = torch.rand(num_channels, DEFAULT_SQUARE_SPATIAL_SIZE, DEFAULT_SQUARE_SPATIAL_SIZE)
+    mean = image.mean(dim=(1, 2)).tolist()
+    std = image.std(dim=(1, 2)).tolist()
+
+    assert_samples_from_standard_normal(F.normalize_image_tensor(image, mean, std))
 
 
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
