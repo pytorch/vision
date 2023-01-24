@@ -11,7 +11,14 @@ from ._transform import _RandomApplyTransform
 from .utils import is_simple_tensor, query_chw
 
 
-class GrayScale(Transform):
+class Grayscale(Transform):
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
+
     def __init__(self, num_output_channels: Literal[1, 3] = 1):
         super().__init__()
         self.num_output_channels = num_output_channels
@@ -20,7 +27,17 @@ class GrayScale(Transform):
         return F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
 
 
-class RandomGrayScale(_RandomApplyTransform):
+class RandomGrayscale(_RandomApplyTransform):
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
+
+    def __init__(self, p: float = 0.1) -> None:
+        super().__init__(p=p)
+
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         num_output_channels = F.get_num_channels(inpt)
         return F.rgb_to_grayscale(inpt, num_output_channels=num_output_channels)
@@ -213,47 +230,3 @@ class RandomAdjustSharpness(_RandomApplyTransform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.adjust_sharpness(inpt, sharpness_factor=self.sharpness_factor)
-
-
-class Grayscale(Transform):
-    _transformed_types = (
-        datapoints.Image,
-        PIL.Image.Image,
-        is_simple_tensor,
-        datapoints.Video,
-    )
-
-    def __init__(self, num_output_channels: Literal[1, 3] = 1) -> None:
-        self.num_output_channels = num_output_channels
-
-    def _transform(
-        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
-        output = _F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
-        return output
-
-
-class RandomGrayscale(_RandomApplyTransform):
-    _transformed_types = (
-        datapoints.Image,
-        PIL.Image.Image,
-        is_simple_tensor,
-        datapoints.Video,
-    )
-
-    def __init__(self, p: float = 0.1) -> None:
-        super().__init__(p=p)
-
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        num_input_channels, *_ = query_chw(flat_inputs)
-        return dict(num_input_channels=num_input_channels)
-
-    def _transform(
-        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
-        output = _F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
-        return output
