@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Literal, Optional, Tuple, Union
 
 import torch
 from torchvision.transforms.functional import InterpolationMode
@@ -170,6 +170,12 @@ class Video(Datapoint):
     ) -> Video:
         output = self._F.elastic_video(
             self.as_subclass(torch.Tensor), displacement, interpolation=interpolation, fill=fill
+        )
+        return Video.wrap_like(self, output)
+
+    def to_grayscale(self, num_output_channels: Literal[1, 3] = 1) -> Video:
+        output = self._F.rgb_to_grayscale_tensor(
+            self.as_subclass(torch.Tensor), num_output_channels=num_output_channels
         )
         return Video.wrap_like(self, output)
 

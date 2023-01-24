@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Literal, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -166,6 +166,12 @@ class Image(Datapoint):
     ) -> Image:
         output = self._F.elastic_image_tensor(
             self.as_subclass(torch.Tensor), displacement, interpolation=interpolation, fill=fill
+        )
+        return Image.wrap_like(self, output)
+
+    def to_grayscale(self, num_output_channels: Literal[1, 3] = 1) -> Image:
+        output = self._F.rgb_to_grayscale_tensor(
+            self.as_subclass(torch.Tensor), num_output_channels=num_output_channels
         )
         return Image.wrap_like(self, output)
 
