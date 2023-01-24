@@ -26,8 +26,6 @@ class Video(Datapoint):
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if data.ndim < 4:
             raise ValueError
-        video = super().__new__(cls, data, requires_grad=requires_grad)
-        # TODO: Should this be `video` or can we remove it?
         return cls._wrap(tensor)
 
     @classmethod
