@@ -38,9 +38,12 @@ class RandomGrayscale(_RandomApplyTransform):
     def __init__(self, p: float = 0.1) -> None:
         super().__init__(p=p)
 
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        num_input_channels, *_ = query_chw(flat_inputs)
+        return dict(num_input_channels=num_input_channels)
+
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        num_output_channels = F.get_num_channels(inpt)
-        return F.rgb_to_grayscale(inpt, num_output_channels=num_output_channels)
+        return F.rgb_to_grayscale(inpt, num_output_channels=params["num_output_channels"])
 
 
 class ColorJitter(Transform):
