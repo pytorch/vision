@@ -6,7 +6,7 @@ process) can be found in the meta-internal wiki.
 
 ### What is public and what is private?
 
-For the Python API, torchvision largely follows the [torch core
+For the Python API, torchvision largely follows the [PyTorch
 policy](https://github.com/pytorch/pytorch/wiki/Public-API-definition-and-documentation)
 which is consistent with other major packages
 ([numpy](https://numpy.org/neps/nep-0023-backwards-compatibility.html),
@@ -43,7 +43,7 @@ guarantees.
 
 Because they're disruptive, **deprecations should only be used sparingly**.
 
-We largely follow the [torch core
+We largely follow the [PyTorch
 policy](https://github.com/pytorch/pytorch/wiki/PyTorch's-Python-Frontend-Backward-and-Forward-Compatibility-Policy):
 breaking changes require a deprecation period of at least 2 versions.
 
