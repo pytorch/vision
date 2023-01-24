@@ -2,6 +2,7 @@ import importlib
 import inspect
 import sys
 from dataclasses import dataclass, fields
+from functools import partial
 from inspect import signature
 from types import ModuleType
 from typing import Any, Callable, cast, Dict, List, Mapping, Optional, TypeVar, Union
@@ -36,6 +37,32 @@ class Weights:
     url: str
     transforms: Callable
     meta: Dict[str, Any]
+
+    def __eq__(self, other: Any) -> bool:
+        # We need this custom implementation for correct deep-copy and deserialization behavior.
+        # TL;DR: After the definition of an enum, creating a new instance, i.e. by deep-copying or deserializing it,
+        # involves an equality check against the defined members. Unfortunately, the `transforms` attribute is often
+        # defined with `functools.partial` and `fn = partial(...); assert deepcopy(fn) != fn`. Without custom handling
+        # for it, the check against the defined members would fail and effectively prevent the weights from being
+        # deep-copied or deserialized.
+        # See https://github.com/pytorch/vision/pull/7107 for details.
+        if not isinstance(other, Weights):
+            return NotImplemented
+
+        if self.url != other.url:
+            return False
+
+        if self.meta != other.meta:
+            return False
+
+        if isinstance(self.transforms, partial) and isinstance(other.transforms, partial):
+            return (
+                self.transforms.func == other.transforms.func
+                and self.transforms.args == other.transforms.args
+                and self.transforms.keywords == other.transforms.keywords
+            )
+        else:
+            return self.transforms == other.transforms
 
 
 class WeightsEnum(StrEnum):
@@ -74,9 +101,6 @@ class WeightsEnum(StrEnum):
             if f.name == name:
                 return object.__getattribute__(self.value, name)
         return super().__getattr__(name)
-
-    def __deepcopy__(self, memodict=None):
-        return self
 
 
 def get_weight(name: str) -> WeightsEnum:
