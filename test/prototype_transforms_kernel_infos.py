@@ -2123,6 +2123,22 @@ def sample_inputs_normalize_image_tensor():
         yield ArgsKwargs(image_loader, mean=mean, std=std)
 
 
+def reference_normalize_image_tensor(image, mean, std, inplace=False):
+    mean = torch.tensor(mean).view(-1, 1, 1)
+    std = torch.tensor(std).view(-1, 1, 1)
+
+    sub = torch.Tensor.sub_ if inplace else torch.Tensor.sub
+    return sub(image, mean).div_(std)
+
+
+def reference_inputs_normalize_image_tensor():
+    yield ArgsKwargs(
+        make_image_loader(size=(32, 32), color_space=datapoints.ColorSpace.RGB, extra_dims=[1]),
+        mean=[0.5, 0.5, 0.5],
+        std=[1.0, 1.0, 1.0],
+    )
+
+
 def sample_inputs_normalize_video():
     mean, std = _NORMALIZE_MEANS_STDS[0]
     for video_loader in make_video_loaders(
@@ -2137,6 +2153,8 @@ KERNEL_INFOS.extend(
             F.normalize_image_tensor,
             kernel_name="normalize_image_tensor",
             sample_inputs_fn=sample_inputs_normalize_image_tensor,
+            reference_fn=reference_normalize_image_tensor,
+            reference_inputs_fn=reference_inputs_normalize_image_tensor,
             test_marks=[
                 xfail_jit_python_scalar_arg("mean"),
                 xfail_jit_python_scalar_arg("std"),
