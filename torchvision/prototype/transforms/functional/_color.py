@@ -8,6 +8,7 @@ from torchvision.transforms.functional_tensor import _max_value
 from torchvision.utils import _log_api_usage_once
 
 from ._meta import _num_value_bits, _rgb_to_gray, convert_dtype_image_tensor
+from ._utils import is_simple_tensor
 
 
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
@@ -43,9 +44,7 @@ def adjust_brightness(inpt: datapoints.InputTypeJIT, brightness_factor: float) -
     if not torch.jit.is_scripting():
         _log_api_usage_once(adjust_brightness)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return adjust_brightness_image_tensor(inpt, brightness_factor=brightness_factor)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.adjust_brightness(brightness_factor=brightness_factor)
@@ -131,9 +130,7 @@ def adjust_contrast(inpt: datapoints.InputTypeJIT, contrast_factor: float) -> da
     if not torch.jit.is_scripting():
         _log_api_usage_once(adjust_contrast)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return adjust_contrast_image_tensor(inpt, contrast_factor=contrast_factor)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.adjust_contrast(contrast_factor=contrast_factor)
@@ -326,9 +323,7 @@ def adjust_hue(inpt: datapoints.InputTypeJIT, hue_factor: float) -> datapoints.I
     if not torch.jit.is_scripting():
         _log_api_usage_once(adjust_hue)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return adjust_hue_image_tensor(inpt, hue_factor=hue_factor)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.adjust_hue(hue_factor=hue_factor)
@@ -371,9 +366,7 @@ def adjust_gamma(inpt: datapoints.InputTypeJIT, gamma: float, gain: float = 1) -
     if not torch.jit.is_scripting():
         _log_api_usage_once(adjust_gamma)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return adjust_gamma_image_tensor(inpt, gamma=gamma, gain=gain)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.adjust_gamma(gamma=gamma, gain=gain)
@@ -410,9 +403,7 @@ def posterize(inpt: datapoints.InputTypeJIT, bits: int) -> datapoints.InputTypeJ
     if not torch.jit.is_scripting():
         _log_api_usage_once(posterize)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return posterize_image_tensor(inpt, bits=bits)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.posterize(bits=bits)
@@ -443,9 +434,7 @@ def solarize(inpt: datapoints.InputTypeJIT, threshold: float) -> datapoints.Inpu
     if not torch.jit.is_scripting():
         _log_api_usage_once(solarize)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return solarize_image_tensor(inpt, threshold=threshold)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.solarize(threshold=threshold)
@@ -498,9 +487,7 @@ def autocontrast(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(autocontrast)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return autocontrast_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.autocontrast()
@@ -593,9 +580,7 @@ def equalize(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(equalize)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return equalize_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.equalize()
@@ -610,7 +595,7 @@ def equalize(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
 
 def invert_image_tensor(image: torch.Tensor) -> torch.Tensor:
     if image.is_floating_point():
-        return 1.0 - image  # type: ignore[no-any-return]
+        return 1.0 - image
     elif image.dtype == torch.uint8:
         return image.bitwise_not()
     else:  # signed integer dtypes
@@ -629,9 +614,7 @@ def invert(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(invert)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return invert_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.invert()
