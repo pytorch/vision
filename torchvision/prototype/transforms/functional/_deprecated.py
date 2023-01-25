@@ -27,13 +27,11 @@ def to_grayscale(inpt: PIL.Image.Image, num_output_channels: int = 1) -> PIL.Ima
 def rgb_to_grayscale(
     inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], num_output_channels: int = 1
 ) -> Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]:
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        old_color_space = datapoints._image._from_tensor_shape(inpt.shape)  # type: ignore[arg-type]
-    else:
-        old_color_space = None
-
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            inpt = inpt.as_subclass(torch.Tensor)
+    old_color_space = None  # TODO: remove when un-deprecating
+    if not (torch.jit.is_scripting() or is_simple_tensor(inpt)) and isinstance(
+        inpt, (datapoints.Image, datapoints.Video)
+    ):
+        inpt = inpt.as_subclass(torch.Tensor)
 
     call = ", num_output_channels=3" if num_output_channels == 3 else ""
     replacement = (

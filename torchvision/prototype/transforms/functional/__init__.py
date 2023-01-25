@@ -7,10 +7,6 @@ from ._utils import is_simple_tensor  # usort: skip
 from ._meta import (
     clamp_bounding_box,
     convert_format_bounding_box,
-    convert_color_space_image_tensor,
-    convert_color_space_image_pil,
-    convert_color_space_video,
-    convert_color_space,
     convert_dtype_image_tensor,
     convert_dtype,
     convert_dtype_video,

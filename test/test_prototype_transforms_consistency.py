@@ -31,7 +31,7 @@ from torchvision.prototype.transforms.functional import to_image_pil
 from torchvision.prototype.transforms.utils import query_spatial_size
 from torchvision.transforms import functional as legacy_F
 
-DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[datapoints.ColorSpace.RGB], extra_dims=[(4,)])
+DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
 
 
 class ConsistencyConfig:
@@ -138,9 +138,7 @@ CONSISTENCY_CONFIGS = [
         ],
         # Make sure that the product of the height, width and number of channels matches the number of elements in
         # `LINEAR_TRANSFORMATION_MEAN`. For example 2 * 6 * 3 == 4 * 3 * 3 == 36.
-        make_images_kwargs=dict(
-            DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=[datapoints.ColorSpace.RGB]
-        ),
+        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=["RGB"]),
         supports_pil=False,
     ),
     ConsistencyConfig(
@@ -150,9 +148,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(num_output_channels=1),
             ArgsKwargs(num_output_channels=3),
         ],
-        make_images_kwargs=dict(
-            DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=[datapoints.ColorSpace.RGB, datapoints.ColorSpace.GRAY]
-        ),
+        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=["RGB", "GRAY"]),
     ),
     ConsistencyConfig(
         prototype_transforms.ConvertDtype,
@@ -174,10 +170,10 @@ CONSISTENCY_CONFIGS = [
         [ArgsKwargs()],
         make_images_kwargs=dict(
             color_spaces=[
-                datapoints.ColorSpace.GRAY,
-                datapoints.ColorSpace.GRAY_ALPHA,
-                datapoints.ColorSpace.RGB,
-                datapoints.ColorSpace.RGB_ALPHA,
+                "GRAY",
+                "GRAY_ALPHA",
+                "RGB",
+                "RGBA",
             ],
             extra_dims=[()],
         ),
@@ -558,15 +554,15 @@ def check_call_consistency(
             output_prototype_image = prototype_transform(image)
         except Exception as exc:
             raise AssertionError(
-                f"Transforming a feature image with shape {image_repr} failed in the prototype transform with "
+                f"Transforming a image datapoint with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
-                f"`features.Image` path in `_transform`."
+                f"`datapoints.Image` path in `_transform`."
             ) from exc
 
         assert_close(
             output_prototype_image,
             output_prototype_tensor,
-            msg=lambda msg: f"Output for feature and tensor images is not equal: \n\n{msg}",
+            msg=lambda msg: f"Output for datapoint and tensor images is not equal: \n\n{msg}",
             **closeness_kwargs,
         )
 
@@ -911,7 +907,7 @@ class TestRefDetTransforms:
         size = (600, 800)
         num_objects = 22
 
-        pil_image = to_image_pil(make_image(size=size, color_space=datapoints.ColorSpace.RGB))
+        pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -921,7 +917,7 @@ class TestRefDetTransforms:
 
         yield (pil_image, target)
 
-        tensor_image = torch.Tensor(make_image(size=size, color_space=datapoints.ColorSpace.RGB))
+        tensor_image = torch.Tensor(make_image(size=size, color_space="RGB"))
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -931,7 +927,7 @@ class TestRefDetTransforms:
 
         yield (tensor_image, target)
 
-        feature_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB)
+        datapoint_image = make_image(size=size, color_space="RGB")
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -939,7 +935,7 @@ class TestRefDetTransforms:
         if with_mask:
             target["masks"] = make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long)
 
-        yield (feature_image, target)
+        yield (datapoint_image, target)
 
     @pytest.mark.parametrize(
         "t_ref, t, data_kwargs",
@@ -1015,13 +1011,13 @@ class TestRefSegTransforms:
         conv_fns.extend([torch.Tensor, lambda x: x])
 
         for conv_fn in conv_fns:
-            feature_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB, dtype=image_dtype)
-            feature_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
+            datapoint_image = make_image(size=size, color_space="RGB", dtype=image_dtype)
+            datapoint_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
 
-            dp = (conv_fn(feature_image), feature_mask)
+            dp = (conv_fn(datapoint_image), datapoint_mask)
             dp_ref = (
-                to_image_pil(feature_image) if supports_pil else feature_image.as_subclass(torch.Tensor),
-                to_image_pil(feature_mask),
+                to_image_pil(datapoint_image) if supports_pil else datapoint_image.as_subclass(torch.Tensor),
+                to_image_pil(datapoint_mask),
             )
 
             yield dp, dp_ref
