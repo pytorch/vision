@@ -18,7 +18,7 @@ from _utils_internal import get_relative_path
 from common_utils import cpu_and_gpu, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
 from PIL import Image
 from torchvision import models, transforms
-from torchvision.models import get_model_builder, list_models
+from torchvision.models import get_model_builder, list_models, get_model_weights, get_weight
 
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
@@ -29,7 +29,7 @@ def list_model_fns(module):
     return [get_model_builder(name) for name in list_models(module)]
 
 
-def _get_image(input_shape, real_image, device):
+def _get_image(input_shape, real_image, device, weights=None):
     """This routine loads a real or random image based on `real_image` argument.
     Currently, the real image is utilized for the following list of models:
     - `retinanet_resnet50_fpn`,
@@ -50,17 +50,23 @@ def _get_image(input_shape, real_image, device):
         )
 
         img = Image.open(GRACE_HOPPER)
+        
+        if weights is None:
+            original_width, original_height = img.size
+            # make the image square
+            img = img.crop((0, 0, original_width, original_width))
+            img = img.resize(input_shape[1:3])
 
-        original_width, original_height = img.size
-
-        # make the image square
-        img = img.crop((0, 0, original_width, original_width))
-        img = img.resize(input_shape[1:3])
-
-        convert_tensor = transforms.ToTensor()
-        image = convert_tensor(img)
-        assert tuple(image.size()) == input_shape
-        return image.to(device=device)
+            convert_tensor = transforms.ToTensor()
+            image = convert_tensor(img)
+            assert tuple(image.size()) == input_shape
+            return image.to(device=device)
+        else:
+            H, W = input_shape[-2:]
+            min_side = min(H, W)
+            preprocess = weights.transforms(resize_size=min_side, crop_size=min_side)
+            image = preprocess(img)
+            return image.to(device=device)
 
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     return torch.rand(input_shape).to(device=device)
@@ -282,7 +288,7 @@ quantized_flaky_models = ("inception_v3", "resnet50")
 # The following contains configuration parameters for all models which are used by
 # the _test_*_model methods.
 _model_params = {
-    "inception_v3": {"input_shape": (1, 3, 299, 299), "init_weights": True},
+    "inception_v3": {"input_shape": (1, 3, 299, 299)},
     "retinanet_resnet50_fpn": {
         "num_classes": 20,
         "score_thresh": 0.01,
@@ -364,7 +370,9 @@ _model_params = {
     "s3d": {
         "input_shape": (1, 3, 16, 224, 224),
     },
-    "googlenet": {"init_weights": True},
+    "regnet_y_128gf": {"weight_name": "IMAGENET1K_SWAG_LINEAR_V1"},
+    "vit_h_14": {"weight_name": "IMAGENET1K_SWAG_LINEAR_V1"},
+    "vitc_b_16": {"weight_name": None},
 }
 # speeding up slow models:
 slow_models = [
@@ -390,7 +398,10 @@ slow_models = [
     "swin_v2_b",
 ]
 for m in slow_models:
-    _model_params[m] = {"input_shape": (1, 3, 64, 64)}
+    if m not in _model_params:
+        _model_params[m] = {"input_shape": (1, 3, 64, 64)}
+    else:
+        _model_params[m]["input_shape"] = (1, 3, 64, 64)
 
 
 # skip big models to reduce memory usage on CI test. We can exclude combinations of (platform-system, device).
@@ -648,6 +659,7 @@ test_vit_conv_stem_configs = [
 
 
 def vitc_b_16(**kwargs: Any):
+    kwargs.pop("weights", None)
     return models.VisionTransformer(
         image_size=224,
         patch_size=16,
@@ -671,33 +683,44 @@ def test_vitc_models(model_fn, dev):
 def test_classification_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
-        "num_classes": 50,
+        "num_classes": 1000,
         "input_shape": (1, 3, 224, 224),
+        "num_expected": 50,
     }
     model_name = model_fn.__name__
     if SKIP_BIG_MODEL and is_skippable(model_name, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
+    num_expected = kwargs.pop("num_expected")
     input_shape = kwargs.pop("input_shape")
     real_image = kwargs.pop("real_image", False)
+    weight_name = kwargs.pop("weight_name", "IMAGENET1K_V1")
+    weight = None
+    if weight_name is not None:
+        weight_enum = get_model_weights(model_name)
+        weight = get_weight(f"{weight_enum.__name__}.{weight_name}")
 
-    model = model_fn(**kwargs)
+    model = model_fn(weights=weight, **kwargs)
     model.eval().to(device=dev)
-    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev)
-    out = model(x)
-    _assert_expected(out.cpu(), model_name, prec=0.1)
+    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev, weights=weight)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(x)
+        expect_out = out[:, :num_expected]
+    _assert_expected(expect_out.cpu(), model_name, prec=3e-2)
     assert out.shape[-1] == num_classes
+    assert expect_out.shape[-1] == num_expected
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
     if dev == "cuda":
-        with torch.cuda.amp.autocast():
+        with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
             out = model(x)
+            expect_out = out[:, :num_expected]
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
-                _assert_expected(out.cpu(), model_name, prec=0.1)
-            assert out.shape[-1] == 50
+                _assert_expected(expect_out.cpu(), model_name, prec=0.1)
+            assert expect_out.shape[-1] == num_expected
 
     _check_input_backprop(model, x)
 
@@ -917,7 +940,7 @@ def test_video_model(model_fn, dev):
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
-    _assert_expected(out.cpu(), model_name, prec=0.1)
+    _assert_expected(out.cpu(), model_name, prec=3e-3)
     assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
@@ -960,7 +983,7 @@ def test_quantized_classification_model(model_fn):
     out = model(x)
 
     if model_name not in quantized_flaky_models:
-        _assert_expected(out.cpu(), model_name + "_quantized", prec=0.1)
+        _assert_expected(out.cpu(), model_name + "_quantized", prec=2e-2)
         assert out.shape[-1] == 5
         _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
         _check_fx_compatible(model, x, eager_out=out)
