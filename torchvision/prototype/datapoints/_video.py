@@ -175,7 +175,7 @@ class Video(Datapoint):
         return Video.wrap_like(self, output)
 
     def to_grayscale(self, num_output_channels: Literal[1, 3] = 1) -> Video:
-        output = self._F.rgb_to_grayscale_tensor(
+        output = self._F.rgb_to_grayscale_image_tensor(
             self.as_subclass(torch.Tensor), num_output_channels=num_output_channels
         )
         return Video.wrap_like(self, output)

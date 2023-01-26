@@ -72,6 +72,8 @@ from ._color import (
     posterize_image_tensor,
     posterize_video,
     rgb_to_grayscale,
+    rgb_to_grayscale_image_pil,
+    rgb_to_grayscale_image_tensor,
     solarize,
     solarize_image_pil,
     solarize_image_tensor,

@@ -44,7 +44,7 @@ class RandomGrayscale(_RandomApplyTransform):
         return dict(num_input_channels=num_input_channels)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return F.rgb_to_grayscale(inpt, num_output_channels=params["num_output_channels"])
+        return F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
 
 
 class ColorJitter(Transform):

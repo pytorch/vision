@@ -13,13 +13,24 @@ from ._meta import _num_value_bits, convert_dtype_image_tensor, get_num_channels
 from ._utils import is_simple_tensor
 
 
-def rgb_to_grayscale_tensor(image: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
+def _rgb_to_grayscale_image_tensor(
+    image: torch.Tensor, num_output_channels: int = 1, preserve_dtype: bool = True
+) -> torch.Tensor:
     r, g, b = image.unbind(dim=-3)
     l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
     l_img = l_img.unsqueeze(dim=-3)
+    if preserve_dtype:
+        l_img = l_img.to(image.dtype)
     if num_output_channels == 3:
         return l_img.expand(image.shape)
     return l_img
+
+
+def rgb_to_grayscale_image_tensor(image: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
+    return _rgb_to_grayscale_image_tensor(image, num_output_channels=num_output_channels, preserve_dtype=True)
+
+
+rgb_to_grayscale_image_pil = _FP.to_grayscale
 
 
 def rgb_to_grayscale(
@@ -32,14 +43,14 @@ def rgb_to_grayscale(
     num_channels = get_num_channels(inpt)
     if num_channels != 3:
         raise ValueError(
-            "Image is expected to have 3 channels (RGB) to be converted to grayscale" f"Got {num_channels}"
+            f"Image is expected to have 3 channels (RGB) to be converted to grayscale. Got {num_channels}."
         )
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        return rgb_to_grayscale_tensor(inpt, num_output_channels=num_output_channels)
+        return rgb_to_grayscale_image_tensor(inpt, num_output_channels=num_output_channels)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.rgb_to_grayscale(inpt, num_output_channels=num_output_channels)
+        return inpt.to_grayscale(num_output_channels=num_output_channels)
     elif isinstance(inpt, PIL.Image.Image):
-        return _FP.to_grayscale(inpt, num_output_channels=num_output_channels)
+        return rgb_to_grayscale_image_pil(inpt, num_output_channels=num_output_channels)
     else:
         raise TypeError(
             f"Input can either be a plain tensor, any TorchVision datapoint, or a PIL image, "
@@ -104,7 +115,7 @@ def adjust_saturation_image_tensor(image: torch.Tensor, saturation_factor: float
     if c == 1:  # Match PIL behaviour
         return image
 
-    grayscale_image = rgb_to_grayscale_tensor(image)
+    grayscale_image = _rgb_to_grayscale_image_tensor(image, num_output_channels=1, preserve_dtype=False)
     if not image.is_floating_point():
         grayscale_image = grayscale_image.floor_()
 
@@ -146,7 +157,7 @@ def adjust_contrast_image_tensor(image: torch.Tensor, contrast_factor: float) ->
         raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
     fp = image.is_floating_point()
     if c == 3:
-        grayscale_image = rgb_to_grayscale_tensor(image)
+        grayscale_image = _rgb_to_grayscale_image_tensor(image, num_output_channels=1, preserve_dtype=False)
         if not fp:
             grayscale_image = grayscale_image.floor_()
     else:
