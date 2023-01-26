@@ -1200,7 +1200,7 @@ class ColorJitter(torch.nn.Module):
             raise TypeError(f"{name} should be a single number or a list/tuple with length 2.")
 
         if not bound[0] <= value[0] <= value[1] <= bound[1]:
-            raise ValueError(f"{name} values should be between {bound}")
+            raise ValueError(f"{name} values should be between {bound}, but got {value}.")
 
         # if value is 0 or (1., 1.) for brightness/contrast/saturation
         # or (0., 0.) for hue, do nothing
