@@ -4,7 +4,6 @@ from typing import Any, List, Optional, Tuple, Union
 
 import torch
 from torchvision.transforms.functional import InterpolationMode
-from typing_extensions import Literal
 
 from ._datapoint import Datapoint, FillTypeJIT
 
@@ -174,7 +173,7 @@ class Video(Datapoint):
         )
         return Video.wrap_like(self, output)
 
-    def to_grayscale(self, num_output_channels: Literal[1, 3] = 1) -> Video:
+    def to_grayscale(self, num_output_channels: int = 1) -> Video:
         output = self._F.rgb_to_grayscale_image_tensor(
             self.as_subclass(torch.Tensor), num_output_channels=num_output_channels
         )
