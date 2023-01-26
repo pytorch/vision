@@ -225,15 +225,6 @@ def clamp_bounding_box(
     return convert_format_bounding_box(xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True)
 
 
-def _rgb_to_gray(image: torch.Tensor, cast: bool = True) -> torch.Tensor:
-    r, g, b = image.unbind(dim=-3)
-    l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
-    if cast:
-        l_img = l_img.to(image.dtype)
-    l_img = l_img.unsqueeze(dim=-3)
-    return l_img
-
-
 def _num_value_bits(dtype: torch.dtype) -> int:
     if dtype == torch.uint8:
         return 8
