@@ -20,6 +20,7 @@ from torchvision.models.efficientnet import (
 )
 from torchvision.models.googlenet import googlenet
 from torchvision.models.inception import inception_v3
+from torchvision.models.maxvit import maxvit_t
 from torchvision.models.mnasnet import mnasnet0_5, mnasnet0_75, mnasnet1_0, mnasnet1_3
 from torchvision.models.mobilenetv2 import mobilenet_v2
 from torchvision.models.mobilenetv3 import mobilenet_v3_large, mobilenet_v3_small
@@ -68,6 +69,17 @@ from torchvision.models.shufflenetv2 import (
     shufflenet_v2_x2_0,
 )
 from torchvision.models.squeezenet import squeezenet1_0, squeezenet1_1
-from torchvision.models.swin_transformer import swin_b, swin_s, swin_t
+from torchvision.models.swin_transformer import swin_b, swin_s, swin_t, swin_v2_b, swin_v2_s, swin_v2_t
 from torchvision.models.vgg import vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn, vgg19, vgg19_bn
+from torchvision.models.video import (
+    mc3_18,
+    mvit_v1_b,
+    mvit_v2_s,
+    r2plus1d_18,
+    r3d_18,
+    s3d,
+    swin3d_b,
+    swin3d_s,
+    swin3d_t,
+)
 from torchvision.models.vision_transformer import vit_b_16, vit_b_32, vit_h_14, vit_l_16, vit_l_32

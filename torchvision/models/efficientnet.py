@@ -465,7 +465,7 @@ class EfficientNet_B0_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.386,
-            "_weight_size": 20.451,
+            "_file_size": 20.451,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -489,7 +489,7 @@ class EfficientNet_B1_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.687,
-            "_weight_size": 30.134,
+            "_file_size": 30.134,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -509,7 +509,7 @@ class EfficientNet_B1_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.687,
-            "_weight_size": 30.136,
+            "_file_size": 30.136,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
                 `new training recipe
@@ -537,7 +537,7 @@ class EfficientNet_B2_Weights(WeightsEnum):
                 }
             },
             "_ops": 1.088,
-            "_weight_size": 35.174,
+            "_file_size": 35.174,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -561,7 +561,7 @@ class EfficientNet_B3_Weights(WeightsEnum):
                 }
             },
             "_ops": 1.827,
-            "_weight_size": 47.184,
+            "_file_size": 47.184,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -585,7 +585,7 @@ class EfficientNet_B4_Weights(WeightsEnum):
                 }
             },
             "_ops": 4.394,
-            "_weight_size": 74.489,
+            "_file_size": 74.489,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -609,7 +609,7 @@ class EfficientNet_B5_Weights(WeightsEnum):
                 }
             },
             "_ops": 10.266,
-            "_weight_size": 116.864,
+            "_file_size": 116.864,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -633,7 +633,7 @@ class EfficientNet_B6_Weights(WeightsEnum):
                 }
             },
             "_ops": 19.068,
-            "_weight_size": 165.362,
+            "_file_size": 165.362,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -657,7 +657,7 @@ class EfficientNet_B7_Weights(WeightsEnum):
                 }
             },
             "_ops": 37.746,
-            "_weight_size": 254.675,
+            "_file_size": 254.675,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -683,7 +683,7 @@ class EfficientNet_V2_S_Weights(WeightsEnum):
                 }
             },
             "_ops": 8.366,
-            "_weight_size": 82.704,
+            "_file_size": 82.704,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
                 `new training recipe
@@ -713,7 +713,7 @@ class EfficientNet_V2_M_Weights(WeightsEnum):
                 }
             },
             "_ops": 24.582,
-            "_weight_size": 208.01,
+            "_file_size": 208.01,
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's
                 `new training recipe
@@ -746,7 +746,7 @@ class EfficientNet_V2_L_Weights(WeightsEnum):
                 }
             },
             "_ops": 56.08,
-            "_weight_size": 454.573,
+            "_file_size": 454.573,
             "_docs": """These weights are ported from the original paper.""",
         },
     )

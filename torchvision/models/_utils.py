@@ -191,7 +191,7 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[D
                 # used to be a pretrained parameter.
                 pretrained_positional = weights_arg is not sentinel
                 if pretrained_positional:
-                    # We put the pretrained argument under its legacy name in the keyword argument dictionary to have a
+                    # We put the pretrained argument under its legacy name in the keyword argument dictionary to have
                     # unified access to the value if the default value is a callable.
                     kwargs[pretrained_param] = pretrained_arg = kwargs.pop(weights_param)
                 else:

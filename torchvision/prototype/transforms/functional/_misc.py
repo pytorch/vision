@@ -10,7 +10,7 @@ from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 from torchvision.utils import _log_api_usage_once
 
-from ..utils import is_simple_tensor
+from ._utils import is_simple_tensor
 
 
 def normalize_image_tensor(
@@ -60,18 +60,14 @@ def normalize(
 ) -> torch.Tensor:
     if not torch.jit.is_scripting():
         _log_api_usage_once(normalize)
-
-        if is_simple_tensor(inpt) or isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            inpt = inpt.as_subclass(torch.Tensor)
-        else:
-            raise TypeError(
-                f"Input can either be a plain tensor or an `Image` or `Video` datapoint, "
-                f"but got {type(inpt)} instead."
-            )
-
-    # Image or Video type should not be retained after normalization due to unknown data range
-    # Thus we return Tensor for input Image
-    return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        return normalize_image_tensor(inpt, mean=mean, std=std, inplace=inplace)
+    elif isinstance(inpt, (datapoints.Image, datapoints.Video)):
+        return inpt.normalize(mean=mean, std=std, inplace=inplace)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor or an `Image` or `Video` datapoint, " f"but got {type(inpt)} instead."
+        )
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
@@ -175,9 +171,7 @@ def gaussian_blur(
     if not torch.jit.is_scripting():
         _log_api_usage_once(gaussian_blur)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return gaussian_blur_image_tensor(inpt, kernel_size=kernel_size, sigma=sigma)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.gaussian_blur(kernel_size=kernel_size, sigma=sigma)

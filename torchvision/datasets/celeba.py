@@ -41,7 +41,7 @@ class CelebA(VisionDataset):
     """
 
     base_folder = "celeba"
-    # There currently does not appear to be a easy way to extract 7z in python (without introducing additional
+    # There currently does not appear to be an easy way to extract 7z in python (without introducing additional
     # dependencies). The "in-the-wild" (not aligned+cropped) images are only in 7z, so they are not available
     # right now.
     file_list = [

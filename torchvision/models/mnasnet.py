@@ -88,7 +88,7 @@ def _round_to_multiple_of(val: float, divisor: int, round_up_bias: float = 0.9) 
 
 
 def _get_depths(alpha: float) -> List[int]:
-    """Scales tensor depths as in reference MobileNet code, prefers rouding up
+    """Scales tensor depths as in reference MobileNet code, prefers rounding up
     rather than down."""
     depths = [32, 16, 24, 40, 80, 96, 192, 320]
     return [_round_to_multiple_of(depth * alpha, 8) for depth in depths]
@@ -232,7 +232,7 @@ class MNASNet0_5_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.104,
-            "_weight_size": 8.591,
+            "_file_size": 8.591,
             "_docs": """These weights reproduce closely the results of the paper.""",
         },
     )
@@ -254,7 +254,7 @@ class MNASNet0_75_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.215,
-            "_weight_size": 12.303,
+            "_file_size": 12.303,
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -278,7 +278,7 @@ class MNASNet1_0_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.314,
-            "_weight_size": 16.915,
+            "_file_size": 16.915,
             "_docs": """These weights reproduce closely the results of the paper.""",
         },
     )
@@ -300,7 +300,7 @@ class MNASNet1_3_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.526,
-            "_weight_size": 24.246,
+            "_file_size": 24.246,
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
