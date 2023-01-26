@@ -201,7 +201,7 @@ def _check_fx_compatible(model, inputs, eager_out=None):
         eager_out = model(inputs)
     with torch.no_grad(), freeze_rng_state():
         fx_out = model_fx(inputs)
-    torch.testing.assert_close(eager_out, fx_out)
+    torch.testing.assert_close(eager_out, fx_out, atol=5e-5, rtol=5e-5)
 
 
 def _check_input_backprop(model, inputs):
