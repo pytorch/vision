@@ -6,7 +6,6 @@ import torch
 
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
-from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
 from .utils import is_simple_tensor, query_chw
@@ -20,7 +19,7 @@ class Grayscale(Transform):
         datapoints.Video,
     )
 
-    def __init__(self, num_output_channels: Literal[1, 3] = 1):
+    def __init__(self, num_output_channels: int = 1):
         super().__init__()
         self.num_output_channels = num_output_channels
 
