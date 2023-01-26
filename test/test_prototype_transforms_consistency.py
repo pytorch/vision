@@ -149,6 +149,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(num_output_channels=3),
         ],
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=["RGB", "GRAY"]),
+        # Use default tolerances of `torch.testing.assert_close`
+        closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
         prototype_transforms.ConvertDtype,
@@ -634,6 +636,106 @@ def test_call_consistency(config, args_kwargs):
         supports_pil=config.supports_pil,
         closeness_kwargs=config.closeness_kwargs,
     )
+
+
+@pytest.mark.parametrize(
+    ("config", "args_kwargs"),
+    [
+        pytest.param(
+            config, args_kwargs, id=f"{config.legacy_cls.__name__}-{idx:0{len(str(len(config.args_kwargs)))}d}"
+        )
+        for config in CONSISTENCY_CONFIGS
+        for idx, args_kwargs in enumerate(config.args_kwargs or [None])
+    ],
+)
+def test_jit_and_get_params_consistency(config, args_kwargs):
+    def check_get_params(prototype_cls, legacy_cls):
+        if not hasattr(config.prototype_cls, "get_params"):
+            raise AssertionError(
+                "The legacy transform defines a `get_params`, but the prototype does not. "
+                "Did you forget to set the `_v1_transforms_cls` class attribute on the prototype transform?"
+            )
+
+        try:
+            torch.jit.script(legacy_cls.get_params)
+        except Exception as exc:
+            raise pytest.UsageError("The `get_params` method of the legacy transform cannot be scripted!") from exc
+
+        try:
+            torch.jit.script(prototype_cls.get_params)
+        except Exception as exc:
+            raise AssertionError(
+                "Can't script the prototype `get_params` method. "
+                "This means there is a bug in the automatic aliasing from the corresponding legacy transform."
+            ) from exc
+
+    def check_call(prototype_transform_eager, legacy_transform_eager, *, images, closeness_kwargs):
+        try:
+            legacy_transform_scripted = torch.jit.script(legacy_transform_eager)
+        except Exception as exc:
+            msg = str(exc)
+
+            # Some of the transform parameter variations cannot be used while scripting. For example, `Resize(size=1)`
+            # is not scriptable. One has to use `Resize(size=[1])` instead. To avoid creating a second set of
+            # parameters, we just abort the JIT call check in such a case.
+            if (
+                re.search(
+                    r"Expected a value of type 'List\[int\]' for argument '\w+' but instead found type 'int'", msg
+                )
+                is not None
+            ):
+                return
+
+            # This error happens when `torch.jit.script` hits an unguarded `_log_api_usage_once`. Since that means that
+            # the transform doesn't support scripting in general, we abort the JIT call check.
+            if re.search(r"'Any' object has no attribute or method '__module__'", msg) is not None:
+                return
+
+            raise pytest.UsageError("The legacy transform cannot be scripted!") from exc
+
+        try:
+            prototype_transform_scripted = torch.jit.script(prototype_transform_eager)
+        except Exception as exc:
+            raise AssertionError("The prototype transform cannot be scripted!") from exc
+
+        for image in images:
+            image = image.as_subclass(torch.Tensor)
+            image_repr = f"[{tuple(image.shape)}, {str(image.dtype).rsplit('.')[-1]}]"
+
+            try:
+                torch.manual_seed(0)
+                output_legacy_scripted = legacy_transform_scripted(image)
+            except Exception as exc:
+                raise AssertionError(
+                    f"Calling the scripted legacy transform with {image_repr} raised the error above!"
+                ) from exc
+
+            try:
+                torch.manual_seed(0)
+                output_prototype_scripted = prototype_transform_scripted(image)
+            except Exception as exc:
+                raise AssertionError(
+                    f"Calling the scripted prototype transform with {image_repr} raised the error above!"
+                ) from exc
+
+            assert_close(
+                output_prototype_scripted,
+                output_legacy_scripted,
+                msg=lambda msg: f"JIT runtime consistency check failed with: \n\n{msg}",
+                **closeness_kwargs,
+            )
+
+    if hasattr(config.legacy_cls, "get_params"):
+        check_get_params(config.prototype_cls, config.legacy_cls)
+
+    if args_kwargs is not None:
+        args, kwargs = args_kwargs
+        check_call(
+            config.prototype_cls(*args, **kwargs),
+            config.legacy_cls(*args, **kwargs),
+            images=make_images(**config.make_images_kwargs),
+            closeness_kwargs=config.closeness_kwargs,
+        )
 
 
 class TestContainerTransforms:

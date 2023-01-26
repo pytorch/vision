@@ -5,6 +5,7 @@ import numpy as np
 import PIL.Image
 import torch
 
+from torchvision import transforms as _transforms
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import Transform
 from torchvision.transforms import functional as _F
@@ -30,6 +31,8 @@ class ToTensor(Transform):
 
 # TODO: in other PR (?) undeprecate those and make them use _rgb_to_gray?
 class Grayscale(Transform):
+    _v1_transform_cls = _transforms.Grayscale
+
     _transformed_types = (
         datapoints.Image,
         PIL.Image.Image,
@@ -68,6 +71,8 @@ class Grayscale(Transform):
 
 
 class RandomGrayscale(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomGrayscale
+
     _transformed_types = (
         datapoints.Image,
         PIL.Image.Image,

@@ -6,7 +6,7 @@ from typing import Any, cast, Dict, List, Optional, Tuple, Union
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
-
+from torchvision import transforms as _transforms
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
@@ -16,6 +16,14 @@ from .utils import has_any, is_simple_tensor, query_chw, query_spatial_size
 
 
 class RandomErasing(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomErasing
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        params = super()._extract_params_for_v1_transform()
+        if params["value"] is None:
+            params["value"] = "random"
+        return params
+
     _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
 
     def __init__(

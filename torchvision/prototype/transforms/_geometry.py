@@ -6,6 +6,7 @@ from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 import PIL.Image
 import torch
 
+from torchvision import transforms as _transforms
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
@@ -27,16 +28,22 @@ from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomHorizontalFlip
+
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.horizontal_flip(inpt)
 
 
 class RandomVerticalFlip(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomVerticalFlip
+
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.vertical_flip(inpt)
 
 
 class Resize(Transform):
+    _v1_transform_cls = _transforms.Resize
+
     def __init__(
         self,
         size: Union[int, Sequence[int]],
@@ -66,6 +73,8 @@ class Resize(Transform):
 
 
 class CenterCrop(Transform):
+    _v1_transform_cls = _transforms.CenterCrop
+
     def __init__(self, size: Union[int, Sequence[int]]):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -75,6 +84,8 @@ class CenterCrop(Transform):
 
 
 class RandomResizedCrop(Transform):
+    _v1_transform_cls = _transforms.RandomResizedCrop
+
     def __init__(
         self,
         size: Union[int, Sequence[int]],
@@ -171,6 +182,8 @@ class FiveCrop(Transform):
         torch.Size([5])
     """
 
+    _v1_transform_cls = _transforms.FiveCrop
+
     _transformed_types = (
         datapoints.Image,
         PIL.Image.Image,
@@ -197,6 +210,8 @@ class TenCrop(Transform):
     See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
     """
 
+    _v1_transform_cls = _transforms.TenCrop
+
     _transformed_types = (
         datapoints.Image,
         PIL.Image.Image,
@@ -220,6 +235,8 @@ class TenCrop(Transform):
 
 
 class Pad(Transform):
+    _v1_transform_cls = _transforms.Pad
+
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
@@ -282,6 +299,8 @@ class RandomZoomOut(_RandomApplyTransform):
 
 
 class RandomRotation(Transform):
+    _v1_transform_cls = _transforms.RandomRotation
+
     def __init__(
         self,
         degrees: Union[numbers.Number, Sequence],
@@ -319,6 +338,8 @@ class RandomRotation(Transform):
 
 
 class RandomAffine(Transform):
+    _v1_transform_cls = _transforms.RandomAffine
+
     def __init__(
         self,
         degrees: Union[numbers.Number, Sequence],
@@ -396,6 +417,8 @@ class RandomAffine(Transform):
 
 
 class RandomCrop(Transform):
+    _v1_transform_cls = _transforms.RandomCrop
+
     def __init__(
         self,
         size: Union[int, Sequence[int]],
@@ -488,6 +511,8 @@ class RandomCrop(Transform):
 
 
 class RandomPerspective(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomPerspective
+
     def __init__(
         self,
         distortion_scale: float = 0.5,
@@ -547,6 +572,8 @@ class RandomPerspective(_RandomApplyTransform):
 
 
 class ElasticTransform(Transform):
+    _v1_transform_cls = _transforms.ElasticTransform
+
     def __init__(
         self,
         alpha: Union[float, Sequence[float]] = 50.0,

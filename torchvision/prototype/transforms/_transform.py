@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 import enum
-from typing import Any, Callable, Dict, List, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
+
+from torchvision.prototype import datapoints
 from torchvision.prototype.transforms.utils import check_type
 from torchvision.utils import _log_api_usage_once
 
@@ -53,6 +57,41 @@ class Transform(nn.Module):
             extra.append(f"{name}={value}")
 
         return ", ".join(extra)
+
+    # FIXME explain everything below
+
+    _v1_transform_cls: Optional[Type[nn.Module]] = None
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        common_attrs = nn.Module().__dict__.keys()
+        params = {
+            attr: value
+            for attr, value in self.__dict__.items()
+            if not attr.startswith("_") and attr not in common_attrs
+        }
+
+        if "fill" not in params:
+            return params
+
+        fill_type_dict = params.pop("fill")
+        fill_candidates = [fill_type_dict[typ] for typ in [torch.Tensor, datapoints.Image]]
+        try:
+            fill = next(filter(lambda candidate: candidate is not None, fill_candidates))
+        except StopIteration:
+            fill = None
+        params["fill"] = fill
+        return params
+
+    def __init_subclass__(cls) -> None:
+        if cls._v1_transform_cls is not None and hasattr(cls._v1_transform_cls, "get_params"):
+            cls.get_params = cls._v1_transform_cls.get_params  # type: ignore[attr-defined]
+
+    def __prepare_scriptable__(self) -> nn.Module:
+        if self._v1_transform_cls is None:
+            # FIXME: add more information
+            raise RuntimeError("This transform cannot be scripted!")
+
+        return self._v1_transform_cls(**self._extract_params_for_v1_transform())
 
 
 class _RandomApplyTransform(Transform):
