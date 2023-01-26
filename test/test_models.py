@@ -364,6 +364,7 @@ _model_params = {
     "vit_h_14": {
         "image_size": 56,
         "input_shape": (1, 3, 56, 56),
+        "weight_name": "IMAGENET1K_SWAG_LINEAR_V1",
     },
     "mvit_v1_b": {
         "input_shape": (1, 3, 16, 224, 224),
@@ -375,7 +376,6 @@ _model_params = {
         "input_shape": (1, 3, 16, 224, 224),
     },
     "regnet_y_128gf": {"weight_name": "IMAGENET1K_SWAG_LINEAR_V1"},
-    "vit_h_14": {"weight_name": "IMAGENET1K_SWAG_LINEAR_V1"},
     "vitc_b_16": {"weight_name": None},
 }
 # speeding up slow models:
