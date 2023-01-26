@@ -71,6 +71,9 @@ from ._color import (
     posterize_image_pil,
     posterize_image_tensor,
     posterize_video,
+    rgb_to_grayscale,
+    rgb_to_grayscale_image_pil,
+    rgb_to_grayscale_image_tensor,
     solarize,
     solarize_image_pil,
     solarize_image_tensor,
@@ -167,4 +170,4 @@ from ._misc import (
 from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_video
 from ._type_conversion import pil_to_tensor, to_image_pil, to_image_tensor, to_pil_image
 
-from ._deprecated import get_image_size, rgb_to_grayscale, to_grayscale, to_tensor  # usort: skip
+from ._deprecated import get_image_size, to_grayscale, to_tensor  # usort: skip

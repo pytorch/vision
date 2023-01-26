@@ -11,6 +11,41 @@ from ._transform import _RandomApplyTransform
 from .utils import is_simple_tensor, query_chw
 
 
+class Grayscale(Transform):
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
+
+    def __init__(self, num_output_channels: int = 1):
+        super().__init__()
+        self.num_output_channels = num_output_channels
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
+
+
+class RandomGrayscale(_RandomApplyTransform):
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
+
+    def __init__(self, p: float = 0.1) -> None:
+        super().__init__(p=p)
+
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        num_input_channels, *_ = query_chw(flat_inputs)
+        return dict(num_input_channels=num_input_channels)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
+
+
 class ColorJitter(Transform):
     def __init__(
         self,

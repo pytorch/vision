@@ -672,7 +672,17 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "config",
-    [{"value": 0.2}, {"value": "random"}, {"value": (0.2, 0.2, 0.2)}, {"value": "random", "ratio": (0.1, 0.2)}],
+    [
+        {},
+        {"value": 1},
+        {"value": 0.2},
+        {"value": "random"},
+        {"value": (1, 1, 1)},
+        {"value": (0.2, 0.2, 0.2)},
+        {"value": [1, 1, 1]},
+        {"value": [0.2, 0.2, 0.2]},
+        {"value": "random", "ratio": (0.1, 0.2)},
+    ],
 )
 def test_random_erasing(device, config):
     tensor, _ = _create_data(24, 32, channels=3, device=device)
