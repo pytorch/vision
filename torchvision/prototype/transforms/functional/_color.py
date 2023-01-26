@@ -9,20 +9,23 @@ from torchvision.transforms.functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
 
-from ._meta import _num_value_bits, convert_dtype_image_tensor, get_num_channels
+from ._meta import _num_value_bits, convert_dtype_image_tensor
 from ._utils import is_simple_tensor
 
 
 def _rgb_to_grayscale_image_tensor(
     image: torch.Tensor, num_output_channels: int = 1, preserve_dtype: bool = True
 ) -> torch.Tensor:
+    if image.shape[-3] == 1:
+        return image.clone()
+
     r, g, b = image.unbind(dim=-3)
     l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
     l_img = l_img.unsqueeze(dim=-3)
     if preserve_dtype:
         l_img = l_img.to(image.dtype)
     if num_output_channels == 3:
-        return l_img.expand(image.shape)
+        l_img = l_img.expand(image.shape)
     return l_img
 
 
@@ -40,11 +43,6 @@ def rgb_to_grayscale(
         _log_api_usage_once(rgb_to_grayscale)
     if num_output_channels not in (1, 3):
         raise ValueError(f"num_output_channels must be 1 or 3, got {num_output_channels}.")
-    num_channels = get_num_channels(inpt)
-    if num_channels != 3:
-        raise ValueError(
-            f"Image is expected to have 3 channels (RGB) to be converted to grayscale. Got {num_channels}."
-        )
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return rgb_to_grayscale_image_tensor(inpt, num_output_channels=num_output_channels)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
