@@ -23,8 +23,10 @@ class Datapoint(torch.Tensor):
         data: Any,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: bool = False,
+        requires_grad: Optional[bool] = None,
     ) -> torch.Tensor:
+        if requires_grad is None:
+            requires_grad = data.requires_grad if isinstance(data, torch.Tensor) else False
         return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
 
     # FIXME: this is just here for BC with the prototype datasets. Some datasets use the Datapoint directly to have a
@@ -36,7 +38,7 @@ class Datapoint(torch.Tensor):
         data: Any,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: bool = False,
+        requires_grad: Optional[bool] = None,
     ) -> Datapoint:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return tensor.as_subclass(Datapoint)
