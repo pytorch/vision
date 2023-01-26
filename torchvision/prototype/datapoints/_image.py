@@ -169,6 +169,12 @@ class Image(Datapoint):
         )
         return Image.wrap_like(self, output)
 
+    def to_grayscale(self, num_output_channels: int = 1) -> Image:
+        output = self._F.rgb_to_grayscale_image_tensor(
+            self.as_subclass(torch.Tensor), num_output_channels=num_output_channels
+        )
+        return Image.wrap_like(self, output)
+
     def adjust_brightness(self, brightness_factor: float) -> Image:
         output = self._F.adjust_brightness_image_tensor(
             self.as_subclass(torch.Tensor), brightness_factor=brightness_factor
