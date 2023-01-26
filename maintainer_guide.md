@@ -28,8 +28,8 @@ fbcode or revert the change. We should be careful about models running in
 production and relying on torchvision ops.
 
 The `test` folder is not importable and is **private.** Even meta-internal
-projects should *not* rely on it (it has happned in the past and is now
-programmatically impossible.)
+projects should *not* rely on it (it has happened in the past and is now
+programmatically impossible).
 
 The training references do not have BC guarantees. Breaking changes are
 possible, but we should make sure that the tutorials are still running properly,
