@@ -8,13 +8,12 @@ from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
-from typing_extensions import Literal
 
 from ._meta import _num_value_bits, convert_dtype_image_tensor, get_num_channels
 from ._utils import is_simple_tensor
 
 
-def rgb_to_grayscale_tensor(image: torch.Tensor, num_output_channels: Literal[1, 3] = 1) -> torch.Tensor:
+def rgb_to_grayscale_tensor(image: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
     r, g, b = image.unbind(dim=-3)
     l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
     l_img = l_img.unsqueeze(dim=-3)
@@ -24,7 +23,7 @@ def rgb_to_grayscale_tensor(image: torch.Tensor, num_output_channels: Literal[1,
 
 
 def rgb_to_grayscale(
-    inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], num_output_channels: Literal[1, 3] = 1
+    inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], num_output_channels: int = 1
 ) -> Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]:
     if not torch.jit.is_scripting():
         _log_api_usage_once(rgb_to_grayscale)
