@@ -686,14 +686,15 @@ def test_classification_model(model_fn, dev):
     # We use float64 (.double()) to reduce differences between cpu and gpu result
     model.eval().to(device=dev).double()
     x = _get_image(input_shape=input_shape, real_image=real_image, device=dev).double()
-    out = model(x)
+    with torch.no_grad(), freeze_rng_state():
+        out = model(x)
     _assert_expected(out.cpu(), model_name, prec=1e-3)
     assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
     if dev == "cuda":
-        with torch.cuda.amp.autocast():
+        with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
