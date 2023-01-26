@@ -42,11 +42,11 @@ class ColorJitter(Transform):
             value = [center - value, center + value]
             if clip_first_on_zero:
                 value[0] = max(value[0], 0.0)
-        elif isinstance(value, collections.abc.Sequence) and len(value) == 2:
-            if not bound[0] <= value[0] <= value[1] <= bound[1]:
-                raise ValueError(f"{name} values should be between {bound}")
-        else:
+        elif not (isinstance(value, collections.abc.Sequence) and len(value) == 2):
             raise TypeError(f"{name} should be a single number or a sequence with length 2.")
+
+        if not bound[0] <= value[0] <= value[1] <= bound[1]:
+            raise ValueError(f"{name} values should be between {bound}")
 
         return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
 
