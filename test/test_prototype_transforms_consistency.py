@@ -34,6 +34,15 @@ from torchvision.transforms import functional as legacy_F
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
 
 
+class NotScriptableArgsKwargs(ArgsKwargs):
+    """
+    This class is used to mark parameters that render the transform non-scriptable. They still work in eager mode and
+    thus will be tested there, but will be skipped by the JIT tests.
+    """
+
+    pass
+
+
 class ConsistencyConfig:
     def __init__(
         self,
@@ -73,7 +82,7 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.Resize,
         legacy_transforms.Resize,
         [
-            ArgsKwargs(32),
+            NotScriptableArgsKwargs(32),
             ArgsKwargs([32]),
             ArgsKwargs((32, 29)),
             ArgsKwargs((31, 28), interpolation=prototype_transforms.InterpolationMode.NEAREST),
@@ -84,9 +93,9 @@ CONSISTENCY_CONFIGS = [
             # ArgsKwargs((30, 27), interpolation=0),
             # ArgsKwargs((35, 29), interpolation=2),
             # ArgsKwargs((34, 25), interpolation=3),
-            ArgsKwargs(31, max_size=32),
+            NotScriptableArgsKwargs(31, max_size=32),
             ArgsKwargs([31], max_size=32),
-            ArgsKwargs(30, max_size=100),
+            NotScriptableArgsKwargs(30, max_size=100),
             ArgsKwargs([31], max_size=32),
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
@@ -123,15 +132,15 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.Pad,
         legacy_transforms.Pad,
         [
-            ArgsKwargs(3),
+            NotScriptableArgsKwargs(3),
             ArgsKwargs([3]),
             ArgsKwargs([2, 3]),
             ArgsKwargs([3, 2, 1, 4]),
-            ArgsKwargs(5, fill=1, padding_mode="constant"),
+            NotScriptableArgsKwargs(5, fill=1, padding_mode="constant"),
             ArgsKwargs([5], fill=1, padding_mode="constant"),
-            ArgsKwargs(5, padding_mode="edge"),
-            ArgsKwargs(5, padding_mode="reflect"),
-            ArgsKwargs(5, padding_mode="symmetric"),
+            NotScriptableArgsKwargs(5, padding_mode="edge"),
+            NotScriptableArgsKwargs(5, padding_mode="reflect"),
+            NotScriptableArgsKwargs(5, padding_mode="symmetric"),
         ],
     ),
     ConsistencyConfig(
@@ -173,7 +182,7 @@ CONSISTENCY_CONFIGS = [
     ConsistencyConfig(
         prototype_transforms.ToPILImage,
         legacy_transforms.ToPILImage,
-        [ArgsKwargs()],
+        [NotScriptableArgsKwargs()],
         make_images_kwargs=dict(
             color_spaces=[
                 "GRAY",
@@ -189,7 +198,7 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.Lambda,
         legacy_transforms.Lambda,
         [
-            ArgsKwargs(lambda image: image / 2),
+            NotScriptableArgsKwargs(lambda image: image / 2),
         ],
         # Technically, this also supports PIL, but it is overkill to write a function here that supports tensor and PIL
         # images given that the transform does nothing but call it anyway.
@@ -383,15 +392,15 @@ CONSISTENCY_CONFIGS = [
         [
             ArgsKwargs(12),
             ArgsKwargs((15, 17)),
-            ArgsKwargs(11, padding=1),
+            NotScriptableArgsKwargs(11, padding=1),
             ArgsKwargs(11, padding=[1]),
             ArgsKwargs((8, 13), padding=(2, 3)),
             ArgsKwargs((14, 9), padding=(0, 2, 1, 0)),
             ArgsKwargs(36, pad_if_needed=True),
             ArgsKwargs((7, 8), fill=1),
-            ArgsKwargs(5, fill=(1, 2, 3)),
+            NotScriptableArgsKwargs(5, fill=(1, 2, 3)),
             ArgsKwargs(12),
-            ArgsKwargs(15, padding=2, padding_mode="edge"),
+            NotScriptableArgsKwargs(15, padding=2, padding_mode="edge"),
             ArgsKwargs(17, padding=(1, 0), padding_mode="reflect"),
             ArgsKwargs(8, padding=(3, 0, 0, 1), padding_mode="symmetric"),
         ],
@@ -607,7 +616,7 @@ def check_call_consistency(
             )
 
 
-parametrize_over_consistency_configs = pytest.mark.parametrize(
+@pytest.mark.parametrize(
     ("config", "args_kwargs"),
     [
         pytest.param(
@@ -617,9 +626,6 @@ parametrize_over_consistency_configs = pytest.mark.parametrize(
         for idx, args_kwargs in enumerate(config.args_kwargs)
     ],
 )
-
-
-@parametrize_over_consistency_configs
 @pytest.mark.filterwarnings("ignore")
 def test_call_consistency(config, args_kwargs):
     args, kwargs = args_kwargs
@@ -649,41 +655,24 @@ def test_call_consistency(config, args_kwargs):
     )
 
 
-@parametrize_over_consistency_configs
+@pytest.mark.parametrize(
+    ("config", "args_kwargs"),
+    [
+        pytest.param(
+            config, args_kwargs, id=f"{config.legacy_cls.__name__}-{idx:0{len(str(len(config.args_kwargs)))}d}"
+        )
+        for config in CONSISTENCY_CONFIGS
+        for idx, args_kwargs in enumerate(config.args_kwargs)
+        if not isinstance(args_kwargs, NotScriptableArgsKwargs)
+    ],
+)
 def test_jit_consistency(config, args_kwargs):
     args, kwargs = args_kwargs
 
     prototype_transform_eager = config.prototype_cls(*args, **kwargs)
     legacy_transform_eager = config.legacy_cls(*args, **kwargs)
 
-    try:
-        legacy_transform_scripted = torch.jit.script(legacy_transform_eager)
-    except Exception as exc:
-        msg = str(exc)
-
-        # Some of the transform parameter variations cannot be used while scripting. For example, `Resize(size=1)`
-        # is not scriptable. One has to use `Resize(size=[1])` instead. To avoid creating a second set of
-        # parameters, we just abort the JIT call check in such a case.
-        if (
-            re.search(r"Expected a value of type 'List\[int\]' for argument '\w+' but instead found type 'int'", msg)
-            is not None
-        ):
-            return
-        if "Expected a value of type 'Union[float, int]' for argument 'fill'" in msg:
-            return
-        # In some cases trying to script the same transformation multiple times with parameters that are not supported,
-        # `torch.jit.script` will emit a cryptic error message rather than one like the ones above.
-        if "Can't redefine method: forward on class:" in msg:
-            return
-
-        # This error happens when `torch.jit.script` hits an unguarded `_log_api_usage_once`. Since that means that
-        # the transform doesn't support scripting in general, we abort the JIT call check.
-        if "'Any' object has no attribute or method '__module__'" in msg:
-            return
-
-        # If we hit some other error, we fail loudly to avoid a false sense of security
-        raise pytest.UsageError("The legacy transform cannot be scripted!") from exc
-
+    legacy_transform_scripted = torch.jit.script(legacy_transform_eager)
     prototype_transform_scripted = torch.jit.script(prototype_transform_eager)
 
     for image in make_images(**config.make_images_kwargs):
