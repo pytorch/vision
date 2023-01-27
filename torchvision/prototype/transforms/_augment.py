@@ -23,7 +23,7 @@ class RandomErasing(_RandomApplyTransform):
         p: float = 0.5,
         scale: Tuple[float, float] = (0.02, 0.33),
         ratio: Tuple[float, float] = (0.3, 3.3),
-        value: float = 0,
+        value: float = 0.0,
         inplace: bool = False,
     ):
         super().__init__(p=p)
@@ -42,11 +42,11 @@ class RandomErasing(_RandomApplyTransform):
         self.scale = scale
         self.ratio = ratio
         if isinstance(value, (int, float)):
-            self.value = [value]
+            self.value = [float(value)]
         elif isinstance(value, str):
             self.value = None
-        elif isinstance(value, tuple):
-            self.value = list(value)
+        elif isinstance(value, (list, tuple)):
+            self.value = [float(v) for v in value]
         else:
             self.value = value
         self.inplace = inplace

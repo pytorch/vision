@@ -20,7 +20,7 @@ class Video(Datapoint):
         *,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: bool = False,
+        requires_grad: Optional[bool] = None,
     ) -> Video:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if data.ndim < 4:
@@ -170,6 +170,12 @@ class Video(Datapoint):
     ) -> Video:
         output = self._F.elastic_video(
             self.as_subclass(torch.Tensor), displacement, interpolation=interpolation, fill=fill
+        )
+        return Video.wrap_like(self, output)
+
+    def rgb_to_grayscale(self, num_output_channels: int = 1) -> Video:
+        output = self._F.rgb_to_grayscale_image_tensor(
+            self.as_subclass(torch.Tensor), num_output_channels=num_output_channels
         )
         return Video.wrap_like(self, output)
 
