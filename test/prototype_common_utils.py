@@ -238,7 +238,6 @@ class TensorLoader:
 
 @dataclasses.dataclass
 class ImageLoader(TensorLoader):
-    color_space: datapoints.ColorSpace
     spatial_size: Tuple[int, int] = dataclasses.field(init=False)
     num_channels: int = dataclasses.field(init=False)
 
@@ -248,10 +247,10 @@ class ImageLoader(TensorLoader):
 
 
 NUM_CHANNELS_MAP = {
-    datapoints.ColorSpace.GRAY: 1,
-    datapoints.ColorSpace.GRAY_ALPHA: 2,
-    datapoints.ColorSpace.RGB: 3,
-    datapoints.ColorSpace.RGB_ALPHA: 4,
+    "GRAY": 1,
+    "GRAY_ALPHA": 2,
+    "RGB": 3,
+    "RGBA": 4,
 }
 
 
@@ -265,7 +264,7 @@ def get_num_channels(color_space):
 def make_image_loader(
     size="random",
     *,
-    color_space=datapoints.ColorSpace.RGB,
+    color_space="RGB",
     extra_dims=(),
     dtype=torch.float32,
     constant_alpha=True,
@@ -276,11 +275,11 @@ def make_image_loader(
     def fn(shape, dtype, device):
         max_value = get_max_value(dtype)
         data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
-        if color_space in {datapoints.ColorSpace.GRAY_ALPHA, datapoints.ColorSpace.RGB_ALPHA} and constant_alpha:
+        if color_space in {"GRAY_ALPHA", "RGBA"} and constant_alpha:
             data[..., -1, :, :] = max_value
-        return datapoints.Image(data, color_space=color_space)
+        return datapoints.Image(data)
 
-    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype, color_space=color_space)
+    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype)
 
 
 make_image = from_loader(make_image_loader)
@@ -290,10 +289,10 @@ def make_image_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        datapoints.ColorSpace.GRAY,
-        datapoints.ColorSpace.GRAY_ALPHA,
-        datapoints.ColorSpace.RGB,
-        datapoints.ColorSpace.RGB_ALPHA,
+        "GRAY",
+        "GRAY_ALPHA",
+        "RGB",
+        "RGBA",
     ),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.float32, torch.uint8),
@@ -306,7 +305,7 @@ def make_image_loaders(
 make_images = from_loaders(make_image_loaders)
 
 
-def make_image_loader_for_interpolation(size="random", *, color_space=datapoints.ColorSpace.RGB, dtype=torch.uint8):
+def make_image_loader_for_interpolation(size="random", *, color_space="RGB", dtype=torch.uint8):
     size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
 
@@ -318,24 +317,24 @@ def make_image_loader_for_interpolation(size="random", *, color_space=datapoints
             .resize((width, height))
             .convert(
                 {
-                    datapoints.ColorSpace.GRAY: "L",
-                    datapoints.ColorSpace.GRAY_ALPHA: "LA",
-                    datapoints.ColorSpace.RGB: "RGB",
-                    datapoints.ColorSpace.RGB_ALPHA: "RGBA",
+                    "GRAY": "L",
+                    "GRAY_ALPHA": "LA",
+                    "RGB": "RGB",
+                    "RGBA": "RGBA",
                 }[color_space]
             )
         )
 
         image_tensor = convert_dtype_image_tensor(to_image_tensor(image_pil).to(device=device), dtype=dtype)
 
-        return datapoints.Image(image_tensor, color_space=color_space)
+        return datapoints.Image(image_tensor)
 
-    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype, color_space=color_space)
+    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype)
 
 
 def make_image_loaders_for_interpolation(
     sizes=((233, 147),),
-    color_spaces=(datapoints.ColorSpace.RGB,),
+    color_spaces=("RGB",),
     dtypes=(torch.uint8,),
 ):
     for params in combinations_grid(size=sizes, color_space=color_spaces, dtype=dtypes):
@@ -583,7 +582,7 @@ class VideoLoader(ImageLoader):
 def make_video_loader(
     size="random",
     *,
-    color_space=datapoints.ColorSpace.RGB,
+    color_space="RGB",
     num_frames="random",
     extra_dims=(),
     dtype=torch.uint8,
@@ -592,12 +591,10 @@ def make_video_loader(
     num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
 
     def fn(shape, dtype, device):
-        video = make_image(size=shape[-2:], color_space=color_space, extra_dims=shape[:-3], dtype=dtype, device=device)
-        return datapoints.Video(video, color_space=color_space)
+        video = make_image(size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device)
+        return datapoints.Video(video)
 
-    return VideoLoader(
-        fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype, color_space=color_space
-    )
+    return VideoLoader(fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype)
 
 
 make_video = from_loader(make_video_loader)
@@ -607,8 +604,8 @@ def make_video_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        datapoints.ColorSpace.GRAY,
-        datapoints.ColorSpace.RGB,
+        "GRAY",
+        "RGB",
     ),
     num_frames=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,
