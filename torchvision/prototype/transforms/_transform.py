@@ -82,10 +82,6 @@ class Transform(nn.Module):
         params["fill"] = fill
         return params
 
-    def __init_subclass__(cls) -> None:
-        if cls._v1_transform_cls is not None and hasattr(cls._v1_transform_cls, "get_params"):
-            cls.get_params = cls._v1_transform_cls.get_params  # type: ignore[attr-defined]
-
     def __prepare_scriptable__(self) -> nn.Module:
         if self._v1_transform_cls is None:
             # FIXME: add more information
