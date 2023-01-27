@@ -83,6 +83,8 @@ class Transform(nn.Module):
         # with `prototype.transforms._utils._setup_fill_arg()`, which returns a defaultdict that holds the fill value
         # for the different datapoint types. Below we extract the value for images and return that together with the
         # other params.
+        # This is needed for `Pad`, `ElasticTransform`, `RandomAffine`, `RandomCrop`, `RandomPerspective` and
+        # `RandomRotation`
         fill_type_dict = params.pop("fill")
         # Although unlikely, someone could set a different `fill` value for plain tensors and `datapoints.Image`'s. In
         # that case we prioritize the value for plain tensors, since that is what JIT is working with.
@@ -104,6 +106,7 @@ class Transform(nn.Module):
             raise RuntimeError(
                 f"Transform {type(self.__name__)} cannot be JIT scripted. "
                 f"This is only support for backward compatibility with transforms which already in v1."
+                f"For torchscript support (on tensors only), you can use the functional API instead."
             )
 
         return self._v1_transform_cls(**self._extract_params_for_v1_transform())

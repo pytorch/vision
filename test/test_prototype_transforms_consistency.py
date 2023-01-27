@@ -607,7 +607,7 @@ def check_call_consistency(
             )
 
 
-consistency_configs = pytest.mark.parametrize(
+parametrize_over_consistency_configs = pytest.mark.parametrize(
     ("config", "args_kwargs"),
     [
         pytest.param(
@@ -619,7 +619,7 @@ consistency_configs = pytest.mark.parametrize(
 )
 
 
-@consistency_configs
+@parametrize_over_consistency_configs
 @pytest.mark.filterwarnings("ignore")
 def test_call_consistency(config, args_kwargs):
     args, kwargs = args_kwargs
@@ -649,7 +649,7 @@ def test_call_consistency(config, args_kwargs):
     )
 
 
-@consistency_configs
+@parametrize_over_consistency_configs
 def test_jit_consistency(config, args_kwargs):
     args, kwargs = args_kwargs
 
