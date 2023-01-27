@@ -30,8 +30,7 @@ def list_model_fns(module):
 
 
 def _get_image(input_shape, real_image, device, weights=None, dtype=None):
-    """This routine loads a real or random image based on `real_image` argument.
-    """
+    """This routine loads a real or random image based on `real_image` argument."""
     if real_image:
         # TODO: Maybe unify file discovery logic with test_image.py
         GRACE_HOPPER = os.path.join(
