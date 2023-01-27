@@ -862,29 +862,31 @@ def test_gaussian_blur(device, channels, meth_kwargs):
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
-    "meth_kwargs",
+    "fill",
     [
-        {"fill": 1},
-        {"fill": 1.0},
-        {"fill": [1]},
-        {"fill": [1.0]},
-        {"fill": (1,)},
-        {"fill": (1.0,)},
-        {"fill": [1, 2, 3]},
-        {"fill": [1.0, 2.0, 3.0]},
-        {"fill": (1, 2, 3)},
-        {"fill": (1.0, 2.0, 3.0)},
+        1,
+        1.0,
+        [1],
+        [1.0],
+        (1,),
+        (1.0,),
+        [1, 2, 3],
+        [1.0, 2.0, 3.0],
+        (1, 2, 3),
+        (1.0, 2.0, 3.0),
     ],
 )
 @pytest.mark.parametrize("channels", [1, 3])
-def test_elastic_transform(device, channels, meth_kwargs):
-    fill = meth_kwargs.get("fill")
+def test_elastic_transform(device, channels, fill):
     if isinstance(fill, (list, tuple)) and len(fill) > 1 and channels == 1:
+        # For this the test would correctly fail, since the number of channels in the image does not match `fill`.
+        # Thus, this is not an issue in the transform, but rather a problem of parametrization that just gives the
+        # product of `fill` and `channels`.
         return
 
     _test_class_op(
         T.ElasticTransform,
-        meth_kwargs=meth_kwargs,
+        meth_kwargs=dict(fill=fill),
         channels=channels,
         device=device,
     )
