@@ -2104,8 +2104,12 @@ class ElasticTransform(torch.nn.Module):
             interpolation = _interpolation_modes_from_int(interpolation)
         self.interpolation = interpolation
 
-        if not isinstance(fill, (int, float)):
-            raise TypeError(f"fill should be int or float. Got {type(fill)}")
+        if isinstance(fill, (int, float)):
+            fill = [float(fill)]
+        elif isinstance(fill, (list, tuple)):
+            fill = [float(f) for f in fill]
+        else:
+            raise TypeError(f"fill should be int or float or a list or tuple of them. Got {type(fill)}")
         self.fill = fill
 
     @staticmethod
