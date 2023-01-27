@@ -858,3 +858,33 @@ def test_gaussian_blur(device, channels, meth_kwargs):
         agg_method="max",
         tol=tol,
     )
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "meth_kwargs",
+    [
+        {"fill": 1},
+        {"fill": 1.0},
+        {"fill": [1]},
+        {"fill": [1.0]},
+        {"fill": (1,)},
+        {"fill": (1.0,)},
+        {"fill": [1, 2, 3]},
+        {"fill": [1.0, 2.0, 3.0]},
+        {"fill": (1, 2, 3)},
+        {"fill": (1.0, 2.0, 3.0)},
+    ],
+)
+@pytest.mark.parametrize("channels", [1, 3])
+def test_elastic_transform(device, channels, meth_kwargs):
+    fill = meth_kwargs.get("fill")
+    if isinstance(fill, (list, tuple)) and len(fill) > 1 and channels == 1:
+        return
+
+    _test_class_op(
+        T.ElasticTransform,
+        meth_kwargs=meth_kwargs,
+        channels=channels,
+        device=device,
+    )
