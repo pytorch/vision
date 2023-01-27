@@ -31,17 +31,6 @@ def list_model_fns(module):
 
 def _get_image(input_shape, real_image, device, weights=None, dtype=None):
     """This routine loads a real or random image based on `real_image` argument.
-    Currently, the real image is utilized for the following list of models:
-    - `retinanet_resnet50_fpn`,
-    - `retinanet_resnet50_fpn_v2`,
-    - `keypointrcnn_resnet50_fpn`,
-    - `fasterrcnn_resnet50_fpn`,
-    - `fasterrcnn_resnet50_fpn_v2`,
-    - `fcos_resnet50_fpn`,
-    - `maskrcnn_resnet50_fpn`,
-    - `maskrcnn_resnet50_fpn_v2`,
-    in `test_classification_model` and `test_detection_model`.
-    To do so, a keyword argument `real_image` was added to the abovelisted models in `_model_params`
     """
     if real_image:
         # TODO: Maybe unify file discovery logic with test_image.py
@@ -690,7 +679,7 @@ def test_classification_model(model_fn, dev):
     defaults = {
         "num_classes": 1000,
         "input_shape": (1, 3, 224, 224),
-        "num_expected": 50,
+        "num_classes_to_check": 50,
         "real_image": True,
     }
     model_name = model_fn.__name__
@@ -698,7 +687,7 @@ def test_classification_model(model_fn, dev):
         pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
-    num_expected = kwargs.pop("num_expected")
+    num_classes_to_check = kwargs.pop("num_classes_to_check")
     input_shape = kwargs.pop("input_shape")
     real_image = kwargs.pop("real_image", False)
     weight_name = kwargs.pop("weight_name", "IMAGENET1K_V1")
@@ -712,10 +701,10 @@ def test_classification_model(model_fn, dev):
     x = _get_image(input_shape=input_shape, real_image=real_image, device=dev, weights=weight)
     with torch.no_grad(), freeze_rng_state():
         out = model(x)
-        expect_out = out[:, :num_expected]
+        expect_out = out[:, :num_classes_to_check]
     _assert_expected(expect_out.cpu(), model_name, prec=3e-2)
     assert out.shape[-1] == num_classes
-    assert expect_out.shape[-1] == num_expected
+    assert expect_out.shape[-1] == num_classes_to_check
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
@@ -723,11 +712,11 @@ def test_classification_model(model_fn, dev):
         with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
             model.to(x.device)
             out = model(x)
-            expect_out = out[:, :num_expected]
+            expect_out = out[:, :num_classes_to_check]
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
                 _assert_expected(expect_out.cpu(), model_name, prec=0.1)
-            assert expect_out.shape[-1] == num_expected
+            assert expect_out.shape[-1] == num_classes_to_check
 
     _check_input_backprop(model, x)
 
