@@ -1798,6 +1798,12 @@ def test_color_jitter():
     color_jitter.__repr__()
 
 
+@pytest.mark.parametrize("hue", [1, (-1, 1)])
+def test_color_jitter_hue_out_of_bounds(hue):
+    with pytest.raises(ValueError, match=re.escape("hue values should be between (-0.5, 0.5)")):
+        transforms.ColorJitter(hue=hue)
+
+
 @pytest.mark.parametrize("seed", range(10))
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
 def test_random_erasing(seed):
