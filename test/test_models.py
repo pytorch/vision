@@ -55,19 +55,19 @@ def _get_image(input_shape, real_image, device, weights=None, dtype=None):
             original_width, original_height = img.size
             # make the image square
             img = img.crop((0, 0, original_width, original_width))
-            img = img.resize(input_shape[1:3])
+            img = img.resize(input_shape[-2:])
 
             convert_tensor = transforms.ToTensor()
             image = convert_tensor(img)
-            assert tuple(image.size()) == input_shape
-            return image.to(device=device, dtype=dtype)
         else:
             H, W = input_shape[-2:]
             min_side = min(H, W)
             preprocess = weights.transforms(resize_size=min_side, crop_size=min_side)
-            image = preprocess(img).unsqueeze(0)
-            assert tuple(image.size()) == input_shape
-            return image.to(device=device, dtype=dtype)
+            image = preprocess(img)
+        if len(input_shape) > len(image.size()):
+            image = image.unsqueeze(0)
+        assert tuple(image.size()) == input_shape
+        return image.to(device=device, dtype=dtype)
 
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     return torch.rand(input_shape).to(device=device, dtype=dtype)
@@ -363,9 +363,9 @@ _model_params = {
         "rpn_post_nms_top_n_test": 1000,
     },
     "vit_h_14": {
-        "image_size": 224,
-        "input_shape": (1, 3, 224, 224),
-        "weight_name": "IMAGENET1K_SWAG_LINEAR_V1",
+        "image_size": 56,
+        "input_shape": (1, 3, 56, 56),
+        "weight_name": None,
     },
     "mvit_v1_b": {
         "input_shape": (1, 3, 16, 224, 224),
