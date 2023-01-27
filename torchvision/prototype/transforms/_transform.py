@@ -7,8 +7,6 @@ import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-
-from torchvision.prototype import datapoints
 from torchvision.prototype.transforms.utils import check_type
 from torchvision.utils import _log_api_usage_once
 
@@ -76,24 +74,16 @@ class Transform(nn.Module):
             if not attr.startswith("_") and attr not in common_attrs
         }
 
-        if "fill" not in params:
-            return params
-
         # transforms v2 has a more complex handling for the `fill` parameter than v1. By default, the input is parsed
         # with `prototype.transforms._utils._setup_fill_arg()`, which returns a defaultdict that holds the fill value
-        # for the different datapoint types. Below we extract the value for images and return that together with the
+        # for the different datapoint types. Below we extract the value for tensors and return that together with the
         # other params.
         # This is needed for `Pad`, `ElasticTransform`, `RandomAffine`, `RandomCrop`, `RandomPerspective` and
         # `RandomRotation`
-        fill_type_dict = params.pop("fill")
-        # Although unlikely, someone could set a different `fill` value for plain tensors and `datapoints.Image`'s. In
-        # that case we prioritize the value for plain tensors, since that is what JIT is working with.
-        fill_candidates = [fill_type_dict[typ] for typ in [torch.Tensor, datapoints.Image]]
-        try:
-            fill = next(filter(lambda candidate: candidate is not None, fill_candidates))
-        except StopIteration:
-            fill = None
-        params["fill"] = fill
+        if "fill" in params:
+            fill_type_dict = params.pop("fill")
+            params["fill"] = fill_type_dict.get(torch.Tensor)
+
         return params
 
     def __prepare_scriptable__(self) -> nn.Module:
