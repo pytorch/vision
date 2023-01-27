@@ -392,10 +392,7 @@ slow_models = [
     "swin_v2_b",
 ]
 for m in slow_models:
-    if m not in _model_params:
-        _model_params[m] = {"input_shape": (1, 3, 64, 64)}
-    else:
-        _model_params[m]["input_shape"] = (1, 3, 64, 64)
+    _model_params[m] = dict(_model_params.get(m, dict()), **{"input_shape": (1, 3, 64, 64)})
 
 
 # skip big models to reduce memory usage on CI test. We can exclude combinations of (platform-system, device).
