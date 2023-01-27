@@ -19,10 +19,10 @@ class RandomErasing(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomErasing
 
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
-        params = super()._extract_params_for_v1_transform()
-        if params["value"] is None:
-            params["value"] = "random"
-        return params
+        return dict(
+            super()._extract_params_for_v1_transform(),
+            value="random" if self.value is None else self.value,
+        )
 
     _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
 

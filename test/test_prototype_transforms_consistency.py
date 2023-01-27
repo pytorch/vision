@@ -85,7 +85,9 @@ CONSISTENCY_CONFIGS = [
             # ArgsKwargs((35, 29), interpolation=2),
             # ArgsKwargs((34, 25), interpolation=3),
             ArgsKwargs(31, max_size=32),
+            ArgsKwargs([31], max_size=32),
             ArgsKwargs(30, max_size=100),
+            ArgsKwargs([31], max_size=32),
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
@@ -126,6 +128,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs([2, 3]),
             ArgsKwargs([3, 2, 1, 4]),
             ArgsKwargs(5, fill=1, padding_mode="constant"),
+            ArgsKwargs([5], fill=1, padding_mode="constant"),
             ArgsKwargs(5, padding_mode="edge"),
             ArgsKwargs(5, padding_mode="reflect"),
             ArgsKwargs(5, padding_mode="symmetric"),
@@ -381,6 +384,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(12),
             ArgsKwargs((15, 17)),
             ArgsKwargs(11, padding=1),
+            ArgsKwargs(11, padding=[1]),
             ArgsKwargs((8, 13), padding=(2, 3)),
             ArgsKwargs((14, 9), padding=(0, 2, 1, 0)),
             ArgsKwargs(36, pad_if_needed=True),
@@ -689,10 +693,15 @@ def test_jit_and_get_params_consistency(config, args_kwargs):
                 is not None
             ):
                 return
+            if "Expected a value of type 'Union[float, int]' for argument 'fill'" in msg:
+                return
+
+            if "Can't redefine method: forward on class:" in msg:
+                return
 
             # This error happens when `torch.jit.script` hits an unguarded `_log_api_usage_once`. Since that means that
             # the transform doesn't support scripting in general, we abort the JIT call check.
-            if re.search(r"'Any' object has no attribute or method '__module__'", msg) is not None:
+            if "'Any' object has no attribute or method '__module__'" in msg:
                 return
 
             raise pytest.UsageError("The legacy transform cannot be scripted!") from exc

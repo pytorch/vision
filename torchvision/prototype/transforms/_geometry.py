@@ -242,6 +242,16 @@ class TenCrop(Transform):
 class Pad(Transform):
     _v1_transform_cls = _transforms.Pad
 
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        params = super()._extract_params_for_v1_transform()
+
+        if not (params["fill"] is None or isinstance(params["fill"], (int, float))):
+            raise ValueError(
+                f"{type(self.__name__)}() can only be scripted for a scalar `fill`, but got {self.fill} for images."
+            )
+
+        return params
+
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
@@ -423,6 +433,22 @@ class RandomAffine(Transform):
 
 class RandomCrop(Transform):
     _v1_transform_cls = _transforms.RandomCrop
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        params = super()._extract_params_for_v1_transform()
+
+        if not (params["fill"] is None or isinstance(params["fill"], (int, float))):
+            raise ValueError(
+                f"{type(self.__name__)}() can only be scripted for a scalar `fill`, but got {self.fill} for images."
+            )
+
+        padding = self.padding
+        if padding is not None:
+            pad_left, pad_right, pad_top, pad_bottom = padding
+            padding = [pad_left, pad_top, pad_right, pad_bottom]
+        params["padding"] = padding
+
+        return params
 
     def __init__(
         self,
