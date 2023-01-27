@@ -684,37 +684,18 @@ def test_jit_consistency(config, args_kwargs):
         # If we hit some other error, we fail loudly to avoid a false sense of security
         raise pytest.UsageError("The legacy transform cannot be scripted!") from exc
 
-    try:
-        prototype_transform_scripted = torch.jit.script(prototype_transform_eager)
-    except Exception as exc:
-        raise AssertionError("The prototype transform cannot be scripted!") from exc
+    prototype_transform_scripted = torch.jit.script(prototype_transform_eager)
 
     for image in make_images(**config.make_images_kwargs):
         image = image.as_subclass(torch.Tensor)
-        image_repr = f"[{tuple(image.shape)}, {str(image.dtype).rsplit('.')[-1]}]"
 
-        try:
-            torch.manual_seed(0)
-            output_legacy_scripted = legacy_transform_scripted(image)
-        except Exception as exc:
-            raise AssertionError(
-                f"Calling the scripted legacy transform with {image_repr} raised the error above!"
-            ) from exc
+        torch.manual_seed(0)
+        output_legacy_scripted = legacy_transform_scripted(image)
 
-        try:
-            torch.manual_seed(0)
-            output_prototype_scripted = prototype_transform_scripted(image)
-        except Exception as exc:
-            raise AssertionError(
-                f"Calling the scripted prototype transform with {image_repr} raised the error above!"
-            ) from exc
+        torch.manual_seed(0)
+        output_prototype_scripted = prototype_transform_scripted(image)
 
-        assert_close(
-            output_prototype_scripted,
-            output_legacy_scripted,
-            msg=lambda msg: f"JIT runtime consistency check failed with: \n\n{msg}",
-            **config.closeness_kwargs,
-        )
+        assert_close(output_prototype_scripted, output_legacy_scripted, **config.closeness_kwargs)
 
 
 class TestContainerTransforms:
