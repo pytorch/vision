@@ -287,7 +287,7 @@ quantized_flaky_models = ("inception_v3", "resnet50")
 
 # The tests for the following detection models are flaky due to precision of float32
 # we will do the test in float64 for these models
-detection_flaky_models = ("keypointrcnn_resnet50_fpn",)
+detection_flaky_models = ("keypointrcnn_resnet50_fpn", "maskrcnn_resnet50_fpn_v2")
 
 
 # The following contains configuration parameters for all models which are used by
