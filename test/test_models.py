@@ -29,7 +29,7 @@ def list_model_fns(module):
     return [get_model_builder(name) for name in list_models(module)]
 
 
-def _get_image(input_shape, real_image, device, weights=None, dtype=torch.get_default_dtype()):
+def _get_image(input_shape, real_image, device, weights=None, dtype=None):
     """This routine loads a real or random image based on `real_image` argument.
     Currently, the real image is utilized for the following list of models:
     - `retinanet_resnet50_fpn`,
@@ -65,7 +65,8 @@ def _get_image(input_shape, real_image, device, weights=None, dtype=torch.get_de
             H, W = input_shape[-2:]
             min_side = min(H, W)
             preprocess = weights.transforms(resize_size=min_side, crop_size=min_side)
-            image = preprocess(img)
+            image = preprocess(img).unsqueeze(0)
+            assert tuple(image.size()) == input_shape
             return image.to(device=device, dtype=dtype)
 
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
@@ -362,8 +363,8 @@ _model_params = {
         "rpn_post_nms_top_n_test": 1000,
     },
     "vit_h_14": {
-        "image_size": 56,
-        "input_shape": (1, 3, 56, 56),
+        "image_size": 224,
+        "input_shape": (1, 3, 224, 224),
         "weight_name": "IMAGENET1K_SWAG_LINEAR_V1",
     },
     "mvit_v1_b": {
@@ -690,6 +691,7 @@ def test_classification_model(model_fn, dev):
         "num_classes": 1000,
         "input_shape": (1, 3, 224, 224),
         "num_expected": 50,
+        "real_image": True,
     }
     model_name = model_fn.__name__
     if SKIP_BIG_MODEL and is_skippable(model_name, dev):
@@ -719,6 +721,7 @@ def test_classification_model(model_fn, dev):
 
     if dev == "cuda":
         with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
+            model.to(x.device)
             out = model(x)
             expect_out = out[:, :num_expected]
             # See autocast_flaky_numerics comment at top of file.
