@@ -28,7 +28,7 @@ def test_to_wrapping():
     assert label_to.categories is label.categories
 
 
-def test_to_feature_reference():
+def test_to_datapoint_reference():
     tensor = torch.tensor([0, 1, 0], dtype=torch.int64)
     label = datapoints.Label(tensor, categories=["foo", "bar"]).to(torch.int32)
 

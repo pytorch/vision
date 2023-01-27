@@ -11,6 +11,41 @@ from ._transform import _RandomApplyTransform
 from .utils import is_simple_tensor, query_chw
 
 
+class Grayscale(Transform):
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
+
+    def __init__(self, num_output_channels: int = 1):
+        super().__init__()
+        self.num_output_channels = num_output_channels
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
+
+
+class RandomGrayscale(_RandomApplyTransform):
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
+
+    def __init__(self, p: float = 0.1) -> None:
+        super().__init__(p=p)
+
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        num_input_channels, *_ = query_chw(flat_inputs)
+        return dict(num_input_channels=num_input_channels)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
+
+
 class ColorJitter(Transform):
     def __init__(
         self,
@@ -42,11 +77,11 @@ class ColorJitter(Transform):
             value = [center - value, center + value]
             if clip_first_on_zero:
                 value[0] = max(value[0], 0.0)
-        elif isinstance(value, collections.abc.Sequence) and len(value) == 2:
-            if not bound[0] <= value[0] <= value[1] <= bound[1]:
-                raise ValueError(f"{name} values should be between {bound}")
-        else:
+        elif not (isinstance(value, collections.abc.Sequence) and len(value) == 2):
             raise TypeError(f"{name} should be a single number or a sequence with length 2.")
+
+        if not bound[0] <= value[0] <= value[1] <= bound[1]:
+            raise ValueError(f"{name} values should be between {bound}, but got {value}.")
 
         return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
 
@@ -82,6 +117,7 @@ class ColorJitter(Transform):
         return output
 
 
+# TODO: This class seems to be untested
 class RandomPhotometricDistort(Transform):
     _transformed_types = (
         datapoints.Image,
@@ -119,15 +155,14 @@ class RandomPhotometricDistort(Transform):
     def _permute_channels(
         self, inpt: Union[datapoints.ImageType, datapoints.VideoType], permutation: torch.Tensor
     ) -> Union[datapoints.ImageType, datapoints.VideoType]:
-        if isinstance(inpt, PIL.Image.Image):
+
+        orig_inpt = inpt
+        if isinstance(orig_inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)
 
         output = inpt[..., permutation, :, :]
 
-        if isinstance(inpt, (datapoints.Image, datapoints.Video)):
-            output = inpt.wrap_like(inpt, output, color_space=datapoints.ColorSpace.OTHER)  # type: ignore[arg-type]
-
-        elif isinstance(inpt, PIL.Image.Image):
+        if isinstance(orig_inpt, PIL.Image.Image):
             output = F.to_image_pil(output)
 
         return output
