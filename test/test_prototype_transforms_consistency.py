@@ -671,7 +671,8 @@ def test_jit_consistency(config, args_kwargs):
             return
         if "Expected a value of type 'Union[float, int]' for argument 'fill'" in msg:
             return
-
+        # In some cases trying to script the same transformation multiple times with parameters that are not supported,
+        # `torch.jit.script` will emit a cryptic error message rather than one like the ones above.
         if "Can't redefine method: forward on class:" in msg:
             return
 
@@ -680,6 +681,7 @@ def test_jit_consistency(config, args_kwargs):
         if "'Any' object has no attribute or method '__module__'" in msg:
             return
 
+        # If we hit some other error, we fail loudly to avoid a false sense of security
         raise pytest.UsageError("The legacy transform cannot be scripted!") from exc
 
     try:

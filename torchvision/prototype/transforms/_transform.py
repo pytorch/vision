@@ -58,11 +58,17 @@ class Transform(nn.Module):
 
         return ", ".join(extra)
 
-    # FIXME explain everything below
-
+    # This attribute should be set on all transforms that have a v1 equivalent. Doing so enables the v2 transformation
+    # to be scriptable. See `_extract_params_for_v1_transform()` and `__prepare_scriptable__` for details.
     _v1_transform_cls: Optional[Type[nn.Module]] = None
 
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        # This method is called by `__prepare_scriptable__` to instantiate the equivalent v1 transform from the current
+        # v2 transform instance. It does two things:
+        # 1. Extract all available public attributes that are specific to that transform and not `nn.Module` in general
+        # 2. If available handle the `fill` attribute for v1 compatibility (see below for details)
+        # Overwrite this method on the v2 transform class if the above is not sufficient. For example, this might happen
+        # if the v2 transform introduced new parameters that are not support by the v1 transform.
         common_attrs = nn.Module().__dict__.keys()
         params = {
             attr: value
@@ -73,7 +79,13 @@ class Transform(nn.Module):
         if "fill" not in params:
             return params
 
+        # transforms v2 has a more complex handling for the `fill` parameter than v1. By default, the input is parsed
+        # with `prototype.transforms._utils._setup_fill_arg()`, which returns a defaultdict that holds the fill value
+        # for the different datapoint types. Below we extract the value for images and return that together with the
+        # other params.
         fill_type_dict = params.pop("fill")
+        # Although unlikely, someone could set a different `fill` value for plain tensors and `datapoints.Image`'s. In
+        # that case we prioritize the value for plain tensors, since that is what JIT is working with.
         fill_candidates = [fill_type_dict[typ] for typ in [torch.Tensor, datapoints.Image]]
         try:
             fill = next(filter(lambda candidate: candidate is not None, fill_candidates))
@@ -83,9 +95,16 @@ class Transform(nn.Module):
         return params
 
     def __prepare_scriptable__(self) -> nn.Module:
+        # This method is called early on when `torch.jit.script`'ing an `nn.Module` instance. If it succeeds, the return
+        # value is used for scripting over the original object that should have been scripted. Since the v1 transforms
+        # are JIT scriptable, and we made sure that for single image inputs v1 and v2 are equivalent, we just return the
+        # equivalent v1 transform here. This of course only makes transforms v2 JIT scriptable as long as transforms v1
+        # is around.
         if self._v1_transform_cls is None:
-            # FIXME: add more information
-            raise RuntimeError("This transform cannot be scripted!")
+            raise RuntimeError(
+                f"Transform {type(self.__name__)} cannot be JIT scripted. "
+                f"This is only support for backward compatibility with transforms which already in v1."
+            )
 
         return self._v1_transform_cls(**self._extract_params_for_v1_transform())
 
