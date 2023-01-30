@@ -1,10 +1,9 @@
 import numbers
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
 from PIL import Image, ImageEnhance, ImageOps
-from typing_extensions import Literal
 
 try:
     import accimage
