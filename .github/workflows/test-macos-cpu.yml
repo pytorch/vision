@@ -47,7 +47,8 @@ jobs:
         conda install \
           --yes \
           -c "pytorch-${CHANNEL}" \
-          -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
+          -c nvidia \
+          pytorch \
           "${CUDATOOLKIT}"
         python3 setup.py develop
         python3 -m pip install pytest pytest-mock 'av<10'
