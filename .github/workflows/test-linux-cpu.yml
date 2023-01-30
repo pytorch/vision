@@ -24,6 +24,7 @@ jobs:
       repository: pytorch/vision
       script: |
         conda search gcc
+        conda search clang
 #        # Mark Build Directory Safe
 #        git config --global --add safe.directory /__w/vision/vision
 #

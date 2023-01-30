@@ -1,4 +1,4 @@
-name: Unit-tests on macOS CPU
+name: Unit-tests on Windows CPU
 
 on:
   pull_request:
@@ -15,11 +15,12 @@ jobs:
       matrix:
         python_version: ["3.8", "3.9", "3.10"]
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     with:
       repository: pytorch/vision
       script: |
         conda search gcc
+        conda search clang
 #        echo '::group::Set PyTorch conda channel'
 #        # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
 #        if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
