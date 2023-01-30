@@ -10,17 +10,12 @@ from ..utils import _log_api_usage_once
 try:
     _load_library("image")
 except (ImportError, OSError) as e:
-    msg = str(e)
-    if msg:
-        msg = f"Failed to load image Python extension: {msg}"
-    else:
-        msg = (
-            "Failed to load image Python extension. "
-            "If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. "
-            "Otherwise, there might be something wrong with your environment. "
-            "Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?"
-        )
-    warn(msg)
+    warn(
+        f"Failed to load image Python extension: '{e}'"
+        f"If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. "
+        f"Otherwise, there might be something wrong with your environment. "
+        f"Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?"
+    )
 
 
 class ImageReadMode(Enum):
