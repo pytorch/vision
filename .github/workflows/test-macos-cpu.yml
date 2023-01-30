@@ -13,11 +13,11 @@ jobs:
           - macos-11
       fail-fast: false
 
-  runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
 
-  steps:
-    - name: test sign of life
-      run: echo "${{ matrix.runner }}"
+    steps:
+      - name: test sign of life
+        run: echo "${{ matrix.runner }}"
 
 #    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
 #    with:
