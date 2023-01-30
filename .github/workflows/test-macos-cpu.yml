@@ -1,23 +1,13 @@
-name: Unit-tests on macOS CPU
-
+name: hello-world
 on:
-  pull_request:
+  pull-request:
 
 jobs:
-  tests:
-    strategy:
-      matrix:
-        runner:
-          - ubuntu-latest
-          - macos-12
-          - macos-11
-      fail-fast: false
-
-    runs-on: ${{ matrix.runner }}
-
+  my-job:
+    runs-on: ubuntu-latest
     steps:
-      - name: test sign of life
-        run: echo "${{ matrix.runner }}"
+      - name: my-step
+        run: echo "Hello World!"
 
 #    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
 #    with:
