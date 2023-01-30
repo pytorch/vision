@@ -20,7 +20,7 @@ from torch.utils._pytree import (
 from torch.utils.data import Dataset
 
 from torchvision import datasets
-from torchvision.prototype import features
+from torchvision.prototype import datapoints
 from torchvision.transforms import functional as F
 
 T = TypeVar("T")
@@ -98,15 +98,15 @@ class VisionDatasetFeatureWrapper(Dataset):
         dataset: datasets.VisionDataset,
         *,
         keep_pil_image: bool = False,
-        bounding_box_format: Optional[features.BoundingBoxFormat] = None,
-        dtypes: Optional[Dict[Type[features._Feature], Optional[torch.dtype]]] = None,
+        bounding_box_format: Optional[datapoints.BoundingBoxFormat] = None,
+        dtypes: Optional[Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]]] = None,
     ) -> VisionDatasetFeatureWrapper:
-        dtypes: Dict[Type[features._Feature], Optional[torch.dtype]] = {
-            features.Image: torch.uint8,
-            features.Label: torch.int64,
-            features.Mask: torch.uint8,
-            features.BoundingBox: torch.float32,
-            features.GenericFeature: None,
+        dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]] = {
+            datapoints.Image: torch.uint8,
+            datapoints.Label: torch.int64,
+            datapoints.Mask: torch.uint8,
+            datapoints.BoundingBox: torch.float32,
+            datapoints.GenericDatapoint: None,
             **(dtypes or dict()),
         }
         wrappers_fn = cls._wrappers_fns[type(dataset)]
@@ -118,49 +118,49 @@ def identity_wrapper(obj: T) -> T:
     return obj
 
 
-def generic_feature_wrapper(data: Any) -> features.GenericFeature:
-    return features.GenericFeature(data)
+def generic_feature_wrapper(data: Any) -> datapoints.GenericDatapoint:
+    return datapoints.GenericDatapoint(data)
 
 
-def wrap_image(image: PIL.Image.Image, *, dtype: Optional[torch.dtype]) -> features.Image:
+def wrap_image(image: PIL.Image.Image, *, dtype: Optional[torch.dtype]) -> datapoints.Image:
     image = F.pil_to_tensor(image)
     if dtype is not None:
         image = F.convert_image_dtype(image, dtype=dtype)
-    return features.Image(image)
+    return datapoints.Image(image)
 
 
 def make_image_wrapper(
-    *, keep_pil_image: bool, dtypes: Dict[Type[features._Feature], Optional[torch.dtype]]
-) -> Callable[[PIL.Image.Image], Union[PIL.Image.Image, features.Image]]:
+    *, keep_pil_image: bool, dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]]
+) -> Callable[[PIL.Image.Image], Union[PIL.Image.Image, datapoints.Image]]:
     if keep_pil_image:
         return identity_wrapper
 
-    return functools.partial(wrap_image, dtype=dtypes[features.Image])
+    return functools.partial(wrap_image, dtype=dtypes[datapoints.Image])
 
 
-def wrap_label(label: Any, *, categories: Optional[Sequence[str]], dtype: Optional[torch.dtype]) -> features.Label:
-    return features.Label(label, categories=categories, dtype=dtype)
+def wrap_label(label: Any, *, categories: Optional[Sequence[str]], dtype: Optional[torch.dtype]) -> datapoints.Label:
+    return datapoints.Label(label, categories=categories, dtype=dtype)
 
 
 def make_label_wrapper(
-    *, categories: Optional[Sequence[str]], dtypes: Dict[Type[features._Feature], Optional[torch.dtype]]
-) -> Callable[[Any], features.Label]:
-    return functools.partial(wrap_label, categories=categories, dtype=dtypes[features.Label])
+    *, categories: Optional[Sequence[str]], dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]]
+) -> Callable[[Any], datapoints.Label]:
+    return functools.partial(wrap_label, categories=categories, dtype=dtypes[datapoints.Label])
 
 
-def wrap_segmentation_mask(segmentation_mask: PIL.Image.Image, *, dtype: Optional[torch.dtype]) -> features.Mask:
+def wrap_segmentation_mask(segmentation_mask: PIL.Image.Image, *, dtype: Optional[torch.dtype]) -> datapoints.Mask:
     assert isinstance(segmentation_mask, PIL.Image.Image)
 
     segmentation_mask = F.pil_to_tensor(segmentation_mask)
     if dtype is not None:
         segmentation_mask = F.convert_image_dtype(segmentation_mask, dtype=dtype)
-    return features.Mask(segmentation_mask.squeeze(0))
+    return datapoints.Mask(segmentation_mask.squeeze(0))
 
 
 def make_segmentation_mask_wrapper(
-    *, dtypes: Dict[Type[features._Feature], Optional[torch.dtype]]
-) -> Callable[[Any], features.Mask]:
-    return functools.partial(wrap_segmentation_mask, dtype=dtypes[features.Mask])
+    *, dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]]
+) -> Callable[[Any], datapoints.Mask]:
+    return functools.partial(wrap_segmentation_mask, dtype=dtypes[datapoints.Mask])
 
 
 CATEGORIES_GETTER = defaultdict(
@@ -178,8 +178,8 @@ CATEGORIES_GETTER = defaultdict(
 def classification_wrappers(
     dataset: datasets.VisionDataset,
     keep_pil_image: bool,
-    bounding_box_format: Optional[features.BoundingBoxFormat],
-    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+    bounding_box_format: Optional[datapoints.BoundingBoxFormat],
+    dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]],
 ) -> Any:
     return (
         make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes),
@@ -201,8 +201,8 @@ for dataset_type in [
 def segmentation_wrappers(
     dataset: datasets.VisionDataset,
     keep_pil_image: bool,
-    bounding_box_format: Optional[features.BoundingBoxFormat],
-    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+    bounding_box_format: Optional[datapoints.BoundingBoxFormat],
+    dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]],
 ) -> Any:
     return (
         make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes),
@@ -220,12 +220,12 @@ for dataset_type in [
 def caltech101_dectection_wrappers(
     dataset: datasets.Caltech101,
     keep_pil_image: bool,
-    bounding_box_format: Optional[features.BoundingBoxFormat],
-    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+    bounding_box_format: Optional[datapoints.BoundingBoxFormat],
+    dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]],
 ) -> Any:
     target_type_wrapper_map = {
         "category": make_label_wrapper(categories=dataset.categories, dtypes=dtypes),
-        "annotation": features.GenericFeature,
+        "annotation": datapoints.GenericDatapoint,
     }
     return (
         make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes),
@@ -237,8 +237,8 @@ def caltech101_dectection_wrappers(
 def coco_dectection_wrappers(
     dataset: datasets.CocoDetection,
     keep_pil_image: bool,
-    bounding_box_format: Optional[features.BoundingBoxFormat],
-    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+    bounding_box_format: Optional[datapoints.BoundingBoxFormat],
+    dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]],
 ) -> Any:
     idx_to_category = {idx: cat["name"] for idx, cat in dataset.coco.cats.items()}
     idx_to_category[0] = "__background__"
@@ -247,21 +247,21 @@ def coco_dectection_wrappers(
 
     categories = [category for _, category in sorted(idx_to_category.items())]
 
-    def segmentation_to_mask(segmentation: Any, *, iscrowd: bool, image_size: Tuple[int, int]) -> torch.Tensor:
+    def segmentation_to_mask(segmentation: Any, *, iscrowd: bool, spatial_size: Tuple[int, int]) -> torch.Tensor:
         from pycocotools import mask
 
         segmentation = (
-            mask.frPyObjects(segmentation, *image_size)
+            mask.frPyObjects(segmentation, *spatial_size)
             if iscrowd
-            else mask.merge(mask.frPyObjects(segmentation, *image_size))
+            else mask.merge(mask.frPyObjects(segmentation, *spatial_size))
         )
         return torch.from_numpy(mask.decode(segmentation)).to(torch.bool)
 
-    def sample_wrapper(sample: Tuple[PIL.Image, List[Dict[str, Any]]]) -> Tuple[features.Image, Dict[str, Any]]:
+    def sample_wrapper(sample: Tuple[PIL.Image, List[Dict[str, Any]]]) -> Tuple[datapoints.Image, Dict[str, Any]]:
         image, target = sample
 
         _, height, width = F.get_dimensions(image)
-        image_size = height, width
+        spatial_size = height, width
 
         image_wrapper = make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes)
         wrapped_image = image_wrapper(image)
@@ -273,25 +273,25 @@ def coco_dectection_wrappers(
 
         wrapped_target = dict(
             batched_target,
-            segmentation=features.Mask(
+            segmentation=datapoints.Mask(
                 torch.stack(
                     [
-                        segmentation_to_mask(segmentation, iscrowd=iscrowd, image_size=image_size)
+                        segmentation_to_mask(segmentation, iscrowd=iscrowd, spatial_size=spatial_size)
                         for segmentation, iscrowd in zip(batched_target["segmentation"], batched_target["iscrowd"])
                     ]
                 ),
-                dtype=dtypes.get(features.Mask),
+                dtype=dtypes.get(datapoints.Mask),
             ),
-            bbox=features.BoundingBox(
+            bbox=datapoints.BoundingBox(
                 batched_target["bbox"],
-                format=features.BoundingBoxFormat.XYXY,
-                image_size=image_size,
-                dtype=dtypes.get(features.BoundingBox),
+                format=datapoints.BoundingBoxFormat.XYXY,
+                spatial_size=spatial_size,
+                dtype=dtypes.get(datapoints.BoundingBox),
             ),
-            labels=features.Label(batched_target.pop("category_id"), categories=categories),
+            labels=datapoints.Label(batched_target.pop("category_id"), categories=categories),
         )
         if bounding_box_format is not None:
-            wrapped_target["bbox"] = cast(features.BoundingBox, wrapped_target["bbox"]).to_format(bounding_box_format)
+            wrapped_target["bbox"] = cast(datapoints.BoundingBox, wrapped_target["bbox"]).to_format(bounding_box_format)
 
         return wrapped_image, wrapped_target
 
@@ -302,8 +302,8 @@ def coco_dectection_wrappers(
 def coco_captions_wrappers(
     dataset: datasets.CocoCaptions,
     keep_pil_image: bool,
-    bounding_box_format: Optional[features.BoundingBoxFormat],
-    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+    bounding_box_format: Optional[datapoints.BoundingBoxFormat],
+    dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]],
 ) -> Any:
     return make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes), identity_wrapper
 
@@ -312,8 +312,8 @@ def coco_captions_wrappers(
 def voc_detection_wrappers(
     dataset: datasets.VOCDetection,
     keep_pil_image: bool,
-    bounding_box_format: Optional[features.BoundingBoxFormat],
-    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+    bounding_box_format: Optional[datapoints.BoundingBoxFormat],
+    dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]],
 ) -> Any:
     categories = [
         "__background__",
@@ -348,25 +348,25 @@ def voc_detection_wrappers(
 
         wrapped_object = dict(
             batched_object,
-            bndbox=features.BoundingBox(
+            bndbox=datapoints.BoundingBox(
                 [
                     [int(bndbox[part]) for part in ("xmin", "ymin", "xmax", "ymax")]
                     for bndbox in batched_object["bndbox"]
                 ],
-                format=features.BoundingBoxFormat.XYXY,
-                image_size=cast(
+                format=datapoints.BoundingBoxFormat.XYXY,
+                spatial_size=cast(
                     Tuple[int, int], tuple(int(target["annotation"]["size"][dim]) for dim in ("height", "width"))
                 ),
             ),
         )
         if bounding_box_format is not None:
-            wrapped_object["bndbox"] = cast(features.BoundingBox, wrapped_object["bndbox"]).to_format(
+            wrapped_object["bndbox"] = cast(datapoints.BoundingBox, wrapped_object["bndbox"]).to_format(
                 bounding_box_format
             )
-        wrapped_object["labels"] = features.Label(
+        wrapped_object["labels"] = datapoints.Label(
             [categories_to_idx[category] for category in batched_object["name"]],
             categories=categories,
-            dtype=dtypes[features.Label],
+            dtype=dtypes[datapoints.Label],
         )
 
         target["annotation"]["object"] = wrapped_object
@@ -379,8 +379,8 @@ def voc_detection_wrappers(
 def sbd_wrappers(
     dataset: datasets.SBDataset,
     keep_pil_image: bool,
-    bounding_box_format: Optional[features.BoundingBoxFormat],
-    dtypes: Dict[Type[features._Feature], Optional[torch.dtype]],
+    bounding_box_format: Optional[datapoints.BoundingBoxFormat],
+    dtypes: Dict[Type[datapoints._datapoint.Datapoint], Optional[torch.dtype]],
 ) -> Any:
     return {
         "boundaries": (make_image_wrapper(keep_pil_image=keep_pil_image, dtypes=dtypes), generic_feature_wrapper),

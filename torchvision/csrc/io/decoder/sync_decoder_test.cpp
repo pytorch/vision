@@ -368,7 +368,7 @@ TEST(SyncDecoder, TestMemoryBufferNoSeekableWithFullRead) {
         }
         // seek mode
         if (!timeoutMs) {
-          // seek capabilty, yes - no
+          // seek capability, yes - no
           return -1;
         }
         return object.seek(size, whence);
@@ -408,7 +408,7 @@ TEST(SyncDecoder, TestMemoryBufferNoSeekableWithPartialRead) {
         }
         // seek mode
         if (!timeoutMs) {
-          // seek capabilty, yes - no
+          // seek capability, yes - no
           return -1;
         }
         return object.seek(size, whence);

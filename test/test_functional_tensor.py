@@ -25,7 +25,12 @@ from common_utils import (
 )
 from torchvision.transforms import InterpolationMode
 
-NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
+NEAREST, NEAREST_EXACT, BILINEAR, BICUBIC = (
+    InterpolationMode.NEAREST,
+    InterpolationMode.NEAREST_EXACT,
+    InterpolationMode.BILINEAR,
+    InterpolationMode.BICUBIC,
+)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -506,7 +511,7 @@ def test_perspective_interpolation_warning():
     ],
 )
 @pytest.mark.parametrize("max_size", [None, 34, 40, 1000])
-@pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST])
+@pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST, NEAREST_EXACT])
 def test_resize(device, dt, size, max_size, interpolation):
 
     if dt == torch.float16 and device == "cpu":
@@ -785,32 +790,40 @@ def test_solarize2(device, dtype, config, channels):
     )
 
 
+@pytest.mark.parametrize(
+    ("dtype", "threshold"),
+    [
+        *[
+            (dtype, threshold)
+            for dtype, threshold in itertools.product(
+                [torch.float32, torch.float16],
+                [0.0, 0.25, 0.5, 0.75, 1.0],
+            )
+        ],
+        *[(torch.uint8, threshold) for threshold in [0, 64, 128, 192, 255]],
+        *[(torch.int64, threshold) for threshold in [0, 2**32, 2**63 - 1]],
+    ],
+)
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("threshold", [0.0, 0.25, 0.5, 0.75, 1.0])
-def test_solarize_threshold1_bound(threshold, device):
-    img = torch.rand((3, 12, 23)).to(device)
+def test_solarize_threshold_within_bound(threshold, dtype, device):
+    make_img = torch.rand if dtype.is_floating_point else partial(torch.randint, 0, torch.iinfo(dtype).max)
+    img = make_img((3, 12, 23), dtype=dtype, device=device)
     F_t.solarize(img, threshold)
 
 
+@pytest.mark.parametrize(
+    ("dtype", "threshold"),
+    [
+        (torch.float32, 1.5),
+        (torch.float16, 1.5),
+        (torch.uint8, 260),
+        (torch.int64, 2**64),
+    ],
+)
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("threshold", [1.5])
-def test_solarize_threshold1_upper_bound(threshold, device):
-    img = torch.rand((3, 12, 23)).to(device)
-    with pytest.raises(TypeError, match="Threshold should be less than bound of img."):
-        F_t.solarize(img, threshold)
-
-
-@pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("threshold", [0, 64, 128, 192, 255])
-def test_solarize_threshold2_bound(threshold, device):
-    img = torch.randint(0, 256, (3, 12, 23)).to(device)
-    F_t.solarize(img, threshold)
-
-
-@pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("threshold", [260])
-def test_solarize_threshold2_upper_bound(threshold, device):
-    img = torch.randint(0, 256, (3, 12, 23)).to(device)
+def test_solarize_threshold_above_bound(threshold, dtype, device):
+    make_img = torch.rand if dtype.is_floating_point else partial(torch.randint, 0, torch.iinfo(dtype).max)
+    img = make_img((3, 12, 23), dtype=dtype, device=device)
     with pytest.raises(TypeError, match="Threshold should be less than bound of img."):
         F_t.solarize(img, threshold)
 
@@ -966,7 +979,7 @@ def test_pad(device, dt, pad, config):
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("mode", [NEAREST, BILINEAR, BICUBIC])
+@pytest.mark.parametrize("mode", [NEAREST, NEAREST_EXACT, BILINEAR, BICUBIC])
 def test_resized_crop(device, mode):
     # test values of F.resized_crop in several cases:
     # 1) resize to the same size, crop to the same size => should be identity

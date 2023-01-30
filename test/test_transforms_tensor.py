@@ -20,7 +20,12 @@ from torchvision import transforms as T
 from torchvision.transforms import functional as F, InterpolationMode
 from torchvision.transforms.autoaugment import _apply_op
 
-NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
+NEAREST, NEAREST_EXACT, BILINEAR, BICUBIC = (
+    InterpolationMode.NEAREST,
+    InterpolationMode.NEAREST_EXACT,
+    InterpolationMode.BILINEAR,
+    InterpolationMode.BICUBIC,
+)
 
 
 def _test_transform_vs_scripted(transform, s_transform, tensor, msg=None):
@@ -378,7 +383,7 @@ class TestResize:
     @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64])
     @pytest.mark.parametrize("size", [[32], [32, 32], (32, 32), [34, 35]])
     @pytest.mark.parametrize("max_size", [None, 35, 1000])
-    @pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST])
+    @pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST, NEAREST_EXACT])
     def test_resize_scripted(self, dt, size, max_size, interpolation, device):
         tensor, _ = _create_data(height=34, width=36, device=device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
@@ -402,12 +407,12 @@ class TestResize:
     @pytest.mark.parametrize("scale", [(0.7, 1.2), [0.7, 1.2]])
     @pytest.mark.parametrize("ratio", [(0.75, 1.333), [0.75, 1.333]])
     @pytest.mark.parametrize("size", [(32,), [44], [32], [32, 32], (32, 32), [44, 55]])
-    @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR, BICUBIC])
+    @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR, BICUBIC, NEAREST_EXACT])
     @pytest.mark.parametrize("antialias", [None, True, False])
     def test_resized_crop(self, scale, ratio, size, interpolation, antialias, device):
 
-        if antialias and interpolation == NEAREST:
-            pytest.skip("Can not resize if interpolation mode is NEAREST and antialias=True")
+        if antialias and interpolation in {NEAREST, NEAREST_EXACT}:
+            pytest.skip(f"Can not resize if interpolation mode is {interpolation} and antialias=True")
 
         tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
@@ -667,7 +672,17 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "config",
-    [{"value": 0.2}, {"value": "random"}, {"value": (0.2, 0.2, 0.2)}, {"value": "random", "ratio": (0.1, 0.2)}],
+    [
+        {},
+        {"value": 1},
+        {"value": 0.2},
+        {"value": "random"},
+        {"value": (1, 1, 1)},
+        {"value": (0.2, 0.2, 0.2)},
+        {"value": [1, 1, 1]},
+        {"value": [0.2, 0.2, 0.2]},
+        {"value": "random", "ratio": (0.1, 0.2)},
+    ],
 )
 def test_random_erasing(device, config):
     tensor, _ = _create_data(24, 32, channels=3, device=device)
@@ -842,4 +857,36 @@ def test_gaussian_blur(device, channels, meth_kwargs):
         device=device,
         agg_method="max",
         tol=tol,
+    )
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "fill",
+    [
+        1,
+        1.0,
+        [1],
+        [1.0],
+        (1,),
+        (1.0,),
+        [1, 2, 3],
+        [1.0, 2.0, 3.0],
+        (1, 2, 3),
+        (1.0, 2.0, 3.0),
+    ],
+)
+@pytest.mark.parametrize("channels", [1, 3])
+def test_elastic_transform(device, channels, fill):
+    if isinstance(fill, (list, tuple)) and len(fill) > 1 and channels == 1:
+        # For this the test would correctly fail, since the number of channels in the image does not match `fill`.
+        # Thus, this is not an issue in the transform, but rather a problem of parametrization that just gives the
+        # product of `fill` and `channels`.
+        return
+
+    _test_class_op(
+        T.ElasticTransform,
+        meth_kwargs=dict(fill=fill),
+        channels=channels,
+        device=device,
     )

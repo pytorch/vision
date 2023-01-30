@@ -20,10 +20,12 @@ from . import functional_pil as F_pil, functional_tensor as F_t
 
 class InterpolationMode(Enum):
     """Interpolation modes
-    Available interpolation methods are ``nearest``, ``bilinear``, ``bicubic``, ``box``, ``hamming``, and ``lanczos``.
+    Available interpolation methods are ``nearest``, ``nearest-exact``, ``bilinear``, ``bicubic``, ``box``, ``hamming``,
+    and ``lanczos``.
     """
 
     NEAREST = "nearest"
+    NEAREST_EXACT = "nearest-exact"
     BILINEAR = "bilinear"
     BICUBIC = "bicubic"
     # For PIL compatibility
@@ -50,6 +52,7 @@ pil_modes_mapping = {
     InterpolationMode.NEAREST: 0,
     InterpolationMode.BILINEAR: 2,
     InterpolationMode.BICUBIC: 3,
+    InterpolationMode.NEAREST_EXACT: 0,
     InterpolationMode.BOX: 4,
     InterpolationMode.HAMMING: 5,
     InterpolationMode.LANCZOS: 1,
@@ -164,7 +167,7 @@ def to_tensor(pic) -> Tensor:
 
     if pic.mode == "1":
         img = 255 * img
-    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+    img = img.view(pic.size[1], pic.size[0], F_pil.get_image_num_channels(pic))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1)).contiguous()
     if isinstance(img, torch.ByteTensor):
@@ -202,7 +205,7 @@ def pil_to_tensor(pic: Any) -> Tensor:
 
     # handle PIL Image
     img = torch.as_tensor(np.array(pic, copy=True))
-    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+    img = img.view(pic.size[1], pic.size[0], F_pil.get_image_num_channels(pic))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1))
     return img
@@ -416,14 +419,15 @@ def resize(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
+            supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         max_size (int, optional): The maximum allowed for the longer edge of
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
             the image is resized again so that the longer edge is equal to
-            ``max_size``. As a result, ``size`` might be overruled, i.e the
+            ``max_size``. As a result, ``size`` might be overruled, i.e. the
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
@@ -617,7 +621,8 @@ def resized_crop(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
+            supported.
             For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
             but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
@@ -854,7 +859,7 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
         brightness_factor (float):  How much to adjust the brightness. Can be
-            any non negative number. 0 gives a black image, 1 gives the
+            any non-negative number. 0 gives a black image, 1 gives the
             original image while 2 increases the brightness by a factor of 2.
 
     Returns:
@@ -876,7 +881,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
         contrast_factor (float): How much to adjust the contrast. Can be any
-            non negative number. 0 gives a solid gray image, 1 gives the
+            non-negative number. 0 gives a solid gray image, 1 gives the
             original image while 2 increases the contrast by a factor of 2.
 
     Returns:
@@ -999,7 +1004,7 @@ def _get_inverse_affine_matrix(
     #       RotateScaleShear(a, s, (sx, sy)) =
     #       = R(a) * S(s) * SHy(sy) * SHx(sx)
     #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(sx)/cos(sy) - sin(a)), 0 ]
-    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
+    #         [ s*sin(a - sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
     #         [ 0                    , 0                                      , 1 ]
     # where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:
     # SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]
@@ -1138,8 +1143,8 @@ def affine(
         translate (sequence of integers): horizontal and vertical translations (post-rotation translation)
         scale (float): overall scale
         shear (float or sequence): shear angle value in degrees between -180 to 180, clockwise direction.
-            If a sequence is specified, the first value corresponds to a shear parallel to the x axis, while
-            the second value corresponds to a shear parallel to the y axis.
+            If a sequence is specified, the first value corresponds to a shear parallel to the x-axis, while
+            the second value corresponds to a shear parallel to the y-axis.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -1229,6 +1234,9 @@ def affine(
     return F_t.affine(img, matrix=matrix, interpolation=interpolation.value, fill=fill)
 
 
+# Looks like to_grayscale() is a stand-alone functional that is never called
+# from the transform classes. Perhaps it's still here for BC? I can't be
+# bothered to dig. Anyway, this can be deprecated as we migrate to V2.
 @torch.jit.unused
 def to_grayscale(img, num_output_channels=1):
     """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
@@ -1290,7 +1298,7 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
         h (int): Height of the erased region.
         w (int): Width of the erased region.
         v: Erasing value.
-        inplace(bool, optional): For in-place operations. By default is set False.
+        inplace(bool, optional): For in-place operations. By default, is set False.
 
     Returns:
         Tensor Image: Erased image.
@@ -1395,7 +1403,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to have its colors posterized.
-            If img is torch Tensor, it should be of type torch.uint8 and
+            If img is torch Tensor, it should be of type torch.uint8, and
             it is expected to be in [..., 1 or 3, H, W] format, where ... means
             it can have an arbitrary number of leading dimensions.
             If img is PIL Image, it is expected to be in mode "L" or "RGB".
@@ -1442,7 +1450,7 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
         sharpness_factor (float):  How much to adjust the sharpness. Can be
-            any non negative number. 0 gives a blurred image, 1 gives the
+            any non-negative number. 0 gives a blurred image, 1 gives the
             original image while 2 increases the sharpness by a factor of 2.
 
     Returns:
@@ -1531,8 +1539,6 @@ def elastic_transform(
         fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
-            Only number is supported for torch Tensor.
-            Only int or str or tuple value is supported for PIL Image.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(elastic_transform)

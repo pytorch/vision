@@ -172,7 +172,7 @@ def _mobilenet_extractor(
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
+    # find the index of the layer from which we won't freeze
     if not 0 <= trainable_layers <= num_stages:
         raise ValueError("trainable_layers should be in the range [0, {num_stages}], instead got {trainable_layers}")
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
@@ -198,6 +198,8 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
                     "box_map": 21.3,
                 }
             },
+            "_ops": 0.583,
+            "_file_size": 13.418,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )

@@ -2,6 +2,7 @@ import importlib
 import inspect
 import sys
 from dataclasses import dataclass, fields
+from functools import partial
 from inspect import signature
 from types import ModuleType
 from typing import Any, Callable, cast, Dict, List, Mapping, Optional, TypeVar, Union
@@ -36,6 +37,32 @@ class Weights:
     url: str
     transforms: Callable
     meta: Dict[str, Any]
+
+    def __eq__(self, other: Any) -> bool:
+        # We need this custom implementation for correct deep-copy and deserialization behavior.
+        # TL;DR: After the definition of an enum, creating a new instance, i.e. by deep-copying or deserializing it,
+        # involves an equality check against the defined members. Unfortunately, the `transforms` attribute is often
+        # defined with `functools.partial` and `fn = partial(...); assert deepcopy(fn) != fn`. Without custom handling
+        # for it, the check against the defined members would fail and effectively prevent the weights from being
+        # deep-copied or deserialized.
+        # See https://github.com/pytorch/vision/pull/7107 for details.
+        if not isinstance(other, Weights):
+            return NotImplemented
+
+        if self.url != other.url:
+            return False
+
+        if self.meta != other.meta:
+            return False
+
+        if isinstance(self.transforms, partial) and isinstance(other.transforms, partial):
+            return (
+                self.transforms.func == other.transforms.func
+                and self.transforms.args == other.transforms.args
+                and self.transforms.keywords == other.transforms.keywords
+            )
+        else:
+            return self.transforms == other.transforms
 
 
 class WeightsEnum(StrEnum):
@@ -114,7 +141,7 @@ def get_weight(name: str) -> WeightsEnum:
 
 def get_model_weights(name: Union[Callable, str]) -> WeightsEnum:
     """
-    Retuns the weights enum class associated to the given model.
+    Returns the weights enum class associated to the given model.
 
     .. betastatus:: function
 
@@ -134,7 +161,6 @@ def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
 
     Args:
         fn (Callable): The builder method used to create the model.
-        weight_name (str): The name of the weight enum entry of the specific model.
     Returns:
         WeightsEnum: The requested weight enum.
     """

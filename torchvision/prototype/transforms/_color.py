@@ -1,13 +1,49 @@
 import collections.abc
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
-from torchvision.prototype import features
+
+from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_chw
+from .utils import is_simple_tensor, query_chw
+
+
+class Grayscale(Transform):
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
+
+    def __init__(self, num_output_channels: int = 1):
+        super().__init__()
+        self.num_output_channels = num_output_channels
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.rgb_to_grayscale(inpt, num_output_channels=self.num_output_channels)
+
+
+class RandomGrayscale(_RandomApplyTransform):
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
+
+    def __init__(self, p: float = 0.1) -> None:
+        super().__init__(p=p)
+
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        num_input_channels, *_ = query_chw(flat_inputs)
+        return dict(num_input_channels=num_input_channels)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return F.rgb_to_grayscale(inpt, num_output_channels=params["num_input_channels"])
 
 
 class ColorJitter(Transform):
@@ -41,19 +77,19 @@ class ColorJitter(Transform):
             value = [center - value, center + value]
             if clip_first_on_zero:
                 value[0] = max(value[0], 0.0)
-        elif isinstance(value, collections.abc.Sequence) and len(value) == 2:
-            if not bound[0] <= value[0] <= value[1] <= bound[1]:
-                raise ValueError(f"{name} values should be between {bound}")
-        else:
+        elif not (isinstance(value, collections.abc.Sequence) and len(value) == 2):
             raise TypeError(f"{name} should be a single number or a sequence with length 2.")
+
+        if not bound[0] <= value[0] <= value[1] <= bound[1]:
+            raise ValueError(f"{name} values should be between {bound}, but got {value}.")
 
         return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
 
     @staticmethod
     def _generate_value(left: float, right: float) -> float:
-        return float(torch.distributions.Uniform(left, right).sample())
+        return torch.empty(1).uniform_(left, right).item()
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         fn_idx = torch.randperm(4)
 
         b = None if self.brightness is None else self._generate_value(self.brightness[0], self.brightness[1])
@@ -81,8 +117,14 @@ class ColorJitter(Transform):
         return output
 
 
+# TODO: This class seems to be untested
 class RandomPhotometricDistort(Transform):
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor)
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(
         self,
@@ -99,8 +141,8 @@ class RandomPhotometricDistort(Transform):
         self.saturation = saturation
         self.p = p
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        num_channels, _, _ = query_chw(sample)
+    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        num_channels, *_ = query_chw(flat_inputs)
         return dict(
             zip(
                 ["brightness", "contrast1", "saturation", "hue", "contrast2"],
@@ -110,20 +152,24 @@ class RandomPhotometricDistort(Transform):
             channel_permutation=torch.randperm(num_channels) if torch.rand(()) < self.p else None,
         )
 
-    def _permute_channels(self, inpt: features.ImageType, permutation: torch.Tensor) -> features.ImageType:
-        if isinstance(inpt, PIL.Image.Image):
+    def _permute_channels(
+        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], permutation: torch.Tensor
+    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
+
+        orig_inpt = inpt
+        if isinstance(orig_inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)
 
         output = inpt[..., permutation, :, :]
 
-        if isinstance(inpt, features.Image):
-            output = features.Image.new_like(inpt, output, color_space=features.ColorSpace.OTHER)
-        elif isinstance(inpt, PIL.Image.Image):
+        if isinstance(orig_inpt, PIL.Image.Image):
             output = F.to_image_pil(output)
 
         return output
 
-    def _transform(self, inpt: features.ImageType, params: Dict[str, Any]) -> features.ImageType:
+    def _transform(
+        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
+    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])

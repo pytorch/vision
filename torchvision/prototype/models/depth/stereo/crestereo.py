@@ -54,7 +54,7 @@ def get_correlation(
 ) -> Tensor:
     """Function that computes a correlation product between the left and right features.
 
-    The correlation is computed in a sliding window fashion, namely the the left features are fixed
+    The correlation is computed in a sliding window fashion, namely the left features are fixed
     and for each ``(i, j)`` location we compute the correlation with a sliding window anchored in
     ``(i, j)`` from the right feature map. The sliding window selects pixels obtained in the range of the sliding
     window; i.e ``(i - window_size // 2, i + window_size // 2)`` respectively ``(j - window_size // 2, j + window_size // 2)``.
@@ -76,7 +76,7 @@ def get_correlation(
     # we expand the left features for broadcasting
     left_feature = left_feature.unsqueeze(1)
     # this will compute an element product of between [B, 1, C, H, W] * [B, n_views, C, H, W]
-    # to obtain correlations over the pixel canditates we perform a mean on the C dimension
+    # to obtain correlations over the pixel candidates we perform a mean on the C dimension
     correlation = torch.mean(left_feature * right_padded, dim=2, keepdim=False)
     # the final correlation tensor shape will be [B, n_views, H, W]
     # where on the i-th position of the n_views dimension we will have
@@ -138,7 +138,7 @@ class IterativeCorrelationLayer(nn.Module):
         self.search_pixels = np.prod(search_window_1d)
         self.groups = groups
 
-        # two selection tables for dealing withh the small_patch argument in the forward function
+        # two selection tables for dealing with the small_patch argument in the forward function
         self.patch_sizes = {
             "2d": [search_window_2d for _ in range(self.groups)],
             "1d": [search_window_1d for _ in range(self.groups)],
@@ -167,7 +167,7 @@ class IterativeCorrelationLayer(nn.Module):
         dilate_size_list = self.dilate_sizes[window_type]
 
         # chunking the left and right feature to perform group-wise correlation
-        # mechanism simillar to GroupNorm. See section 3.1 ``Group-wise correlation``.
+        # mechanism similar to GroupNorm. See section 3.1 ``Group-wise correlation``.
         left_groups = torch.chunk(left_feature, self.groups, dim=1)
         right_groups = torch.chunk(right_feature, self.groups, dim=1)
 
@@ -202,7 +202,7 @@ class AttentionOffsetCorrelationLayer(nn.Module):
         self.search_pixels = int(np.prod(search_window_1d))
         self.groups = groups
 
-        # two selection tables for dealing withh the small_patch argument in the forward function
+        # two selection tables for dealing with the small_patch argument in the forward function
         self.patch_sizes = {
             "2d": [search_window_2d for _ in range(self.groups)],
             "1d": [search_window_1d for _ in range(self.groups)],
@@ -234,7 +234,7 @@ class AttentionOffsetCorrelationLayer(nn.Module):
             # prepare for transformer required input shapes
             left_feature = left_feature.permute(0, 2, 3, 1).reshape(B, H * W, C)
             right_feature = right_feature.permute(0, 2, 3, 1).reshape(B, H * W, C)
-            # this can be either self attention or cross attention, hence the tupple return
+            # this can be either self attention or cross attention, hence the tuple return
             left_feature, right_feature = self.attention_module(left_feature, right_feature)
             left_feature = left_feature.reshape(B, H, W, C).permute(0, 3, 1, 2)
             right_feature = right_feature.reshape(B, H, W, C).permute(0, 3, 1, 2)
@@ -272,7 +272,7 @@ class AttentionOffsetCorrelationLayer(nn.Module):
 
             for d in (0, 2, 3):
                 offsets = offsets.unsqueeze(d)
-            # extra offsets for search (i.e. deformed search indexes. Simillar concept to deformable convolutions)
+            # extra offsets for search (i.e. deformed search indexes. Similar concept to deformable convolutions)
             offsets = offsets + extra_offset
 
             coords = (
@@ -344,7 +344,7 @@ def elu_feature_map(x: Tensor) -> Tensor:
 class LinearAttention(nn.Module):
     """
     Linear attention operation from: https://arxiv.org/pdf/2006.16236.pdf
-    Cannonical implementation reference: https://github.com/idiap/fast-transformers/blob/master/fast_transformers/attention/linear_attention.py
+    Canonical implementation reference: https://github.com/idiap/fast-transformers/blob/master/fast_transformers/attention/linear_attention.py
     LoFTR implementation reference: https://github.com/zju3dv/LoFTR/blob/2122156015b61fbb650e28b58a958e4d632b1058/src/loftr/loftr_module/linear_attention.py
     """
 
@@ -437,7 +437,7 @@ class SoftmaxAttention(nn.Module):
 
 class PositionalEncodingSine(nn.Module):
     """
-    Sinusoidal positonal encodings
+    Sinusoidal positional encodings
 
     Using the scaling term from https://github.com/megvii-research/CREStereo/blob/master/nets/attention/position_encoding.py
     Reference implementation from https://github.com/facebookresearch/detr/blob/8a144f83a287f4d3fece4acdf073f387c5af387d/models/position_encoding.py#L28-L48
@@ -484,7 +484,7 @@ class PositionalEncodingSine(nn.Module):
 class LocalFeatureEncoderLayer(nn.Module):
     """
     LoFTR transformer module from: https://arxiv.org/pdf/2104.00680.pdf
-    Cannonical implementations at: https://github.com/zju3dv/LoFTR/blob/master/src/loftr/loftr_module/transformer.py
+    Canonical implementations at: https://github.com/zju3dv/LoFTR/blob/master/src/loftr/loftr_module/transformer.py
     """
 
     def __init__(
@@ -542,7 +542,7 @@ class LocalFeatureEncoderLayer(nn.Module):
 
         # attention operation
         message = self.attention_op(queries, keys, values, x_mask, source_mask)
-        # concatenating attention heads together before passing throught projection layer
+        # concatenating attention heads together before passing through projection layer
         message = self.merge(message.reshape(B, S, D))
         message = self.attention_norm(message)
 
@@ -556,7 +556,7 @@ class LocalFeatureEncoderLayer(nn.Module):
 class LocalFeatureTransformer(nn.Module):
     """
     LoFTR transformer module from: https://arxiv.org/pdf/2104.00680.pdf
-    Cannonical implementations at: https://github.com/zju3dv/LoFTR/blob/master/src/loftr/loftr_module/transformer.py
+    Canonical implementations at: https://github.com/zju3dv/LoFTR/blob/master/src/loftr/loftr_module/transformer.py
     """
 
     def __init__(
@@ -652,9 +652,9 @@ class CREStereo(nn.Module):
         feature_downsample_rates (List[int]): The downsample rates used to build a feature pyramid from the outputs of the `feature_encoder`. Default: [2, 4]
         correlation_groups (int): In how many groups should the features be split when computer per-pixel correlation. Defaults 4.
         search_window_1d (Tuple[int, int]): The alternate search window size in the x and y directions for the 1D case. Defaults to (1, 9).
-        search_dilate_1d (Tuple[int, int]): The dilation used in the `search_window_1d` when selecting pixels. Simillar to `nn.Conv2d` dilate. Defaults to (1, 1).
+        search_dilate_1d (Tuple[int, int]): The dilation used in the `search_window_1d` when selecting pixels. Similar to `nn.Conv2d` dilate. Defaults to (1, 1).
         search_window_2d (Tuple[int, int]): The alternate search window size in the x and y directions for the 2D case. Defaults to (3, 3).
-        search_dilate_2d (Tuple[int, int]): The dilation used in the `search_window_2d` when selecting pixels. Simillar to `nn.Conv2d` dilate. Defaults to (1, 1).
+        search_dilate_2d (Tuple[int, int]): The dilation used in the `search_window_2d` when selecting pixels. Similar to `nn.Conv2d` dilate. Defaults to (1, 1).
     """
 
     def __init__(
@@ -699,7 +699,7 @@ class CREStereo(nn.Module):
             multiplier=0.25,
         )
 
-        # offsets modules for offseted feature selection
+        # offsets modules for offsetted feature selection
         self.offset_convs = nn.ModuleDict()
         self.correlation_layers = nn.ModuleDict()
 
@@ -715,7 +715,7 @@ class CREStereo(nn.Module):
         # useful for iterating through torch.jit.script module given the network forward pass
         #
         # Ignore the largest resolution. We handle that separately due to torch.jit.script
-        # not being to able access to runtime generated keys in ModuleDicts.
+        # not being able to access to runtime generated keys in ModuleDicts.
         # This way, we can keep a generic way of processing all pyramid levels but except
         # the final one
         iterative_correlation_layer = partial(
@@ -763,7 +763,7 @@ class CREStereo(nn.Module):
         return "1d" if iteration % 2 == 0 else "2d"
 
     def forward(
-        self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor], num_iters: int = 10
+        self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor] = None, num_iters: int = 10
     ) -> List[Tensor]:
         features = torch.cat([left_image, right_image], dim=0)
         features = self.feature_encoder(features)
@@ -781,10 +781,10 @@ class CREStereo(nn.Module):
         ctx_pyramid = self.downsampling_pyramid(ctx)
 
         # we store in reversed order because we process the pyramid from top to bottom
-        l_pyramid: Dict[str, Tensor] = {res: l_pyramid[idx] for idx, res in enumerate(self.resolutions)}
-        r_pyramid: Dict[str, Tensor] = {res: r_pyramid[idx] for idx, res in enumerate(self.resolutions)}
-        net_pyramid: Dict[str, Tensor] = {res: net_pyramid[idx] for idx, res in enumerate(self.resolutions)}
-        ctx_pyramid: Dict[str, Tensor] = {res: ctx_pyramid[idx] for idx, res in enumerate(self.resolutions)}
+        l_pyramid = {res: l_pyramid[idx] for idx, res in enumerate(self.resolutions)}
+        r_pyramid = {res: r_pyramid[idx] for idx, res in enumerate(self.resolutions)}
+        net_pyramid = {res: net_pyramid[idx] for idx, res in enumerate(self.resolutions)}
+        ctx_pyramid = {res: ctx_pyramid[idx] for idx, res in enumerate(self.resolutions)}
 
         # offsets for sampling pixel candidates in the correlation ops
         offsets: Dict[str, Tensor] = {}
@@ -814,7 +814,7 @@ class CREStereo(nn.Module):
         flow_estimates: Dict[str, Tensor] = {}
         # we added this because of torch.script.jit
         # also, the predicition prior is always going to have the
-        # spatial size of the features outputed by the feature encoder
+        # spatial size of the features outputted by the feature encoder
         flow_pred_prior: Tensor = torch.empty(
             size=(B, 2, left_features.shape[2], left_features.shape[3]),
             dtype=l_pyramid[max_res].dtype,
@@ -860,9 +860,9 @@ class CREStereo(nn.Module):
                 # compute the scale difference between the first pyramid scale and the current pyramid scale
                 scale_to_base = l_pyramid[fine_grained_resolution].shape[2] // l_pyramid[resolution].shape[2]
                 for it in range(num_iters // 2):
-                    # set wether or not we want to search on (X, Y) axes for correlation or just on X axis
+                    # set whether we want to search on (X, Y) axes for correlation or just on X axis
                     window_type = self._get_window_type(it)
-                    # we consider this a prior, therefor we do not want to back-propagate through it
+                    # we consider this a prior, therefore we do not want to back-propagate through it
                     flow_estimates[resolution] = flow_estimates[resolution].detach()
 
                     correlations = correlation_layer(
@@ -918,8 +918,8 @@ class CREStereo(nn.Module):
         # this coincides with the maximum resolution
 
         # we keep a separate loop here in order to avoid python control flow
-        # to decide how much iterations should we do based on the current resolution
-        # further more, if provided with an inital flow, there is no need to generate
+        # to decide how many iterations should we do based on the current resolution
+        # furthermore, if provided with an initial flow, there is no need to generate
         # a prior estimate when moving into the final refinement stage
 
         for it in range(num_iters):
@@ -1095,7 +1095,7 @@ class CREStereo_Base_Weights(WeightsEnum):
                     "_detailed": {
                         # 1 is the number of cascades
                         1: {
-                            # 2 is number of refininement interations
+                            # 2 is number of refininement iterations
                             2: {
                                 "mae": 1.704,
                                 "rmse": 3.738,
@@ -1307,7 +1307,7 @@ class CREStereo_Base_Weights(WeightsEnum):
                     "_detailed": {
                         # 1 is the number of cascades
                         1: {
-                            # 2 is number of refininement interations
+                            # 2 is number of refininement iterations
                             2: {
                                 "mae": 1.85,
                                 "rmse": 3.797,
@@ -1425,6 +1425,9 @@ def crestereo_base(*, weights: Optional[CREStereo_Base_Weights] = None, progress
     .. autoclass:: torchvision.prototype.models.depth.stereo.CREStereo_Base_Weights
         :members:
     """
+
+    weights = CREStereo_Base_Weights.verify(weights)
+
     return _crestereo(
         weights=weights,
         progress=progress,

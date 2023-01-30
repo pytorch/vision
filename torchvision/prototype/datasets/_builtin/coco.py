@@ -14,7 +14,9 @@ from torchdata.datapipes.iter import (
     Mapper,
     UnBatcher,
 )
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datapoints import BoundingBox, Label, Mask
+from torchvision.prototype.datapoints._datapoint import Datapoint
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -24,7 +26,6 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     read_categories_file,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
 
 from .._api import register_dataset, register_info
 
@@ -97,35 +98,38 @@ class Coco(Dataset):
         )
         return [images, meta]
 
-    def _segmentation_to_mask(self, segmentation: Any, *, is_crowd: bool, image_size: Tuple[int, int]) -> torch.Tensor:
+    def _segmentation_to_mask(
+        self, segmentation: Any, *, is_crowd: bool, spatial_size: Tuple[int, int]
+    ) -> torch.Tensor:
         from pycocotools import mask
 
         if is_crowd:
-            segmentation = mask.frPyObjects(segmentation, *image_size)
+            segmentation = mask.frPyObjects(segmentation, *spatial_size)
         else:
-            segmentation = mask.merge(mask.frPyObjects(segmentation, *image_size))
+            segmentation = mask.merge(mask.frPyObjects(segmentation, *spatial_size))
 
         return torch.from_numpy(mask.decode(segmentation)).to(torch.bool)
 
     def _decode_instances_anns(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
-        image_size = (image_meta["height"], image_meta["width"])
+        spatial_size = (image_meta["height"], image_meta["width"])
         labels = [ann["category_id"] for ann in anns]
         return dict(
-            # TODO: create a segmentation feature
-            segmentations=_Feature(
+            segmentations=Mask(
                 torch.stack(
                     [
-                        self._segmentation_to_mask(ann["segmentation"], is_crowd=ann["iscrowd"], image_size=image_size)
+                        self._segmentation_to_mask(
+                            ann["segmentation"], is_crowd=ann["iscrowd"], spatial_size=spatial_size
+                        )
                         for ann in anns
                     ]
                 )
             ),
-            areas=_Feature([ann["area"] for ann in anns]),
-            crowds=_Feature([ann["iscrowd"] for ann in anns], dtype=torch.bool),
+            areas=Datapoint([ann["area"] for ann in anns]),
+            crowds=Datapoint([ann["iscrowd"] for ann in anns], dtype=torch.bool),
             bounding_boxes=BoundingBox(
                 [ann["bbox"] for ann in anns],
                 format="xywh",
-                image_size=image_size,
+                spatial_size=spatial_size,
             ),
             labels=Label(labels, categories=self._categories),
             super_categories=[self._category_to_super_category[self._categories[label]] for label in labels],

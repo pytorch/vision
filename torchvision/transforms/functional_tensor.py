@@ -15,12 +15,6 @@ def _assert_image_tensor(img: Tensor) -> None:
         raise TypeError("Tensor is not a torch image.")
 
 
-def _assert_threshold(img: Tensor, threshold: float) -> None:
-    bound = 1 if img.is_floating_point() else 255
-    if threshold > bound:
-        raise TypeError("Threshold should be less than bound of img.")
-
-
 def get_dimensions(img: Tensor) -> List[int]:
     _assert_image_tensor(img)
     channels = 1 if img.ndim == 2 else img.shape[-3]
@@ -56,6 +50,8 @@ def _max_value(dtype: torch.dtype) -> int:
     elif dtype == torch.int64:
         return 9223372036854775807
     else:
+        # This is only here for completeness. This value is implicitly assumed in a lot of places so changing it is not
+        # easy.
         return 1
 
 
@@ -212,8 +208,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
         return img
 
     orig_dtype = img.dtype
-    if img.dtype == torch.uint8:
-        img = img.to(dtype=torch.float32) / 255.0
+    img = convert_image_dtype(img, torch.float32)
 
     img = _rgb2hsv(img)
     h, s, v = img.unbind(dim=-3)
@@ -221,10 +216,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     img = torch.stack((h, s, v), dim=-3)
     img_hue_adj = _hsv2rgb(img)
 
-    if orig_dtype == torch.uint8:
-        img_hue_adj = (img_hue_adj * 255.0).to(dtype=orig_dtype)
-
-    return img_hue_adj
+    return convert_image_dtype(img_hue_adj, orig_dtype)
 
 
 def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
@@ -263,7 +255,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
 def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
     ratio = float(ratio)
-    bound = 1.0 if img1.is_floating_point() else 255.0
+    bound = _max_value(img1.dtype)
     return (ratio * img1 + (1.0 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
@@ -280,7 +272,7 @@ def _rgb2hsv(img: Tensor) -> Tensor:
     #   + S channel has division by `maxc`, which is zero only if `maxc = minc`
     #   + H channel has division by `(maxc - minc)`.
     #
-    # Instead of overwriting NaN afterwards, we just prevent it from occuring so
+    # Instead of overwriting NaN afterwards, we just prevent it from occurring, so
     # we don't need to deal with it in case we save the NaN in a buffer in
     # backprop, if it is ever supported, but it doesn't hurt to do so.
     eqc = maxc == minc
@@ -424,7 +416,7 @@ def pad(
     out_dtype = img.dtype
     need_cast = False
     if (padding_mode != "constant") and img.dtype not in (torch.float32, torch.float64):
-        # Here we temporary cast input tensor to float
+        # Here we temporarily cast input tensor to float
         # until pytorch issue is resolved :
         # https://github.com/pytorch/pytorch/issues/40763
         need_cast = True
@@ -755,12 +747,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
     kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
     kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(
-        img,
-        [
-            kernel.dtype,
-        ],
-    )
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype])
 
     # padding = (left, right, top, bottom)
     padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
@@ -780,8 +767,7 @@ def invert(img: Tensor) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    bound = torch.tensor(1 if img.is_floating_point() else 255, dtype=img.dtype, device=img.device)
-    return bound - img
+    return _max_value(img.dtype) - img
 
 
 def posterize(img: Tensor, bits: int) -> Tensor:
@@ -807,7 +793,8 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    _assert_threshold(img, threshold)
+    if threshold > _max_value(img.dtype):
+        raise TypeError("Threshold should be less than bound of img.")
 
     inverted_img = invert(img)
     return torch.where(img >= threshold, inverted_img, img)
@@ -821,12 +808,7 @@ def _blurred_degenerate_image(img: Tensor) -> Tensor:
     kernel /= kernel.sum()
     kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    result_tmp, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(
-        img,
-        [
-            kernel.dtype,
-        ],
-    )
+    result_tmp, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype])
     result_tmp = conv2d(result_tmp, kernel, groups=result_tmp.shape[-3])
     result_tmp = _cast_squeeze_out(result_tmp, need_cast, need_squeeze, out_dtype)
 
@@ -859,7 +841,7 @@ def autocontrast(img: Tensor) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    bound = 1.0 if img.is_floating_point() else 255.0
+    bound = _max_value(img.dtype)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
 
     minimum = img.amin(dim=(-2, -1), keepdim=True).to(dtype)
@@ -880,7 +862,7 @@ def _scale_channel(img_chan: Tensor) -> Tensor:
     if img_chan.is_cuda:
         hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
     else:
-        hist = torch.bincount(img_chan.view(-1), minlength=256)
+        hist = torch.bincount(img_chan.reshape(-1), minlength=256)
 
     nonzero_hist = hist[hist != 0]
     step = torch.div(nonzero_hist[:-1].sum(), 255, rounding_mode="floor")

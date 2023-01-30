@@ -15,7 +15,8 @@ from torchdata.datapipes.iter import (
     TarArchiveLoader,
 )
 from torchdata.datapipes.map import IterToMapConverter
-from torchvision.prototype.datasets.utils import Dataset, ManualDownloadResource, OnlineResource
+from torchvision.prototype.datapoints import Label
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, ManualDownloadResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -25,7 +26,6 @@ from torchvision.prototype.datasets.utils._internal import (
     read_categories_file,
     read_mat,
 )
-from torchvision.prototype.features import EncodedImage, Label
 
 from .._api import register_dataset, register_info
 

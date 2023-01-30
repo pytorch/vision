@@ -5,14 +5,20 @@ from typing import Any, Optional, Sequence, Type, TypeVar, Union
 import torch
 from torch.utils._pytree import tree_map
 
-from ._feature import _Feature
+from ._datapoint import Datapoint
 
 
 L = TypeVar("L", bound="_LabelBase")
 
 
-class _LabelBase(_Feature):
+class _LabelBase(Datapoint):
     categories: Optional[Sequence[str]]
+
+    @classmethod
+    def _wrap(cls: Type[L], tensor: torch.Tensor, *, categories: Optional[Sequence[str]]) -> L:
+        label_base = tensor.as_subclass(cls)
+        label_base.categories = categories
+        return label_base
 
     def __new__(
         cls: Type[L],
@@ -21,18 +27,16 @@ class _LabelBase(_Feature):
         categories: Optional[Sequence[str]] = None,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: bool = False,
+        requires_grad: Optional[bool] = None,
     ) -> L:
-        label_base = super().__new__(cls, data, dtype=dtype, device=device, requires_grad=requires_grad)
-
-        label_base.categories = categories
-
-        return label_base
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        return cls._wrap(tensor, categories=categories)
 
     @classmethod
-    def new_like(cls: Type[L], other: L, data: Any, *, categories: Optional[Sequence[str]] = None, **kwargs: Any) -> L:
-        return super().new_like(
-            other, data, categories=categories if categories is not None else other.categories, **kwargs
+    def wrap_like(cls: Type[L], other: L, tensor: torch.Tensor, *, categories: Optional[Sequence[str]] = None) -> L:
+        return cls._wrap(
+            tensor,
+            categories=categories if categories is not None else other.categories,
         )
 
     @classmethod

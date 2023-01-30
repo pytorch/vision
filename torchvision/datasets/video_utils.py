@@ -49,7 +49,7 @@ class _VideoTimestampsDataset:
     Dataset used to parallelize the reading of the timestamps
     of a list of videos, given their paths in the filesystem.
 
-    Used in VideoClips and defined at top level so it can be
+    Used in VideoClips and defined at top level, so it can be
     pickled when forking.
     """
 
@@ -198,6 +198,7 @@ class VideoClips:
             _video_max_dimension=self._video_max_dimension,
             _audio_samples=self._audio_samples,
             _audio_channels=self._audio_channels,
+            output_format=self.output_format,
         )
 
     @staticmethod

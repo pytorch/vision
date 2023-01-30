@@ -1,6 +1,7 @@
 import math
+from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, List, Optional, OrderedDict, Sequence, Tuple
+from typing import Any, Callable, List, Optional, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -300,7 +301,7 @@ class PartitionAttentionLayer(nn.Module):
         self,
         in_channels: int,
         head_dim: int,
-        # partitioning parameteres
+        # partitioning parameters
         partition_size: int,
         partition_type: str,
         # grid size needs to be known at initialization time
@@ -426,7 +427,7 @@ class MaxVitLayer(nn.Module):
     ) -> None:
         super().__init__()
 
-        layers: OrderedDict[str, Any] = OrderedDict()  # type: ignore
+        layers: OrderedDict = OrderedDict()
 
         # convolutional layer
         layers["MBconv"] = MBConv(
@@ -785,6 +786,8 @@ class MaxVit_T_Weights(WeightsEnum):
                     "acc@5": 96.722,
                 }
             },
+            "_ops": 5.558,
+            "_file_size": 118.769,
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )

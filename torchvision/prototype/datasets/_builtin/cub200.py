@@ -14,7 +14,9 @@ from torchdata.datapipes.iter import (
     Mapper,
 )
 from torchdata.datapipes.map import IterToMapConverter
-from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
+from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datapoints._datapoint import Datapoint
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -25,7 +27,6 @@ from torchvision.prototype.datasets.utils._internal import (
     read_categories_file,
     read_mat,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
 
 from .._api import register_dataset, register_info
 
@@ -130,13 +131,13 @@ class CUB200(Dataset):
         return path.with_suffix(".jpg").name
 
     def _2011_prepare_ann(
-        self, data: Tuple[str, Tuple[List[str], Tuple[str, BinaryIO]]], image_size: Tuple[int, int]
+        self, data: Tuple[str, Tuple[List[str], Tuple[str, BinaryIO]]], spatial_size: Tuple[int, int]
     ) -> Dict[str, Any]:
         _, (bounding_box_data, segmentation_data) = data
         segmentation_path, segmentation_buffer = segmentation_data
         return dict(
             bounding_box=BoundingBox(
-                [float(part) for part in bounding_box_data[1:]], format="xywh", image_size=image_size
+                [float(part) for part in bounding_box_data[1:]], format="xywh", spatial_size=spatial_size
             ),
             segmentation_path=segmentation_path,
             segmentation=EncodedImage.from_file(segmentation_buffer),
@@ -149,7 +150,9 @@ class CUB200(Dataset):
         path = pathlib.Path(data[0])
         return path.with_suffix(".jpg").name, data
 
-    def _2010_prepare_ann(self, data: Tuple[str, Tuple[str, BinaryIO]], image_size: Tuple[int, int]) -> Dict[str, Any]:
+    def _2010_prepare_ann(
+        self, data: Tuple[str, Tuple[str, BinaryIO]], spatial_size: Tuple[int, int]
+    ) -> Dict[str, Any]:
         _, (path, buffer) = data
         content = read_mat(buffer)
         return dict(
@@ -157,9 +160,9 @@ class CUB200(Dataset):
             bounding_box=BoundingBox(
                 [int(content["bbox"][coord]) for coord in ("left", "bottom", "right", "top")],
                 format="xyxy",
-                image_size=image_size,
+                spatial_size=spatial_size,
             ),
-            segmentation=_Feature(content["seg"]),
+            segmentation=Datapoint(content["seg"]),
         )
 
     def _prepare_sample(
@@ -175,9 +178,12 @@ class CUB200(Dataset):
         image = EncodedImage.from_file(buffer)
 
         return dict(
-            prepare_ann_fn(anns_data, image.image_size),
+            prepare_ann_fn(anns_data, image.spatial_size),
             image=image,
-            label=Label(int(pathlib.Path(path).parent.name.rsplit(".", 1)[0]), categories=self._categories),
+            label=Label(
+                int(pathlib.Path(path).parent.name.rsplit(".", 1)[0]) - 1,
+                categories=self._categories,
+            ),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

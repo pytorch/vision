@@ -54,7 +54,7 @@ def _sequence_loss_fn(
     abs_diff = abs_diff.mean(axis=(1, 2, 3, 4))
     num_predictions = flow_preds.shape[0]
 
-    # alocating on CPU and moving to device during run-time can force
+    # allocating on CPU and moving to device during run-time can force
     # an unwanted GPU synchronization that produces a large overhead
     if weights is None or len(weights) != num_predictions:
         weights = gamma ** torch.arange(num_predictions - 1, -1, -1, device=flow_preds.device, dtype=flow_preds.dtype)
@@ -275,7 +275,7 @@ class SmoothnessLoss(nn.Module):
         """
         Args:
             images: tensor of shape (D1, D2, ..., DN, C, H, W)
-            depths: tensor of shape (D1, D2, ..., DN, 1, H, W)
+            vals: tensor of shape (D1, D2, ..., DN, 1, H, W)
 
         Returns:
             smoothness loss of shape (D1, D2, ..., DN)
@@ -303,7 +303,7 @@ def _flow_sequence_consistency_loss_fn(
     # In the original paper, an additional refinement network is used to refine a flow prediction.
     # Each step performed by the recurrent module in Raft or CREStereo is a refinement step using a delta_flow update.
     # which should be consistent with the previous step. In this implementation, we simplify the overall loss
-    # term and ignore left-right consistency loss or photometric loss which can be treated separetely.
+    # term and ignore left-right consistency loss or photometric loss which can be treated separately.
 
     torch._assert(
         rescale_factor <= 1.0,

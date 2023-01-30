@@ -20,13 +20,13 @@ So, before starting any work and submitting a PR there are a few critical things
 
 ### 1. Preparation work
 
-- Start by looking into this [issue](https://github.com/pytorch/vision/issues/2707) in order to have an idea of the models that are being considered, express your willingness to add a new model and discuss with the community whether or not this model should be included in TorchVision. It is very important at this stage to make sure that there is an agreement on the value of having this model in TorchVision and there is no one else already working on it.
+- Start by looking into this [issue](https://github.com/pytorch/vision/issues/2707) in order to have an idea of the models that are being considered, express your willingness to add a new model and discuss with the community whether this model should be included in TorchVision. It is very important at this stage to make sure that there is an agreement on the value of having this model in TorchVision and there is no one else already working on it.
 
 - If the decision is to include the new model, then please create a new ticket which will be used for all design and implementation discussions prior to the PR. One of the TorchVision maintainers will reach out at this stage and this will be your POC from this point onwards in order to provide support, guidance and regular feedback.
 
 ### 2.  Implement the model
 
-Please take a look at existing models in TorchVision to get familiar with the idioms. Also please look at recent contributions for new models. If in doubt about any design decisions you can ask for feedback on the issue created in step 1.  Example of things to take into account:
+Please take a look at existing models in TorchVision to get familiar with the idioms. Also, please look at recent contributions for new models. If in doubt about any design decisions you can ask for feedback on the issue created in step 1.  Example of things to take into account:
 
 - The implementation should be as close as possible to the canonical implementation/paper
 - The PR must include the code implementation, documentation and tests
@@ -34,7 +34,7 @@ Please take a look at existing models in TorchVision to get familiar with the id
 - The weights need to reproduce closely the results of the paper in terms of accuracy, even though the final weights to be deployed will be those trained by the TorchVision maintainers
 - The PR description should include commands/configuration used to train the model, so that the TorchVision maintainers can easily run them to verify the implementation and generate the final model to be released
 - Make sure we re-use existing components as much as possible (inheritance)
-- New primitives (transforms, losses, etc) can be added if necessary, but the final location will be determined after discussion with the dedicated maintainer
+- New primitives (transforms, losses, etc.) can be added if necessary, but the final location will be determined after discussion with the dedicated maintainer
 - Please take a look at the detailed [implementation and documentation guidelines](https://github.com/pytorch/vision/issues/5319) for a fine grain list of things not to be missed
 
 ### 3. Train the model with reference scripts
