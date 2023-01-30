@@ -41,7 +41,7 @@ jobs:
         
         echo '::group::Create conda environment'
         conda create \
-          --name ci
+          --name ci \
           --quiet --yes \
           python=${{ matrix.python-version }} pip \
           clang_osx-64 clangxx_osx-64 \
