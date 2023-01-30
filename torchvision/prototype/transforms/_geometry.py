@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, cast, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -11,8 +11,6 @@ from torchvision.ops.boxes import box_iou
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
 from torchvision.transforms.functional import _get_perspective_coeffs
-
-from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
