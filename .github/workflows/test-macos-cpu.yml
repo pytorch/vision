@@ -39,7 +39,7 @@ jobs:
         fi
 
         # Create Conda Env
-        conda create -y -n ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy pillow requests
+        conda create -y -n ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy ninja
         conda activate ci_env
         
         # Install PyTorch, Torchvision, and testing libraries
