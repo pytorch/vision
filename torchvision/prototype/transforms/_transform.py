@@ -81,8 +81,8 @@ class Transform(nn.Module):
         # This is needed for `Pad`, `ElasticTransform`, `RandomAffine`, `RandomCrop`, `RandomPerspective` and
         # `RandomRotation`
         if "fill" in params:
-            fill_type_dict = params.pop("fill")
-            params["fill"] = fill_type_dict.get(torch.Tensor)
+            fill_type_defaultdict = params.pop("fill")
+            params["fill"] = fill_type_defaultdict[torch.Tensor]
 
         return params
 
