@@ -9,9 +9,6 @@ on:
       - release/*
   workflow_dispatch:
 
-env:
-  CHANNEL: "nightly"
-
 jobs:
   tests:
     strategy:
@@ -23,37 +20,55 @@ jobs:
       runner: linux.12xlarge
       repository: pytorch/vision
       script: |
-        conda search gcc
-        conda search clang
-#        # Mark Build Directory Safe
-#        git config --global --add safe.directory /__w/vision/vision
-#
-#        # Set up Environment Variables
-#        export PYTHON_VERSION="${{ matrix.python_version }}"
-#        export VERSION="cpu"
-#        export CUDATOOLKIT="cpuonly"
-#
-#        # Set CHANNEL
-#        if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
-#          export CHANNEL=test
-#        else
-#          export CHANNEL=nightly
-#        fi
-#
-#        # Create Conda Env
-#        conda create -y -n ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy
-#        conda activate ci_env
-#
-#        # Install PyTorch, Torchvision, and testing libraries
-#        set -ex
-#        conda install \
-#          --yes \
-#          -c "pytorch-${CHANNEL}" \
-#          -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
-#          "${CUDATOOLKIT}"
-#        python3 setup.py develop
-#        python3 -m pip install pytest pytest-mock 'av<10'
-#
-#        # Run Tests
-#        python3 -m torch.utils.collect_env
-#        python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
+        echo '::group::Set PyTorch conda channel'
+        # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
+        if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
+          POSTFIX=test
+        else
+          POSTFIX=nightly
+        fi
+        PYTORCH_CHANNEL=pytorch-"${POSTFIX}"
+        echo "${PYTORCH_CHANNEL}"
+        echo '::endgroup::'
+
+        echo '::group::Set PyTorch conda mutex'
+        PYTORCH_MUTEX=cpuonly
+        echo "${PYTORCH_MUTEX}"
+        echo '::endgroup::'
+
+        echo '::group::Create conda environment'
+        conda create \
+          --name ci \
+          --quiet --yes \
+          python=${{ matrix.python-version }} pip \
+          gcc_linux-64 gxx_linux-64 \
+          setuptools ninja \
+          libpng jpeg
+        conda activate ci
+        pip install 'av<10'
+        echo '::endgroup::'
+
+        echo '::group::Install PyTorch'
+        conda install \
+          --quiet --yes \
+          -c "${PYTORCH_CHANNEL}" \
+          -c nvidia \
+          pytorch \
+          "${PYTORCH_MUTEX}"
+        echo '::endgroup::'
+
+        echo '::group::Install TorchVision'
+        python setup.py develop
+        echo '::endgroup::'
+
+        echo '::group::Collect PyTorch environment information'
+        python -m torch.utils.collect_env
+        echo '::endgroup::'
+
+        echo '::group::Install testing utilities'
+        pip install --progress-bar=off pytest pytest-mock pytest-cov
+        echo '::endgroup::'
+
+        echo '::group::Run tests'
+        pytest --durations=25
+        echo '::endgroup::'

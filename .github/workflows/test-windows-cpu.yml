@@ -40,7 +40,7 @@ jobs:
           --name ci \
           --quiet --yes \
           python=${{ matrix.python-version }} pip \
-          clang_osx-64 clangxx_osx-64 \
+          m2w64-gcc m2w64-gxx \
           setuptools ninja \
           libpng jpeg
         conda activate ci
