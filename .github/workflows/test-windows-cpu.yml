@@ -45,7 +45,6 @@ jobs:
           libpng jpeg
         set +u
         conda activate ci
-        set -u
         pip install 'av<10'
         echo '::endgroup::'
 
