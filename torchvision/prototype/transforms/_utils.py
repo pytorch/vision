@@ -1,14 +1,12 @@
 import functools
 import numbers
 from collections import defaultdict
-from typing import Any, Dict, Sequence, Type, TypeVar, Union
+from typing import Any, Dict, Literal, Sequence, Type, TypeVar, Union
 
 from torchvision.prototype import datapoints
 from torchvision.prototype.datapoints._datapoint import FillType, FillTypeJIT
 
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
-
-from typing_extensions import Literal
 
 
 def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size: int = 2) -> Sequence[float]:

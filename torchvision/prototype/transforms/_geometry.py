@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, cast, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -10,8 +10,6 @@ from torchvision.ops.boxes import box_iou
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
 from torchvision.transforms.functional import _get_perspective_coeffs
-
-from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
@@ -46,11 +44,16 @@ class Resize(Transform):
     ) -> None:
         super().__init__()
 
-        self.size = (
-            [size]
-            if isinstance(size, int)
-            else _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
-        )
+        if isinstance(size, int):
+            size = [size]
+        elif isinstance(size, (list, tuple)) and len(size) in {1, 2}:
+            size = list(size)
+        else:
+            raise ValueError(
+                f"size can either be an integer or a list or tuple of one or two integers, " f"but got {size} instead."
+            )
+        self.size = size
+
         self.interpolation = interpolation
         self.max_size = max_size
         self.antialias = antialias
