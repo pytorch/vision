@@ -2,30 +2,23 @@ name: Unit-tests on macOS CPU
 
 on:
   pull_request:
-  push:
-    branches:
-      - nightly
-      - main
-      - release/*
-  workflow_dispatch:
-
-env:
-  CHANNEL: "nightly"
 
 jobs:
   tests:
     strategy:
       matrix:
         runner:
-          - macos-12  # x86
-          - macos-m1-12  # Apple Silicon
+          - ubuntu-latest
+          - macos-12
+          - macos-11
       fail-fast: false
 
   runs-on: ${{ matrix.runner }}
 
   steps:
     - name: test sign of life
-      run: echo "Hello"
+      run: echo "${{ matrix.runner }}"
+
 #    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
 #    with:
 #      runner: ${{ matrix.runner }}
