@@ -3,6 +3,25 @@ import torch
 from torchvision.prototype import datapoints
 
 
+@pytest.mark.parametrize(
+    ("data", "input_requires_grad", "expected_requires_grad"),
+    [
+        ([0.0], None, False),
+        ([0.0], False, False),
+        ([0.0], True, True),
+        (torch.tensor([0.0], requires_grad=False), None, False),
+        (torch.tensor([0.0], requires_grad=False), False, False),
+        (torch.tensor([0.0], requires_grad=False), True, True),
+        (torch.tensor([0.0], requires_grad=True), None, True),
+        (torch.tensor([0.0], requires_grad=True), False, False),
+        (torch.tensor([0.0], requires_grad=True), True, True),
+    ],
+)
+def test_new_requires_grad(data, input_requires_grad, expected_requires_grad):
+    datapoint = datapoints.Label(data, requires_grad=input_requires_grad)
+    assert datapoint.requires_grad is expected_requires_grad
+
+
 def test_isinstance():
     assert isinstance(
         datapoints.Label([0, 1, 0], categories=["foo", "bar"]),
@@ -28,7 +47,7 @@ def test_to_wrapping():
     assert label_to.categories is label.categories
 
 
-def test_to_feature_reference():
+def test_to_datapoint_reference():
     tensor = torch.tensor([0, 1, 0], dtype=torch.int64)
     label = datapoints.Label(tensor, categories=["foo", "bar"]).to(torch.int32)
 

@@ -3,16 +3,10 @@ from __future__ import annotations
 from typing import Any, Callable, List, Tuple, Type, Union
 
 import PIL.Image
-import torch
 
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datapoints
-from torchvision.prototype.datapoints._datapoint import Datapoint
-from torchvision.prototype.transforms.functional import get_dimensions, get_spatial_size
-
-
-def is_simple_tensor(inpt: Any) -> bool:
-    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, Datapoint)
+from torchvision.prototype.transforms.functional import get_dimensions, get_spatial_size, is_simple_tensor
 
 
 def query_bounding_box(flat_inputs: List[Any]) -> datapoints.BoundingBox:

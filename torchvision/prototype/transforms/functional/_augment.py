@@ -7,6 +7,8 @@ from torchvision.prototype import datapoints
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 from torchvision.utils import _log_api_usage_once
 
+from ._utils import is_simple_tensor
+
 
 def erase_image_tensor(
     image: torch.Tensor, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
@@ -45,9 +47,7 @@ def erase(
     if not torch.jit.is_scripting():
         _log_api_usage_once(erase)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return erase_image_tensor(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
     elif isinstance(inpt, datapoints.Image):
         output = erase_image_tensor(inpt.as_subclass(torch.Tensor), i=i, j=j, h=h, w=w, v=v, inplace=inplace)
