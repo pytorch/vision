@@ -737,7 +737,9 @@ def _get_gaussian_kernel2d(
     return kernel2d
 
 
-def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Tensor:
+def gaussian_blur(
+    img: Tensor, kernel_size: List[int], sigma: List[float], pad_mode: str = "reflect", pad_value: float = 0.0
+) -> Tensor:
     if not (isinstance(img, torch.Tensor)):
         raise TypeError(f"img should be Tensor. Got {type(img)}")
 
@@ -751,7 +753,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
 
     # padding = (left, right, top, bottom)
     padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
-    img = torch_pad(img, padding, mode="reflect")
+    img = torch_pad(img, padding, mode=pad_mode, value=pad_value)
     img = conv2d(img, kernel, groups=img.shape[-3])
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
