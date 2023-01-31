@@ -656,6 +656,15 @@ def test_call_consistency(config, args_kwargs):
 
 
 @pytest.mark.parametrize(
+    "config",
+    [config for config in CONSISTENCY_CONFIGS if hasattr(config.legacy_cls, "get_params")],
+    ids=lambda config: config.legacy_cls.__name__,
+)
+def test_get_params_consistency(config):
+    assert config.prototype_cls.get_params is config.legacy_cls.get_params
+
+
+@pytest.mark.parametrize(
     ("config", "args_kwargs"),
     [
         pytest.param(

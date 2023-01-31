@@ -56,9 +56,18 @@ class Transform(nn.Module):
 
         return ", ".join(extra)
 
-    # This attribute should be set on all transforms that have a v1 equivalent. Doing so enables the v2 transformation
-    # to be scriptable. See `_extract_params_for_v1_transform()` and `__prepare_scriptable__` for details.
+    # This attribute should be set on all transforms that have a v1 equivalent. Doing so enables two things:
+    # 1. In case the v1 transform has a static `get_params` method, it will also be available under the same name on
+    #    the v2 transform. See `__init_subclass__` for details.
+    # 2. The v2 transform will be JIT scriptable. See `_extract_params_for_v1_transform` and `__prepare_scriptable__`
+    #    for details.
     _v1_transform_cls: Optional[Type[nn.Module]] = None
+
+    def __init_subclass__(cls) -> None:
+        # Since `get_params` is a `@staticmethod`, we have to bind it to the class itself rather than to an instance.
+        # This method is called after subclassing has happened, i.e. `cls` is the subclass.
+        if cls._v1_transform_cls is not None and hasattr(cls._v1_transform_cls, "get_params"):
+            cls.get_params = cls._v1_transform_cls.get_params  # type: ignore[attr-defined]
 
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
         # This method is called by `__prepare_scriptable__` to instantiate the equivalent v1 transform from the current
