@@ -19,6 +19,8 @@ jobs:
     with:
       repository: pytorch/vision
       script: |
+        echo CONDA_BUILD=$CONDA_BUILD
+        
         echo '::group::Set PyTorch conda channel'
         # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
         if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
@@ -43,8 +45,11 @@ jobs:
           setuptools ninja \
           libpng jpeg
         conda activate ci
+        echo CONDA_BUILD=$CONDA_BUILD
         pip install 'av<10'
         echo '::endgroup::'
+        
+        echo CONDA_BUILD=$CONDA_BUILD
 
         echo '::group::Install PyTorch'
         conda install \
@@ -54,6 +59,8 @@ jobs:
           pytorch \
           "${PYTORCH_MUTEX}"
         echo '::endgroup::'
+        
+        echo CONDA_BUILD=$CONDA_BUILD
 
         echo '::group::Install TorchVision'
         python setup.py develop
