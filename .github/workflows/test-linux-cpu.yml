@@ -57,6 +57,12 @@ jobs:
         echo '::endgroup::'
 
         echo '::group::Install TorchVision'
+        # The `setuptools` package installed through `conda` includes a patch that errors if something is installed 
+        # through `setuptools` while the `CONDA_BUILD` environment variable is set.
+        # https://github.com/AnacondaRecipes/setuptools-feedstock/blob/f5d8d256810ce28fc0cf34170bc34e06d3754041/recipe/patches/0002-disable-downloads-inside-conda-build.patch
+        # (Although we are not using the `-c conda-forge` channel, the patch is equivalent but not public for 
+        # `setuptools` from the `-c defaults` channel
+        unset CONDA_BUILD
         python setup.py develop
         echo '::endgroup::'
 
