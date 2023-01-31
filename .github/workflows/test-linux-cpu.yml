@@ -46,7 +46,8 @@ jobs:
           --quiet --yes \
           python pip \
           setuptools ninja \
-          libpng jpeg
+          libpng jpeg \
+          Pillow numpy requests
         conda activate ci
         pip install 'av<10'
         echo '::endgroup::'
@@ -59,10 +60,6 @@ jobs:
           pytorch \
           "${PYTORCH_MUTEX}"
         echo '::endgroup::'
-        
-        python -c "import certifi; print(certifi.where())"
-        python -c "import pip._vendor.certifi as certifi; print(certifi.where())"
-        echo PIP_CERT=$PIP_CERT
 
         echo '::group::Install TorchVision'
         # The `setuptools` package installed through `conda` includes a patch that errors if something is installed 
