@@ -13,11 +13,15 @@ jobs:
   tests:
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        include:
+          - os: linux
+            runner: linux.12xlarge
+          - os: windows
+            runner: windows.4xlarge
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/${{ matrix.os }}_job.yml@main
     with:
-      runner: linux.12xlarge
+      runner: ${{ matrix.runner }}
       repository: pytorch/vision
       script: |
         echo '::group::Set PyTorch conda channel'
@@ -40,7 +44,7 @@ jobs:
         conda create \
           --name ci \
           --quiet --yes \
-          python=${{ matrix.python-version }} pip \
+          python pip \
           setuptools ninja \
           libpng jpeg
         conda activate ci
