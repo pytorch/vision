@@ -1,5 +1,4 @@
 #include "seekable_buffer.h"
-#include <c10/util/Logging.h>
 #include <chrono>
 #include "memory_buffer.h"
 

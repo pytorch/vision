@@ -1,5 +1,4 @@
 #include "video_sampler.h"
-#include <c10/util/Logging.h>
 #include "util.h"
 
 // www.ffmpeg.org/doxygen/0.5/swscale-example_8c-source.html

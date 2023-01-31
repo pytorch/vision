@@ -1,4 +1,3 @@
-#include <c10/util/Logging.h>
 #include <dirent.h>
 #include <gtest/gtest.h>
 #include "memory_buffer.h"
