@@ -16,7 +16,7 @@ jobs:
   tests:
     strategy:
       matrix:
-        python_version: ["3.8", "3.9", "3.10"]
+        python_version: ["3.8", "3.9", "3.10", "3.11"]
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
@@ -39,7 +39,12 @@ jobs:
         fi
 
         # Create Conda Env
-        conda create -yp ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy
+        if [[ "${PYTHON_VERSION}" = "3.11" ]]; then
+          conda create -yp ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy
+        else
+          conda create -yp ci_env -c conda-forge python="${PYTHON_VERSION}" numpy libpng jpeg scipy
+        fi
+        
         conda activate /work/ci_env
         
         # Install PyTorch, Torchvision, and testing libraries
