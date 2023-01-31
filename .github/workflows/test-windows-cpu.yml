@@ -54,6 +54,10 @@ jobs:
           pytorch \
           "${PYTORCH_MUTEX}"
         echo '::endgroup::'
+        
+        python -c "import certifi; print(certifi.where())"
+        python -c "import pip._vendor.certifi as certifi; print(certifi.where())"
+        echo PIP_CERT=$PIP_CERT
 
         echo '::group::Install TorchVision'
         # the `setuptools` package installed through `conda` includes a patch that errors if something is installed 
