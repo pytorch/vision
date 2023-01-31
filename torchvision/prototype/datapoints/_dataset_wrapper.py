@@ -84,10 +84,12 @@ def get_categories(dataset: datasets.VisionDataset) -> Optional[List[str]]:
 
 
 def classification_wrapper(
-    dataset: datasets.VisionDataset, sample: Tuple[PIL.Image.Image, int]
-) -> Tuple[PIL.Image.Image, datapoints.Label]:
+    dataset: datasets.VisionDataset, sample: Tuple[PIL.Image.Image, Optional[int]]
+) -> Tuple[PIL.Image.Image, Optional[datapoints.Label]]:
     image, label = sample
-    return image, datapoints.Label(label, categories=get_categories(dataset))
+    if label is not None:
+        label = datapoints.Label(label, categories=get_categories(dataset))
+    return image, label
 
 
 for dataset_type in [
