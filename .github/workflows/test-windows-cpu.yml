@@ -40,10 +40,8 @@ jobs:
           --name ci \
           --quiet --yes \
           python=${{ matrix.python-version }} pip \
-          m2w64-gcc \
           setuptools ninja \
           libpng jpeg
-        set +u
         conda activate ci
         pip install 'av<10'
         echo '::endgroup::'
