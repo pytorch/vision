@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import enum
-from typing import Any, Callable, Dict, List, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import PIL.Image
 import torch
@@ -53,6 +55,51 @@ class Transform(nn.Module):
             extra.append(f"{name}={value}")
 
         return ", ".join(extra)
+
+    # This attribute should be set on all transforms that have a v1 equivalent. Doing so enables the v2 transformation
+    # to be scriptable. See `_extract_params_for_v1_transform()` and `__prepare_scriptable__` for details.
+    _v1_transform_cls: Optional[Type[nn.Module]] = None
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        # This method is called by `__prepare_scriptable__` to instantiate the equivalent v1 transform from the current
+        # v2 transform instance. It does two things:
+        # 1. Extract all available public attributes that are specific to that transform and not `nn.Module` in general
+        # 2. If available handle the `fill` attribute for v1 compatibility (see below for details)
+        # Overwrite this method on the v2 transform class if the above is not sufficient. For example, this might happen
+        # if the v2 transform introduced new parameters that are not support by the v1 transform.
+        common_attrs = nn.Module().__dict__.keys()
+        params = {
+            attr: value
+            for attr, value in self.__dict__.items()
+            if not attr.startswith("_") and attr not in common_attrs
+        }
+
+        # transforms v2 has a more complex handling for the `fill` parameter than v1. By default, the input is parsed
+        # with `prototype.transforms._utils._setup_fill_arg()`, which returns a defaultdict that holds the fill value
+        # for the different datapoint types. Below we extract the value for tensors and return that together with the
+        # other params.
+        # This is needed for `Pad`, `ElasticTransform`, `RandomAffine`, `RandomCrop`, `RandomPerspective` and
+        # `RandomRotation`
+        if "fill" in params:
+            fill_type_defaultdict = params.pop("fill")
+            params["fill"] = fill_type_defaultdict[torch.Tensor]
+
+        return params
+
+    def __prepare_scriptable__(self) -> nn.Module:
+        # This method is called early on when `torch.jit.script`'ing an `nn.Module` instance. If it succeeds, the return
+        # value is used for scripting over the original object that should have been scripted. Since the v1 transforms
+        # are JIT scriptable, and we made sure that for single image inputs v1 and v2 are equivalent, we just return the
+        # equivalent v1 transform here. This of course only makes transforms v2 JIT scriptable as long as transforms v1
+        # is around.
+        if self._v1_transform_cls is None:
+            raise RuntimeError(
+                f"Transform {type(self.__name__)} cannot be JIT scripted. "
+                f"This is only support for backward compatibility with transforms which already in v1."
+                f"For torchscript support (on tensors only), you can use the functional API instead."
+            )
+
+        return self._v1_transform_cls(**self._extract_params_for_v1_transform())
 
 
 class _RandomApplyTransform(Transform):
