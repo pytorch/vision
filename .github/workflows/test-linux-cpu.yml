@@ -40,7 +40,7 @@ jobs:
 
         # Create Conda Env
         if [[ "${PYTHON_VERSION}" = "3.11" ]]; then
-          conda create -yp ci_env python="${PYTHON_VERSION}" numpy libpng jpeg scipy
+          conda create -yp ci_env python="${PYTHON_VERSION}" numpy libpng jpeg
         else
           conda create -yp ci_env -c conda-forge python="${PYTHON_VERSION}" numpy libpng jpeg scipy
         fi
