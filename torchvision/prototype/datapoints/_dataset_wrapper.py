@@ -6,7 +6,7 @@ import contextlib
 
 import functools
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import PIL.Image
 import torch
@@ -14,9 +14,6 @@ from torch.utils.data import Dataset
 from torchvision import datasets
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F
-
-T = TypeVar("T")
-D = TypeVar("D", bound=datasets.VisionDataset)
 
 __all__ = ["wrap_dataset_for_transforms_v2"]
 
@@ -65,10 +62,6 @@ class _VisionDatasetDatapointWrapper(Dataset):
 
     def __len__(self) -> int:
         return len(self.vision_dataset)
-
-
-def identity_wrapper(sample: T) -> T:
-    return sample
 
 
 @functools.lru_cache(maxsize=None)
@@ -189,7 +182,7 @@ def coco_dectection_wrapper(
 
 
 _WRAPPERS[datasets.CocoDetection] = coco_dectection_wrapper
-_WRAPPERS[datasets.CocoCaptions] = identity_wrapper
+_WRAPPERS[datasets.CocoCaptions] = lambda sample: sample
 
 
 def voc_detection_wrapper(
