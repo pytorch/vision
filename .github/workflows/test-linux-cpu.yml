@@ -50,11 +50,16 @@ jobs:
         
         # Install PyTorch, Torchvision, and testing libraries
         set -ex
-        conda install \
-          --yes \
-          -c "pytorch-${CHANNEL}" \
-          -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
-          "${CUDATOOLKIT}"
+        if [[ "${PYTHON_VERSION}" = "3.11" ]]; then
+          conda install \
+            --yes \
+            -c "pytorch-${CHANNEL}" \
+            -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
+            "${CUDATOOLKIT}"
+        else
+          python -m pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu
+        fi
+
         python3 setup.py develop
         python3 -m pip install pytest pytest-mock 'av<10'
 
