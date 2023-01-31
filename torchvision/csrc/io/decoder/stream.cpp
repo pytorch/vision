@@ -1,5 +1,4 @@
 #include "stream.h"
-#include <c10/util/Logging.h>
 #include <stdio.h>
 #include <string.h>
 #include "util.h"
