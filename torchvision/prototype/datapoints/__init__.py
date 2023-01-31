@@ -5,4 +5,4 @@ from ._label import Label, OneHotLabel
 from ._mask import Mask
 from ._video import TensorVideoType, TensorVideoTypeJIT, Video, VideoType, VideoTypeJIT
 
-from ._dataset_wrapper import VisionDatasetFeatureWrapper  # usort: skip
+from ._dataset_wrapper import wrap_dataset_for_transforms_v2  # type: ignore[attr-defined]  # usort: skip
