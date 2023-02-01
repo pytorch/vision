@@ -21,6 +21,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
       repository: pytorch/vision
+      runner: linux.12xlarge
       script: |
         export PYTHON_VERSION=${{ matrix.python-version }}
 
