@@ -20,12 +20,12 @@ jobs:
         runner: ["linux.12xlarge"]
         timeout: 30
         gpu-arch-type: ["cpu"]
-      include:
-        - python-version: 3.8
-          runner: linux.g5.4xlarge.nvidia.gpu
-          timeout: 120
-          gpu-arch-type: cuda
-          gpu-arch-version: "11.6"
+        include:
+          - python-version: 3.8
+            runner: linux.g5.4xlarge.nvidia.gpu
+            timeout: 120
+            gpu-arch-type: cuda
+            gpu-arch-version: "11.6"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
     with:
