@@ -225,7 +225,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+3dc1e21 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+8e3de21 ) &#x25BC</a>
     </div>
     
 
@@ -447,14 +447,11 @@ behavior, such as batch normalization. To switch between these modes, use
 </pre></div>
 </div>
 </section>
-<section id="model-registration-mechanism">
-<h3>Model Registration Mechanism<a class="headerlink" href="#model-registration-mechanism" title="Permalink to this heading">¶</a></h3>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The registration mechanism is in Beta stage, and backward compatibility is not guaranteed.</p>
-</div>
-<p>As of v0.14, TorchVision offers a new model registration mechanism which allows retreaving models
-and weights by their names. Here are a few examples on how to use them:</p>
+<section id="listing-and-retrieving-available-models">
+<h3>Listing and retrieving available models<a class="headerlink" href="#listing-and-retrieving-available-models" title="Permalink to this heading">¶</a></h3>
+<p>As of v0.14, TorchVision offers a new mechanism which allows listing and
+retrieving models and weights by their names. Here are a few examples on how to
+use them:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># List available models</span>
 <span class="n">all_models</span> <span class="o">=</span> <span class="n">list_models</span><span class="p">()</span>
 <span class="n">classification_models</span> <span class="o">=</span> <span class="n">list_models</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="p">)</span>
@@ -474,7 +471,7 @@ and weights by their names. Here are a few examples on how to use them:</p>
 <span class="k">assert</span> <span class="n">weights_enum</span> <span class="o">==</span> <span class="n">weights_enum2</span>
 </pre></div>
 </div>
-<p>Here are the available public methods of the model registration mechanism:</p>
+<p>Here are the available public functions to retrieve models and their corresponding weights:</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.get_model.html#torchvision.models.get_model" title="torchvision.models.get_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_model</span></code></a>(name, **config)</p></td>
@@ -2131,7 +2128,7 @@ pre-trained weights:</p>
 <li><a class="reference internal" href="#general-information-on-pre-trained-weights">General information on pre-trained weights</a><ul>
 <li><a class="reference internal" href="#initializing-pre-trained-models">Initializing pre-trained models</a></li>
 <li><a class="reference internal" href="#using-the-pre-trained-models">Using the pre-trained models</a></li>
-<li><a class="reference internal" href="#model-registration-mechanism">Model Registration Mechanism</a></li>
+<li><a class="reference internal" href="#listing-and-retrieving-available-models">Listing and retrieving available models</a></li>
 <li><a class="reference internal" href="#using-models-from-hub">Using models from Hub</a></li>
 </ul>
 </li>
