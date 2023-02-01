@@ -1,7 +1,7 @@
 import importlib
 import inspect
 import sys
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from inspect import signature
@@ -9,8 +9,6 @@ from types import ModuleType
 from typing import Any, Callable, cast, Dict, List, Mapping, Optional, TypeVar, Union
 
 from torch import nn
-
-from torchvision._utils import StrEnum
 
 from .._internally_replaced_utils import load_state_dict_from_url
 
