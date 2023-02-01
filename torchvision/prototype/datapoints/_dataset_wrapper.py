@@ -6,7 +6,7 @@ import contextlib
 
 import functools
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import PIL.Image
 import torch
@@ -36,6 +36,17 @@ def wrap_dataset_for_transforms_v2(dataset: datasets.VisionDataset) -> _VisionDa
             )
         raise ValueError(msg)
     return _VisionDatasetDatapointWrapper(dataset, wrapper)
+
+
+def raise_missing_functionality(dataset, *params):
+    msg = f"{type(dataset).__name__}"
+    if params:
+        param_msg = ", ".join(f"{param}={getattr(dataset, param)}" for param in params)
+        msg = f"{msg} with {param_msg}"
+    raise RuntimeError(
+        f"{msg} is currently not supported by this wrapper. "
+        f"If this would be helpful for you, please open an issue at https://github.com/pytorch/vision/issues."
+    )
 
 
 class _VisionDatasetDatapointWrapper(Dataset):
@@ -120,18 +131,12 @@ for dataset_type in [
 def caltech101_wrapper(
     dataset: datasets.Caltech101, sample: Tuple[PIL.Image.Image, Any]
 ) -> Tuple[PIL.Image.Image, Any]:
+    if "annotation" in dataset.target_type:
+        raise_missing_functionality(dataset, "target_type")
+
     image, target = sample
 
-    target_type_wrapper_map: Dict[str, Callable] = {
-        "category": lambda label: datapoints.Label(label, categories=dataset.categories),
-        "annotation": datapoints.GenericDatapoint,
-    }
-    if len(dataset.target_type) == 1:
-        target = target_type_wrapper_map[dataset.target_type[0]](target)
-    else:
-        target = tuple(target_type_wrapper_map[typ](item) for typ, item in zip(dataset.target_type, target))
-
-    return image, target
+    return image, datapoints.Label(target, categories=dataset.categories)
 
 
 _WRAPPERS[datasets.Caltech101] = caltech101_wrapper
@@ -248,14 +253,11 @@ _WRAPPERS[datasets.VOCDetection] = voc_detection_wrapper
 
 
 def sbd_wrapper(dataset: datasets.SBDataset, sample: Tuple[PIL.Image.Image, Any]) -> Tuple[PIL.Image.Image, Any]:
-    image, target = sample
-
     if dataset.mode == "boundaries":
-        target = datapoints.GenericDatapoint(target)
-    else:
-        target = datapoints.Mask(F.to_image_tensor(target))
+        raise_missing_functionality(dataset, "mode")
 
-    return image, target
+    image, target = sample
+    return image, datapoints.Mask(F.to_image_tensor(target))
 
 
 _WRAPPERS[datasets.SBDataset] = sbd_wrapper
