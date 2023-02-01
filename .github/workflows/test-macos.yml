@@ -22,6 +22,7 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
+      timeout: 60
       script: |
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
