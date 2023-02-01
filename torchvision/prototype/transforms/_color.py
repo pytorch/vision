@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
-
+from torchvision import transforms as _transforms
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
 
@@ -12,6 +12,8 @@ from .utils import is_simple_tensor, query_chw
 
 
 class Grayscale(Transform):
+    _v1_transform_cls = _transforms.Grayscale
+
     _transformed_types = (
         datapoints.Image,
         PIL.Image.Image,
@@ -28,6 +30,8 @@ class Grayscale(Transform):
 
 
 class RandomGrayscale(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomGrayscale
+
     _transformed_types = (
         datapoints.Image,
         PIL.Image.Image,
@@ -47,6 +51,11 @@ class RandomGrayscale(_RandomApplyTransform):
 
 
 class ColorJitter(Transform):
+    _v1_transform_cls = _transforms.ColorJitter
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        return {attr: value or 0 for attr, value in super()._extract_params_for_v1_transform().items()}
+
     def __init__(
         self,
         brightness: Optional[Union[float, Sequence[float]]] = None,
@@ -77,11 +86,11 @@ class ColorJitter(Transform):
             value = [center - value, center + value]
             if clip_first_on_zero:
                 value[0] = max(value[0], 0.0)
-        elif isinstance(value, collections.abc.Sequence) and len(value) == 2:
-            if not bound[0] <= value[0] <= value[1] <= bound[1]:
-                raise ValueError(f"{name} values should be between {bound}")
-        else:
+        elif not (isinstance(value, collections.abc.Sequence) and len(value) == 2):
             raise TypeError(f"{name} should be a single number or a sequence with length 2.")
+
+        if not bound[0] <= value[0] <= value[1] <= bound[1]:
+            raise ValueError(f"{name} values should be between {bound}, but got {value}.")
 
         return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
 
@@ -194,16 +203,22 @@ class RandomPhotometricDistort(Transform):
 
 
 class RandomEqualize(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomEqualize
+
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.equalize(inpt)
 
 
 class RandomInvert(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomInvert
+
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.invert(inpt)
 
 
 class RandomPosterize(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomPosterize
+
     def __init__(self, bits: int, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.bits = bits
@@ -213,6 +228,8 @@ class RandomPosterize(_RandomApplyTransform):
 
 
 class RandomSolarize(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomSolarize
+
     def __init__(self, threshold: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.threshold = threshold
@@ -222,11 +239,15 @@ class RandomSolarize(_RandomApplyTransform):
 
 
 class RandomAutocontrast(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomAutocontrast
+
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.autocontrast(inpt)
 
 
 class RandomAdjustSharpness(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomAdjustSharpness
+
     def __init__(self, sharpness_factor: float, p: float = 0.5) -> None:
         super().__init__(p=p)
         self.sharpness_factor = sharpness_factor

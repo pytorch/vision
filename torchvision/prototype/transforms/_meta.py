@@ -2,6 +2,7 @@ from typing import Any, Dict, Union
 
 import torch
 
+from torchvision import transforms as _transforms
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
 
@@ -27,6 +28,8 @@ class ConvertBoundingBoxFormat(Transform):
 
 
 class ConvertDtype(Transform):
+    _v1_transform_cls = _transforms.ConvertImageDtype
+
     _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
 
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
