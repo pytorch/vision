@@ -278,7 +278,7 @@ class DenseNet121_Weights(WeightsEnum):
                 }
             },
             "_ops": 2.834,
-            "_weight_size": 30.845,
+            "_file_size": 30.845,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -298,7 +298,7 @@ class DenseNet161_Weights(WeightsEnum):
                 }
             },
             "_ops": 7.728,
-            "_weight_size": 110.369,
+            "_file_size": 110.369,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -318,7 +318,7 @@ class DenseNet169_Weights(WeightsEnum):
                 }
             },
             "_ops": 3.36,
-            "_weight_size": 54.708,
+            "_file_size": 54.708,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -338,7 +338,7 @@ class DenseNet201_Weights(WeightsEnum):
                 }
             },
             "_ops": 4.291,
-            "_weight_size": 77.373,
+            "_file_size": 77.373,
         },
     )
     DEFAULT = IMAGENET1K_V1

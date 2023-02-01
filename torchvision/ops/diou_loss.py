@@ -36,7 +36,7 @@ def distance_box_iou_loss(
         Tensor: Loss tensor with the reduction option applied.
 
     Reference:
-        Zhaohui Zheng et. al: Distance Intersection over Union Loss:
+        Zhaohui Zheng et al.: Distance Intersection over Union Loss:
         https://arxiv.org/abs/1911.08287
     """
 

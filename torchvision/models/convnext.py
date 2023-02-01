@@ -220,7 +220,7 @@ class ConvNeXt_Tiny_Weights(WeightsEnum):
                 }
             },
             "_ops": 4.456,
-            "_weight_size": 109.119,
+            "_file_size": 109.119,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -240,7 +240,7 @@ class ConvNeXt_Small_Weights(WeightsEnum):
                 }
             },
             "_ops": 8.684,
-            "_weight_size": 191.703,
+            "_file_size": 191.703,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -260,7 +260,7 @@ class ConvNeXt_Base_Weights(WeightsEnum):
                 }
             },
             "_ops": 15.355,
-            "_weight_size": 338.064,
+            "_file_size": 338.064,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -280,7 +280,7 @@ class ConvNeXt_Large_Weights(WeightsEnum):
                 }
             },
             "_ops": 34.361,
-            "_weight_size": 754.537,
+            "_file_size": 754.537,
         },
     )
     DEFAULT = IMAGENET1K_V1

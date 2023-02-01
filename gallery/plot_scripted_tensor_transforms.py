@@ -10,7 +10,7 @@ them using JIT compilation.
 
 Prior to v0.8.0, transforms in torchvision have traditionally been PIL-centric
 and presented multiple limitations due to that. Now, since v0.8.0, transforms
-implementations are Tensor and PIL compatible and we can achieve the following
+implementations are Tensor and PIL compatible, and we can achieve the following
 new features:
 
 - transform multi-band torch tensor images (with more than 3-4 channels)

@@ -10,7 +10,7 @@ import torch.distributed as dist
 import torchvision.models.optical_flow
 import torchvision.prototype.models.depth.stereo
 import utils
-import vizualization
+import visualization
 
 from parsing import make_dataset, make_eval_transform, make_train_transform, VALID_DATASETS
 from torch import nn
@@ -148,7 +148,7 @@ def _evaluate(
     *,
     padder_mode,
     print_freq=10,
-    writter=None,
+    writer=None,
     step=None,
     iterations=None,
     batch_size=None,
@@ -198,10 +198,10 @@ def _evaluate(
             "the dataset is not divisible by the batch size. Try lowering the batch size or GPU number for more accurate results."
         )
 
-    if writter is not None and args.rank == 0:
+    if writer is not None and args.rank == 0:
         for meter_name, meter_value in logger.meters.items():
             scalar_name = f"{meter_name} {header}"
-            writter.add_scalar(scalar_name, meter_value.avg, step)
+            writer.add_scalar(scalar_name, meter_value.avg, step)
 
     logger.synchronize_between_processes()
     print(header, logger)
@@ -249,7 +249,7 @@ def make_eval_loader(dataset_name: str, args: argparse.Namespace) -> torch.utils
     return val_loader
 
 
-def evaluate(model, loaders, args, writter=None, step=None):
+def evaluate(model, loaders, args, writer=None, step=None):
     for loader_name, loader in loaders.items():
         _evaluate(
             model,
@@ -259,7 +259,7 @@ def evaluate(model, loaders, args, writter=None, step=None):
             padder_mode=args.padder_type,
             header=f"{loader_name} evaluation",
             batch_size=args.batch_size,
-            writter=writter,
+            writer=writer,
             step=step,
         )
 
@@ -394,13 +394,13 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
                 for name, value in logger.meters.items():
                     writer.add_scalar(name, value.avg, step)
                 # log the images to tensorboard
-                pred_grid = vizualization.make_training_sample_grid(
+                pred_grid = visualization.make_training_sample_grid(
                     image_left, image_right, disp_mask, valid_disp_mask, disp_predictions
                 )
                 writer.add_image("predictions", pred_grid, step, dataformats="HWC")
 
                 # second thing we want to see is how relevant the iterative refinement is
-                pred_sequence_grid = vizualization.make_disparity_sequence_grid(disp_predictions, disp_mask)
+                pred_sequence_grid = visualization.make_disparity_sequence_grid(disp_predictions, disp_mask)
                 writer.add_image("sequence", pred_sequence_grid, step, dataformats="HWC")
 
         if step % args.save_frequency == 0:
@@ -446,13 +446,13 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
 def main(args):
     args.total_iterations = sum(args.dataset_steps)
 
-    # intialize DDP setting
+    # initialize DDP setting
     utils.setup_ddp(args)
     print(args)
 
     args.test_only = args.train_datasets is None
 
-    # set the appropiate devices
+    # set the appropriate devices
     if args.distributed and args.device == "cpu":
         raise ValueError("The device must be cuda if we want to run in distributed mode using torchrun")
     device = torch.device(args.device)
@@ -495,7 +495,7 @@ def main(args):
     # initialize the learning rate schedule
     scheduler = make_lr_schedule(args, optimizer)
 
-    # load them from checkpoint if need
+    # load them from checkpoint if needed
     args.start_step = 0
     if args.resume_path is not None:
         checkpoint = torch.load(args.resume_path, map_location="cpu")
@@ -531,7 +531,7 @@ def main(args):
         # the train dataset is preshuffled in order to respect the iteration order
         sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=False, drop_last=True)
     else:
-        # the train dataset is already shuffled so we can use a simple SequentialSampler
+        # the train dataset is already shuffled, so we can use a simple SequentialSampler
         sampler = torch.utils.data.SequentialSampler(train_dataset)
 
     train_loader = torch.utils.data.DataLoader(
@@ -542,7 +542,7 @@ def main(args):
         num_workers=args.workers,
     )
 
-    # intialize the logger
+    # initialize the logger
     if args.tensorboard_summaries:
         from torch.utils.tensorboard import SummaryWriter
 

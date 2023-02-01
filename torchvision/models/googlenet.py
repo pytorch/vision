@@ -291,7 +291,7 @@ class GoogLeNet_Weights(WeightsEnum):
                 }
             },
             "_ops": 1.498,
-            "_weight_size": 49.731,
+            "_file_size": 49.731,
             "_docs": """These weights are ported from the original paper.""",
         },
     )

@@ -137,8 +137,7 @@ def _read_video_from_file(
     audio_timebase: Fraction = default_timebase,
 ) -> Tuple[torch.Tensor, torch.Tensor, VideoMetaData]:
     """
-    Reads a video from a file, returning both the video frames as well as
-    the audio frames
+    Reads a video from a file, returning both the video frames and the audio frames
 
     Args:
     filename (str): path to the video file
@@ -281,8 +280,7 @@ def _read_video_from_memory(
     audio_timebase_denominator: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    Reads a video from memory, returning both the video frames as well as
-    the audio frames
+    Reads a video from memory, returning both the video frames as the audio frames
     This function is torchscriptable.
 
     Args:
@@ -337,7 +335,7 @@ def _read_video_from_memory(
 
     if not isinstance(video_data, torch.Tensor):
         with warnings.catch_warnings():
-            # Ignore the warning because we actually dont modify the buffer in this function
+            # Ignore the warning because we actually don't modify the buffer in this function
             warnings.filterwarnings("ignore", message="The given buffer is not writable")
             video_data = torch.frombuffer(video_data, dtype=torch.uint8)
 
@@ -382,7 +380,7 @@ def _read_video_timestamps_from_memory(
     """
     if not isinstance(video_data, torch.Tensor):
         with warnings.catch_warnings():
-            # Ignore the warning because we actually dont modify the buffer in this function
+            # Ignore the warning because we actually don't modify the buffer in this function
             warnings.filterwarnings("ignore", message="The given buffer is not writable")
             video_data = torch.frombuffer(video_data, dtype=torch.uint8)
     result = torch.ops.video_reader.read_video_from_memory(
@@ -423,7 +421,7 @@ def _probe_video_from_memory(
     """
     if not isinstance(video_data, torch.Tensor):
         with warnings.catch_warnings():
-            # Ignore the warning because we actually dont modify the buffer in this function
+            # Ignore the warning because we actually don't modify the buffer in this function
             warnings.filterwarnings("ignore", message="The given buffer is not writable")
             video_data = torch.frombuffer(video_data, dtype=torch.uint8)
     result = torch.ops.video_reader.probe_video_from_memory(video_data)
