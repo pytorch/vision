@@ -17,6 +17,8 @@ from torchvision.prototype.transforms import functional as F
 
 __all__ = ["wrap_dataset_for_transforms_v2"]
 
+cache = functools.partial(functools.lru_cache, max_size=None)
+
 _WRAPPERS = {}
 
 
@@ -70,7 +72,7 @@ class _VisionDatasetDatapointWrapper(Dataset):
         return len(self._vision_dataset)
 
 
-@functools.lru_cache(maxsize=None)
+@cache
 def get_categories(dataset: datasets.VisionDataset) -> Optional[List[str]]:
     categories_fn = {
         datasets.Caltech256: lambda dataset: [name.rsplit(".", 1)[1] for name in dataset.categories],
@@ -135,16 +137,19 @@ def caltech101_wrapper(
 _WRAPPERS[datasets.Caltech101] = caltech101_wrapper
 
 
-def coco_dectection_wrapper(
-    dataset: datasets.CocoDetection, sample: Tuple[PIL.Image.Image, List[Dict[str, Any]]]
-) -> Tuple[PIL.Image.Image, Dict[str, List[Any]]]:
+@cache
+def get_coco_detection_categories(dataset: datasets.CocoDetection):
     idx_to_category = {idx: cat["name"] for idx, cat in dataset.coco.cats.items()}
     idx_to_category[0] = "__background__"
     for idx in set(range(91)) - idx_to_category.keys():
         idx_to_category[idx] = "N/A"
 
-    categories = [category for _, category in sorted(idx_to_category.items())]
+    return [category for _, category in sorted(idx_to_category.items())]
 
+
+def coco_dectection_wrapper(
+    dataset: datasets.CocoDetection, sample: Tuple[PIL.Image.Image, List[Dict[str, Any]]]
+) -> Tuple[PIL.Image.Image, Dict[str, List[Any]]]:
     def segmentation_to_mask(segmentation: Any, *, spatial_size: Tuple[int, int]) -> torch.Tensor:
         from pycocotools import mask
 
@@ -181,7 +186,7 @@ def coco_dectection_wrapper(
                 ]
             ),
         ),
-        labels=datapoints.Label(batched_target["category_id"], categories=categories),
+        labels=datapoints.Label(batched_target["category_id"], categories=get_coco_detection_categories(dataset)),
     )
 
     return image, batched_target
