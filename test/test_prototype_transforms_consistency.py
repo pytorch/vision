@@ -656,6 +656,39 @@ def test_call_consistency(config, args_kwargs):
 
 
 @pytest.mark.parametrize(
+    "config",
+    [config for config in CONSISTENCY_CONFIGS if hasattr(config.legacy_cls, "get_params")],
+    ids=lambda config: config.legacy_cls.__name__,
+)
+def test_get_params_alias(config):
+    assert config.prototype_cls.get_params is config.legacy_cls.get_params
+
+
+@pytest.mark.parametrize(
+    ("transform_cls", "args_kwargs"),
+    [
+        (prototype_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
+        (prototype_transforms.RandomErasing, ArgsKwargs(make_image(), scale=(0.3, 0.7), ratio=(0.5, 1.5))),
+        (prototype_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
+        (prototype_transforms.ElasticTransform, ArgsKwargs(alpha=[15.3, 27.2], sigma=[2.5, 3.9], size=[17, 31])),
+        (prototype_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
+        (
+            prototype_transforms.RandomAffine,
+            ArgsKwargs(degrees=[-20.0, 10.0], translate=None, scale_ranges=None, shears=None, img_size=[15, 29]),
+        ),
+        (prototype_transforms.RandomCrop, ArgsKwargs(make_image(size=(61, 47)), output_size=(19, 25))),
+        (prototype_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
+        (prototype_transforms.RandomRotation, ArgsKwargs(degrees=[-20.0, 10.0])),
+        (prototype_transforms.AutoAugment, ArgsKwargs(5)),
+    ],
+)
+def test_get_params_jit(transform_cls, args_kwargs):
+    args, kwargs = args_kwargs
+
+    torch.jit.script(transform_cls.get_params)(*args, **kwargs)
+
+
+@pytest.mark.parametrize(
     ("config", "args_kwargs"),
     [
         pytest.param(
