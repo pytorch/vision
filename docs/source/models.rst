@@ -123,8 +123,6 @@ behavior, such as batch normalization. To switch between these modes, use
 Listing and retrieving available models
 ---------------------------------------
 
-.. betastatus:: these helpers
-
 As of v0.14, TorchVision offers a new mechanism which allows listing and
 retrieving models and weights by their names. Here are a few examples on how to
 use them:
