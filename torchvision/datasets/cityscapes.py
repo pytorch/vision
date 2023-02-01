@@ -10,7 +10,7 @@ from .vision import VisionDataset
 
 
 class Cityscapes(VisionDataset):
-    """`Cityscapes <http://www.cityscapes-dataset.com/>`_ Dataset.
+    """`Cityscapes <https://www.cityscapes-dataset.com/>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where directory ``leftImg8bit``

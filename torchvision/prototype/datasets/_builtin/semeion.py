@@ -30,7 +30,7 @@ class SEMEION(Dataset):
 
     def _resources(self) -> List[OnlineResource]:
         data = HttpResource(
-            "http://archive.ics.uci.edu/ml/machine-learning-databases/semeion/semeion.data",
+            "https://archive.ics.uci.edu/ml/machine-learning-databases/semeion/semeion.data",
             sha256="f43228ae3da5ea6a3c95069d53450b86166770e3b719dcc333182128fe08d4b1",
         )
         return [data]

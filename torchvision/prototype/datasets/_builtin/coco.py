@@ -71,7 +71,7 @@ class Coco(Dataset):
 
         super().__init__(root, dependencies=("pycocotools",), skip_integrity_check=skip_integrity_check)
 
-    _IMAGE_URL_BASE = "http://images.cocodataset.org/zips"
+    _IMAGE_URL_BASE = "https://images.cocodataset.org/zips"
 
     _IMAGES_CHECKSUMS = {
         ("2014", "train"): "ede4087e640bddba550e090eae701092534b554b42b05ac33f0300b984b31775",
@@ -80,7 +80,7 @@ class Coco(Dataset):
         ("2017", "val"): "4f7e2ccb2866ec5041993c9cf2a952bbed69647b115d0f74da7ce8f4bef82f05",
     }
 
-    _META_URL_BASE = "http://images.cocodataset.org/annotations"
+    _META_URL_BASE = "https://images.cocodataset.org/annotations"
 
     _META_CHECKSUMS = {
         "2014": "031296bbc80c45a1d1f76bf9a90ead27e94e99ec629208449507a4917a3bf009",

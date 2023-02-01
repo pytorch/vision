@@ -13,7 +13,7 @@ CSV = namedtuple("CSV", ["header", "index", "data"])
 
 
 class CelebA(VisionDataset):
-    """`Large-scale CelebFaces Attributes (CelebA) Dataset <http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html>`_ Dataset.
+    """`Large-scale CelebFaces Attributes (CelebA) Dataset <https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html>`_ Dataset.
 
     Args:
         root (string): Root directory where images are downloaded to.

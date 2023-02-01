@@ -9,7 +9,7 @@ from .vision import VisionDataset
 
 
 class Kitti(VisionDataset):
-    """`KITTI <http://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark>`_ Dataset.
+    """`KITTI <https://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark>`_ Dataset.
 
     It corresponds to the "left color images of object" dataset, for object detection.
 

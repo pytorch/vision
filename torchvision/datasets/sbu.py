@@ -8,7 +8,7 @@ from .vision import VisionDataset
 
 
 class SBU(VisionDataset):
-    """`SBU Captioned Photo <http://www.cs.virginia.edu/~vicente/sbucaptions/>`_ Dataset.
+    """`SBU Captioned Photo <https://www.cs.virginia.edu/~vicente/sbucaptions/>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where tarball

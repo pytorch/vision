@@ -19,7 +19,7 @@ META_FILE = "meta.bin"
 
 
 class ImageNet(ImageFolder):
-    """`ImageNet <http://image-net.org/>`_ 2012 Classification Dataset.
+    """`ImageNet <https://image-net.org/>`_ 2012 Classification Dataset.
 
     Args:
         root (string): Root directory of the ImageNet Dataset.

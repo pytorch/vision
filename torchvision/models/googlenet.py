@@ -302,7 +302,7 @@ class GoogLeNet_Weights(WeightsEnum):
 @handle_legacy_interface(weights=("pretrained", GoogLeNet_Weights.IMAGENET1K_V1))
 def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     """GoogLeNet (Inception v1) model architecture from
-    `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`_.
+    `Going Deeper with Convolutions <https://arxiv.org/abs/1409.4842>`_.
 
     Args:
         weights (:class:`~torchvision.models.GoogLeNet_Weights`, optional): The

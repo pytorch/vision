@@ -30,7 +30,7 @@ def _info() -> Dict[str, Any]:
 @register_dataset(NAME)
 class SBD(Dataset):
     """
-    - **homepage**: http://home.bharathh.info/pubs/codes/SBD/download.html
+    - **homepage**: https://home.bharathh.info/pubs/codes/SBD/download.html
     - **dependencies**:
         - <scipy `https://scipy.org`>_
     """
@@ -58,7 +58,7 @@ class SBD(Dataset):
         if self._split == "train_noval":
             resources.append(
                 HttpResource(
-                    "http://home.bharathh.info/pubs/codes/SBD/train_noval.txt",
+                    "https://home.bharathh.info/pubs/codes/SBD/train_noval.txt",
                     sha256="0b2068f7a359d2907431803e1cd63bf6162da37d7d503b589d3b08c6fd0c2432",
                 )
             )

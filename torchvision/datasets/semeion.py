@@ -9,7 +9,7 @@ from .vision import VisionDataset
 
 
 class SEMEION(VisionDataset):
-    r"""`SEMEION <http://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit>`_ Dataset.
+    r"""`SEMEION <https://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where directory
@@ -23,7 +23,7 @@ class SEMEION(VisionDataset):
             downloaded again.
 
     """
-    url = "http://archive.ics.uci.edu/ml/machine-learning-databases/semeion/semeion.data"
+    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/semeion/semeion.data"
     filename = "semeion.data"
     md5_checksum = "cb545d371d2ce14ec121470795a77432"
 

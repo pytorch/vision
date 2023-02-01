@@ -10,7 +10,7 @@ from .vision import VisionDataset
 class _LFW(VisionDataset):
 
     base_folder = "lfw-py"
-    download_url_prefix = "http://vis-www.cs.umass.edu/lfw/"
+    download_url_prefix = "https://vis-www.cs.umass.edu/lfw/"
 
     file_dict = {
         "original": ("lfw", "lfw.tgz", "a17d05bd522c52d84eca14327a23d494"),
@@ -92,7 +92,7 @@ class _LFW(VisionDataset):
 
 
 class LFWPeople(_LFW):
-    """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
+    """`LFW <https://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where directory
@@ -174,7 +174,7 @@ class LFWPeople(_LFW):
 
 
 class LFWPairs(_LFW):
-    """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
+    """`LFW <https://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where directory

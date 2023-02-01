@@ -83,7 +83,7 @@ class FlowDataset(ABC, VisionDataset):
 
 
 class Sintel(FlowDataset):
-    """`Sintel <http://sintel.is.tue.mpg.de/>`_ Dataset for optical flow.
+    """`Sintel <https://sintel.is.tue.mpg.de/>`_ Dataset for optical flow.
 
     The dataset is expected to have the following structure: ::
 
@@ -170,7 +170,7 @@ class Sintel(FlowDataset):
 
 
 class KittiFlow(FlowDataset):
-    """`KITTI <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow>`__ dataset for optical flow (2015).
+    """`KITTI <https://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow>`__ dataset for optical flow (2015).
 
     The dataset is expected to have the following structure: ::
 
@@ -397,7 +397,7 @@ class FlyingThings3D(FlowDataset):
 
 
 class HD1K(FlowDataset):
-    """`HD1K <http://hci-benchmark.iwr.uni-heidelberg.de/>`__ dataset for optical flow.
+    """`HD1K <https://hci-benchmark.iwr.uni-heidelberg.de/>`__ dataset for optical flow.
 
     The dataset is expected to have the following structure: ::
 
@@ -466,7 +466,7 @@ class HD1K(FlowDataset):
 def _read_flo(file_name: str) -> np.ndarray:
     """Read .flo file in Middlebury format"""
     # Code adapted from:
-    # http://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
+    # https://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
     # Everything needs to be in little Endian according to
     # https://vision.middlebury.edu/flow/code/flow-code/README.txt
     with open(file_name, "rb") as f:

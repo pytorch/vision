@@ -20,7 +20,7 @@ def _info() -> Dict[str, Any]:
 @register_dataset(NAME)
 class SVHN(Dataset):
     """SVHN Dataset.
-    homepage="http://ufldl.stanford.edu/housenumbers/",
+    homepage="https://ufldl.stanford.edu/housenumbers/",
     dependencies = scipy
     """
 
@@ -43,7 +43,7 @@ class SVHN(Dataset):
 
     def _resources(self) -> List[OnlineResource]:
         data = HttpResource(
-            f"http://ufldl.stanford.edu/housenumbers/{self._split}_32x32.mat",
+            f"https://ufldl.stanford.edu/housenumbers/{self._split}_32x32.mat",
             sha256=self._CHECKSUMS[self._split],
         )
 

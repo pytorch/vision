@@ -23,7 +23,7 @@ class SUN397(VisionDataset):
             downloaded again.
     """
 
-    _DATASET_URL = "http://vision.princeton.edu/projects/2010/SUN/SUN397.tar.gz"
+    _DATASET_URL = "https://vision.princeton.edu/projects/2010/SUN/SUN397.tar.gz"
     _DATASET_MD5 = "8ca2778205c41d23104230ba66911c7a"
 
     def __init__(

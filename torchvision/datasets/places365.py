@@ -9,7 +9,7 @@ from .vision import VisionDataset
 
 
 class Places365(VisionDataset):
-    r"""`Places365 <http://places2.csail.mit.edu/index.html>`_ classification dataset.
+    r"""`Places365 <https://places2.csail.mit.edu/index.html>`_ classification dataset.
 
     Args:
         root (string): Root directory of the Places365 dataset.
@@ -36,7 +36,7 @@ class Places365(VisionDataset):
         RuntimeError: If ``download is True`` and the image archive is already extracted.
     """
     _SPLITS = ("train-standard", "train-challenge", "val")
-    _BASE_URL = "http://data.csail.mit.edu/places/places365/"
+    _BASE_URL = "https://data.csail.mit.edu/places/places365/"
     # {variant: (archive, md5)}
     _DEVKIT_META = {
         "standard": ("filelist_places365-standard.tar", "35a0585fee1fa656440f3ab298f8479c"),

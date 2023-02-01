@@ -10,7 +10,7 @@ from .vision import VisionDataset
 
 
 class WIDERFace(VisionDataset):
-    """`WIDERFace <http://shuoyang1213.me/WIDERFACE/>`_ Dataset.
+    """`WIDERFace <https://shuoyang1213.me/WIDERFACE/>`_ Dataset.
 
     Args:
         root (string): Root directory where images and annotations are downloaded to.
@@ -44,7 +44,7 @@ class WIDERFace(VisionDataset):
         ("1HIfDbVEWKmsYKJZm4lchTBDLW5N7dY5T", "e5d8f4248ed24c334bbd12f49c29dd40", "WIDER_test.zip"),
     ]
     ANNOTATIONS_FILE = (
-        "http://shuoyang1213.me/WIDERFACE/support/bbx_annotation/wider_face_split.zip",
+        "https://shuoyang1213.me/WIDERFACE/support/bbx_annotation/wider_face_split.zip",
         "0e3767bcf0e326556d407bf5bff5d27c",
         "wider_face_split.zip",
     )

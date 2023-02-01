@@ -124,7 +124,7 @@ def _mnist_info() -> Dict[str, Any]:
 @register_dataset("mnist")
 class MNIST(_MNISTBase):
     """
-    - **homepage**: http://yann.lecun.com/exdb/mnist
+    - **homepage**: https://yann.lecun.com/exdb/mnist
     """
 
     def __init__(
@@ -138,7 +138,7 @@ class MNIST(_MNISTBase):
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
     _URL_BASE: Union[str, Sequence[str]] = (
-        "http://yann.lecun.com/exdb/mnist",
+        "https://yann.lecun.com/exdb/mnist",
         "https://ossci-datasets.s3.amazonaws.com/mnist",
     )
     _CHECKSUMS = {
@@ -187,7 +187,7 @@ class FashionMNIST(MNIST):
     - **homepage**: https://github.com/zalandoresearch/fashion-mnist
     """
 
-    _URL_BASE = "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com"
+    _URL_BASE = "https://fashion-mnist.s3-website.eu-central-1.amazonaws.com"
     _CHECKSUMS = {
         "train-images-idx3-ubyte.gz": "3aede38d61863908ad78613f6a32ed271626dd12800ba2636569512369268a84",
         "train-labels-idx1-ubyte.gz": "a04f17134ac03560a47e3764e11b92fc97de4d1bfaf8ba1a3aa29af54cc90845",
@@ -208,10 +208,10 @@ def _kmnist_info() -> Dict[str, Any]:
 @register_dataset("kmnist")
 class KMNIST(MNIST):
     """
-    - **homepage**: http://codh.rois.ac.jp/kmnist/index.html.en
+    - **homepage**: https://codh.rois.ac.jp/kmnist/index.html.en
     """
 
-    _URL_BASE = "http://codh.rois.ac.jp/kmnist/dataset/kmnist"
+    _URL_BASE = "https://codh.rois.ac.jp/kmnist/dataset/kmnist"
     _CHECKSUMS = {
         "train-images-idx3-ubyte.gz": "51467d22d8cc72929e2a028a0428f2086b092bb31cfb79c69cc0a90ce135fde4",
         "train-labels-idx1-ubyte.gz": "e38f9ebcd0f3ebcdec7fc8eabdcdaef93bb0df8ea12bee65224341c8183d8e17",

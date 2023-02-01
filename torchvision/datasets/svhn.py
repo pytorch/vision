@@ -9,7 +9,7 @@ from .vision import VisionDataset
 
 
 class SVHN(VisionDataset):
-    """`SVHN <http://ufldl.stanford.edu/housenumbers/>`_ Dataset.
+    """`SVHN <https://ufldl.stanford.edu/housenumbers/>`_ Dataset.
     Note: The SVHN dataset assigns the label `10` to the digit `0`. However, in this Dataset,
     we assign the label `0` to the digit `0` to be compatible with PyTorch loss functions which
     expect the class labels to be in the range `[0, C-1]`
@@ -34,17 +34,17 @@ class SVHN(VisionDataset):
 
     split_list = {
         "train": [
-            "http://ufldl.stanford.edu/housenumbers/train_32x32.mat",
+            "https://ufldl.stanford.edu/housenumbers/train_32x32.mat",
             "train_32x32.mat",
             "e26dedcc434d2e4c54c9b2d4a06d8373",
         ],
         "test": [
-            "http://ufldl.stanford.edu/housenumbers/test_32x32.mat",
+            "https://ufldl.stanford.edu/housenumbers/test_32x32.mat",
             "test_32x32.mat",
             "eb5a983be6a315427106f1b164d9cef3",
         ],
         "extra": [
-            "http://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
+            "https://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
             "extra_32x32.mat",
             "a93ce644f1a588dc4d68dda5feec44a7",
         ],

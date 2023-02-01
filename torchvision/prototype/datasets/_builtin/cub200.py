@@ -44,7 +44,7 @@ def _info() -> Dict[str, Any]:
 @register_dataset(NAME)
 class CUB200(Dataset):
     """
-    - **homepage**: http://www.vision.caltech.edu/visipedia/CUB-200.html
+    - **homepage**: https://www.vision.caltech.edu/visipedia/CUB-200.html
     """
 
     def __init__(

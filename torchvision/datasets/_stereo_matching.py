@@ -201,7 +201,7 @@ class CarlaStereo(StereoMatchingDataset):
 
 class Kitti2012Stereo(StereoMatchingDataset):
     """
-    KITTI dataset from the `2012 stereo evaluation benchmark <http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php>`_.
+    KITTI dataset from the `2012 stereo evaluation benchmark <https://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php>`_.
     Uses the RGB images for consistency with KITTI 2015.
 
     The dataset is expected to have the following structure: ::
@@ -286,7 +286,7 @@ class Kitti2012Stereo(StereoMatchingDataset):
 
 class Kitti2015Stereo(StereoMatchingDataset):
     """
-    KITTI dataset from the `2015 stereo evaluation benchmark <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php>`_.
+    KITTI dataset from the `2015 stereo evaluation benchmark <https://www.cvlibs.net/datasets/kitti/eval_scene_flow.php>`_.
 
     The dataset is expected to have the following structure: ::
 
@@ -934,7 +934,7 @@ class SceneFlowStereo(StereoMatchingDataset):
 
 
 class SintelStereo(StereoMatchingDataset):
-    """Sintel `Stereo Dataset <http://sintel.is.tue.mpg.de/stereo>`_.
+    """Sintel `Stereo Dataset <https://sintel.is.tue.mpg.de/stereo>`_.
 
     The dataset is expected to have the following structure: ::
 

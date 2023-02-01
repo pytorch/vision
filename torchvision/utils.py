@@ -487,7 +487,7 @@ def _make_colorwheel() -> torch.Tensor:
     """
     Generates a color wheel for optical flow visualization as presented in:
     Baker et al. "A Database and Evaluation Methodology for Optical Flow" (ICCV, 2007)
-    URL: http://vision.middlebury.edu/flow/flowEval-iccv07.pdf.
+    URL: https://vision.middlebury.edu/flow/flowEval-iccv07.pdf.
 
     Returns:
         colorwheel (Tensor[55, 3]): Colorwheel Tensor.

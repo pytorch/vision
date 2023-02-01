@@ -211,7 +211,7 @@ def inception_v3(
     **kwargs: Any,
 ) -> QuantizableInception3:
     r"""Inception v3 model architecture from
-    `Rethinking the Inception Architecture for Computer Vision <http://arxiv.org/abs/1512.00567>`__.
+    `Rethinking the Inception Architecture for Computer Vision <https://arxiv.org/abs/1512.00567>`__.
 
     .. note::
         **Important**: In contrast to the other models the inception_v3 expects tensors with a size of

@@ -8,7 +8,7 @@ from torchvision.datasets.vision import VisionDataset
 
 
 class MovingMNIST(VisionDataset):
-    """`MovingMNIST <http://www.cs.toronto.edu/~nitish/unsupervised_video/>`_ Dataset.
+    """`MovingMNIST <https://www.cs.toronto.edu/~nitish/unsupervised_video/>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where ``MovingMNIST/mnist_test_seq.npy`` exists.
@@ -24,7 +24,7 @@ class MovingMNIST(VisionDataset):
             downloaded again.
     """
 
-    _URL = "http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"
+    _URL = "https://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"
 
     def __init__(
         self,

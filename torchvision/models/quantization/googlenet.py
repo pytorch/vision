@@ -150,7 +150,7 @@ def googlenet(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableGoogLeNet:
-    """GoogLeNet (Inception v1) model architecture from `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`__.
+    """GoogLeNet (Inception v1) model architecture from `Going Deeper with Convolutions <https://arxiv.org/abs/1409.4842>`__.
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit

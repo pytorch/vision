@@ -10,7 +10,7 @@ from .vision import VisionDataset
 
 
 class PhotoTour(VisionDataset):
-    """`Multi-view Stereo Correspondence <http://matthewalunbrown.com/patchdata/patchdata.html>`_ Dataset.
+    """`Multi-view Stereo Correspondence <https://matthewalunbrown.com/patchdata/patchdata.html>`_ Dataset.
 
     .. note::
 
@@ -20,7 +20,7 @@ class PhotoTour(VisionDataset):
             patches are centred on real interest point detections, rather than being projections of 3D points as is the
             case in the old dataset.
 
-        The original dataset is available under http://phototour.cs.washington.edu/patches/default.htm.
+        The original dataset is available under https://phototour.cs.washington.edu/patches/default.htm.
 
 
     Args:
@@ -36,27 +36,31 @@ class PhotoTour(VisionDataset):
 
     urls = {
         "notredame_harris": [
-            "http://matthewalunbrown.com/patchdata/notredame_harris.zip",
+            "https://matthewalunbrown.com/patchdata/notredame_harris.zip",
             "notredame_harris.zip",
             "69f8c90f78e171349abdf0307afefe4d",
         ],
         "yosemite_harris": [
-            "http://matthewalunbrown.com/patchdata/yosemite_harris.zip",
+            "https://matthewalunbrown.com/patchdata/yosemite_harris.zip",
             "yosemite_harris.zip",
             "a73253d1c6fbd3ba2613c45065c00d46",
         ],
         "liberty_harris": [
-            "http://matthewalunbrown.com/patchdata/liberty_harris.zip",
+            "https://matthewalunbrown.com/patchdata/liberty_harris.zip",
             "liberty_harris.zip",
             "c731fcfb3abb4091110d0ae8c7ba182c",
         ],
         "notredame": [
-            "http://icvl.ee.ic.ac.uk/vbalnt/notredame.zip",
+            "https://icvl.ee.ic.ac.uk/vbalnt/notredame.zip",
             "notredame.zip",
             "509eda8535847b8c0a90bbb210c83484",
         ],
-        "yosemite": ["http://icvl.ee.ic.ac.uk/vbalnt/yosemite.zip", "yosemite.zip", "533b2e8eb7ede31be40abc317b2fd4f0"],
-        "liberty": ["http://icvl.ee.ic.ac.uk/vbalnt/liberty.zip", "liberty.zip", "fdd9152f138ea5ef2091746689176414"],
+        "yosemite": [
+            "https://icvl.ee.ic.ac.uk/vbalnt/yosemite.zip",
+            "yosemite.zip",
+            "533b2e8eb7ede31be40abc317b2fd4f0",
+        ],
+        "liberty": ["https://icvl.ee.ic.ac.uk/vbalnt/liberty.zip", "liberty.zip", "fdd9152f138ea5ef2091746689176414"],
     }
     means = {
         "notredame": 0.4854,

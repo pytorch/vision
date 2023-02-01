@@ -29,7 +29,7 @@ class STL10(VisionDataset):
     """
 
     base_folder = "stl10_binary"
-    url = "http://ai.stanford.edu/~acoates/stl10/stl10_binary.tar.gz"
+    url = "https://ai.stanford.edu/~acoates/stl10/stl10_binary.tar.gz"
     filename = "stl10_binary.tar.gz"
     tgz_md5 = "91f7769df0f17e558f3565bffb0c7dfb"
     class_names_file = "class_names.txt"

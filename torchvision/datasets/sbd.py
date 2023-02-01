@@ -10,7 +10,7 @@ from .vision import VisionDataset
 
 
 class SBDataset(VisionDataset):
-    """`Semantic Boundaries Dataset <http://home.bharathh.info/pubs/codes/SBD/download.html>`_
+    """`Semantic Boundaries Dataset <https://home.bharathh.info/pubs/codes/SBD/download.html>`_
 
     The SBD currently contains annotations from 11355 images taken from the PASCAL VOC 2011 dataset.
 
@@ -45,7 +45,7 @@ class SBDataset(VisionDataset):
     md5 = "82b4d87ceb2ed10f6038a1cba92111cb"
     filename = "benchmark.tgz"
 
-    voc_train_url = "http://home.bharathh.info/pubs/codes/SBD/train_noval.txt"
+    voc_train_url = "https://home.bharathh.info/pubs/codes/SBD/train_noval.txt"
     voc_split_filename = "train_noval.txt"
     voc_split_md5 = "79bff800c5f0b1ec6b21080a3c066722"
 

@@ -31,7 +31,7 @@ def _info() -> Dict[str, Any]:
 @register_dataset(NAME)
 class VOC(Dataset):
     """
-    - **homepage**: http://host.robots.ox.ac.uk/pascal/VOC/
+    - **homepage**: https://host.robots.ox.ac.uk/pascal/VOC/
     """
 
     def __init__(
@@ -71,7 +71,7 @@ class VOC(Dataset):
 
     def _resources(self) -> List[OnlineResource]:
         file_name, sha256 = (self._TEST_ARCHIVES if self._split == "test" else self._TRAIN_VAL_ARCHIVES)[self._year]
-        archive = HttpResource(f"http://host.robots.ox.ac.uk/pascal/VOC/voc{self._year}/{file_name}", sha256=sha256)
+        archive = HttpResource(f"https://host.robots.ox.ac.uk/pascal/VOC/voc{self._year}/{file_name}", sha256=sha256)
         return [archive]
 
     def _is_in_folder(self, data: Tuple[str, Any], *, name: str, depth: int = 1) -> bool:

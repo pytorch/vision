@@ -17,7 +17,7 @@ from .vision import VisionDataset
 
 
 class MNIST(VisionDataset):
-    """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
+    """`MNIST <https://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where ``MNIST/raw/train-images-idx3-ubyte``
@@ -34,7 +34,7 @@ class MNIST(VisionDataset):
     """
 
     mirrors = [
-        "http://yann.lecun.com/exdb/mnist/",
+        "https://yann.lecun.com/exdb/mnist/",
         "https://ossci-datasets.s3.amazonaws.com/mnist/",
     ]
 
@@ -216,7 +216,7 @@ class FashionMNIST(MNIST):
             target and transforms it.
     """
 
-    mirrors = ["http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"]
+    mirrors = ["https://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"]
 
     resources = [
         ("train-images-idx3-ubyte.gz", "8d4fb7e6c68d591d4c3dfef9ec88bf0d"),
@@ -244,7 +244,7 @@ class KMNIST(MNIST):
             target and transforms it.
     """
 
-    mirrors = ["http://codh.rois.ac.jp/kmnist/dataset/kmnist/"]
+    mirrors = ["https://codh.rois.ac.jp/kmnist/dataset/kmnist/"]
 
     resources = [
         ("train-images-idx3-ubyte.gz", "bdb82020997e1d708af4cf47b453dcf7"),
