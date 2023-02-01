@@ -125,7 +125,7 @@ Model Registration Mechanism
 
 .. betastatus:: registration mechanism
 
-As of v0.14, TorchVision offers a new model registration mechanism which allows retreaving models
+As of v0.14, TorchVision offers a new model registration mechanism which allows retrieving models
 and weights by their names. Here are a few examples on how to use them:
 
 .. code:: python
