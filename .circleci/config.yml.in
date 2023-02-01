@@ -855,7 +855,7 @@ jobs:
     executor:
       name: windows-gpu
     environment:
-      CUDA_VERSION: "11.6"
+      CUDA_VERSION: "11.7"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
