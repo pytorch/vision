@@ -18,7 +18,7 @@ jobs:
           - "3.9"
           - "3.10"
         runner: ["linux.12xlarge"]
-        timeout: 30
+        timeout: [60]
         gpu-arch-type: ["cpu"]
         include:
           - python-version: 3.8
