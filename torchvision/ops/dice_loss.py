@@ -24,11 +24,11 @@ def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "non
         \text{loss}(x, class) = 1 - \text{Dice}(x, class)
 
     Args:
-        inputs: (Tensor): A float tensor with rank >= 2 and shape (B, N1, .... NK, C)
+        inputs: (Tensor): A float tensor with rank >= 2 and shape (B, C, N1, .... NK)
                 where B is the Batch Size and C is the number of classes.
                 The predictions for each example.
         targets: (Tensor): A one-hot tensor with the same shape as inputs.
-                The first dimension is the batch size and last dimension is the
+                The first dimension is the batch size and the second dimension is the
                 number of classes.
         eps: (float, optional): Scalar to enforce numerical stability.
         reduction (string, optional): ``'none'`` | ``'mean'`` | ``'sum'``
@@ -44,13 +44,13 @@ def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "non
         _log_api_usage_once(dice_loss)
 
     # compute softmax over the classes axis
-    p = F.softmax(inputs, dim=-1)
+    p = F.softmax(inputs, dim=1)
     p = p.flatten(start_dim=1)
 
     targets = targets.flatten(start_dim=1)
 
-    intersection = torch.sum(p * targets, dim=-1)
-    cardinality = torch.sum(p + targets, dim=-1)
+    intersection = torch.sum(p * targets, dim=1)
+    cardinality = torch.sum(p + targets, dim=1)
 
     dice_score = 2.0 * intersection / (cardinality + eps)
 
