@@ -16,8 +16,8 @@ from common_utils import (
     get_tmp_dir,
     int_dtypes,
 )
-from torchvision import transforms as T
-from torchvision.transforms import functional as F, InterpolationMode
+from torchvision.prototype import transforms as T
+from torchvision.prototype.transforms import functional as F, InterpolationMode
 from torchvision.transforms.autoaugment import _apply_op
 
 NEAREST, NEAREST_EXACT, BILINEAR, BICUBIC = (

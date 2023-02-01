@@ -9,8 +9,8 @@ from typing import Sequence
 import numpy as np
 import pytest
 import torch
-import torchvision.transforms as T
-import torchvision.transforms.functional as F
+import torchvision.prototype.transforms as T
+import torchvision.prototype.transforms.functional as F
 import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional_tensor as F_t
 from common_utils import (
