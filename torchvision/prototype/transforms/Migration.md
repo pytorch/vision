@@ -3,23 +3,23 @@ Needs to be done in order to migrate to Beta
 
 (Some of the items really just mean "Nicolas needs to understand this better")
 
-* Figure out logistics of migration (extra .v2 namespace, programmatic "opt-in",
+* (P V N)Figure out logistics of migration (extra .v2 namespace, programmatic "opt-in",
   stuff like that): tracked in https://github.com/pytorch/vision/issues/7097
-* Figure out dataset <-> transformsV2 layer (including HF or other external
+* (P and N)Figure out dataset <-> transformsV2 layer (including HF or other external
   datasets): tracked in https://github.com/pytorch/vision/pull/6663
-* Figure out internal video partners and what they actually need. Some of the
+* (N) Figure out internal video partners and what they actually need. Some of the
   Video transforms like `uniform_temporal_subsample()` are outliers (awkward
   support, doesn't fit well into the current API). Same for `PermuteDimensions`
   and `TransposeDimension` which break underlying assumptions about dimension
   order.
 * Address critical TODOs below and in code, code review etc.
 * Write Docs
+* Philip: (EDIT: submit dummy PR)Polish tests - make sure they are at least functionally equivalent to the v1
+  tests. This requires individually checking them.
 
 Needs to be done before migrating to stable
 -------------------------------------------
 
-* Polish tests - make sure they are at least functionally equivalent to the v1
-  tests. This requires individually checking them.
 * Address rest of TODOs below and in code, code review etc.
 * Look into pytorch 2.0 compat? (**Should this be bumped up??**)
 * Figure out path to user-defined transforms and sub-classes 
