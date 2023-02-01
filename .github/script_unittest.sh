@@ -12,7 +12,18 @@ echo "${PYTORCH_CHANNEL}"
 echo '::endgroup::'
 
 echo '::group::Set PyTorch conda mutex'
-PYTORCH_MUTEX=cpuonly
+case $GPU_ARCH_TYPE in
+  cpu)
+    PYTORCH_MUTEX=cpuonly
+    ;;
+  cuda)
+    PYTORCH_MUTEX="pytorch-cuda=${GPU_ARCH_VERSION}"
+    ;;
+  *)
+    echo "Unknown GPU_ARCH_TYPE=${GPU_ARCH_TYPE}"
+    exit 1
+    ;;
+esac
 echo "${PYTORCH_MUTEX}"
 echo '::endgroup::'
 
@@ -35,6 +46,10 @@ conda install \
   -c nvidia \
   pytorch \
   "${PYTORCH_MUTEX}"
+
+if [[ $GPU_ARCH_TYPE = 'cuda' ]]; then
+  python3 -c "import torch; exit(not torch.cuda.is_available())"
+fi
 echo '::endgroup::'
 
 echo '::group::Install TorchVision'

@@ -1,4 +1,4 @@
-name: Unit-tests on Linux CPU
+name: Unit-tests on macOS
 
 on:
   pull_request:
@@ -17,12 +17,13 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
+        gpu-arch-type: ["cpu"]
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
-      runner: linux.12xlarge
       script: |
         export PYTHON_VERSION=${{ matrix.python-version }}
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
 
         ./.github/script_unittest.sh
