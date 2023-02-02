@@ -74,3 +74,7 @@ echo '::endgroup::'
 echo '::group::Run tests'
 pytest --durations=25
 echo '::endgroup::'
+
+CODE=$?
+echo $CODE
+exit $CODE
