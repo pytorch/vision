@@ -62,7 +62,12 @@ jobs:
         fi
 
         python3 setup.py develop
-        python3 -m pip install pytest pytest-mock 'av<10'
+        if [[ "${PYTHON_VERSION}" = "3.11" ]]; then
+          # Looks like the av libraries are not available for 3.11
+          python3 -m pip install pytest pytest-mock
+        else
+          python3 -m pip install pytest pytest-mock 'av<10'
+        fi
 
         # Run Tests
         python3 -m torch.utils.collect_env
