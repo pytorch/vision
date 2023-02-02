@@ -1615,7 +1615,6 @@ def _check_antialias(
     img: Tensor, antialias: Optional[Union[str, bool]], interpolation: InterpolationMode
 ) -> Optional[bool]:
     if isinstance(antialias, str):  # it should be "warn", but we don't bother checking against that
-        # TODO Should we only warn if input is a tensor, or for PIL images too?
         if isinstance(img, Tensor) and (
             interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC
         ):
