@@ -5,6 +5,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-mock
+  - pip
   - libpng
   - jpeg
   - ca-certificates

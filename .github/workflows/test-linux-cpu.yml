@@ -65,6 +65,7 @@ jobs:
         if [[ "${PYTHON_VERSION}" = "3.11" ]]; then
           # Looks like the av libraries are not available for 3.11
           python3 -m pip install pytest pytest-mock
+          python3 -m pip install av
         else
           python3 -m pip install pytest pytest-mock 'av<10'
         fi
