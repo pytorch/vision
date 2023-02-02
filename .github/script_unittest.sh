@@ -4,7 +4,9 @@ set -eu
 
 echo '::group::Prepare conda'
 BASH_CONFIG=$(conda init bash | grep modified | tr -s ' ' | cut -d ' ' -f2)
+set +u
 source "${BASH_CONFIG}"
+set -u
 echo '::endgroup::'
 
 echo '::group::Set PyTorch conda channel'
