@@ -128,10 +128,12 @@ def load_data(traindir, valdir, args):
         print(f"Loading dataset_train from {cache_path}")
         dataset, _ = torch.load(cache_path)
     else:
+        # We need a default value for the variables below because args may come
+        # from train_quantization.py which doesn't define them.
         auto_augment_policy = getattr(args, "auto_augment", None)
         random_erase_prob = getattr(args, "random_erase", 0.0)
-        ra_magnitude = args.ra_magnitude
-        augmix_severity = args.augmix_severity
+        ra_magnitude = getattr(args, "ra_magnitude", None)
+        augmix_severity = getattr(args, "augmix_severity", None)
         dataset = torchvision.datasets.ImageFolder(
             traindir,
             presets.ClassificationPresetTrain(
