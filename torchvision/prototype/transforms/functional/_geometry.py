@@ -10,6 +10,7 @@ from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
 from torchvision.prototype import datapoints
 from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional import (
+    _check_antialias,
     _compute_resized_output_size as __compute_resized_output_size,
     _get_perspective_coeffs,
     InterpolationMode,
@@ -143,14 +144,18 @@ def resize_image_tensor(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
+    antialias = _check_antialias(img=image, antialias=antialias, interpolation=interpolation)
+    assert not isinstance(antialias, str)
     antialias = False if antialias is None else antialias
     align_corners: Optional[bool] = None
     if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
         align_corners = False
-    elif antialias:
-        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
+    else:
+        # The default of antialias should be True from 0.17, so we don't warn or
+        # error if other interpolation modes are used. This is documented.
+        antialias = False
 
     shape = image.shape
     num_channels, old_height, old_width = shape[-3:]
