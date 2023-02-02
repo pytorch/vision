@@ -1,4 +1,5 @@
 #include "memory_buffer.h"
+#include <c10/util/Logging.h>
 
 namespace ffmpeg {
 

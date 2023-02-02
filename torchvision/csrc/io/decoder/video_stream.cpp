@@ -1,4 +1,5 @@
 #include "video_stream.h"
+#include <c10/util/Logging.h>
 #include "util.h"
 
 namespace ffmpeg {

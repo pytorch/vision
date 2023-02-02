@@ -1,4 +1,5 @@
 #include "decoder.h"
+#include <c10/util/Logging.h>
 #include <libavutil/avutil.h>
 #include <future>
 #include <iostream>

@@ -17,11 +17,6 @@ extern "C" {
 #include <libswresample/swresample.h>
 #include "libswscale/swscale.h"
 }
-#ifdef USE_GLOG
-#include <glog/logging.h>
-#else
-#include <c10/util/Logging.h>
-#endif
 
 namespace ffmpeg {
 

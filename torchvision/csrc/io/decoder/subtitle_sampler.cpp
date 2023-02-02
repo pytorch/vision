@@ -1,4 +1,5 @@
 #include "subtitle_sampler.h"
+#include <c10/util/Logging.h>
 #include "util.h"
 
 namespace ffmpeg {
