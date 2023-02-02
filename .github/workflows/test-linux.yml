@@ -34,5 +34,7 @@ jobs:
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+        
+        sleep 3600
 
         ./.github/script_unittest.sh
