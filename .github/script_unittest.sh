@@ -2,6 +2,11 @@
 
 set -eu
 
+echo '::group::Prepare conda'
+BASH_CONFIG=$(conda init bash | grep modified | tr -s ' ' | cut -d ' ' -f2)
+source "${BASH_CONFIG}"
+echo '::endgroup::'
+
 echo '::group::Set PyTorch conda channel'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
 if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
@@ -37,8 +42,6 @@ conda create \
   setuptools ninja \
   libpng jpeg \
   Pillow numpy requests
-conda init bash
-source "${HOME}/.bashrc"
 conda activate ci
 pip install 'av<10'
 echo '::endgroup::'
