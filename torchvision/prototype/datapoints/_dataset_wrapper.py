@@ -73,6 +73,10 @@ class _VisionDatasetDatapointWrapper(Dataset):
         return len(self._vision_dataset)
 
 
+def identity(item):
+    return item
+
+
 def list_of_dicts_to_dict_of_lists(list_of_dicts: List[Dict[str, Any]]) -> Dict[str, List]:
     if not list_of_dicts:
         return {}
@@ -103,7 +107,7 @@ def wrap_target_by_type(
         target = [target]
 
     wrapped_target = tuple(
-        type_wrappers.get(target_type, lambda item: item)(item) for target_type, item in zip(target_types, target)
+        type_wrappers.get(target_type, identity)(item) for target_type, item in zip(target_types, target)
     )
 
     if len(wrapped_target) == 1:
@@ -120,6 +124,8 @@ def get_categories(dataset: datasets.VisionDataset) -> Optional[List[str]]:
         datasets.CIFAR100: lambda dataset: dataset.classes,
         datasets.FashionMNIST: lambda dataset: dataset.classes,
         datasets.ImageNet: lambda dataset: [", ".join(names) for names in dataset.classes],
+        datasets.DatasetFolder: lambda dataset: dataset.classes,
+        datasets.ImageFolder: lambda dataset: dataset.classes,
     }.get(type(dataset))
     return categories_fn(dataset) if categories_fn is not None else None
 
@@ -141,6 +147,8 @@ for dataset_type in [
     datasets.MNIST,
     datasets.FashionMNIST,
     datasets.GTSRB,
+    datasets.DatasetFolder,
+    datasets.ImageFolder,
 ]:
     _WRAPPERS[dataset_type] = classification_wrapper
 
@@ -222,7 +230,7 @@ def coco_dectection_wrapper(
 
 
 _WRAPPERS[datasets.CocoDetection] = coco_dectection_wrapper
-_WRAPPERS[datasets.CocoCaptions] = lambda sample: sample
+_WRAPPERS[datasets.CocoCaptions] = identity
 
 
 VOC_DETECTION_CATEGORIES = [
