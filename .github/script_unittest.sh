@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 
-# FIXME: readd -e
-set -u
+set -eu
 
 echo '::group::Prepare conda'
 CONDA_PATH=$(which conda)
 eval "$(${CONDA_PATH} shell.bash hook)"
+# The `setuptools` package installed through `conda` includes a patch that errors if something is installed
+# through `setuptools` while the `CONDA_BUILD` environment variable is set.
+# https://github.com/AnacondaRecipes/setuptools-feedstock/blob/f5d8d256810ce28fc0cf34170bc34e06d3754041/recipe/patches/0002-disable-downloads-inside-conda-build.patch
+# (Although we are not using the `-c conda-forge` channel, the patch is equivalent but not public for
+# `setuptools` from the `-c defaults` channel)
+# Since we aren't using `conda build` here, we unset it to avoid installation problems later
+# TODO: investigate where `CONDA_BUILD` is set and maybe fix unset it there
+unset CONDA_BUILD
 echo '::endgroup::'
 
 echo '::group::Set PyTorch conda channel'
@@ -19,7 +26,7 @@ PYTORCH_CHANNEL=pytorch-"${POSTFIX}"
 echo "${PYTORCH_CHANNEL}"
 echo '::endgroup::'
 
-echo '::group::Set PyTorch conda mutex'
+echo '::group::Set PyTorch GPU mutex'
 case $GPU_ARCH_TYPE in
   cpu)
     PYTORCH_MUTEX=cpuonly
@@ -61,13 +68,6 @@ fi
 echo '::endgroup::'
 
 echo '::group::Install TorchVision'
-# The `setuptools` package installed through `conda` includes a patch that errors if something is installed
-# through `setuptools` while the `CONDA_BUILD` environment variable is set.
-# https://github.com/AnacondaRecipes/setuptools-feedstock/blob/f5d8d256810ce28fc0cf34170bc34e06d3754041/recipe/patches/0002-disable-downloads-inside-conda-build.patch
-# (Although we are not using the `-c conda-forge` channel, the patch is equivalent but not public for
-# `setuptools` from the `-c defaults` channel
-# TODO: investigate where `CONDA_BUILD` is set and maybe fix it there
-unset CONDA_BUILD
 python setup.py develop
 echo '::endgroup::'
 
