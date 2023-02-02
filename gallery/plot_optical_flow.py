@@ -81,9 +81,10 @@ plot(img1_batch)
 
 #########################
 # The RAFT model accepts RGB images. We first get the frames from
-# :func:`~torchvision.io.read_video` and resize them to ensure their
-# dimensions are divisible by 8. Then we use the transforms bundled into the
-# weights in order to preprocess the input and rescale its values to the
+# :func:`~torchvision.io.read_video` and resize them to ensure their dimensions
+# are divisible by 8. Note that we explicitly use ``antialias=False``, because
+# this is how those models were trained. Then we use the transforms bundled into
+# the weights in order to preprocess the input and rescale its values to the
 # required ``[-1, 1]`` interval.
 
 from torchvision.models.optical_flow import Raft_Large_Weights
@@ -93,8 +94,8 @@ transforms = weights.transforms()
 
 
 def preprocess(img1_batch, img2_batch):
-    img1_batch = F.resize(img1_batch, size=[520, 960])
-    img2_batch = F.resize(img2_batch, size=[520, 960])
+    img1_batch = F.resize(img1_batch, size=[520, 960], antialias=False)
+    img2_batch = F.resize(img2_batch, size=[520, 960], antialias=False)
     return transforms(img1_batch, img2_batch)
 
 
