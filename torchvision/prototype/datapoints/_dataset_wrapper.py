@@ -166,6 +166,29 @@ for dataset_type in [
     _WRAPPERS[dataset_type] = segmentation_wrapper
 
 
+def video_classification_wrapper(dataset, sample):
+    if dataset.video_clips.output_format == "THWC":
+        raise RuntimeError(
+            f"{type(dataset).__name__} with output_format='THWC' is not supported by this wrapper, "
+            f"since it is not compatible with the transformations. Please use output_format='TCHW' instead."
+        )
+
+    video, audio, label = sample
+
+    video = datapoints.Video(video)
+    label = datapoints.Label(label, categories=dataset.classes)
+
+    return video, audio, label
+
+
+for dataset_type in [
+    datasets.HMDB51,
+    datasets.Kinetics,
+    datasets.UCF101,
+]:
+    _WRAPPERS[dataset_type] = video_classification_wrapper
+
+
 def caltech101_wrapper(
     dataset: datasets.Caltech101, sample: Tuple[PIL.Image.Image, Any]
 ) -> Tuple[PIL.Image.Image, Any]:
