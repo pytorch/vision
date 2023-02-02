@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu
+
 echo '::group::Set PyTorch conda channel'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
 if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
@@ -74,7 +76,3 @@ echo '::endgroup::'
 echo '::group::Run tests'
 pytest --durations=25
 echo '::endgroup::'
-
-CODE=$?
-echo $CODE
-exit $CODE
