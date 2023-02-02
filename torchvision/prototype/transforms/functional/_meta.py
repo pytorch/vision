@@ -1,9 +1,9 @@
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import datapoints
-from torchvision.prototype.datapoints import BoundingBoxFormat, ColorSpace
+from torchvision.prototype.datapoints import BoundingBoxFormat
 from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional_tensor import _max_value
 
@@ -223,139 +223,6 @@ def clamp_bounding_box(
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
     return convert_format_bounding_box(xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True)
-
-
-def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
-    image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
-    if not torch.all(alpha == _max_value(alpha.dtype)):
-        raise RuntimeError(
-            "Stripping the alpha channel if it contains values other than the max value is not supported."
-        )
-    return image
-
-
-def _add_alpha(image: torch.Tensor, alpha: Optional[torch.Tensor] = None) -> torch.Tensor:
-    if alpha is None:
-        shape = list(image.shape)
-        shape[-3] = 1
-        alpha = torch.full(shape, _max_value(image.dtype), dtype=image.dtype, device=image.device)
-    return torch.cat((image, alpha), dim=-3)
-
-
-def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
-    repeats = [1] * grayscale.ndim
-    repeats[-3] = 3
-    return grayscale.repeat(repeats)
-
-
-def _rgb_to_gray(image: torch.Tensor, cast: bool = True) -> torch.Tensor:
-    r, g, b = image.unbind(dim=-3)
-    l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
-    if cast:
-        l_img = l_img.to(image.dtype)
-    l_img = l_img.unsqueeze(dim=-3)
-    return l_img
-
-
-def convert_color_space_image_tensor(
-    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
-) -> torch.Tensor:
-    if new_color_space == old_color_space:
-        return image
-
-    if old_color_space == ColorSpace.OTHER or new_color_space == ColorSpace.OTHER:
-        raise RuntimeError(f"Conversion to or from {ColorSpace.OTHER} is not supported.")
-
-    if old_color_space == ColorSpace.GRAY and new_color_space == ColorSpace.GRAY_ALPHA:
-        return _add_alpha(image)
-    elif old_color_space == ColorSpace.GRAY and new_color_space == ColorSpace.RGB:
-        return _gray_to_rgb(image)
-    elif old_color_space == ColorSpace.GRAY and new_color_space == ColorSpace.RGB_ALPHA:
-        return _add_alpha(_gray_to_rgb(image))
-    elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.GRAY:
-        return _strip_alpha(image)
-    elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB:
-        return _gray_to_rgb(_strip_alpha(image))
-    elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB_ALPHA:
-        image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
-        return _add_alpha(_gray_to_rgb(image), alpha)
-    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAY:
-        return _rgb_to_gray(image)
-    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAY_ALPHA:
-        return _add_alpha(_rgb_to_gray(image))
-    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.RGB_ALPHA:
-        return _add_alpha(image)
-    elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY:
-        return _rgb_to_gray(_strip_alpha(image))
-    elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY_ALPHA:
-        image, alpha = torch.tensor_split(image, indices=(-1,), dim=-3)
-        return _add_alpha(_rgb_to_gray(image), alpha)
-    elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.RGB:
-        return _strip_alpha(image)
-    else:
-        raise RuntimeError(f"Conversion from {old_color_space} to {new_color_space} is not supported.")
-
-
-_COLOR_SPACE_TO_PIL_MODE = {
-    ColorSpace.GRAY: "L",
-    ColorSpace.GRAY_ALPHA: "LA",
-    ColorSpace.RGB: "RGB",
-    ColorSpace.RGB_ALPHA: "RGBA",
-}
-
-
-@torch.jit.unused
-def convert_color_space_image_pil(image: PIL.Image.Image, color_space: ColorSpace) -> PIL.Image.Image:
-    old_mode = image.mode
-    try:
-        new_mode = _COLOR_SPACE_TO_PIL_MODE[color_space]
-    except KeyError:
-        raise ValueError(f"Conversion from {ColorSpace.from_pil_mode(old_mode)} to {color_space} is not supported.")
-
-    if image.mode == new_mode:
-        return image
-
-    return image.convert(new_mode)
-
-
-def convert_color_space_video(
-    video: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
-) -> torch.Tensor:
-    return convert_color_space_image_tensor(video, old_color_space=old_color_space, new_color_space=new_color_space)
-
-
-def convert_color_space(
-    inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT],
-    color_space: ColorSpace,
-    old_color_space: Optional[ColorSpace] = None,
-) -> Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(convert_color_space)
-
-    if torch.jit.is_scripting() or is_simple_tensor(inpt):
-        if old_color_space is None:
-            raise RuntimeError(
-                "In order to convert the color space of simple tensors, "
-                "the `old_color_space=...` parameter needs to be passed."
-            )
-        return convert_color_space_image_tensor(inpt, old_color_space=old_color_space, new_color_space=color_space)
-    elif isinstance(inpt, datapoints.Image):
-        output = convert_color_space_image_tensor(
-            inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
-        )
-        return datapoints.Image.wrap_like(inpt, output, color_space=color_space)
-    elif isinstance(inpt, datapoints.Video):
-        output = convert_color_space_video(
-            inpt.as_subclass(torch.Tensor), old_color_space=inpt.color_space, new_color_space=color_space
-        )
-        return datapoints.Video.wrap_like(inpt, output, color_space=color_space)
-    elif isinstance(inpt, PIL.Image.Image):
-        return convert_color_space_image_pil(inpt, color_space=color_space)
-    else:
-        raise TypeError(
-            f"Input can either be a plain tensor, an `Image` or `Video` datapoint, or a PIL image, "
-            f"but got {type(inpt)} instead."
-        )
 
 
 def _num_value_bits(dtype: torch.dtype) -> int:

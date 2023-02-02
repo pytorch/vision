@@ -161,8 +161,8 @@ class TestSmoke:
                 itertools.chain.from_iterable(
                     fn(
                         color_spaces=[
-                            datapoints.ColorSpace.GRAY,
-                            datapoints.ColorSpace.RGB,
+                            "GRAY",
+                            "RGB",
                         ],
                         dtypes=[torch.uint8],
                         extra_dims=[(), (4,)],
@@ -192,7 +192,7 @@ class TestSmoke:
             (
                 transforms.Normalize(mean=[0.0, 0.0, 0.0], std=[1.0, 1.0, 1.0]),
                 itertools.chain.from_iterable(
-                    fn(color_spaces=[datapoints.ColorSpace.RGB], dtypes=[torch.float32])
+                    fn(color_spaces=["RGB"], dtypes=[torch.float32])
                     for fn in [
                         make_images,
                         make_vanilla_tensor_images,
@@ -221,45 +221,6 @@ class TestSmoke:
     def test_random_resized_crop(self, transform, input):
         transform(input)
 
-    @parametrize(
-        [
-            (
-                transforms.ConvertColorSpace(color_space=new_color_space, old_color_space=old_color_space),
-                itertools.chain.from_iterable(
-                    [
-                        fn(color_spaces=[old_color_space])
-                        for fn in (
-                            make_images,
-                            make_vanilla_tensor_images,
-                            make_pil_images,
-                            make_videos,
-                        )
-                    ]
-                ),
-            )
-            for old_color_space, new_color_space in itertools.product(
-                [
-                    datapoints.ColorSpace.GRAY,
-                    datapoints.ColorSpace.GRAY_ALPHA,
-                    datapoints.ColorSpace.RGB,
-                    datapoints.ColorSpace.RGB_ALPHA,
-                ],
-                repeat=2,
-            )
-        ]
-    )
-    def test_convert_color_space(self, transform, input):
-        transform(input)
-
-    def test_convert_color_space_unsupported_types(self):
-        transform = transforms.ConvertColorSpace(
-            color_space=datapoints.ColorSpace.RGB, old_color_space=datapoints.ColorSpace.GRAY
-        )
-
-        for inpt in [make_bounding_box(format="XYXY"), make_masks()]:
-            output = transform(inpt)
-            assert output is inpt
-
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
 class TestRandomHorizontalFlip:
@@ -285,7 +246,7 @@ class TestRandomHorizontalFlip:
 
         assert_equal(expected, pil_to_tensor(actual))
 
-    def test_features_image(self, p):
+    def test_datapoints_image(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomHorizontalFlip(p=p)
 
@@ -293,7 +254,7 @@ class TestRandomHorizontalFlip:
 
         assert_equal(datapoints.Image(expected), actual)
 
-    def test_features_mask(self, p):
+    def test_datapoints_mask(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomHorizontalFlip(p=p)
 
@@ -301,7 +262,7 @@ class TestRandomHorizontalFlip:
 
         assert_equal(datapoints.Mask(expected), actual)
 
-    def test_features_bounding_box(self, p):
+    def test_datapoints_bounding_box(self, p):
         input = datapoints.BoundingBox([0, 0, 5, 5], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
         transform = transforms.RandomHorizontalFlip(p=p)
 
@@ -338,7 +299,7 @@ class TestRandomVerticalFlip:
 
         assert_equal(expected, pil_to_tensor(actual))
 
-    def test_features_image(self, p):
+    def test_datapoints_image(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomVerticalFlip(p=p)
 
@@ -346,7 +307,7 @@ class TestRandomVerticalFlip:
 
         assert_equal(datapoints.Image(expected), actual)
 
-    def test_features_mask(self, p):
+    def test_datapoints_mask(self, p):
         input, expected = self.input_expected_image_tensor(p)
         transform = transforms.RandomVerticalFlip(p=p)
 
@@ -354,7 +315,7 @@ class TestRandomVerticalFlip:
 
         assert_equal(datapoints.Mask(expected), actual)
 
-    def test_features_bounding_box(self, p):
+    def test_datapoints_bounding_box(self, p):
         input = datapoints.BoundingBox([0, 0, 5, 5], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(10, 10))
         transform = transforms.RandomVerticalFlip(p=p)
 
@@ -1558,7 +1519,7 @@ class TestFixedSizeCrop:
         transform = transforms.FixedSizeCrop(size=crop_size)
 
         flat_inputs = [
-            make_image(size=spatial_size, color_space=datapoints.ColorSpace.RGB),
+            make_image(size=spatial_size, color_space="RGB"),
             make_bounding_box(
                 format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, extra_dims=batch_shape
             ),
