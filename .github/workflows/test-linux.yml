@@ -18,12 +18,10 @@ jobs:
           - "3.9"
           - "3.10"
         runner: ["linux.12xlarge"]
-        timeout: [60]
         gpu-arch-type: ["cpu"]
         include:
           - python-version: 3.8
             runner: linux.g5.4xlarge.nvidia.gpu
-            timeout: 120
             gpu-arch-type: cuda
             gpu-arch-version: "11.6"
       fail-fast: false
@@ -31,7 +29,7 @@ jobs:
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
-      timeout: ${{ matrix.timeout }}
+      timeout: 120
       script: |
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
