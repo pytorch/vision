@@ -41,8 +41,14 @@ class _VisionDatasetDatapointWrapper(Dataset):
         self._vision_dataset = dataset
         self._wrapper = wrapper
 
-        # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply the
-        # transforms
+        # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply them.
+        # Although internally, `datasets.VisionDataset` merges `transform` and `target_transform` into the joint
+        # `transforms`
+        # https://github.com/pytorch/vision/blob/135a0f9ea9841b6324b4fe8974e2543cbb95709a/torchvision/datasets/vision.py#L52-L54
+        # some (if not most) datasets still use `transform` and `target_transform` individually. Thus, we need to
+        # disable all three here to be able to extract the untransformed sample to wrap.
+        self.transform, dataset.transform = dataset.transform, None
+        self.target_transform, dataset.target_transform = dataset.target_transform, None
         self.transforms, dataset.transforms = dataset.transforms, None
 
     def __getattr__(self, item):
@@ -58,9 +64,8 @@ class _VisionDatasetDatapointWrapper(Dataset):
 
         sample = self._wrapper(self._vision_dataset, sample)
 
-        # We don't need to care about `transform` and `target_transform` here since `VisionDataset` joins them into a
-        # `transforms` internally:
-        # https://github.com/pytorch/vision/blob/2d92728341bbd3dc1e0f1e86c6a436049bbb3403/torchvision/datasets/vision.py#L52-L54
+        # Regardless of whether the user has supplied the transforms individually (`transform` and `target_transform`)
+        # or joint (`transforms`), we can access the full functionality through `transforms`
         if self.transforms is not None:
             sample = self.transforms(*sample)
 
