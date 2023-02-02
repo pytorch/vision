@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 
+# FIXME: readd -e
 set -eu
 
 echo '::group::Prepare conda'
-BASH_CONFIG=$(conda init bash | tee log | grep modified | tr -s ' ' | cut -d ' ' -f2)
-cat log
-cat "${BASH_CONFIG}"
-set +u
-source "${BASH_CONFIG}"
-set -u
+CONDA_PATH=$(which conda)
+eval "$(${CONDA_PATH} shell.bash hook)"
 echo '::endgroup::'
 
 echo '::group::Set PyTorch conda channel'
