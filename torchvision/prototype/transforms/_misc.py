@@ -4,6 +4,7 @@ import PIL.Image
 
 import torch
 
+from torchvision import transforms as _transforms
 from torchvision.ops import remove_small_boxes
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
@@ -39,6 +40,8 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
+    _v1_transform_cls = _transforms.LinearTransformation
+
     _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
 
     def __init__(self, transformation_matrix: torch.Tensor, mean_vector: torch.Tensor):
@@ -94,6 +97,7 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
+    _v1_transform_cls = _transforms.Normalize
     _transformed_types = (datapoints.Image, is_simple_tensor, datapoints.Video)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
@@ -113,6 +117,8 @@ class Normalize(Transform):
 
 
 class GaussianBlur(Transform):
+    _v1_transform_cls = _transforms.GaussianBlur
+
     def __init__(
         self, kernel_size: Union[int, Sequence[int]], sigma: Union[int, float, Sequence[float]] = (0.1, 2.0)
     ) -> None:

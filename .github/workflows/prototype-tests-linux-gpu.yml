@@ -17,7 +17,7 @@ jobs:
         include:
           - python-version: "3.8"
             gpu-arch-type: cuda
-            gpu-arch-version: "11.6"
+            gpu-arch-version: "11.7"
             runner: linux.4xlarge.nvidia.gpu
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
@@ -40,7 +40,7 @@ jobs:
         PYTORCH_CHANNEL=pytorch-"${POSTFIX}"
         echo "${PYTORCH_CHANNEL}"
         echo '::endgroup::'
-                
+
         echo '::group::Set PyTorch conda mutex'
         if [[ ${{ matrix.gpu-arch-type }} = 'cuda' ]]; then
           PYTORCH_MUTEX="pytorch-cuda=${{ matrix.gpu-arch-version }}"
@@ -49,7 +49,7 @@ jobs:
         fi
         echo "${PYTORCH_MUTEX}"
         echo '::endgroup::'
-        
+
         echo '::group::Create conda environment'
         conda create --prefix $PWD/ci \
           --quiet --yes \
@@ -69,21 +69,21 @@ jobs:
           python3 -c "import torch; exit(not torch.cuda.is_available())"
         fi
         echo '::endgroup::'
-          
+
         echo '::group::Install TorchVision'
         python setup.py develop
         echo '::endgroup::'
-        
+
         echo '::group::Collect PyTorch environment information'
         python -m torch.utils.collect_env
         echo '::endgroup::'
-        
+
         echo '::group::Install testing utilities'
         pip install --progress-bar=off pytest pytest-mock pytest-cov
         echo '::endgroup::'
 
         echo '::group::Run prototype tests'
-        # We don't want to run the prototype datasets tests. Since the positional glob into `pytest`, i.e. 
+        # We don't want to run the prototype datasets tests. Since the positional glob into `pytest`, i.e.
         # `test/test_prototype*.py` takes the highest priority, neither `--ignore` nor `--ignore-glob` can help us here.
         rm test/test_prototype_datasets*.py
         pytest \
