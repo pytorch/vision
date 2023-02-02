@@ -17,12 +17,16 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
+        runner:
+          - macos-12
+          - macos-m1-12
         gpu-arch-type: ["cpu"]
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
       timeout: 120
+      runner: ${{ matrix.runner }}
       script: |
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
