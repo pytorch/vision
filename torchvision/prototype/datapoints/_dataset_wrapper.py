@@ -4,9 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import functools
-from typing import Any, Callable, Dict, List, Optional, Tuple
-
-import PIL.Image
 
 import torch
 from torch.utils.data import Dataset
@@ -24,7 +21,7 @@ _WRAPPERS = {}
 
 
 # TODO: naming!
-def wrap_dataset_for_transforms_v2(dataset: datasets.VisionDataset) -> _VisionDatasetDatapointWrapper:
+def wrap_dataset_for_transforms_v2(dataset):
     dataset_cls = type(dataset)
     wrapper = _WRAPPERS.get(dataset_cls)
     if wrapper is None:
@@ -40,7 +37,7 @@ def wrap_dataset_for_transforms_v2(dataset: datasets.VisionDataset) -> _VisionDa
 
 
 class _VisionDatasetDatapointWrapper(Dataset):
-    def __init__(self, dataset: datasets.VisionDataset, wrapper) -> None:
+    def __init__(self, dataset, wrapper):
         self._vision_dataset = dataset
         self._wrapper = wrapper
 
@@ -48,13 +45,13 @@ class _VisionDatasetDatapointWrapper(Dataset):
         # transforms
         self.transforms, dataset.transforms = dataset.transforms, None
 
-    def __getattr__(self, item: str) -> Any:
+    def __getattr__(self, item):
         with contextlib.suppress(AttributeError):
             return object.__getattribute__(self, item)
 
         return getattr(self._vision_dataset, item)
 
-    def __getitem__(self, idx: int) -> Any:
+    def __getitem__(self, idx):
         # This gets us the raw sample since we disabled the transforms for the underlying dataset in the constructor
         # of this class
         sample = self._vision_dataset[idx]
@@ -69,7 +66,7 @@ class _VisionDatasetDatapointWrapper(Dataset):
 
         return sample
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._vision_dataset)
 
 
@@ -77,7 +74,7 @@ def identity(item):
     return item
 
 
-def list_of_dicts_to_dict_of_lists(list_of_dicts: List[Dict[str, Any]]) -> Dict[str, List]:
+def list_of_dicts_to_dict_of_lists(list_of_dicts):
     if not list_of_dicts:
         return {}
 
@@ -88,9 +85,7 @@ def list_of_dicts_to_dict_of_lists(list_of_dicts: List[Dict[str, Any]]) -> Dict[
     return dict_of_lists
 
 
-def wrap_target_by_type(
-    dataset, target, type_wrappers: Dict[str, Callable], *, fail_on=(), attr_name: str = "target_type"
-):
+def wrap_target_by_type(dataset, target, type_wrappers, *, fail_on=(), attr_name="target_type"):
     if target is None:
         return None
 
@@ -117,7 +112,7 @@ def wrap_target_by_type(
 
 
 @cache
-def get_categories(dataset: datasets.VisionDataset) -> Optional[List[str]]:
+def get_categories(dataset):
     categories_fn = {
         datasets.Caltech256: lambda dataset: [name.rsplit(".", 1)[1] for name in dataset.categories],
         datasets.CIFAR10: lambda dataset: dataset.classes,
@@ -130,9 +125,7 @@ def get_categories(dataset: datasets.VisionDataset) -> Optional[List[str]]:
     return categories_fn(dataset) if categories_fn is not None else None
 
 
-def classification_wrapper(
-    dataset: datasets.VisionDataset, sample: Tuple[PIL.Image.Image, Optional[int]]
-) -> Tuple[PIL.Image.Image, Optional[datapoints.Label]]:
+def classification_wrapper(dataset, sample):
     image, label = sample
     if label is not None:
         label = datapoints.Label(label, categories=get_categories(dataset))
@@ -153,9 +146,7 @@ for dataset_type in [
     _WRAPPERS[dataset_type] = classification_wrapper
 
 
-def segmentation_wrapper(
-    dataset: datasets.VisionDataset, sample: Tuple[PIL.Image.Image, PIL.Image.Image]
-) -> Tuple[PIL.Image.Image, datapoints.Mask]:
+def segmentation_wrapper(dataset, sample):
     image, mask = sample
     return image, datapoints.Mask(F.to_image_tensor(mask).squeeze(0))
 
@@ -189,9 +180,7 @@ for dataset_type in [
     _WRAPPERS[dataset_type] = video_classification_wrapper
 
 
-def caltech101_wrapper(
-    dataset: datasets.Caltech101, sample: Tuple[PIL.Image.Image, Any]
-) -> Tuple[PIL.Image.Image, Any]:
+def caltech101_wrapper(dataset, sample):
     image, target = sample
     return image, wrap_target_by_type(
         dataset,
@@ -205,7 +194,7 @@ _WRAPPERS[datasets.Caltech101] = caltech101_wrapper
 
 
 @cache
-def get_coco_detection_categories(dataset: datasets.CocoDetection):
+def get_coco_detection_categories(dataset):
     idx_to_category = {idx: cat["name"] for idx, cat in dataset.coco.cats.items()}
     idx_to_category[0] = "__background__"
     for idx in set(range(91)) - idx_to_category.keys():
@@ -214,10 +203,8 @@ def get_coco_detection_categories(dataset: datasets.CocoDetection):
     return [category for _, category in sorted(idx_to_category.items())]
 
 
-def coco_dectection_wrapper(
-    dataset: datasets.CocoDetection, sample: Tuple[PIL.Image.Image, List[Dict[str, Any]]]
-) -> Tuple[PIL.Image.Image, Dict[str, List[Any]]]:
-    def segmentation_to_mask(segmentation: Any, *, spatial_size: Tuple[int, int]) -> torch.Tensor:
+def coco_dectection_wrapper(dataset, sample):
+    def segmentation_to_mask(segmentation, *, spatial_size):
         from pycocotools import mask
 
         segmentation = (
@@ -282,9 +269,7 @@ VOC_DETECTION_CATEGORIES = [
 VOC_DETECTION_CATEGORY_TO_IDX = dict(zip(VOC_DETECTION_CATEGORIES, range(len(VOC_DETECTION_CATEGORIES))))
 
 
-def voc_detection_wrapper(
-    dataset: datasets.VOCDetection, sample: Tuple[PIL.Image.Image, Any]
-) -> Tuple[PIL.Image.Image, Any]:
+def voc_detection_wrapper(dataset, sample):
     image, target = sample
 
     batched_instances = list_of_dicts_to_dict_of_lists(target["annotation"]["object"])
@@ -305,7 +290,7 @@ def voc_detection_wrapper(
 _WRAPPERS[datasets.VOCDetection] = voc_detection_wrapper
 
 
-def sbd_wrapper(dataset: datasets.SBDataset, sample: Tuple[PIL.Image.Image, Any]) -> Tuple[PIL.Image.Image, Any]:
+def sbd_wrapper(dataset, sample):
     if dataset.mode == "boundaries":
         raise RuntimeError(
             "SBDataset with mode='boundaries' is currently not supported by this wrapper. "
@@ -319,7 +304,7 @@ def sbd_wrapper(dataset: datasets.SBDataset, sample: Tuple[PIL.Image.Image, Any]
 _WRAPPERS[datasets.SBDataset] = sbd_wrapper
 
 
-def celeba_wrapper(dataset: datasets.CelebA, sample: Tuple[PIL.Image.Image, Any]) -> Tuple[PIL.Image.Image, Any]:
+def celeba_wrapper(dataset, sample):
     image, target = sample
     return wrap_target_by_type(
         dataset,
@@ -341,7 +326,7 @@ KITTI_CATEGORIES = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cycl
 KITTI_CATEGORY_TO_IDX = dict(zip(KITTI_CATEGORIES, range(len(KITTI_CATEGORIES))))
 
 
-def kitti_wrapper(dataset: datasets.Kitti, sample):
+def kitti_wrapper(dataset, sample):
     image, target = sample
 
     target = list_of_dicts_to_dict_of_lists(target)
@@ -359,9 +344,7 @@ def kitti_wrapper(dataset: datasets.Kitti, sample):
 _WRAPPERS[datasets.Kitti] = kitti_wrapper
 
 
-def oxford_iiit_pet_wrapper(
-    dataset: datasets.OxfordIIITPet, sample: Tuple[PIL.Image.Image, List]
-) -> Tuple[PIL.Image.Image, List]:
+def oxford_iiit_pet_wrapper(dataset, sample):
     image, target = sample
     return image, wrap_target_by_type(
         dataset,
@@ -377,10 +360,8 @@ def oxford_iiit_pet_wrapper(
 _WRAPPERS[datasets.OxfordIIITPet] = oxford_iiit_pet_wrapper
 
 
-def cityscapes_wrapper(
-    dataset: datasets.Cityscapes, sample: Tuple[PIL.Image.Image, List]
-) -> Tuple[PIL.Image.Image, List]:
-    def instance_segmentation_wrapper(mask: PIL.Image.Image) -> datapoints.Mask:
+def cityscapes_wrapper(dataset, sample):
+    def instance_segmentation_wrapper(mask):
         # See https://github.com/mcordts/cityscapesScripts/blob/8da5dd00c9069058ccc134654116aac52d4f6fa2/cityscapesscripts/preparation/json2instanceImg.py#L7-L21
         data = F.pil_to_tensor(mask).squeeze(0)
         masks = []
@@ -412,9 +393,7 @@ def cityscapes_wrapper(
 _WRAPPERS[datasets.Cityscapes] = cityscapes_wrapper
 
 
-def widerface_wrapper(
-    dataset: datasets.WIDERFace, sample: Tuple[PIL.Image.Image, Optional[Dict[str, torch.Tensor]]]
-) -> Tuple[PIL.Image.Image, Optional[Dict[str, torch.Tensor]]]:
+def widerface_wrapper(dataset, sample):
     image, target = sample
     if target is not None:
         # FIXME: all returned values inside this dictionary are tensors, but not images
