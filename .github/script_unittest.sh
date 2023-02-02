@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # FIXME: readd -e
-set -eu
+set -u
 
 echo '::group::Prepare conda'
 CONDA_PATH=$(which conda)
