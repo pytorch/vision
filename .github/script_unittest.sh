@@ -30,14 +30,15 @@ echo "${PYTORCH_MUTEX}"
 echo '::endgroup::'
 
 echo '::group::Create conda environment'
+ENV_PATH="${PWD}/ci-env"
 conda create \
-  --name ci \
+  --prefix $ENV_PATH \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
   setuptools ninja \
   libpng jpeg \
   Pillow numpy requests
-conda activate ci
+conda activate $ENV_PATH
 pip install 'av<10'
 echo '::endgroup::'
 
