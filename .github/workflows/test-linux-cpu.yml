@@ -24,6 +24,7 @@ jobs:
       repository: pytorch/vision
       script: |
         # Mark Build Directory Safe
+        set -euxo pipefail
         git config --global --add safe.directory /__w/vision/vision
 
         # Set up Environment Variables
@@ -49,7 +50,6 @@ jobs:
         conda activate /work/ci_env
         
         # Install PyTorch, Torchvision, and testing libraries
-        set -ex
         if [[ "${PYTHON_VERSION}" = "3.11" ]]; then
           conda install \
             --yes \
