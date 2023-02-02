@@ -347,8 +347,7 @@ class Resize(torch.nn.Module):
             interpolation = _interpolation_modes_from_int(interpolation)
 
         self.interpolation = interpolation
-        print("OUI")
-        self.antialias = F._check_antialias(antialias, interpolation)
+        self.antialias = antialias
 
     def forward(self, img):
         """
@@ -931,7 +930,7 @@ class RandomResizedCrop(torch.nn.Module):
             )
             interpolation = _interpolation_modes_from_int(interpolation)
 
-        self.antialias = F._check_antialias(antialias, interpolation)
+        self.antialias = antialias
         self.interpolation = interpolation
         self.scale = scale
         self.ratio = ratio

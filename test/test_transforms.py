@@ -443,18 +443,11 @@ def test_resize_antialias_error():
 def test_resize_antialias_default_warning():
 
     img = Image.new("RGB", size=(10, 10), color=127)
-
-    match = "The default value of the antialias"
-    with pytest.warns(UserWarning, match=match):
-        transforms.Resize((20, 20))(img)
-    with pytest.warns(UserWarning, match=match):
-        transforms.RandomResizedCrop((20, 20))(img)
-
-    # For modes that aren't bicubic or bilinear, don't throw a warning
+    # We make sure we don't warn for PIL images since the default behaviour doesn't change
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        transforms.Resize((20, 20), interpolation=transforms.InterpolationMode.NEAREST)(img)
-        transforms.RandomResizedCrop((20, 20), interpolation=transforms.InterpolationMode.NEAREST)(img)
+        transforms.Resize((20, 20))(img)
+        transforms.RandomResizedCrop((20, 20))(img)
 
 
 @pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))

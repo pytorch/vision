@@ -485,7 +485,7 @@ def resize(
     if (image_height, image_width) == output_size:
         return img
 
-    antialias = _check_antialias(antialias, interpolation)
+    antialias = _check_antialias(img, antialias, interpolation)
 
     if not isinstance(img, torch.Tensor):
         if antialias is not None and not antialias:
@@ -1611,10 +1611,14 @@ def elastic_transform(
 
 
 # TODO in v0.17: remove this helper and change default of antialias to True everywhere
-def _check_antialias(antialias: Optional[Union[str, bool]], interpolation: InterpolationMode) -> Optional[bool]:
+def _check_antialias(
+    img: Tensor, antialias: Optional[Union[str, bool]], interpolation: InterpolationMode
+) -> Optional[bool]:
     if isinstance(antialias, str):  # it should be "warn", but we don't bother checking against that
         # TODO Should we only warn if input is a tensor, or for PIL images too?
-        if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
+        if isinstance(img, Tensor) and (
+            interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC
+        ):
             warnings.warn(
                 "The default value of the antialias parameter will change from None to True in v0.17, "
                 "in order to be consistent across the PIL and Tensor backends. "
