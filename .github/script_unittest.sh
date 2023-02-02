@@ -29,7 +29,7 @@ esac
 echo "${PYTORCH_MUTEX}"
 echo '::endgroup::'
 
-echo '::group::Create conda environment'
+echo '::group::Create build environment'
 conda create \
   --name ci \
   --quiet --yes \
@@ -37,6 +37,8 @@ conda create \
   setuptools ninja \
   libpng jpeg \
   Pillow numpy requests
+conda init bash
+source "${HOME}/.bashrc"
 conda activate ci
 pip install 'av<10'
 echo '::endgroup::'
