@@ -1,4 +1,4 @@
-name: Unit-tests on Linux
+name: Unit-tests on Windows
 
 on:
   pull_request:
@@ -17,15 +17,15 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
-        runner: ["linux.12xlarge"]
+        runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
         include:
           - python-version: 3.8
-            runner: linux.g5.4xlarge.nvidia.gpu
+            runner: windows.8xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.7"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
