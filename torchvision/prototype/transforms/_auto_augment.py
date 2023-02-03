@@ -81,10 +81,22 @@ class _AutoAugmentBase(Transform):
         interpolation: InterpolationMode,
         fill: Dict[Type, datapoints.FillTypeJIT],
     ) -> Union[datapoints.ImageType, datapoints.VideoType]:
-        fill_ = fill[type(image)]
+        return self._apply_transform(
+            image, transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill
+        )
+
+    def _apply_transform(
+        self,
+        inpt: datapoints.InputType,
+        transform_id: str,
+        magnitude: float,
+        interpolation: InterpolationMode,
+        fill: Dict[Type, datapoints.FillTypeJIT],
+    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
+        fill_ = fill[type(inpt)]
 
         if transform_id == "Identity":
-            return image
+            return inpt
         elif transform_id == "ShearX":
             # magnitude should be arctan(magnitude)
             # official autoaug: (1, level, 0, 0, 1, 0)
@@ -93,7 +105,7 @@ class _AutoAugmentBase(Transform):
             # torchvision:      (1, tan(level), 0, 0, 1, 0)
             # https://github.com/pytorch/vision/blob/0c2373d0bba3499e95776e7936e207d8a1676e65/torchvision/transforms/functional.py#L976
             return F.affine(
-                image,
+                inpt,
                 angle=0.0,
                 translate=[0, 0],
                 scale=1.0,
@@ -106,7 +118,7 @@ class _AutoAugmentBase(Transform):
             # magnitude should be arctan(magnitude)
             # See above
             return F.affine(
-                image,
+                inpt,
                 angle=0.0,
                 translate=[0, 0],
                 scale=1.0,
@@ -117,7 +129,7 @@ class _AutoAugmentBase(Transform):
             )
         elif transform_id == "TranslateX":
             return F.affine(
-                image,
+                inpt,
                 angle=0.0,
                 translate=[int(magnitude), 0],
                 scale=1.0,
@@ -127,7 +139,7 @@ class _AutoAugmentBase(Transform):
             )
         elif transform_id == "TranslateY":
             return F.affine(
-                image,
+                inpt,
                 angle=0.0,
                 translate=[0, int(magnitude)],
                 scale=1.0,
@@ -136,26 +148,29 @@ class _AutoAugmentBase(Transform):
                 fill=fill_,
             )
         elif transform_id == "Rotate":
-            return F.rotate(image, angle=magnitude, interpolation=interpolation, fill=fill_)
+            return F.rotate(inpt, angle=magnitude, interpolation=interpolation, fill=fill_)
         elif transform_id == "Brightness":
-            return F.adjust_brightness(image, brightness_factor=1.0 + magnitude)
+            return F.adjust_brightness(inpt, brightness_factor=1.0 + magnitude)
         elif transform_id == "Color":
-            return F.adjust_saturation(image, saturation_factor=1.0 + magnitude)
+            return F.adjust_saturation(inpt, saturation_factor=1.0 + magnitude)
         elif transform_id == "Contrast":
-            return F.adjust_contrast(image, contrast_factor=1.0 + magnitude)
+            return F.adjust_contrast(inpt, contrast_factor=1.0 + magnitude)
         elif transform_id == "Sharpness":
-            return F.adjust_sharpness(image, sharpness_factor=1.0 + magnitude)
+            return F.adjust_sharpness(inpt, sharpness_factor=1.0 + magnitude)
         elif transform_id == "Posterize":
-            return F.posterize(image, bits=int(magnitude))
+            return F.posterize(inpt, bits=int(magnitude))
         elif transform_id == "Solarize":
-            bound = _FT._max_value(image.dtype) if isinstance(image, torch.Tensor) else 255.0
-            return F.solarize(image, threshold=bound * magnitude)
+            if check_type(inpt, (datapoints.Image, is_simple_tensor, datapoints.Video)):
+                bound = _FT._max_value(inpt.dtype)
+            else:
+                bound = 255
+            return F.solarize(inpt, threshold=bound * magnitude)
         elif transform_id == "AutoContrast":
-            return F.autocontrast(image)
+            return F.autocontrast(inpt)
         elif transform_id == "Equalize":
-            return F.equalize(image)
+            return F.equalize(inpt)
         elif transform_id == "Invert":
-            return F.invert(image)
+            return F.invert(inpt)
         else:
             raise ValueError(f"No transform available for {transform_id}")
 
@@ -597,7 +612,8 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         fn: Callable[..., torch.Tensor], fn_kwrgs: dict, image: torch.Tensor, bboxes: torch.Tensor
     ) -> torch.Tensor:
         new_img = image.clone()
-        for bbox in bboxes:
+        int_bboxes = bboxes.to(torch.long)
+        for bbox in int_bboxes:
             bbox_img = new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]]
             out_bbox_img = fn(bbox_img, **fn_kwrgs)
             new_img[..., bbox[1] : bbox[3], bbox[0] : bbox[2]] = out_bbox_img
@@ -615,57 +631,16 @@ class _AutoAugmentDetectionBase(_AutoAugmentBase):
         # TODO: SolarizeAdd, Cutout, BBox_Cutout, Flip_Only_BBoxes, Cutout_Only_BBoxes
 
         if transform_id.endswith("_Only_BBoxes"):
-            transform_id = transform_id[:-12]
+            transform_id = transform_id.replace("_Only_BBoxes", "")
             fn_kwargs = dict(transform_id=transform_id, magnitude=magnitude, interpolation=interpolation, fill=fill)
             image = self._transform_image_or_video_in_bboxes(
                 self._apply_image_or_video_transform, fn_kwargs, image, bboxes
             )
-        elif transform_id.endswith("_BBox"):
-            transform_id = transform_id[:-5]
-            image = self._apply_image_or_video_transform(image, transform_id, magnitude, interpolation, fill)
-
-            if transform_id == "Rotate":
-                bboxes = bboxes.rotate(angle=magnitude)
-                # bboxes = bboxes.affine(
-                #     angle=magnitude,
-                #     translate=[0, 0],
-                #     scale=1.0,
-                #     shear=[0.0, 0.0],
-                # )
-            elif transform_id == "TranslateX":
-                bboxes = bboxes.affine(
-                    angle=0.0,
-                    translate=[int(magnitude), 0],
-                    scale=1.0,
-                    shear=[0.0, 0.0],
-                )
-            elif transform_id == "TranslateY":
-                bboxes = bboxes.affine(
-                    angle=0.0,
-                    translate=[0, int(magnitude)],
-                    scale=1.0,
-                    shear=[0.0, 0.0],
-                )
-            elif transform_id == "ShearX":
-                bboxes = bboxes.affine(
-                    angle=0.0,
-                    translate=[0, 0],
-                    scale=1.0,
-                    shear=[math.degrees(math.atan(magnitude)), 0.0],
-                    center=[0, 0],
-                )
-            elif transform_id == "ShearY":
-                bboxes = bboxes.affine(
-                    angle=0.0,
-                    translate=[0, 0],
-                    scale=1.0,
-                    shear=[0.0, math.degrees(math.atan(magnitude))],
-                    center=[0, 0],
-                )
         elif transform_id == "BBox_Cutout":
             raise NotImplementedError()
         else:
-            image = self._apply_image_or_video_transform(image, transform_id, magnitude, interpolation, fill)
+            image = self._apply_transform(image, transform_id, magnitude, interpolation, fill)
+            bboxes = self._apply_transform(bboxes, transform_id, magnitude, interpolation, fill)
 
         return image, bboxes
 
@@ -690,19 +665,19 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
         "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Brightness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
-        "Cutout": (lambda num_bins, height, width: torch.linspace(0.0, 100.0, num_bins), False),  # TODO: int()?
+        "Cutout": (lambda num_bins, height, width: torch.linspace(0.0, 100.0, num_bins, dtype=torch.long), False),
         "BBox_Cutout": (lambda num_bins, height, width: torch.linspace(0.0, 0.75, num_bins), False),
-        "Rotate_BBox": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins), True),
-        "TranslateX_BBox": (
+        "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins), True),
+        "TranslateX": (
             lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins),
             True,
         ),  # TODO: check 250.0
-        "TranslateY_BBox": (
+        "TranslateY": (
             lambda num_bins, height, width: torch.linspace(0.0, 250.0, num_bins),
             True,
         ),  # TODO: check 250.0
-        "ShearX_BBox": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
-        "ShearY_BBox": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
+        "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
+        "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
         "Rotate_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins), True),
         "ShearX_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
         "ShearY_Only_BBoxes": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
@@ -733,73 +708,73 @@ class AutoAugmentDetection(_AutoAugmentDetectionBase):
     def _get_policies(self, policy: str) -> List[List[Tuple[str, float, Optional[int]]]]:
         if policy == "v0":
             return [
-                [("TranslateX_BBox", 0.6, 4), ("Equalize", 0.8, 10)],
+                [("TranslateX", 0.6, 4), ("Equalize", 0.8, 10)],
                 [("TranslateY_Only_BBoxes", 0.2, 2), ("Cutout", 0.8, 8)],
-                [("Sharpness", 0.0, 8), ("ShearX_BBox", 0.4, 0)],
-                [("ShearY_BBox", 1.0, 2), ("TranslateY_Only_BBoxes", 0.6, 6)],
-                [("Rotate_BBox", 0.6, 10), ("Color", 1.0, 6)],
+                [("Sharpness", 0.0, 8), ("ShearX", 0.4, 0)],
+                [("ShearY", 1.0, 2), ("TranslateY_Only_BBoxes", 0.6, 6)],
+                [("Rotate", 0.6, 10), ("Color", 1.0, 6)],
             ]
         elif policy == "v1":
             return [
-                [("TranslateX_BBox", 0.6, 4), ("Equalize", 0.8, 10)],
+                [("TranslateX", 0.6, 4), ("Equalize", 0.8, 10)],
                 [("TranslateY_Only_BBoxes", 0.2, 2), ("Cutout", 0.8, 8)],
-                [("Sharpness", 0.0, 8), ("ShearX_BBox", 0.4, 0)],
-                [("ShearY_BBox", 1.0, 2), ("TranslateY_Only_BBoxes", 0.6, 6)],
-                [("Rotate_BBox", 0.6, 10), ("Color", 1.0, 6)],
+                [("Sharpness", 0.0, 8), ("ShearX", 0.4, 0)],
+                [("ShearY", 1.0, 2), ("TranslateY_Only_BBoxes", 0.6, 6)],
+                [("Rotate", 0.6, 10), ("Color", 1.0, 6)],
                 [("Color", 0.0, 0), ("ShearX_Only_BBoxes", 0.8, 4)],
                 [("ShearY_Only_BBoxes", 0.8, 2), ("Flip_Only_BBoxes", 0.0, 10)],
-                [("Equalize", 0.6, 10), ("TranslateX_BBox", 0.2, 2)],
+                [("Equalize", 0.6, 10), ("TranslateX", 0.2, 2)],
                 [("Color", 1.0, 10), ("TranslateY_Only_BBoxes", 0.4, 6)],
-                [("Rotate_BBox", 0.8, 10), ("Contrast", 0.0, 10)],
+                [("Rotate", 0.8, 10), ("Contrast", 0.0, 10)],
                 [("Cutout", 0.2, 2), ("Brightness", 0.8, 10)],
                 [("Color", 1.0, 6), ("Equalize", 1.0, 2)],
                 [("Cutout_Only_BBoxes", 0.4, 6), ("TranslateY_Only_BBoxes", 0.8, 2)],
-                [("Color", 0.2, 8), ("Rotate_BBox", 0.8, 10)],
+                [("Color", 0.2, 8), ("Rotate", 0.8, 10)],
                 [("Sharpness", 0.4, 4), ("TranslateY_Only_BBoxes", 0.0, 4)],
                 [("Sharpness", 1.0, 4), ("SolarizeAdd", 0.4, 4)],
-                [("Rotate_BBox", 1.0, 8), ("Sharpness", 0.2, 8)],
-                [("ShearY_BBox", 0.6, 10), ("Equalize_Only_BBoxes", 0.6, 8)],
-                [("ShearX_BBox", 0.2, 6), ("TranslateY_Only_BBoxes", 0.2, 10)],
+                [("Rotate", 1.0, 8), ("Sharpness", 0.2, 8)],
+                [("ShearY", 0.6, 10), ("Equalize_Only_BBoxes", 0.6, 8)],
+                [("ShearX", 0.2, 6), ("TranslateY_Only_BBoxes", 0.2, 10)],
                 [("SolarizeAdd", 0.6, 8), ("Brightness", 0.8, 10)],
             ]
         elif policy == "vtest":
             return [
-                [("TranslateX_BBox", 1.0, 4), ("Equalize", 1.0, 10)],
+                [("TranslateX", 1.0, 4), ("Equalize", 1.0, 10)],
             ]
         elif policy == "v2":
             return [
                 [("Color", 0.0, 6), ("Cutout", 0.6, 8), ("Sharpness", 0.4, 8)],
-                [("Rotate_BBox", 0.4, 8), ("Sharpness", 0.4, 2), ("Rotate_BBox", 0.8, 10)],
-                [("TranslateY_BBox", 1.0, 8), ("AutoContrast", 0.8, 2)],
-                [("AutoContrast", 0.4, 6), ("ShearX_BBox", 0.8, 8), ("Brightness", 0.0, 10)],
+                [("Rotate", 0.4, 8), ("Sharpness", 0.4, 2), ("Rotate", 0.8, 10)],
+                [("TranslateY", 1.0, 8), ("AutoContrast", 0.8, 2)],
+                [("AutoContrast", 0.4, 6), ("ShearX", 0.8, 8), ("Brightness", 0.0, 10)],
                 [("SolarizeAdd", 0.2, 6), ("Contrast", 0.0, 10), ("AutoContrast", 0.6, 0)],
                 [("Cutout", 0.2, 0), ("Solarize", 0.8, 8), ("Color", 1.0, 4)],
-                [("TranslateY_BBox", 0.0, 4), ("Equalize", 0.6, 8), ("Solarize", 0.0, 10)],
-                [("TranslateY_BBox", 0.2, 2), ("ShearY_BBox", 0.8, 8), ("Rotate_BBox", 0.8, 8)],
+                [("TranslateY", 0.0, 4), ("Equalize", 0.6, 8), ("Solarize", 0.0, 10)],
+                [("TranslateY", 0.2, 2), ("ShearY", 0.8, 8), ("Rotate", 0.8, 8)],
                 [("Cutout", 0.8, 8), ("Brightness", 0.8, 8), ("Cutout", 0.2, 2)],
-                [("Color", 0.8, 4), ("TranslateY_BBox", 1.0, 6), ("Rotate_BBox", 0.6, 6)],
-                [("Rotate_BBox", 0.6, 10), ("BBox_Cutout", 1.0, 4), ("Cutout", 0.2, 8)],
-                [("Rotate_BBox", 0.0, 0), ("Equalize", 0.6, 6), ("ShearY_BBox", 0.6, 8)],
+                [("Color", 0.8, 4), ("TranslateY", 1.0, 6), ("Rotate", 0.6, 6)],
+                [("Rotate", 0.6, 10), ("BBox_Cutout", 1.0, 4), ("Cutout", 0.2, 8)],
+                [("Rotate", 0.0, 0), ("Equalize", 0.6, 6), ("ShearY", 0.6, 8)],
                 [("Brightness", 0.8, 8), ("AutoContrast", 0.4, 2), ("Brightness", 0.2, 2)],
-                [("TranslateY_BBox", 0.4, 8), ("Solarize", 0.4, 6), ("SolarizeAdd", 0.2, 10)],
+                [("TranslateY", 0.4, 8), ("Solarize", 0.4, 6), ("SolarizeAdd", 0.2, 10)],
                 [("Contrast", 1.0, 10), ("SolarizeAdd", 0.2, 8), ("Equalize", 0.2, 4)],
             ]
         elif policy == "v3":
             return [
-                [("Posterize", 0.8, 2), ("TranslateX_BBox", 1.0, 8)],
+                [("Posterize", 0.8, 2), ("TranslateX", 1.0, 8)],
                 [("BBox_Cutout", 0.2, 10), ("Sharpness", 1.0, 8)],
-                [("Rotate_BBox", 0.6, 8), ("Rotate_BBox", 0.8, 10)],
+                [("Rotate", 0.6, 8), ("Rotate", 0.8, 10)],
                 [("Equalize", 0.8, 10), ("AutoContrast", 0.2, 10)],
-                [("SolarizeAdd", 0.2, 2), ("TranslateY_BBox", 0.2, 8)],
+                [("SolarizeAdd", 0.2, 2), ("TranslateY", 0.2, 8)],
                 [("Sharpness", 0.0, 2), ("Color", 0.4, 8)],
-                [("Equalize", 1.0, 8), ("TranslateY_BBox", 1.0, 8)],
-                [("Posterize", 0.6, 2), ("Rotate_BBox", 0.0, 10)],
-                [("AutoContrast", 0.6, 0), ("Rotate_BBox", 1.0, 6)],
+                [("Equalize", 1.0, 8), ("TranslateY", 1.0, 8)],
+                [("Posterize", 0.6, 2), ("Rotate", 0.0, 10)],
+                [("AutoContrast", 0.6, 0), ("Rotate", 1.0, 6)],
                 [("Equalize", 0.0, 4), ("Cutout", 0.8, 10)],
-                [("Brightness", 1.0, 2), ("TranslateY_BBox", 1.0, 6)],
-                [("Contrast", 0.0, 2), ("ShearY_BBox", 0.8, 0)],
+                [("Brightness", 1.0, 2), ("TranslateY", 1.0, 6)],
+                [("Contrast", 0.0, 2), ("ShearY", 0.8, 0)],
                 [("AutoContrast", 0.8, 10), ("Contrast", 0.2, 10)],
-                [("Rotate_BBox", 1.0, 10), ("Cutout", 1.0, 10)],
+                [("Rotate", 1.0, 10), ("Cutout", 1.0, 10)],
                 [("SolarizeAdd", 0.8, 6), ("Equalize", 0.8, 8)],
             ]
         else:
