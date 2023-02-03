@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import functools
+from collections import defaultdict
 
 import torch
 from torch.utils.data import Dataset
@@ -80,21 +81,18 @@ def identity(item):
 
 
 def list_of_dicts_to_dict_of_lists(list_of_dicts):
-    if not list_of_dicts:
-        return {}
-
-    dict_of_lists = {key: [value] for key, value in list_of_dicts[0].items()}
-    for dct in list_of_dicts[1:]:
+    dict_of_lists = defaultdict(list)
+    for dct in list_of_dicts:
         for key, value in dct.items():
             dict_of_lists[key].append(value)
-    return dict_of_lists
+    return dict(dict_of_lists)
 
 
-def wrap_target_by_type(dataset, target, type_wrappers, *, fail_on=(), attr_name="target_type"):
+def wrap_target_by_type(dataset, target, type_wrappers, *, fail_on=()):
     if target is None:
         return None
 
-    target_types = getattr(dataset, attr_name)
+    target_types = next(getattr(dataset, attr) for attr in ["target_type", "_target_types"])
 
     if any(target_type in fail_on for target_type in target_types):
         raise RuntimeError(
@@ -358,7 +356,6 @@ def oxford_iiit_pet_wrapper(dataset, sample):
             "category": lambda item: datapoints.Label(item, categories=dataset.classes),
             "segmentation": lambda item: datapoints.Mask(F.pil_to_tensor(item).squeeze(0)),
         },
-        attr_name="_target_types",
     )
 
 
