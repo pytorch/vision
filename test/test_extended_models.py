@@ -7,9 +7,9 @@ import test_models as TM
 import torch
 from common_extended_utils import get_file_size_mb, get_ops
 from torchvision import models
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models import get_model_weights, Weights, WeightsEnum
 from torchvision.models._utils import handle_legacy_interface
+from torchvision.models.detection.backbone_utils import mobilenet_backbone, resnet_fpn_backbone
 
 run_if_test_with_extended = pytest.mark.skipif(
     os.getenv("PYTORCH_TEST_WITH_EXTENDED", "0") != "1",
@@ -428,6 +428,7 @@ class TestHandleLegacyInterface:
         + TM.list_model_fns(models.video)
         + TM.list_model_fns(models.optical_flow)
         + [lambda pretrained: resnet_fpn_backbone(backbone_name="resnet50", pretrained=pretrained)],
+        +[lambda pretrained: mobilenet_backbone(backbone_name="mobilenet_v2", fpn=False, pretrained=pretrained)],
     )
     @run_if_test_with_extended
     def test_pretrained_deprecation(self, model_fn):
