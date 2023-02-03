@@ -3,8 +3,8 @@ from typing import Any, BinaryIO, Dict, List, Tuple, Union
 
 import numpy as np
 from torchdata.datapipes.iter import IterDataPipe, Mapper, UnBatcher
-from torchvision.prototype.datapoints import Image, Label
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datapoints import Image
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, LabelWithCategories, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, read_mat
 
 from .._api import register_dataset, register_info
@@ -64,7 +64,7 @@ class SVHN(Dataset):
 
         return dict(
             image=Image(image_array.transpose((2, 0, 1))),
-            label=Label(int(label_array) % 10, categories=self._categories),
+            label=LabelWithCategories(int(label_array) % 10, categories=self._categories),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

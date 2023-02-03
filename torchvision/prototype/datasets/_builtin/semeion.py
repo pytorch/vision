@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Tuple, Union
 
 import torch
 from torchdata.datapipes.iter import CSVParser, IterDataPipe, Mapper
-from torchvision.prototype.datapoints import Image, OneHotLabel
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datapoints import Image
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OneHotLabelWithCategories, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 
 from .._api import register_dataset, register_info
@@ -40,7 +40,7 @@ class SEMEION(Dataset):
 
         return dict(
             image=Image(torch.tensor([float(pixel) for pixel in image_data], dtype=torch.float).reshape(16, 16)),
-            label=OneHotLabel([int(label) for label in label_data], categories=self._categories),
+            label=OneHotLabelWithCategories([int(label) for label in label_data], categories=self._categories),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

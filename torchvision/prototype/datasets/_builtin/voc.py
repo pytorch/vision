@@ -6,8 +6,14 @@ from xml.etree import ElementTree
 
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
 from torchvision.datasets import VOCDetection
-from torchvision.prototype.datapoints import BoundingBox, Label
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
+from torchvision.prototype.datapoints import BoundingBox
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    HttpResource,
+    LabelWithCategories,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -110,7 +116,7 @@ class VOC(Dataset):
                 format="xyxy",
                 spatial_size=cast(Tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
             ),
-            labels=Label(
+            labels=LabelWithCategories(
                 [self._categories.index(instance["name"]) for instance in instances], categories=self._categories
             ),
         )

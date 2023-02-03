@@ -2,8 +2,14 @@ import pathlib
 from typing import Any, BinaryIO, Dict, Iterator, List, Tuple, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datapoints import BoundingBox, Label
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
+from torchvision.prototype.datapoints import BoundingBox
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    HttpResource,
+    LabelWithCategories,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
@@ -88,7 +94,7 @@ class StanfordCars(Dataset):
         return dict(
             path=path,
             image=image,
-            label=Label(target[4] - 1, categories=self._categories),
+            label=LabelWithCategories(target[4] - 1, categories=self._categories),
             bounding_box=BoundingBox(target[:4], format="xyxy", spatial_size=image.spatial_size),
         )
 

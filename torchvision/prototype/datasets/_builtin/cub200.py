@@ -14,9 +14,15 @@ from torchdata.datapipes.iter import (
     Mapper,
 )
 from torchdata.datapipes.map import IterToMapConverter
-from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datapoints import BoundingBox
 from torchvision.prototype.datapoints._datapoint import Datapoint
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    GDriveResource,
+    LabelWithCategories,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -180,7 +186,7 @@ class CUB200(Dataset):
         return dict(
             prepare_ann_fn(anns_data, image.spatial_size),
             image=image,
-            label=Label(
+            label=LabelWithCategories(
                 int(pathlib.Path(path).parent.name.rsplit(".", 1)[0]) - 1,
                 categories=self._categories,
             ),

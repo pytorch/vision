@@ -15,8 +15,13 @@ from torchdata.datapipes.iter import (
     TarArchiveLoader,
 )
 from torchdata.datapipes.map import IterToMapConverter
-from torchvision.prototype.datapoints import Label
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, ManualDownloadResource, OnlineResource
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    LabelWithCategories,
+    ManualDownloadResource,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -118,10 +123,12 @@ class ImageNet(Dataset):
 
     _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
-    def _prepare_train_data(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[Label, str], Tuple[str, BinaryIO]]:
+    def _prepare_train_data(
+        self, data: Tuple[str, BinaryIO]
+    ) -> Tuple[Tuple[LabelWithCategories, str], Tuple[str, BinaryIO]]:
         path = pathlib.Path(data[0])
         wnid = cast(Match[str], self._TRAIN_IMAGE_NAME_PATTERN.match(path.name))["wnid"]
-        label = Label.from_category(self._wnid_to_category[wnid], categories=self._categories)
+        label = LabelWithCategories.from_category(self._wnid_to_category[wnid], categories=self._categories)
         return (label, wnid), data
 
     def _prepare_test_data(self, data: Tuple[str, BinaryIO]) -> Tuple[None, Tuple[str, BinaryIO]]:
@@ -140,15 +147,15 @@ class ImageNet(Dataset):
 
     def _prepare_val_data(
         self, data: Tuple[Tuple[int, str], Tuple[str, BinaryIO]]
-    ) -> Tuple[Tuple[Label, str], Tuple[str, BinaryIO]]:
+    ) -> Tuple[Tuple[LabelWithCategories, str], Tuple[str, BinaryIO]]:
         label_data, image_data = data
         _, wnid = label_data
-        label = Label.from_category(self._wnid_to_category[wnid], categories=self._categories)
+        label = LabelWithCategories.from_category(self._wnid_to_category[wnid], categories=self._categories)
         return (label, wnid), image_data
 
     def _prepare_sample(
         self,
-        data: Tuple[Optional[Tuple[Label, str]], Tuple[str, BinaryIO]],
+        data: Tuple[Optional[Tuple[LabelWithCategories, str]], Tuple[str, BinaryIO]],
     ) -> Dict[str, Any]:
         label_data, (path, buffer) = data
 

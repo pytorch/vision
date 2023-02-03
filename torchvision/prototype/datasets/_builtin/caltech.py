@@ -4,9 +4,15 @@ from typing import Any, BinaryIO, Dict, List, Tuple, Union
 
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper
-from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datapoints import BoundingBox
 from torchvision.prototype.datapoints._datapoint import Datapoint
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    GDriveResource,
+    LabelWithCategories,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
@@ -106,7 +112,7 @@ class Caltech101(Dataset):
         ann = read_mat(ann_buffer)
 
         return dict(
-            label=Label.from_category(category, categories=self._categories),
+            label=LabelWithCategories.from_category(category, categories=self._categories),
             image_path=image_path,
             image=image,
             ann_path=ann_path,
@@ -188,7 +194,9 @@ class Caltech256(Dataset):
         return dict(
             path=path,
             image=EncodedImage.from_file(buffer),
-            label=Label(int(pathlib.Path(path).parent.name.split(".", 1)[0]) - 1, categories=self._categories),
+            label=LabelWithCategories(
+                int(pathlib.Path(path).parent.name.split(".", 1)[0]) - 1, categories=self._categories
+            ),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

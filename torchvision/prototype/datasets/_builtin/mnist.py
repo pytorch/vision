@@ -7,8 +7,8 @@ from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Sequence
 
 import torch
 from torchdata.datapipes.iter import Decompressor, Demultiplexer, IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datapoints import Image, Label
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datapoints import Image
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, LabelWithCategories, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, INFINITE_BUFFER_SIZE
 from torchvision.prototype.utils._internal import fromfile
 
@@ -95,7 +95,7 @@ class _MNISTBase(Dataset):
         image, label = data
         return dict(
             image=Image(image),
-            label=Label(label, dtype=torch.int64, categories=self._categories),
+            label=LabelWithCategories(label, dtype=torch.int64, categories=self._categories),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

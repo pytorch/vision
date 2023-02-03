@@ -4,8 +4,8 @@ from collections import namedtuple
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datapoints import Image, Label
-from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
+from torchvision.prototype.datapoints import Image
+from torchvision.prototype.datasets.utils import Dataset, GDriveResource, LabelWithCategories, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 
 from .._api import register_dataset, register_info
@@ -109,7 +109,7 @@ class PCAM(Dataset):
 
         return {
             "image": Image(image.transpose(2, 0, 1)),
-            "label": Label(target.item(), categories=self._categories),
+            "label": LabelWithCategories(target.item(), categories=self._categories),
         }
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

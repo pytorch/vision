@@ -6,8 +6,8 @@ from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Tuple, U
 
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
-from torchvision.prototype.datapoints import Image, Label
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datapoints import Image
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, LabelWithCategories, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
@@ -70,7 +70,7 @@ class _CifarBase(Dataset):
         image_array, category_idx = data
         return dict(
             image=Image(image_array),
-            label=Label(category_idx, categories=self._categories),
+            label=LabelWithCategories(category_idx, categories=self._categories),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

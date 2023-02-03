@@ -3,9 +3,15 @@ import pathlib
 from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper, Zipper
-from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datapoints import BoundingBox
 from torchvision.prototype.datapoints._datapoint import Datapoint
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    GDriveResource,
+    LabelWithCategories,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -141,7 +147,7 @@ class CelebA(Dataset):
         return dict(
             path=path,
             image=image,
-            identity=Label(int(identity["identity"])),
+            identity=LabelWithCategories(int(identity["identity"])),
             attributes={attr: value == "1" for attr, value in attributes.items()},
             bounding_box=BoundingBox(
                 [int(bounding_box[key]) for key in ("x_1", "y_1", "width", "height")],

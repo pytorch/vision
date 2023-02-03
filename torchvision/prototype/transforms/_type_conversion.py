@@ -21,10 +21,8 @@ class LabelToOneHot(Transform):
 
     def _transform(self, inpt: datapoints.Label, params: Dict[str, Any]) -> datapoints.OneHotLabel:
         num_categories = self.num_categories
-        if num_categories == -1 and inpt.categories is not None:
-            num_categories = len(inpt.categories)
         output = one_hot(inpt.as_subclass(torch.Tensor), num_classes=num_categories)
-        return datapoints.OneHotLabel(output, categories=inpt.categories)
+        return datapoints.OneHotLabel(output)
 
     def extra_repr(self) -> str:
         if self.num_categories == -1:

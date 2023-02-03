@@ -3,8 +3,14 @@ import pathlib
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import CSVParser, Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
-from torchvision.prototype.datapoints import Label
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
+
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    HttpResource,
+    LabelWithCategories,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -89,7 +95,7 @@ class DTD(Dataset):
 
         return dict(
             joint_categories={category for category in joint_categories if category},
-            label=Label.from_category(category, categories=self._categories),
+            label=LabelWithCategories.from_category(category, categories=self._categories),
             path=path,
             image=EncodedImage.from_file(buffer),
         )

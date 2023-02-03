@@ -2,8 +2,13 @@ import pathlib
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, JsonParser, Mapper, UnBatcher
-from torchvision.prototype.datapoints import Label
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    HttpResource,
+    LabelWithCategories,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -66,7 +71,7 @@ class CLEVR(Dataset):
         return dict(
             path=path,
             image=EncodedImage.from_file(buffer),
-            label=Label(len(scenes_data["objects"])) if scenes_data else None,
+            label=LabelWithCategories(len(scenes_data["objects"])) if scenes_data else None,
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

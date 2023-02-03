@@ -2,8 +2,14 @@ from pathlib import Path
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
-from torchvision.prototype.datapoints import Label
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
+
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    HttpResource,
+    LabelWithCategories,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -57,7 +63,7 @@ class Food101(Dataset):
     def _prepare_sample(self, data: Tuple[str, Tuple[str, BinaryIO]]) -> Dict[str, Any]:
         id, (path, buffer) = data
         return dict(
-            label=Label.from_category(id.split("/", 1)[0], categories=self._categories),
+            label=LabelWithCategories.from_category(id.split("/", 1)[0], categories=self._categories),
             path=path,
             image=EncodedImage.from_file(buffer),
         )

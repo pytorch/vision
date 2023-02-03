@@ -2,8 +2,14 @@ import pathlib
 from typing import Any, Dict, List, Tuple, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
-from torchvision.prototype.datapoints import Label
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
+
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    HttpResource,
+    LabelWithCategories,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
@@ -53,7 +59,7 @@ class Country211(Dataset):
         path, buffer = data
         category = pathlib.Path(path).parent.name
         return dict(
-            label=Label.from_category(category, categories=self._categories),
+            label=LabelWithCategories.from_category(category, categories=self._categories),
             path=path,
             image=EncodedImage.from_file(buffer),
         )

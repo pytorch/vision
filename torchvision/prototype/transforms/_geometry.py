@@ -167,16 +167,16 @@ class FiveCrop(Transform):
     """
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], datapoints.Label]):
+        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], datapoints.LabelWithCategories]):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
         ...         image_or_video = images_or_videos[0]
         ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
-        ...         labels = datapoints.Label.wrap_like(labels, labels.repeat(batch_size))
+        ...         labels = datapoints.LabelWithCategories.wrap_like(labels, labels.repeat(batch_size))
         ...         return images_or_videos, labels
         ...
         >>> image = datapoints.Image(torch.rand(3, 256, 256))
-        >>> label = datapoints.Label(0)
+        >>> label = datapoints.LabelWithCategories(0)
         >>> transform = transforms.Compose([transforms.FiveCrop(), BatchMultiCrop()])
         >>> images, labels = transform(image, label)
         >>> images.shape
@@ -847,7 +847,7 @@ class FixedSizeCrop(Transform):
         ):
             raise TypeError(
                 f"If a BoundingBox is contained in the input sample, "
-                f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
+                f"{type(self).__name__}() also requires it to contain a LabelWithCategories or OneHotLabelWithCategories."
             )
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:

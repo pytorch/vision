@@ -14,9 +14,15 @@ from torchdata.datapipes.iter import (
     Mapper,
     UnBatcher,
 )
-from torchvision.prototype.datapoints import BoundingBox, Label, Mask
+from torchvision.prototype.datapoints import BoundingBox, Mask
 from torchvision.prototype.datapoints._datapoint import Datapoint
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    EncodedImage,
+    HttpResource,
+    LabelWithCategories,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -131,7 +137,7 @@ class Coco(Dataset):
                 format="xywh",
                 spatial_size=spatial_size,
             ),
-            labels=Label(labels, categories=self._categories),
+            labels=LabelWithCategories(labels, categories=self._categories),
             super_categories=[self._category_to_super_category[self._categories[label]] for label in labels],
             ann_ids=[ann["id"] for ann in anns],
         )

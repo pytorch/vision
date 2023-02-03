@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Union
 
 import torch
 from torchdata.datapipes.iter import CSVDictParser, IterDataPipe, Mapper
-from torchvision.prototype.datapoints import Image, Label
-from torchvision.prototype.datasets.utils import Dataset, KaggleDownloadResource, OnlineResource
+from torchvision.prototype.datapoints import Image
+from torchvision.prototype.datasets.utils import Dataset, KaggleDownloadResource, LabelWithCategories, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 
 from .._api import register_dataset, register_info
@@ -49,7 +49,7 @@ class FER2013(Dataset):
 
         return dict(
             image=Image(torch.tensor([int(idx) for idx in data["pixels"].split()], dtype=torch.uint8).reshape(48, 48)),
-            label=Label(int(label_id), categories=self._categories) if label_id is not None else None,
+            label=LabelWithCategories(int(label_id), categories=self._categories) if label_id is not None else None,
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
