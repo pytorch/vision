@@ -7,7 +7,8 @@ import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.prototype.transforms.utils import check_type
+from torchvision.prototype import datapoints
+from torchvision.prototype.transforms.utils import check_type, is_simple_tensor
 from torchvision.utils import _log_api_usage_once
 
 
@@ -37,9 +38,30 @@ class Transform(nn.Module):
 
         params = self._get_params(flat_inputs)
 
-        flat_outputs = [
-            self._transform(inpt, params) if check_type(inpt, self._transformed_types) else inpt for inpt in flat_inputs
-        ]
+        # This is a heuristic on how to deal with simple tensor inputs:
+        # 1. If we haven't seen an image yet, we transform a simple tensor
+        # 2. If we have seen an image before, so either a simple tensor, a `datapoints.Image` or a `PIL.Image.Image`,
+        #    we return simple tensors without modification.
+        # The order is defined by the returned list of `tree_flatten`, which recurses depth-first through the input.
+        # Since in most cases the image is the first input or at least comes before any other numerical data, this
+        # heuristic allows users to keep any supplemental numerical data in the sample as simple tensors. We have a few
+        # datasets, like `Caltech101`, `CelebA`, and `Widerface`, that would need special handling without this
+        # heuristic, since they return the target partially or completely as tensors.
+        # TODO: try to get user feedback if this heuristic is confusing or it is fine to keep it
+        flat_outputs = []
+        image_found = False
+        for inpt in flat_inputs:
+            needs_transform = False
+            if is_simple_tensor(inpt):
+                if not image_found:
+                    image_found = True
+                    needs_transform = True
+            elif check_type(inpt, self._transformed_types):
+                if isinstance(inpt, (datapoints.Image, PIL.Image.Image)):
+                    image_found = True
+                needs_transform = True
+
+            flat_outputs.append(self._transform(inpt, params) if needs_transform else inpt)
 
         return tree_unflatten(flat_outputs, spec)
 

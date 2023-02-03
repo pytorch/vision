@@ -8,8 +8,9 @@ import pytest
 import torch
 
 import torchvision.prototype.transforms.utils
-from common_utils import assert_equal, cpu_and_gpu
+from common_utils import cpu_and_gpu
 from prototype_common_utils import (
+    assert_equal,
     DEFAULT_EXTRA_DIMS,
     make_bounding_box,
     make_bounding_boxes,
@@ -25,7 +26,7 @@ from prototype_common_utils import (
 )
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import datapoints, transforms
-from torchvision.prototype.transforms.utils import check_type
+from torchvision.prototype.transforms.utils import check_type, is_simple_tensor
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
@@ -220,6 +221,35 @@ class TestSmoke:
     )
     def test_random_resized_crop(self, transform, input):
         transform(input)
+
+
+@pytest.mark.parametrize(
+    ("first_input", "second_input"),
+    itertools.product(
+        [
+            next(make_vanilla_tensor_images()),
+            make_image(),
+            next(make_pil_images()),
+        ],
+        repeat=2,
+    ),
+)
+def test_simple_tensor_heurisitc(first_input, second_input):
+    class CopyCloneTransform(transforms.Transform):
+        def _transform(self, inpt, params):
+            return inpt.clone() if isinstance(inpt, torch.Tensor) else inpt.copy()
+
+    transform = CopyCloneTransform()
+    first_output, second_output = transform([first_input, second_input])
+
+    assert first_output is not first_input
+    assert_equal(first_output, first_input)
+
+    if is_simple_tensor(second_input):
+        assert second_output is second_input
+    else:
+        assert second_output is not second_input
+        assert_equal(second_output, second_input)
 
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
