@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -euxo pipefail
 
 echo '::group::Prepare conda'
 CONDA_PATH=$(which conda)
