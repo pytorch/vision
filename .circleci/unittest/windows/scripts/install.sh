@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 
 unset PYTORCH_VERSION
@@ -24,7 +25,7 @@ else
     fi
 
     cuda_toolkit_pckg="cudatoolkit"
-    if [[ $CUDA_VERSION == 11.6 || $CUDA_VERSION == 11.7 ]]; then
+    if [[ $CUDA_VERSION == 11.6 || $CUDA_VERSION == 11.7 || $CUDA_VERSION == 11.8 ]]; then
         cuda_toolkit_pckg="pytorch-cuda"
     fi
 

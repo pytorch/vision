@@ -1234,6 +1234,9 @@ def affine(
     return F_t.affine(img, matrix=matrix, interpolation=interpolation.value, fill=fill)
 
 
+# Looks like to_grayscale() is a stand-alone functional that is never called
+# from the transform classes. Perhaps it's still here for BC? I can't be
+# bothered to dig. Anyway, this can be deprecated as we migrate to V2.
 @torch.jit.unused
 def to_grayscale(img, num_output_channels=1):
     """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
@@ -1536,8 +1539,6 @@ def elastic_transform(
         fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
-            Only number is supported for torch Tensor.
-            Only int or str or tuple value is supported for PIL Image.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(elastic_transform)

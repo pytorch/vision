@@ -80,7 +80,6 @@ Image detection or segmentation
     CocoDetection
     CelebA
     Cityscapes
-    GTSRB
     Kitti
     OxfordIIITPet
     SBDataset
