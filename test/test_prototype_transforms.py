@@ -224,7 +224,7 @@ class TestSmoke:
 
 
 @pytest.mark.parametrize(
-    "sample",
+    "flat_inputs",
     itertools.permutations(
         [
             next(make_vanilla_tensor_images()),
@@ -236,12 +236,18 @@ class TestSmoke:
         3,
     ),
 )
-def test_simple_tensor_heuristic(sample):
+def test_simple_tensor_heuristic(flat_inputs):
     def split_on_simple_tensor(to_split):
+        # This takes a sequence that is structurally aligned with `flat_inputs` and splits its items into three parts:
+        # 1. The first simple tensor. If none is present, this will be `None`
+        # 2. A list of the remaining simple tensors
+        # 3. A list of all other items
         simple_tensors = []
         others = []
-        for item, predicate in zip(to_split, sample):
-            (simple_tensors if is_simple_tensor(predicate) else others).append(item)
+        # Splitting always happens on the original `flat_inputs` to avoid any erroneous type changes by the transform to
+        # affect the splitting.
+        for item, inpt in zip(to_split, flat_inputs):
+            (simple_tensors if is_simple_tensor(inpt) else others).append(item)
         return simple_tensors[0] if simple_tensors else None, simple_tensors[1:], others
 
     class CopyCloneTransform(transforms.Transform):
@@ -258,10 +264,10 @@ def test_simple_tensor_heuristic(sample):
             assert_equal(output, inpt)
             return True
 
-    first_simple_tensor_input, other_simple_tensor_inputs, other_inputs = split_on_simple_tensor(sample)
+    first_simple_tensor_input, other_simple_tensor_inputs, other_inputs = split_on_simple_tensor(flat_inputs)
 
     transform = CopyCloneTransform()
-    transformed_sample = transform(sample)
+    transformed_sample = transform(flat_inputs)
 
     first_simple_tensor_output, other_simple_tensor_outputs, other_outputs = split_on_simple_tensor(transformed_sample)
 
