@@ -427,8 +427,10 @@ class TestHandleLegacyInterface:
         + TM.list_model_fns(models.segmentation)
         + TM.list_model_fns(models.video)
         + TM.list_model_fns(models.optical_flow)
-        + [lambda pretrained: resnet_fpn_backbone(backbone_name="resnet50", pretrained=pretrained)],
-        +[lambda pretrained: mobilenet_backbone(backbone_name="mobilenet_v2", fpn=False, pretrained=pretrained)],
+        + [
+            lambda pretrained: resnet_fpn_backbone(backbone_name="resnet50", pretrained=pretrained),
+            lambda pretrained: mobilenet_backbone(backbone_name="mobilenet_v2", fpn=False, pretrained=pretrained),
+        ],
     )
     @run_if_test_with_extended
     def test_pretrained_deprecation(self, model_fn):
