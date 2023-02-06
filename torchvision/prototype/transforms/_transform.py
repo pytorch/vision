@@ -56,14 +56,17 @@ class Transform(nn.Module):
         flat_outputs = []
         simple_tensor_transformed = has_any(flat_inputs, datapoints.Image, datapoints.Video, PIL.Image.Image)
         for inpt in flat_inputs:
-            if is_simple_tensor(inpt):
+            needs_transform = True
+
+            if not check_type(inpt, self._transformed_types):
+                needs_transform = False
+            elif is_simple_tensor(inpt):
                 if simple_tensor_transformed:
-                    flat_outputs.append(inpt)
-                    continue
+                    needs_transform = False
+                else:
+                    simple_tensor_transformed = True
 
-                simple_tensor_transformed = True
-
-            flat_outputs.append(self._transform(inpt, params))
+            flat_outputs.append(self._transform(inpt, params) if needs_transform else inpt)
 
         return tree_unflatten(flat_outputs, spec)
 
