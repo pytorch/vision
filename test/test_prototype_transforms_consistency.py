@@ -663,6 +663,15 @@ def test_call_consistency(config, args_kwargs):
 def test_get_params_alias(config):
     assert config.prototype_cls.get_params is config.legacy_cls.get_params
 
+    if not config.args_kwargs:
+        return
+
+    args, kwargs = config.args_kwargs[0]
+    legacy_transform = config.legacy_cls(*args, **kwargs)
+    prototype_transform = config.prototype_cls(*args, **kwargs)
+
+    assert prototype_transform.get_params is legacy_transform.get_params
+
 
 @pytest.mark.parametrize(
     ("transform_cls", "args_kwargs"),
