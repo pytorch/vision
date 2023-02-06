@@ -39,17 +39,9 @@ def make_vanilla_tensor_images(*args, **kwargs):
         yield image.data
 
 
-def make_vanilla_tensor_image(*args, **kwargs):
-    return next(make_vanilla_tensor_images(*args, **kwargs))
-
-
 def make_pil_images(*args, **kwargs):
     for image in make_vanilla_tensor_images(*args, **kwargs):
         yield to_pil_image(image)
-
-
-def make_pil_image(*args, **kwargs):
-    return next(make_pil_images(*args, **kwargs))
 
 
 def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
@@ -233,14 +225,16 @@ class TestSmoke:
 
 @pytest.mark.parametrize(
     "sample",
-    [
-        [make_pil_image(), make_vanilla_tensor_image(), make_vanilla_tensor_image()],
-        [make_vanilla_tensor_image(), make_pil_image(), make_vanilla_tensor_image()],
-        [make_vanilla_tensor_image(), make_vanilla_tensor_image(), make_pil_image()],
-        [make_image(), make_vanilla_tensor_image(), make_vanilla_tensor_image()],
-        [make_vanilla_tensor_image(), make_image(), make_vanilla_tensor_image()],
-        [make_vanilla_tensor_image(), make_vanilla_tensor_image(), make_image()],
-    ],
+    itertools.permutations(
+        [
+            next(make_vanilla_tensor_images()),
+            next(make_vanilla_tensor_images()),
+            next(make_pil_images()),
+            make_image(),
+            next(make_videos()),
+        ],
+        3,
+    ),
 )
 def test_simple_tensor_heuristic(sample):
     def split_on_simple_tensor(to_split):
@@ -248,7 +242,7 @@ def test_simple_tensor_heuristic(sample):
         others = []
         for item, predicate in zip(to_split, sample):
             (simple_tensors if is_simple_tensor(predicate) else others).append(item)
-        return simple_tensors[0], simple_tensors[1:], others
+        return simple_tensors[0] if simple_tensors else None, simple_tensors[1:], others
 
     class CopyCloneTransform(transforms.Transform):
         def _transform(self, inpt, params):
@@ -271,10 +265,11 @@ def test_simple_tensor_heuristic(sample):
 
     first_simple_tensor_output, other_simple_tensor_outputs, other_outputs = split_on_simple_tensor(transformed_sample)
 
-    if other_inputs:
-        assert not transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
-    else:
-        assert transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+    if first_simple_tensor_input is not None:
+        if other_inputs:
+            assert not transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+        else:
+            assert transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
 
     for output, inpt in zip(other_simple_tensor_outputs, other_simple_tensor_inputs):
         assert not transform.was_applied(output, inpt)
