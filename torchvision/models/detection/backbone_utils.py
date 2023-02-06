@@ -62,7 +62,7 @@ class BackboneWithFPN(nn.Module):
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: _get_enum_from_fn(resnet.__dict__[kwargs["backbone_name"]]).from_str("IMAGENET1K_V1"),
+        lambda kwargs: _get_enum_from_fn(resnet.__dict__[kwargs["backbone_name"]])["IMAGENET1K_V1"],
     ),
 )
 def resnet_fpn_backbone(
@@ -177,7 +177,7 @@ def _validate_trainable_layers(
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: _get_enum_from_fn(mobilenet.__dict__[kwargs["backbone_name"]]).from_str("IMAGENET1K_V1"),
+        lambda kwargs: _get_enum_from_fn(mobilenet.__dict__[kwargs["backbone_name"]])["IMAGENET1K_V1"],
     ),
 )
 def mobilenet_backbone(
