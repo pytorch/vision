@@ -87,7 +87,8 @@ class ColorJitter(Transform):
             if clip_first_on_zero:
                 value[0] = max(value[0], 0.0)
         elif not (isinstance(value, collections.abc.Sequence) and len(value) == 2):
-            raise TypeError(f"{name} should be a single number or a sequence with length 2.")
+            # TODO: not related to tests or BC but we should really print the input.
+            raise TypeError(f"{name}={value} should be a single number or a sequence with length 2.")
 
         if not bound[0] <= value[0] <= value[1] <= bound[1]:
             raise ValueError(f"{name} values should be between {bound}, but got {value}.")
