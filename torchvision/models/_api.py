@@ -6,7 +6,7 @@ from enum import Enum
 from functools import partial
 from inspect import signature
 from types import ModuleType
-from typing import Any, Callable, cast, Dict, List, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, Union
 
 from torch import nn
 
@@ -138,7 +138,7 @@ def get_weight(name: str) -> WeightsEnum:
     return weights_enum[value_name]
 
 
-def get_model_weights(name: Union[Callable, str]) -> WeightsEnum:
+def get_model_weights(name: Union[Callable, str]) -> Type[WeightsEnum]:
     """
     Returns the weights enum class associated to the given model.
 
@@ -152,7 +152,7 @@ def get_model_weights(name: Union[Callable, str]) -> WeightsEnum:
     return _get_enum_from_fn(model)
 
 
-def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
+def _get_enum_from_fn(fn: Callable) -> Type[WeightsEnum]:
     """
     Internal method that gets the weight enum of a specific model builder method.
 
@@ -182,7 +182,7 @@ def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
             "The WeightsEnum class for the specific method couldn't be retrieved. Make sure the typing info is correct."
         )
 
-    return cast(WeightsEnum, weights_enum)
+    return weights_enum
 
 
 M = TypeVar("M", bound=nn.Module)
