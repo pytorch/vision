@@ -39,9 +39,17 @@ def make_vanilla_tensor_images(*args, **kwargs):
         yield image.data
 
 
+def make_vanilla_tensor_image(*args, **kwargs):
+    return next(make_vanilla_tensor_images(*args, **kwargs))
+
+
 def make_pil_images(*args, **kwargs):
     for image in make_vanilla_tensor_images(*args, **kwargs):
         yield to_pil_image(image)
+
+
+def make_pil_image(*args, **kwargs):
+    return next(make_pil_images(*args, **kwargs))
 
 
 def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
@@ -224,32 +232,55 @@ class TestSmoke:
 
 
 @pytest.mark.parametrize(
-    ("first_input", "second_input"),
-    itertools.product(
-        [
-            next(make_vanilla_tensor_images()),
-            make_image(),
-            next(make_pil_images()),
-        ],
-        repeat=2,
-    ),
+    "sample",
+    [
+        [make_pil_image(), make_vanilla_tensor_image(), make_vanilla_tensor_image()],
+        [make_vanilla_tensor_image(), make_pil_image(), make_vanilla_tensor_image()],
+        [make_vanilla_tensor_image(), make_vanilla_tensor_image(), make_pil_image()],
+        [make_image(), make_vanilla_tensor_image(), make_vanilla_tensor_image()],
+        [make_vanilla_tensor_image(), make_image(), make_vanilla_tensor_image()],
+        [make_vanilla_tensor_image(), make_vanilla_tensor_image(), make_image()],
+    ],
 )
-def test_simple_tensor_heurisitc(first_input, second_input):
+def test_simple_tensor_heuristic(sample):
+    def split_on_simple_tensor(to_split):
+        simple_tensors = []
+        others = []
+        for item, predicate in zip(to_split, sample):
+            (simple_tensors if is_simple_tensor(predicate) else others).append(item)
+        return simple_tensors[0], simple_tensors[1:], others
+
     class CopyCloneTransform(transforms.Transform):
         def _transform(self, inpt, params):
             return inpt.clone() if isinstance(inpt, torch.Tensor) else inpt.copy()
 
+        @staticmethod
+        def was_applied(output, inpt):
+            identity = output is inpt
+            if identity:
+                return False
+
+            # Make sure nothing fishy is going on
+            assert_equal(output, inpt)
+            return True
+
+    first_simple_tensor_input, other_simple_tensor_inputs, other_inputs = split_on_simple_tensor(sample)
+
     transform = CopyCloneTransform()
-    first_output, second_output = transform([first_input, second_input])
+    transformed_sample = transform(sample)
 
-    assert first_output is not first_input
-    assert_equal(first_output, first_input)
+    first_simple_tensor_output, other_simple_tensor_outputs, other_outputs = split_on_simple_tensor(transformed_sample)
 
-    if is_simple_tensor(second_input):
-        assert second_output is second_input
+    if other_inputs:
+        assert not transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
     else:
-        assert second_output is not second_input
-        assert_equal(second_output, second_input)
+        assert transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+
+    for output, inpt in zip(other_simple_tensor_outputs, other_simple_tensor_inputs):
+        assert not transform.was_applied(output, inpt)
+
+    for input, output in zip(other_inputs, other_outputs):
+        assert transform.was_applied(output, input)
 
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
