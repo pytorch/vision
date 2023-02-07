@@ -862,17 +862,3 @@ def interpolate_embeddings(
             model_state = model_state_copy
 
     return model_state
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "vit_b_16": ViT_B_16_Weights.IMAGENET1K_V1.url,
-        "vit_b_32": ViT_B_32_Weights.IMAGENET1K_V1.url,
-        "vit_l_16": ViT_L_16_Weights.IMAGENET1K_V1.url,
-        "vit_l_32": ViT_L_32_Weights.IMAGENET1K_V1.url,
-    }
-)

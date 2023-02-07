@@ -67,7 +67,7 @@ class Transform(nn.Module):
         # Since `get_params` is a `@staticmethod`, we have to bind it to the class itself rather than to an instance.
         # This method is called after subclassing has happened, i.e. `cls` is the subclass, e.g. `Resize`.
         if cls._v1_transform_cls is not None and hasattr(cls._v1_transform_cls, "get_params"):
-            cls.get_params = cls._v1_transform_cls.get_params  # type: ignore[attr-defined]
+            cls.get_params = staticmethod(cls._v1_transform_cls.get_params)  # type: ignore[attr-defined]
 
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
         # This method is called by `__prepare_scriptable__` to instantiate the equivalent v1 transform from the current
