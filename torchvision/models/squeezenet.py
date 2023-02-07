@@ -221,15 +221,3 @@ def squeezenet1_1(
     """
     weights = SqueezeNet1_1_Weights.verify(weights)
     return _squeezenet("1_1", weights, progress, **kwargs)
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "squeezenet1_0": SqueezeNet1_0_Weights.IMAGENET1K_V1.url,
-        "squeezenet1_1": SqueezeNet1_1_Weights.IMAGENET1K_V1.url,
-    }
-)

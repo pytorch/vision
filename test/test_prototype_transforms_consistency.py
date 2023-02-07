@@ -87,12 +87,6 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs((32, 29)),
             ArgsKwargs((31, 28), interpolation=prototype_transforms.InterpolationMode.NEAREST),
             ArgsKwargs((33, 26), interpolation=prototype_transforms.InterpolationMode.BICUBIC),
-            # FIXME: these are currently failing, since the new transform only supports the enum. The int input is
-            #  already deprecated and scheduled to be removed in 0.15. Should we support ints on the prototype
-            #  transform? I guess it depends if we roll out before 0.15 or not.
-            # ArgsKwargs((30, 27), interpolation=0),
-            # ArgsKwargs((35, 29), interpolation=2),
-            # ArgsKwargs((34, 25), interpolation=3),
             NotScriptableArgsKwargs(31, max_size=32),
             ArgsKwargs([31], max_size=32),
             NotScriptableArgsKwargs(30, max_size=100),
