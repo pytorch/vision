@@ -406,17 +406,3 @@ def shufflenet_v2_x2_0(
     weights = ShuffleNet_V2_X2_0_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "shufflenetv2_x0.5": ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1.url,
-        "shufflenetv2_x1.0": ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1.url,
-        "shufflenetv2_x1.5": None,
-        "shufflenetv2_x2.0": None,
-    }
-)
