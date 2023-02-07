@@ -1,15 +1,14 @@
 import importlib
 import inspect
 import sys
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
+from enum import Enum
 from functools import partial
 from inspect import signature
 from types import ModuleType
-from typing import Any, Callable, cast, Dict, List, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, Union
 
 from torch import nn
-
-from torchvision._utils import StrEnum
 
 from .._internally_replaced_utils import load_state_dict_from_url
 
@@ -65,7 +64,7 @@ class Weights:
             return self.transforms == other.transforms
 
 
-class WeightsEnum(StrEnum):
+class WeightsEnum(Enum):
     """
     This class is the parent class of all model weights. Each model building method receives an optional `weights`
     parameter with its associated pre-trained weights. It inherits from `Enum` and its values should be of type
@@ -75,14 +74,11 @@ class WeightsEnum(StrEnum):
         value (Weights): The data class entry with the weight information.
     """
 
-    def __init__(self, value: Weights):
-        self._value_ = value
-
     @classmethod
     def verify(cls, obj: Any) -> Any:
         if obj is not None:
             if type(obj) is str:
-                obj = cls.from_str(obj.replace(cls.__name__ + ".", ""))
+                obj = cls[obj.replace(cls.__name__ + ".", "")]
             elif not isinstance(obj, cls):
                 raise TypeError(
                     f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
@@ -95,12 +91,17 @@ class WeightsEnum(StrEnum):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self._name_}"
 
-    def __getattr__(self, name):
-        # Be able to fetch Weights attributes directly
-        for f in fields(Weights):
-            if f.name == name:
-                return object.__getattribute__(self.value, name)
-        return super().__getattr__(name)
+    @property
+    def url(self):
+        return self.value.url
+
+    @property
+    def transforms(self):
+        return self.value.transforms
+
+    @property
+    def meta(self):
+        return self.value.meta
 
 
 def get_weight(name: str) -> WeightsEnum:
@@ -134,10 +135,10 @@ def get_weight(name: str) -> WeightsEnum:
     if weights_enum is None:
         raise ValueError(f"The weight enum '{enum_name}' for the specific method couldn't be retrieved.")
 
-    return weights_enum.from_str(value_name)
+    return weights_enum[value_name]
 
 
-def get_model_weights(name: Union[Callable, str]) -> WeightsEnum:
+def get_model_weights(name: Union[Callable, str]) -> Type[WeightsEnum]:
     """
     Returns the weights enum class associated to the given model.
 
@@ -151,7 +152,7 @@ def get_model_weights(name: Union[Callable, str]) -> WeightsEnum:
     return _get_enum_from_fn(model)
 
 
-def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
+def _get_enum_from_fn(fn: Callable) -> Type[WeightsEnum]:
     """
     Internal method that gets the weight enum of a specific model builder method.
 
@@ -181,7 +182,7 @@ def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
             "The WeightsEnum class for the specific method couldn't be retrieved. Make sure the typing info is correct."
         )
 
-    return cast(WeightsEnum, weights_enum)
+    return weights_enum
 
 
 M = TypeVar("M", bound=nn.Module)
