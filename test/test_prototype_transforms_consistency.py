@@ -655,7 +655,7 @@ def test_call_consistency(config, args_kwargs):
     )
 
 
-get_paramsl_parametrization = pytest.mark.parametrize(
+get_params_parametrization = pytest.mark.parametrize(
     ("config", "get_params_args_kwargs"),
     [
         pytest.param(
