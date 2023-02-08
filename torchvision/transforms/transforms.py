@@ -15,7 +15,7 @@ except ImportError:
 
 from ..utils import _log_api_usage_once
 from . import functional as F
-from .functional import _interpolation_modes_from_int, InterpolationMode
+from .functional import InterpolationMode
 
 __all__ = [
     "Compose",
@@ -2044,14 +2044,6 @@ class ElasticTransform(torch.nn.Module):
             sigma = [sigma[0], sigma[0]]
 
         self.sigma = sigma
-
-        # Backward compatibility with integer value
-        if isinstance(interpolation, int):
-            warnings.warn(
-                "Argument interpolation should be of type InterpolationMode instead of int. "
-                "Please, use InterpolationMode enum."
-            )
-            interpolation = _interpolation_modes_from_int(interpolation)
         self.interpolation = interpolation
 
         if isinstance(fill, (int, float)):

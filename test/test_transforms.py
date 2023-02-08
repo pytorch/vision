@@ -2217,10 +2217,6 @@ def test_elastic_transformation():
     with pytest.raises(ValueError, match=r"sigma is a sequence its length should be 2"):
         transforms.ElasticTransform(alpha=2.0, sigma=[1.0, 0.0, 1.0])
 
-    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
-        t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
-
     with pytest.raises(TypeError, match=r"fill should be int or float"):
         transforms.ElasticTransform(alpha=1.0, sigma=1.0, fill={})
 

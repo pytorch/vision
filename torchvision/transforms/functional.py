@@ -34,20 +34,6 @@ class InterpolationMode(Enum):
     LANCZOS = "lanczos"
 
 
-# TODO: Once torchscript supports Enums with staticmethod
-# this can be put into InterpolationMode as staticmethod
-def _interpolation_modes_from_int(i: int) -> InterpolationMode:
-    inverse_modes_mapping = {
-        0: InterpolationMode.NEAREST,
-        2: InterpolationMode.BILINEAR,
-        3: InterpolationMode.BICUBIC,
-        4: InterpolationMode.BOX,
-        5: InterpolationMode.HAMMING,
-        1: InterpolationMode.LANCZOS,
-    }
-    return inverse_modes_mapping[i]
-
-
 pil_modes_mapping = {
     InterpolationMode.NEAREST: 0,
     InterpolationMode.BILINEAR: 2,
@@ -1501,13 +1487,6 @@ def elastic_transform(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(elastic_transform)
-    # Backward compatibility with integer value
-    if isinstance(interpolation, int):
-        warnings.warn(
-            "Argument interpolation should be of type InterpolationMode instead of int. "
-            "Please, use InterpolationMode enum."
-        )
-        interpolation = _interpolation_modes_from_int(interpolation)
 
     if not isinstance(displacement, torch.Tensor):
         raise TypeError("Argument displacement should be a Tensor")
