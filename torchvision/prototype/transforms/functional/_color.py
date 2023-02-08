@@ -46,7 +46,7 @@ def rgb_to_grayscale(
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return rgb_to_grayscale_image_tensor(inpt, num_output_channels=num_output_channels)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
-        return inpt.to_grayscale(num_output_channels=num_output_channels)
+        return inpt.rgb_to_grayscale(num_output_channels=num_output_channels)
     elif isinstance(inpt, PIL.Image.Image):
         return rgb_to_grayscale_image_pil(inpt, num_output_channels=num_output_channels)
     else:
