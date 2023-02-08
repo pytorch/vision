@@ -1,9 +1,9 @@
 import itertools
+import re
 
 import numpy as np
 
 import PIL.Image
-
 import pytest
 import torch
 
@@ -1822,17 +1822,17 @@ class TestRandomResize:
     [
         (
             torch.float64,
-            {torch.Tensor: torch.float64, datapoints.Image: torch.float64, datapoints.BoundingBox: torch.float64},
+            {datapoints.Video: torch.float64, datapoints.Image: torch.float64, datapoints.BoundingBox: torch.float64},
         ),
         (
-            {torch.Tensor: torch.int32, datapoints.Image: torch.float32, datapoints.BoundingBox: torch.float64},
-            {torch.Tensor: torch.int32, datapoints.Image: torch.float32, datapoints.BoundingBox: torch.float64},
+            {datapoints.Video: torch.int32, datapoints.Image: torch.float32, datapoints.BoundingBox: torch.float64},
+            {datapoints.Video: torch.int32, datapoints.Image: torch.float32, datapoints.BoundingBox: torch.float64},
         ),
     ],
 )
 def test_to_dtype(dtype, expected_dtypes):
     sample = dict(
-        plain_tensor=torch.testing.make_tensor(5, dtype=torch.int64, device="cpu"),
+        video=make_video(dtype=torch.int64),
         image=make_image(dtype=torch.uint8),
         bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, dtype=torch.float32),
         str="str",
@@ -1855,22 +1855,27 @@ def test_to_dtype(dtype, expected_dtypes):
             assert transformed_value is value
 
 
+@pytest.mark.parametrize("other_type", [datapoints.Image, datapoints.Video])
+def test_to_dtype_plain_tensor_warning(other_type):
+    with pytest.warns(UserWarning, match=re.escape("`torch.Tensor` will *not* be transformed")):
+        transforms.ToDtype(dtype={torch.Tensor: torch.float32, other_type: torch.float64})
+
+
 @pytest.mark.parametrize(
     ("dims", "inverse_dims"),
     [
         (
-            {torch.Tensor: (1, 2, 0), datapoints.Image: (2, 1, 0), datapoints.Video: None},
-            {torch.Tensor: (2, 0, 1), datapoints.Image: (2, 1, 0), datapoints.Video: None},
+            {datapoints.Image: (2, 1, 0), datapoints.Video: None},
+            {datapoints.Image: (2, 1, 0), datapoints.Video: None},
         ),
         (
-            {torch.Tensor: (1, 2, 0), datapoints.Image: (2, 1, 0), datapoints.Video: (1, 2, 3, 0)},
-            {torch.Tensor: (2, 0, 1), datapoints.Image: (2, 1, 0), datapoints.Video: (3, 0, 1, 2)},
+            {datapoints.Image: (2, 1, 0), datapoints.Video: (1, 2, 3, 0)},
+            {datapoints.Image: (2, 1, 0), datapoints.Video: (3, 0, 1, 2)},
         ),
     ],
 )
 def test_permute_dimensions(dims, inverse_dims):
     sample = dict(
-        plain_tensor=torch.testing.make_tensor((3, 28, 28), dtype=torch.uint8, device="cpu"),
         image=make_image(),
         bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY),
         video=make_video(),
@@ -1895,16 +1900,21 @@ def test_permute_dimensions(dims, inverse_dims):
             assert transformed_value is value
 
 
+@pytest.mark.parametrize("other_type", [datapoints.Image, datapoints.Video])
+def test_permute_dimensions_plain_tensor_warning(other_type):
+    with pytest.warns(UserWarning, match=re.escape("`torch.Tensor` will *not* be transformed")):
+        transforms.PermuteDimensions(dims={torch.Tensor: (0, 1), other_type: (1, 0)})
+
+
 @pytest.mark.parametrize(
     "dims",
     [
         (-1, -2),
-        {torch.Tensor: (-1, -2), datapoints.Image: (1, 2), datapoints.Video: None},
+        {datapoints.Image: (1, 2), datapoints.Video: None},
     ],
 )
 def test_transpose_dimensions(dims):
     sample = dict(
-        plain_tensor=torch.testing.make_tensor((3, 28, 28), dtype=torch.uint8, device="cpu"),
         image=make_image(),
         bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY),
         video=make_video(),
@@ -1928,6 +1938,12 @@ def test_transpose_dimensions(dims):
             assert type(transformed_value) == torch.Tensor
         else:
             assert transformed_value is value
+
+
+@pytest.mark.parametrize("other_type", [datapoints.Image, datapoints.Video])
+def test_transpose_dimensions_plain_tensor_warning(other_type):
+    with pytest.warns(UserWarning, match=re.escape("`torch.Tensor` will *not* be transformed")):
+        transforms.TransposeDimensions(dims={torch.Tensor: (0, 1), other_type: (1, 0)})
 
 
 class TestUniformTemporalSubsample:
