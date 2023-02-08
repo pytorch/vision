@@ -9,10 +9,10 @@ from torch import nn, Tensor
 from ...ops import boxes as box_ops
 from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..vgg import VGG, VGG16_Weights, vgg16
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..vgg import VGG, vgg16, VGG16_Weights
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
@@ -39,6 +39,8 @@ class SSD300_VGG16_Weights(WeightsEnum):
                     "box_map": 25.1,
                 }
             },
+            "_ops": 34.858,
+            "_file_size": 135.988,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
@@ -126,12 +128,12 @@ class SSD(nn.Module):
     Implements SSD architecture from `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
-    image, and should be in 0-1 range. Different images can have different sizes but they will be resized
+    image, and should be in 0-1 range. Different images can have different sizes, but they will be resized
     to a fixed size before passing it to the backbone.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
@@ -554,7 +556,7 @@ def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
     stage_indices = [0] + [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)][:-1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
+    # find the index of the layer from which we won't freeze
     torch._assert(
         0 <= trainable_layers <= num_stages,
         f"trainable_layers should be in the range [0, {num_stages}]. Instead got {trainable_layers}",
@@ -568,6 +570,7 @@ def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
     return SSDFeatureExtractorVGG(backbone, highres)
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", SSD300_VGG16_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", VGG16_Weights.IMAGENET1K_FEATURES),
@@ -584,13 +587,15 @@ def ssd300_vgg16(
     """The SSD300 model is based on the `SSD: Single Shot MultiBox Detector
     <https://arxiv.org/abs/1512.02325>`_ paper.
 
+    .. betastatus:: detection module
+
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
-    image, and should be in 0-1 range. Different images can have different sizes but they will be resized
+    image, and should be in 0-1 range. Different images can have different sizes, but they will be resized
     to a fixed size before passing it to the backbone.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -646,7 +651,7 @@ def ssd300_vgg16(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 
@@ -675,25 +680,3 @@ def ssd300_vgg16(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "ssd300_vgg16_coco": SSD300_VGG16_Weights.COCO_V1.url,
-    }
-)
-
-
-backbone_urls = _ModelURLs(
-    {
-        # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses
-        # the same input standardization method as the paper.
-        # Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-        # Only the `features` weights have proper values, those on the `classifier` module are filled with nans.
-        "vgg16_features": VGG16_Weights.IMAGENET1K_FEATURES.url,
-    }
-)

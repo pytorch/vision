@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, Any, List, Optional
+from typing import Any, Callable, List, Optional
 
 import torch
 import torch.nn as nn
@@ -7,9 +7,9 @@ from torch import Tensor
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import register_model, Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [
@@ -204,6 +204,8 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
                     "acc@5": 81.746,
                 }
             },
+            "_ops": 0.04,
+            "_file_size": 5.282,
             "_docs": """These weights were trained from scratch to reproduce closely the results of the paper.""",
         },
     )
@@ -224,6 +226,8 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
                     "acc@5": 88.316,
                 }
             },
+            "_ops": 0.145,
+            "_file_size": 8.791,
             "_docs": """These weights were trained from scratch to reproduce closely the results of the paper.""",
         },
     )
@@ -244,6 +248,8 @@ class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
                     "acc@5": 91.086,
                 }
             },
+            "_ops": 0.296,
+            "_file_size": 13.557,
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -267,6 +273,8 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
                     "acc@5": 93.006,
                 }
             },
+            "_ops": 0.583,
+            "_file_size": 28.433,
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
@@ -276,6 +284,7 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x0_5(
     *, weights: Optional[ShuffleNet_V2_X0_5_Weights] = None, progress: bool = True, **kwargs: Any
@@ -306,6 +315,7 @@ def shufflenet_v2_x0_5(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x1_0(
     *, weights: Optional[ShuffleNet_V2_X1_0_Weights] = None, progress: bool = True, **kwargs: Any
@@ -336,6 +346,7 @@ def shufflenet_v2_x1_0(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x1_5(
     *, weights: Optional[ShuffleNet_V2_X1_5_Weights] = None, progress: bool = True, **kwargs: Any
@@ -366,6 +377,7 @@ def shufflenet_v2_x1_5(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
+@register_model()
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x2_0(
     *, weights: Optional[ShuffleNet_V2_X2_0_Weights] = None, progress: bool = True, **kwargs: Any
@@ -394,17 +406,3 @@ def shufflenet_v2_x2_0(
     weights = ShuffleNet_V2_X2_0_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "shufflenetv2_x0.5": ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1.url,
-        "shufflenetv2_x1.0": ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1.url,
-        "shufflenetv2_x1.5": None,
-        "shufflenetv2_x2.0": None,
-    }
-)

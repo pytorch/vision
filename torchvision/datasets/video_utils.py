@@ -2,15 +2,10 @@ import bisect
 import math
 import warnings
 from fractions import Fraction
-from typing import Any, Dict, List, Optional, Callable, Union, Tuple, TypeVar, cast
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, TypeVar, Union
 
 import torch
-from torchvision.io import (
-    _probe_video_from_file,
-    _read_video_from_file,
-    read_video,
-    read_video_timestamps,
-)
+from torchvision.io import _probe_video_from_file, _read_video_from_file, read_video, read_video_timestamps
 
 from .utils import tqdm
 
@@ -54,7 +49,7 @@ class _VideoTimestampsDataset:
     Dataset used to parallelize the reading of the timestamps
     of a list of videos, given their paths in the filesystem.
 
-    Used in VideoClips and defined at top level so it can be
+    Used in VideoClips and defined at top level, so it can be
     pickled when forking.
     """
 
@@ -203,6 +198,7 @@ class VideoClips:
             _video_max_dimension=self._video_max_dimension,
             _audio_samples=self._audio_samples,
             _audio_channels=self._audio_channels,
+            output_format=self.output_format,
         )
 
     @staticmethod

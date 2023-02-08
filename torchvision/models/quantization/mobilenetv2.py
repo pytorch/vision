@@ -1,16 +1,15 @@
 from functools import partial
 from typing import Any, Optional, Union
 
-from torch import Tensor
-from torch import nn
-from torch.ao.quantization import QuantStub, DeQuantStub
-from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, MobileNet_V2_Weights
+from torch import nn, Tensor
+from torch.ao.quantization import DeQuantStub, QuantStub
+from torchvision.models.mobilenetv2 import InvertedResidual, MobileNet_V2_Weights, MobileNetV2
 
 from ...ops.misc import Conv2dNormActivation
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
@@ -81,6 +80,8 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
                     "acc@5": 90.150,
                 }
             },
+            "_ops": 0.301,
+            "_file_size": 3.423,
             "_docs": """
                 These weights were produced by doing Quantization Aware Training (eager mode) on top of the unquantized
                 weights listed below.
@@ -90,6 +91,7 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
     DEFAULT = IMAGENET1K_QNNPACK_V1
 
 
+@register_model(name="quantized_mobilenet_v2")
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -150,15 +152,3 @@ def mobilenet_v2(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-from ..mobilenetv2 import model_urls  # noqa: F401
-
-
-quant_model_urls = _ModelURLs(
-    {
-        "mobilenet_v2_qnnpack": MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1.url,
-    }
-)

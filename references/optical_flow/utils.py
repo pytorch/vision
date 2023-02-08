@@ -1,8 +1,7 @@
 import datetime
 import os
 import time
-from collections import defaultdict
-from collections import deque
+from collections import defaultdict, deque
 
 import torch
 import torch.distributed as dist
@@ -158,7 +157,7 @@ class MetricLogger:
 def compute_metrics(flow_pred, flow_gt, valid_flow_mask=None):
 
     epe = ((flow_pred - flow_gt) ** 2).sum(dim=1).sqrt()
-    flow_norm = (flow_gt ** 2).sum(dim=1).sqrt()
+    flow_norm = (flow_gt**2).sum(dim=1).sqrt()
 
     if valid_flow_mask is not None:
         epe = epe[valid_flow_mask]
@@ -182,8 +181,8 @@ def sequence_loss(flow_preds, flow_gt, valid_flow_mask, gamma=0.8, max_flow=400)
     if gamma > 1:
         raise ValueError(f"Gamma should be < 1, got {gamma}.")
 
-    # exlude invalid pixels and extremely large diplacements
-    flow_norm = torch.sum(flow_gt ** 2, dim=1).sqrt()
+    # exclude invalid pixels and extremely large diplacements
+    flow_norm = torch.sum(flow_gt**2, dim=1).sqrt()
     valid_flow_mask = valid_flow_mask & (flow_norm < max_flow)
 
     valid_flow_mask = valid_flow_mask[:, None, :, :]
@@ -249,7 +248,7 @@ def setup_ddp(args):
     # https://discuss.pytorch.org/t/what-is-the-difference-between-rank-and-local-rank/61940/2
 
     if all(key in os.environ for key in ("LOCAL_RANK", "RANK", "WORLD_SIZE")):
-        # if we're here, the script was called with torchrun. Otherwise
+        # if we're here, the script was called with torchrun. Otherwise,
         # these args will be set already by the run_with_submitit script
         args.local_rank = int(os.environ["LOCAL_RANK"])
         args.rank = int(os.environ["RANK"])

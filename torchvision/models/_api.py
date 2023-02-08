@@ -1,16 +1,19 @@
 import importlib
 import inspect
 import sys
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
+from enum import Enum
+from functools import partial
 from inspect import signature
-from typing import Any, Callable, Dict, cast
+from types import ModuleType
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, Union
 
-from torchvision._utils import StrEnum
+from torch import nn
 
 from .._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ["WeightsEnum", "Weights", "get_weight"]
+__all__ = ["WeightsEnum", "Weights", "get_model", "get_model_builder", "get_model_weights", "get_weight", "list_models"]
 
 
 @dataclass
@@ -34,8 +37,34 @@ class Weights:
     transforms: Callable
     meta: Dict[str, Any]
 
+    def __eq__(self, other: Any) -> bool:
+        # We need this custom implementation for correct deep-copy and deserialization behavior.
+        # TL;DR: After the definition of an enum, creating a new instance, i.e. by deep-copying or deserializing it,
+        # involves an equality check against the defined members. Unfortunately, the `transforms` attribute is often
+        # defined with `functools.partial` and `fn = partial(...); assert deepcopy(fn) != fn`. Without custom handling
+        # for it, the check against the defined members would fail and effectively prevent the weights from being
+        # deep-copied or deserialized.
+        # See https://github.com/pytorch/vision/pull/7107 for details.
+        if not isinstance(other, Weights):
+            return NotImplemented
 
-class WeightsEnum(StrEnum):
+        if self.url != other.url:
+            return False
+
+        if self.meta != other.meta:
+            return False
+
+        if isinstance(self.transforms, partial) and isinstance(other.transforms, partial):
+            return (
+                self.transforms.func == other.transforms.func
+                and self.transforms.args == other.transforms.args
+                and self.transforms.keywords == other.transforms.keywords
+            )
+        else:
+            return self.transforms == other.transforms
+
+
+class WeightsEnum(Enum):
     """
     This class is the parent class of all model weights. Each model building method receives an optional `weights`
     parameter with its associated pre-trained weights. It inherits from `Enum` and its values should be of type
@@ -45,37 +74,39 @@ class WeightsEnum(StrEnum):
         value (Weights): The data class entry with the weight information.
     """
 
-    def __init__(self, value: Weights):
-        self._value_ = value
-
     @classmethod
     def verify(cls, obj: Any) -> Any:
         if obj is not None:
             if type(obj) is str:
-                obj = cls.from_str(obj.replace(cls.__name__ + ".", ""))
+                obj = cls[obj.replace(cls.__name__ + ".", "")]
             elif not isinstance(obj, cls):
                 raise TypeError(
                     f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
                 )
         return obj
 
-    def get_state_dict(self, progress: bool) -> Dict[str, Any]:
+    def get_state_dict(self, progress: bool) -> Mapping[str, Any]:
         return load_state_dict_from_url(self.url, progress=progress)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self._name_}"
 
-    def __getattr__(self, name):
-        # Be able to fetch Weights attributes directly
-        for f in fields(Weights):
-            if f.name == name:
-                return object.__getattribute__(self.value, name)
-        return super().__getattr__(name)
+    @property
+    def url(self):
+        return self.value.url
+
+    @property
+    def transforms(self):
+        return self.value.transforms
+
+    @property
+    def meta(self):
+        return self.value.meta
 
 
 def get_weight(name: str) -> WeightsEnum:
     """
-    Gets the weight enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"
+    Gets the weights enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"
 
     Args:
         name (str): The name of the weight enum entry.
@@ -104,17 +135,29 @@ def get_weight(name: str) -> WeightsEnum:
     if weights_enum is None:
         raise ValueError(f"The weight enum '{enum_name}' for the specific method couldn't be retrieved.")
 
-    return weights_enum.from_str(value_name)
+    return weights_enum[value_name]
 
 
-def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
+def get_model_weights(name: Union[Callable, str]) -> Type[WeightsEnum]:
+    """
+    Returns the weights enum class associated to the given model.
+
+    Args:
+        name (callable or str): The model builder function or the name under which it is registered.
+
+    Returns:
+        weights_enum (WeightsEnum): The weights enum class associated with the model.
+    """
+    model = get_model_builder(name) if isinstance(name, str) else name
+    return _get_enum_from_fn(model)
+
+
+def _get_enum_from_fn(fn: Callable) -> Type[WeightsEnum]:
     """
     Internal method that gets the weight enum of a specific model builder method.
-    Might be removed after the handle_legacy_interface is removed.
 
     Args:
         fn (Callable): The builder method used to create the model.
-        weight_name (str): The name of the weight enum entry of the specific model.
     Returns:
         WeightsEnum: The requested weight enum.
     """
@@ -139,4 +182,69 @@ def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
             "The WeightsEnum class for the specific method couldn't be retrieved. Make sure the typing info is correct."
         )
 
-    return cast(WeightsEnum, weights_enum)
+    return weights_enum
+
+
+M = TypeVar("M", bound=nn.Module)
+
+BUILTIN_MODELS = {}
+
+
+def register_model(name: Optional[str] = None) -> Callable[[Callable[..., M]], Callable[..., M]]:
+    def wrapper(fn: Callable[..., M]) -> Callable[..., M]:
+        key = name if name is not None else fn.__name__
+        if key in BUILTIN_MODELS:
+            raise ValueError(f"An entry is already registered under the name '{key}'.")
+        BUILTIN_MODELS[key] = fn
+        return fn
+
+    return wrapper
+
+
+def list_models(module: Optional[ModuleType] = None) -> List[str]:
+    """
+    Returns a list with the names of registered models.
+
+    Args:
+        module (ModuleType, optional): The module from which we want to extract the available models.
+
+    Returns:
+        models (list): A list with the names of available models.
+    """
+    models = [
+        k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__.rsplit(".", 1)[0] == module.__name__
+    ]
+    return sorted(models)
+
+
+def get_model_builder(name: str) -> Callable[..., nn.Module]:
+    """
+    Gets the model name and returns the model builder method.
+
+    Args:
+        name (str): The name under which the model is registered.
+
+    Returns:
+        fn (Callable): The model builder method.
+    """
+    name = name.lower()
+    try:
+        fn = BUILTIN_MODELS[name]
+    except KeyError:
+        raise ValueError(f"Unknown model {name}")
+    return fn
+
+
+def get_model(name: str, **config: Any) -> nn.Module:
+    """
+    Gets the model name and configuration and returns an instantiated model.
+
+    Args:
+        name (str): The name under which the model is registered.
+        **config (Any): parameters passed to the model builder method.
+
+    Returns:
+        model (nn.Module): The initialized model.
+    """
+    fn = get_model_builder(name)
+    return fn(**config)

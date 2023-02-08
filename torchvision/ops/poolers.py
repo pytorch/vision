@@ -1,5 +1,4 @@
-import warnings
-from typing import Optional, List, Dict, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.fx
@@ -161,8 +160,8 @@ def _multiscale_roi_align(
             reference. The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         output_size (Union[List[Tuple[int, int]], List[int]]): size of the output
         sampling_ratio (int): sampling ratio for ROIAlign
-        scales (Optional[List[float]]): If None, scales will be automatically infered. Default value is None.
-        mapper (Optional[LevelMapper]): If none, mapper will be automatically infered. Default value is None.
+        scales (Optional[List[float]]): If None, scales will be automatically inferred. Default value is None.
+        mapper (Optional[LevelMapper]): If none, mapper will be automatically inferred. Default value is None.
     Returns:
         result (Tensor)
     """
@@ -286,22 +285,6 @@ class MultiScaleRoIAlign(nn.Module):
         self.map_levels = None
         self.canonical_scale = canonical_scale
         self.canonical_level = canonical_level
-
-    def convert_to_roi_format(self, boxes: List[Tensor]) -> Tensor:
-        warnings.warn("The 'convert_to_roi_format' method is deprecated since 0.12 and will be removed in 0.14.")
-        return _convert_to_roi_format(boxes)
-
-    def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
-        warnings.warn("The 'infer_scale' method is deprecated since 0.12 and will be removed in 0.14.")
-        return _infer_scale(feature, original_size)
-
-    def setup_setup_scales(
-        self,
-        features: List[Tensor],
-        image_shapes: List[Tuple[int, int]],
-    ) -> None:
-        warnings.warn("The 'setup_setup_scales' method is deprecated since 0.12 and will be removed in 0.14.")
-        self.scales, self.map_levels = _setup_scales(features, image_shapes, self.canonical_scale, self.canonical_level)
 
     def forward(
         self,

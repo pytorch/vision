@@ -24,7 +24,7 @@ try:
 except ImportError:
     stats = None
 
-from common_utils import cycle_over, int_dtypes, float_dtypes, assert_equal
+from common_utils import assert_equal, cycle_over, float_dtypes, int_dtypes
 
 
 GRACE_HOPPER = get_file_path_2(
@@ -1522,10 +1522,10 @@ def test_ten_crop(should_vflip, single_dim):
     five_crop.__repr__()
 
     if should_vflip:
-        vflipped_img = img.transpose(Image.FLIP_TOP_BOTTOM)
+        vflipped_img = img.transpose(_pil_constants.FLIP_TOP_BOTTOM)
         expected_output += five_crop(vflipped_img)
     else:
-        hflipped_img = img.transpose(Image.FLIP_LEFT_RIGHT)
+        hflipped_img = img.transpose(_pil_constants.FLIP_LEFT_RIGHT)
         expected_output += five_crop(hflipped_img)
 
     assert len(results) == 10
@@ -1670,9 +1670,9 @@ def test_random_crop():
     assert result.size(1) == height + 1
     assert result.size(2) == width + 1
 
-    t = transforms.RandomCrop(48)
+    t = transforms.RandomCrop(33)
     img = torch.ones(3, 32, 32)
-    with pytest.raises(ValueError, match=r"Required crop size .+ is larger then input image size .+"):
+    with pytest.raises(ValueError, match=r"Required crop size .+ is larger than input image size .+"):
         t(img)
 
 
@@ -1798,6 +1798,12 @@ def test_color_jitter():
     color_jitter.__repr__()
 
 
+@pytest.mark.parametrize("hue", [1, (-1, 1)])
+def test_color_jitter_hue_out_of_bounds(hue):
+    with pytest.raises(ValueError, match=re.escape("hue values should be between (-0.5, 0.5)")):
+        transforms.ColorJitter(hue=hue)
+
+
 @pytest.mark.parametrize("seed", range(10))
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
 def test_random_erasing(seed):
@@ -1818,7 +1824,7 @@ def test_random_erasing(seed):
     tol = 0.05
     assert 1 / 3 - tol <= aspect_ratio <= 3 + tol
 
-    # Make sure that h > w and h < w are equaly likely (log-scale sampling)
+    # Make sure that h > w and h < w are equally likely (log-scale sampling)
     aspect_ratios = []
     random.seed(42)
     trial = 1000
@@ -1865,28 +1871,6 @@ def test_random_rotation():
 
     # Checking if RandomRotation can be printed as string
     t.__repr__()
-
-    # assert deprecation warning and non-BC
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
-            "Please use 'interpolation' instead."
-        ),
-    ):
-        t = transforms.RandomRotation((-10, 10), resample=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
-
-    # assert changed type warning
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        ),
-    ):
-        t = transforms.RandomRotation((-10, 10), interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
 def test_random_rotation_error():
@@ -2078,7 +2062,7 @@ class TestAffine:
                 # https://github.com/python-pillow/Pillow/blob/71f8ec6a0cfc1008076a023c0756542539d057ab/
                 # src/libImaging/Geometry.c#L1060
                 input_pt = np.array([x + 0.5, y + 0.5, 1.0])
-                res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(np.int)
+                res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(int)
                 _x, _y = res[:2]
                 if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                     true_result[y, x, :] = input_img[_y, _x, :]
@@ -2217,37 +2201,54 @@ def test_random_affine():
     t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
     assert "bilinear" in t.__repr__()
 
-    # assert deprecation warning and non-BC
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
-            "Please use 'interpolation' instead."
-        ),
-    ):
-        t = transforms.RandomAffine(10, resample=2)
+
+def test_elastic_transformation():
+    with pytest.raises(TypeError, match=r"alpha should be float or a sequence of floats"):
+        transforms.ElasticTransform(alpha=True, sigma=2.0)
+    with pytest.raises(TypeError, match=r"alpha should be a sequence of floats"):
+        transforms.ElasticTransform(alpha=[1.0, True], sigma=2.0)
+    with pytest.raises(ValueError, match=r"alpha is a sequence its length should be 2"):
+        transforms.ElasticTransform(alpha=[1.0, 0.0, 1.0], sigma=2.0)
+
+    with pytest.raises(TypeError, match=r"sigma should be float or a sequence of floats"):
+        transforms.ElasticTransform(alpha=2.0, sigma=True)
+    with pytest.raises(TypeError, match=r"sigma should be a sequence of floats"):
+        transforms.ElasticTransform(alpha=2.0, sigma=[1.0, True])
+    with pytest.raises(ValueError, match=r"sigma is a sequence its length should be 2"):
+        transforms.ElasticTransform(alpha=2.0, sigma=[1.0, 0.0, 1.0])
+
+    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
-            "Please use 'fill' instead."
-        ),
-    ):
-        t = transforms.RandomAffine(10, fillcolor=10)
-        assert t.fill == 10
+    with pytest.raises(TypeError, match=r"fill should be int or float"):
+        transforms.ElasticTransform(alpha=1.0, sigma=1.0, fill={})
 
-    # assert changed type warning
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        ),
-    ):
-        t = transforms.RandomAffine(10, interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
+    x = torch.randint(0, 256, (3, 32, 32), dtype=torch.uint8)
+    img = F.to_pil_image(x)
+    t = transforms.ElasticTransform(alpha=0.0, sigma=0.0)
+    transformed_img = t(img)
+    assert transformed_img == img
+
+    # Smoke test on PIL images
+    t = transforms.ElasticTransform(alpha=0.5, sigma=0.23)
+    transformed_img = t(img)
+    assert isinstance(transformed_img, Image.Image)
+
+    # Checking if ElasticTransform can be printed as string
+    t.__repr__()
+
+
+def test_random_grayscale_with_grayscale_input():
+    transform = transforms.RandomGrayscale(p=1.0)
+
+    image_tensor = torch.randint(0, 256, (1, 16, 16), dtype=torch.uint8)
+    output_tensor = transform(image_tensor)
+    torch.testing.assert_close(output_tensor, image_tensor)
+
+    image_pil = F.to_pil_image(image_tensor)
+    output_pil = transform(image_pil)
+    torch.testing.assert_close(F.pil_to_tensor(output_pil), image_tensor)
 
 
 if __name__ == "__main__":

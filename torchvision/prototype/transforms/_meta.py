@@ -1,77 +1,59 @@
-from typing import Union, Any, Dict, Optional
+from typing import Any, Dict, Union
 
-import PIL.Image
 import torch
-from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, functional as F
-from torchvision.transforms.functional import convert_image_dtype
 
-from ._utils import is_simple_tensor
+from torchvision import transforms as _transforms
+from torchvision.prototype import datapoints
+from torchvision.prototype.transforms import functional as F, Transform
+
+from .utils import is_simple_tensor
 
 
 class ConvertBoundingBoxFormat(Transform):
-    def __init__(self, format: Union[str, features.BoundingBoxFormat]) -> None:
+    _transformed_types = (datapoints.BoundingBox,)
+
+    def __init__(self, format: Union[str, datapoints.BoundingBoxFormat]) -> None:
         super().__init__()
         if isinstance(format, str):
-            format = features.BoundingBoxFormat[format]
+            format = datapoints.BoundingBoxFormat[format]
         self.format = format
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, features.BoundingBox):
-            output = F.convert_bounding_box_format(input, old_format=input.format, new_format=params["format"])
-            return features.BoundingBox.new_like(input, output, format=params["format"])
-        else:
-            return input
+    def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
+        # We need to unwrap here to avoid unnecessary `__torch_function__` calls,
+        # since `convert_format_bounding_box` does not have a dispatcher function that would do that for us
+        output = F.convert_format_bounding_box(
+            inpt.as_subclass(torch.Tensor), old_format=inpt.format, new_format=params["format"]
+        )
+        return datapoints.BoundingBox.wrap_like(inpt, output, format=params["format"])
 
 
-class ConvertImageDtype(Transform):
+class ConvertDtype(Transform):
+    _v1_transform_cls = _transforms.ConvertImageDtype
+
+    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
+
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.dtype = dtype
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, features.Image):
-            output = convert_image_dtype(input, dtype=self.dtype)
-            return features.Image.new_like(input, output, dtype=self.dtype)
-        elif is_simple_tensor(input):
-            return convert_image_dtype(input, dtype=self.dtype)
-        else:
-            return input
+    def _transform(
+        self, inpt: Union[datapoints.TensorImageType, datapoints.TensorVideoType], params: Dict[str, Any]
+    ) -> Union[datapoints.TensorImageType, datapoints.TensorVideoType]:
+        return F.convert_dtype(inpt, self.dtype)
 
 
-class ConvertImageColorSpace(Transform):
-    def __init__(
-        self,
-        color_space: Union[str, features.ColorSpace],
-        old_color_space: Optional[Union[str, features.ColorSpace]] = None,
-    ) -> None:
-        super().__init__()
+# We changed the name to align it with the new naming scheme. Still, `ConvertImageDtype` is
+# prevalent and well understood. Thus, we just alias it without deprecating the old name.
+ConvertImageDtype = ConvertDtype
 
-        if isinstance(color_space, str):
-            color_space = features.ColorSpace.from_str(color_space)
-        self.color_space = color_space
 
-        if isinstance(old_color_space, str):
-            old_color_space = features.ColorSpace.from_str(old_color_space)
-        self.old_color_space = old_color_space
+class ClampBoundingBoxes(Transform):
+    _transformed_types = (datapoints.BoundingBox,)
 
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, features.Image):
-            output = F.convert_image_color_space_tensor(
-                input, old_color_space=input.color_space, new_color_space=self.color_space
-            )
-            return features.Image.new_like(input, output, color_space=self.color_space)
-        elif is_simple_tensor(input):
-            if self.old_color_space is None:
-                raise RuntimeError(
-                    f"In order to convert simple tensor images, `{type(self).__name__}(...)` "
-                    f"needs to be constructed with the `old_color_space=...` parameter."
-                )
-
-            return F.convert_image_color_space_tensor(
-                input, old_color_space=self.old_color_space, new_color_space=self.color_space
-            )
-        elif isinstance(input, PIL.Image.Image):
-            return F.convert_image_color_space_pil(input, color_space=self.color_space)
-        else:
-            return input
+    def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
+        # We need to unwrap here to avoid unnecessary `__torch_function__` calls,
+        # since `clamp_bounding_box` does not have a dispatcher function that would do that for us
+        output = F.clamp_bounding_box(
+            inpt.as_subclass(torch.Tensor), format=inpt.format, spatial_size=inpt.spatial_size
+        )
+        return datapoints.BoundingBox.wrap_like(inpt, output)

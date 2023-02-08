@@ -3,10 +3,12 @@ Faster R-CNN
 
 .. currentmodule:: torchvision.models.detection
 
+
 The Faster R-CNN model is based on the `Faster R-CNN: Towards Real-Time Object Detection 
 with Region Proposal Networks <https://arxiv.org/abs/1506.01497>`__
 paper.
 
+.. betastatus:: detection module
 
 Model builders
 --------------

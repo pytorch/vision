@@ -3,9 +3,9 @@ from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 from torch.nn import functional as F
-from torchvision.ops import FrozenBatchNorm2d, complete_box_iou_loss, distance_box_iou_loss, generalized_box_iou_loss
+from torchvision.ops import complete_box_iou_loss, distance_box_iou_loss, FrozenBatchNorm2d, generalized_box_iou_loss
 
 
 class BalancedPositiveNegativeSampler:
@@ -25,7 +25,7 @@ class BalancedPositiveNegativeSampler:
     def __call__(self, matched_idxs: List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]:
         """
         Args:
-            matched idxs: list of tensors containing -1, 0 or positive values.
+            matched_idxs: list of tensors containing -1, 0 or positive values.
                 Each tensor corresponds to a specific image.
                 -1 values are ignored, 0 are considered as negatives and > 0 as
                 positives.
@@ -237,7 +237,7 @@ class BoxLinearCoder:
         """
         self.normalize_by_size = normalize_by_size
 
-    def encode_single(self, reference_boxes: Tensor, proposals: Tensor) -> Tensor:
+    def encode(self, reference_boxes: Tensor, proposals: Tensor) -> Tensor:
         """
         Encode a set of proposals with respect to some reference boxes
 
@@ -248,29 +248,32 @@ class BoxLinearCoder:
         Returns:
             Tensor: the encoded relative box offsets that can be used to
             decode the boxes.
+
         """
+
         # get the center of reference_boxes
-        reference_boxes_ctr_x = 0.5 * (reference_boxes[:, 0] + reference_boxes[:, 2])
-        reference_boxes_ctr_y = 0.5 * (reference_boxes[:, 1] + reference_boxes[:, 3])
+        reference_boxes_ctr_x = 0.5 * (reference_boxes[..., 0] + reference_boxes[..., 2])
+        reference_boxes_ctr_y = 0.5 * (reference_boxes[..., 1] + reference_boxes[..., 3])
 
         # get box regression transformation deltas
-        target_l = reference_boxes_ctr_x - proposals[:, 0]
-        target_t = reference_boxes_ctr_y - proposals[:, 1]
-        target_r = proposals[:, 2] - reference_boxes_ctr_x
-        target_b = proposals[:, 3] - reference_boxes_ctr_y
+        target_l = reference_boxes_ctr_x - proposals[..., 0]
+        target_t = reference_boxes_ctr_y - proposals[..., 1]
+        target_r = proposals[..., 2] - reference_boxes_ctr_x
+        target_b = proposals[..., 3] - reference_boxes_ctr_y
 
-        targets = torch.stack((target_l, target_t, target_r, target_b), dim=1)
+        targets = torch.stack((target_l, target_t, target_r, target_b), dim=-1)
+
         if self.normalize_by_size:
-            reference_boxes_w = reference_boxes[:, 2] - reference_boxes[:, 0]
-            reference_boxes_h = reference_boxes[:, 3] - reference_boxes[:, 1]
+            reference_boxes_w = reference_boxes[..., 2] - reference_boxes[..., 0]
+            reference_boxes_h = reference_boxes[..., 3] - reference_boxes[..., 1]
             reference_boxes_size = torch.stack(
-                (reference_boxes_w, reference_boxes_h, reference_boxes_w, reference_boxes_h), dim=1
+                (reference_boxes_w, reference_boxes_h, reference_boxes_w, reference_boxes_h), dim=-1
             )
             targets = targets / reference_boxes_size
-
         return targets
 
-    def decode_single(self, rel_codes: Tensor, boxes: Tensor) -> Tensor:
+    def decode(self, rel_codes: Tensor, boxes: Tensor) -> Tensor:
+
         """
         From a set of original boxes and encoded relative box offsets,
         get the decoded boxes.
@@ -281,23 +284,30 @@ class BoxLinearCoder:
 
         Returns:
             Tensor: the predicted boxes with the encoded relative box offsets.
+
+        .. note::
+            This method assumes that ``rel_codes`` and ``boxes`` have same size for 0th dimension. i.e. ``len(rel_codes) == len(boxes)``.
+
         """
 
-        boxes = boxes.to(rel_codes.dtype)
+        boxes = boxes.to(dtype=rel_codes.dtype)
 
-        ctr_x = 0.5 * (boxes[:, 0] + boxes[:, 2])
-        ctr_y = 0.5 * (boxes[:, 1] + boxes[:, 3])
+        ctr_x = 0.5 * (boxes[..., 0] + boxes[..., 2])
+        ctr_y = 0.5 * (boxes[..., 1] + boxes[..., 3])
+
         if self.normalize_by_size:
-            boxes_w = boxes[:, 2] - boxes[:, 0]
-            boxes_h = boxes[:, 3] - boxes[:, 1]
-            boxes_size = torch.stack((boxes_w, boxes_h, boxes_w, boxes_h), dim=1)
-            rel_codes = rel_codes * boxes_size
+            boxes_w = boxes[..., 2] - boxes[..., 0]
+            boxes_h = boxes[..., 3] - boxes[..., 1]
 
-        pred_boxes1 = ctr_x - rel_codes[:, 0]
-        pred_boxes2 = ctr_y - rel_codes[:, 1]
-        pred_boxes3 = ctr_x + rel_codes[:, 2]
-        pred_boxes4 = ctr_y + rel_codes[:, 3]
-        pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=1)
+            list_box_size = torch.stack((boxes_w, boxes_h, boxes_w, boxes_h), dim=-1)
+            rel_codes = rel_codes * list_box_size
+
+        pred_boxes1 = ctr_x - rel_codes[..., 0]
+        pred_boxes2 = ctr_y - rel_codes[..., 1]
+        pred_boxes3 = ctr_x + rel_codes[..., 2]
+        pred_boxes4 = ctr_y + rel_codes[..., 3]
+
+        pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=-1)
         return pred_boxes
 
 
@@ -393,9 +403,9 @@ class Matcher:
         it is unmatched, then match it to the ground-truth with which it has the highest
         quality value.
         """
-        # For each gt, find the prediction with which it has highest quality
+        # For each gt, find the prediction with which it has the highest quality
         highest_quality_foreach_gt, _ = match_quality_matrix.max(dim=1)
-        # Find highest quality match available, even if it is low, including ties
+        # Find the highest quality match available, even if it is low, including ties
         gt_pred_pairs_of_highest_quality = torch.where(match_quality_matrix == highest_quality_foreach_gt[:, None])
         # Example gt_pred_pairs_of_highest_quality:
         #   tensor([[    0, 39796],
@@ -491,14 +501,14 @@ def _topk_min(input: Tensor, orig_kval: int, axis: int) -> int:
     if K exceeds the number of elements along that axis. Previously, python's min() function was
     used to determine whether to use the provided k-value or the specified dim axis value.
 
-    However in cases where the model is being exported in tracing mode, python min() is
+    However, in cases where the model is being exported in tracing mode, python min() is
     static causing the model to be traced incorrectly and eventually fail at the topk node.
     In order to avoid this situation, in tracing mode, torch.min() is used instead.
 
     Args:
-        input (Tensor): The orignal input tensor.
+        input (Tensor): The original input tensor.
         orig_kval (int): The provided k-value.
-        axis(int): Axis along which we retreive the input size.
+        axis(int): Axis along which we retrieve the input size.
 
     Returns:
         min_kval (int): Appropriately selected k-value.

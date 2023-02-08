@@ -2,11 +2,12 @@ import functools
 import os
 import os.path
 import pathlib
-from typing import BinaryIO, Optional, Collection, Union, Tuple, List, Dict, Any
+from typing import Any, BinaryIO, Collection, Dict, List, Optional, Tuple, Union
 
-from torchdata.datapipes.iter import IterDataPipe, FileLister, Mapper, Filter, FileOpener
+from torchdata.datapipes.iter import FileLister, FileOpener, Filter, IterDataPipe, Mapper
+from torchvision.prototype.datapoints import Label
+from torchvision.prototype.datasets.utils import EncodedData, EncodedImage
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
-from torchvision.prototype.features import Label, EncodedImage, EncodedData
 
 
 __all__ = ["from_data_folder", "from_image_folder"]

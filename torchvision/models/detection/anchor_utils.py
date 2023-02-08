@@ -61,7 +61,7 @@ class AnchorGenerator(nn.Module):
         aspect_ratios: List[float],
         dtype: torch.dtype = torch.float32,
         device: torch.device = torch.device("cpu"),
-    ):
+    ) -> Tensor:
         scales = torch.as_tensor(scales, dtype=dtype, device=device)
         aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)
@@ -76,7 +76,7 @@ class AnchorGenerator(nn.Module):
     def set_cell_anchors(self, dtype: torch.dtype, device: torch.device):
         self.cell_anchors = [cell_anchor.to(dtype=dtype, device=device) for cell_anchor in self.cell_anchors]
 
-    def num_anchors_per_location(self):
+    def num_anchors_per_location(self) -> List[int]:
         return [len(s) * len(a) for s, a in zip(self.sizes, self.aspect_ratios)]
 
     # For every combination of (a, (g, s), i) in (self.cell_anchors, zip(grid_sizes, strides), 0:2),
@@ -145,7 +145,7 @@ class DefaultBoxGenerator(nn.Module):
             of the scales of each feature map. It is used only if the ``scales`` parameter is not provided.
         scales (List[float]], optional): The scales of the default boxes. If not provided it will be estimated using
             the ``min_ratio`` and ``max_ratio`` parameters.
-        steps (List[int]], optional): It's a hyper-parameter that affects the tiling of defalt boxes. If not provided
+        steps (List[int]], optional): It's a hyper-parameter that affects the tiling of default boxes. If not provided
             it will be estimated from the data.
         clip (bool): Whether the standardized values of default boxes should be clipped between 0 and 1. The clipping
             is applied while the boxes are encoded in format ``(cx, cy, w, h)``.
@@ -201,7 +201,7 @@ class DefaultBoxGenerator(nn.Module):
             _wh_pairs.append(torch.as_tensor(wh_pairs, dtype=dtype, device=device))
         return _wh_pairs
 
-    def num_anchors_per_location(self):
+    def num_anchors_per_location(self) -> List[int]:
         # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
         return [2 + 2 * len(r) for r in self.aspect_ratios]
 
@@ -213,8 +213,8 @@ class DefaultBoxGenerator(nn.Module):
         for k, f_k in enumerate(grid_sizes):
             # Now add the default boxes for each width-height pair
             if self.steps is not None:
-                x_f_k = image_size[0] / self.steps[k]
-                y_f_k = image_size[1] / self.steps[k]
+                x_f_k = image_size[1] / self.steps[k]
+                y_f_k = image_size[0] / self.steps[k]
             else:
                 y_f_k, x_f_k = f_k
 

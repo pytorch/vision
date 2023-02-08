@@ -1,13 +1,12 @@
 import csv
 import os
-import warnings
 from collections import namedtuple
-from typing import Any, Callable, List, Optional, Union, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import PIL
 import torch
 
-from .utils import check_integrity, verify_str_arg
+from .utils import check_integrity, download_file_from_google_drive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 CSV = namedtuple("CSV", ["header", "index", "data"])
@@ -24,10 +23,10 @@ class CelebA(VisionDataset):
             or ``landmarks``. Can also be a list to output a tuple with all specified target types.
             The targets represent:
 
-                - ``attr`` (np.array shape=(40,) dtype=int): binary (0, 1) labels for attributes
+                - ``attr`` (Tensor shape=(40,) dtype=int): binary (0, 1) labels for attributes
                 - ``identity`` (int): label for each person (data points with the same identity are the same person)
-                - ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)
-                - ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
+                - ``bbox`` (Tensor shape=(4,) dtype=int): bounding box (x, y, width, height)
+                - ``landmarks`` (Tensor shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
                   righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)
 
             Defaults to ``attr``. If empty, ``None`` will be returned as target.
@@ -36,21 +35,13 @@ class CelebA(VisionDataset):
             and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-        download (bool, optional): Deprecated.
-
-            .. warning::
-
-                Downloading CelebA is not supported anymore as of 0.13 and this
-                parameter will be removed in 0.15. See
-                `this issue <https://github.com/pytorch/vision/issues/5705>`__
-                for more details.
-                Please download the files from
-                https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract
-                them in ``root/celeba``.
+        download (bool, optional): If true, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
     """
 
     base_folder = "celeba"
-    # There currently does not appear to be a easy way to extract 7z in python (without introducing additional
+    # There currently does not appear to be an easy way to extract 7z in python (without introducing additional
     # dependencies). The "in-the-wild" (not aligned+cropped) images are only in 7z, so they are not available
     # right now.
     file_list = [
@@ -73,7 +64,7 @@ class CelebA(VisionDataset):
         target_type: Union[List[str], str] = "attr",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        download: bool = None,
+        download: bool = False,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = split
@@ -85,15 +76,6 @@ class CelebA(VisionDataset):
         if not self.target_type and self.target_transform is not None:
             raise RuntimeError("target_transform is specified but target_type is empty")
 
-        if download is not None:
-            warnings.warn(
-                "Downloading CelebA is not supported anymore as of 0.13, and the "
-                "download parameter will be removed in 0.15. See "
-                "https://github.com/pytorch/vision/issues/5705 for more details. "
-                "Please download the files from "
-                "https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them "
-                "in ``root/celeba``."
-            )
         if download:
             self.download()
 
@@ -164,14 +146,10 @@ class CelebA(VisionDataset):
             print("Files already downloaded and verified")
             return
 
-        raise ValueError(
-            "Downloading CelebA is not supported anymore as of 0.13, and the "
-            "download parameter will be removed in 0.15. See "
-            "https://github.com/pytorch/vision/issues/5705 for more details. "
-            "Please download the files from "
-            "https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them "
-            "in ``root/celeba``."
-        )
+        for (file_id, md5, filename) in self.file_list:
+            download_file_from_google_drive(file_id, os.path.join(self.root, self.base_folder), filename, md5)
+
+        extract_archive(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"))
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))

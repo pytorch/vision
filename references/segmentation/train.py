@@ -10,6 +10,7 @@ import torchvision
 import utils
 from coco_utils import get_coco
 from torch import nn
+from torch.optim.lr_scheduler import PolynomialLR
 from torchvision.transforms import functional as F, InterpolationMode
 
 
@@ -156,8 +157,12 @@ def main(args):
         dataset_test, batch_size=1, sampler=test_sampler, num_workers=args.workers, collate_fn=utils.collate_fn
     )
 
-    model = torchvision.models.segmentation.__dict__[args.model](
-        weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, aux_loss=args.aux_loss
+    model = torchvision.models.get_model(
+        args.model,
+        weights=args.weights,
+        weights_backbone=args.weights_backbone,
+        num_classes=num_classes,
+        aux_loss=args.aux_loss,
     )
     model.to(device)
     if args.distributed:
@@ -180,8 +185,8 @@ def main(args):
     scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
     iters_per_epoch = len(data_loader)
-    main_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-        optimizer, lambda x: (1 - x / (iters_per_epoch * (args.epochs - args.lr_warmup_epochs))) ** 0.9
+    main_lr_scheduler = PolynomialLR(
+        optimizer, total_iters=iters_per_epoch * (args.epochs - args.lr_warmup_epochs), power=0.9
     )
 
     if args.lr_warmup_epochs > 0:
@@ -255,7 +260,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--data-path", default="/datasets01/COCO/022719/", type=str, help="dataset path")
     parser.add_argument("--dataset", default="coco", type=str, help="dataset name")
     parser.add_argument("--model", default="fcn_resnet101", type=str, help="model name")
-    parser.add_argument("--aux-loss", action="store_true", help="auxiliar loss")
+    parser.add_argument("--aux-loss", action="store_true", help="auxiliary loss")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
         "-b", "--batch-size", default=8, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"

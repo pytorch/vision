@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -315,7 +315,7 @@ def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched
     valid = torch.cat(valid, dim=0).to(dtype=torch.uint8)
     valid = torch.where(valid)[0]
 
-    # torch.mean (in binary_cross_entropy_with_logits) does'nt
+    # torch.mean (in binary_cross_entropy_with_logits) doesn't
     # accept empty tensors, so handle it sepaartely
     if keypoint_targets.numel() == 0 or len(valid) == 0:
         return keypoint_logits.sum() * 0
@@ -746,7 +746,7 @@ class RoIHeads(nn.Module):
                 if not t["boxes"].dtype in floating_point_types:
                     raise TypeError(f"target boxes must of float type, instead got {t['boxes'].dtype}")
                 if not t["labels"].dtype == torch.int64:
-                    raise TypeError("target labels must of int64 type, instead got {t['labels'].dtype}")
+                    raise TypeError(f"target labels must of int64 type, instead got {t['labels'].dtype}")
                 if self.has_keypoint():
                     if not t["keypoints"].dtype == torch.float32:
                         raise TypeError(f"target keypoints must of float type, instead got {t['keypoints'].dtype}")
@@ -787,7 +787,7 @@ class RoIHeads(nn.Module):
             mask_proposals = [p["boxes"] for p in result]
             if self.training:
                 if matched_idxs is None:
-                    raise ValueError("if in trainning, matched_idxs should not be None")
+                    raise ValueError("if in training, matched_idxs should not be None")
 
                 # during training, only focus on positive boxes
                 num_images = len(proposals)

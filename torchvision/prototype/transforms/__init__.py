@@ -1,25 +1,59 @@
-from . import functional  # usort: skip
+from torchvision.transforms import AutoAugmentPolicy, InterpolationMode  # usort: skip
+
+from . import functional, utils  # usort: skip
 
 from ._transform import Transform  # usort: skip
+from ._presets import StereoMatching  # usort: skip
 
-from ._augment import RandomErasing, RandomMixup, RandomCutmix
-from ._auto_augment import RandAugment, TrivialAugmentWide, AutoAugment, AugMix
-from ._color import ColorJitter, RandomPhotometricDistort, RandomEqualize
+from ._augment import RandomCutmix, RandomErasing, RandomMixup, SimpleCopyPaste
+from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
+from ._color import (
+    ColorJitter,
+    Grayscale,
+    RandomAdjustSharpness,
+    RandomAutocontrast,
+    RandomEqualize,
+    RandomGrayscale,
+    RandomInvert,
+    RandomPhotometricDistort,
+    RandomPosterize,
+    RandomSolarize,
+)
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
-    Resize,
     CenterCrop,
-    RandomResizedCrop,
+    ElasticTransform,
     FiveCrop,
-    TenCrop,
-    BatchMultiCrop,
-    RandomHorizontalFlip,
-    RandomVerticalFlip,
+    FixedSizeCrop,
     Pad,
+    RandomAffine,
+    RandomCrop,
+    RandomHorizontalFlip,
+    RandomIoUCrop,
+    RandomPerspective,
+    RandomResize,
+    RandomResizedCrop,
+    RandomRotation,
+    RandomShortestSize,
+    RandomVerticalFlip,
     RandomZoomOut,
+    Resize,
+    ScaleJitter,
+    TenCrop,
 )
-from ._meta import ConvertBoundingBoxFormat, ConvertImageDtype, ConvertImageColorSpace
-from ._misc import Identity, Normalize, ToDtype, Lambda
-from ._type_conversion import DecodeImage, LabelToOneHot
+from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat, ConvertDtype, ConvertImageDtype
+from ._misc import (
+    GaussianBlur,
+    Identity,
+    Lambda,
+    LinearTransformation,
+    Normalize,
+    PermuteDimensions,
+    RemoveSmallBoundingBoxes,
+    ToDtype,
+    TransposeDimensions,
+)
+from ._temporal import UniformTemporalSubsample
+from ._type_conversion import LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 
-from ._deprecated import Grayscale, RandomGrayscale, ToTensor, ToPILImage, PILToTensor  # usort: skip
+from ._deprecated import ToTensor  # usort: skip

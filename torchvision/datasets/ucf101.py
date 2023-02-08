@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Tuple, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from torch import Tensor
 
@@ -17,7 +17,7 @@ class UCF101(VisionDataset):
     by ``frames_per_clip``, where the step in frames between each clip is given by
     ``step_between_clips``. The dataset itself can be downloaded from the dataset website;
     annotations that ``annotation_path`` should be pointing to can be downloaded from `here
-    <https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip>`.
+    <https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip>`_.
 
     To give an example, for 2 videos with 10 and 15 frames respectively, if ``frames_per_clip=5``
     and ``step_between_clips=5``, the dataset size will be (2 + 3) = 5, where the first two
@@ -93,7 +93,7 @@ class UCF101(VisionDataset):
             output_format=output_format,
         )
         # we bookkeep the full version of video clips because we want to be able
-        # to return the meta data of full version rather than the subset version of
+        # to return the metadata of full version rather than the subset version of
         # video clips
         self.full_video_clips = video_clips
         self.indices = self._select_fold(video_list, annotation_path, fold, train)

@@ -6,13 +6,13 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
 from ...transforms._presets import ObjectDetection
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from ._utils import overwrite_eps
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
-from .faster_rcnn import FasterRCNN, FastRCNNConvFCHead, RPNHead, _default_anchorgen
+from .faster_rcnn import _default_anchorgen, FasterRCNN, FastRCNNConvFCHead, RPNHead
 
 
 __all__ = [
@@ -31,9 +31,9 @@ class MaskRCNN(FasterRCNN):
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
@@ -56,7 +56,7 @@ class MaskRCNN(FasterRCNN):
 
     Args:
         backbone (nn.Module): the network used to compute the features for the model.
-            It should contain a out_channels attribute, which indicates the number of output
+            It should contain an out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
             The backbone should return a single Tensor or and OrderedDict[Tensor].
         num_classes (int): number of output classes of the model (including the background).
@@ -123,7 +123,7 @@ class MaskRCNN(FasterRCNN):
         >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # MaskRCNN needs to know the number of
         >>> # output channels in a backbone. For mobilenet_v2, it's 1280
-        >>> # so we need to add it here
+        >>> # so we need to add it here,
         >>> backbone.out_channels = 1280
         >>>
         >>> # let's make the RPN generate 5 x 3 anchors per spatial
@@ -370,6 +370,8 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
                     "mask_map": 34.6,
                 }
             },
+            "_ops": 134.38,
+            "_file_size": 169.84,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
@@ -390,12 +392,15 @@ class MaskRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
                     "mask_map": 41.8,
                 }
             },
+            "_ops": 333.577,
+            "_file_size": 177.219,
             "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )
     DEFAULT = COCO_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", MaskRCNN_ResNet50_FPN_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
@@ -412,12 +417,14 @@ def maskrcnn_resnet50_fpn(
     """Mask R-CNN model with a ResNet-50-FPN backbone from the `Mask R-CNN
     <https://arxiv.org/abs/1703.06870>`_ paper.
 
+    .. betastatus:: detection module
+
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -481,7 +488,7 @@ def maskrcnn_resnet50_fpn(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 
@@ -501,6 +508,11 @@ def maskrcnn_resnet50_fpn(
     return model
 
 
+@register_model()
+@handle_legacy_interface(
+    weights=("pretrained", MaskRCNN_ResNet50_FPN_V2_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
+)
 def maskrcnn_resnet50_fpn_v2(
     *,
     weights: Optional[MaskRCNN_ResNet50_FPN_V2_Weights] = None,
@@ -512,6 +524,8 @@ def maskrcnn_resnet50_fpn_v2(
 ) -> MaskRCNN:
     """Improved Mask R-CNN model with a ResNet-50-FPN backbone from the `Benchmarking Detection Transfer
     Learning with Vision Transformers <https://arxiv.org/abs/2111.11429>`_ paper.
+
+    .. betastatus:: detection module
 
     :func:`~torchvision.models.detection.maskrcnn_resnet50_fpn` for more details.
 
@@ -542,7 +556,7 @@ def maskrcnn_resnet50_fpn_v2(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 
@@ -571,14 +585,3 @@ def maskrcnn_resnet50_fpn_v2(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "maskrcnn_resnet50_fpn_coco": MaskRCNN_ResNet50_FPN_Weights.COCO_V1.url,
-    }
-)

@@ -36,7 +36,7 @@ def distance_box_iou_loss(
         Tensor: Loss tensor with the reduction option applied.
 
     Reference:
-        Zhaohui Zheng et. al: Distance Intersection over Union Loss:
+        Zhaohui Zheng et al.: Distance Intersection over Union Loss:
         https://arxiv.org/abs/1911.08287
     """
 
@@ -50,10 +50,17 @@ def distance_box_iou_loss(
 
     loss, _ = _diou_iou_loss(boxes1, boxes2, eps)
 
-    if reduction == "mean":
+    # Check reduction option and return loss accordingly
+    if reduction == "none":
+        pass
+    elif reduction == "mean":
         loss = loss.mean() if loss.numel() > 0 else 0.0 * loss.sum()
     elif reduction == "sum":
         loss = loss.sum()
+    else:
+        raise ValueError(
+            f"Invalid Value for arg 'reduction': '{reduction} \n Supported reduction modes: 'none', 'mean', 'sum'"
+        )
     return loss
 
 

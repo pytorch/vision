@@ -312,6 +312,8 @@ bool Decoder::init(
     }
   }
 
+  av_dict_set_int(&options, "probesize", params_.probeSize, 0);
+
   interrupted_ = false;
 
   // ffmpeg avformat_open_input call can hang if media source doesn't respond
@@ -488,7 +490,8 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   AVPacket* avPacket;
   avPacket = av_packet_alloc();
   if (avPacket == nullptr) {
-    LOG(ERROR) << "decoder as not able to allocate the packet.";
+    LOG(ERROR) << "uuid=" << params_.loggingUuid
+               << " decoder as not able to allocate the packet.";
     return AVERROR_BUFFER_TOO_SMALL;
   }
   avPacket->data = nullptr;
@@ -506,6 +509,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   bool decodedFrame = false;
   while (!interrupted_ && inRange_.any() && !decodedFrame) {
     if (watcher() == false) {
+      LOG(ERROR) << "uuid=" << params_.loggingUuid << " hit ETIMEDOUT";
       result = ETIMEDOUT;
       break;
     }
@@ -514,15 +518,25 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       VLOG(4) << "Decoder is busy...";
       std::this_thread::yield();
       result = 0; // reset error, EAGAIN is not an error at all
+      // reset the packet to default settings
+      av_packet_unref(avPacket);
       continue;
     } else if (result == AVERROR_EOF) {
       flushStreams();
       VLOG(1) << "End of stream";
       result = ENODATA;
       break;
+    } else if (
+        result == AVERROR(EPERM) && params_.skipOperationNotPermittedPackets) {
+      // reset error, lets skip packets with EPERM
+      result = 0;
+      // reset the packet to default settings
+      av_packet_unref(avPacket);
+      continue;
     } else if (result < 0) {
       flushStreams();
-      LOG(ERROR) << "Error detected: " << Util::generateErrorDesc(result);
+      LOG(ERROR) << "uuid=" << params_.loggingUuid
+                 << " error detected: " << Util::generateErrorDesc(result);
       break;
     }
 
@@ -543,7 +557,8 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       // packet either got consumed completely or not at all
       if ((result = processPacket(
                stream, avPacket, &gotFrame, &hasMsg, params_.fastSeek)) < 0) {
-        LOG(ERROR) << "processPacket failed with code: " << result;
+        LOG(ERROR) << "uuid=" << params_.loggingUuid
+                   << " processPacket failed with code: " << result;
         break;
       }
 
@@ -584,7 +599,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
           << result;
 
   // loop can be terminated, either by:
-  // 1. explcitly iterrupted
+  // 1. explicitly interrupted
   // 3. unrecoverable error or ENODATA (end of stream) or ETIMEDOUT (timeout)
   // 4. decoded frames pts are out of the specified range
   // 5. success decoded frame

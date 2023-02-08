@@ -3,7 +3,7 @@ import random
 import numpy as np
 import pytest
 import torch
-from common_utils import IN_CIRCLE_CI, CIRCLECI_GPU_NO_CUDA_MSG, IN_FBCODE, IN_RE_WORKER, CUDA_NOT_AVAILABLE_MSG
+from common_utils import CIRCLECI_GPU_NO_CUDA_MSG, CUDA_NOT_AVAILABLE_MSG, IN_CIRCLE_CI, IN_FBCODE, IN_RE_WORKER
 
 
 def pytest_configure(config):
@@ -16,7 +16,7 @@ def pytest_collection_modifyitems(items):
     # This hook is called by pytest after it has collected the tests (google its name to check out its doc!)
     # We can ignore some tests as we see fit here, or add marks, such as a skip mark.
     #
-    # Typically here, we try to optimize CI time. In particular, the GPU CI instances don't need to run the
+    # Typically, here, we try to optimize CI time. In particular, the GPU CI instances don't need to run the
     # tests that don't need CUDA, because those tests are extensively tested in the CPU CI instances already.
     # This is true for both CircleCI and the fbcode internal CI.
     # In the fbcode CI, we have an additional constraint: we try to avoid skipping tests. So instead of relying on
@@ -57,7 +57,7 @@ def pytest_collection_modifyitems(items):
                 item.add_marker(pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG))
 
         if item.get_closest_marker("dont_collect") is not None:
-            # currently, this is only used for some tests we're sure we dont want to run on fbcode
+            # currently, this is only used for some tests we're sure we don't want to run on fbcode
             continue
 
         out_items.append(item)

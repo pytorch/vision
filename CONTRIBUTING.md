@@ -69,7 +69,7 @@ If you plan to modify the code or documentation, please follow the steps below:
 For more details about pull requests, 
 please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request). 
 
-If you would like to contribute a new model, please see [here](#New-model).
+If you would like to contribute a new model, please see [here](#New-architecture-or-improved-model-weights).
 
 If you would like to contribute a new dataset, please see [here](#New-dataset). 
 
@@ -83,7 +83,7 @@ Instead of relying directly on `black` however, we rely on
 [ufmt](https://github.com/omnilib/ufmt), for compatibility reasons with Facebook
 internal infrastructure.
 
-To format your code, install `ufmt` with `pip install ufmt==1.3.2 black==21.9b0 usort==0.6.4` and use e.g.:
+To format your code, install `ufmt` with `pip install ufmt==1.3.2 black==22.3.0 usort==1.0.2` and use e.g.:
 
 ```bash
 ufmt format torchvision
@@ -198,7 +198,7 @@ it in an issue as, most likely, it will not be accepted.
 ### Pull Request
 
 If all previous checks (flake8, mypy, unit tests) are passing, please send a PR. Submitted PR will pass other tests on 
-different operation systems, python versions and hardwares.
+different operating systems, python versions and hardware.
 
 For more details about pull requests workflow, 
 please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).

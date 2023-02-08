@@ -6,10 +6,10 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
 from ...transforms._presets import ObjectDetection
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 from ._utils import overwrite_eps
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .faster_rcnn import FasterRCNN
@@ -29,9 +29,9 @@ class KeypointRCNN(FasterRCNN):
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -55,7 +55,7 @@ class KeypointRCNN(FasterRCNN):
 
     Args:
         backbone (nn.Module): the network used to compute the features for the model.
-            It should contain a out_channels attribute, which indicates the number of output
+            It should contain an out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
             The backbone should return a single Tensor or and OrderedDict[Tensor].
         num_classes (int): number of output classes of the model (including the background).
@@ -121,7 +121,7 @@ class KeypointRCNN(FasterRCNN):
         >>> # only the features
         >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # KeypointRCNN needs to know the number of
-        >>> # output channels in a backbone. For mobilenet_v2, it's 1280
+        >>> # output channels in a backbone. For mobilenet_v2, it's 1280,
         >>> # so we need to add it here
         >>> backbone.out_channels = 1280
         >>>
@@ -328,6 +328,8 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
                     "kp_map": 61.1,
                 }
             },
+            "_ops": 133.924,
+            "_file_size": 226.054,
             "_docs": """
                 These weights were produced by following a similar training recipe as on the paper but use a checkpoint
                 from an early epoch.
@@ -347,12 +349,15 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
                     "kp_map": 65.0,
                 }
             },
+            "_ops": 137.42,
+            "_file_size": 226.054,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -375,14 +380,16 @@ def keypointrcnn_resnet50_fpn(
     """
     Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.
 
+    .. betastatus:: detection module
+
     Reference: `Mask R-CNN <https://arxiv.org/abs/1703.06870>`__.
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -441,8 +448,8 @@ def keypointrcnn_resnet50_fpn(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
-        num_keypoints = _ovewrite_value_param(num_keypoints, len(weights.meta["keypoint_names"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
+        num_keypoints = _ovewrite_value_param("num_keypoints", num_keypoints, len(weights.meta["keypoint_names"]))
     else:
         if num_classes is None:
             num_classes = 2
@@ -463,16 +470,3 @@ def keypointrcnn_resnet50_fpn(
             overwrite_eps(model, 0.0)
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        # legacy model for BC reasons, see https://github.com/pytorch/vision/issues/1606
-        "keypointrcnn_resnet50_fpn_coco_legacy": KeypointRCNN_ResNet50_FPN_Weights.COCO_LEGACY.url,
-        "keypointrcnn_resnet50_fpn_coco": KeypointRCNN_ResNet50_FPN_Weights.COCO_V1.url,
-    }
-)

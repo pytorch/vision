@@ -1,29 +1,22 @@
 import enum
 import functools
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, cast, Union
+from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
 from xml.etree import ElementTree
 
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Filter,
-    Demultiplexer,
-    IterKeyZipper,
-    LineReader,
-)
+from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
 from torchvision.datasets import VOCDetection
-from torchvision.prototype.datasets.utils import OnlineResource, HttpResource, Dataset
+from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    path_accessor,
     getitem,
-    INFINITE_BUFFER_SIZE,
-    path_comparator,
     hint_sharding,
     hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    path_accessor,
+    path_comparator,
     read_categories_file,
 )
-from torchvision.prototype.features import BoundingBox, Label, EncodedImage
 
 from .._api import register_dataset, register_info
 
@@ -101,7 +94,9 @@ class VOC(Dataset):
             return None
 
     def _parse_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
-        return cast(Dict[str, Any], VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())["annotation"])
+        ann = cast(Dict[str, Any], VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())["annotation"])
+        buffer.close()
+        return ann
 
     def _prepare_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
         anns = self._parse_detection_ann(buffer)
@@ -113,7 +108,7 @@ class VOC(Dataset):
                     for instance in instances
                 ],
                 format="xyxy",
-                image_size=cast(Tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
+                spatial_size=cast(Tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
             ),
             labels=Label(
                 [self._categories.index(instance["name"]) for instance in instances], categories=self._categories

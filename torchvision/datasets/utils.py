@@ -15,17 +15,15 @@ import urllib.error
 import urllib.request
 import warnings
 import zipfile
-from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple, Iterator
+from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar
 from urllib.parse import urlparse
 
+import numpy as np
 import requests
 import torch
 from torch.utils.model_zoo import tqdm
 
-from .._internally_replaced_utils import (
-    _download_file_from_remote_location,
-    _is_remote_location_available,
-)
+from .._internally_replaced_utils import _download_file_from_remote_location, _is_remote_location_available
 
 USER_AGENT = "pytorch/vision"
 
@@ -50,24 +48,14 @@ def _urlretrieve(url: str, filename: str, chunk_size: int = 1024 * 32) -> None:
         _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
 
 
-def gen_bar_updater() -> Callable[[int, int, int], None]:
-    warnings.warn("The function `gen_bar_update` is deprecated since 0.13 and will be removed in 0.15.")
-    pbar = tqdm(total=None)
-
-    def bar_update(count, block_size, total_size):
-        if pbar.total is None and total_size:
-            pbar.total = total_size
-        progress_bytes = count * block_size
-        pbar.update(progress_bytes - pbar.n)
-
-    return bar_update
-
-
 def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
     # Setting the `usedforsecurity` flag does not change anything about the functionality, but indicates that we are
     # not using the MD5 checksum for cryptography. This enables its usage in restricted environments like FIPS. Without
     # it torchvision.datasets is unusable in these environments since we perform a MD5 check everywhere.
-    md5 = hashlib.md5(**dict(usedforsecurity=False) if sys.version_info >= (3, 9) else dict())
+    if sys.version_info >= (3, 9):
+        md5 = hashlib.md5(usedforsecurity=False)
+    else:
+        md5 = hashlib.md5()
     with open(fpath, "rb") as f:
         for chunk in iter(lambda: f.read(chunk_size), b""):
             md5.update(chunk)
@@ -460,7 +448,7 @@ T = TypeVar("T", str, bytes)
 def verify_str_arg(
     value: T,
     arg: Optional[str] = None,
-    valid_values: Iterable[T] = None,
+    valid_values: Optional[Iterable[T]] = None,
     custom_msg: Optional[str] = None,
 ) -> T:
     if not isinstance(value, torch._six.string_classes):
@@ -483,3 +471,45 @@ def verify_str_arg(
         raise ValueError(msg)
 
     return value
+
+
+def _read_pfm(file_name: str, slice_channels: int = 2) -> np.ndarray:
+    """Read file in .pfm format. Might contain either 1 or 3 channels of data.
+
+    Args:
+        file_name (str): Path to the file.
+        slice_channels (int): Number of channels to slice out of the file.
+            Useful for reading different data formats stored in .pfm files: Optical Flows, Stereo Disparity Maps, etc.
+    """
+
+    with open(file_name, "rb") as f:
+        header = f.readline().rstrip()
+        if header not in [b"PF", b"Pf"]:
+            raise ValueError("Invalid PFM file")
+
+        dim_match = re.match(rb"^(\d+)\s(\d+)\s$", f.readline())
+        if not dim_match:
+            raise Exception("Malformed PFM header.")
+        w, h = (int(dim) for dim in dim_match.groups())
+
+        scale = float(f.readline().rstrip())
+        if scale < 0:  # little-endian
+            endian = "<"
+            scale = -scale
+        else:
+            endian = ">"  # big-endian
+
+        data = np.fromfile(f, dtype=endian + "f")
+
+    pfm_channels = 3 if header == b"PF" else 1
+
+    data = data.reshape(h, w, pfm_channels).transpose(2, 0, 1)
+    data = np.flip(data, axis=1)  # flip on h dimension
+    data = data[:slice_channels, :, :]
+    return data.astype(np.float32)
+
+
+def _flip_byte_order(t: torch.Tensor) -> torch.Tensor:
+    return (
+        t.contiguous().view(torch.uint8).view(*t.shape, t.element_size()).flip(-1).view(*t.shape[:-1], -1).view(t.dtype)
+    )

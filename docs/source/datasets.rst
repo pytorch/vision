@@ -80,7 +80,6 @@ Image detection or segmentation
     CocoDetection
     CelebA
     Cityscapes
-    GTSRB
     Kitti
     OxfordIIITPet
     SBDataset
@@ -100,6 +99,24 @@ Optical Flow
     HD1K
     KittiFlow
     Sintel
+
+Stereo Matching
+~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :toctree: generated/
+    :template: class_dataset.rst
+
+    CarlaStereo
+    Kitti2012Stereo
+    Kitti2015Stereo
+    CREStereo
+    FallingThingsStereo
+    SceneFlowStereo
+    SintelStereo
+    InStereo2k
+    ETH3DStereo
+    Middlebury2014Stereo
 
 Image pairs
 ~~~~~~~~~~~
@@ -129,9 +146,16 @@ Video classification
 
     HMDB51
     Kinetics
-    Kinetics400
     UCF101
 
+Video prediction
+~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :toctree: generated/
+    :template: class_dataset.rst
+
+    MovingMNIST
 
 .. _base_classes_datasets:
 

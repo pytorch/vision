@@ -6,6 +6,8 @@ DeepLabV3
 The DeepLabV3 model is based on the `Rethinking Atrous Convolution for Semantic
 Image Segmentation <https://arxiv.org/abs/1706.05587>`__ paper.
 
+.. betastatus:: segmentation module
+
 
 Model builders
 --------------

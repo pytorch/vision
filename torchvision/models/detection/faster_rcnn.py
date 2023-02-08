@@ -7,17 +7,17 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
 from ...transforms._presets import ObjectDetection
-from .._api import WeightsEnum, Weights
+from .._api import register_model, Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..mobilenetv3 import mobilenet_v3_large, MobileNet_V3_Large_Weights
+from ..resnet import resnet50, ResNet50_Weights
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
-from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers, _mobilenet_extractor
+from .backbone_utils import _mobilenet_extractor, _resnet_fpn_extractor, _validate_trainable_layers
 from .generalized_rcnn import GeneralizedRCNN
 from .roi_heads import RoIHeads
-from .rpn import RPNHead, RegionProposalNetwork
+from .rpn import RegionProposalNetwork, RPNHead
 from .transform import GeneralizedRCNNTransform
 
 
@@ -47,9 +47,9 @@ class FasterRCNN(GeneralizedRCNN):
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
@@ -68,7 +68,7 @@ class FasterRCNN(GeneralizedRCNN):
 
     Args:
         backbone (nn.Module): the network used to compute the features for the model.
-            It should contain a out_channels attribute, which indicates the number of output
+            It should contain an out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
             The backbone should return a single Tensor or and OrderedDict[Tensor].
         num_classes (int): number of output classes of the model (including the background).
@@ -128,7 +128,7 @@ class FasterRCNN(GeneralizedRCNN):
         >>> # only the features
         >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # FasterRCNN needs to know the number of
-        >>> # output channels in a backbone. For mobilenet_v2, it's 1280
+        >>> # output channels in a backbone. For mobilenet_v2, it's 1280,
         >>> # so we need to add it here
         >>> backbone.out_channels = 1280
         >>>
@@ -250,7 +250,7 @@ class FasterRCNN(GeneralizedRCNN):
         if box_head is None:
             resolution = box_roi_pool.output_size[0]
             representation_size = 1024
-            box_head = TwoMLPHead(out_channels * resolution ** 2, representation_size)
+            box_head = TwoMLPHead(out_channels * resolution**2, representation_size)
 
         if box_predictor is None:
             representation_size = 1024
@@ -388,6 +388,8 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
                     "box_map": 37.0,
                 }
             },
+            "_ops": 134.38,
+            "_file_size": 159.743,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
@@ -407,6 +409,8 @@ class FasterRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
                     "box_map": 46.7,
                 }
             },
+            "_ops": 280.371,
+            "_file_size": 167.104,
             "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )
@@ -426,6 +430,8 @@ class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
                     "box_map": 32.8,
                 }
             },
+            "_ops": 4.494,
+            "_file_size": 74.239,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
@@ -445,12 +451,15 @@ class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
                     "box_map": 22.8,
                 }
             },
+            "_ops": 0.719,
+            "_file_size": 74.239,
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FasterRCNN_ResNet50_FPN_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
@@ -469,12 +478,14 @@ def fasterrcnn_resnet50_fpn(
     Detection with Region Proposal Networks <https://arxiv.org/abs/1506.01497>`__
     paper.
 
+    .. betastatus:: detection module
+
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and a targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -547,7 +558,7 @@ def fasterrcnn_resnet50_fpn(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 
@@ -567,6 +578,11 @@ def fasterrcnn_resnet50_fpn(
     return model
 
 
+@register_model()
+@handle_legacy_interface(
+    weights=("pretrained", FasterRCNN_ResNet50_FPN_V2_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
+)
 def fasterrcnn_resnet50_fpn_v2(
     *,
     weights: Optional[FasterRCNN_ResNet50_FPN_V2_Weights] = None,
@@ -579,6 +595,8 @@ def fasterrcnn_resnet50_fpn_v2(
     """
     Constructs an improved Faster R-CNN model with a ResNet-50-FPN backbone from `Benchmarking Detection
     Transfer Learning with Vision Transformers <https://arxiv.org/abs/2111.11429>`__ paper.
+
+    .. betastatus:: detection module
 
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
@@ -611,7 +629,7 @@ def fasterrcnn_resnet50_fpn_v2(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 
@@ -651,7 +669,7 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
 ) -> FasterRCNN:
     if weights is not None:
         weights_backbone = None
-        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_classes = _ovewrite_value_param("num_classes", num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 
@@ -681,6 +699,7 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
     return model
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
@@ -695,7 +714,9 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     **kwargs: Any,
 ) -> FasterRCNN:
     """
-    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tunned for mobile use cases.
+    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tuned for mobile use cases.
+
+    .. betastatus:: detection module
 
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
@@ -752,6 +773,7 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     )
 
 
+@register_model()
 @handle_legacy_interface(
     weights=("pretrained", FasterRCNN_MobileNet_V3_Large_FPN_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
@@ -767,6 +789,9 @@ def fasterrcnn_mobilenet_v3_large_fpn(
 ) -> FasterRCNN:
     """
     Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
+
+    .. betastatus:: detection module
+
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
     details.
@@ -816,16 +841,3 @@ def fasterrcnn_mobilenet_v3_large_fpn(
         trainable_backbone_layers=trainable_backbone_layers,
         **kwargs,
     )
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "fasterrcnn_resnet50_fpn_coco": FasterRCNN_ResNet50_FPN_Weights.COCO_V1.url,
-        "fasterrcnn_mobilenet_v3_large_320_fpn_coco": FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1.url,
-        "fasterrcnn_mobilenet_v3_large_fpn_coco": FasterRCNN_MobileNet_V3_Large_FPN_Weights.COCO_V1.url,
-    }
-)

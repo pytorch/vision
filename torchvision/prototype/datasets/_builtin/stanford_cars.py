@@ -1,16 +1,16 @@
 import pathlib
-from typing import Any, Dict, List, Tuple, Iterator, BinaryIO, Union
+from typing import Any, BinaryIO, Dict, Iterator, List, Tuple, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datapoints import BoundingBox, Label
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
     path_comparator,
-    read_mat,
     read_categories_file,
+    read_mat,
 )
-from torchvision.prototype.features import BoundingBox, EncodedImage, Label
 
 from .._api import register_dataset, register_info
 
@@ -89,7 +89,7 @@ class StanfordCars(Dataset):
             path=path,
             image=image,
             label=Label(target[4] - 1, categories=self._categories),
-            bounding_box=BoundingBox(target[:4], format="xyxy", image_size=image.image_size),
+            bounding_box=BoundingBox(target[:4], format="xyxy", spatial_size=image.spatial_size),
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

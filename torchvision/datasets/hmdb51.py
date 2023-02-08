@@ -1,6 +1,6 @@
 import glob
 import os
-from typing import Optional, Callable, Tuple, Dict, Any, List
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from torch import Tensor
 
@@ -102,7 +102,7 @@ class HMDB51(VisionDataset):
             output_format=output_format,
         )
         # we bookkeep the full version of video clips because we want to be able
-        # to return the meta data of full version rather than the subset version of
+        # to return the metadata of full version rather than the subset version of
         # video clips
         self.full_video_clips = video_clips
         self.fold = fold

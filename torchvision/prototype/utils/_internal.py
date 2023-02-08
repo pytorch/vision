@@ -3,18 +3,7 @@ import difflib
 import io
 import mmap
 import platform
-from typing import (
-    Any,
-    BinaryIO,
-    Callable,
-    Collection,
-    Iterator,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-    Optional,
-)
+from typing import BinaryIO, Callable, Collection, Sequence, TypeVar, Union
 
 import numpy as np
 import torch
@@ -25,8 +14,6 @@ __all__ = [
     "add_suggestion",
     "fromfile",
     "ReadOnlyTensorBuffer",
-    "apply_recursively",
-    "query_recursively",
 ]
 
 
@@ -137,31 +124,3 @@ class ReadOnlyTensorBuffer:
         cursor = self.tell()
         offset, whence = (0, io.SEEK_END) if size == -1 else (size, io.SEEK_CUR)
         return self._memory[slice(cursor, self.seek(offset, whence))].tobytes()
-
-
-def apply_recursively(fn: Callable, obj: Any) -> Any:
-    # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
-    # "a" == "a"[0][0]...
-    if isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
-        return [apply_recursively(fn, item) for item in obj]
-    elif isinstance(obj, collections.abc.Mapping):
-        return {key: apply_recursively(fn, item) for key, item in obj.items()}
-    else:
-        return fn(obj)
-
-
-def query_recursively(
-    fn: Callable[[Tuple[Any, ...], Any], Optional[D]], obj: Any, *, id: Tuple[Any, ...] = ()
-) -> Iterator[D]:
-    # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
-    # "a" == "a"[0][0]...
-    if isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
-        for idx, item in enumerate(obj):
-            yield from query_recursively(fn, item, id=(*id, idx))
-    elif isinstance(obj, collections.abc.Mapping):
-        for key, item in obj.items():
-            yield from query_recursively(fn, item, id=(*id, key))
-    else:
-        result = fn(id, obj)
-        if result is not None:
-            yield result

@@ -165,7 +165,7 @@ struct MediaFormat {
 struct DecoderParameters {
   // local file, remote file, http url, rtmp stream uri, etc. anything that
   // ffmpeg can recognize
-  std::string uri;
+  std::string uri{std::string()};
   // timeout on getting bytes for decoding
   size_t timeoutMs{1000};
   // logging level, default AV_LOG_PANIC
@@ -210,6 +210,15 @@ struct DecoderParameters {
 
   std::string tlsCertFile;
   std::string tlsKeyFile;
+
+  // Skip packets that fail with EPERM errors and continue decoding.
+  bool skipOperationNotPermittedPackets{false};
+
+  // probing size in bytes, i.e. the size of the data to analyze to get stream
+  // information. A higher value will enable detecting more information in case
+  // it is dispersed into the stream, but will increase latency. Must be an
+  // integer not lesser than 32. It is 5000000 by default.
+  int64_t probeSize{5000000};
 };
 
 struct DecoderHeader {
@@ -292,7 +301,7 @@ struct DecoderMetadata {
 };
 /**
  * Abstract class for decoding media bytes
- * It has two diffrent modes. Internal media bytes retrieval for given uri and
+ * It has two different modes. Internal media bytes retrieval for given uri and
  * external media bytes provider in case of memory streams
  */
 class MediaDecoder {
