@@ -78,7 +78,7 @@ class SVHN(VisionDataset):
         loaded_mat = sio.loadmat(os.path.join(self.root, self.filename))
 
         self.data = loaded_mat["X"]
-        # loading from the .mat file gives an np array of type np.uint8
+        # loading from the .mat file gives an np.ndarray of type np.uint8
         # converting to np.int64, so that we have a LongTensor after
         # the conversion from the numpy array
         # the squeeze is needed to obtain a 1D tensor

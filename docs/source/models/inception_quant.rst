@@ -10,7 +10,7 @@ Computer Vision <https://arxiv.org/abs/1512.00567>`__ paper.
 Model builders
 --------------
 
-The following model builders can be used to instanciate a quantized Inception
+The following model builders can be used to instantiate a quantized Inception
 model, with or without pre-trained weights. All the model builders internally
 rely on the ``torchvision.models.quantization.inception.QuantizableInception3``
 base class. Please refer to the `source code

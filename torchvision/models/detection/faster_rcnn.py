@@ -47,9 +47,9 @@ class FasterRCNN(GeneralizedRCNN):
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
@@ -68,7 +68,7 @@ class FasterRCNN(GeneralizedRCNN):
 
     Args:
         backbone (nn.Module): the network used to compute the features for the model.
-            It should contain a out_channels attribute, which indicates the number of output
+            It should contain an out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
             The backbone should return a single Tensor or and OrderedDict[Tensor].
         num_classes (int): number of output classes of the model (including the background).
@@ -128,7 +128,7 @@ class FasterRCNN(GeneralizedRCNN):
         >>> # only the features
         >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # FasterRCNN needs to know the number of
-        >>> # output channels in a backbone. For mobilenet_v2, it's 1280
+        >>> # output channels in a backbone. For mobilenet_v2, it's 1280,
         >>> # so we need to add it here
         >>> backbone.out_channels = 1280
         >>>
@@ -483,9 +483,9 @@ def fasterrcnn_resnet50_fpn(
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
-    The behavior of the model changes depending if it is in training or evaluation mode.
+    The behavior of the model changes depending on if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    During training, the model expects both the input tensors and a targets (list of dictionary),
     containing:
 
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -714,7 +714,7 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     **kwargs: Any,
 ) -> FasterRCNN:
     """
-    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tunned for mobile use cases.
+    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tuned for mobile use cases.
 
     .. betastatus:: detection module
 
@@ -841,16 +841,3 @@ def fasterrcnn_mobilenet_v3_large_fpn(
         trainable_backbone_layers=trainable_backbone_layers,
         **kwargs,
     )
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "fasterrcnn_resnet50_fpn_coco": FasterRCNN_ResNet50_FPN_Weights.COCO_V1.url,
-        "fasterrcnn_mobilenet_v3_large_320_fpn_coco": FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1.url,
-        "fasterrcnn_mobilenet_v3_large_fpn_coco": FasterRCNN_MobileNet_V3_Large_FPN_Weights.COCO_V1.url,
-    }
-)

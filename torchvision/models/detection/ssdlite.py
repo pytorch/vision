@@ -172,7 +172,7 @@ def _mobilenet_extractor(
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
+    # find the index of the layer from which we won't freeze
     if not 0 <= trainable_layers <= num_stages:
         raise ValueError("trainable_layers should be in the range [0, {num_stages}], instead got {trainable_layers}")
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
@@ -329,14 +329,3 @@ def ssdlite320_mobilenet_v3_large(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "ssdlite320_mobilenet_v3_large_coco": SSDLite320_MobileNet_V3_Large_Weights.COCO_V1.url,
-    }
-)

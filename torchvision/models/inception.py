@@ -48,7 +48,7 @@ class Inception3(nn.Module):
             )
             init_weights = True
         if len(inception_blocks) != 7:
-            raise ValueError(f"lenght of inception_blocks should be 7 instead of {len(inception_blocks)}")
+            raise ValueError(f"length of inception_blocks should be 7 instead of {len(inception_blocks)}")
         conv_block = inception_blocks[0]
         inception_a = inception_blocks[1]
         inception_b = inception_blocks[2]
@@ -476,15 +476,3 @@ def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bo
             model.AuxLogits = None
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        # Inception v3 ported from TensorFlow
-        "inception_v3_google": Inception_V3_Weights.IMAGENET1K_V1.url,
-    }
-)

@@ -151,7 +151,7 @@ class ToTensorVideo:
 
 class RandomHorizontalFlipVideo:
     """
-    Flip the video clip along the horizonal direction with a given probability
+    Flip the video clip along the horizontal direction with a given probability
     Args:
         p (float): probability of the clip being flipped. Default value is 0.5
     """

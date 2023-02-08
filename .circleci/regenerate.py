@@ -21,7 +21,7 @@ import yaml
 from jinja2 import select_autoescape
 
 
-PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
+PYTHON_VERSIONS = ["3.8", "3.9", "3.10"]
 
 RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
@@ -32,8 +32,8 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu116", "cu117", "cu118", "rocm5.2", "rocm5.3"],
-                "win": ["cpu", "cu116", "cu117", "cu118"],
+                "linux": ["cpu", "cu117", "cu118", "rocm5.2", "rocm5.3"],
+                "win": ["cpu", "cu117", "cu118"],
                 "macos": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
@@ -55,17 +55,18 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                         ):
                             fb = "main"
                         if not fb and (
-                            os_type == "linux" and cu_version == "cpu" and btype == "wheel" and python_version == "3.7"
+                            os_type == "linux" and cu_version == "cpu" and btype == "wheel" and python_version == "3.8"
                         ):
                             # the fields must match the build_docs "requires" dependency
                             fb = "/.*/"
 
                         # Disable all Linux Wheels Workflows from CircleCI
                         # since those will now be done through Nova. We'll keep
-                        # around the py3.7 Linux Wheels build since the docs
+                        # around the py3.8 cpu Linux Wheels build since the docs
                         # job depends on it.
-                        if os_type == "linux" and btype == "wheel" and python_version != "3.7":
-                            continue
+                        if os_type == "linux" and btype == "wheel":
+                            if not (python_version == "3.8" and cu_version == "cpu"):
+                                continue
 
                         # Disable all Macos Wheels Workflows from CircleCI.
                         if os_type == "macos" and btype == "wheel":
@@ -98,7 +99,7 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=""
         )
     )
 
-    # For the remaining py3.7 Linux Wheels job left around for the docs build,
+    # For the remaining py3.8 Linux Wheels job left around for the docs build,
     # we'll disable uploads.
     if os_type == "linux" and btype == "wheel":
         upload = False
@@ -116,9 +117,9 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=""
 def build_doc_job(filter_branch):
     job = {
         "name": "build_docs",
-        "python_version": "3.7",
+        "python_version": "3.8",
         "requires": [
-            "binary_linux_wheel_py3.7_cpu",
+            "binary_linux_wheel_py3.8_cpu",
         ],
     }
 
@@ -131,7 +132,7 @@ def upload_doc_job(filter_branch):
     job = {
         "name": "upload_docs",
         "context": "org-member",
-        "python_version": "3.7",
+        "python_version": "3.8",
         "requires": [
             "build_docs",
         ],
@@ -143,7 +144,6 @@ def upload_doc_job(filter_branch):
 
 
 manylinux_images = {
-    "cu116": "pytorch/manylinux-cuda116",
     "cu117": "pytorch/manylinux-cuda117",
     "cu118": "pytorch/manylinux-cuda118",
 }
@@ -270,7 +270,7 @@ def unittest_workflows(indentation=6):
                 if device_type == "gpu":
                     if python_version != "3.8":
                         job["filters"] = gen_filter_branch_tree("main", "nightly")
-                    job["cu_version"] = "cu116"
+                    job["cu_version"] = "cu117"
                 else:
                     job["cu_version"] = "cpu"
 
@@ -288,7 +288,7 @@ def cmake_workflows(indentation=6):
         for device in device_types:
             job = {"name": f"cmake_{os_type}_{device}", "python_version": python_version}
 
-            job["cu_version"] = "cu116" if device == "gpu" else "cpu"
+            job["cu_version"] = "cu117" if device == "gpu" else "cpu"
             if device == "gpu" and os_type == "linux":
                 job["wheel_docker_image"] = "pytorch/manylinux-cuda116"
             jobs.append({f"cmake_{os_type}_{device}": job})
