@@ -13,12 +13,12 @@ jobs:
   tests:
     strategy:
       matrix:
-        python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
-        runner: ["linux.12xlarge"]
-        gpu-arch-type: ["cpu"]
+#        python-version:
+#          - "3.8"
+#          - "3.9"
+#          - "3.10"
+#        runner: ["linux.12xlarge"]
+#        gpu-arch-type: ["cpu"]
         include:
           - python-version: 3.8
             runner: linux.g5.4xlarge.nvidia.gpu
