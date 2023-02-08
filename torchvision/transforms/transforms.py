@@ -1713,11 +1713,11 @@ class RandomErasing(torch.nn.Module):
 
             # cast self.value to script acceptable type
             if isinstance(self.value, (int, float)):
-                value = [self.value]
+                value = [float(self.value)]
             elif isinstance(self.value, str):
                 value = None
-            elif isinstance(self.value, tuple):
-                value = list(self.value)
+            elif isinstance(self.value, (list, tuple)):
+                value = [float(v) for v in self.value]
             else:
                 value = self.value
 
