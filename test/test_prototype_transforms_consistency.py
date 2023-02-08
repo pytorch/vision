@@ -74,6 +74,7 @@ CONSISTENCY_CONFIGS = [
         legacy_transforms.Resize,
         [
             ArgsKwargs(32),
+            ArgsKwargs([32]),
             ArgsKwargs((32, 29)),
             ArgsKwargs((31, 28), interpolation=prototype_transforms.InterpolationMode.NEAREST),
             ArgsKwargs((33, 26), interpolation=prototype_transforms.InterpolationMode.BICUBIC),
