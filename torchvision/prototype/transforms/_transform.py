@@ -54,17 +54,17 @@ class Transform(nn.Module):
         # tries to transform multiple simple tensors at the same time, expecting them all to be treated as images.
         # However, this case wasn't supported by transforms v1 either, so there is no BC concern.
         flat_outputs = []
-        simple_tensor_transformed = has_any(flat_inputs, datapoints.Image, datapoints.Video, PIL.Image.Image)
+        transform_simple_tensor = not has_any(flat_inputs, datapoints.Image, datapoints.Video, PIL.Image.Image)
         for inpt in flat_inputs:
             needs_transform = True
 
             if not check_type(inpt, self._transformed_types):
                 needs_transform = False
             elif is_simple_tensor(inpt):
-                if simple_tensor_transformed:
-                    needs_transform = False
+                if transform_simple_tensor:
+                    transform_simple_tensor = False
                 else:
-                    simple_tensor_transformed = True
+                    needs_transform = False
 
             flat_outputs.append(self._transform(inpt, params) if needs_transform else inpt)
 
