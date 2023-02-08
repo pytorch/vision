@@ -149,6 +149,8 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(num_output_channels=3),
         ],
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=["RGB", "GRAY"]),
+        # Use default tolerances of `torch.testing.assert_close`
+        closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
         prototype_transforms.ConvertDtype,
@@ -271,6 +273,9 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=0),
             ArgsKwargs(p=1),
         ],
+        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=["RGB", "GRAY"]),
+        # Use default tolerances of `torch.testing.assert_close`
+        closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
         prototype_transforms.RandomResizedCrop,
