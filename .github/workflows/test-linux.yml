@@ -36,3 +36,5 @@ jobs:
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
         ./.github/unittest.sh
+        
+        sleep 7200
