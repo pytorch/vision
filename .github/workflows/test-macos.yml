@@ -19,8 +19,8 @@ jobs:
           - "3.10"
         runner: ["macos-12"]
         include:
-          python-version: "3.8"
-          runner: macos-m1-12
+          - python-version: "3.8"
+            runner: macos-m1-12
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
