@@ -317,7 +317,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(saturation=(0.8, 0.9)),
             ArgsKwargs(hue=0.3),
             ArgsKwargs(hue=(-0.1, 0.2)),
-            ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.5, hue=0.6),
+            ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.5, hue=0.3),
         ],
         closeness_kwargs={"atol": 1e-5, "rtol": 1e-5},
     ),
