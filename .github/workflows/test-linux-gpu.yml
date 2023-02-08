@@ -27,6 +27,8 @@ jobs:
       gpu-arch-version: ${{ matrix.cuda_arch_version }}
       timeout: 120
       script: |
+        sleep 7200
+
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
 
@@ -53,9 +55,7 @@ jobs:
           -c "pytorch-${CHANNEL}" \
           -c nvidia "pytorch-${CHANNEL}"::pytorch[build="*${VERSION}*"] \
           "${CUDATOOLKIT}"
-        
-        sleep 7200
-        
+
 #        python3 setup.py develop
 #        python3 -m pip install pytest pytest-mock 'av<10'
 #

@@ -35,6 +35,6 @@ jobs:
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
 
-        ./.github/unittest.sh
-        
         sleep 7200
+
+        ./.github/unittest.sh
