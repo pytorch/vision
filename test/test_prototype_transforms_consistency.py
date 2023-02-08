@@ -34,6 +34,15 @@ from torchvision.transforms import functional as legacy_F
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
 
 
+class NotScriptableArgsKwargs(ArgsKwargs):
+    """
+    This class is used to mark parameters that render the transform non-scriptable. They still work in eager mode and
+    thus will be tested there, but will be skipped by the JIT tests.
+    """
+
+    pass
+
+
 class ConsistencyConfig:
     def __init__(
         self,
@@ -73,19 +82,15 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.Resize,
         legacy_transforms.Resize,
         [
-            ArgsKwargs(32),
+            NotScriptableArgsKwargs(32),
             ArgsKwargs([32]),
             ArgsKwargs((32, 29)),
             ArgsKwargs((31, 28), interpolation=prototype_transforms.InterpolationMode.NEAREST),
             ArgsKwargs((33, 26), interpolation=prototype_transforms.InterpolationMode.BICUBIC),
-            # FIXME: these are currently failing, since the new transform only supports the enum. The int input is
-            #  already deprecated and scheduled to be removed in 0.15. Should we support ints on the prototype
-            #  transform? I guess it depends if we roll out before 0.15 or not.
-            # ArgsKwargs((30, 27), interpolation=0),
-            # ArgsKwargs((35, 29), interpolation=2),
-            # ArgsKwargs((34, 25), interpolation=3),
-            ArgsKwargs(31, max_size=32),
-            ArgsKwargs(30, max_size=100),
+            NotScriptableArgsKwargs(31, max_size=32),
+            ArgsKwargs([31], max_size=32),
+            NotScriptableArgsKwargs(30, max_size=100),
+            ArgsKwargs([31], max_size=32),
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
@@ -121,14 +126,15 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.Pad,
         legacy_transforms.Pad,
         [
-            ArgsKwargs(3),
+            NotScriptableArgsKwargs(3),
             ArgsKwargs([3]),
             ArgsKwargs([2, 3]),
             ArgsKwargs([3, 2, 1, 4]),
-            ArgsKwargs(5, fill=1, padding_mode="constant"),
-            ArgsKwargs(5, padding_mode="edge"),
-            ArgsKwargs(5, padding_mode="reflect"),
-            ArgsKwargs(5, padding_mode="symmetric"),
+            NotScriptableArgsKwargs(5, fill=1, padding_mode="constant"),
+            ArgsKwargs([5], fill=1, padding_mode="constant"),
+            NotScriptableArgsKwargs(5, padding_mode="edge"),
+            NotScriptableArgsKwargs(5, padding_mode="reflect"),
+            NotScriptableArgsKwargs(5, padding_mode="symmetric"),
         ],
     ),
     ConsistencyConfig(
@@ -170,7 +176,7 @@ CONSISTENCY_CONFIGS = [
     ConsistencyConfig(
         prototype_transforms.ToPILImage,
         legacy_transforms.ToPILImage,
-        [ArgsKwargs()],
+        [NotScriptableArgsKwargs()],
         make_images_kwargs=dict(
             color_spaces=[
                 "GRAY",
@@ -186,7 +192,7 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.Lambda,
         legacy_transforms.Lambda,
         [
-            ArgsKwargs(lambda image: image / 2),
+            NotScriptableArgsKwargs(lambda image: image / 2),
         ],
         # Technically, this also supports PIL, but it is overkill to write a function here that supports tensor and PIL
         # images given that the transform does nothing but call it anyway.
@@ -380,14 +386,15 @@ CONSISTENCY_CONFIGS = [
         [
             ArgsKwargs(12),
             ArgsKwargs((15, 17)),
-            ArgsKwargs(11, padding=1),
+            NotScriptableArgsKwargs(11, padding=1),
+            ArgsKwargs(11, padding=[1]),
             ArgsKwargs((8, 13), padding=(2, 3)),
             ArgsKwargs((14, 9), padding=(0, 2, 1, 0)),
             ArgsKwargs(36, pad_if_needed=True),
             ArgsKwargs((7, 8), fill=1),
-            ArgsKwargs(5, fill=(1, 2, 3)),
+            NotScriptableArgsKwargs(5, fill=(1, 2, 3)),
             ArgsKwargs(12),
-            ArgsKwargs(15, padding=2, padding_mode="edge"),
+            NotScriptableArgsKwargs(15, padding=2, padding_mode="edge"),
             ArgsKwargs(17, padding=(1, 0), padding_mode="reflect"),
             ArgsKwargs(8, padding=(3, 0, 0, 1), padding_mode="symmetric"),
         ],
@@ -640,6 +647,92 @@ def test_call_consistency(config, args_kwargs):
         supports_pil=config.supports_pil,
         closeness_kwargs=config.closeness_kwargs,
     )
+
+
+get_params_parametrization = pytest.mark.parametrize(
+    ("config", "get_params_args_kwargs"),
+    [
+        pytest.param(
+            next(config for config in CONSISTENCY_CONFIGS if config.prototype_cls is transform_cls),
+            get_params_args_kwargs,
+            id=transform_cls.__name__,
+        )
+        for transform_cls, get_params_args_kwargs in [
+            (prototype_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
+            (prototype_transforms.RandomErasing, ArgsKwargs(make_image(), scale=(0.3, 0.7), ratio=(0.5, 1.5))),
+            (prototype_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
+            (prototype_transforms.ElasticTransform, ArgsKwargs(alpha=[15.3, 27.2], sigma=[2.5, 3.9], size=[17, 31])),
+            (prototype_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
+            (
+                prototype_transforms.RandomAffine,
+                ArgsKwargs(degrees=[-20.0, 10.0], translate=None, scale_ranges=None, shears=None, img_size=[15, 29]),
+            ),
+            (prototype_transforms.RandomCrop, ArgsKwargs(make_image(size=(61, 47)), output_size=(19, 25))),
+            (prototype_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
+            (prototype_transforms.RandomRotation, ArgsKwargs(degrees=[-20.0, 10.0])),
+            (prototype_transforms.AutoAugment, ArgsKwargs(5)),
+        ]
+    ],
+)
+
+
+@get_params_parametrization
+def test_get_params_alias(config, get_params_args_kwargs):
+    assert config.prototype_cls.get_params is config.legacy_cls.get_params
+
+    if not config.args_kwargs:
+        return
+    args, kwargs = config.args_kwargs[0]
+    legacy_transform = config.legacy_cls(*args, **kwargs)
+    prototype_transform = config.prototype_cls(*args, **kwargs)
+
+    assert prototype_transform.get_params is legacy_transform.get_params
+
+
+@get_params_parametrization
+def test_get_params_jit(config, get_params_args_kwargs):
+    get_params_args, get_params_kwargs = get_params_args_kwargs
+
+    torch.jit.script(config.prototype_cls.get_params)(*get_params_args, **get_params_kwargs)
+
+    if not config.args_kwargs:
+        return
+    args, kwargs = config.args_kwargs[0]
+    transform = config.prototype_cls(*args, **kwargs)
+
+    torch.jit.script(transform.get_params)(*get_params_args, **get_params_kwargs)
+
+
+@pytest.mark.parametrize(
+    ("config", "args_kwargs"),
+    [
+        pytest.param(
+            config, args_kwargs, id=f"{config.legacy_cls.__name__}-{idx:0{len(str(len(config.args_kwargs)))}d}"
+        )
+        for config in CONSISTENCY_CONFIGS
+        for idx, args_kwargs in enumerate(config.args_kwargs)
+        if not isinstance(args_kwargs, NotScriptableArgsKwargs)
+    ],
+)
+def test_jit_consistency(config, args_kwargs):
+    args, kwargs = args_kwargs
+
+    prototype_transform_eager = config.prototype_cls(*args, **kwargs)
+    legacy_transform_eager = config.legacy_cls(*args, **kwargs)
+
+    legacy_transform_scripted = torch.jit.script(legacy_transform_eager)
+    prototype_transform_scripted = torch.jit.script(prototype_transform_eager)
+
+    for image in make_images(**config.make_images_kwargs):
+        image = image.as_subclass(torch.Tensor)
+
+        torch.manual_seed(0)
+        output_legacy_scripted = legacy_transform_scripted(image)
+
+        torch.manual_seed(0)
+        output_prototype_scripted = prototype_transform_scripted(image)
+
+        assert_close(output_prototype_scripted, output_legacy_scripted, **config.closeness_kwargs)
 
 
 class TestContainerTransforms:
