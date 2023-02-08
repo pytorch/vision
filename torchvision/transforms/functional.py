@@ -1539,8 +1539,6 @@ def elastic_transform(
         fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
-            Only number is supported for torch Tensor.
-            Only int or str or tuple value is supported for PIL Image.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(elastic_transform)
