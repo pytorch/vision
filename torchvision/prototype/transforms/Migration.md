@@ -17,6 +17,7 @@ Needs to be done in order to migrate to Beta
 * Philip: (EDIT: submit dummy PR)Polish tests - make sure they are at least functionally equivalent to the v1
   tests. This requires individually checking them.
 * (P V N) Bikeshed on a good name for wrap_dataset_for_transforms_v2
+* (P V N ) make `Image(some_pil_image)` work - https://github.com/pytorch/vision/pull/6663#discussion_r1093121007
 
 Needs to be done before migrating to stable
 -------------------------------------------
