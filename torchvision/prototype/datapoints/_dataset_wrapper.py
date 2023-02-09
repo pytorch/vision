@@ -127,7 +127,7 @@ def classification_wrapper_factory(dataset):
     return identity
 
 
-for dataset_type in [
+for dataset_cls in [
     datasets.Caltech256,
     datasets.CIFAR10,
     datasets.CIFAR100,
@@ -138,7 +138,7 @@ for dataset_type in [
     datasets.DatasetFolder,
     datasets.ImageFolder,
 ]:
-    WRAPPER_FACTORIES[dataset_type] = classification_wrapper_factory
+    WRAPPER_FACTORIES.register(dataset_cls)(classification_wrapper_factory)
 
 
 def segmentation_wrapper_factory(dataset):
@@ -149,10 +149,10 @@ def segmentation_wrapper_factory(dataset):
     return wrapper
 
 
-for dataset_type in [
+for dataset_cls in [
     datasets.VOCSegmentation,
 ]:
-    WRAPPER_FACTORIES[dataset_type] = segmentation_wrapper_factory
+    WRAPPER_FACTORIES.register(dataset_cls)(segmentation_wrapper_factory)
 
 
 def video_classification_wrapper_factory(dataset):
@@ -172,12 +172,12 @@ def video_classification_wrapper_factory(dataset):
     return wrapper
 
 
-for dataset_type in [
+for dataset_cls in [
     datasets.HMDB51,
     datasets.Kinetics,
     datasets.UCF101,
 ]:
-    WRAPPER_FACTORIES[dataset_type] = video_classification_wrapper_factory
+    WRAPPER_FACTORIES.register(dataset_cls)(video_classification_wrapper_factory)
 
 
 @WRAPPER_FACTORIES.register(datasets.Caltech101)
