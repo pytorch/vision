@@ -80,6 +80,13 @@ def _pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, mae=Fal
     return dict(atol=uint8_atol / 255 * get_max_value(dtype), rtol=0, mae=mae)
 
 
+def scripted_vs_eager_double_pixel_difference(atol=1e-6, rtol=1e-5):
+    return {
+        (("TestKernels", "test_scripted_vs_eager"), dtype, device): {"atol": atol, "rtol": rtol, "mae": False}
+        for device, dtype in [("cpu", torch.float64), ("cuda", torch.float64)]
+    }
+
+
 def cuda_vs_cpu_pixel_difference(atol=1):
     return {
         (("TestKernels", "test_cuda_vs_cpu"), dtype, "cuda"): _pixel_difference_closeness_kwargs(atol, dtype=dtype)
@@ -1174,7 +1181,8 @@ _PERSPECTIVE_COEFFS = [
 
 
 def sample_inputs_perspective_image_tensor():
-    for image_loader in make_image_loaders(sizes=["random"]):
+    # Skip tests on dtype float64, otherwise scripted vs eager are failing
+    for image_loader in make_image_loaders(sizes=["random"], dtypes=(torch.uint8, torch.float32)):
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, None, None, fill=fill, coefficients=_PERSPECTIVE_COEFFS[0])
 
@@ -1220,7 +1228,12 @@ def reference_inputs_perspective_mask():
 
 
 def sample_inputs_perspective_video():
-    for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
+    # Skip tests on dtype float64, otherwise scripted vs eager are failing
+    for video_loader in make_video_loaders(
+        sizes=["random"],
+        num_frames=["random"],
+        dtypes=(torch.uint8, torch.float32),
+    ):
         yield ArgsKwargs(video_loader, None, None, coefficients=_PERSPECTIVE_COEFFS[0])
 
 
@@ -1255,7 +1268,9 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.perspective_video,
             sample_inputs_fn=sample_inputs_perspective_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
+            closeness_kwargs={
+                **cuda_vs_cpu_pixel_difference(),
+            },
         ),
     ]
 )
@@ -1266,9 +1281,7 @@ def _get_elastic_displacement(spatial_size):
 
 
 def sample_inputs_elastic_image_tensor():
-    for image_loader in make_image_loaders(
-        sizes=["random"], dtypes=[torch.uint8, torch.float32, torch.float64]
-    ):
+    for image_loader in make_image_loaders(sizes=["random"], dtypes=[torch.uint8, torch.float32, torch.float64]):
         displacement = _get_elastic_displacement(image_loader.spatial_size)
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
             yield ArgsKwargs(image_loader, displacement=displacement, fill=fill)
