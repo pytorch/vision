@@ -5,10 +5,10 @@ from typing import Any, List, Optional, Tuple, Union
 import torch
 from torchvision.transforms import InterpolationMode
 
-from ._feature import _Feature, FillTypeJIT
+from ._datapoint import Datapoint, FillTypeJIT
 
 
-class Mask(_Feature):
+class Mask(Datapoint):
     @classmethod
     def _wrap(cls, tensor: torch.Tensor) -> Mask:
         return tensor.as_subclass(cls)
@@ -19,7 +19,7 @@ class Mask(_Feature):
         *,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: bool = False,
+        requires_grad: Optional[bool] = None,
     ) -> Mask:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor)

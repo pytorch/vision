@@ -2,7 +2,9 @@
 
 import collections.abc
 import dataclasses
+import enum
 import functools
+import pathlib
 from collections import defaultdict
 from typing import Callable, Optional, Sequence, Tuple, Union
 
@@ -12,9 +14,9 @@ import torch
 import torch.testing
 from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
-from torch.testing._comparison import assert_equal as _assert_equal, BooleanPair, NonePair, NumberPair, TensorLikePair
-from torchvision.prototype import features
-from torchvision.prototype.transforms.functional import to_image_tensor
+from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
+from torchvision.prototype import datapoints
+from torchvision.prototype.transforms.functional import convert_dtype_image_tensor, to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 __all__ = [
@@ -52,44 +54,31 @@ class ImagePair(TensorLikePair):
         actual,
         expected,
         *,
-        agg_method=None,
-        allowed_percentage_diff=None,
+        mae=False,
         **other_parameters,
     ):
         if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
             actual, expected = [to_image_tensor(input) for input in [actual, expected]]
 
         super().__init__(actual, expected, **other_parameters)
-        self.agg_method = getattr(torch, agg_method) if isinstance(agg_method, str) else agg_method
-        self.allowed_percentage_diff = allowed_percentage_diff
+        self.mae = mae
 
     def compare(self) -> None:
         actual, expected = self.actual, self.expected
 
         self._compare_attributes(actual, expected)
-
         actual, expected = self._equalize_attributes(actual, expected)
-        abs_diff = torch.abs(actual - expected)
 
-        if self.allowed_percentage_diff is not None:
-            percentage_diff = float((abs_diff.ne(0).to(torch.float64).mean()))
-            if percentage_diff > self.allowed_percentage_diff:
-                raise self._make_error_meta(
+        if self.mae:
+            actual, expected = self._promote_for_comparison(actual, expected)
+            mae = float(torch.abs(actual - expected).float().mean())
+            if mae > self.atol:
+                self._fail(
                     AssertionError,
-                    f"{percentage_diff:.1%} elements differ, "
-                    f"but only {self.allowed_percentage_diff:.1%} is allowed",
+                    f"The MAE of the images is {mae}, but only {self.atol} is allowed.",
                 )
-
-        if self.agg_method is None:
-            super()._compare_values(actual, expected)
         else:
-            agg_abs_diff = float(self.agg_method(abs_diff.to(torch.float64)))
-            if agg_abs_diff > self.atol:
-                raise self._make_error_meta(
-                    AssertionError,
-                    f"The '{self.agg_method.__name__}' of the absolute difference is {agg_abs_diff}, "
-                    f"but only {self.atol} is allowed.",
-                )
+            super()._compare_values(actual, expected)
 
 
 def assert_close(
@@ -110,7 +99,7 @@ def assert_close(
     """Superset of :func:`torch.testing.assert_close` with support for PIL vs. tensor image comparison"""
     __tracebackhide__ = True
 
-    _assert_equal(
+    error_metas = not_close_error_metas(
         actual,
         expected,
         pair_types=(
@@ -128,9 +117,11 @@ def assert_close(
         check_dtype=check_dtype,
         check_layout=check_layout,
         check_stride=check_stride,
-        msg=msg,
         **kwargs,
     )
+
+    if error_metas:
+        raise error_metas[0].to_error(msg)
 
 
 assert_equal = functools.partial(assert_close, rtol=0, atol=0)
@@ -140,6 +131,8 @@ def parametrized_error_message(*args, **kwargs):
     def to_str(obj):
         if isinstance(obj, torch.Tensor) and obj.numel() > 10:
             return f"tensor(shape={list(obj.shape)}, dtype={obj.dtype}, device={obj.device})"
+        elif isinstance(obj, enum.Enum):
+            return f"{type(obj).__name__}.{obj.name}"
         else:
             return repr(obj)
 
@@ -172,11 +165,13 @@ class ArgsKwargs:
         yield self.kwargs
 
     def load(self, device="cpu"):
-        args = tuple(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self.args)
-        kwargs = {
-            keyword: arg.load(device) if isinstance(arg, TensorLoader) else arg for keyword, arg in self.kwargs.items()
-        }
-        return args, kwargs
+        return ArgsKwargs(
+            *(arg.load(device) if isinstance(arg, TensorLoader) else arg for arg in self.args),
+            **{
+                keyword: arg.load(device) if isinstance(arg, TensorLoader) else arg
+                for keyword, arg in self.kwargs.items()
+            },
+        )
 
 
 DEFAULT_SQUARE_SPATIAL_SIZE = 15
@@ -245,7 +240,6 @@ class TensorLoader:
 
 @dataclasses.dataclass
 class ImageLoader(TensorLoader):
-    color_space: features.ColorSpace
     spatial_size: Tuple[int, int] = dataclasses.field(init=False)
     num_channels: int = dataclasses.field(init=False)
 
@@ -255,10 +249,10 @@ class ImageLoader(TensorLoader):
 
 
 NUM_CHANNELS_MAP = {
-    features.ColorSpace.GRAY: 1,
-    features.ColorSpace.GRAY_ALPHA: 2,
-    features.ColorSpace.RGB: 3,
-    features.ColorSpace.RGB_ALPHA: 4,
+    "GRAY": 1,
+    "GRAY_ALPHA": 2,
+    "RGB": 3,
+    "RGBA": 4,
 }
 
 
@@ -272,7 +266,7 @@ def get_num_channels(color_space):
 def make_image_loader(
     size="random",
     *,
-    color_space=features.ColorSpace.RGB,
+    color_space="RGB",
     extra_dims=(),
     dtype=torch.float32,
     constant_alpha=True,
@@ -283,11 +277,11 @@ def make_image_loader(
     def fn(shape, dtype, device):
         max_value = get_max_value(dtype)
         data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
-        if color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
+        if color_space in {"GRAY_ALPHA", "RGBA"} and constant_alpha:
             data[..., -1, :, :] = max_value
-        return features.Image(data, color_space=color_space)
+        return datapoints.Image(data)
 
-    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype, color_space=color_space)
+    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype)
 
 
 make_image = from_loader(make_image_loader)
@@ -297,10 +291,10 @@ def make_image_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        features.ColorSpace.GRAY,
-        features.ColorSpace.GRAY_ALPHA,
-        features.ColorSpace.RGB,
-        features.ColorSpace.RGB_ALPHA,
+        "GRAY",
+        "GRAY_ALPHA",
+        "RGB",
+        "RGBA",
     ),
     extra_dims=DEFAULT_EXTRA_DIMS,
     dtypes=(torch.float32, torch.uint8),
@@ -313,9 +307,45 @@ def make_image_loaders(
 make_images = from_loaders(make_image_loaders)
 
 
+def make_image_loader_for_interpolation(size="random", *, color_space="RGB", dtype=torch.uint8):
+    size = _parse_spatial_size(size)
+    num_channels = get_num_channels(color_space)
+
+    def fn(shape, dtype, device):
+        height, width = shape[-2:]
+
+        image_pil = (
+            PIL.Image.open(pathlib.Path(__file__).parent / "assets" / "encode_jpeg" / "grace_hopper_517x606.jpg")
+            .resize((width, height))
+            .convert(
+                {
+                    "GRAY": "L",
+                    "GRAY_ALPHA": "LA",
+                    "RGB": "RGB",
+                    "RGBA": "RGBA",
+                }[color_space]
+            )
+        )
+
+        image_tensor = convert_dtype_image_tensor(to_image_tensor(image_pil).to(device=device), dtype=dtype)
+
+        return datapoints.Image(image_tensor)
+
+    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype)
+
+
+def make_image_loaders_for_interpolation(
+    sizes=((233, 147),),
+    color_spaces=("RGB",),
+    dtypes=(torch.uint8,),
+):
+    for params in combinations_grid(size=sizes, color_space=color_spaces, dtype=dtypes):
+        yield make_image_loader_for_interpolation(**params)
+
+
 @dataclasses.dataclass
 class BoundingBoxLoader(TensorLoader):
-    format: features.BoundingBoxFormat
+    format: datapoints.BoundingBoxFormat
     spatial_size: Tuple[int, int]
 
 
@@ -333,11 +363,11 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
 
 def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dtype=torch.float32):
     if isinstance(format, str):
-        format = features.BoundingBoxFormat[format]
+        format = datapoints.BoundingBoxFormat[format]
     if format not in {
-        features.BoundingBoxFormat.XYXY,
-        features.BoundingBoxFormat.XYWH,
-        features.BoundingBoxFormat.CXCYWH,
+        datapoints.BoundingBoxFormat.XYXY,
+        datapoints.BoundingBoxFormat.XYWH,
+        datapoints.BoundingBoxFormat.CXCYWH,
     }:
         raise pytest.UsageError(f"Can't make bounding box in format {format}")
 
@@ -349,19 +379,19 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dt
             raise pytest.UsageError()
 
         if any(dim == 0 for dim in extra_dims):
-            return features.BoundingBox(
+            return datapoints.BoundingBox(
                 torch.empty(*extra_dims, 4, dtype=dtype, device=device), format=format, spatial_size=spatial_size
             )
 
         height, width = spatial_size
 
-        if format == features.BoundingBoxFormat.XYXY:
+        if format == datapoints.BoundingBoxFormat.XYXY:
             x1 = torch.randint(0, width // 2, extra_dims)
             y1 = torch.randint(0, height // 2, extra_dims)
             x2 = randint_with_tensor_bounds(x1 + 1, width - x1) + x1
             y2 = randint_with_tensor_bounds(y1 + 1, height - y1) + y1
             parts = (x1, y1, x2, y2)
-        elif format == features.BoundingBoxFormat.XYWH:
+        elif format == datapoints.BoundingBoxFormat.XYWH:
             x = torch.randint(0, width // 2, extra_dims)
             y = torch.randint(0, height // 2, extra_dims)
             w = randint_with_tensor_bounds(1, width - x)
@@ -374,7 +404,7 @@ def make_bounding_box_loader(*, extra_dims=(), format, spatial_size="random", dt
             h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
             parts = (cx, cy, w, h)
 
-        return features.BoundingBox(
+        return datapoints.BoundingBox(
             torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, spatial_size=spatial_size
         )
 
@@ -387,7 +417,7 @@ make_bounding_box = from_loader(make_bounding_box_loader)
 def make_bounding_box_loaders(
     *,
     extra_dims=DEFAULT_EXTRA_DIMS,
-    formats=tuple(features.BoundingBoxFormat),
+    formats=tuple(datapoints.BoundingBoxFormat),
     spatial_size="random",
     dtypes=(torch.float32, torch.int64),
 ):
@@ -427,7 +457,7 @@ def make_label_loader(*, extra_dims=(), categories=None, dtype=torch.int64):
         # The idiom `make_tensor(..., dtype=torch.int64).to(dtype)` is intentional to only get integer values,
         # regardless of the requested dtype, e.g. 0 or 0.0 rather than 0 or 0.123
         data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=torch.int64, device=device).to(dtype)
-        return features.Label(data, categories=categories)
+        return datapoints.Label(data, categories=categories)
 
     return LabelLoader(fn, shape=extra_dims, dtype=dtype, categories=categories)
 
@@ -451,7 +481,7 @@ def make_one_hot_label_loader(*, categories=None, extra_dims=(), dtype=torch.int
             # since `one_hot` only supports int64
             label = make_label_loader(extra_dims=extra_dims, categories=num_categories, dtype=torch.int64).load(device)
             data = one_hot(label, num_classes=num_categories).to(dtype)
-        return features.OneHotLabel(data, categories=categories)
+        return datapoints.OneHotLabel(data, categories=categories)
 
     return OneHotLabelLoader(fn, shape=(*extra_dims, num_categories), dtype=dtype, categories=categories)
 
@@ -480,7 +510,7 @@ def make_detection_mask_loader(size="random", *, num_objects="random", extra_dim
 
     def fn(shape, dtype, device):
         data = torch.testing.make_tensor(shape, low=0, high=2, dtype=dtype, device=device)
-        return features.Mask(data)
+        return datapoints.Mask(data)
 
     return MaskLoader(fn, shape=(*extra_dims, num_objects, *size), dtype=dtype)
 
@@ -508,7 +538,7 @@ def make_segmentation_mask_loader(size="random", *, num_categories="random", ext
 
     def fn(shape, dtype, device):
         data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=dtype, device=device)
-        return features.Mask(data)
+        return datapoints.Mask(data)
 
     return MaskLoader(fn, shape=(*extra_dims, *size), dtype=dtype)
 
@@ -554,7 +584,7 @@ class VideoLoader(ImageLoader):
 def make_video_loader(
     size="random",
     *,
-    color_space=features.ColorSpace.RGB,
+    color_space="RGB",
     num_frames="random",
     extra_dims=(),
     dtype=torch.uint8,
@@ -563,12 +593,10 @@ def make_video_loader(
     num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
 
     def fn(shape, dtype, device):
-        video = make_image(size=shape[-2:], color_space=color_space, extra_dims=shape[:-3], dtype=dtype, device=device)
-        return features.Video(video, color_space=color_space)
+        video = make_image(size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device)
+        return datapoints.Video(video)
 
-    return VideoLoader(
-        fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype, color_space=color_space
-    )
+    return VideoLoader(fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype)
 
 
 make_video = from_loader(make_video_loader)
@@ -578,8 +606,8 @@ def make_video_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        features.ColorSpace.GRAY,
-        features.ColorSpace.RGB,
+        "GRAY",
+        "RGB",
     ),
     num_frames=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,

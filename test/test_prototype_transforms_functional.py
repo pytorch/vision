@@ -10,12 +10,19 @@ import PIL.Image
 import pytest
 
 import torch
+
+import torchvision.prototype.transforms.utils
 from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
-from prototype_common_utils import assert_close, make_bounding_boxes, make_image, parametrized_error_message
+from prototype_common_utils import (
+    assert_close,
+    DEFAULT_SQUARE_SPATIAL_SIZE,
+    make_bounding_boxes,
+    parametrized_error_message,
+)
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
 from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torch.utils._pytree import tree_map
-from torchvision.prototype import features
+from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F
 from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
 from torchvision.prototype.transforms.functional._meta import convert_format_bounding_box
@@ -61,12 +68,7 @@ def make_info_args_kwargs_params(info, *, args_kwargs_fn, test_id=None):
     ]
 
 
-def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=None):
-    if condition is None:
-
-        def condition(info):
-            return True
-
+def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn):
     def decorator(test_fn):
         parts = test_fn.__qualname__.split(".")
         if len(parts) == 1:
@@ -81,9 +83,6 @@ def make_info_args_kwargs_parametrization(infos, *, args_kwargs_fn, condition=No
         argnames = ("info", "args_kwargs")
         argvalues = []
         for info in infos:
-            if not condition(info):
-                continue
-
             argvalues.extend(make_info_args_kwargs_params(info, args_kwargs_fn=args_kwargs_fn, test_id=test_id))
 
         return pytest.mark.parametrize(argnames, argvalues)(test_fn)
@@ -110,10 +109,22 @@ class TestKernels:
         args_kwargs_fn=lambda kernel_info: kernel_info.sample_inputs_fn(),
     )
     reference_inputs = make_info_args_kwargs_parametrization(
-        KERNEL_INFOS,
+        [info for info in KERNEL_INFOS if info.reference_fn is not None],
         args_kwargs_fn=lambda info: info.reference_inputs_fn(),
-        condition=lambda info: info.reference_fn is not None,
     )
+
+    @make_info_args_kwargs_parametrization(
+        [info for info in KERNEL_INFOS if info.logs_usage],
+        args_kwargs_fn=lambda info: info.sample_inputs_fn(),
+    )
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_logging(self, spy_on, info, args_kwargs, device):
+        spy = spy_on(torch._C._log_api_usage_once)
+
+        args, kwargs = args_kwargs.load(device)
+        info.kernel(*args, **kwargs)
+
+        spy.assert_any_call(f"{info.kernel.__module__}.{info.id}")
 
     @ignore_jit_warning_no_profile
     @sample_inputs
@@ -131,7 +142,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*other_args, *kwargs),
+            msg=parametrized_error_message(*other_args, **kwargs),
         )
 
     def _unbatch(self, batch, *, data_dims):
@@ -156,22 +167,26 @@ class TestKernels:
     def test_batched_vs_single(self, test_id, info, args_kwargs, device):
         (batched_input, *other_args), kwargs = args_kwargs.load(device)
 
-        feature_type = features.Image if features.is_simple_tensor(batched_input) else type(batched_input)
+        datapoint_type = (
+            datapoints.Image
+            if torchvision.prototype.transforms.utils.is_simple_tensor(batched_input)
+            else type(batched_input)
+        )
         # This dictionary contains the number of rightmost dimensions that contain the actual data.
         # Everything to the left is considered a batch dimension.
         data_dims = {
-            features.Image: 3,
-            features.BoundingBox: 1,
+            datapoints.Image: 3,
+            datapoints.BoundingBox: 1,
             # `Mask`'s are special in the sense that the data dimensions depend on the type of mask. For detection masks
             # it is 3 `(*, N, H, W)`, but for segmentation masks it is 2 `(*, H, W)`. Since both a grouped under one
             # type all kernels should also work without differentiating between the two. Thus, we go with 2 here as
             # common ground.
-            features.Mask: 2,
-            features.Video: 4,
-        }.get(feature_type)
+            datapoints.Mask: 2,
+            datapoints.Video: 4,
+        }.get(datapoint_type)
         if data_dims is None:
             raise pytest.UsageError(
-                f"The number of data dimensions cannot be determined for input of type {feature_type.__name__}."
+                f"The number of data dimensions cannot be determined for input of type {datapoint_type.__name__}."
             ) from None
         elif batched_input.ndim <= data_dims:
             pytest.skip("Input is not batched.")
@@ -188,7 +203,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=batched_input.dtype, device=batched_input.device),
-            msg=parametrized_error_message(*other_args, *kwargs),
+            msg=parametrized_error_message(*other_args, **kwargs),
         )
 
     @sample_inputs
@@ -218,7 +233,7 @@ class TestKernels:
             output_cpu,
             check_device=False,
             **info.get_closeness_kwargs(test_id, dtype=input_cuda.dtype, device=input_cuda.device),
-            msg=parametrized_error_message(*other_args, *kwargs),
+            msg=parametrized_error_message(*other_args, **kwargs),
         )
 
     @sample_inputs
@@ -245,7 +260,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*other_args, *kwargs),
+            msg=parametrized_error_message(*other_args, **kwargs),
         )
 
     @make_info_args_kwargs_parametrization(
@@ -272,7 +287,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=torch.float32, device=input.device),
-            msg=parametrized_error_message(*other_args, *kwargs),
+            msg=parametrized_error_message(*other_args, **kwargs),
         )
 
 
@@ -290,10 +305,22 @@ def spy_on(mocker):
 
 class TestDispatchers:
     image_sample_inputs = make_info_args_kwargs_parametrization(
-        DISPATCHER_INFOS,
-        args_kwargs_fn=lambda info: info.sample_inputs(features.Image),
-        condition=lambda info: features.Image in info.kernels,
+        [info for info in DISPATCHER_INFOS if datapoints.Image in info.kernels],
+        args_kwargs_fn=lambda info: info.sample_inputs(datapoints.Image),
     )
+
+    @make_info_args_kwargs_parametrization(
+        DISPATCHER_INFOS,
+        args_kwargs_fn=lambda info: info.sample_inputs(),
+    )
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_logging(self, spy_on, info, args_kwargs, device):
+        spy = spy_on(torch._C._log_api_usage_once)
+
+        args, kwargs = args_kwargs.load(device)
+        info.dispatcher(*args, **kwargs)
+
+        spy.assert_any_call(f"{info.dispatcher.__module__}.{info.id}")
 
     @ignore_jit_warning_no_profile
     @image_sample_inputs
@@ -301,8 +328,8 @@ class TestDispatchers:
     def test_scripted_smoke(self, info, args_kwargs, device):
         dispatcher = script(info.dispatcher)
 
-        (image_feature, *other_args), kwargs = args_kwargs.load(device)
-        image_simple_tensor = torch.Tensor(image_feature)
+        (image_datapoint, *other_args), kwargs = args_kwargs.load(device)
+        image_simple_tensor = torch.Tensor(image_datapoint)
 
         dispatcher(image_simple_tensor, *other_args, **kwargs)
 
@@ -313,7 +340,6 @@ class TestDispatchers:
         "dispatcher",
         [
             F.clamp_bounding_box,
-            F.convert_color_space,
             F.get_dimensions,
             F.get_image_num_channels,
             F.get_image_size,
@@ -330,28 +356,37 @@ class TestDispatchers:
 
     @image_sample_inputs
     def test_dispatch_simple_tensor(self, info, args_kwargs, spy_on):
-        (image_feature, *other_args), kwargs = args_kwargs.load()
-        image_simple_tensor = torch.Tensor(image_feature)
+        (image_datapoint, *other_args), kwargs = args_kwargs.load()
+        image_simple_tensor = torch.Tensor(image_datapoint)
 
-        kernel_info = info.kernel_infos[features.Image]
+        kernel_info = info.kernel_infos[datapoints.Image]
         spy = spy_on(kernel_info.kernel, module=info.dispatcher.__module__, name=kernel_info.id)
 
         info.dispatcher(image_simple_tensor, *other_args, **kwargs)
 
         spy.assert_called_once()
 
+    @image_sample_inputs
+    def test_simple_tensor_output_type(self, info, args_kwargs):
+        (image_datapoint, *other_args), kwargs = args_kwargs.load()
+        image_simple_tensor = image_datapoint.as_subclass(torch.Tensor)
+
+        output = info.dispatcher(image_simple_tensor, *other_args, **kwargs)
+
+        # We cannot use `isinstance` here since all datapoints are instances of `torch.Tensor` as well
+        assert type(output) is torch.Tensor
+
     @make_info_args_kwargs_parametrization(
-        DISPATCHER_INFOS,
-        args_kwargs_fn=lambda info: info.sample_inputs(features.Image),
-        condition=lambda info: info.pil_kernel_info is not None,
+        [info for info in DISPATCHER_INFOS if info.pil_kernel_info is not None],
+        args_kwargs_fn=lambda info: info.sample_inputs(datapoints.Image),
     )
     def test_dispatch_pil(self, info, args_kwargs, spy_on):
-        (image_feature, *other_args), kwargs = args_kwargs.load()
+        (image_datapoint, *other_args), kwargs = args_kwargs.load()
 
-        if image_feature.ndim > 3:
+        if image_datapoint.ndim > 3:
             pytest.skip("Input is batched")
 
-        image_pil = F.to_image_pil(image_feature)
+        image_pil = F.to_image_pil(image_datapoint)
 
         pil_kernel_info = info.pil_kernel_info
         spy = spy_on(pil_kernel_info.kernel, module=info.dispatcher.__module__, name=pil_kernel_info.id)
@@ -361,40 +396,69 @@ class TestDispatchers:
         spy.assert_called_once()
 
     @make_info_args_kwargs_parametrization(
+        [info for info in DISPATCHER_INFOS if info.pil_kernel_info is not None],
+        args_kwargs_fn=lambda info: info.sample_inputs(datapoints.Image),
+    )
+    def test_pil_output_type(self, info, args_kwargs):
+        (image_datapoint, *other_args), kwargs = args_kwargs.load()
+
+        if image_datapoint.ndim > 3:
+            pytest.skip("Input is batched")
+
+        image_pil = F.to_image_pil(image_datapoint)
+
+        output = info.dispatcher(image_pil, *other_args, **kwargs)
+
+        assert isinstance(output, PIL.Image.Image)
+
+    @make_info_args_kwargs_parametrization(
         DISPATCHER_INFOS,
         args_kwargs_fn=lambda info: info.sample_inputs(),
     )
-    def test_dispatch_feature(self, info, args_kwargs, spy_on):
-        (feature, *other_args), kwargs = args_kwargs.load()
+    def test_dispatch_datapoint(self, info, args_kwargs, spy_on):
+        (datapoint, *other_args), kwargs = args_kwargs.load()
 
         method_name = info.id
-        method = getattr(feature, method_name)
-        feature_type = type(feature)
-        spy = spy_on(method, module=feature_type.__module__, name=f"{feature_type.__name__}.{method_name}")
+        method = getattr(datapoint, method_name)
+        datapoint_type = type(datapoint)
+        spy = spy_on(method, module=datapoint_type.__module__, name=f"{datapoint_type.__name__}.{method_name}")
 
-        info.dispatcher(feature, *other_args, **kwargs)
+        info.dispatcher(datapoint, *other_args, **kwargs)
 
         spy.assert_called_once()
 
+    @make_info_args_kwargs_parametrization(
+        DISPATCHER_INFOS,
+        args_kwargs_fn=lambda info: info.sample_inputs(),
+    )
+    def test_datapoint_output_type(self, info, args_kwargs):
+        (datapoint, *other_args), kwargs = args_kwargs.load()
+
+        output = info.dispatcher(datapoint, *other_args, **kwargs)
+
+        assert isinstance(output, type(datapoint))
+
     @pytest.mark.parametrize(
-        ("dispatcher_info", "feature_type", "kernel_info"),
+        ("dispatcher_info", "datapoint_type", "kernel_info"),
         [
-            pytest.param(dispatcher_info, feature_type, kernel_info, id=f"{dispatcher_info.id}-{feature_type.__name__}")
+            pytest.param(
+                dispatcher_info, datapoint_type, kernel_info, id=f"{dispatcher_info.id}-{datapoint_type.__name__}"
+            )
             for dispatcher_info in DISPATCHER_INFOS
-            for feature_type, kernel_info in dispatcher_info.kernel_infos.items()
+            for datapoint_type, kernel_info in dispatcher_info.kernel_infos.items()
         ],
     )
-    def test_dispatcher_kernel_signatures_consistency(self, dispatcher_info, feature_type, kernel_info):
+    def test_dispatcher_kernel_signatures_consistency(self, dispatcher_info, datapoint_type, kernel_info):
         dispatcher_signature = inspect.signature(dispatcher_info.dispatcher)
         dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
 
         kernel_signature = inspect.signature(kernel_info.kernel)
         kernel_params = list(kernel_signature.parameters.values())[1:]
 
-        # We filter out metadata that is implicitly passed to the dispatcher through the input feature, but has to be
+        # We filter out metadata that is implicitly passed to the dispatcher through the input datapoint, but has to be
         # explicit passed to the kernel.
-        feature_type_metadata = feature_type.__annotations__.keys()
-        kernel_params = [param for param in kernel_params if param.name not in feature_type_metadata]
+        datapoint_type_metadata = datapoint_type.__annotations__.keys()
+        kernel_params = [param for param in kernel_params if param.name not in datapoint_type_metadata]
 
         dispatcher_params = iter(dispatcher_params)
         for dispatcher_param, kernel_param in zip(dispatcher_params, kernel_params):
@@ -412,26 +476,34 @@ class TestDispatchers:
             assert dispatcher_param == kernel_param
 
     @pytest.mark.parametrize("info", DISPATCHER_INFOS, ids=lambda info: info.id)
-    def test_dispatcher_feature_signatures_consistency(self, info):
+    def test_dispatcher_datapoint_signatures_consistency(self, info):
         try:
-            feature_method = getattr(features._Feature, info.id)
+            datapoint_method = getattr(datapoints._datapoint.Datapoint, info.id)
         except AttributeError:
-            pytest.skip("Dispatcher doesn't support arbitrary feature dispatch.")
+            pytest.skip("Dispatcher doesn't support arbitrary datapoint dispatch.")
 
         dispatcher_signature = inspect.signature(info.dispatcher)
         dispatcher_params = list(dispatcher_signature.parameters.values())[1:]
 
-        feature_signature = inspect.signature(feature_method)
-        feature_params = list(feature_signature.parameters.values())[1:]
+        datapoint_signature = inspect.signature(datapoint_method)
+        datapoint_params = list(datapoint_signature.parameters.values())[1:]
 
-        # Because we use `from __future__ import annotations` inside the module where `features._Feature` is defined,
-        # the annotations are stored as strings. This makes them concrete again, so they can be compared to the natively
-        # concrete dispatcher annotations.
-        feature_annotations = get_type_hints(feature_method)
-        for param in feature_params:
-            param._annotation = feature_annotations[param.name]
+        # Because we use `from __future__ import annotations` inside the module where `datapoints._datapoint` is
+        # defined, the annotations are stored as strings. This makes them concrete again, so they can be compared to the
+        # natively concrete dispatcher annotations.
+        datapoint_annotations = get_type_hints(datapoint_method)
+        for param in datapoint_params:
+            param._annotation = datapoint_annotations[param.name]
 
-        assert dispatcher_params == feature_params
+        assert dispatcher_params == datapoint_params
+
+    @pytest.mark.parametrize("info", DISPATCHER_INFOS, ids=lambda info: info.id)
+    def test_unkown_type(self, info):
+        unkown_input = object()
+        (_, *other_args), kwargs = next(iter(info.sample_inputs())).load("cpu")
+
+        with pytest.raises(TypeError, match=re.escape(str(type(unkown_input)))):
+            info.dispatcher(unkown_input, *other_args, **kwargs)
 
 
 @pytest.mark.parametrize(
@@ -468,6 +540,22 @@ def test_convert_dtype_image_tensor_dtype_and_device(info, args_kwargs, device):
 
     assert output.dtype == dtype
     assert output.device == input.device
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("num_channels", [1, 3])
+def test_normalize_image_tensor_stats(device, num_channels):
+    stats = pytest.importorskip("scipy.stats", reason="SciPy is not available")
+
+    def assert_samples_from_standard_normal(t):
+        p_value = stats.kstest(t.flatten(), cdf="norm", args=(0, 1)).pvalue
+        return p_value > 1e-4
+
+    image = torch.rand(num_channels, DEFAULT_SQUARE_SPATIAL_SIZE, DEFAULT_SQUARE_SPATIAL_SIZE)
+    mean = image.mean(dim=(1, 2)).tolist()
+    std = image.std(dim=(1, 2)).tolist()
+
+    assert_samples_from_standard_normal(F.normalize_image_tensor(image, mean, std))
 
 
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
@@ -508,8 +596,12 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         [spatial_size[1] // 2 - 10, spatial_size[0] // 2 - 10, spatial_size[1] // 2 + 10, spatial_size[0] // 2 + 10],
         [1, 1, 5, 5],
     ]
-    in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, dtype=torch.float64, device=device
+    in_boxes = datapoints.BoundingBox(
+        in_boxes,
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=spatial_size,
+        dtype=torch.float64,
+        device=device,
     )
     # Tested parameters
     angle = 63
@@ -575,7 +667,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
 
         height, width = bbox.spatial_size
         bbox_xyxy = convert_format_bounding_box(
-            bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
+            bbox, old_format=bbox.format, new_format=datapoints.BoundingBoxFormat.XYXY
         )
         points = np.array(
             [
@@ -592,10 +684,10 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
         )
         transformed_points = np.matmul(points, affine_matrix.T)
         out_bbox = [
-            np.min(transformed_points[:4, 0]),
-            np.min(transformed_points[:4, 1]),
-            np.max(transformed_points[:4, 0]),
-            np.max(transformed_points[:4, 1]),
+            float(np.min(transformed_points[:4, 0])),
+            float(np.min(transformed_points[:4, 1])),
+            float(np.max(transformed_points[:4, 0])),
+            float(np.max(transformed_points[:4, 1])),
         ]
         if expand_:
             tr_x = np.min(transformed_points[4:, 0])
@@ -608,15 +700,15 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             height = int(height - 2 * tr_y)
             width = int(width - 2 * tr_x)
 
-        out_bbox = features.BoundingBox(
+        out_bbox = datapoints.BoundingBox(
             out_bbox,
-            format=features.BoundingBoxFormat.XYXY,
+            format=datapoints.BoundingBoxFormat.XYXY,
             spatial_size=(height, width),
             dtype=bbox.dtype,
             device=bbox.device,
         )
         return (
-            convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format),
+            convert_format_bounding_box(out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox.format),
             (height, width),
         )
 
@@ -644,7 +736,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
 
         expected_bboxes = []
         for bbox in bboxes:
-            bbox = features.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
+            bbox = datapoints.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
             expected_bbox, expected_spatial_size = _compute_expected_bbox(bbox, -angle, expand, center_)
             expected_bboxes.append(expected_bbox)
         if len(expected_bboxes) > 1:
@@ -667,8 +759,12 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
         [spatial_size[1] - 6, spatial_size[0] - 6, spatial_size[1] - 2, spatial_size[0] - 2],
         [spatial_size[1] // 2 - 10, spatial_size[0] // 2 - 10, spatial_size[1] // 2 + 10, spatial_size[0] // 2 + 10],
     ]
-    in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, dtype=torch.float64, device=device
+    in_boxes = datapoints.BoundingBox(
+        in_boxes,
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=spatial_size,
+        dtype=torch.float64,
+        device=device,
     )
     # Tested parameters
     angle = 45
@@ -728,7 +824,7 @@ def test_correctness_rotate_segmentation_mask_on_fixed_input(device):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "format",
-    [features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH],
+    [datapoints.BoundingBoxFormat.XYXY, datapoints.BoundingBoxFormat.XYWH, datapoints.BoundingBoxFormat.CXCYWH],
 )
 @pytest.mark.parametrize(
     "top, left, height, width, expected_bboxes",
@@ -758,9 +854,11 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
         [50.0, 5.0, 70.0, 22.0],
         [45.0, 46.0, 56.0, 62.0],
     ]
-    in_boxes = features.BoundingBox(in_boxes, format=features.BoundingBoxFormat.XYXY, spatial_size=size, device=device)
-    if format != features.BoundingBoxFormat.XYXY:
-        in_boxes = convert_format_bounding_box(in_boxes, features.BoundingBoxFormat.XYXY, format)
+    in_boxes = datapoints.BoundingBox(
+        in_boxes, format=datapoints.BoundingBoxFormat.XYXY, spatial_size=size, device=device
+    )
+    if format != datapoints.BoundingBoxFormat.XYXY:
+        in_boxes = convert_format_bounding_box(in_boxes, datapoints.BoundingBoxFormat.XYXY, format)
 
     output_boxes, output_spatial_size = F.crop_bounding_box(
         in_boxes,
@@ -771,8 +869,8 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
         size[1],
     )
 
-    if format != features.BoundingBoxFormat.XYXY:
-        output_boxes = convert_format_bounding_box(output_boxes, format, features.BoundingBoxFormat.XYXY)
+    if format != datapoints.BoundingBoxFormat.XYXY:
+        output_boxes = convert_format_bounding_box(output_boxes, format, datapoints.BoundingBoxFormat.XYXY)
 
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
     torch.testing.assert_close(output_spatial_size, size)
@@ -805,7 +903,7 @@ def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "format",
-    [features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH],
+    [datapoints.BoundingBoxFormat.XYXY, datapoints.BoundingBoxFormat.XYWH, datapoints.BoundingBoxFormat.CXCYWH],
 )
 @pytest.mark.parametrize(
     "top, left, height, width, size",
@@ -834,16 +932,16 @@ def test_correctness_resized_crop_bounding_box(device, format, top, left, height
         expected_bboxes.append(_compute_expected_bbox(list(in_box), top, left, height, width, size))
     expected_bboxes = torch.tensor(expected_bboxes, device=device)
 
-    in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, spatial_size=spatial_size, device=device
+    in_boxes = datapoints.BoundingBox(
+        in_boxes, format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size, device=device
     )
-    if format != features.BoundingBoxFormat.XYXY:
-        in_boxes = convert_format_bounding_box(in_boxes, features.BoundingBoxFormat.XYXY, format)
+    if format != datapoints.BoundingBoxFormat.XYXY:
+        in_boxes = convert_format_bounding_box(in_boxes, datapoints.BoundingBoxFormat.XYXY, format)
 
     output_boxes, output_spatial_size = F.resized_crop_bounding_box(in_boxes, format, top, left, height, width, size)
 
-    if format != features.BoundingBoxFormat.XYXY:
-        output_boxes = convert_format_bounding_box(output_boxes, format, features.BoundingBoxFormat.XYXY)
+    if format != datapoints.BoundingBoxFormat.XYXY:
+        output_boxes = convert_format_bounding_box(output_boxes, format, datapoints.BoundingBoxFormat.XYXY)
 
     torch.testing.assert_close(output_boxes, expected_bboxes)
     torch.testing.assert_close(output_spatial_size, size)
@@ -871,14 +969,14 @@ def test_correctness_pad_bounding_box(device, padding):
         bbox_dtype = bbox.dtype
         bbox = (
             bbox.clone()
-            if bbox_format == features.BoundingBoxFormat.XYXY
-            else convert_format_bounding_box(bbox, bbox_format, features.BoundingBoxFormat.XYXY)
+            if bbox_format == datapoints.BoundingBoxFormat.XYXY
+            else convert_format_bounding_box(bbox, bbox_format, datapoints.BoundingBoxFormat.XYXY)
         )
 
         bbox[0::2] += pad_left
         bbox[1::2] += pad_up
 
-        bbox = convert_format_bounding_box(bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format)
+        bbox = convert_format_bounding_box(bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox_format)
         if bbox.dtype != bbox_dtype:
             # Temporary cast to original dtype
             # e.g. float32 -> int
@@ -906,7 +1004,7 @@ def test_correctness_pad_bounding_box(device, padding):
 
         expected_bboxes = []
         for bbox in bboxes:
-            bbox = features.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
+            bbox = datapoints.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
             expected_bboxes.append(_compute_expected_bbox(bbox, padding))
 
         if len(expected_bboxes) > 1:
@@ -952,7 +1050,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         )
 
         bbox_xyxy = convert_format_bounding_box(
-            bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
+            bbox, old_format=bbox.format, new_format=datapoints.BoundingBoxFormat.XYXY
         )
         points = np.array(
             [
@@ -971,14 +1069,16 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             np.max(transformed_points[:, 0]),
             np.max(transformed_points[:, 1]),
         ]
-        out_bbox = features.BoundingBox(
+        out_bbox = datapoints.BoundingBox(
             np.array(out_bbox),
-            format=features.BoundingBoxFormat.XYXY,
+            format=datapoints.BoundingBoxFormat.XYXY,
             spatial_size=bbox.spatial_size,
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_format_bounding_box(out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format)
+        return convert_format_bounding_box(
+            out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox.format
+        )
 
     spatial_size = (32, 38)
 
@@ -1003,7 +1103,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
 
         expected_bboxes = []
         for bbox in bboxes:
-            bbox = features.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
+            bbox = datapoints.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
             expected_bboxes.append(_compute_expected_bbox(bbox, inv_pcoeffs))
         if len(expected_bboxes) > 1:
             expected_bboxes = torch.stack(expected_bboxes)
@@ -1022,7 +1122,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         format_ = bbox.format
         spatial_size_ = bbox.spatial_size
         dtype = bbox.dtype
-        bbox = convert_format_bounding_box(bbox.float(), format_, features.BoundingBoxFormat.XYWH)
+        bbox = convert_format_bounding_box(bbox.float(), format_, datapoints.BoundingBoxFormat.XYWH)
 
         if len(output_size_) == 1:
             output_size_.append(output_size_[-1])
@@ -1036,7 +1136,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
             bbox[3].item(),
         ]
         out_bbox = torch.tensor(out_bbox)
-        out_bbox = convert_format_bounding_box(out_bbox, features.BoundingBoxFormat.XYWH, format_)
+        out_bbox = convert_format_bounding_box(out_bbox, datapoints.BoundingBoxFormat.XYWH, format_)
         return out_bbox.to(dtype=dtype, device=bbox.device)
 
     for bboxes in make_bounding_boxes(extra_dims=((4,),)):
@@ -1053,7 +1153,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
 
         expected_bboxes = []
         for bbox in bboxes:
-            bbox = features.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
+            bbox = datapoints.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
             expected_bboxes.append(_compute_expected_bbox(bbox, output_size))
 
         if len(expected_bboxes) > 1:
@@ -1138,22 +1238,10 @@ def test_correctness_gaussian_blur_image_tensor(device, spatial_size, dt, ksize,
         torch.tensor(true_cv2_results[gt_key]).reshape(shape[-2], shape[-1], shape[-3]).permute(2, 0, 1).to(tensor)
     )
 
-    image = features.Image(tensor)
+    image = datapoints.Image(tensor)
 
     out = fn(image, kernel_size=ksize, sigma=sigma)
     torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
-
-
-def test_normalize_output_type():
-    inpt = torch.rand(1, 3, 32, 32)
-    output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
-    assert type(output) is torch.Tensor
-    torch.testing.assert_close(inpt - 0.5, output)
-
-    inpt = make_image(color_space=features.ColorSpace.RGB)
-    output = F.normalize(inpt, mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
-    assert type(output) is torch.Tensor
-    torch.testing.assert_close(inpt - 0.5, output)
 
 
 @pytest.mark.parametrize(

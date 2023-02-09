@@ -12,7 +12,6 @@ import torch
 from ..utils import _log_api_usage_once
 from . import _video_opt
 
-
 try:
     import av
 
@@ -242,8 +241,7 @@ def read_video(
     output_format: str = "THWC",
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
     """
-    Reads a video from a file, returning both the video frames as well as
-    the audio frames
+    Reads a video from a file, returning both the video frames and the audio frames
 
     Args:
         filename (str): path to the video file

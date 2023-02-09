@@ -266,7 +266,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--data-path", default="/datasets01/COCO/022719/", type=str, help="dataset path")
     parser.add_argument("--dataset", default="coco", type=str, help="dataset name")
     parser.add_argument("--model", default="fcn_resnet101", type=str, help="model name")
-    parser.add_argument("--aux-loss", action="store_true", help="auxiliar loss")
+    parser.add_argument("--aux-loss", action="store_true", help="auxiliary loss")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
         "-b", "--batch-size", default=8, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"

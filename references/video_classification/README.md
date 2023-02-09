@@ -76,7 +76,7 @@ Input data augmentations at validation time (with optional parameters):
 5. Convert BCHW to CBHW
 
 This translates in the following set of command-line arguments. Please note that `--batch-size` parameter controls the
-batch size per GPU. Moreover note that our default `--lr` is configured for 64 GPUs which is how many we used for the 
+batch size per GPU. Moreover, note that our default `--lr` is configured for 64 GPUs which is how many we used for the 
 Video resnet models:
 ```
 # number of frames per clip

@@ -1798,6 +1798,12 @@ def test_color_jitter():
     color_jitter.__repr__()
 
 
+@pytest.mark.parametrize("hue", [1, (-1, 1)])
+def test_color_jitter_hue_out_of_bounds(hue):
+    with pytest.raises(ValueError, match=re.escape("hue values should be between (-0.5, 0.5)")):
+        transforms.ColorJitter(hue=hue)
+
+
 @pytest.mark.parametrize("seed", range(10))
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
 def test_random_erasing(seed):
@@ -1818,7 +1824,7 @@ def test_random_erasing(seed):
     tol = 0.05
     assert 1 / 3 - tol <= aspect_ratio <= 3 + tol
 
-    # Make sure that h > w and h < w are equaly likely (log-scale sampling)
+    # Make sure that h > w and h < w are equally likely (log-scale sampling)
     aspect_ratios = []
     random.seed(42)
     trial = 1000
@@ -1865,17 +1871,6 @@ def test_random_rotation():
 
     # Checking if RandomRotation can be printed as string
     t.__repr__()
-
-    # assert changed type warning
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        ),
-    ):
-        t = transforms.RandomRotation((-10, 10), interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
 def test_random_rotation_error():
@@ -2067,7 +2062,7 @@ class TestAffine:
                 # https://github.com/python-pillow/Pillow/blob/71f8ec6a0cfc1008076a023c0756542539d057ab/
                 # src/libImaging/Geometry.c#L1060
                 input_pt = np.array([x + 0.5, y + 0.5, 1.0])
-                res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(np.int)
+                res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(int)
                 _x, _y = res[:2]
                 if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                     true_result[y, x, :] = input_img[_y, _x, :]
@@ -2205,17 +2200,6 @@ def test_random_affine():
 
     t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
     assert "bilinear" in t.__repr__()
-
-    # assert changed type warning
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        ),
-    ):
-        t = transforms.RandomAffine(10, interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
 def test_elastic_transformation():

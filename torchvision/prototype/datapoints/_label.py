@@ -5,13 +5,13 @@ from typing import Any, Optional, Sequence, Type, TypeVar, Union
 import torch
 from torch.utils._pytree import tree_map
 
-from ._feature import _Feature
+from ._datapoint import Datapoint
 
 
 L = TypeVar("L", bound="_LabelBase")
 
 
-class _LabelBase(_Feature):
+class _LabelBase(Datapoint):
     categories: Optional[Sequence[str]]
 
     @classmethod
@@ -27,7 +27,7 @@ class _LabelBase(_Feature):
         categories: Optional[Sequence[str]] = None,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: bool = False,
+        requires_grad: Optional[bool] = None,
     ) -> L:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor, categories=categories)

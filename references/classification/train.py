@@ -131,15 +131,21 @@ def load_data(traindir, valdir, args):
         print(f"Loading dataset_train from {cache_path}")
         dataset, _ = torch.load(cache_path)
     else:
+        # We need a default value for the variables below because args may come
+        # from train_quantization.py which doesn't define them.
+        auto_augment_policy = getattr(args, "auto_augment", None)
+        random_erase_prob = getattr(args, "random_erase", 0.0)
+        ra_magnitude = getattr(args, "ra_magnitude", None)
+        augmix_severity = getattr(args, "augmix_severity", None)
         dataset = torchvision.datasets.ImageFolder(
             traindir,
             presets.ClassificationPresetTrain(
                 crop_size=train_crop_size,
                 interpolation=interpolation,
-                auto_augment_policy=args.auto_augment,
-                random_erase_prob=args.random_erase,
-                ra_magnitude=args.ra_magnitude,
-                augmix_severity=args.augmix_severity,
+                auto_augment_policy=auto_augment_policy,
+                random_erase_prob=random_erase_prob,
+                ra_magnitude=ra_magnitude,
+                augmix_severity=augmix_severity,
             ),
             target_transform=lambda target: features.Label(target),
         )
@@ -322,11 +328,11 @@ def main(args):
 
     model_ema = None
     if args.model_ema:
-        # Decay adjustment that aims to keep the decay independent from other hyper-parameters originally proposed at:
+        # Decay adjustment that aims to keep the decay independent of other hyper-parameters originally proposed at:
         # https://github.com/facebookresearch/pycls/blob/f8cd9627/pycls/core/net.py#L123
         #
         # total_ema_updates = (Dataset_size / n_GPUs) * epochs / (batch_size_per_gpu * EMA_steps)
-        # We consider constant = Dataset_size for a given dataset/setup and ommit it. Thus:
+        # We consider constant = Dataset_size for a given dataset/setup and omit it. Thus:
         # adjust = 1 / total_ema_updates ~= n_GPUs * batch_size_per_gpu * EMA_steps / epochs
         adjust = args.world_size * args.batch_size * args.model_ema_steps / args.epochs
         alpha = 1.0 - args.model_ema_decay
