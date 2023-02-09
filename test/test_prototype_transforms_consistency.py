@@ -23,6 +23,7 @@ from prototype_common_utils import (
     make_label,
     make_segmentation_mask,
 )
+from torch import nn
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datapoints, transforms as prototype_transforms
@@ -761,19 +762,24 @@ class TestContainerTransforms:
         check_call_consistency(prototype_transform, legacy_transform)
 
     @pytest.mark.parametrize("p", [0, 0.1, 0.5, 0.9, 1])
-    def test_random_apply(self, p):
+    @pytest.mark.parametrize("sequence_type", [list, nn.ModuleList])
+    def test_random_apply(self, p, sequence_type):
         prototype_transform = prototype_transforms.RandomApply(
-            [
-                prototype_transforms.Resize(256),
-                prototype_transforms.CenterCrop(224),
-            ],
+            sequence_type(
+                [
+                    prototype_transforms.Resize(256),
+                    prototype_transforms.CenterCrop(224),
+                ]
+            ),
             p=p,
         )
         legacy_transform = legacy_transforms.RandomApply(
-            [
-                legacy_transforms.Resize(256),
-                legacy_transforms.CenterCrop(224),
-            ],
+            sequence_type(
+                [
+                    legacy_transforms.Resize(256),
+                    legacy_transforms.CenterCrop(224),
+                ]
+            ),
             p=p,
         )
 
