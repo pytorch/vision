@@ -93,6 +93,10 @@ def identity(item):
     return item
 
 
+def pil_image_to_mask(pil_image):
+    return datapoints.Mask(F.to_image_tensor(pil_image).squeeze(0))
+
+
 def list_of_dicts_to_dict_of_lists(list_of_dicts):
     dict_of_lists = defaultdict(list)
     for dct in list_of_dicts:
@@ -139,7 +143,7 @@ for dataset_type in [
 def segmentation_wrapper_factory(dataset):
     def wrapper(sample):
         image, mask = sample
-        return image, datapoints.Mask(F.to_image_tensor(mask).squeeze(0))
+        return image, pil_image_to_mask(mask)
 
     return wrapper
 
@@ -185,7 +189,9 @@ def caltech101_wrapper_factory(dataset):
 
         target = wrap_target_by_type(target, target_types=dataset.target_type)
 
-    return classification_wrapper_factory(dataset)
+        return image, target
+
+    return wrapper
 
 
 @WRAPPER_FACTORIES.register(datasets.CocoDetection)
@@ -339,7 +345,7 @@ def oxford_iiit_pet_wrapper_factor(dataset):
                 target,
                 target_types=dataset._target_types,
                 type_wrappers={
-                    "segmentation": lambda item: datapoints.Mask(F.pil_to_tensor(item).squeeze(0)),
+                    "segmentation": pil_image_to_mask,
                 },
             )
 
@@ -378,8 +384,7 @@ def cityscapes_wrapper_factory(dataset):
             target_types=dataset.target_type,
             type_wrappers={
                 "instance": instance_segmentation_wrapper,
-                # FIXME: pil_image_to_mask
-                "semantic": lambda item: datapoints.Mask(F.pil_to_tensor(item).squeeze(0)),
+                "semantic": pil_image_to_mask,
             },
         )
 

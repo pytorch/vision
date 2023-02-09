@@ -592,7 +592,8 @@ class DatasetTestCase(unittest.TestCase):
         try:
             with self.create_dataset(config) as (dataset, _):
                 wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
-                wrapped_dataset[0]
+                wrapped_sample = wrapped_dataset[0]
+                assert wrapped_sample is not None
         except ValueError as error:
             if str(error).startswith(f"No wrapper exist for dataset class {type(dataset).__name__}"):
                 return
