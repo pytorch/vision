@@ -404,8 +404,11 @@ def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[in
 
 
 def _apply_grid_transform(
-    float_img: torch.Tensor, grid: torch.Tensor, mode: str, fill: datapoints.FillTypeJIT
+    img: torch.Tensor, grid: torch.Tensor, mode: str, fill: datapoints.FillTypeJIT
 ) -> torch.Tensor:
+
+    fp = img.dtype == grid.dtype
+    float_img = img if fp else img.to(grid.dtype)
 
     shape = float_img.shape
     if shape[0] > 1:
@@ -433,7 +436,9 @@ def _apply_grid_transform(
             # img * mask + (1.0 - mask) * fill = img * mask - fill * mask + fill = mask * (img - fill) + fill
             float_img = float_img.sub_(fill_img).mul_(mask).add_(fill_img)
 
-    return float_img
+    img = float_img.round_().to(img.dtype) if not fp else float_img
+
+    return img
 
 
 def _assert_grid_transform_inputs(
@@ -511,7 +516,6 @@ def affine_image_tensor(
 
     shape = image.shape
     ndim = image.ndim
-    fp = torch.is_floating_point(image)
 
     if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
@@ -535,13 +539,10 @@ def affine_image_tensor(
 
     _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
 
-    dtype = image.dtype if fp else torch.float32
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
     grid = _affine_grid(theta, w=width, h=height, ow=width, oh=height)
-    output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
-
-    if not fp:
-        output = output.round_().to(image.dtype)
+    output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
     if needs_unsquash:
         output = output.reshape(shape)
@@ -797,19 +798,15 @@ def rotate_image_tensor(
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
 
     if image.numel() > 0:
-        fp = torch.is_floating_point(image)
         image = image.reshape(-1, num_channels, height, width)
 
         _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
 
         ow, oh = _compute_affine_output_size(matrix, width, height) if expand else (width, height)
-        dtype = image.dtype if fp else torch.float32
+        dtype = image.dtype if torch.is_floating_point(image) else torch.float32
         theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
         grid = _affine_grid(theta, w=width, h=height, ow=ow, oh=oh)
-        output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
-
-        if not fp:
-            output = output.round_().to(image.dtype)
+        output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
         new_height, new_width = output.shape[-2:]
     else:
@@ -1283,7 +1280,6 @@ def perspective_image_tensor(
 
     shape = image.shape
     ndim = image.ndim
-    fp = torch.is_floating_point(image)
 
     if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
@@ -1304,12 +1300,9 @@ def perspective_image_tensor(
     )
 
     oh, ow = shape[-2:]
-    dtype = image.dtype if fp else torch.float32
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=image.device)
-    output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
-
-    if not fp:
-        output = output.round_().to(image.dtype)
+    output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
     if needs_unsquash:
         output = output.reshape(shape)
@@ -1494,10 +1487,9 @@ def elastic_image_tensor(
 
     shape = image.shape
     ndim = image.ndim
-    fp = torch.is_floating_point(image)
 
     device = image.device
-    dtype = image.dtype if fp else torch.float32
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
 
     if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
@@ -1516,10 +1508,7 @@ def elastic_image_tensor(
 
     image_height, image_width = shape[-2:]
     grid = _create_identity_grid((image_height, image_width), device=device, dtype=dtype).add_(displacement)
-    output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
-
-    if not fp:
-        output = output.round_().to(image.dtype)
+    output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
     if needs_unsquash:
         output = output.reshape(shape)
