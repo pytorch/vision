@@ -120,13 +120,12 @@ behavior, such as batch normalization. To switch between these modes, use
     # Set model to eval mode
     model.eval()
 
-Model Registration Mechanism
-----------------------------
+Listing and retrieving available models
+---------------------------------------
 
-.. betastatus:: registration mechanism
-
-As of v0.14, TorchVision offers a new model registration mechanism which allows retrieving models
-and weights by their names. Here are a few examples on how to use them:
+As of v0.14, TorchVision offers a new mechanism which allows listing and
+retrieving models and weights by their names. Here are a few examples on how to
+use them:
 
 .. code:: python
 
@@ -148,7 +147,7 @@ and weights by their names. Here are a few examples on how to use them:
     weights_enum2 = get_model_weights(torchvision.models.quantization.mobilenet_v3_large)
     assert weights_enum == weights_enum2
 
-Here are the available public methods of the model registration mechanism:
+Here are the available public functions to retrieve models and their corresponding weights:
 
 .. currentmodule:: torchvision.models
 .. autosummary::
