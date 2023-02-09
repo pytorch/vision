@@ -16,6 +16,7 @@ Needs to be done in order to migrate to Beta
 * Write Docs
 * Philip: (EDIT: submit dummy PR)Polish tests - make sure they are at least functionally equivalent to the v1
   tests. This requires individually checking them.
+* (P V N) Bikeshed on a good name for wrap_dataset_for_transforms_v2
 
 Needs to be done before migrating to stable
 -------------------------------------------
