@@ -581,6 +581,27 @@ class DatasetTestCase(unittest.TestCase):
 
                 mock.assert_called()
 
+    @test_all_configs
+    def test_transforms_v2_wrapper(self, config):
+        # This is stable test, so we can't depend on prototype stuff
+        try:
+            from torchvision.prototype.datapoints import wrap_dataset_for_transforms_v2
+        except ImportError:
+            return
+
+        try:
+            with self.create_dataset(config) as (dataset, _):
+                wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
+                wrapped_dataset[0]
+        except ValueError as error:
+            if str(error).startswith(f"No wrapper exist for dataset class {type(dataset).__name__}"):
+                return
+            raise error
+        except RuntimeError as error:
+            if "currently not supported by this wrapper" in str(error):
+                return
+            raise error
+
 
 class ImageDatasetTestCase(DatasetTestCase):
     """Abstract base class for image dataset testcases.
@@ -661,6 +682,15 @@ class VideoDatasetTestCase(DatasetTestCase):
             return args
 
         return wrapper
+
+    @test_all_configs
+    def test_transforms_v2_wrapper(self, config):
+        # `output_format == "THWC"` is not supported by the wrapper. Thus, we skip the `config` if it is set explicitly
+        # or use the supported `"TCHW"`
+        if config.setdefault("output_format", "TCHW") == "THWC":
+            return
+
+        super().test_transforms_v2_wrapper.__wrapped__(self, config)
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:

@@ -82,6 +82,13 @@ class VisionDatasetDatapointWrapper(Dataset):
         return len(self._vision_dataset)
 
 
+def raise_not_supported(description):
+    raise RuntimeError(
+        f"{description} is currently not supported by this wrapper. "
+        f"If this would be helpful for you, please open an issue at https://github.com/pytorch/vision/issues."
+    )
+
+
 def identity(item):
     return item
 
@@ -168,13 +175,6 @@ for dataset_type in [
     WRAPPER_FACTORIES[dataset_type] = video_classification_wrapper_factory
 
 
-def raise_not_supported(description):
-    raise RuntimeError(
-        f"{description} is currently not supported by this wrapper. "
-        f"If this would be helpful for you, please open an issue at https://github.com/pytorch/vision/issues."
-    )
-
-
 @WRAPPER_FACTORIES.register(datasets.Caltech101)
 def caltech101_wrapper_factory(dataset):
     if "annotation" in dataset.target_type:
@@ -253,7 +253,7 @@ VOC_DETECTION_CATEGORY_TO_IDX = dict(zip(VOC_DETECTION_CATEGORIES, range(len(VOC
 
 
 @WRAPPER_FACTORIES.register(datasets.VOCDetection)
-def voc_detection_wrapper_factory(dataset, sample):
+def voc_detection_wrapper_factory(dataset):
     def wrapper(sample):
         image, target = sample
 
@@ -316,12 +316,13 @@ def kitti_wrapper_factory(dataset):
     def wrapper(sample):
         image, target = sample
 
-        target = list_of_dicts_to_dict_of_lists(target)
+        if target is not None:
+            target = list_of_dicts_to_dict_of_lists(target)
 
-        target["boxes"] = datapoints.BoundingBox(
-            target["bbox"], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(image.height, image.width)
-        )
-        target["labels"] = torch.tensor([KITTI_CATEGORY_TO_IDX[category] for category in target["type"]])
+            target["boxes"] = datapoints.BoundingBox(
+                target["bbox"], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(image.height, image.width)
+            )
+            target["labels"] = torch.tensor([KITTI_CATEGORY_TO_IDX[category] for category in target["type"]])
 
         return image, target
 
