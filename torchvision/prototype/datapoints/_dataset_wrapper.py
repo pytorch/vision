@@ -3,29 +3,23 @@
 from __future__ import annotations
 
 import contextlib
-import functools
 from collections import defaultdict
 
 import torch
 from torch.utils.data import Dataset
 
 from torchvision import datasets
-from torchvision._utils import sequence_to_str
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F
 
 __all__ = ["wrap_dataset_for_transforms_v2"]
 
-cache = functools.partial(functools.lru_cache)
-
-_WRAPPERS = {}
-
 
 # TODO: naming!
 def wrap_dataset_for_transforms_v2(dataset):
     dataset_cls = type(dataset)
-    wrapper = _WRAPPERS.get(dataset_cls)
-    if wrapper is None:
+    wrapper_factory = WRAPPER_FACTORIES.get(dataset_cls)
+    if wrapper_factory is None:
         # TODO: If we have documentation on how to do that, put a link in the error message.
         msg = f"No wrapper exist for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
         if dataset_cls in datasets.__dict__.values():
@@ -34,10 +28,22 @@ def wrap_dataset_for_transforms_v2(dataset):
                 f"please open an issue at https://github.com/pytorch/vision/issues."
             )
         raise ValueError(msg)
-    return _VisionDatasetDatapointWrapper(dataset, wrapper)
+    return VisionDatasetDatapointWrapper(dataset, wrapper_factory(dataset))
 
 
-class _VisionDatasetDatapointWrapper(Dataset):
+class WrapperFactories(dict):
+    def register(self, dataset_cls):
+        def decorator(wrapper_factory):
+            self[dataset_cls] = wrapper_factory
+            return wrapper_factory
+
+        return decorator
+
+
+WRAPPER_FACTORIES = WrapperFactories()
+
+
+class VisionDatasetDatapointWrapper(Dataset):
     def __init__(self, dataset, wrapper):
         self._vision_dataset = dataset
         self._wrapper = wrapper
@@ -63,7 +69,7 @@ class _VisionDatasetDatapointWrapper(Dataset):
         # of this class
         sample = self._vision_dataset[idx]
 
-        sample = self._wrapper(self._vision_dataset, sample)
+        sample = self._wrapper(sample)
 
         # Regardless of whether the user has supplied the transforms individually (`transform` and `target_transform`)
         # or joint (`transforms`), we can access the full functionality through `transforms`
@@ -88,18 +94,9 @@ def list_of_dicts_to_dict_of_lists(list_of_dicts):
     return dict(dict_of_lists)
 
 
-def wrap_target_by_type(dataset, target, type_wrappers, *, fail_on=()):
-    if target is None:
-        return None
-
-    target_types = next(getattr(dataset, attr) for attr in ["target_type", "_target_types"])
-
-    if any(target_type in fail_on for target_type in target_types):
-        raise RuntimeError(
-            f"{type(dataset).__name__} with target type(s) {sequence_to_str(fail_on, separate_last='or ')} "
-            f"is currently not supported by this wrapper. "
-            f"If this would be helpful for you, please open an issue at https://github.com/pytorch/vision/issues."
-        )
+def wrap_target_by_type(target, *, target_types, type_wrappers=None):
+    if type_wrappers is None:
+        type_wrappers = dict()
 
     if not isinstance(target, (tuple, list)):
         target = [target]
@@ -114,25 +111,8 @@ def wrap_target_by_type(dataset, target, type_wrappers, *, fail_on=()):
     return wrapped_target
 
 
-@cache
-def get_categories(dataset):
-    categories_fn = {
-        datasets.Caltech256: lambda dataset: [name.rsplit(".", 1)[1] for name in dataset.categories],
-        datasets.CIFAR10: lambda dataset: dataset.classes,
-        datasets.CIFAR100: lambda dataset: dataset.classes,
-        datasets.FashionMNIST: lambda dataset: dataset.classes,
-        datasets.ImageNet: lambda dataset: [", ".join(names) for names in dataset.classes],
-        datasets.DatasetFolder: lambda dataset: dataset.classes,
-        datasets.ImageFolder: lambda dataset: dataset.classes,
-    }.get(type(dataset))
-    return categories_fn(dataset) if categories_fn is not None else None
-
-
-def classification_wrapper(dataset, sample):
-    image, label = sample
-    if label is not None:
-        label = datapoints.Label(label, categories=get_categories(dataset))
-    return image, label
+def classification_wrapper_factory(dataset):
+    return identity
 
 
 for dataset_type in [
@@ -146,33 +126,38 @@ for dataset_type in [
     datasets.DatasetFolder,
     datasets.ImageFolder,
 ]:
-    _WRAPPERS[dataset_type] = classification_wrapper
+    WRAPPER_FACTORIES[dataset_type] = classification_wrapper_factory
 
 
-def segmentation_wrapper(dataset, sample):
-    image, mask = sample
-    return image, datapoints.Mask(F.to_image_tensor(mask).squeeze(0))
+def segmentation_wrapper_factory(dataset):
+    def wrapper(sample):
+        image, mask = sample
+        return image, datapoints.Mask(F.to_image_tensor(mask).squeeze(0))
+
+    return wrapper
 
 
 for dataset_type in [
     datasets.VOCSegmentation,
 ]:
-    _WRAPPERS[dataset_type] = segmentation_wrapper
+    WRAPPER_FACTORIES[dataset_type] = segmentation_wrapper_factory
 
 
-def video_classification_wrapper(dataset, sample):
+def video_classification_wrapper_factory(dataset):
     if dataset.video_clips.output_format == "THWC":
         raise RuntimeError(
-            f"{type(dataset).__name__} with output_format='THWC' is not supported by this wrapper, "
-            f"since it is not compatible with the transformations. Please use output_format='TCHW' instead."
+            f"{type(dataset).__name__} with `output_format='THWC'` is not supported by this wrapper, "
+            f"since it is not compatible with the transformations. Please use `output_format='TCHW'` instead."
         )
 
-    video, audio, label = sample
+    def wrapper(sample):
+        video, audio, label = sample
 
-    video = datapoints.Video(video)
-    label = datapoints.Label(label, categories=dataset.classes)
+        video = datapoints.Video(video)
 
-    return video, audio, label
+        return video, audio, label
+
+    return wrapper
 
 
 for dataset_type in [
@@ -180,33 +165,31 @@ for dataset_type in [
     datasets.Kinetics,
     datasets.UCF101,
 ]:
-    _WRAPPERS[dataset_type] = video_classification_wrapper
+    WRAPPER_FACTORIES[dataset_type] = video_classification_wrapper_factory
 
 
-def caltech101_wrapper(dataset, sample):
-    image, target = sample
-    return image, wrap_target_by_type(
-        dataset,
-        target,
-        {"category": lambda item: datapoints.Label(target, categories=dataset.categories)},
-        fail_on=["annotation"],
+def raise_not_supported(description):
+    raise RuntimeError(
+        f"{description} is currently not supported by this wrapper. "
+        f"If this would be helpful for you, please open an issue at https://github.com/pytorch/vision/issues."
     )
 
 
-_WRAPPERS[datasets.Caltech101] = caltech101_wrapper
+@WRAPPER_FACTORIES.register(datasets.Caltech101)
+def caltech101_wrapper_factory(dataset):
+    if "annotation" in dataset.target_type:
+        raise_not_supported("Caltech101 dataset with `target_type=['annotation', ...]`")
+
+    def wrapper(sample):
+        image, target = sample
+
+        target = wrap_target_by_type(target, target_types=dataset.target_type)
+
+    return classification_wrapper_factory(dataset)
 
 
-@cache
-def get_coco_detection_categories(dataset):
-    idx_to_category = {idx: cat["name"] for idx, cat in dataset.coco.cats.items()}
-    idx_to_category[0] = "__background__"
-    for idx in set(range(91)) - idx_to_category.keys():
-        idx_to_category[idx] = "N/A"
-
-    return [category for _, category in sorted(idx_to_category.items())]
-
-
-def coco_dectection_wrapper(dataset, sample):
+@WRAPPER_FACTORIES.register(datasets.CocoDetection)
+def coco_dectection_wrapper_factory(dataset):
     def segmentation_to_mask(segmentation, *, spatial_size):
         from pycocotools import mask
 
@@ -217,33 +200,30 @@ def coco_dectection_wrapper(dataset, sample):
         )
         return torch.from_numpy(mask.decode(segmentation))
 
-    image, target = sample
+    def wrapper(sample):
+        image, target = sample
 
-    batched_target = list_of_dicts_to_dict_of_lists(target)
+        batched_target = list_of_dicts_to_dict_of_lists(target)
 
-    spatial_size = tuple(F.get_spatial_size(image))
-    batched_target["boxes"] = datapoints.BoundingBox(
-        batched_target["bbox"],
-        format=datapoints.BoundingBoxFormat.XYXY,
-        spatial_size=spatial_size,
-    )
-    batched_target["masks"] = datapoints.Mask(
-        torch.stack(
-            [
-                segmentation_to_mask(segmentation, spatial_size=spatial_size)
-                for segmentation in batched_target["segmentation"]
-            ]
-        ),
-    )
-    batched_target["labels"] = datapoints.Label(
-        batched_target["category_id"], categories=get_coco_detection_categories(dataset)
-    )
+        spatial_size = tuple(F.get_spatial_size(image))
+        batched_target["boxes"] = datapoints.BoundingBox(
+            batched_target["bbox"],
+            format=datapoints.BoundingBoxFormat.XYXY,
+            spatial_size=spatial_size,
+        )
+        batched_target["masks"] = datapoints.Mask(
+            torch.stack(
+                [
+                    segmentation_to_mask(segmentation, spatial_size=spatial_size)
+                    for segmentation in batched_target["segmentation"]
+                ]
+            ),
+        )
+        batched_target["labels"] = torch.tensor(batched_target["category_id"])
 
-    return image, batched_target
+        return image, batched_target
 
-
-_WRAPPERS[datasets.CocoDetection] = coco_dectection_wrapper
-_WRAPPERS[datasets.CocoCaptions] = identity
+    return wrapper
 
 
 VOC_DETECTION_CATEGORIES = [
@@ -272,97 +252,106 @@ VOC_DETECTION_CATEGORIES = [
 VOC_DETECTION_CATEGORY_TO_IDX = dict(zip(VOC_DETECTION_CATEGORIES, range(len(VOC_DETECTION_CATEGORIES))))
 
 
-def voc_detection_wrapper(dataset, sample):
-    image, target = sample
+@WRAPPER_FACTORIES.register(datasets.VOCDetection)
+def voc_detection_wrapper_factory(dataset, sample):
+    def wrapper(sample):
+        image, target = sample
 
-    batched_instances = list_of_dicts_to_dict_of_lists(target["annotation"]["object"])
+        batched_instances = list_of_dicts_to_dict_of_lists(target["annotation"]["object"])
 
-    target["boxes"] = datapoints.BoundingBox(
-        [[int(bndbox[part]) for part in ("xmin", "ymin", "xmax", "ymax")] for bndbox in batched_instances["bndbox"]],
-        format=datapoints.BoundingBoxFormat.XYXY,
-        spatial_size=(image.height, image.width),
-    )
-    target["labels"] = datapoints.Label(
-        [VOC_DETECTION_CATEGORY_TO_IDX[category] for category in batched_instances["name"]],
-        categories=VOC_DETECTION_CATEGORIES,
-    )
-
-    return image, target
-
-
-_WRAPPERS[datasets.VOCDetection] = voc_detection_wrapper
-
-
-def sbd_wrapper(dataset, sample):
-    if dataset.mode == "boundaries":
-        raise RuntimeError(
-            "SBDataset with mode='boundaries' is currently not supported by this wrapper. "
-            "If this would be helpful for you, please open an issue at https://github.com/pytorch/vision/issues."
+        target["boxes"] = datapoints.BoundingBox(
+            [
+                [int(bndbox[part]) for part in ("xmin", "ymin", "xmax", "ymax")]
+                for bndbox in batched_instances["bndbox"]
+            ],
+            format=datapoints.BoundingBoxFormat.XYXY,
+            spatial_size=(image.height, image.width),
+        )
+        target["labels"] = torch.tensor(
+            [VOC_DETECTION_CATEGORY_TO_IDX[category] for category in batched_instances["name"]]
         )
 
-    image, target = sample
-    return image, datapoints.Mask(F.to_image_tensor(target).squeeze(0))
+        return image, target
+
+    return wrapper
 
 
-_WRAPPERS[datasets.SBDataset] = sbd_wrapper
+@WRAPPER_FACTORIES.register(datasets.SBDataset)
+def sbd_wrapper(dataset):
+    if dataset.mode == "boundaries":
+        raise_not_supported("SBDataset with mode='boundaries'")
+
+    return segmentation_wrapper_factory(dataset)
 
 
-def celeba_wrapper(dataset, sample):
-    image, target = sample
-    return wrap_target_by_type(
-        dataset,
-        target,
-        {
-            "identity": datapoints.Label,
-            "bbox": lambda item: datapoints.BoundingBox(
-                item, format=datapoints.BoundingBoxFormat.XYWH, spatial_size=(image.height, image.width)
-            ),
-        },
-        # FIXME: Failing on "attr" here is problematic, since it is the default
-        fail_on=["attr", "landmarks"],
-    )
+@WRAPPER_FACTORIES.register(datasets.CelebA)
+def celeba_wrapper_factory(dataset):
+    if any(target_type in dataset.target_type for target_type in ["attr", "landmarks"]):
+        raise_not_supported("`CelebA` dataset with `target_type=['attr', 'landmarks', ...]`")
 
+    def wrapper(sample):
+        image, target = sample
 
-_WRAPPERS[datasets.CelebA] = celeba_wrapper
+        target = wrap_target_by_type(
+            target,
+            target_types=dataset.target_type,
+            type_wrappers={
+                "bbox": lambda item: datapoints.BoundingBox(
+                    item, format=datapoints.BoundingBoxFormat.XYWH, spatial_size=(image.height, image.width)
+                ),
+            },
+        )
+
+        return image, target
+
+    return wrapper
+
 
 KITTI_CATEGORIES = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
 KITTI_CATEGORY_TO_IDX = dict(zip(KITTI_CATEGORIES, range(len(KITTI_CATEGORIES))))
 
 
-def kitti_wrapper(dataset, sample):
-    image, target = sample
+@WRAPPER_FACTORIES.register(datasets.Kitti)
+def kitti_wrapper_factory(dataset):
+    def wrapper(sample):
+        image, target = sample
 
-    target = list_of_dicts_to_dict_of_lists(target)
+        target = list_of_dicts_to_dict_of_lists(target)
 
-    target["boxes"] = datapoints.BoundingBox(
-        target["bbox"], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(image.height, image.width)
-    )
-    target["labels"] = datapoints.Label(
-        [KITTI_CATEGORY_TO_IDX[category] for category in target["type"]], categories=KITTI_CATEGORIES
-    )
+        target["boxes"] = datapoints.BoundingBox(
+            target["bbox"], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(image.height, image.width)
+        )
+        target["labels"] = torch.tensor([KITTI_CATEGORY_TO_IDX[category] for category in target["type"]])
 
-    return image, target
+        return image, target
 
-
-_WRAPPERS[datasets.Kitti] = kitti_wrapper
-
-
-def oxford_iiit_pet_wrapper(dataset, sample):
-    image, target = sample
-    return image, wrap_target_by_type(
-        dataset,
-        target,
-        {
-            "category": lambda item: datapoints.Label(item, categories=dataset.classes),
-            "segmentation": lambda item: datapoints.Mask(F.pil_to_tensor(item).squeeze(0)),
-        },
-    )
+    return wrapper
 
 
-_WRAPPERS[datasets.OxfordIIITPet] = oxford_iiit_pet_wrapper
+@WRAPPER_FACTORIES.register(datasets.OxfordIIITPet)
+def oxford_iiit_pet_wrapper_factor(dataset):
+    def wrapper(sample):
+        image, target = sample
+
+        if target is not None:
+            target = wrap_target_by_type(
+                target,
+                target_types=dataset._target_types,
+                type_wrappers={
+                    "segmentation": lambda item: datapoints.Mask(F.pil_to_tensor(item).squeeze(0)),
+                },
+            )
+
+        return image, target
+
+    return wrapper
 
 
-def cityscapes_wrapper(dataset, sample):
+@WRAPPER_FACTORIES.register(datasets.Cityscapes)
+def cityscapes_wrapper_factory(dataset):
+    if any(target_type in dataset.target_type for target_type in ["polygon", "color"]):
+        raise_not_supported("`Cityscapes` dataset with `target_type=['polygon', 'color', ...]`")
+
     def instance_segmentation_wrapper(mask):
         # See https://github.com/mcordts/cityscapesScripts/blob/8da5dd00c9069058ccc134654116aac52d4f6fa2/cityscapesscripts/preparation/json2instanceImg.py#L7-L21
         data = F.pil_to_tensor(mask).squeeze(0)
@@ -377,32 +366,37 @@ def cityscapes_wrapper(dataset, sample):
         masks = datapoints.Mask(torch.stack(masks))
         # FIXME: without the labels, returning just the instance masks is pretty useless. However, we would need to
         #  return a two-tuple or the like where we originally only had a single PIL image.
-        labels = datapoints.Label(torch.stack(labels), categories=[cls.name for cls in dataset.classes])
+        labels = datapoints.Label(torch.stack(labels))
         return masks
 
-    image, target = sample
-    return image, wrap_target_by_type(
-        dataset,
-        target,
-        {
-            "instance": instance_segmentation_wrapper,
-            "semantic": lambda item: datapoints.Mask(F.pil_to_tensor(item).squeeze(0)),
-        },
-        fail_on=["polygon", "color"],
-    )
+    def wrapper(sample):
+        image, target = sample
 
-
-_WRAPPERS[datasets.Cityscapes] = cityscapes_wrapper
-
-
-def widerface_wrapper(dataset, sample):
-    image, target = sample
-    if target is not None:
-        # FIXME: all returned values inside this dictionary are tensors, but not images
-        target["bbox"] = datapoints.BoundingBox(
-            target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, spatial_size=(image.height, image.width)
+        target = wrap_target_by_type(
+            target,
+            target_types=dataset.target_type,
+            type_wrappers={
+                "instance": instance_segmentation_wrapper,
+                # FIXME: pil_image_to_mask
+                "semantic": lambda item: datapoints.Mask(F.pil_to_tensor(item).squeeze(0)),
+            },
         )
-    return image, target
+
+        return image, target
+
+    return wrapper
 
 
-_WRAPPERS[datasets.WIDERFace] = widerface_wrapper
+@WRAPPER_FACTORIES.register(datasets.WIDERFace)
+def widerface_wrapper(dataset):
+    def wrapper(sample):
+        image, target = sample
+
+        if target is not None:
+            target["bbox"] = datapoints.BoundingBox(
+                target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, spatial_size=(image.height, image.width)
+            )
+
+        return image, target
+
+    return wrapper
