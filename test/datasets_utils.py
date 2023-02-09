@@ -583,11 +583,10 @@ class DatasetTestCase(unittest.TestCase):
 
     @test_all_configs
     def test_transforms_v2_wrapper(self, config):
-        # This is stable test, so we can't depend on prototype stuff
-        try:
-            from torchvision.prototype.datapoints import wrap_dataset_for_transforms_v2
-        except ImportError:
-            return
+        # Although this is a stable test, we unconditionally import from `torchvision.prototype` here. The wrapper needs
+        # to be available with the next release when v2 is released. Thus, if this import somehow fails on the release
+        # branch, we screwed up the roll-out
+        from torchvision.prototype.datapoints import wrap_dataset_for_transforms_v2
 
         try:
             with self.create_dataset(config) as (dataset, _):
