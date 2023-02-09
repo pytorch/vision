@@ -258,14 +258,3 @@ def mobilenet_v2(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "mobilenet_v2": MobileNet_V2_Weights.IMAGENET1K_V1.url,
-    }
-)
