@@ -537,8 +537,10 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix)
     def transform(bbox, affine_matrix_, format_):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
+        if not torch.is_floating_point(bbox):
+            bbox = bbox.float()
         bbox_xyxy = F.convert_format_bounding_box(
-            bbox.float(), old_format=format_, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+            bbox, old_format=format_, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
         )
         points = np.array(
             [
@@ -556,6 +558,7 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix)
                 np.max(transformed_points[:, 0]).item(),
                 np.max(transformed_points[:, 1]).item(),
             ],
+            dtype=bbox_xyxy.dtype,
         )
         out_bbox = F.convert_format_bounding_box(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
