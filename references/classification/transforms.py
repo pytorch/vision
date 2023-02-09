@@ -8,15 +8,6 @@ from torchvision.prototype.transforms import functional as PF
 from torchvision.transforms import functional as F
 
 
-class WrapIntoFeatures(torch.nn.Module):
-    def forward(self, sample):
-        image, target = sample
-        return PF.to_image_tensor(image), features.Label(target)
-
-
-# Original Transforms can be removed:
-
-
 class RandomMixup(torch.nn.Module):
     """Randomly apply Mixup to the provided batch and targets.
     The class implements the data augmentations as described in the paper
