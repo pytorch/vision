@@ -106,10 +106,7 @@ def list_of_dicts_to_dict_of_lists(list_of_dicts):
     return dict(dict_of_lists)
 
 
-def wrap_target_by_type(target, *, target_types, type_wrappers=None):
-    if type_wrappers is None:
-        type_wrappers = dict()
-
+def wrap_target_by_type(target, *, target_types, type_wrappers):
     if not isinstance(target, (tuple, list)):
         target = [target]
 
@@ -185,14 +182,7 @@ def caltech101_wrapper_factory(dataset):
     if "annotation" in dataset.target_type:
         raise_not_supported("Caltech101 dataset with `target_type=['annotation', ...]`")
 
-    def wrapper(sample):
-        image, target = sample
-
-        target = wrap_target_by_type(target, target_types=dataset.target_type)
-
-        return image, target
-
-    return wrapper
+    return classification_wrapper_factory(dataset)
 
 
 @WRAPPER_FACTORIES.register(datasets.CocoDetection)
