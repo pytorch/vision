@@ -274,7 +274,3 @@ class Datapoint(torch.Tensor):
 
 InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
 InputTypeJIT = torch.Tensor
-
-
-class GenericDatapoint(Datapoint):
-    pass
