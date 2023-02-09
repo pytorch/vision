@@ -25,6 +25,7 @@ import torch
 import torchvision.datasets
 import torchvision.io
 from common_utils import disable_console_output, get_tmp_dir
+from torch.utils._pytree import tree_any
 from torchvision.transforms.functional import get_dimensions
 
 
@@ -587,13 +588,14 @@ class DatasetTestCase(unittest.TestCase):
         # to be available with the next release when v2 is released. Thus, if this import somehow fails on the release
         # branch, we screwed up the roll-out
         from torchvision.prototype.datapoints import wrap_dataset_for_transforms_v2
+        from torchvision.prototype.datapoints._datapoint import Datapoint
 
         try:
             with self.create_dataset(config) as (dataset, _):
                 wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
                 wrapped_sample = wrapped_dataset[0]
-                assert wrapped_sample is not None
-        except ValueError as error:
+                assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
+        except TypeError as error:
             if str(error).startswith(f"No wrapper exist for dataset class {type(dataset).__name__}"):
                 return
             raise error
