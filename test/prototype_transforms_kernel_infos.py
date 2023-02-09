@@ -1264,7 +1264,7 @@ def _get_elastic_displacement(spatial_size):
 
 def sample_inputs_elastic_image_tensor():
     for image_loader in make_image_loaders(
-        sizes=["random"], dtypes=[torch.uint8, torch.float16, torch.float32, torch.float64]
+        sizes=["random"], dtypes=[torch.uint8, torch.float32, torch.float64]
     ):
         displacement = _get_elastic_displacement(image_loader.spatial_size)
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):

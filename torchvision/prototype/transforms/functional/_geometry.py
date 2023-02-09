@@ -1494,8 +1494,10 @@ def elastic_image_tensor(
 
     shape = image.shape
     ndim = image.ndim
-    device = image.device
     fp = torch.is_floating_point(image)
+
+    device = image.device
+    dtype = image.dtype if fp else torch.float32
 
     if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
@@ -1506,9 +1508,15 @@ def elastic_image_tensor(
     else:
         needs_unsquash = False
 
+    if displacement.dtype != dtype:
+        displacement = displacement.to(dtype)
+
+    if displacement.device != device:
+        displacement = displacement.to(device)
+
     image_height, image_width = shape[-2:]
-    grid = _create_identity_grid((image_height, image_width), device=device).add_(displacement.to(device))
-    output = _apply_grid_transform(image if fp else image.to(torch.float32), grid, interpolation.value, fill=fill)
+    grid = _create_identity_grid((image_height, image_width), device=device, dtype=dtype).add_(displacement)
+    output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
 
     if not fp:
         output = output.round_().to(image.dtype)
@@ -1531,13 +1539,13 @@ def elastic_image_pil(
     return to_pil_image(output, mode=image.mode)
 
 
-def _create_identity_grid(size: Tuple[int, int], device: torch.device) -> torch.Tensor:
+def _create_identity_grid(size: Tuple[int, int], device: torch.device, dtype: torch.dtype) -> torch.Tensor:
     sy, sx = size
-    base_grid = torch.empty(1, sy, sx, 2, device=device)
-    x_grid = torch.linspace((-sx + 1) / sx, (sx - 1) / sx, sx, device=device)
+    base_grid = torch.empty(1, sy, sx, 2, device=device, dtype=dtype)
+    x_grid = torch.linspace((-sx + 1) / sx, (sx - 1) / sx, sx, device=device, dtype=dtype)
     base_grid[..., 0].copy_(x_grid)
 
-    y_grid = torch.linspace((-sy + 1) / sy, (sy - 1) / sy, sy, device=device).unsqueeze_(-1)
+    y_grid = torch.linspace((-sy + 1) / sy, (sy - 1) / sy, sy, device=device, dtype=dtype).unsqueeze_(-1)
     base_grid[..., 1].copy_(y_grid)
 
     return base_grid
@@ -1552,7 +1560,14 @@ def elastic_bounding_box(
         return bounding_box
 
     # TODO: add in docstring about approximation we are doing for grid inversion
-    displacement = displacement.to(bounding_box.device)
+    device = bounding_box.device
+    dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
+
+    if displacement.dtype != dtype:
+        displacement = displacement.to(dtype)
+
+    if displacement.device != device:
+        displacement = displacement.to(device)
 
     original_shape = bounding_box.shape
     bounding_box = (
@@ -1563,7 +1578,7 @@ def elastic_bounding_box(
     # Or add spatial_size arg and check displacement shape
     spatial_size = displacement.shape[-3], displacement.shape[-2]
 
-    id_grid = _create_identity_grid(spatial_size, bounding_box.device)
+    id_grid = _create_identity_grid(spatial_size, device=device, dtype=dtype)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
     # This is not an exact inverse of the grid
     inv_grid = id_grid.sub_(displacement)
