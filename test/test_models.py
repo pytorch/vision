@@ -60,7 +60,7 @@ def _get_image(input_shape, real_image, device, dtype=None):
         convert_tensor = transforms.ToTensor()
         image = convert_tensor(img)
         assert tuple(image.size()) == input_shape
-        return image.to(device=device)
+        return image.to(device=device, dtype=dtype)
 
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     return torch.rand(input_shape).to(device=device, dtype=dtype)
