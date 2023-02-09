@@ -62,10 +62,11 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
 
                         # Disable all Linux Wheels Workflows from CircleCI
                         # since those will now be done through Nova. We'll keep
-                        # around the py3.8 Linux Wheels build since the docs
+                        # around the py3.8 cpu Linux Wheels build since the docs
                         # job depends on it.
-                        if os_type == "linux" and btype == "wheel" and python_version != "3.8":
-                            continue
+                        if os_type == "linux" and btype == "wheel":
+                            if not (python_version == "3.8" and cu_version == "cpu"):
+                                continue
 
                         # Disable all Macos Wheels Workflows from CircleCI.
                         if os_type == "macos" and btype == "wheel":
