@@ -109,7 +109,7 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
                 }
             },
             "_ops": 2.086,
-            "_weight_size": 12.49,
+            "_file_size": 12.49,
             "_docs": """
                 These weights were trained on a subset of COCO, using only the 20 categories that are present in the
                 Pascal VOC dataset.
@@ -176,14 +176,3 @@ def lraspp_mobilenet_v3_large(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "lraspp_mobilenet_v3_large_coco": LRASPP_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1.url,
-    }
-)

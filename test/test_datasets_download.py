@@ -296,6 +296,10 @@ def qmnist():
     )
 
 
+def moving_mnist():
+    return collect_download_configs(lambda: datasets.MovingMNIST(ROOT, download=True), name="MovingMNIST")
+
+
 def omniglot():
     return itertools.chain(
         *[
@@ -463,6 +467,7 @@ def make_parametrize_kwargs(download_configs):
             widerface(),
             kinetics(),
             kitti(),
+            places365(),
         )
     )
 )
@@ -477,7 +482,6 @@ def test_url_is_accessible(url, md5):
 @pytest.mark.parametrize(
     **make_parametrize_kwargs(
         itertools.chain(
-            places365(),  # https://github.com/pytorch/vision/issues/6268
             sbu(),  # https://github.com/pytorch/vision/issues/7005
         )
     )

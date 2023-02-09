@@ -6,16 +6,24 @@ from typing import Any, cast, Dict, List, Optional, Tuple, Union
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
-
+from torchvision import transforms as _transforms
 from torchvision.ops import masks_to_boxes
 from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F, InterpolationMode
+from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
 
 from ._transform import _RandomApplyTransform
 from .utils import has_any, is_simple_tensor, query_chw, query_spatial_size
 
 
 class RandomErasing(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomErasing
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        return dict(
+            super()._extract_params_for_v1_transform(),
+            value="random" if self.value is None else self.value,
+        )
+
     _transformed_types = (is_simple_tensor, datapoints.Image, PIL.Image.Image, datapoints.Video)
 
     def __init__(
@@ -23,7 +31,7 @@ class RandomErasing(_RandomApplyTransform):
         p: float = 0.5,
         scale: Tuple[float, float] = (0.02, 0.33),
         ratio: Tuple[float, float] = (0.3, 3.3),
-        value: float = 0,
+        value: float = 0.0,
         inplace: bool = False,
     ):
         super().__init__(p=p)
@@ -42,11 +50,11 @@ class RandomErasing(_RandomApplyTransform):
         self.scale = scale
         self.ratio = ratio
         if isinstance(value, (int, float)):
-            self.value = [value]
+            self.value = [float(value)]
         elif isinstance(value, str):
             self.value = None
-        elif isinstance(value, tuple):
-            self.value = list(value)
+        elif isinstance(value, (list, tuple)):
+            self.value = [float(v) for v in value]
         else:
             self.value = value
         self.inplace = inplace
@@ -191,15 +199,14 @@ class RandomCutmix(_BaseMixupCutmix):
             return inpt
 
 
-class SimpleCopyPaste(_RandomApplyTransform):
+class SimpleCopyPaste(Transform):
     def __init__(
         self,
-        p: float = 0.5,
         blending: bool = True,
         resize_interpolation: InterpolationMode = F.InterpolationMode.BILINEAR,
         antialias: Optional[bool] = None,
     ) -> None:
-        super().__init__(p=p)
+        super().__init__()
         self.resize_interpolation = resize_interpolation
         self.blending = blending
         self.antialias = antialias

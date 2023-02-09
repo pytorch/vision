@@ -672,7 +672,17 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "config",
-    [{"value": 0.2}, {"value": "random"}, {"value": (0.2, 0.2, 0.2)}, {"value": "random", "ratio": (0.1, 0.2)}],
+    [
+        {},
+        {"value": 1},
+        {"value": 0.2},
+        {"value": "random"},
+        {"value": (1, 1, 1)},
+        {"value": (0.2, 0.2, 0.2)},
+        {"value": [1, 1, 1]},
+        {"value": [0.2, 0.2, 0.2]},
+        {"value": "random", "ratio": (0.1, 0.2)},
+    ],
 )
 def test_random_erasing(device, config):
     tensor, _ = _create_data(24, 32, channels=3, device=device)
@@ -847,4 +857,36 @@ def test_gaussian_blur(device, channels, meth_kwargs):
         device=device,
         agg_method="max",
         tol=tol,
+    )
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "fill",
+    [
+        1,
+        1.0,
+        [1],
+        [1.0],
+        (1,),
+        (1.0,),
+        [1, 2, 3],
+        [1.0, 2.0, 3.0],
+        (1, 2, 3),
+        (1.0, 2.0, 3.0),
+    ],
+)
+@pytest.mark.parametrize("channels", [1, 3])
+def test_elastic_transform(device, channels, fill):
+    if isinstance(fill, (list, tuple)) and len(fill) > 1 and channels == 1:
+        # For this the test would correctly fail, since the number of channels in the image does not match `fill`.
+        # Thus, this is not an issue in the transform, but rather a problem of parametrization that just gives the
+        # product of `fill` and `channels`.
+        return
+
+    _test_class_op(
+        T.ElasticTransform,
+        meth_kwargs=dict(fill=fill),
+        channels=channels,
+        device=device,
     )

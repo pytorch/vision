@@ -153,7 +153,7 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
                 }
             },
             "_ops": 178.722,
-            "_weight_size": 160.515,
+            "_file_size": 160.515,
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -174,7 +174,7 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
                 }
             },
             "_ops": 258.743,
-            "_weight_size": 233.217,
+            "_file_size": 233.217,
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -195,7 +195,7 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
                 }
             },
             "_ops": 10.452,
-            "_weight_size": 42.301,
+            "_file_size": 42.301,
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -388,16 +388,3 @@ def deeplabv3_mobilenet_v3_large(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "deeplabv3_resnet50_coco": DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1.url,
-        "deeplabv3_resnet101_coco": DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1.url,
-        "deeplabv3_mobilenet_v3_large_coco": DeepLabV3_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1.url,
-    }
-)

@@ -291,7 +291,7 @@ class GoogLeNet_Weights(WeightsEnum):
                 }
             },
             "_ops": 1.498,
-            "_weight_size": 49.731,
+            "_file_size": 49.731,
             "_docs": """These weights are ported from the original paper.""",
         },
     )
@@ -343,15 +343,3 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
             )
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        # GoogLeNet ported from TensorFlow
-        "googlenet": GoogLeNet_Weights.IMAGENET1K_V1.url,
-    }
-)
