@@ -45,7 +45,9 @@ class RandomApply(Transform):
         if torch.rand(1) >= self.p:
             return sample
 
-        return super().forward(sample)
+        for transform in self.transforms:
+            sample = transform(sample)
+        return sample
 
     def extra_repr(self) -> str:
         format_string = []
