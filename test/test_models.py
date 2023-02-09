@@ -29,7 +29,7 @@ def list_model_fns(module):
     return [get_model_builder(name) for name in list_models(module)]
 
 
-def _get_image(input_shape, real_image, device):
+def _get_image(input_shape, real_image, device, dtype=None):
     """This routine loads a real or random image based on `real_image` argument.
     Currently, the real image is utilized for the following list of models:
     - `retinanet_resnet50_fpn`,
@@ -63,7 +63,7 @@ def _get_image(input_shape, real_image, device):
         return image.to(device=device)
 
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-    return torch.rand(input_shape).to(device=device)
+    return torch.rand(input_shape).to(device=device, dtype=dtype)
 
 
 @pytest.fixture
@@ -792,7 +792,7 @@ def test_detection_model(model_fn, dev):
 
     model = model_fn(**kwargs)
     model.eval().to(device=dev, dtype=dtype)
-    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev).to(dtype)
+    x = _get_image(input_shape=input_shape, real_image=real_image, device=dev, dtype=dtype)
     model_input = [x]
     with torch.no_grad(), freeze_rng_state():
         out = model(model_input)
