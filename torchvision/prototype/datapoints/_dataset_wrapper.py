@@ -29,6 +29,10 @@ class WrapperFactories(dict):
         return decorator
 
 
+# We need this two-stage design, i.e. a wrapper factory producing the actual wrapper, since some wrappers depend on the
+# dataset instance rather than just the class, since they require the user defined instance attributes. Thus, we can
+# provide a wrapping from the dataset class to the factory here, but can only instantiate the wrapper at runtime when
+# we have access to the dataset instance.
 WRAPPER_FACTORIES = WrapperFactories()
 
 
