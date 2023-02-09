@@ -352,7 +352,7 @@ def cityscapes_wrapper_factory(dataset):
 
     def instance_segmentation_wrapper(mask):
         # See https://github.com/mcordts/cityscapesScripts/blob/8da5dd00c9069058ccc134654116aac52d4f6fa2/cityscapesscripts/preparation/json2instanceImg.py#L7-L21
-        data = F.pil_to_tensor(mask).squeeze(0)
+        data = pil_image_to_mask(mask)
         masks = []
         labels = []
         for id in data.unique():
@@ -361,11 +361,7 @@ def cityscapes_wrapper_factory(dataset):
             if label >= 1_000:
                 label //= 1_000
             labels.append(label)
-        masks = datapoints.Mask(torch.stack(masks))
-        # FIXME: without the labels, returning just the instance masks is pretty useless. However, we would need to
-        #  return a two-tuple or the like where we originally only had a single PIL image.
-        labels = datapoints.Label(torch.stack(labels))
-        return masks
+        return dict(masks=datapoints.Mask(torch.stack(masks)), labels=torch.stack(labels))
 
     def wrapper(sample):
         image, target = sample
