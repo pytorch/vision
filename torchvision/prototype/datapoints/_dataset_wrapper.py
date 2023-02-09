@@ -17,18 +17,7 @@ __all__ = ["wrap_dataset_for_transforms_v2"]
 
 # TODO: naming!
 def wrap_dataset_for_transforms_v2(dataset):
-    dataset_cls = type(dataset)
-    wrapper_factory = WRAPPER_FACTORIES.get(dataset_cls)
-    if wrapper_factory is None:
-        # TODO: If we have documentation on how to do that, put a link in the error message.
-        msg = f"No wrapper exist for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
-        if dataset_cls in datasets.__dict__.values():
-            msg = (
-                f"{msg} If an automated wrapper for this dataset would be useful for you, "
-                f"please open an issue at https://github.com/pytorch/vision/issues."
-            )
-        raise ValueError(msg)
-    return VisionDatasetDatapointWrapper(dataset, wrapper_factory(dataset))
+    return VisionDatasetDatapointWrapper(dataset)
 
 
 class WrapperFactories(dict):
@@ -44,9 +33,21 @@ WRAPPER_FACTORIES = WrapperFactories()
 
 
 class VisionDatasetDatapointWrapper(Dataset):
-    def __init__(self, dataset, wrapper):
-        self._vision_dataset = dataset
-        self._wrapper = wrapper
+    def __init__(self, dataset):
+        dataset_cls = type(dataset)
+        wrapper_factory = WRAPPER_FACTORIES.get(dataset_cls)
+        if wrapper_factory is None:
+            # TODO: If we have documentation on how to do that, put a link in the error message.
+            msg = f"No wrapper exist for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
+            if dataset_cls in datasets.__dict__.values():
+                msg = (
+                    f"{msg} If an automated wrapper for this dataset would be useful for you, "
+                    f"please open an issue at https://github.com/pytorch/vision/issues."
+                )
+            raise TypeError(msg)
+
+        self._dataset = dataset
+        self._wrapper = wrapper_factory(dataset)
 
         # We need to disable the transforms on the dataset here to be able to inject the wrapping before we apply them.
         # Although internally, `datasets.VisionDataset` merges `transform` and `target_transform` into the joint
@@ -62,12 +63,12 @@ class VisionDatasetDatapointWrapper(Dataset):
         with contextlib.suppress(AttributeError):
             return object.__getattribute__(self, item)
 
-        return getattr(self._vision_dataset, item)
+        return getattr(self._dataset, item)
 
     def __getitem__(self, idx):
         # This gets us the raw sample since we disabled the transforms for the underlying dataset in the constructor
         # of this class
-        sample = self._vision_dataset[idx]
+        sample = self._dataset[idx]
 
         sample = self._wrapper(sample)
 
@@ -79,7 +80,7 @@ class VisionDatasetDatapointWrapper(Dataset):
         return sample
 
     def __len__(self):
-        return len(self._vision_dataset)
+        return len(self._dataset)
 
 
 def raise_not_supported(description):
