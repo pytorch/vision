@@ -85,8 +85,8 @@ class WeightsEnum(Enum):
                 )
         return obj
 
-    def get_state_dict(self, progress: bool) -> Mapping[str, Any]:
-        return load_state_dict_from_url(self.url, progress=progress, check_hash=True)
+    def get_state_dict(self, *args: Any, **kwargs: Any) -> Mapping[str, Any]:
+        return load_state_dict_from_url(self.url, *args, **kwargs)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self._name_}"
