@@ -421,8 +421,6 @@ def resize(
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
             supported.
-            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
-            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         max_size (int, optional): The maximum allowed for the longer edge of
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
@@ -455,13 +453,6 @@ def resize(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(resize)
-    # Backward compatibility with integer value
-    if isinstance(interpolation, int):
-        warnings.warn(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        )
-        interpolation = _interpolation_modes_from_int(interpolation)
 
     if not isinstance(interpolation, InterpolationMode):
         raise TypeError("Argument interpolation should be a InterpolationMode")
@@ -639,8 +630,6 @@ def resized_crop(
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
             supported.
-            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
-            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         antialias (bool, optional): Whether to apply antialiasing.
             It only affects **tensors** with bilinear or bicubic modes and it is
             ignored otherwise: on PIL images, antialiasing is always applied on
@@ -737,8 +726,6 @@ def perspective(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
-            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
 
@@ -753,14 +740,6 @@ def perspective(
         _log_api_usage_once(perspective)
 
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
-
-    # Backward compatibility with integer value
-    if isinstance(interpolation, int):
-        warnings.warn(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        )
-        interpolation = _interpolation_modes_from_int(interpolation)
 
     if not isinstance(interpolation, InterpolationMode):
         raise TypeError("Argument interpolation should be a InterpolationMode")
@@ -1097,8 +1076,6 @@ def rotate(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
-            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -1119,14 +1096,6 @@ def rotate(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(rotate)
-
-    # Backward compatibility with integer value
-    if isinstance(interpolation, int):
-        warnings.warn(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        )
-        interpolation = _interpolation_modes_from_int(interpolation)
 
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
@@ -1178,8 +1147,6 @@ def affine(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
-            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
 
@@ -1194,14 +1161,6 @@ def affine(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(affine)
-
-    # Backward compatibility with integer value
-    if isinstance(interpolation, int):
-        warnings.warn(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        )
-        interpolation = _interpolation_modes_from_int(interpolation)
 
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
