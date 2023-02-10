@@ -4,14 +4,17 @@ import time
 import warnings
 
 import presets
+from sampler import RASampler
+from transforms import WrapIntoFeatures
+import utils  # usort: skip
+
 import torch
 import torch.utils.data
 import torchvision
-import transforms
-import utils
-from sampler import RASampler
+
 from torch import nn
 from torch.utils.data.dataloader import default_collate
+from torchvision.prototype import features, transforms
 from torchvision.transforms.functional import InterpolationMode
 
 
@@ -144,6 +147,7 @@ def load_data(traindir, valdir, args):
                 ra_magnitude=ra_magnitude,
                 augmix_severity=augmix_severity,
             ),
+            target_transform=lambda target: features.Label(target),
         )
         if args.cache_dataset:
             print(f"Saving dataset_train to {cache_path}")
@@ -168,7 +172,8 @@ def load_data(traindir, valdir, args):
 
         dataset_test = torchvision.datasets.ImageFolder(
             valdir,
-            preprocessing,
+            transform=preprocessing,
+            target_transform=lambda target: features.Label(target),
         )
         if args.cache_dataset:
             print(f"Saving dataset_test to {cache_path}")
@@ -210,16 +215,23 @@ def main(args):
 
     collate_fn = None
     num_classes = len(dataset.classes)
-    mixup_transforms = []
+    mixup_or_cutmix = []
     if args.mixup_alpha > 0.0:
-        mixup_transforms.append(transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha))
+        mixup_or_cutmix.append(transforms.RandomMixup(alpha=args.mixup_alpha, p=1.0))
     if args.cutmix_alpha > 0.0:
-        mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
-    if mixup_transforms:
-        mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
+        mixup_or_cutmix.append(transforms.RandomCutmix(alpha=args.cutmix_alpha, p=1.0))
+    if mixup_or_cutmix:
+        batch_transform = transforms.Compose(
+            [
+                WrapIntoFeatures(),
+                transforms.LabelToOneHot(num_categories=num_classes),
+                transforms.ToDtype({features.OneHotLabel: torch.float, features.Image: None}),
+                transforms.RandomChoice(mixup_or_cutmix),
+            ]
+        )
 
         def collate_fn(batch):
-            return mixupcutmix(*default_collate(batch))
+            return batch_transform(*default_collate(batch))
 
     data_loader = torch.utils.data.DataLoader(
         dataset,

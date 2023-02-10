@@ -1,5 +1,5 @@
 import torch
-from torchvision.transforms import autoaugment, transforms
+from torchvision.prototype import transforms
 from torchvision.transforms.functional import InterpolationMode
 
 
@@ -17,22 +17,24 @@ class ClassificationPresetTrain:
         augmix_severity=3,
         random_erase_prob=0.0,
     ):
-        trans = [transforms.RandomResizedCrop(crop_size, interpolation=interpolation)]
+        trans = [
+            transforms.ToImageTensor(),
+            transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True),
+        ]
         if hflip_prob > 0:
-            trans.append(transforms.RandomHorizontalFlip(hflip_prob))
+            trans.append(transforms.RandomHorizontalFlip(p=hflip_prob))
         if auto_augment_policy is not None:
             if auto_augment_policy == "ra":
-                trans.append(autoaugment.RandAugment(interpolation=interpolation, magnitude=ra_magnitude))
+                trans.append(transforms.RandAugment(interpolation=interpolation, magnitude=ra_magnitude))
             elif auto_augment_policy == "ta_wide":
-                trans.append(autoaugment.TrivialAugmentWide(interpolation=interpolation))
+                trans.append(transforms.TrivialAugmentWide(interpolation=interpolation))
             elif auto_augment_policy == "augmix":
-                trans.append(autoaugment.AugMix(interpolation=interpolation, severity=augmix_severity))
+                trans.append(transforms.AugMix(interpolation=interpolation, severity=augmix_severity))
             else:
-                aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
-                trans.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))
+                aa_policy = transforms.AutoAugmentPolicy(auto_augment_policy)
+                trans.append(transforms.AutoAugment(policy=aa_policy, interpolation=interpolation))
         trans.extend(
             [
-                transforms.PILToTensor(),
                 transforms.ConvertImageDtype(torch.float),
                 transforms.Normalize(mean=mean, std=std),
             ]
@@ -59,9 +61,9 @@ class ClassificationPresetEval:
 
         self.transforms = transforms.Compose(
             [
-                transforms.Resize(resize_size, interpolation=interpolation),
+                transforms.ToImageTensor(),
+                transforms.Resize(resize_size, interpolation=interpolation, antialias=True),
                 transforms.CenterCrop(crop_size),
-                transforms.PILToTensor(),
                 transforms.ConvertImageDtype(torch.float),
                 transforms.Normalize(mean=mean, std=std),
             ]

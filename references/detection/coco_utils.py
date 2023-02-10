@@ -1,30 +1,13 @@
-import copy
 import os
 
 import torch
 import torch.utils.data
 import torchvision
-import transforms as T
+
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
-
-
-class FilterAndRemapCocoCategories:
-    def __init__(self, categories, remap=True):
-        self.categories = categories
-        self.remap = remap
-
-    def __call__(self, image, target):
-        anno = target["annotations"]
-        anno = [obj for obj in anno if obj["category_id"] in self.categories]
-        if not self.remap:
-            target["annotations"] = anno
-            return image, target
-        anno = copy.deepcopy(anno)
-        for obj in anno:
-            obj["category_id"] = self.categories.index(obj["category_id"])
-        target["annotations"] = anno
-        return image, target
+from torchvision.prototype import features, transforms as T
+from torchvision.prototype.transforms import functional as F
 
 
 def convert_coco_poly_to_mask(segmentations, height, width):
@@ -45,7 +28,8 @@ def convert_coco_poly_to_mask(segmentations, height, width):
 
 
 class ConvertCocoPolysToMask:
-    def __call__(self, image, target):
+    def __call__(self, sample):
+        image, target = sample
         w, h = image.size
 
         image_id = target["image_id"]
@@ -98,6 +82,27 @@ class ConvertCocoPolysToMask:
         target["iscrowd"] = iscrowd
 
         return image, target
+
+
+class WrapIntoFeatures:
+    def __call__(self, sample):
+        image, target = sample
+
+        wrapped_target = dict(
+            boxes=features.BoundingBox(
+                target["boxes"],
+                format=features.BoundingBoxFormat.XYXY,
+                spatial_size=(image.height, image.width),
+            ),
+            # TODO: add categories
+            labels=features.Label(target["labels"], categories=None),
+            masks=features.Mask(target["masks"]),
+            image_id=int(target["image_id"]),
+            area=target["area"].tolist(),
+            iscrowd=target["iscrowd"].bool().tolist(),
+        )
+
+        return F.to_image_tensor(image), wrapped_target
 
 
 def _coco_remove_images_without_annotations(dataset, cat_list=None):
@@ -225,10 +230,12 @@ def get_coco(root, image_set, transforms, mode="instances"):
     PATHS = {
         "train": ("train2017", os.path.join("annotations", anno_file_template.format(mode, "train"))),
         "val": ("val2017", os.path.join("annotations", anno_file_template.format(mode, "val"))),
-        # "train": ("val2017", os.path.join("annotations", anno_file_template.format(mode, "val")))
     }
 
-    t = [ConvertCocoPolysToMask()]
+    t = [
+        ConvertCocoPolysToMask(),
+        WrapIntoFeatures(),
+    ]
 
     if transforms is not None:
         t.append(transforms)
@@ -242,8 +249,6 @@ def get_coco(root, image_set, transforms, mode="instances"):
 
     if image_set == "train":
         dataset = _coco_remove_images_without_annotations(dataset)
-
-    # dataset = torch.utils.data.Subset(dataset, [i for i in range(500)])
 
     return dataset
 

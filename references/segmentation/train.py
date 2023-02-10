@@ -11,15 +11,19 @@ import utils
 from coco_utils import get_coco
 from torch import nn
 from torch.optim.lr_scheduler import PolynomialLR
-from torchvision.transforms import functional as F, InterpolationMode
+from torchvision.prototype.transforms import Compose, functional as F, InterpolationMode
+from transforms import WrapIntoFeatures
 
 
 def get_dataset(dir_path, name, image_set, transform):
-    def sbd(*args, **kwargs):
-        return torchvision.datasets.SBDataset(*args, mode="segmentation", **kwargs)
+    def voc(*args, transforms, **kwargs):
+        return torchvision.datasets.VOCSegmentation(*args, transforms=Compose([transforms]), **kwargs)
+
+    def sbd(*args, transforms, **kwargs):
+        return torchvision.datasets.SBDataset(*args, mode="segmentation", transforms=Compose([transforms]), **kwargs)
 
     paths = {
-        "voc": (dir_path, torchvision.datasets.VOCSegmentation, 21),
+        "voc": (dir_path, voc, 21),
         "voc_aug": (dir_path, sbd, 21),
         "coco": (dir_path, get_coco, 21),
     }
@@ -35,12 +39,14 @@ def get_transform(train, args):
     elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
+        wrap = WrapIntoFeatures()
 
-        def preprocessing(img, target):
+        def preprocessing(sample):
+            img, target = sample
             img = trans(img)
             size = F.get_dimensions(img)[1:]
             target = F.resize(target, size, interpolation=InterpolationMode.NEAREST)
-            return img, F.pil_to_tensor(target)
+            return wrap((img, target))
 
         return preprocessing
     else:
@@ -134,8 +140,8 @@ def main(args):
     else:
         torch.backends.cudnn.benchmark = True
 
-    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(True, args))
-    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(False, args))
+    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(train=True, args=args))
+    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(train=False, args=args))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)

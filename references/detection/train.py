@@ -31,12 +31,12 @@ import utils
 from coco_utils import get_coco, get_coco_kp
 from engine import evaluate, train_one_epoch
 from group_by_aspect_ratio import create_aspect_ratio_groups, GroupedBatchSampler
+from torchvision.prototype import transforms as T
 from torchvision.transforms import InterpolationMode
-from transforms import SimpleCopyPaste
 
 
 def copypaste_collate_fn(batch):
-    copypaste = SimpleCopyPaste(blending=True, resize_interpolation=InterpolationMode.BILINEAR)
+    copypaste = T.SimpleCopyPaste(blending=True, resize_interpolation=InterpolationMode.BILINEAR, antialias=True)
     return copypaste(*utils.collate_fn(batch))
 
 

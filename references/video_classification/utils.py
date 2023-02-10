@@ -161,6 +161,8 @@ def accuracy(output, target, topk=(1,)):
     with torch.inference_mode():
         maxk = max(topk)
         batch_size = target.size(0)
+        if target.ndim == 2:
+            target = target.max(dim=1)[1]
 
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
