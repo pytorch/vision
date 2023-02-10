@@ -94,7 +94,7 @@ def parametrize_from_transforms(*transforms):
 class TestSmoke:
     @parametrize_from_transforms(
         transforms.RandomErasing(p=1.0),
-        transforms.Resize([16, 16], antialias=None),
+        transforms.Resize([16, 16], antialias=True),
         transforms.CenterCrop([16, 16]),
         transforms.ConvertDtype(),
         transforms.RandomHorizontalFlip(),
@@ -210,7 +210,7 @@ class TestSmoke:
     @parametrize(
         [
             (
-                transforms.RandomResizedCrop([16, 16], antialias=None),
+                transforms.RandomResizedCrop([16, 16], antialias=True),
                 itertools.chain(
                     make_images(extra_dims=[(4,)]),
                     make_vanilla_tensor_images(),
