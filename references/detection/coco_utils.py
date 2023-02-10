@@ -27,6 +27,7 @@ def convert_coco_poly_to_mask(segmentations, height, width):
     return masks
 
 
+#TODO: Is this still needed?
 class ConvertCocoPolysToMask:
     def __call__(self, sample):
         image, target = sample
@@ -82,28 +83,6 @@ class ConvertCocoPolysToMask:
         target["iscrowd"] = iscrowd
 
         return image, target
-
-
-class WrapIntoDataPoints:
-    def __call__(self, sample):
-        image, target = sample
-
-        wrapped_target = dict(
-            boxes=datapoints.BoundingBox(
-                target["boxes"],
-                format=datapoints.BoundingBoxFormat.XYXY,
-                spatial_size=(image.height, image.width),
-            ),
-            # TODO: add categories
-            # labels=datapoints.Label(target["labels"], categories=None),
-            labels=torch.tensor(target["labels"]),
-            masks=datapoints.Mask(target["masks"]),
-            image_id=int(target["image_id"]),
-            area=target["area"].tolist(),
-            iscrowd=target["iscrowd"].bool().tolist(),
-        )
-
-        return F.to_image_tensor(image), wrapped_target
 
 
 def _coco_remove_images_without_annotations(dataset, cat_list=None):
@@ -213,20 +192,6 @@ def get_coco_api_from_dataset(dataset):
 
 
 # TODO: Maybe not critical but the wrapper doesn't work on sub-classes
-# So the one below can't be used with the wrapper.
-class CocoDetection(torchvision.datasets.CocoDetection):
-    def __init__(self, img_folder, ann_file, transforms):
-        super().__init__(img_folder, ann_file)
-        self._transforms = transforms
-
-    def __getitem__(self, idx):
-        img, target = super().__getitem__(idx)
-        image_id = self.ids[idx]
-        target = dict(image_id=image_id, annotations=target)
-        if self._transforms is not None:
-            img, target = self._transforms(img, target)
-        return img, target
-
 
 def get_coco(root, image_set, transforms, mode="instances"):
     anno_file_template = "{}_{}2017.json"
@@ -235,20 +200,10 @@ def get_coco(root, image_set, transforms, mode="instances"):
         "val": ("val2017", os.path.join("annotations", anno_file_template.format(mode, "val"))),
     }
 
-    t = [
-        # ConvertCocoPolysToMask(),
-        # WrapIntoDataPoints(),
-    ]
-
-    if transforms is not None:
-        t.append(transforms)
-    transforms = T.Compose(t)
 
     img_folder, ann_file = PATHS[image_set]
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
-
-    # dataset = CocoDetection(img_folder, ann_file, transforms=transforms)
 
     from torchvision.prototype.datapoints import wrap_dataset_for_transforms_v2
 
