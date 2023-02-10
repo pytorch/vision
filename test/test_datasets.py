@@ -763,11 +763,19 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
         return info
 
     def _create_annotations(self, image_ids, num_annotations_per_image):
-        annotations = datasets_utils.combinations_grid(
-            image_id=image_ids, bbox=([1.0, 2.0, 3.0, 4.0],) * num_annotations_per_image
-        )
-        for id, annotation in enumerate(annotations):
-            annotation["id"] = id
+        annotations = []
+        annotion_id = 0
+        for image_id in itertools.islice(itertools.cycle(image_ids), len(image_ids) * num_annotations_per_image):
+            annotations.append(
+                dict(
+                    image_id=image_id,
+                    id=annotion_id,
+                    bbox=torch.rand(4).tolist(),
+                    segmentation=[torch.rand(8).tolist()],
+                    category_id=int(torch.randint(91, ())),
+                )
+            )
+            annotion_id += 1
         return annotations, dict()
 
     def _create_json(self, root, name, content):
@@ -1528,27 +1536,16 @@ class MovingMNISTTestCase(datasets_utils.DatasetTestCase):
 class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.DatasetFolder
 
-    # The dataset has no fixed return type since it is defined by the loader parameter. For testing, we use a loader
-    # that simply returns the path as type 'str' instead of loading anything. See the 'dataset_args()' method.
-    FEATURE_TYPES = (str, int)
-
-    _IMAGE_EXTENSIONS = ("jpg", "png")
-    _VIDEO_EXTENSIONS = ("avi", "mp4")
-    _EXTENSIONS = (*_IMAGE_EXTENSIONS, *_VIDEO_EXTENSIONS)
+    _EXTENSIONS = ("jpg", "png")
 
     # DatasetFolder has two mutually exclusive parameters: 'extensions' and 'is_valid_file'. One of both is required.
     # We only iterate over different 'extensions' here and handle the tests for 'is_valid_file' in the
     # 'test_is_valid_file()' method.
     DEFAULT_CONFIG = dict(extensions=_EXTENSIONS)
-    ADDITIONAL_CONFIGS = (
-        *datasets_utils.combinations_grid(extensions=[(ext,) for ext in _IMAGE_EXTENSIONS]),
-        dict(extensions=_IMAGE_EXTENSIONS),
-        *datasets_utils.combinations_grid(extensions=[(ext,) for ext in _VIDEO_EXTENSIONS]),
-        dict(extensions=_VIDEO_EXTENSIONS),
-    )
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(extensions=[(ext,) for ext in _EXTENSIONS])
 
     def dataset_args(self, tmpdir, config):
-        return tmpdir, lambda x: x
+        return tmpdir, datasets.folder.pil_loader
 
     def inject_fake_data(self, tmpdir, config):
         extensions = config["extensions"] or self._is_valid_file_to_extensions(config["is_valid_file"])
@@ -1559,14 +1556,8 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
             if ext not in extensions:
                 continue
 
-            create_example_folder = (
-                datasets_utils.create_image_folder
-                if ext in self._IMAGE_EXTENSIONS
-                else datasets_utils.create_video_folder
-            )
-
             num_examples = torch.randint(1, 3, size=()).item()
-            create_example_folder(tmpdir, cls, lambda idx: self._file_name_fn(cls, ext, idx), num_examples)
+            datasets_utils.create_image_folder(tmpdir, cls, lambda idx: self._file_name_fn(cls, ext, idx), num_examples)
 
             num_examples_total += num_examples
             classes.append(cls)
