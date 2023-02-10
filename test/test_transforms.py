@@ -1872,17 +1872,6 @@ def test_random_rotation():
     # Checking if RandomRotation can be printed as string
     t.__repr__()
 
-    # assert changed type warning
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        ),
-    ):
-        t = transforms.RandomRotation((-10, 10), interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
-
 
 def test_random_rotation_error():
     # assert fill being either a Sequence or a Number
@@ -2211,17 +2200,6 @@ def test_random_affine():
 
     t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
     assert "bilinear" in t.__repr__()
-
-    # assert changed type warning
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        ),
-    ):
-        t = transforms.RandomAffine(10, interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
 def test_elastic_transformation():

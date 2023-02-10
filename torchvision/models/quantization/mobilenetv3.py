@@ -235,15 +235,3 @@ def mobilenet_v3_large(
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large", **kwargs)
     return _mobilenet_v3_model(inverted_residual_setting, last_channel, weights, progress, quantize, **kwargs)
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-from ..mobilenetv3 import model_urls  # noqa: F401
-
-
-quant_model_urls = _ModelURLs(
-    {
-        "mobilenet_v3_large_qnnpack": MobileNet_V3_Large_QuantizedWeights.IMAGENET1K_QNNPACK_V1.url,
-    }
-)
