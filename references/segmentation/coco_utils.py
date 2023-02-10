@@ -6,7 +6,7 @@ import torch.utils.data
 import torchvision
 from PIL import Image
 from pycocotools import mask as coco_mask
-from torchvision.prototype.transforms import Compose
+from transforms import Compose
 
 
 class FilterAndRemapCocoCategories:
@@ -14,9 +14,7 @@ class FilterAndRemapCocoCategories:
         self.categories = categories
         self.remap = remap
 
-    def __call__(self, sample):
-        image, anno = sample
-
+    def __call__(self, image, anno):
         anno = [obj for obj in anno if obj["category_id"] in self.categories]
         if not self.remap:
             return image, anno
@@ -44,9 +42,7 @@ def convert_coco_poly_to_mask(segmentations, height, width):
 
 
 class ConvertCocoPolysToMask:
-    def __call__(self, sample):
-        image, anno = sample
-
+    def __call__(self, image, anno):
         w, h = image.size
         segmentations = [obj["segmentation"] for obj in anno]
         cats = [obj["category_id"] for obj in anno]
@@ -94,6 +90,7 @@ def get_coco(root, image_set, transforms):
     PATHS = {
         "train": ("train2017", os.path.join("annotations", "instances_train2017.json")),
         "val": ("val2017", os.path.join("annotations", "instances_val2017.json")),
+        # "train": ("val2017", os.path.join("annotations", "instances_val2017.json"))
     }
     CAT_LIST = [0, 5, 2, 16, 9, 44, 6, 3, 17, 62, 21, 67, 18, 19, 4, 1, 64, 20, 63, 7, 72]
 

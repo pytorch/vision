@@ -13,9 +13,6 @@ import utils
 from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.datasets.samplers import DistributedSampler, RandomClipSampler, UniformClipSampler
-from torchvision.prototype import features, transforms
-from torchvision.transforms.functional import InterpolationMode
-from transforms import WrapIntoFeatures
 
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):
@@ -129,6 +126,12 @@ def _get_cache_path(filepath, args):
     return cache_path
 
 
+def collate_fn(batch):
+    # remove audio from the batch
+    batch = [(d[0], d[2], d[3]) for d in batch]
+    return default_collate(batch)
+
+
 def main(args):
     if args.output_dir:
         utils.mkdir(args.output_dir)
@@ -150,7 +153,6 @@ def main(args):
     val_crop_size = tuple(args.val_crop_size)
     train_resize_size = tuple(args.train_resize_size)
     train_crop_size = tuple(args.train_crop_size)
-    interpolation = InterpolationMode(args.interpolation)
 
     traindir = os.path.join(args.data_path, "train")
     valdir = os.path.join(args.data_path, "val")
@@ -158,15 +160,7 @@ def main(args):
     print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir, args)
-    transform_train = presets.VideoClassificationPresetTrain(
-        crop_size=train_crop_size,
-        resize_size=train_resize_size,
-        interpolation=interpolation,
-        auto_augment_policy=args.auto_augment,
-        random_erase_prob=args.random_erase,
-        ra_magnitude=args.ra_magnitude,
-        augmix_severity=args.augmix_severity,
-    )
+    transform_train = presets.VideoClassificationPresetTrain(crop_size=train_crop_size, resize_size=train_resize_size)
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_train from {cache_path}")
@@ -203,11 +197,7 @@ def main(args):
         weights = torchvision.models.get_weight(args.weights)
         transform_test = weights.transforms()
     else:
-        transform_test = presets.VideoClassificationPresetEval(
-            crop_size=val_crop_size,
-            resize_size=val_resize_size,
-            interpolation=interpolation,
-        )
+        transform_test = presets.VideoClassificationPresetEval(crop_size=val_crop_size, resize_size=val_resize_size)
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")
@@ -242,27 +232,6 @@ def main(args):
         train_sampler = DistributedSampler(train_sampler)
         test_sampler = DistributedSampler(test_sampler, shuffle=False)
 
-    collate_fn = None
-    num_classes = len(dataset.classes)
-    mixup_or_cutmix = []
-    if args.mixup_alpha > 0.0:
-        mixup_or_cutmix.append(transforms.RandomMixup(alpha=args.mixup_alpha, p=1.0))
-    if args.cutmix_alpha > 0.0:
-        mixup_or_cutmix.append(transforms.RandomCutmix(alpha=args.cutmix_alpha, p=1.0))
-    if mixup_or_cutmix:
-        batch_transform = transforms.Compose(
-            [
-                WrapIntoFeatures(),
-                transforms.LabelToOneHot(num_categories=num_classes),
-                transforms.ToDtype({features.OneHotLabel: torch.float, features.Video: None, features._Feature: None}),
-                transforms.RandomChoice(mixup_or_cutmix),
-                transforms.TransposeDimensions((-3, -4)),
-            ]
-        )
-
-        def collate_fn(batch):
-            return batch_transform(*default_collate(batch))
-
     data_loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -278,6 +247,7 @@ def main(args):
         sampler=test_sampler,
         num_workers=args.workers,
         pin_memory=True,
+        collate_fn=collate_fn,
     )
 
     print("Creating model")
@@ -426,12 +396,6 @@ def get_args_parser(add_help=True):
         help="Only test the model",
         action="store_true",
     )
-    parser.add_argument("--mixup-alpha", default=0.0, type=float, help="mixup alpha (default: 0.0)")
-    parser.add_argument("--cutmix-alpha", default=0.0, type=float, help="cutmix alpha (default: 0.0)")
-    parser.add_argument("--auto-augment", default=None, type=str, help="auto augment policy (default: None)")
-    parser.add_argument("--ra-magnitude", default=9, type=int, help="magnitude of auto augment policy")
-    parser.add_argument("--augmix-severity", default=3, type=int, help="severity of augmix policy")
-    parser.add_argument("--random-erase", default=0.0, type=float, help="random erasing probability (default: 0.0)")
     parser.add_argument(
         "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
@@ -440,9 +404,6 @@ def get_args_parser(add_help=True):
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
-    parser.add_argument(
-        "--interpolation", default="bilinear", type=str, help="the interpolation method (default: bilinear)"
-    )
     parser.add_argument(
         "--val-resize-size",
         default=(128, 171),

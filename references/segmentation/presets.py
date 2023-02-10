@@ -1,38 +1,39 @@
-from collections import defaultdict
-
 import torch
-from torchvision.prototype import features, transforms as T
-from transforms import PadIfSmaller, WrapIntoFeatures
+import transforms as T
 
 
-class SegmentationPresetTrain(T.Compose):
+class SegmentationPresetTrain:
     def __init__(self, *, base_size, crop_size, hflip_prob=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
-        transforms = [
-            WrapIntoFeatures(),
-            T.RandomResize(min_size=int(0.5 * base_size), max_size=int(2.0 * base_size), antialias=True),
-        ]
+        min_size = int(0.5 * base_size)
+        max_size = int(2.0 * base_size)
+
+        trans = [T.RandomResize(min_size, max_size)]
         if hflip_prob > 0:
-            transforms.append(T.RandomHorizontalFlip(hflip_prob))
-        transforms.extend(
+            trans.append(T.RandomHorizontalFlip(hflip_prob))
+        trans.extend(
             [
-                # We need a custom pad transform here, since the padding we want to perform here is fundamentally
-                # different from the padding in `RandomCrop` if `pad_if_needed=True`.
-                PadIfSmaller(crop_size, fill=defaultdict(lambda: 0, {features.Mask: 255})),
                 T.RandomCrop(crop_size),
+                T.PILToTensor(),
                 T.ConvertImageDtype(torch.float),
                 T.Normalize(mean=mean, std=std),
             ]
         )
-        super().__init__(transforms)
+        self.transforms = T.Compose(trans)
+
+    def __call__(self, img, target):
+        return self.transforms(img, target)
 
 
-class SegmentationPresetEval(T.Compose):
+class SegmentationPresetEval:
     def __init__(self, *, base_size, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
-        super().__init__(
+        self.transforms = T.Compose(
             [
-                WrapIntoFeatures(),
-                T.Resize(base_size, antialias=True),
+                T.RandomResize(base_size, base_size),
+                T.PILToTensor(),
                 T.ConvertImageDtype(torch.float),
                 T.Normalize(mean=mean, std=std),
             ]
         )
+
+    def __call__(self, img, target):
+        return self.transforms(img, target)
