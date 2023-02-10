@@ -230,15 +230,3 @@ def fcn_resnet101(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "fcn_resnet50_coco": FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1.url,
-        "fcn_resnet101_coco": FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1.url,
-    }
-)

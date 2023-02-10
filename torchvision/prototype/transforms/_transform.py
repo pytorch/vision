@@ -7,7 +7,8 @@ import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.prototype.transforms.utils import check_type
+from torchvision.prototype import datapoints
+from torchvision.prototype.transforms.utils import check_type, has_any, is_simple_tensor
 from torchvision.utils import _log_api_usage_once
 
 
@@ -37,9 +38,35 @@ class Transform(nn.Module):
 
         params = self._get_params(flat_inputs)
 
-        flat_outputs = [
-            self._transform(inpt, params) if check_type(inpt, self._transformed_types) else inpt for inpt in flat_inputs
-        ]
+        # Below is a heuristic on how to deal with simple tensor inputs:
+        # 1. Simple tensors, i.e. tensors that are not a datapoint, are passed through if there is an explicit image
+        #    (`datapoints.Image` or `PIL.Image.Image`) or video (`datapoints.Video`) in the sample.
+        # 2. If there is no explicit image or video in the sample, only the first encountered simple tensor is
+        #    transformed as image, while the rest is passed through. The order is defined by the returned `flat_inputs`
+        #    of `tree_flatten`, which recurses depth-first through the input.
+        #
+        # This heuristic stems from two requirements:
+        # 1. We need to keep BC for single input simple tensors and treat them as images.
+        # 2. We don't want to treat all simple tensors as images, because some datasets like `CelebA` or `Widerface`
+        #    return supplemental numerical data as tensors that cannot be transformed as images.
+        #
+        # The heuristic should work well for most people in practice. The only case where it doesn't is if someone
+        # tries to transform multiple simple tensors at the same time, expecting them all to be treated as images.
+        # However, this case wasn't supported by transforms v1 either, so there is no BC concern.
+        flat_outputs = []
+        transform_simple_tensor = not has_any(flat_inputs, datapoints.Image, datapoints.Video, PIL.Image.Image)
+        for inpt in flat_inputs:
+            needs_transform = True
+
+            if not check_type(inpt, self._transformed_types):
+                needs_transform = False
+            elif is_simple_tensor(inpt):
+                if transform_simple_tensor:
+                    transform_simple_tensor = False
+                else:
+                    needs_transform = False
+
+            flat_outputs.append(self._transform(inpt, params) if needs_transform else inpt)
 
         return tree_unflatten(flat_outputs, spec)
 
@@ -56,9 +83,18 @@ class Transform(nn.Module):
 
         return ", ".join(extra)
 
-    # This attribute should be set on all transforms that have a v1 equivalent. Doing so enables the v2 transformation
-    # to be scriptable. See `_extract_params_for_v1_transform()` and `__prepare_scriptable__` for details.
+    # This attribute should be set on all transforms that have a v1 equivalent. Doing so enables two things:
+    # 1. In case the v1 transform has a static `get_params` method, it will also be available under the same name on
+    #    the v2 transform. See `__init_subclass__` for details.
+    # 2. The v2 transform will be JIT scriptable. See `_extract_params_for_v1_transform` and `__prepare_scriptable__`
+    #    for details.
     _v1_transform_cls: Optional[Type[nn.Module]] = None
+
+    def __init_subclass__(cls) -> None:
+        # Since `get_params` is a `@staticmethod`, we have to bind it to the class itself rather than to an instance.
+        # This method is called after subclassing has happened, i.e. `cls` is the subclass, e.g. `Resize`.
+        if cls._v1_transform_cls is not None and hasattr(cls._v1_transform_cls, "get_params"):
+            cls.get_params = staticmethod(cls._v1_transform_cls.get_params)  # type: ignore[attr-defined]
 
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
         # This method is called by `__prepare_scriptable__` to instantiate the equivalent v1 transform from the current
@@ -94,7 +130,7 @@ class Transform(nn.Module):
         # is around.
         if self._v1_transform_cls is None:
             raise RuntimeError(
-                f"Transform {type(self.__name__)} cannot be JIT scripted. "
+                f"Transform {type(self).__name__} cannot be JIT scripted. "
                 f"This is only support for backward compatibility with transforms which already in v1."
                 f"For torchscript support (on tensors only), you can use the functional API instead."
             )

@@ -3,7 +3,7 @@ import importlib
 import pathlib
 from typing import Any, Collection, Dict, Iterator, List, Optional, Sequence, Union
 
-from torch.utils.data import IterDataPipe
+from torchdata.datapipes.iter import IterDataPipe
 from torchvision.datasets.utils import verify_str_arg
 
 from ._resource import OnlineResource
