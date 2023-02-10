@@ -1111,10 +1111,7 @@ class LinearTransformation(torch.nn.Module):
 
         flat_tensor = tensor.view(-1, n) - self.mean_vector
 
-        transformation_matrix = self.transformation_matrix
-        if flat_tensor.dtype != transformation_matrix.dtype:
-            transformation_matrix = transformation_matrix.to(flat_tensor.dtype)
-
+        transformation_matrix = self.transformation_matrix.to(flat_tensor.dtype)
         transformed_tensor = torch.mm(flat_tensor, transformation_matrix)
         return transformed_tensor.view(shape)
 

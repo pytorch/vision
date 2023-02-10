@@ -80,13 +80,6 @@ def _pixel_difference_closeness_kwargs(uint8_atol, *, dtype=torch.uint8, mae=Fal
     return dict(atol=uint8_atol / 255 * get_max_value(dtype), rtol=0, mae=mae)
 
 
-def scripted_vs_eager_double_pixel_difference(atol=1e-6, rtol=1e-5):
-    return {
-        (("TestKernels", "test_scripted_vs_eager"), dtype, device): {"atol": atol, "rtol": rtol, "mae": False}
-        for device, dtype in [("cpu", torch.float64), ("cuda", torch.float64)]
-    }
-
-
 def cuda_vs_cpu_pixel_difference(atol=1):
     return {
         (("TestKernels", "test_cuda_vs_cpu"), dtype, "cuda"): _pixel_difference_closeness_kwargs(atol, dtype=dtype)
@@ -1272,9 +1265,7 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.perspective_video,
             sample_inputs_fn=sample_inputs_perspective_video,
-            closeness_kwargs={
-                **cuda_vs_cpu_pixel_difference(),
-            },
+            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
         ),
     ]
 )
