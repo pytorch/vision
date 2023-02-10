@@ -175,8 +175,14 @@ class BoundingBox(Datapoint):
         fill: FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> BoundingBox:
+        # FIXME: why didn't this trigger CI???
         output = self._F.perspective_bounding_box(
-            self.as_subclass(torch.Tensor), startpoints, endpoints, self.format, coefficients=coefficients
+            self.as_subclass(torch.Tensor),
+            self.format,
+            self.spatial_size,
+            startpoints=startpoints,
+            endpoints=endpoints,
+            coefficients=coefficients,
         )
         return BoundingBox.wrap_like(self, output)
 
@@ -186,5 +192,7 @@ class BoundingBox(Datapoint):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> BoundingBox:
-        output = self._F.elastic_bounding_box(self.as_subclass(torch.Tensor), self.format, displacement)
+        output = self._F.elastic_bounding_box(
+            self.as_subclass(torch.Tensor), self.format, self.spatial_size, displacement=displacement
+        )
         return BoundingBox.wrap_like(self, output)

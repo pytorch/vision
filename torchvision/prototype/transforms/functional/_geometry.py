@@ -21,7 +21,7 @@ from torchvision.transforms.functional_tensor import _pad_symmetric
 
 from torchvision.utils import _log_api_usage_once
 
-from ._meta import convert_format_bounding_box, get_spatial_size_image_pil
+from ._meta import clamp_bounding_box, convert_format_bounding_box, get_spatial_size_image_pil
 
 from ._utils import is_simple_tensor
 
@@ -644,7 +644,11 @@ def _affine_bounding_box_xyxy(
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         spatial_size = (new_height, new_width)
 
-    return out_bboxes.to(bounding_box.dtype), spatial_size
+    out_bboxes = clamp_bounding_box(
+        out_bboxes.to(bounding_box.dtype), format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size
+    )
+
+    return out_bboxes, spatial_size
 
 
 def affine_bounding_box(
@@ -1182,8 +1186,9 @@ def crop_bounding_box(
         sub = [left, top, 0, 0]
 
     bounding_box = bounding_box - torch.tensor(sub, dtype=bounding_box.dtype, device=bounding_box.device)
+    spatial_size = (height, width)
 
-    return bounding_box, (height, width)
+    return clamp_bounding_box(bounding_box, format=format, spatial_size=spatial_size), spatial_size
 
 
 def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
@@ -1333,6 +1338,7 @@ def perspective_image_pil(
 def perspective_bounding_box(
     bounding_box: torch.Tensor,
     format: datapoints.BoundingBoxFormat,
+    spatial_size: Tuple[int, int],
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
     coefficients: Optional[List[float]] = None,
@@ -1409,7 +1415,11 @@ def perspective_bounding_box(
     transformed_points = transformed_points.reshape(-1, 4, 2)
     out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
 
-    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
+    out_bboxes = clamp_bounding_box(
+        torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype),
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=spatial_size,
+    )
 
     # out_bboxes should be of shape [N boxes, 4]
 
@@ -1546,6 +1556,7 @@ def _create_identity_grid(size: Tuple[int, int], device: torch.device) -> torch.
 def elastic_bounding_box(
     bounding_box: torch.Tensor,
     format: datapoints.BoundingBoxFormat,
+    spatial_size: Tuple[int, int],
     displacement: torch.Tensor,
 ) -> torch.Tensor:
     if bounding_box.numel() == 0:
@@ -1558,10 +1569,6 @@ def elastic_bounding_box(
     bounding_box = (
         convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
-
-    # Question (vfdev-5): should we rely on good displacement shape and fetch image size from it
-    # Or add spatial_size arg and check displacement shape
-    spatial_size = displacement.shape[-3], displacement.shape[-2]
 
     id_grid = _create_identity_grid(spatial_size, bounding_box.device)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
@@ -1581,7 +1588,11 @@ def elastic_bounding_box(
 
     transformed_points = transformed_points.reshape(-1, 4, 2)
     out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
-    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
+    out_bboxes = clamp_bounding_box(
+        torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype),
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=spatial_size,
+    )
 
     return convert_format_bounding_box(
         out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
