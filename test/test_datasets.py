@@ -763,11 +763,19 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
         return info
 
     def _create_annotations(self, image_ids, num_annotations_per_image):
-        annotations = datasets_utils.combinations_grid(
-            image_id=image_ids, bbox=([1.0, 2.0, 3.0, 4.0],) * num_annotations_per_image
-        )
-        for id, annotation in enumerate(annotations):
-            annotation["id"] = id
+        annotations = []
+        annotion_id = 0
+        for image_id in itertools.islice(itertools.cycle(image_ids), len(image_ids) * num_annotations_per_image):
+            annotations.append(
+                dict(
+                    image_id=image_id,
+                    id=annotion_id,
+                    bbox=torch.rand(4).tolist(),
+                    segmentation=[torch.rand(8).tolist()],
+                    category_id=int(torch.randint(91, ())),
+                )
+            )
+            annotion_id += 1
         return annotations, dict()
 
     def _create_json(self, root, name, content):
