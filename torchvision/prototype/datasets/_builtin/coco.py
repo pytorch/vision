@@ -15,7 +15,7 @@ from torchdata.datapipes.iter import (
     UnBatcher,
 )
 from torchvision.prototype.datapoints import BoundingBox, Label, Mask
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GenericDatapoint, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -123,8 +123,8 @@ class Coco(Dataset):
                     ]
                 )
             ),
-            areas=GenericDatapoint([ann["area"] for ann in anns]),
-            crowds=GenericDatapoint([ann["iscrowd"] for ann in anns], dtype=torch.bool),
+            areas=torch.as_tensor([ann["area"] for ann in anns]),
+            crowds=torch.as_tensor([ann["iscrowd"] for ann in anns], dtype=torch.bool),
             bounding_boxes=BoundingBox(
                 [ann["bbox"] for ann in anns],
                 format="xywh",

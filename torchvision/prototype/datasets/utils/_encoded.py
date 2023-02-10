@@ -10,25 +10,6 @@ import torch
 from torchvision.prototype.datapoints._datapoint import Datapoint
 from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
-
-class GenericDatapoint(Datapoint):
-    def __new__(
-        cls,
-        data: Any,
-        *,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: Optional[bool] = None,
-    ) -> GenericDatapoint:
-        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return tensor.as_subclass(cls)
-
-    @classmethod
-    def wrap_like(cls: Type[GenericDatapoint], other: GenericDatapoint, tensor: torch.Tensor) -> GenericDatapoint:
-        generic_datapoint = tensor.as_subclass(cls)
-        return generic_datapoint
-
-
 D = TypeVar("D", bound="EncodedData")
 
 

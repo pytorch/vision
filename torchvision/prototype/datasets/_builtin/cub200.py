@@ -3,6 +3,7 @@ import functools
 import pathlib
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple, Union
 
+import torch
 from torchdata.datapipes.iter import (
     CSVDictParser,
     CSVParser,
@@ -15,7 +16,7 @@ from torchdata.datapipes.iter import (
 )
 from torchdata.datapipes.map import IterToMapConverter
 from torchvision.prototype.datapoints import BoundingBox, Label
-from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, GenericDatapoint, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, EncodedImage, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     getitem,
     hint_sharding,
@@ -161,7 +162,7 @@ class CUB200(Dataset):
                 format="xyxy",
                 spatial_size=spatial_size,
             ),
-            segmentation=GenericDatapoint(content["seg"]),
+            segmentation=torch.as_tensor(content["seg"]),
         )
 
     def _prepare_sample(
