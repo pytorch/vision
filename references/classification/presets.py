@@ -17,7 +17,7 @@ class ClassificationPresetTrain:
         random_erase_prob=0.0,
     ):
         trans = [
-            transforms.ToImageTensor(),
+            transforms.ToImageTensor(),  # Or not? Should also work with PIL anyway
             transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True),
         ]
         if hflip_prob > 0:

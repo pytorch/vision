@@ -207,8 +207,16 @@ def coco_dectection_wrapper_factory(dataset):
         batched_target = list_of_dicts_to_dict_of_lists(target)
 
         spatial_size = tuple(F.get_spatial_size(image))
+        # TODO: I only caught this because I was getting erros telling me the
+        # bboxes are degenerate in the model code
+        # We should check the validity of the bboxes in the tests
+        boxes = torch.tensor(batched_target["bbox"]).reshape(-1, 4)
+        boxes[:, 2:] += boxes[:, :2]
+        boxes[:, 0::2].clamp_(min=0, max=spatial_size[1])
+        boxes[:, 1::2].clamp_(min=0, max=spatial_size[0])
+
         batched_target["boxes"] = datapoints.BoundingBox(
-            batched_target["bbox"],
+            boxes,
             format=datapoints.BoundingBoxFormat.XYXY,
             spatial_size=spatial_size,
         )

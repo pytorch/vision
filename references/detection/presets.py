@@ -1,7 +1,25 @@
 from collections import defaultdict
 
 import torch
-from torchvision.prototype import features, transforms as T
+import transforms as reference_transforms
+from torchvision.prototype import datapoints, transforms as T
+
+
+# TODO: Should we provide a transforms that filters-out keys?
+
+# TODO: Make this public, implement it properly
+class Sanitize(torch.nn.Module):
+    def forward(self, inpt):
+        # TODO: why are some img Tensor while others are datapoints.Image??????
+        img, target = inpt
+        boxes = target["boxes"]
+        labels = target["labels"]
+
+        ok_idx = (boxes[:, 2:] > boxes[:, :2]).all(axis=1)
+        target["boxes"] = boxes[ok_idx]  # TODO: does this preserve the DataPoint subclass?
+        target["labels"] = labels[ok_idx]
+
+        return img, target
 
 
 class DetectionPresetTrain(T.Compose):
@@ -14,7 +32,9 @@ class DetectionPresetTrain(T.Compose):
         elif data_augmentation == "lsj":
             transforms = [
                 T.ScaleJitter(target_size=(1024, 1024), antialias=True),
-                T.FixedSizeCrop(size=(1024, 1024), fill=defaultdict(lambda: mean, {features.Mask: 0})),
+                reference_transforms.FixedSizeCrop(
+                    size=(1024, 1024), fill=defaultdict(lambda: mean, {datapoints.Mask: 0})
+                ),
                 T.RandomHorizontalFlip(p=hflip_prob),
                 T.ConvertImageDtype(torch.float),
             ]
@@ -28,20 +48,30 @@ class DetectionPresetTrain(T.Compose):
             ]
         elif data_augmentation == "ssd":
             transforms = [
+                T.ToImageTensor(),  # Here?
                 T.RandomPhotometricDistort(),
-                T.RandomZoomOut(fill=defaultdict(lambda: mean, {features.Mask: 0})),
+                T.RandomZoomOut(fill=defaultdict(lambda: mean, {datapoints.Mask: 0})),
                 T.RandomIoUCrop(),
                 T.RandomHorizontalFlip(p=hflip_prob),
                 T.ConvertImageDtype(torch.float),
+                Sanitize(),
             ]
         elif data_augmentation == "ssdlite":
             transforms = [
+                T.ToImageTensor(),  # Here?
                 T.RandomIoUCrop(),
                 T.RandomHorizontalFlip(p=hflip_prob),
                 T.ConvertImageDtype(torch.float),
+                Sanitize(),
             ]
         else:
             raise ValueError(f'Unknown data augmentation policy "{data_augmentation}"')
+
+        # TODO: we should convert to tensor *somewhere* (where?) because
+        # otherwise `.to()` would fail during training on PIL.Image.
+        # Can't do it here because ConvertImageDtype is pass-through for PIL
+        # (see todo in its functional part)
+        # transforms += [T.ToImageTensor()]
 
         super().__init__(transforms)
 

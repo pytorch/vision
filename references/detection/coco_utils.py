@@ -6,7 +6,7 @@ import torchvision
 
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
-from torchvision.prototype import features, transforms as T
+from torchvision.prototype import datapoints, transforms as T
 from torchvision.prototype.transforms import functional as F
 
 
@@ -84,19 +84,20 @@ class ConvertCocoPolysToMask:
         return image, target
 
 
-class WrapIntoFeatures:
+class WrapIntoDataPoints:
     def __call__(self, sample):
         image, target = sample
 
         wrapped_target = dict(
-            boxes=features.BoundingBox(
+            boxes=datapoints.BoundingBox(
                 target["boxes"],
-                format=features.BoundingBoxFormat.XYXY,
+                format=datapoints.BoundingBoxFormat.XYXY,
                 spatial_size=(image.height, image.width),
             ),
             # TODO: add categories
-            labels=features.Label(target["labels"], categories=None),
-            masks=features.Mask(target["masks"]),
+            # labels=datapoints.Label(target["labels"], categories=None),
+            labels=torch.tensor(target["labels"]),
+            masks=datapoints.Mask(target["masks"]),
             image_id=int(target["image_id"]),
             area=target["area"].tolist(),
             iscrowd=target["iscrowd"].bool().tolist(),
@@ -131,10 +132,10 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
             return True
         return False
 
-    if not isinstance(dataset, torchvision.datasets.CocoDetection):
-        raise TypeError(
-            f"This function expects dataset of type torchvision.datasets.CocoDetection, instead  got {type(dataset)}"
-        )
+    # if not isinstance(dataset, torchvision.datasets.CocoDetection):
+    #     raise TypeError(
+    #         f"This function expects dataset of type torchvision.datasets.CocoDetection, instead  got {type(dataset)}"
+    #     )
     ids = []
     for ds_idx, img_id in enumerate(dataset.ids):
         ann_ids = dataset.coco.getAnnIds(imgIds=img_id, iscrowd=None)
@@ -211,6 +212,8 @@ def get_coco_api_from_dataset(dataset):
     return convert_to_coco_api(dataset)
 
 
+# TODO: Maybe not critical but the wrapper doesn't work on sub-classes
+# So the one below can't be used with the wrapper.
 class CocoDetection(torchvision.datasets.CocoDetection):
     def __init__(self, img_folder, ann_file, transforms):
         super().__init__(img_folder, ann_file)
@@ -233,8 +236,8 @@ def get_coco(root, image_set, transforms, mode="instances"):
     }
 
     t = [
-        ConvertCocoPolysToMask(),
-        WrapIntoFeatures(),
+        # ConvertCocoPolysToMask(),
+        # WrapIntoDataPoints(),
     ]
 
     if transforms is not None:
@@ -245,7 +248,12 @@ def get_coco(root, image_set, transforms, mode="instances"):
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
 
-    dataset = CocoDetection(img_folder, ann_file, transforms=transforms)
+    # dataset = CocoDetection(img_folder, ann_file, transforms=transforms)
+
+    from torchvision.prototype.datapoints import wrap_dataset_for_transforms_v2
+
+    dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
+    dataset = wrap_dataset_for_transforms_v2(dataset)
 
     if image_set == "train":
         dataset = _coco_remove_images_without_annotations(dataset)

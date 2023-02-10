@@ -161,8 +161,27 @@ class _RandomApplyTransform(Transform):
 
         params = self._get_params(flat_inputs)
 
-        flat_outputs = [
-            self._transform(inpt, params) if check_type(inpt, self._transformed_types) else inpt for inpt in flat_inputs
-        ]
+        # flat_outputs = [
+        #     self._transform(inpt, params) if check_type(inpt, self._transformed_types) else inpt for inpt in flat_inputs
+        # ]
+
+        # return tree_unflatten(flat_outputs, spec)
+        # TODO: Ooopsieees
+        # Sounds like we need to extract that logic out
+        # Also what does that mean for user-defined transforms?
+        flat_outputs = []
+        transform_simple_tensor = not has_any(flat_inputs, datapoints.Image, datapoints.Video, PIL.Image.Image)
+        for inpt in flat_inputs:
+            needs_transform = True
+
+            if not check_type(inpt, self._transformed_types):
+                needs_transform = False
+            elif is_simple_tensor(inpt):
+                if transform_simple_tensor:
+                    transform_simple_tensor = False
+                else:
+                    needs_transform = False
+
+            flat_outputs.append(self._transform(inpt, params) if needs_transform else inpt)
 
         return tree_unflatten(flat_outputs, spec)

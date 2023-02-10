@@ -22,7 +22,9 @@ def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
     chws = {
         tuple(get_dimensions(inpt))
         for inpt in flat_inputs
-        if isinstance(inpt, (datapoints.Image, PIL.Image.Image, datapoints.Video)) or is_simple_tensor(inpt)
+        if isinstance(inpt, (datapoints.Image, PIL.Image.Image, datapoints.Video))
+        # See TODO below
+        # or is_simple_tensor(inpt)
     }
     if not chws:
         raise TypeError("No image or video was found in the sample")
@@ -39,7 +41,12 @@ def query_spatial_size(flat_inputs: List[Any]) -> Tuple[int, int]:
         if isinstance(
             inpt, (datapoints.Image, PIL.Image.Image, datapoints.Video, datapoints.Mask, datapoints.BoundingBox)
         )
-        or is_simple_tensor(inpt)
+        # TODO: this doesn't respect the heuristic to pass-through Tensors if there's an Image.
+        # There are probably a few others?
+        # I have to comment it out, otherwise the 1D label Tensor would be
+        # passed to get_spatial_size() which would fail because
+        # get_spatial_size_image_tensor() expects a 2D tensor down the road
+        # or is_simple_tensor(inpt)
     }
     if not sizes:
         raise TypeError("No image, video, mask or bounding box was found in the sample")

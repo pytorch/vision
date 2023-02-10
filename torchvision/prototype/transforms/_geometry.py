@@ -675,11 +675,12 @@ class RandomIoUCrop(Transform):
         if not (
             has_all(flat_inputs, datapoints.BoundingBox)
             and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
-            and has_any(flat_inputs, datapoints.Label, datapoints.OneHotLabel)
+            # and has_any(flat_inputs, datapoints.Label, datapoints.OneHotLabel)  # TODO: remove when we migrate and update error message below
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
                 "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Masks."
+                f"Got {flat_inputs}"
             )
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -738,19 +739,23 @@ class RandomIoUCrop(Transform):
 
         is_within_crop_area = params["is_within_crop_area"]
 
-        if isinstance(inpt, (datapoints.Label, datapoints.OneHotLabel)):
-            return inpt.wrap_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
+        # if isinstance(inpt, (datapoints.Label, datapoints.OneHotLabel)):
+        #     return inpt.wrap_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
         if isinstance(output, datapoints.BoundingBox):
-            bboxes = output[is_within_crop_area]
+            # bboxes = output[is_within_crop_area]
+            bboxes = output
+            bboxes[~is_within_crop_area] = 0
+
             bboxes = F.clamp_bounding_box(bboxes, output.format, output.spatial_size)
             output = datapoints.BoundingBox.wrap_like(output, bboxes)
-        elif isinstance(output, datapoints.Mask):
-            # apply is_within_crop_area if mask is one-hot encoded
-            masks = output[is_within_crop_area]
-            output = datapoints.Mask.wrap_like(output, masks)
+        # TODO: is a output still a Mask? Is it OK to comment that out?
+        # elif isinstance(output, datapoints.Mask):
+        #     # apply is_within_crop_area if mask is one-hot encoded
+        #     masks = output[is_within_crop_area]
+        #     output = datapoints.Mask.wrap_like(output, masks)
 
         return output
 

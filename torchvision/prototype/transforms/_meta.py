@@ -27,6 +27,10 @@ class ConvertBoundingBoxFormat(Transform):
         return datapoints.BoundingBox.wrap_like(inpt, output, format=params["format"])
 
 
+# TODO: This doesn't convert PIL?
+# This means that the detection preset fails right now if we convert PIL ->
+# Tensor at the very end: PIL images are passed-through so instead of getting a
+# float tensor we actually get a uint8 which raises an error
 class ConvertDtype(Transform):
     _v1_transform_cls = _transforms.ConvertImageDtype
 
