@@ -38,7 +38,7 @@ class Transform(nn.Module):
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
         params = self._get_params(
-            inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform
+            [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
         )
 
         flat_outputs = [
