@@ -3,7 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from itertools import product
-from typing import Callable, List, Tuple
+from typing import Callable, List
 
 import numpy as np
 import pytest
