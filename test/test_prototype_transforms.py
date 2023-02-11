@@ -1988,3 +1988,58 @@ class TestUniformTemporalSubsample:
         assert type(output) is type(inpt)
         assert output.shape[-4] == num_samples
         assert output.dtype == inpt.dtype
+
+
+@pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
+@pytest.mark.parametrize("label_type", (torch.Tensor, int))
+@pytest.mark.parametrize("dataset_return_type", (dict, tuple))
+def test_classif_preset(image_type, label_type, dataset_return_type):
+
+    image = datapoints.Image(torch.randint(0, 256, size=(1, 3, 250, 250), dtype=torch.uint8))
+    if image_type is PIL.Image:
+        image = to_pil_image(image[0])
+    elif image_type is torch.Tensor:
+        image = image.as_subclass(torch.Tensor)
+        assert is_simple_tensor(image)
+
+    label = 1 if label_type is int else torch.tensor([1])
+
+    if dataset_return_type is dict:
+        sample = {
+            "image": image,
+            "label": label,
+        }
+    else:
+        sample = image, label
+
+    t = transforms.Compose(
+        [
+            transforms.RandomResizedCrop((224, 224)),
+            transforms.RandomHorizontalFlip(p=1),
+            transforms.RandAugment(),
+            transforms.TrivialAugmentWide(),
+            transforms.AugMix(),
+            transforms.AutoAugment(),
+            transforms.ToImageTensor(),
+            # TODO: ConvertImageDtype is a pass-through on PIL images, is that
+            # intended?  This results in a failure if ToImageTensor() is called
+            # after it, because the image would still be uint8 which make Normalize
+            # fail.
+            transforms.ConvertImageDtype(torch.float),
+            transforms.Normalize(mean=[0, 0, 0], std=[1, 1, 1]),
+            transforms.RandomErasing(p=1),
+        ]
+    )
+
+    out = t(sample)
+
+    assert type(out) == type(sample)
+
+    if dataset_return_type is tuple:
+        out_image, out_label = out
+    else:
+        assert out.keys() == sample.keys()
+        out_image, out_label = out.values()
+
+    assert out_image.shape[-2:] == (224, 224)
+    assert out_label == label
