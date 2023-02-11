@@ -4,7 +4,7 @@ Implements the Generalized R-CNN framework
 
 import warnings
 from collections import OrderedDict
-from typing import List, Tuple, Union, Dict, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 from torch import nn, Tensor
@@ -36,13 +36,17 @@ class GeneralizedRCNN(nn.Module):
         self._has_warned = False
 
     @torch.jit.unused
-    def eager_outputs(self, losses: Dict[str, Tensor], detections: List[Dict[str, Tensor]]) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+    def eager_outputs(
+        self, losses: Dict[str, Tensor], detections: List[Dict[str, Tensor]]
+    ) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         if self.training:
             return losses
 
         return detections
 
-    def forward(self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+    def forward(
+        self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
+    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         """
         Args:
             images (list[Tensor]): images to be processed
