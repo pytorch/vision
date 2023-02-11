@@ -25,6 +25,7 @@ import torch
 import torchvision.datasets
 import torchvision.io
 from common_utils import disable_console_output, get_tmp_dir
+from torch.utils._pytree import tree_any
 from torchvision.transforms.functional import get_dimensions
 
 
@@ -581,6 +582,28 @@ class DatasetTestCase(unittest.TestCase):
 
                 mock.assert_called()
 
+    @test_all_configs
+    def test_transforms_v2_wrapper(self, config):
+        # Although this is a stable test, we unconditionally import from `torchvision.prototype` here. The wrapper needs
+        # to be available with the next release when v2 is released. Thus, if this import somehow fails on the release
+        # branch, we screwed up the roll-out
+        from torchvision.prototype.datapoints import wrap_dataset_for_transforms_v2
+        from torchvision.prototype.datapoints._datapoint import Datapoint
+
+        try:
+            with self.create_dataset(config) as (dataset, _):
+                wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
+                wrapped_sample = wrapped_dataset[0]
+                assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
+        except TypeError as error:
+            if str(error).startswith(f"No wrapper exist for dataset class {type(dataset).__name__}"):
+                return
+            raise error
+        except RuntimeError as error:
+            if "currently not supported by this wrapper" in str(error):
+                return
+            raise error
+
 
 class ImageDatasetTestCase(DatasetTestCase):
     """Abstract base class for image dataset testcases.
@@ -661,6 +684,15 @@ class VideoDatasetTestCase(DatasetTestCase):
             return args
 
         return wrapper
+
+    @test_all_configs
+    def test_transforms_v2_wrapper(self, config):
+        # `output_format == "THWC"` is not supported by the wrapper. Thus, we skip the `config` if it is set explicitly
+        # or use the supported `"TCHW"`
+        if config.setdefault("output_format", "TCHW") == "THWC":
+            return
+
+        super().test_transforms_v2_wrapper.__wrapped__(self, config)
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
