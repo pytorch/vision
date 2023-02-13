@@ -39,7 +39,16 @@ WRAPPER_FACTORIES = WrapperFactories()
 class VisionDatasetDatapointWrapper(Dataset):
     def __init__(self, dataset):
         dataset_cls = type(dataset)
+        # We test for exact dataset class matches first. If we don't find one, we check if the dataset subclasses any
+        # of the known ones.
         wrapper_factory = WRAPPER_FACTORIES.get(dataset_cls)
+        if wrapper_factory is None:
+            with contextlib.suppress(StopIteration):
+                wrapper_factory = next(
+                    wrapper_factory
+                    for dataset_supercls_candidate, wrapper_factory in WRAPPER_FACTORIES.items()
+                    if issubclass(dataset_cls, dataset_supercls_candidate)
+                )
         if wrapper_factory is None:
             # TODO: If we have documentation on how to do that, put a link in the error message.
             msg = f"No wrapper exist for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
