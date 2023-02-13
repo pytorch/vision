@@ -214,7 +214,6 @@ def coco_dectection_wrapper_factory(dataset):
 
         batched_target = list_of_dicts_to_dict_of_lists(target)
 
-        assert all(image_id_from_target == image_id for image_id_from_target in batched_target.pop("image_id"))
         batched_target["image_id"] = image_id
 
         spatial_size = tuple(F.get_spatial_size(image))
