@@ -223,7 +223,7 @@ def resize_bounding_box(
     ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio], device=bounding_box.device)
 
     bounding_box = bounding_box.mul(ratios).to(bounding_box.dtype)
-    return clamp_bounding_box(bounding_box, format=format, spatial_size=spatial_size), spatial_size
+    return bounding_box, spatial_size
 
 
 def resize_video(

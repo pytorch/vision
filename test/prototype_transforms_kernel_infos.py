@@ -351,14 +351,12 @@ def reference_resize_bounding_box(bounding_box, *, format, spatial_size, size, m
             [new_width / old_width, 0, 0],
             [0, new_height / old_height, 0],
         ],
-        dtype="float32",
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+        bounding_box, format=format, spatial_size=(new_height, new_width), affine_matrix=affine_matrix
     )
-    # FIXME: this should happen in the affine helper
-    expected_bboxes = F.clamp_bounding_box(expected_bboxes, format=format, spatial_size=(new_height, new_width))
     return expected_bboxes, (new_height, new_width)
 
 
@@ -396,10 +394,7 @@ KERNEL_INFOS.extend(
             reference_fn=reference_resize_bounding_box,
             reference_inputs_fn=reference_inputs_resize_bounding_box,
             closeness_kwargs={
-                # FIXME: those are crazy tolerances. We need to investigate what is going on
-                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=20, rtol=0),
-                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=10, rtol=0),
-                (("TestKernels", "test_against_reference"), torch.float64, "cpu"): dict(atol=10, rtol=0),
+                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
             },
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
