@@ -407,6 +407,7 @@ def _apply_grid_transform(
     img: torch.Tensor, grid: torch.Tensor, mode: str, fill: datapoints.FillTypeJIT
 ) -> torch.Tensor:
 
+    # We are using context knowledge that grid should have float dtype
     fp = img.dtype == grid.dtype
     float_img = img if fp else img.to(grid.dtype)
 
@@ -1490,6 +1491,9 @@ def elastic_image_tensor(
 
     device = image.device
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    # We are aware that if input image dtype is uint8 and displacement is float64 then
+    # displacement will be casted to float32 and all computations will be done with float32
+    # We can fix this later if needed
 
     if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
@@ -1500,11 +1504,8 @@ def elastic_image_tensor(
     else:
         needs_unsquash = False
 
-    if displacement.dtype != dtype:
-        displacement = displacement.to(dtype)
-
-    if displacement.device != device:
-        displacement = displacement.to(device)
+    if displacement.dtype != dtype or displacement.device != device:
+        displacement = displacement.to(dtype=dtype, device=device)
 
     image_height, image_width = shape[-2:]
     grid = _create_identity_grid((image_height, image_width), device=device, dtype=dtype).add_(displacement)
@@ -1552,11 +1553,8 @@ def elastic_bounding_box(
     device = bounding_box.device
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
 
-    if displacement.dtype != dtype:
-        displacement = displacement.to(dtype)
-
-    if displacement.device != device:
-        displacement = displacement.to(device)
+    if displacement.dtype != dtype or displacement.device != device:
+        displacement = displacement.to(dtype=dtype, device=device)
 
     original_shape = bounding_box.shape
     bounding_box = (
