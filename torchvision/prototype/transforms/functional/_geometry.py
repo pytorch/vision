@@ -1113,8 +1113,9 @@ def pad_bounding_box(
     height, width = spatial_size
     height += top + bottom
     width += left + right
+    spatial_size = (height, width)
 
-    return bounding_box, (height, width)
+    return clamp_bounding_box(bounding_box, format=format, spatial_size=spatial_size), spatial_size
 
 
 def pad_video(
