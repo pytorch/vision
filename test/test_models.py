@@ -1050,5 +1050,25 @@ def test_raft(model_fn, scripted):
     _assert_expected(flow_pred.cpu(), name=model_fn.__name__, atol=1e-2, rtol=1)
 
 
+def test_presets_antialias():
+
+    img = torch.randint(0, 256, size=(1, 3, 224, 224), dtype=torch.uint8)
+
+    match = "The default value of the antialias parameter"
+    with pytest.warns(UserWarning, match=match):
+        models.ResNet18_Weights.DEFAULT.transforms()(img)
+    with pytest.warns(UserWarning, match=match):
+        models.segmentation.DeepLabV3_ResNet50_Weights.DEFAULT.transforms()(img)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        models.ResNet18_Weights.DEFAULT.transforms(antialias=True)(img)
+        models.segmentation.DeepLabV3_ResNet50_Weights.DEFAULT.transforms(antialias=True)(img)
+
+        models.detection.FasterRCNN_ResNet50_FPN_Weights.DEFAULT.transforms()(img)
+        models.video.R3D_18_Weights.DEFAULT.transforms()(img)
+        models.optical_flow.Raft_Small_Weights.DEFAULT.transforms()(img, img)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

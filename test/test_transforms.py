@@ -2,6 +2,7 @@ import math
 import os
 import random
 import re
+import warnings
 from functools import partial
 
 import numpy as np
@@ -319,7 +320,7 @@ def test_randomresized_params():
         scale_range = (scale_min, scale_min + round(random.random(), 2))
         aspect_min = max(round(random.random(), 2), epsilon)
         aspect_ratio_range = (aspect_min, aspect_min + round(random.random(), 2))
-        randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
+        randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range, antialias=True)
         i, j, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
         aspect_ratio_obtained = w / h
         assert (
@@ -366,7 +367,7 @@ def test_randomresized_params():
 def test_resize(height, width, osize, max_size):
     img = Image.new("RGB", size=(width, height), color=127)
 
-    t = transforms.Resize(osize, max_size=max_size)
+    t = transforms.Resize(osize, max_size=max_size, antialias=True)
     result = t(img)
 
     msg = f"{height}, {width} - {osize} - {max_size}"
@@ -424,7 +425,7 @@ def test_resize_sequence_output(height, width, osize):
     img = Image.new("RGB", size=(width, height), color=127)
     oheight, owidth = osize
 
-    t = transforms.Resize(osize)
+    t = transforms.Resize(osize, antialias=True)
     result = t(img)
 
     assert (owidth, oheight) == result.size
@@ -439,6 +440,16 @@ def test_resize_antialias_error():
         t(img)
 
 
+def test_resize_antialias_default_warning():
+
+    img = Image.new("RGB", size=(10, 10), color=127)
+    # We make sure we don't warn for PIL images since the default behaviour doesn't change
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        transforms.Resize((20, 20))(img)
+        transforms.RandomResizedCrop((20, 20))(img)
+
+
 @pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
 def test_resize_size_equals_small_edge_size(height, width):
     # Non-regression test for https://github.com/pytorch/vision/issues/5405
@@ -447,7 +458,7 @@ def test_resize_size_equals_small_edge_size(height, width):
     img = Image.new("RGB", size=(width, height), color=127)
 
     small_edge = min(height, width)
-    t = transforms.Resize(small_edge, max_size=max_size)
+    t = transforms.Resize(small_edge, max_size=max_size, antialias=True)
     result = t(img)
     assert max(result.size) == max_size
 
@@ -1424,11 +1435,11 @@ def test_random_choice(proba_passthrough, seed):
 def test_random_order():
     random_state = random.getstate()
     random.seed(42)
-    random_order_transform = transforms.RandomOrder([transforms.Resize(20), transforms.CenterCrop(10)])
+    random_order_transform = transforms.RandomOrder([transforms.Resize(20, antialias=True), transforms.CenterCrop(10)])
     img = transforms.ToPILImage()(torch.rand(3, 25, 25))
     num_samples = 250
     num_normal_order = 0
-    resize_crop_out = transforms.CenterCrop(10)(transforms.Resize(20)(img))
+    resize_crop_out = transforms.CenterCrop(10)(transforms.Resize(20, antialias=True)(img))
     for _ in range(num_samples):
         out = random_order_transform(img)
         if out == resize_crop_out:

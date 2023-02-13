@@ -237,13 +237,6 @@ class TensorLoader:
     def load(self, device):
         return self.fn(self.shape, self.dtype, device)
 
-    def unwrap(self):
-        return TensorLoader(
-            fn=lambda shape, dtype, device: self.fn(shape, dtype, device).as_subclass(torch.Tensor),
-            shape=self.shape,
-            dtype=self.dtype,
-        )
-
 
 @dataclasses.dataclass
 class ImageLoader(TensorLoader):
@@ -304,7 +297,7 @@ def make_image_loaders(
         "RGBA",
     ),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.float32, torch.uint8),
+    dtypes=(torch.float32, torch.float64, torch.uint8),
     constant_alpha=True,
 ):
     for params in combinations_grid(size=sizes, color_space=color_spaces, extra_dims=extra_dims, dtype=dtypes):
@@ -426,7 +419,7 @@ def make_bounding_box_loaders(
     extra_dims=DEFAULT_EXTRA_DIMS,
     formats=tuple(datapoints.BoundingBoxFormat),
     spatial_size="random",
-    dtypes=(torch.float32, torch.int64),
+    dtypes=(torch.float32, torch.float64, torch.int64),
 ):
     for params in combinations_grid(extra_dims=extra_dims, format=formats, dtype=dtypes):
         yield make_bounding_box_loader(**params, spatial_size=spatial_size)
@@ -618,7 +611,7 @@ def make_video_loaders(
     ),
     num_frames=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.uint8,),
+    dtypes=(torch.uint8, torch.float32, torch.float64),
 ):
     for params in combinations_grid(
         size=sizes, color_space=color_spaces, num_frames=num_frames, extra_dims=extra_dims, dtype=dtypes

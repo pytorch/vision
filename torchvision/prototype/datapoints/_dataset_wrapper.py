@@ -108,7 +108,7 @@ def identity(item):
 
 
 def pil_image_to_mask(pil_image):
-    return datapoints.Mask(F.to_image_tensor(pil_image).squeeze(0))
+    return datapoints.Mask(pil_image)
 
 
 def list_of_dicts_to_dict_of_lists(list_of_dicts):
@@ -214,6 +214,10 @@ def coco_dectection_wrapper_factory(dataset):
         image, target = sample
 
         batched_target = list_of_dicts_to_dict_of_lists(target)
+
+        image_ids = batched_target.pop("image_id")
+        image_id = batched_target["image_id"] = image_ids.pop()
+        assert all(other_image_id == image_id for other_image_id in image_ids)
 
         spatial_size = tuple(F.get_spatial_size(image))
         batched_target["boxes"] = datapoints.BoundingBox(

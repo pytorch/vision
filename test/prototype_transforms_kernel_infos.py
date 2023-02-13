@@ -12,7 +12,6 @@ import torchvision.prototype.transforms.functional as F
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
-    BoundingBoxLoader,
     get_num_channels,
     ImageLoader,
     InfoBase,
@@ -106,6 +105,12 @@ def float32_vs_uint8_pixel_difference(atol=1, mae=False):
             torch.float32,
             "cpu",
         ): _pixel_difference_closeness_kwargs(atol, dtype=torch.float32, mae=mae)
+    }
+
+
+def scripted_vs_eager_double_pixel_difference(device, atol=1e-6, rtol=1e-6):
+    return {
+        (("TestKernels", "test_scripted_vs_eager"), torch.float64, device): {"atol": atol, "rtol": rtol, "mae": False},
     }
 
 
@@ -331,7 +336,6 @@ def sample_inputs_resize_video():
 
 
 def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=None):
-
     old_height, old_width = spatial_size
     new_height, new_width = F._geometry._compute_resized_output_size(spatial_size, size=size, max_size=max_size)
 
@@ -344,13 +348,15 @@ def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=bounding_box.format, affine_matrix=affine_matrix
+        bounding_box, format=datapoints.BoundingBoxFormat.XYXY, affine_matrix=affine_matrix
     )
     return expected_bboxes, (new_height, new_width)
 
 
 def reference_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(extra_dims=((), (4,))):
+    for bounding_box_loader in make_bounding_box_loaders(
+        formats=[datapoints.BoundingBoxFormat.XYXY], extra_dims=((), (4,))
+    ):
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
             yield ArgsKwargs(bounding_box_loader, size=size, spatial_size=bounding_box_loader.spatial_size)
 
@@ -541,8 +547,10 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix)
     def transform(bbox, affine_matrix_, format_):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
+        if not torch.is_floating_point(bbox):
+            bbox = bbox.float()
         bbox_xyxy = F.convert_format_bounding_box(
-            bbox.float(), old_format=format_, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+            bbox, old_format=format_, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
         )
         points = np.array(
             [
@@ -560,6 +568,7 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix)
                 np.max(transformed_points[:, 0]).item(),
                 np.max(transformed_points[:, 1]).item(),
             ],
+            dtype=bbox_xyxy.dtype,
         )
         out_bbox = F.convert_format_bounding_box(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
@@ -659,8 +668,7 @@ KERNEL_INFOS.extend(
 def sample_inputs_convert_format_bounding_box():
     formats = list(datapoints.BoundingBoxFormat)
     for bounding_box_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
-        yield ArgsKwargs(bounding_box_loader, new_format=new_format)
-        yield ArgsKwargs(bounding_box_loader.unwrap(), old_format=bounding_box_loader.format, new_format=new_format)
+        yield ArgsKwargs(bounding_box_loader, old_format=bounding_box_loader.format, new_format=new_format)
 
 
 def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
@@ -671,14 +679,8 @@ def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
 
 def reference_inputs_convert_format_bounding_box():
     for args_kwargs in sample_inputs_convert_format_bounding_box():
-        if len(args_kwargs.args[0].shape) != 2:
-            continue
-
-        (loader, *other_args), kwargs = args_kwargs
-        if isinstance(loader, BoundingBoxLoader):
-            kwargs["old_format"] = loader.format
-            loader = loader.unwrap()
-        yield ArgsKwargs(loader, *other_args, **kwargs)
+        if len(args_kwargs.args[0].shape) == 2:
+            yield args_kwargs
 
 
 KERNEL_INFOS.append(
@@ -688,18 +690,6 @@ KERNEL_INFOS.append(
         reference_fn=reference_convert_format_bounding_box,
         reference_inputs_fn=reference_inputs_convert_format_bounding_box,
         logs_usage=True,
-        test_marks=[
-            mark_framework_limitation(
-                ("TestKernels", "test_scripted_vs_eager"),
-                reason=(
-                    "The function is hybrid kernel / dispatcher. JIT unwraps a `datapoints.BoundingBox` into a "
-                    "`torch.Tensor`, but then the kernel (rightfully) complains that neither `format` nor "
-                    "`spatial_size` was passed"
-                ),
-                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader)
-                and arg_kwargs.kwargs.get("old_format") is None,
-            )
-        ],
     ),
 )
 
@@ -844,6 +834,10 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.rotate_bounding_box,
             sample_inputs_fn=sample_inputs_rotate_bounding_box,
+            closeness_kwargs={
+                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+            },
         ),
         KernelInfo(
             F.rotate_mask,
@@ -1275,6 +1269,8 @@ KERNEL_INFOS.extend(
                 **pil_reference_pixel_difference(2, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(),
+                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
             },
         ),
         KernelInfo(
@@ -1294,7 +1290,11 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.perspective_video,
             sample_inputs_fn=sample_inputs_perspective_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
+            closeness_kwargs={
+                **cuda_vs_cpu_pixel_difference(),
+                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+            },
         ),
     ]
 )
@@ -2030,10 +2030,8 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_clamp_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
-        yield ArgsKwargs(bounding_box_loader)
-
         yield ArgsKwargs(
-            bounding_box_loader.unwrap(),
+            bounding_box_loader,
             format=bounding_box_loader.format,
             spatial_size=bounding_box_loader.spatial_size,
         )
@@ -2044,19 +2042,6 @@ KERNEL_INFOS.append(
         F.clamp_bounding_box,
         sample_inputs_fn=sample_inputs_clamp_bounding_box,
         logs_usage=True,
-        test_marks=[
-            mark_framework_limitation(
-                ("TestKernels", "test_scripted_vs_eager"),
-                reason=(
-                    "The function is hybrid kernel / dispatcher. JIT unwraps a `datapoints.BoundingBox` into a "
-                    "`torch.Tensor`, but then the kernel (rightfully) complains that neither `format` nor "
-                    "`spatial_size` was passed"
-                ),
-                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader)
-                and arg_kwargs.kwargs.get("format") is None
-                and arg_kwargs.kwargs.get("spatial_size") is None,
-            )
-        ],
     )
 )
 
