@@ -951,9 +951,7 @@ def test_resized_crop(device, mode):
 
     # 2) resize by half and crop a TL corner
     tensor, _ = _create_data(26, 36, device=device)
-    out_tensor = F.resized_crop(
-        tensor, top=0, left=0, height=20, width=30, size=[10, 15], interpolation=NEAREST, antialias=True
-    )
+    out_tensor = F.resized_crop(tensor, top=0, left=0, height=20, width=30, size=[10, 15], interpolation=NEAREST)
     expected_out_tensor = tensor[:, :20:2, :30:2]
     assert_equal(
         expected_out_tensor,
@@ -971,7 +969,6 @@ def test_resized_crop(device, mode):
         width=30,
         size=[10, 15],
         interpolation=NEAREST,
-        antialias=True,
     )
 
 
