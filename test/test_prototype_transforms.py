@@ -229,6 +229,7 @@ class TestSmoke:
             none=None,
             str="str",
             path=pathlib.Path.cwd(),
+            object=object(),
             tensor=torch.empty(5),
             array=np.empty(5),
         )
