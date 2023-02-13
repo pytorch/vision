@@ -12,7 +12,6 @@ import torchvision.prototype.transforms.functional as F
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
-    BoundingBoxLoader,
     get_num_channels,
     ImageLoader,
     InfoBase,
@@ -691,18 +690,6 @@ KERNEL_INFOS.append(
         reference_fn=reference_convert_format_bounding_box,
         reference_inputs_fn=reference_inputs_convert_format_bounding_box,
         logs_usage=True,
-        test_marks=[
-            mark_framework_limitation(
-                ("TestKernels", "test_scripted_vs_eager"),
-                reason=(
-                    "The function is hybrid kernel / dispatcher. JIT unwraps a `datapoints.BoundingBox` into a "
-                    "`torch.Tensor`, but then the kernel (rightfully) complains that neither `format` nor "
-                    "`spatial_size` was passed"
-                ),
-                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader)
-                and arg_kwargs.kwargs.get("old_format") is None,
-            )
-        ],
     ),
 )
 
@@ -2055,19 +2042,6 @@ KERNEL_INFOS.append(
         F.clamp_bounding_box,
         sample_inputs_fn=sample_inputs_clamp_bounding_box,
         logs_usage=True,
-        test_marks=[
-            mark_framework_limitation(
-                ("TestKernels", "test_scripted_vs_eager"),
-                reason=(
-                    "The function is hybrid kernel / dispatcher. JIT unwraps a `datapoints.BoundingBox` into a "
-                    "`torch.Tensor`, but then the kernel (rightfully) complains that neither `format` nor "
-                    "`spatial_size` was passed"
-                ),
-                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader)
-                and arg_kwargs.kwargs.get("format") is None
-                and arg_kwargs.kwargs.get("spatial_size") is None,
-            )
-        ],
     )
 )
 
