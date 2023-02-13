@@ -205,16 +205,17 @@ def coco_dectection_wrapper_factory(dataset):
         return torch.from_numpy(mask.decode(segmentation))
 
     def wrapper(idx, sample):
+        image_id = dataset.ids[idx]
+
         image, target = sample
 
         if not target:
-            return image, dict(image_id=dataset.ids[idx])
+            return image, dict(image_id=image_id)
 
         batched_target = list_of_dicts_to_dict_of_lists(target)
 
-        image_ids = batched_target.pop("image_id")
-        image_id = batched_target["image_id"] = image_ids.pop()
-        assert all(other_image_id == image_id for other_image_id in image_ids)
+        assert all(image_id_from_target == image_id for image_id_from_target in batched_target.pop("image_id"))
+        batched_target["image_id"] = image_id
 
         spatial_size = tuple(F.get_spatial_size(image))
         batched_target["boxes"] = datapoints.BoundingBox(
