@@ -207,17 +207,23 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
 
 
 def resize_bounding_box(
-    bounding_box: torch.Tensor, spatial_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
+    bounding_box: torch.Tensor,
+    format: datapoints.BoundingBoxFormat,
+    spatial_size: Tuple[int, int],
+    size: List[int],
+    max_size: Optional[int] = None,
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = spatial_size
+
     new_height, new_width = _compute_resized_output_size(spatial_size, size=size, max_size=max_size)
+    spatial_size = (new_height, new_width)
+
     w_ratio = new_width / old_width
     h_ratio = new_height / old_height
     ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio], device=bounding_box.device)
-    return (
-        bounding_box.mul(ratios).to(bounding_box.dtype),
-        (new_height, new_width),
-    )
+
+    bounding_box = bounding_box.mul(ratios).to(bounding_box.dtype)
+    return clamp_bounding_box(bounding_box, format=format, spatial_size=spatial_size), spatial_size
 
 
 def resize_video(
@@ -1803,7 +1809,7 @@ def resized_crop_bounding_box(
     size: List[int],
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     bounding_box, _ = crop_bounding_box(bounding_box, format, top, left, height, width)
-    return resize_bounding_box(bounding_box, (height, width), size)
+    return resize_bounding_box(bounding_box, format=format, spatial_size=(height, width), size=size)
 
 
 def resized_crop_mask(

@@ -81,7 +81,11 @@ class BoundingBox(Datapoint):
         antialias: Optional[bool] = None,
     ) -> BoundingBox:
         output, spatial_size = self._F.resize_bounding_box(
-            self.as_subclass(torch.Tensor), spatial_size=self.spatial_size, size=size, max_size=max_size
+            self.as_subclass(torch.Tensor),
+            format=self.format,
+            spatial_size=self.spatial_size,
+            size=size,
+            max_size=max_size,
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 

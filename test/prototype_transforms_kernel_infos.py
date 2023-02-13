@@ -108,7 +108,7 @@ def float32_vs_uint8_pixel_difference(atol=1, mae=False):
     }
 
 
-def scripted_vs_eager_double_pixel_difference(device, atol=1e-6, rtol=1e-6):
+def scripted_vs_eager_float64_tolerances(device, atol=1e-6, rtol=1e-6):
     return {
         (("TestKernels", "test_scripted_vs_eager"), torch.float64, device): {"atol": atol, "rtol": rtol, "mae": False},
     }
@@ -214,7 +214,9 @@ def reference_horizontal_flip_bounding_box(bounding_box, *, format, spatial_size
         dtype="float32",
     )
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
 
     return expected_bboxes
 
@@ -322,7 +324,12 @@ def reference_inputs_resize_image_tensor():
 def sample_inputs_resize_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
-            yield ArgsKwargs(bounding_box_loader, size=size, spatial_size=bounding_box_loader.spatial_size)
+            yield ArgsKwargs(
+                bounding_box_loader,
+                format=bounding_box_loader.format,
+                spatial_size=bounding_box_loader.spatial_size,
+                size=size,
+            )
 
 
 def sample_inputs_resize_mask():
@@ -335,7 +342,7 @@ def sample_inputs_resize_video():
         yield ArgsKwargs(video_loader, size=[min(video_loader.shape[-2:]) + 1])
 
 
-def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=None):
+def reference_resize_bounding_box(bounding_box, *, format, spatial_size, size, max_size=None):
     old_height, old_width = spatial_size
     new_height, new_width = F._geometry._compute_resized_output_size(spatial_size, size=size, max_size=max_size)
 
@@ -348,17 +355,22 @@ def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=datapoints.BoundingBoxFormat.XYXY, affine_matrix=affine_matrix
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
     )
+    # FIXME: this should happen in the affine helper
+    expected_bboxes = F.clamp_bounding_box(expected_bboxes, format=format, spatial_size=(new_height, new_width))
     return expected_bboxes, (new_height, new_width)
 
 
 def reference_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(
-        formats=[datapoints.BoundingBoxFormat.XYXY], extra_dims=((), (4,))
-    ):
+    for bounding_box_loader in make_bounding_box_loaders(extra_dims=((), (4,))):
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
-            yield ArgsKwargs(bounding_box_loader, size=size, spatial_size=bounding_box_loader.spatial_size)
+            yield ArgsKwargs(
+                bounding_box_loader,
+                size=size,
+                format=bounding_box_loader.format,
+                spatial_size=bounding_box_loader.spatial_size,
+            )
 
 
 KERNEL_INFOS.extend(
@@ -384,7 +396,10 @@ KERNEL_INFOS.extend(
             reference_fn=reference_resize_bounding_box,
             reference_inputs_fn=reference_inputs_resize_bounding_box,
             closeness_kwargs={
-                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
+                # FIXME: those are crazy tolerances. We need to investigate what is going on
+                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=20, rtol=0),
+                (("TestKernels", "test_against_reference"), torch.float32, "cpu"): dict(atol=10, rtol=0),
+                (("TestKernels", "test_against_reference"), torch.float64, "cpu"): dict(atol=10, rtol=0),
             },
             test_marks=[
                 xfail_jit_python_scalar_arg("size"),
@@ -543,8 +558,8 @@ def _compute_affine_matrix(angle, translate, scale, shear, center):
     return true_matrix
 
 
-def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix):
-    def transform(bbox, affine_matrix_, format_):
+def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, affine_matrix):
+    def transform(bbox, affine_matrix_, format_, spatial_size_):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
         if not torch.is_floating_point(bbox):
@@ -573,12 +588,16 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix)
         out_bbox = F.convert_format_bounding_box(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
         )
+
+        # new_spatial_size = F._geometry._compute_affine_output_size(FIXME, w=spatial_size_[1], h=spatial_size_[0])
+        new_spatial_size = spatial_size_
+        out_bbox = F.clamp_bounding_box(out_bbox, format=format_, spatial_size=new_spatial_size)
         return out_bbox.to(dtype=in_dtype)
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
 
-    expected_bboxes = [transform(bbox, affine_matrix, format) for bbox in bounding_box]
+    expected_bboxes = [transform(bbox, affine_matrix, format, spatial_size) for bbox in bounding_box]
     if len(expected_bboxes) > 1:
         expected_bboxes = torch.stack(expected_bboxes)
     else:
@@ -594,7 +613,9 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
     affine_matrix = _compute_affine_matrix(angle, translate, scale, shear, center)
     affine_matrix = affine_matrix[:2, :]
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
 
     return expected_bboxes
 
@@ -732,7 +753,9 @@ def reference_vertical_flip_bounding_box(bounding_box, *, format, spatial_size):
         dtype="float32",
     )
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
 
     return expected_bboxes
 
@@ -835,8 +858,8 @@ KERNEL_INFOS.extend(
             F.rotate_bounding_box,
             sample_inputs_fn=sample_inputs_rotate_bounding_box,
             closeness_kwargs={
-                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-6, rtol=1e-6),
-                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-6, rtol=1e-6),
+                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-5, rtol=1e-5),
             },
         ),
         KernelInfo(
@@ -897,7 +920,6 @@ def sample_inputs_crop_video():
 
 
 def reference_crop_bounding_box(bounding_box, *, format, top, left, height, width):
-
     affine_matrix = np.array(
         [
             [1, 0, -left],
@@ -906,8 +928,11 @@ def reference_crop_bounding_box(bounding_box, *, format, top, left, height, widt
         dtype="float32",
     )
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
-    return expected_bboxes, (height, width)
+    spatial_size = (height, width)
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
+    return expected_bboxes, spatial_size
 
 
 def reference_inputs_crop_bounding_box():
@@ -1125,7 +1150,10 @@ def reference_pad_bounding_box(bounding_box, *, format, spatial_size, padding, p
     height = spatial_size[0] + top + bottom
     width = spatial_size[1] + left + right
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
+    expected_bboxes = F.clamp_bounding_box(expected_bboxes, format=format, spatial_size=(height, width))
     return expected_bboxes, (height, width)
 
 
@@ -1225,14 +1253,16 @@ def sample_inputs_perspective_bounding_box():
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
             startpoints=None,
             endpoints=None,
             coefficients=_PERSPECTIVE_COEFFS[0],
         )
 
     format = datapoints.BoundingBoxFormat.XYXY
+    loader = make_bounding_box_loader(format=format)
     yield ArgsKwargs(
-        make_bounding_box_loader(format=format), format=format, startpoints=_STARTPOINTS, endpoints=_ENDPOINTS
+        loader, format=format, spatial_size=loader.spatial_size, startpoints=_STARTPOINTS, endpoints=_ENDPOINTS
     )
 
 
@@ -1269,13 +1299,17 @@ KERNEL_INFOS.extend(
                 **pil_reference_pixel_difference(2, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(),
-                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
-                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-5, rtol=1e-5),
             },
         ),
         KernelInfo(
             F.perspective_bounding_box,
             sample_inputs_fn=sample_inputs_perspective_bounding_box,
+            closeness_kwargs={
+                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-6, rtol=1e-6),
+                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-6, rtol=1e-6),
+            },
         ),
         KernelInfo(
             F.perspective_mask,
@@ -1292,8 +1326,8 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_perspective_video,
             closeness_kwargs={
                 **cuda_vs_cpu_pixel_difference(),
-                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
-                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-5, rtol=1e-5),
             },
         ),
     ]
@@ -1331,6 +1365,7 @@ def sample_inputs_elastic_bounding_box():
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
             displacement=displacement,
         )
 

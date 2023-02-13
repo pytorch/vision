@@ -25,7 +25,7 @@ from torch.utils._pytree import tree_map
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F
 from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
-from torchvision.prototype.transforms.functional._meta import convert_format_bounding_box
+from torchvision.prototype.transforms.functional._meta import clamp_bounding_box, convert_format_bounding_box
 from torchvision.transforms.functional import _get_perspective_coeffs
 
 
@@ -266,7 +266,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(input, *other_args, **kwargs),
         )
 
     @make_info_args_kwargs_parametrization(
@@ -1121,7 +1121,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_format_bounding_box(out_bbox, new_format=bbox.format)
+        return clamp_bounding_box(convert_format_bounding_box(out_bbox, new_format=bbox.format))
 
     spatial_size = (32, 38)
 
@@ -1134,6 +1134,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         output_bboxes = F.perspective_bounding_box(
             bboxes.as_subclass(torch.Tensor),
             format=bboxes.format,
+            spatial_size=bboxes.spatial_size,
             startpoints=None,
             endpoints=None,
             coefficients=pcoeffs,
