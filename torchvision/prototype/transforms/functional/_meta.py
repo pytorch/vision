@@ -232,11 +232,11 @@ def clamp_bounding_box(
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         if format is None or spatial_size is None:
-            raise RuntimeError("For simple tensor inputs, `format` and `spatial_size` has to be passed.")
+            raise ValueError("For simple tensor inputs, `format` and `spatial_size` has to be passed.")
         return _clamp_bounding_box(inpt, format=format, spatial_size=spatial_size)
     elif isinstance(inpt, datapoints.BoundingBox):
         if format is not None or spatial_size is not None:
-            raise RuntimeError("For bounding box datapoints inputs, `format` and `spatial_size` must not be passed.")
+            raise ValueError("For bounding box datapoints inputs, `format` and `spatial_size` must not be passed.")
         output = _clamp_bounding_box(inpt, format=inpt.format, spatial_size=inpt.spatial_size)
         return datapoints.BoundingBox.wrap_like(inpt, output)
     else:
