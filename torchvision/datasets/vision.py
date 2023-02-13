@@ -1,4 +1,6 @@
 import os
+
+from abc import ABCMeta
 from typing import Any, Callable, List, Optional, Tuple
 
 import torch
@@ -7,7 +9,17 @@ import torch.utils.data as data
 from ..utils import _log_api_usage_once
 
 
-class VisionDataset(data.Dataset):
+class Hack(ABCMeta):
+    def __instancecheck__(self, instance):
+        from torchvision.prototype.datapoints._dataset_wrapper import VisionDatasetDatapointWrapper
+
+        if isinstance(instance, VisionDatasetDatapointWrapper):
+            return isinstance(instance._dataset, self)
+
+        return self in type(instance).mro()
+
+
+class VisionDataset(data.Dataset, metaclass=Hack):
     """
     Base Class For making datasets which are compatible with torchvision.
     It is necessary to override the ``__getitem__`` and ``__len__`` method.

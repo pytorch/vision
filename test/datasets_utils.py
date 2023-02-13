@@ -593,6 +593,8 @@ class DatasetTestCase(unittest.TestCase):
         try:
             with self.create_dataset(config) as (dataset, _):
                 wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
+                assert isinstance(wrapped_dataset, self.DATASET_CLASS)
+
                 wrapped_sample = wrapped_dataset[0]
                 assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
         except TypeError as error:
