@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Tuple, Union
 
+import PIL.Image
 import torch
 from torchvision.transforms import InterpolationMode
 
@@ -21,6 +22,11 @@ class Mask(Datapoint):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
     ) -> Mask:
+        if isinstance(data, PIL.Image.Image):
+            from torchvision.prototype.transforms import functional as F
+
+            data = F.pil_to_tensor(data)
+
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor)
 
