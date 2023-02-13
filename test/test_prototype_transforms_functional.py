@@ -590,6 +590,33 @@ class TestClampBoundingBox:
             F.clamp_bounding_box(datapoint, **metadata)
 
 
+class TestConvertFormatBoundingBox:
+    @pytest.mark.parametrize(
+        ("inpt", "old_format"),
+        [
+            (next(make_bounding_boxes()), None),
+            (next(make_bounding_boxes()).as_subclass(torch.Tensor), datapoints.BoundingBoxFormat.XYXY),
+        ],
+    )
+    def test_missing_new_format(self, inpt, old_format):
+        with pytest.raises(TypeError, match="new_format"):
+            F.convert_format_bounding_box(inpt, old_format)
+
+    def test_simple_tensor_insufficient_metadata(self):
+        simple_tensor = next(make_bounding_boxes()).as_subclass(torch.Tensor)
+
+        with pytest.raises(ValueError, match="simple tensor"):
+            F.convert_format_bounding_box(simple_tensor, new_format=datapoints.BoundingBoxFormat.CXCYWH)
+
+    def test_datapoint_explicit_metadata(self):
+        datapoint = next(make_bounding_boxes())
+
+        with pytest.raises(ValueError, match="bounding box datapoint"):
+            F.convert_format_bounding_box(
+                datapoint, old_format=datapoint.format, new_format=datapoints.BoundingBoxFormat.CXCYWH
+            )
+
+
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
 #  `prototype_transforms_kernel_infos.py`
 
