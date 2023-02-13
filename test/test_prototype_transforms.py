@@ -1,6 +1,6 @@
 import itertools
-import warnings
 import re
+import warnings
 from collections import defaultdict
 
 import numpy as np
@@ -2205,4 +2205,3 @@ def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
 
     out["label"] = torch.tensor(out["label"])
     assert out["boxes"].shape[0] == out["masks"].shape[0] == out["label"].shape[0] == num_boxes
-
