@@ -176,7 +176,11 @@ class BoundingBox(Datapoint):
         coefficients: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.perspective_bounding_box(
-            self.as_subclass(torch.Tensor), startpoints, endpoints, self.format, coefficients=coefficients
+            self.as_subclass(torch.Tensor),
+            format=self.format,
+            startpoints=startpoints,
+            endpoints=endpoints,
+            coefficients=coefficients,
         )
         return BoundingBox.wrap_like(self, output)
 
