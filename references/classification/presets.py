@@ -15,11 +15,18 @@ class ClassificationPresetTrain:
         ra_magnitude=9,
         augmix_severity=3,
         random_erase_prob=0.0,
+        backend="pil",
     ):
-        trans = [
-            transforms.ToImageTensor(),  # Or not? Should also work with PIL anyway
-            transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True),
-        ]
+        backend = backend.lower()
+        trans = []
+        if backend == "datapoint":
+            trans.append(transforms.ToImageTensor())
+        elif backend == "tensor":
+            trans.append(transforms.PILToTensor())
+        else:
+            assert backend == "pil"
+
+        trans.append(transforms.RandomResizedCrop(crop_size, interpolation=interpolation, antialias=True))
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(p=hflip_prob))
         if auto_augment_policy is not None:
@@ -32,6 +39,11 @@ class ClassificationPresetTrain:
             else:
                 aa_policy = transforms.AutoAugmentPolicy(auto_augment_policy)
                 trans.append(transforms.AutoAugment(policy=aa_policy, interpolation=interpolation))
+
+        if backend == "pil":
+            # Note: we could also just use pure tensors?
+            trans.append(transforms.ToImageTensor())
+
         trans.extend(
             [
                 transforms.ConvertImageDtype(torch.float),
@@ -56,17 +68,32 @@ class ClassificationPresetEval:
         mean=(0.485, 0.456, 0.406),
         std=(0.229, 0.224, 0.225),
         interpolation=transforms.InterpolationMode.BILINEAR,
+        backend="pil",
     ):
+        backend = backend.lower()
 
-        self.transforms = transforms.Compose(
-            [
-                transforms.ToImageTensor(),
-                transforms.Resize(resize_size, interpolation=interpolation, antialias=True),
-                transforms.CenterCrop(crop_size),
-                transforms.ConvertImageDtype(torch.float),
-                transforms.Normalize(mean=mean, std=std),
-            ]
-        )
+        trans = []
+        if backend == "datapoint":
+            trans.append(transforms.ToImageTensor())
+        elif backend == "tensor":
+            trans.append(transforms.PILToTensor())
+        else:
+            assert backend == "pil"
+
+        trans += [
+            transforms.Resize(resize_size, interpolation=interpolation, antialias=True),
+            transforms.CenterCrop(crop_size),
+        ]
+
+        if backend == "pil":
+            trans.append(transforms.ToImageTensor())
+
+        trans += [
+            transforms.ConvertImageDtype(torch.float),
+            transforms.Normalize(mean=mean, std=std),
+        ]
+
+        self.transforms = transforms.Compose(trans)
 
     def __call__(self, img):
         return self.transforms(img)

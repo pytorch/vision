@@ -27,7 +27,7 @@ def convert_coco_poly_to_mask(segmentations, height, width):
     return masks
 
 
-#TODO: Is this still needed?
+# TODO: Is this still needed?
 class ConvertCocoPolysToMask:
     def __call__(self, sample):
         image, target = sample
@@ -193,13 +193,13 @@ def get_coco_api_from_dataset(dataset):
 
 # TODO: Maybe not critical but the wrapper doesn't work on sub-classes
 
+
 def get_coco(root, image_set, transforms, mode="instances"):
     anno_file_template = "{}_{}2017.json"
     PATHS = {
         "train": ("train2017", os.path.join("annotations", anno_file_template.format(mode, "train"))),
         "val": ("val2017", os.path.join("annotations", anno_file_template.format(mode, "val"))),
     }
-
 
     img_folder, ann_file = PATHS[image_set]
     img_folder = os.path.join(root, img_folder)

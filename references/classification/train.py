@@ -145,6 +145,7 @@ def load_data(traindir, valdir, args):
                 random_erase_prob=random_erase_prob,
                 ra_magnitude=ra_magnitude,
                 augmix_severity=augmix_severity,
+                backend=args.backend,
             ),
         )
         if args.cache_dataset:
@@ -165,7 +166,10 @@ def load_data(traindir, valdir, args):
             preprocessing = weights.transforms()
         else:
             preprocessing = presets.ClassificationPresetEval(
-                crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
+                crop_size=val_crop_size,
+                resize_size=val_resize_size,
+                interpolation=interpolation,
+                backend=args.backend,
             )
 
         dataset_test = torchvision.datasets.ImageFolder(
@@ -509,6 +513,7 @@ def get_args_parser(add_help=True):
         "--ra-reps", default=3, type=int, help="number of repetitions for Repeated Augmentation (default: 3)"
     )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+    parser.add_argument("--backend", default="PIL", type=str, help="PIL, tensor or datapoint - case insensitive")
     return parser
 
 
