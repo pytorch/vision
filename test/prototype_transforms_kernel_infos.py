@@ -2015,7 +2015,9 @@ KERNEL_INFOS.append(
                     "`torch.Tensor`, but then the kernel (rightfully) complains that neither `format` nor "
                     "`spatial_size` was passed"
                 ),
-                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader),
+                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader)
+                and arg_kwargs.kwargs.get("format") is None
+                and arg_kwargs.kwargs.get("spatial_size") is None,
             )
         ],
     )
