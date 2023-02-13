@@ -12,6 +12,7 @@ import torchvision.prototype.transforms.functional as F
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
+    BoundingBoxLoader,
     get_num_channels,
     ImageLoader,
     InfoBase,
@@ -25,6 +26,7 @@ from prototype_common_utils import (
     make_video_loader,
     make_video_loaders,
     mark_framework_limitation,
+    TensorLoader,
     TestMark,
 )
 from torch.utils._pytree import tree_map
@@ -2010,8 +2012,15 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_clamp_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
+        yield ArgsKwargs(bounding_box_loader)
+
+        simple_tensor_loader = TensorLoader(
+            fn=lambda shape, dtype, device: bounding_box_loader.fn(shape, dtype, device).as_subclass(torch.Tensor),
+            shape=bounding_box_loader.shape,
+            dtype=bounding_box_loader.dtype,
+        )
         yield ArgsKwargs(
-            bounding_box_loader, format=bounding_box_loader.format, spatial_size=bounding_box_loader.spatial_size
+            simple_tensor_loader, format=bounding_box_loader.format, spatial_size=bounding_box_loader.spatial_size
         )
 
 
@@ -2020,6 +2029,19 @@ KERNEL_INFOS.append(
         F.clamp_bounding_box,
         sample_inputs_fn=sample_inputs_clamp_bounding_box,
         logs_usage=True,
+        test_marks=[
+            mark_framework_limitation(
+                ("TestKernels", "test_scripted_vs_eager"),
+                reason=(
+                    "The function is hybrid kernel / dispatcher. JIT unwraps a `datapoints.BoundingBox` into a "
+                    "`torch.Tensor`, but then the kernel (rightfully) complains that neither `format` nor "
+                    "`spatial_size` was passed"
+                ),
+                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader)
+                and arg_kwargs.kwargs.get("format") is None
+                and arg_kwargs.kwargs.get("spatial_size") is None,
+            )
+        ],
     )
 )
 
