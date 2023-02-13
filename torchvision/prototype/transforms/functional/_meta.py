@@ -229,7 +229,7 @@ def convert_format_bounding_box(
         return _convert_format_bounding_box(inpt, old_format=old_format, new_format=new_format, inplace=inplace)
     elif isinstance(inpt, datapoints.BoundingBox):
         if old_format is not None:
-            raise ValueError("For bounding box datapoint inputs, `format` and `spatial_size` must not be passed.")
+            raise ValueError("For bounding box datapoint inputs, `old_format` must not be passed.")
         output = _convert_format_bounding_box(inpt, old_format=inpt.format, new_format=new_format, inplace=inplace)
         return datapoints.BoundingBox.wrap_like(inpt, output)
     else:
