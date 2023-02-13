@@ -873,12 +873,11 @@ def rotate_bounding_box(
         expand=expand,
     )
 
-    return (
-        convert_format_bounding_box(
-            out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-        ).reshape(original_shape),
-        spatial_size,
-    )
+    out_bboxes = clamp_bounding_box(out_bboxes, format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size)
+    out_bboxes = convert_format_bounding_box(
+        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+    ).reshape(original_shape)
+    return out_bboxes, spatial_size
 
 
 def rotate_mask(

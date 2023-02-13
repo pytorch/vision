@@ -824,6 +824,41 @@ def sample_inputs_rotate_bounding_box():
         )
 
 
+def reference_inputs_rotate_bounding_box():
+    for bounding_box_loader, angle in itertools.product(make_bounding_box_loaders(extra_dims=((), (4,))), _ROTATE_ANGLES):
+        yield ArgsKwargs(
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
+            angle=angle,
+        )
+
+    # TODO: add samples with expand=True and center
+
+
+def reference_rotate_bounding_box(bounding_box, *, format, spatial_size, angle, expand=False, center=None):
+
+    if center is None:
+        center = [spatial_size[1] * 0.5, spatial_size[0] * 0.5]
+
+    a = np.cos(angle * np.pi / 180.0)
+    b = np.sin(angle * np.pi / 180.0)
+    cx = center[0]
+    cy = center[1]
+    affine_matrix = np.array(
+        [
+            [a, b, cx - cx * a - b * cy],
+            [-b, a, cy + cx * b - a * cy],
+        ],
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+    )
+
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
+    return expected_bboxes, spatial_size
+
+
 def sample_inputs_rotate_mask():
     for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
         yield ArgsKwargs(mask_loader, angle=15.0)
@@ -852,9 +887,12 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.rotate_bounding_box,
             sample_inputs_fn=sample_inputs_rotate_bounding_box,
+            reference_fn=reference_rotate_bounding_box,
+            reference_inputs_fn=reference_inputs_rotate_bounding_box,
             closeness_kwargs={
                 **scripted_vs_eager_float64_tolerances("cpu", atol=1e-6, rtol=1e-6),
                 **scripted_vs_eager_float64_tolerances("cuda", atol=1e-5, rtol=1e-5),
+                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
             },
         ),
         KernelInfo(
