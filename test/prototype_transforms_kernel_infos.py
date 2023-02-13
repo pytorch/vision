@@ -1293,7 +1293,7 @@ KERNEL_INFOS.extend(
                 **cuda_vs_cpu_pixel_difference(),
                 **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
                 **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
-            }
+            },
         ),
     ]
 )
