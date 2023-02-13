@@ -207,7 +207,6 @@ def coco_dectection_wrapper_factory(dataset):
         batched_target = list_of_dicts_to_dict_of_lists(target)
 
         spatial_size = tuple(F.get_spatial_size(image))
-
         batched_target["boxes"] = datapoints.BoundingBox(
             batched_target["bbox"],
             format=datapoints.BoundingBoxFormat.XYWH,
