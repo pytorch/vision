@@ -2067,11 +2067,7 @@ def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
             # transforms.FixedSizeCrop(
             #     size=(1024, 1024), fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0})
             # ),
-            # TODO: I have to set a very low size for the crop (30, 30),
-            # otherwise we'd get an error saying the crop is larger than the
-            # image. This means RandomCrop doesn't do the same thing as
-            # FixedSizeCrop and we need ot figure out the key differences
-            transforms.RandomCrop((30, 30)),
+            transforms.RandomCrop((1024, 1024), pad_if_needed=True),
             transforms.RandomHorizontalFlip(p=1),
             to_tensor(),
             transforms.ConvertImageDtype(torch.float),
