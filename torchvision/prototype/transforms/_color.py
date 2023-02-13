@@ -169,7 +169,8 @@ class RandomPhotometricDistort(Transform):
         if isinstance(orig_inpt, PIL.Image.Image):
             inpt = F.pil_to_tensor(inpt)
 
-        output = inpt[..., permutation, :, :]
+        # TODO: Find a better fix than as_subclass???
+        output = inpt[..., permutation, :, :].as_subclass(type(inpt))
 
         if isinstance(orig_inpt, PIL.Image.Image):
             output = F.to_image_pil(output)
