@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Type
 
 import PIL.Image
 import torch
-from torch._C import DisableTorchFunction
+from torch._C import DisableTorchFunctionSubclass
 from torch.types import _device, _dtype, _size
 from torchvision.transforms import InterpolationMode
 
@@ -23,30 +23,15 @@ class Datapoint(torch.Tensor):
         data: Any,
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: bool = False,
+        requires_grad: Optional[bool] = None,
     ) -> torch.Tensor:
+        if requires_grad is None:
+            requires_grad = data.requires_grad if isinstance(data, torch.Tensor) else False
         return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
-
-    # FIXME: this is just here for BC with the prototype datasets. Some datasets use the Datapoint directly to have a
-    #  a no-op input for the prototype transforms. For this use case, we can't use plain tensors, since they will be
-    #  interpreted as images. We should decide if we want a public no-op datapoint like `GenericDatapoint` or make this
-    #  one public again.
-    def __new__(
-        cls,
-        data: Any,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: bool = False,
-    ) -> Datapoint:
-        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return tensor.as_subclass(Datapoint)
 
     @classmethod
     def wrap_like(cls: Type[D], other: D, tensor: torch.Tensor) -> D:
-        # FIXME: this is just here for BC with the prototype datasets. See __new__ for details. If that is resolved,
-        #  this method should be made abstract
-        # raise NotImplementedError
-        return tensor.as_subclass(cls)
+        raise NotImplementedError
 
     _NO_WRAPPING_EXCEPTIONS = {
         torch.Tensor.clone: lambda cls, input, output: cls.wrap_like(input, output),
@@ -87,7 +72,7 @@ class Datapoint(torch.Tensor):
         if not all(issubclass(cls, t) for t in types):
             return NotImplemented
 
-        with DisableTorchFunction():
+        with DisableTorchFunctionSubclass():
             output = func(*args, **kwargs or dict())
 
             wrapper = cls._NO_WRAPPING_EXCEPTIONS.get(func)
@@ -98,7 +83,7 @@ class Datapoint(torch.Tensor):
             # `args = (torch.Tensor(), datapoints.Image())` first. Without this guard, the original `torch.Tensor` would
             # be wrapped into a `datapoints.Image`.
             if wrapper and isinstance(args[0], cls):
-                return wrapper(cls, args[0], output)  # type: ignore[no-any-return]
+                return wrapper(cls, args[0], output)
 
             # Inplace `func`'s, canonically identified with a trailing underscore in their name like `.add_(...)`,
             # will retain the input type. Thus, we need to unwrap here.
@@ -129,22 +114,22 @@ class Datapoint(torch.Tensor):
     # this way we return the result without passing into __torch_function__
     @property
     def shape(self) -> _size:  # type: ignore[override]
-        with DisableTorchFunction():
+        with DisableTorchFunctionSubclass():
             return super().shape
 
     @property
     def ndim(self) -> int:  # type: ignore[override]
-        with DisableTorchFunction():
+        with DisableTorchFunctionSubclass():
             return super().ndim
 
     @property
     def device(self, *args: Any, **kwargs: Any) -> _device:  # type: ignore[override]
-        with DisableTorchFunction():
+        with DisableTorchFunctionSubclass():
             return super().device
 
     @property
     def dtype(self) -> _dtype:  # type: ignore[override]
-        with DisableTorchFunction():
+        with DisableTorchFunctionSubclass():
             return super().dtype
 
     def horizontal_flip(self) -> Datapoint:
@@ -160,7 +145,7 @@ class Datapoint(torch.Tensor):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Datapoint:
         return self
 
@@ -178,7 +163,7 @@ class Datapoint(torch.Tensor):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Datapoint:
         return self
 
@@ -228,6 +213,9 @@ class Datapoint(torch.Tensor):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> Datapoint:
+        return self
+
+    def rgb_to_grayscale(self, num_output_channels: int = 1) -> Datapoint:
         return self
 
     def adjust_brightness(self, brightness_factor: float) -> Datapoint:

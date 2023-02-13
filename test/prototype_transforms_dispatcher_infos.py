@@ -44,19 +44,19 @@ class DispatcherInfo(InfoBase):
         self.pil_kernel_info = pil_kernel_info
 
         kernel_infos = {}
-        for feature_type, kernel in self.kernels.items():
+        for datapoint_type, kernel in self.kernels.items():
             kernel_info = self._KERNEL_INFO_MAP.get(kernel)
             if not kernel_info:
                 raise pytest.UsageError(
-                    f"Can't register {kernel.__name__} for type {feature_type} since there is no `KernelInfo` for it. "
+                    f"Can't register {kernel.__name__} for type {datapoint_type} since there is no `KernelInfo` for it. "
                     f"Please add a `KernelInfo` for it in `prototype_transforms_kernel_infos.py`."
                 )
-            kernel_infos[feature_type] = kernel_info
+            kernel_infos[datapoint_type] = kernel_info
         self.kernel_infos = kernel_infos
 
-    def sample_inputs(self, *feature_types, filter_metadata=True):
-        for feature_type in feature_types or self.kernel_infos.keys():
-            kernel_info = self.kernel_infos.get(feature_type)
+    def sample_inputs(self, *datapoint_types, filter_metadata=True):
+        for datapoint_type in datapoint_types or self.kernel_infos.keys():
+            kernel_info = self.kernel_infos.get(datapoint_type)
             if not kernel_info:
                 raise pytest.UsageError(f"There is no kernel registered for type {type.__name__}")
 
@@ -64,13 +64,21 @@ class DispatcherInfo(InfoBase):
 
             if not filter_metadata:
                 yield from sample_inputs
-            else:
-                for args_kwargs in sample_inputs:
-                    for attribute in feature_type.__annotations__.keys():
-                        if attribute in args_kwargs.kwargs:
-                            del args_kwargs.kwargs[attribute]
+                return
 
-                    yield args_kwargs
+            import itertools
+
+            for args_kwargs in sample_inputs:
+                for name in itertools.chain(
+                    datapoint_type.__annotations__.keys(),
+                    # FIXME: this seems ok for conversion dispatchers, but we should probably handle this on a
+                    #  per-dispatcher level. However, so far there is no option for that.
+                    (f"old_{name}" for name in datapoint_type.__annotations__.keys()),
+                ):
+                    if name in args_kwargs.kwargs:
+                        del args_kwargs.kwargs[name]
+
+                yield args_kwargs
 
 
 def xfail_jit(reason, *, condition=None):
@@ -107,10 +115,19 @@ def xfail_jit_list_of_ints(name, *, reason=None):
     )
 
 
-skip_dispatch_feature = TestMark(
-    ("TestDispatchers", "test_dispatch_feature"),
-    pytest.mark.skip(reason="Dispatcher doesn't support arbitrary feature dispatch."),
+skip_dispatch_datapoint = TestMark(
+    ("TestDispatchers", "test_dispatch_datapoint"),
+    pytest.mark.skip(reason="Dispatcher doesn't support arbitrary datapoint dispatch."),
 )
+
+multi_crop_skips = [
+    TestMark(
+        ("TestDispatchers", test_name),
+        pytest.mark.skip(reason="Multi-crop dispatchers return a sequence of items rather than a single one."),
+    )
+    for test_name in ["test_simple_tensor_output_type", "test_pil_output_type", "test_datapoint_output_type"]
+]
+multi_crop_skips.append(skip_dispatch_datapoint)
 
 
 def fill_sequence_needs_broadcast(args_kwargs):
@@ -352,7 +369,7 @@ DISPATCHER_INFOS = [
         },
         pil_kernel_info=PILKernelInfo(F.erase_image_pil),
         test_marks=[
-            skip_dispatch_feature,
+            skip_dispatch_datapoint,
         ],
     ),
     DispatcherInfo(
@@ -404,7 +421,7 @@ DISPATCHER_INFOS = [
         pil_kernel_info=PILKernelInfo(F.five_crop_image_pil),
         test_marks=[
             xfail_jit_python_scalar_arg("size"),
-            skip_dispatch_feature,
+            *multi_crop_skips,
         ],
     ),
     DispatcherInfo(
@@ -415,7 +432,7 @@ DISPATCHER_INFOS = [
         },
         test_marks=[
             xfail_jit_python_scalar_arg("size"),
-            skip_dispatch_feature,
+            *multi_crop_skips,
         ],
         pil_kernel_info=PILKernelInfo(F.ten_crop_image_pil),
     ),
@@ -426,7 +443,6 @@ DISPATCHER_INFOS = [
             datapoints.Video: F.normalize_video,
         },
         test_marks=[
-            skip_dispatch_feature,
             xfail_jit_python_scalar_arg("mean"),
             xfail_jit_python_scalar_arg("std"),
         ],
@@ -438,7 +454,7 @@ DISPATCHER_INFOS = [
             datapoints.Video: F.convert_dtype_video,
         },
         test_marks=[
-            skip_dispatch_feature,
+            skip_dispatch_datapoint,
         ],
     ),
     DispatcherInfo(
@@ -447,7 +463,21 @@ DISPATCHER_INFOS = [
             datapoints.Video: F.uniform_temporal_subsample_video,
         },
         test_marks=[
-            skip_dispatch_feature,
+            skip_dispatch_datapoint,
+        ],
+    ),
+    DispatcherInfo(
+        F.clamp_bounding_box,
+        kernels={datapoints.BoundingBox: F.clamp_bounding_box},
+        test_marks=[
+            skip_dispatch_datapoint,
+        ],
+    ),
+    DispatcherInfo(
+        F.convert_format_bounding_box,
+        kernels={datapoints.BoundingBox: F.convert_format_bounding_box},
+        test_marks=[
+            skip_dispatch_datapoint,
         ],
     ),
 ]

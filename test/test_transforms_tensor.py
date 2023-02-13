@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 
 import numpy as np
 import pytest
@@ -371,7 +372,7 @@ class TestResize:
     def test_resize_int(self, size):
         # TODO: Minimal check for bug-fix, improve this later
         x = torch.rand(3, 32, 46)
-        t = T.Resize(size=size)
+        t = T.Resize(size=size, antialias=True)
         y = t(x)
         # If size is an int, smaller edge of the image will be matched to this number.
         # i.e, if height > width, then image will be rescaled to (size * height / width, size).
@@ -394,13 +395,13 @@ class TestResize:
         if max_size is not None and len(size) != 1:
             pytest.skip("Size should be an int or a sequence of length 1 if max_size is specified")
 
-        transform = T.Resize(size=size, interpolation=interpolation, max_size=max_size)
+        transform = T.Resize(size=size, interpolation=interpolation, max_size=max_size, antialias=True)
         s_transform = torch.jit.script(transform)
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_resize_save_load(self, tmpdir):
-        fn = T.Resize(size=[32])
+        fn = T.Resize(size=[32], antialias=True)
         _test_fn_save_load(fn, tmpdir)
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -424,8 +425,24 @@ class TestResize:
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_resized_crop_save_load(self, tmpdir):
-        fn = T.RandomResizedCrop(size=[32])
+        fn = T.RandomResizedCrop(size=[32], antialias=True)
         _test_fn_save_load(fn, tmpdir)
+
+    def test_antialias_default_warning(self):
+
+        img = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8)
+
+        match = "The default value of the antialias"
+        with pytest.warns(UserWarning, match=match):
+            T.Resize((20, 20))(img)
+        with pytest.warns(UserWarning, match=match):
+            T.RandomResizedCrop((20, 20))(img)
+
+        # For modes that aren't bicubic or bilinear, don't throw a warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            T.Resize((20, 20), interpolation=NEAREST)(img)
+            T.RandomResizedCrop((20, 20), interpolation=NEAREST)(img)
 
 
 def _test_random_affine_helper(device, **kwargs):
@@ -672,7 +689,17 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "config",
-    [{"value": 0.2}, {"value": "random"}, {"value": (0.2, 0.2, 0.2)}, {"value": "random", "ratio": (0.1, 0.2)}],
+    [
+        {},
+        {"value": 1},
+        {"value": 0.2},
+        {"value": "random"},
+        {"value": (1, 1, 1)},
+        {"value": (0.2, 0.2, 0.2)},
+        {"value": [1, 1, 1]},
+        {"value": [0.2, 0.2, 0.2]},
+        {"value": "random", "ratio": (0.1, 0.2)},
+    ],
 )
 def test_random_erasing(device, config):
     tensor, _ = _create_data(24, 32, channels=3, device=device)
@@ -847,4 +874,36 @@ def test_gaussian_blur(device, channels, meth_kwargs):
         device=device,
         agg_method="max",
         tol=tol,
+    )
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "fill",
+    [
+        1,
+        1.0,
+        [1],
+        [1.0],
+        (1,),
+        (1.0,),
+        [1, 2, 3],
+        [1.0, 2.0, 3.0],
+        (1, 2, 3),
+        (1.0, 2.0, 3.0),
+    ],
+)
+@pytest.mark.parametrize("channels", [1, 3])
+def test_elastic_transform(device, channels, fill):
+    if isinstance(fill, (list, tuple)) and len(fill) > 1 and channels == 1:
+        # For this the test would correctly fail, since the number of channels in the image does not match `fill`.
+        # Thus, this is not an issue in the transform, but rather a problem of parametrization that just gives the
+        # product of `fill` and `channels`.
+        return
+
+    _test_class_op(
+        T.ElasticTransform,
+        meth_kwargs=dict(fill=fill),
+        channels=channels,
+        device=device,
     )

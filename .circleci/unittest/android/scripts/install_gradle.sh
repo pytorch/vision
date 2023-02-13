@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 
-_https_amazon_aws=https://ossci-android.s3.amazonaws.com
+_https_amazon_aws=https://downloads.gradle-dn.com/distributions
 GRADLE_VERSION=6.8.3
 
 _gradle_home=/opt/gradle

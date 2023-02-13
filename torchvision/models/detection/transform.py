@@ -76,7 +76,7 @@ class GeneralizedRCNNTransform(nn.Module):
     Performs input / target transformation before feeding the data to a GeneralizedRCNN
     model.
 
-    The transformations it perform are:
+    The transformations it performs are:
         - input normalization (mean subtraction and std division)
         - input / target resizing to match min_size / max_size
 
@@ -158,7 +158,7 @@ class GeneralizedRCNNTransform(nn.Module):
 
     def torch_choice(self, k: List[int]) -> int:
         """
-        Implements `random.choice` via torch ops so it can be compiled with
+        Implements `random.choice` via torch ops, so it can be compiled with
         TorchScript. Remove if https://github.com/pytorch/pytorch/issues/25803
         is fixed.
         """

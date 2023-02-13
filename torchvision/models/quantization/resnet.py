@@ -176,7 +176,7 @@ class ResNet18_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 1.814,
-            "_weight_size": 11.238,
+            "_file_size": 11.238,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -197,7 +197,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 4.089,
-            "_weight_size": 24.759,
+            "_file_size": 24.759,
         },
     )
     IMAGENET1K_FBGEMM_V2 = Weights(
@@ -214,7 +214,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 4.089,
-            "_weight_size": 24.953,
+            "_file_size": 24.953,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V2
@@ -235,7 +235,7 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 16.414,
-            "_weight_size": 86.034,
+            "_file_size": 86.034,
         },
     )
     IMAGENET1K_FBGEMM_V2 = Weights(
@@ -252,7 +252,7 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 16.414,
-            "_weight_size": 86.645,
+            "_file_size": 86.645,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V2
@@ -274,7 +274,7 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 15.46,
-            "_weight_size": 81.556,
+            "_file_size": 81.556,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -482,17 +482,3 @@ def resnext101_64x4d(
     _ovewrite_named_param(kwargs, "groups", 64)
     _ovewrite_named_param(kwargs, "width_per_group", 4)
     return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-from ..resnet import model_urls  # noqa: F401
-
-
-quant_model_urls = _ModelURLs(
-    {
-        "resnet18_fbgemm": ResNet18_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
-        "resnet50_fbgemm": ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
-        "resnext101_32x8d_fbgemm": ResNeXt101_32X8D_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
-    }
-)

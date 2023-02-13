@@ -14,7 +14,7 @@ import torch
 import torch.testing
 from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
-from torch.testing._comparison import assert_equal as _assert_equal, BooleanPair, NonePair, NumberPair, TensorLikePair
+from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms.functional import convert_dtype_image_tensor, to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
@@ -73,7 +73,7 @@ class ImagePair(TensorLikePair):
             actual, expected = self._promote_for_comparison(actual, expected)
             mae = float(torch.abs(actual - expected).float().mean())
             if mae > self.atol:
-                raise self._make_error_meta(
+                self._fail(
                     AssertionError,
                     f"The MAE of the images is {mae}, but only {self.atol} is allowed.",
                 )
@@ -99,7 +99,7 @@ def assert_close(
     """Superset of :func:`torch.testing.assert_close` with support for PIL vs. tensor image comparison"""
     __tracebackhide__ = True
 
-    _assert_equal(
+    error_metas = not_close_error_metas(
         actual,
         expected,
         pair_types=(
@@ -117,9 +117,11 @@ def assert_close(
         check_dtype=check_dtype,
         check_layout=check_layout,
         check_stride=check_stride,
-        msg=msg,
         **kwargs,
     )
+
+    if error_metas:
+        raise error_metas[0].to_error(msg)
 
 
 assert_equal = functools.partial(assert_close, rtol=0, atol=0)
@@ -238,7 +240,6 @@ class TensorLoader:
 
 @dataclasses.dataclass
 class ImageLoader(TensorLoader):
-    color_space: datapoints.ColorSpace
     spatial_size: Tuple[int, int] = dataclasses.field(init=False)
     num_channels: int = dataclasses.field(init=False)
 
@@ -248,10 +249,10 @@ class ImageLoader(TensorLoader):
 
 
 NUM_CHANNELS_MAP = {
-    datapoints.ColorSpace.GRAY: 1,
-    datapoints.ColorSpace.GRAY_ALPHA: 2,
-    datapoints.ColorSpace.RGB: 3,
-    datapoints.ColorSpace.RGB_ALPHA: 4,
+    "GRAY": 1,
+    "GRAY_ALPHA": 2,
+    "RGB": 3,
+    "RGBA": 4,
 }
 
 
@@ -265,7 +266,7 @@ def get_num_channels(color_space):
 def make_image_loader(
     size="random",
     *,
-    color_space=datapoints.ColorSpace.RGB,
+    color_space="RGB",
     extra_dims=(),
     dtype=torch.float32,
     constant_alpha=True,
@@ -276,11 +277,11 @@ def make_image_loader(
     def fn(shape, dtype, device):
         max_value = get_max_value(dtype)
         data = torch.testing.make_tensor(shape, low=0, high=max_value, dtype=dtype, device=device)
-        if color_space in {datapoints.ColorSpace.GRAY_ALPHA, datapoints.ColorSpace.RGB_ALPHA} and constant_alpha:
+        if color_space in {"GRAY_ALPHA", "RGBA"} and constant_alpha:
             data[..., -1, :, :] = max_value
-        return datapoints.Image(data, color_space=color_space)
+        return datapoints.Image(data)
 
-    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype, color_space=color_space)
+    return ImageLoader(fn, shape=(*extra_dims, num_channels, *size), dtype=dtype)
 
 
 make_image = from_loader(make_image_loader)
@@ -290,13 +291,13 @@ def make_image_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        datapoints.ColorSpace.GRAY,
-        datapoints.ColorSpace.GRAY_ALPHA,
-        datapoints.ColorSpace.RGB,
-        datapoints.ColorSpace.RGB_ALPHA,
+        "GRAY",
+        "GRAY_ALPHA",
+        "RGB",
+        "RGBA",
     ),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.float32, torch.uint8),
+    dtypes=(torch.float32, torch.float64, torch.uint8),
     constant_alpha=True,
 ):
     for params in combinations_grid(size=sizes, color_space=color_spaces, extra_dims=extra_dims, dtype=dtypes):
@@ -306,7 +307,7 @@ def make_image_loaders(
 make_images = from_loaders(make_image_loaders)
 
 
-def make_image_loader_for_interpolation(size="random", *, color_space=datapoints.ColorSpace.RGB, dtype=torch.uint8):
+def make_image_loader_for_interpolation(size="random", *, color_space="RGB", dtype=torch.uint8):
     size = _parse_spatial_size(size)
     num_channels = get_num_channels(color_space)
 
@@ -318,24 +319,24 @@ def make_image_loader_for_interpolation(size="random", *, color_space=datapoints
             .resize((width, height))
             .convert(
                 {
-                    datapoints.ColorSpace.GRAY: "L",
-                    datapoints.ColorSpace.GRAY_ALPHA: "LA",
-                    datapoints.ColorSpace.RGB: "RGB",
-                    datapoints.ColorSpace.RGB_ALPHA: "RGBA",
+                    "GRAY": "L",
+                    "GRAY_ALPHA": "LA",
+                    "RGB": "RGB",
+                    "RGBA": "RGBA",
                 }[color_space]
             )
         )
 
         image_tensor = convert_dtype_image_tensor(to_image_tensor(image_pil).to(device=device), dtype=dtype)
 
-        return datapoints.Image(image_tensor, color_space=color_space)
+        return datapoints.Image(image_tensor)
 
-    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype, color_space=color_space)
+    return ImageLoader(fn, shape=(num_channels, *size), dtype=dtype)
 
 
 def make_image_loaders_for_interpolation(
     sizes=((233, 147),),
-    color_spaces=(datapoints.ColorSpace.RGB,),
+    color_spaces=("RGB",),
     dtypes=(torch.uint8,),
 ):
     for params in combinations_grid(size=sizes, color_space=color_spaces, dtype=dtypes):
@@ -418,7 +419,7 @@ def make_bounding_box_loaders(
     extra_dims=DEFAULT_EXTRA_DIMS,
     formats=tuple(datapoints.BoundingBoxFormat),
     spatial_size="random",
-    dtypes=(torch.float32, torch.int64),
+    dtypes=(torch.float32, torch.float64, torch.int64),
 ):
     for params in combinations_grid(extra_dims=extra_dims, format=formats, dtype=dtypes):
         yield make_bounding_box_loader(**params, spatial_size=spatial_size)
@@ -583,7 +584,7 @@ class VideoLoader(ImageLoader):
 def make_video_loader(
     size="random",
     *,
-    color_space=datapoints.ColorSpace.RGB,
+    color_space="RGB",
     num_frames="random",
     extra_dims=(),
     dtype=torch.uint8,
@@ -592,12 +593,10 @@ def make_video_loader(
     num_frames = int(torch.randint(1, 5, ())) if num_frames == "random" else num_frames
 
     def fn(shape, dtype, device):
-        video = make_image(size=shape[-2:], color_space=color_space, extra_dims=shape[:-3], dtype=dtype, device=device)
-        return datapoints.Video(video, color_space=color_space)
+        video = make_image(size=shape[-2:], extra_dims=shape[:-3], dtype=dtype, device=device)
+        return datapoints.Video(video)
 
-    return VideoLoader(
-        fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype, color_space=color_space
-    )
+    return VideoLoader(fn, shape=(*extra_dims, num_frames, get_num_channels(color_space), *size), dtype=dtype)
 
 
 make_video = from_loader(make_video_loader)
@@ -607,12 +606,12 @@ def make_video_loaders(
     *,
     sizes=DEFAULT_SPATIAL_SIZES,
     color_spaces=(
-        datapoints.ColorSpace.GRAY,
-        datapoints.ColorSpace.RGB,
+        "GRAY",
+        "RGB",
     ),
     num_frames=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.uint8,),
+    dtypes=(torch.uint8, torch.float32, torch.float64),
 ):
     for params in combinations_grid(
         size=sizes, color_space=color_spaces, num_frames=num_frames, extra_dims=extra_dims, dtype=dtypes
@@ -641,14 +640,14 @@ class TestMark:
         self.condition = condition or (lambda args_kwargs: True)
 
 
-def mark_framework_limitation(test_id, reason):
+def mark_framework_limitation(test_id, reason, condition=None):
     # The purpose of this function is to have a single entry point for skip marks that are only there, because the test
     # framework cannot handle the kernel in general or a specific parameter combination.
     # As development progresses, we can change the `mark.skip` to `mark.xfail` from time to time to see if the skip is
     # still justified.
     # We don't want to use `mark.xfail` all the time, because that actually runs the test until an error happens. Thus,
     # we are wasting CI resources for no reason for most of the time
-    return TestMark(test_id, pytest.mark.skip(reason=reason))
+    return TestMark(test_id, pytest.mark.skip(reason=reason), condition=condition)
 
 
 class InfoBase:

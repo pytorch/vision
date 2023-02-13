@@ -2,6 +2,7 @@ import math
 import os
 import random
 import re
+import warnings
 from functools import partial
 
 import numpy as np
@@ -319,7 +320,7 @@ def test_randomresized_params():
         scale_range = (scale_min, scale_min + round(random.random(), 2))
         aspect_min = max(round(random.random(), 2), epsilon)
         aspect_ratio_range = (aspect_min, aspect_min + round(random.random(), 2))
-        randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
+        randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range, antialias=True)
         i, j, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
         aspect_ratio_obtained = w / h
         assert (
@@ -366,7 +367,7 @@ def test_randomresized_params():
 def test_resize(height, width, osize, max_size):
     img = Image.new("RGB", size=(width, height), color=127)
 
-    t = transforms.Resize(osize, max_size=max_size)
+    t = transforms.Resize(osize, max_size=max_size, antialias=True)
     result = t(img)
 
     msg = f"{height}, {width} - {osize} - {max_size}"
@@ -424,7 +425,7 @@ def test_resize_sequence_output(height, width, osize):
     img = Image.new("RGB", size=(width, height), color=127)
     oheight, owidth = osize
 
-    t = transforms.Resize(osize)
+    t = transforms.Resize(osize, antialias=True)
     result = t(img)
 
     assert (owidth, oheight) == result.size
@@ -439,6 +440,16 @@ def test_resize_antialias_error():
         t(img)
 
 
+def test_resize_antialias_default_warning():
+
+    img = Image.new("RGB", size=(10, 10), color=127)
+    # We make sure we don't warn for PIL images since the default behaviour doesn't change
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        transforms.Resize((20, 20))(img)
+        transforms.RandomResizedCrop((20, 20))(img)
+
+
 @pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
 def test_resize_size_equals_small_edge_size(height, width):
     # Non-regression test for https://github.com/pytorch/vision/issues/5405
@@ -447,7 +458,7 @@ def test_resize_size_equals_small_edge_size(height, width):
     img = Image.new("RGB", size=(width, height), color=127)
 
     small_edge = min(height, width)
-    t = transforms.Resize(small_edge, max_size=max_size)
+    t = transforms.Resize(small_edge, max_size=max_size, antialias=True)
     result = t(img)
     assert max(result.size) == max_size
 
@@ -1424,11 +1435,11 @@ def test_random_choice(proba_passthrough, seed):
 def test_random_order():
     random_state = random.getstate()
     random.seed(42)
-    random_order_transform = transforms.RandomOrder([transforms.Resize(20), transforms.CenterCrop(10)])
+    random_order_transform = transforms.RandomOrder([transforms.Resize(20, antialias=True), transforms.CenterCrop(10)])
     img = transforms.ToPILImage()(torch.rand(3, 25, 25))
     num_samples = 250
     num_normal_order = 0
-    resize_crop_out = transforms.CenterCrop(10)(transforms.Resize(20)(img))
+    resize_crop_out = transforms.CenterCrop(10)(transforms.Resize(20, antialias=True)(img))
     for _ in range(num_samples):
         out = random_order_transform(img)
         if out == resize_crop_out:
@@ -1798,6 +1809,12 @@ def test_color_jitter():
     color_jitter.__repr__()
 
 
+@pytest.mark.parametrize("hue", [1, (-1, 1)])
+def test_color_jitter_hue_out_of_bounds(hue):
+    with pytest.raises(ValueError, match=re.escape("hue values should be between (-0.5, 0.5)")):
+        transforms.ColorJitter(hue=hue)
+
+
 @pytest.mark.parametrize("seed", range(10))
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
 def test_random_erasing(seed):
@@ -1818,7 +1835,7 @@ def test_random_erasing(seed):
     tol = 0.05
     assert 1 / 3 - tol <= aspect_ratio <= 3 + tol
 
-    # Make sure that h > w and h < w are equaly likely (log-scale sampling)
+    # Make sure that h > w and h < w are equally likely (log-scale sampling)
     aspect_ratios = []
     random.seed(42)
     trial = 1000
@@ -1865,17 +1882,6 @@ def test_random_rotation():
 
     # Checking if RandomRotation can be printed as string
     t.__repr__()
-
-    # assert changed type warning
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        ),
-    ):
-        t = transforms.RandomRotation((-10, 10), interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
 def test_random_rotation_error():
@@ -2067,7 +2073,7 @@ class TestAffine:
                 # https://github.com/python-pillow/Pillow/blob/71f8ec6a0cfc1008076a023c0756542539d057ab/
                 # src/libImaging/Geometry.c#L1060
                 input_pt = np.array([x + 0.5, y + 0.5, 1.0])
-                res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(np.int)
+                res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(int)
                 _x, _y = res[:2]
                 if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                     true_result[y, x, :] = input_img[_y, _x, :]
@@ -2205,17 +2211,6 @@ def test_random_affine():
 
     t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
     assert "bilinear" in t.__repr__()
-
-    # assert changed type warning
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-            "Please use InterpolationMode enum."
-        ),
-    ):
-        t = transforms.RandomAffine(10, interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
 def test_elastic_transformation():

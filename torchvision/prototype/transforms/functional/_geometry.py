@@ -10,6 +10,7 @@ from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
 from torchvision.prototype import datapoints
 from torchvision.transforms import functional_pil as _FP
 from torchvision.transforms.functional import (
+    _check_antialias,
     _compute_resized_output_size as __compute_resized_output_size,
     _get_perspective_coeffs,
     InterpolationMode,
@@ -22,6 +23,8 @@ from torchvision.transforms.functional_tensor import _pad_symmetric
 from torchvision.utils import _log_api_usage_once
 
 from ._meta import convert_format_bounding_box, get_spatial_size_image_pil
+
+from ._utils import is_simple_tensor
 
 
 def horizontal_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
@@ -60,9 +63,7 @@ def horizontal_flip(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(horizontal_flip)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return horizontal_flip_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.horizontal_flip()
@@ -111,9 +112,7 @@ def vertical_flip(inpt: datapoints.InputTypeJIT) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(vertical_flip)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return vertical_flip_image_tensor(inpt)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.vertical_flip()
@@ -145,14 +144,18 @@ def resize_image_tensor(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
+    antialias = _check_antialias(img=image, antialias=antialias, interpolation=interpolation)
+    assert not isinstance(antialias, str)
     antialias = False if antialias is None else antialias
     align_corners: Optional[bool] = None
     if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
         align_corners = False
-    elif antialias:
-        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
+    else:
+        # The default of antialias should be True from 0.17, so we don't warn or
+        # error if other interpolation modes are used. This is documented.
+        antialias = False
 
     shape = image.shape
     num_channels, old_height, old_width = shape[-3:]
@@ -227,7 +230,7 @@ def resize_video(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
     return resize_image_tensor(video, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
@@ -237,13 +240,11 @@ def resize(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(resize)
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return resize_image_tensor(inpt, size, interpolation=interpolation, max_size=max_size, antialias=antialias)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.resize(size, interpolation=interpolation, max_size=max_size, antialias=antialias)
@@ -408,8 +409,12 @@ def _compute_affine_output_size(matrix: List[float], w: int, h: int) -> Tuple[in
 
 
 def _apply_grid_transform(
-    float_img: torch.Tensor, grid: torch.Tensor, mode: str, fill: datapoints.FillTypeJIT
+    img: torch.Tensor, grid: torch.Tensor, mode: str, fill: datapoints.FillTypeJIT
 ) -> torch.Tensor:
+
+    # We are using context knowledge that grid should have float dtype
+    fp = img.dtype == grid.dtype
+    float_img = img if fp else img.to(grid.dtype)
 
     shape = float_img.shape
     if shape[0] > 1:
@@ -437,7 +442,9 @@ def _apply_grid_transform(
             # img * mask + (1.0 - mask) * fill = img * mask - fill * mask + fill = mask * (img - fill) + fill
             float_img = float_img.sub_(fill_img).mul_(mask).add_(fill_img)
 
-    return float_img
+    img = float_img.round_().to(img.dtype) if not fp else float_img
+
+    return img
 
 
 def _assert_grid_transform_inputs(
@@ -515,7 +522,6 @@ def affine_image_tensor(
 
     shape = image.shape
     ndim = image.ndim
-    fp = torch.is_floating_point(image)
 
     if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
@@ -539,13 +545,10 @@ def affine_image_tensor(
 
     _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
 
-    dtype = image.dtype if fp else torch.float32
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
     grid = _affine_grid(theta, w=width, h=height, ow=width, oh=height)
-    output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
-
-    if not fp:
-        output = output.round_().to(image.dtype)
+    output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
     if needs_unsquash:
         output = output.reshape(shape)
@@ -616,7 +619,7 @@ def _affine_bounding_box_xyxy(
     # Single point structure is similar to
     # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
     points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
-    points = torch.cat([points, torch.ones(points.shape[0], 1, device=points.device)], dim=-1)
+    points = torch.cat([points, torch.ones(points.shape[0], 1, device=device, dtype=dtype)], dim=-1)
     # 2) Now let's transform the points using affine matrix
     transformed_points = torch.matmul(points, transposed_affine_matrix)
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
@@ -744,9 +747,7 @@ def affine(
         _log_api_usage_once(affine)
 
     # TODO: consider deprecating integers from angle and shear on the future
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return affine_image_tensor(
             inpt,
             angle,
@@ -803,19 +804,15 @@ def rotate_image_tensor(
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
 
     if image.numel() > 0:
-        fp = torch.is_floating_point(image)
         image = image.reshape(-1, num_channels, height, width)
 
         _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
 
         ow, oh = _compute_affine_output_size(matrix, width, height) if expand else (width, height)
-        dtype = image.dtype if fp else torch.float32
+        dtype = image.dtype if torch.is_floating_point(image) else torch.float32
         theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
         grid = _affine_grid(theta, w=width, h=height, ow=ow, oh=oh)
-        output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
-
-        if not fp:
-            output = output.round_().to(image.dtype)
+        output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
         new_height, new_width = output.shape[-2:]
     else:
@@ -929,9 +926,7 @@ def rotate(
     if not torch.jit.is_scripting():
         _log_api_usage_once(rotate)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return rotate_image_tensor(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.rotate(angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
@@ -1139,9 +1134,7 @@ def pad(
     if not torch.jit.is_scripting():
         _log_api_usage_once(pad)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return pad_image_tensor(inpt, padding, fill=fill, padding_mode=padding_mode)
 
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
@@ -1219,9 +1212,7 @@ def crop(inpt: datapoints.InputTypeJIT, top: int, left: int, height: int, width:
     if not torch.jit.is_scripting():
         _log_api_usage_once(crop)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return crop_image_tensor(inpt, top, left, height, width)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.crop(top, left, height, width)
@@ -1249,9 +1240,9 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
 
     d = 0.5
     base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
-    x_grid = torch.linspace(d, ow + d - 1.0, steps=ow, device=device)
+    x_grid = torch.linspace(d, ow + d - 1.0, steps=ow, device=device, dtype=dtype)
     base_grid[..., 0].copy_(x_grid)
-    y_grid = torch.linspace(d, oh + d - 1.0, steps=oh, device=device).unsqueeze_(-1)
+    y_grid = torch.linspace(d, oh + d - 1.0, steps=oh, device=device, dtype=dtype).unsqueeze_(-1)
     base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
@@ -1295,7 +1286,6 @@ def perspective_image_tensor(
 
     shape = image.shape
     ndim = image.ndim
-    fp = torch.is_floating_point(image)
 
     if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
@@ -1316,12 +1306,9 @@ def perspective_image_tensor(
     )
 
     oh, ow = shape[-2:]
-    dtype = image.dtype if fp else torch.float32
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=image.device)
-    output = _apply_grid_transform(image if fp else image.to(dtype), grid, interpolation.value, fill=fill)
-
-    if not fp:
-        output = output.round_().to(image.dtype)
+    output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
     if needs_unsquash:
         output = output.reshape(shape)
@@ -1476,9 +1463,7 @@ def perspective(
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(perspective)
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return perspective_image_tensor(
             inpt, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
         )
@@ -1508,8 +1493,12 @@ def elastic_image_tensor(
 
     shape = image.shape
     ndim = image.ndim
+
     device = image.device
-    fp = torch.is_floating_point(image)
+    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    # We are aware that if input image dtype is uint8 and displacement is float64 then
+    # displacement will be casted to float32 and all computations will be done with float32
+    # We can fix this later if needed
 
     if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
@@ -1520,12 +1509,12 @@ def elastic_image_tensor(
     else:
         needs_unsquash = False
 
-    image_height, image_width = shape[-2:]
-    grid = _create_identity_grid((image_height, image_width), device=device).add_(displacement.to(device))
-    output = _apply_grid_transform(image if fp else image.to(torch.float32), grid, interpolation.value, fill=fill)
+    if displacement.dtype != dtype or displacement.device != device:
+        displacement = displacement.to(dtype=dtype, device=device)
 
-    if not fp:
-        output = output.round_().to(image.dtype)
+    image_height, image_width = shape[-2:]
+    grid = _create_identity_grid((image_height, image_width), device=device, dtype=dtype).add_(displacement)
+    output = _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 
     if needs_unsquash:
         output = output.reshape(shape)
@@ -1545,13 +1534,13 @@ def elastic_image_pil(
     return to_pil_image(output, mode=image.mode)
 
 
-def _create_identity_grid(size: Tuple[int, int], device: torch.device) -> torch.Tensor:
+def _create_identity_grid(size: Tuple[int, int], device: torch.device, dtype: torch.dtype) -> torch.Tensor:
     sy, sx = size
-    base_grid = torch.empty(1, sy, sx, 2, device=device)
-    x_grid = torch.linspace((-sx + 1) / sx, (sx - 1) / sx, sx, device=device)
+    base_grid = torch.empty(1, sy, sx, 2, device=device, dtype=dtype)
+    x_grid = torch.linspace((-sx + 1) / sx, (sx - 1) / sx, sx, device=device, dtype=dtype)
     base_grid[..., 0].copy_(x_grid)
 
-    y_grid = torch.linspace((-sy + 1) / sy, (sy - 1) / sy, sy, device=device).unsqueeze_(-1)
+    y_grid = torch.linspace((-sy + 1) / sy, (sy - 1) / sy, sy, device=device, dtype=dtype).unsqueeze_(-1)
     base_grid[..., 1].copy_(y_grid)
 
     return base_grid
@@ -1566,7 +1555,11 @@ def elastic_bounding_box(
         return bounding_box
 
     # TODO: add in docstring about approximation we are doing for grid inversion
-    displacement = displacement.to(bounding_box.device)
+    device = bounding_box.device
+    dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
+
+    if displacement.dtype != dtype or displacement.device != device:
+        displacement = displacement.to(dtype=dtype, device=device)
 
     original_shape = bounding_box.shape
     bounding_box = (
@@ -1577,7 +1570,7 @@ def elastic_bounding_box(
     # Or add spatial_size arg and check displacement shape
     spatial_size = displacement.shape[-3], displacement.shape[-2]
 
-    id_grid = _create_identity_grid(spatial_size, bounding_box.device)
+    id_grid = _create_identity_grid(spatial_size, device=device, dtype=dtype)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
     # This is not an exact inverse of the grid
     inv_grid = id_grid.sub_(displacement)
@@ -1639,9 +1632,7 @@ def elastic(
     if not torch.jit.is_scripting():
         _log_api_usage_once(elastic)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return elastic_image_tensor(inpt, displacement, interpolation=interpolation, fill=fill)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.elastic(displacement, interpolation=interpolation, fill=fill)
@@ -1754,9 +1745,7 @@ def center_crop(inpt: datapoints.InputTypeJIT, output_size: List[int]) -> datapo
     if not torch.jit.is_scripting():
         _log_api_usage_once(center_crop)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return center_crop_image_tensor(inpt, output_size)
     elif isinstance(inpt, datapoints._datapoint.Datapoint):
         return inpt.center_crop(output_size)
@@ -1777,7 +1766,7 @@ def resized_crop_image_tensor(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    antialias: Optional[bool] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
     image = crop_image_tensor(image, top, left, height, width)
     return resize_image_tensor(image, size, interpolation=interpolation, antialias=antialias)
@@ -1830,7 +1819,7 @@ def resized_crop_video(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    antialias: Optional[bool] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
     return resized_crop_image_tensor(
         video, top, left, height, width, antialias=antialias, size=size, interpolation=interpolation
@@ -1845,14 +1834,12 @@ def resized_crop(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    antialias: Optional[bool] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(resized_crop)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, datapoints._datapoint.Datapoint)
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return resized_crop_image_tensor(
             inpt, top, left, height, width, antialias=antialias, size=size, interpolation=interpolation
         )
@@ -1935,9 +1922,7 @@ def five_crop(
 
     # TODO: consider breaking BC here to return List[datapoints.ImageTypeJIT/VideoTypeJIT] to align this op with
     #  `ten_crop`
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return five_crop_image_tensor(inpt, size)
     elif isinstance(inpt, datapoints.Image):
         output = five_crop_image_tensor(inpt.as_subclass(torch.Tensor), size)
@@ -1991,9 +1976,7 @@ def ten_crop(
     if not torch.jit.is_scripting():
         _log_api_usage_once(ten_crop)
 
-    if isinstance(inpt, torch.Tensor) and (
-        torch.jit.is_scripting() or not isinstance(inpt, (datapoints.Image, datapoints.Video))
-    ):
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
     elif isinstance(inpt, datapoints.Image):
         output = ten_crop_image_tensor(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)

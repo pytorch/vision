@@ -34,7 +34,7 @@ class BoundingBox(Datapoint):
         spatial_size: Tuple[int, int],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: bool = False,
+        requires_grad: Optional[bool] = None,
     ) -> BoundingBox:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
 
@@ -78,7 +78,7 @@ class BoundingBox(Datapoint):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> BoundingBox:
         output, spatial_size = self._F.resize_bounding_box(
             self.as_subclass(torch.Tensor), spatial_size=self.spatial_size, size=size, max_size=max_size
@@ -105,7 +105,7 @@ class BoundingBox(Datapoint):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> BoundingBox:
         output, spatial_size = self._F.resized_crop_bounding_box(
             self.as_subclass(torch.Tensor), self.format, top, left, height, width, size=size
@@ -176,7 +176,11 @@ class BoundingBox(Datapoint):
         coefficients: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.perspective_bounding_box(
-            self.as_subclass(torch.Tensor), startpoints, endpoints, self.format, coefficients=coefficients
+            self.as_subclass(torch.Tensor),
+            format=self.format,
+            startpoints=startpoints,
+            endpoints=endpoints,
+            coefficients=coefficients,
         )
         return BoundingBox.wrap_like(self, output)
 

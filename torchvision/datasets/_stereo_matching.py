@@ -424,9 +424,9 @@ class Middlebury2014Stereo(StereoMatchingDataset):
         split (string, optional): The dataset split of scenes, either "train" (default), "test", or "additional"
         use_ambient_views (boolean, optional): Whether to use different expose or lightning views when possible.
             The dataset samples with equal probability between ``[im1.png, im1E.png, im1L.png]``.
-        calibration (string, optional): Wether or not to use the calibrated (default) or uncalibrated scenes.
+        calibration (string, optional): Whether or not to use the calibrated (default) or uncalibrated scenes.
         transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.
-        download (boolean, optional): Wether or not to download the dataset in the ``root`` directory.
+        download (boolean, optional): Whether or not to download the dataset in the ``root`` directory.
     """
 
     splits = {
@@ -720,7 +720,7 @@ class CREStereo(StereoMatchingDataset):
 class FallingThingsStereo(StereoMatchingDataset):
     """`FallingThings <https://research.nvidia.com/publication/2018-06_falling-things-synthetic-dataset-3d-object-detection-and-pose-estimation>`_ dataset.
 
-    The dataset is expected to have the following structre: ::
+    The dataset is expected to have the following structure: ::
 
         root
             FallingThings
@@ -825,7 +825,7 @@ class SceneFlowStereo(StereoMatchingDataset):
     """Dataset interface for `Scene Flow <https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html>`_ datasets.
     This interface provides access to the `FlyingThings3D, `Monkaa` and `Driving` datasets.
 
-    The dataset is expected to have the following structre: ::
+    The dataset is expected to have the following structure: ::
 
         root
             SceneFlow
@@ -1031,7 +1031,7 @@ class SintelStereo(StereoMatchingDataset):
         disparity_map = r * 4 + g / (2**6) + b / (2**14)
         # reshape into (C, H, W) format
         disparity_map = np.transpose(disparity_map, (2, 0, 1))
-        # find the appropiate file paths
+        # find the appropriate file paths
         occlued_mask_path, out_of_frame_mask_path = self._get_occlussion_mask_paths(file_path)
         # occlusion masks
         valid_mask = np.asarray(Image.open(occlued_mask_path)) == 0
@@ -1058,7 +1058,7 @@ class SintelStereo(StereoMatchingDataset):
 class InStereo2k(StereoMatchingDataset):
     """`InStereo2k <https://github.com/YuhuaXu/StereoDataset>`_ dataset.
 
-    The dataset is expected to have the following structre: ::
+    The dataset is expected to have the following structure: ::
 
         root
             InStereo2k

@@ -140,7 +140,7 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 0.04,
-            "_weight_size": 1.501,
+            "_file_size": 1.501,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -161,7 +161,7 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 0.145,
-            "_weight_size": 2.334,
+            "_file_size": 2.334,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -183,7 +183,7 @@ class ShuffleNet_V2_X1_5_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 0.296,
-            "_weight_size": 3.672,
+            "_file_size": 3.672,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -205,7 +205,7 @@ class ShuffleNet_V2_X2_0_QuantizedWeights(WeightsEnum):
                 }
             },
             "_ops": 0.583,
-            "_weight_size": 7.467,
+            "_file_size": 7.467,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -425,16 +425,3 @@ def shufflenet_v2_x2_0(
     return _shufflenetv2(
         [4, 8, 4], [24, 244, 488, 976, 2048], weights=weights, progress=progress, quantize=quantize, **kwargs
     )
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from .._utils import _ModelURLs
-from ..shufflenetv2 import model_urls  # noqa: F401
-
-
-quant_model_urls = _ModelURLs(
-    {
-        "shufflenetv2_x0.5_fbgemm": ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
-        "shufflenetv2_x1.0_fbgemm": ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
-    }
-)

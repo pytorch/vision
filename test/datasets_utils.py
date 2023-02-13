@@ -25,6 +25,7 @@ import torch
 import torchvision.datasets
 import torchvision.io
 from common_utils import disable_console_output, get_tmp_dir
+from torch.utils._pytree import tree_any
 from torchvision.transforms.functional import get_dimensions
 
 
@@ -137,7 +138,7 @@ def test_all_configs(test):
 
     .. note::
 
-        This will try to remove duplicate configurations. During this process it will not not preserve a potential
+        This will try to remove duplicate configurations. During this process it will not preserve a potential
         ordering of the configurations or an inner ordering of a configuration.
     """
 
@@ -146,7 +147,7 @@ def test_all_configs(test):
             return [dict(config_) for config_ in {tuple(sorted(config.items())) for config in configs}]
         except TypeError:
             # A TypeError will be raised if a value of any config is not hashable, e.g. a list. In that case duplicate
-            # removal would be a lot more elaborate and we simply bail out.
+            # removal would be a lot more elaborate, and we simply bail out.
             return configs
 
     @functools.wraps(test)
@@ -297,7 +298,7 @@ class DatasetTestCase(unittest.TestCase):
         .. note::
 
             The default behavior is only valid if the dataset to be tested has ``root`` as the only required parameter.
-            Otherwise you need to overwrite this method.
+            Otherwise, you need to overwrite this method.
 
         Args:
             tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
@@ -581,6 +582,28 @@ class DatasetTestCase(unittest.TestCase):
 
                 mock.assert_called()
 
+    @test_all_configs
+    def test_transforms_v2_wrapper(self, config):
+        # Although this is a stable test, we unconditionally import from `torchvision.prototype` here. The wrapper needs
+        # to be available with the next release when v2 is released. Thus, if this import somehow fails on the release
+        # branch, we screwed up the roll-out
+        from torchvision.prototype.datapoints import wrap_dataset_for_transforms_v2
+        from torchvision.prototype.datapoints._datapoint import Datapoint
+
+        try:
+            with self.create_dataset(config) as (dataset, _):
+                wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
+                wrapped_sample = wrapped_dataset[0]
+                assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
+        except TypeError as error:
+            if str(error).startswith(f"No wrapper exist for dataset class {type(dataset).__name__}"):
+                return
+            raise error
+        except RuntimeError as error:
+            if "currently not supported by this wrapper" in str(error):
+                return
+            raise error
+
 
 class ImageDatasetTestCase(DatasetTestCase):
     """Abstract base class for image dataset testcases.
@@ -604,7 +627,7 @@ class ImageDatasetTestCase(DatasetTestCase):
             patch_checks=patch_checks,
             **kwargs,
         ) as (dataset, info):
-            # PIL.Image.open() only loads the image meta data upfront and keeps the file open until the first access
+            # PIL.Image.open() only loads the image metadata upfront and keeps the file open until the first access
             # to the pixel data occurs. Trying to delete such a file results in an PermissionError on Windows. Thus, we
             # force-load opened images.
             # This problem only occurs during testing since some tests, e.g. DatasetTestCase.test_feature_types open an
@@ -661,6 +684,15 @@ class VideoDatasetTestCase(DatasetTestCase):
             return args
 
         return wrapper
+
+    @test_all_configs
+    def test_transforms_v2_wrapper(self, config):
+        # `output_format == "THWC"` is not supported by the wrapper. Thus, we skip the `config` if it is set explicitly
+        # or use the supported `"TCHW"`
+        if config.setdefault("output_format", "TCHW") == "THWC":
+            return
+
+        super().test_transforms_v2_wrapper.__wrapped__(self, config)
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
@@ -786,7 +818,7 @@ def create_video_file(
     fps: float = 25,
     **kwargs: Any,
 ) -> pathlib.Path:
-    """Create an video file from random data.
+    """Create a video file from random data.
 
     Args:
         root (Union[str, pathlib.Path]): Root directory the video file will be placed in.

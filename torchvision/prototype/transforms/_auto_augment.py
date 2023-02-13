@@ -5,7 +5,7 @@ import PIL.Image
 import torch
 
 from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
-
+from torchvision import transforms as _transforms
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
 from torchvision.prototype.transforms.functional._meta import get_spatial_size
@@ -37,10 +37,11 @@ class _AutoAugmentBase(Transform):
         unsupported_types: Tuple[Type, ...] = (datapoints.BoundingBox, datapoints.Mask),
     ) -> Tuple[Tuple[List[Any], TreeSpec, int], Union[datapoints.ImageType, datapoints.VideoType]]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
+        needs_transform_list = self._needs_transform_list(flat_inputs)
 
         image_or_videos = []
-        for idx, inpt in enumerate(flat_inputs):
-            if check_type(
+        for idx, (inpt, needs_transform) in enumerate(zip(flat_inputs, needs_transform_list)):
+            if needs_transform and check_type(
                 inpt,
                 (
                     datapoints.Image,
@@ -161,6 +162,8 @@ class _AutoAugmentBase(Transform):
 
 
 class AutoAugment(_AutoAugmentBase):
+    _v1_transform_cls = _transforms.AutoAugment
+
     _AUGMENTATION_SPACE = {
         "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
         "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
@@ -315,6 +318,7 @@ class AutoAugment(_AutoAugmentBase):
 
 
 class RandAugment(_AutoAugmentBase):
+    _v1_transform_cls = _transforms.RandAugment
     _AUGMENTATION_SPACE = {
         "Identity": (lambda num_bins, height, width: None, False),
         "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
@@ -375,6 +379,7 @@ class RandAugment(_AutoAugmentBase):
 
 
 class TrivialAugmentWide(_AutoAugmentBase):
+    _v1_transform_cls = _transforms.TrivialAugmentWide
     _AUGMENTATION_SPACE = {
         "Identity": (lambda num_bins, height, width: None, False),
         "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
@@ -425,6 +430,8 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
 
 class AugMix(_AutoAugmentBase):
+    _v1_transform_cls = _transforms.AugMix
+
     _PARTIAL_AUGMENTATION_SPACE = {
         "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
         "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),

@@ -46,7 +46,7 @@ class ToImageTensor(Transform):
     def _transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
     ) -> datapoints.Image:
-        return F.to_image_tensor(inpt)  # type: ignore[no-any-return]
+        return F.to_image_tensor(inpt)
 
 
 class ToImagePIL(Transform):

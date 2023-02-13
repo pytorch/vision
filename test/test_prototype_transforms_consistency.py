@@ -23,6 +23,7 @@ from prototype_common_utils import (
     make_label,
     make_segmentation_mask,
 )
+from torch import nn
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datapoints, transforms as prototype_transforms
@@ -31,7 +32,16 @@ from torchvision.prototype.transforms.functional import to_image_pil
 from torchvision.prototype.transforms.utils import query_spatial_size
 from torchvision.transforms import functional as legacy_F
 
-DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=[datapoints.ColorSpace.RGB], extra_dims=[(4,)])
+DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
+
+
+class NotScriptableArgsKwargs(ArgsKwargs):
+    """
+    This class is used to mark parameters that render the transform non-scriptable. They still work in eager mode and
+    thus will be tested there, but will be skipped by the JIT tests.
+    """
+
+    pass
 
 
 class ConsistencyConfig:
@@ -73,18 +83,15 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.Resize,
         legacy_transforms.Resize,
         [
-            ArgsKwargs(32),
+            NotScriptableArgsKwargs(32),
+            ArgsKwargs([32]),
             ArgsKwargs((32, 29)),
             ArgsKwargs((31, 28), interpolation=prototype_transforms.InterpolationMode.NEAREST),
             ArgsKwargs((33, 26), interpolation=prototype_transforms.InterpolationMode.BICUBIC),
-            # FIXME: these are currently failing, since the new transform only supports the enum. The int input is
-            #  already deprecated and scheduled to be removed in 0.15. Should we support ints on the prototype
-            #  transform? I guess it depends if we roll out before 0.15 or not.
-            # ArgsKwargs((30, 27), interpolation=0),
-            # ArgsKwargs((35, 29), interpolation=2),
-            # ArgsKwargs((34, 25), interpolation=3),
-            ArgsKwargs(31, max_size=32),
-            ArgsKwargs(30, max_size=100),
+            NotScriptableArgsKwargs(31, max_size=32),
+            ArgsKwargs([31], max_size=32),
+            NotScriptableArgsKwargs(30, max_size=100),
+            ArgsKwargs([31], max_size=32),
             ArgsKwargs((29, 32), antialias=False),
             ArgsKwargs((28, 31), antialias=True),
         ],
@@ -120,29 +127,39 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.Pad,
         legacy_transforms.Pad,
         [
-            ArgsKwargs(3),
+            NotScriptableArgsKwargs(3),
             ArgsKwargs([3]),
             ArgsKwargs([2, 3]),
             ArgsKwargs([3, 2, 1, 4]),
-            ArgsKwargs(5, fill=1, padding_mode="constant"),
-            ArgsKwargs(5, padding_mode="edge"),
-            ArgsKwargs(5, padding_mode="reflect"),
-            ArgsKwargs(5, padding_mode="symmetric"),
+            NotScriptableArgsKwargs(5, fill=1, padding_mode="constant"),
+            ArgsKwargs([5], fill=1, padding_mode="constant"),
+            NotScriptableArgsKwargs(5, padding_mode="edge"),
+            NotScriptableArgsKwargs(5, padding_mode="reflect"),
+            NotScriptableArgsKwargs(5, padding_mode="symmetric"),
         ],
     ),
-    ConsistencyConfig(
-        prototype_transforms.LinearTransformation,
-        legacy_transforms.LinearTransformation,
-        [
-            ArgsKwargs(LINEAR_TRANSFORMATION_MATRIX, LINEAR_TRANSFORMATION_MEAN),
-        ],
-        # Make sure that the product of the height, width and number of channels matches the number of elements in
-        # `LINEAR_TRANSFORMATION_MEAN`. For example 2 * 6 * 3 == 4 * 3 * 3 == 36.
-        make_images_kwargs=dict(
-            DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=[datapoints.ColorSpace.RGB]
-        ),
-        supports_pil=False,
-    ),
+    *[
+        ConsistencyConfig(
+            prototype_transforms.LinearTransformation,
+            legacy_transforms.LinearTransformation,
+            [
+                ArgsKwargs(LINEAR_TRANSFORMATION_MATRIX.to(matrix_dtype), LINEAR_TRANSFORMATION_MEAN.to(matrix_dtype)),
+            ],
+            # Make sure that the product of the height, width and number of channels matches the number of elements in
+            # `LINEAR_TRANSFORMATION_MEAN`. For example 2 * 6 * 3 == 4 * 3 * 3 == 36.
+            make_images_kwargs=dict(
+                DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=["RGB"], dtypes=[image_dtype]
+            ),
+            supports_pil=False,
+        )
+        for matrix_dtype, image_dtype in [
+            (torch.float32, torch.float32),
+            (torch.float64, torch.float64),
+            (torch.float32, torch.uint8),
+            (torch.float64, torch.float32),
+            (torch.float32, torch.float64),
+        ]
+    ],
     ConsistencyConfig(
         prototype_transforms.Grayscale,
         legacy_transforms.Grayscale,
@@ -150,9 +167,9 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(num_output_channels=1),
             ArgsKwargs(num_output_channels=3),
         ],
-        make_images_kwargs=dict(
-            DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=[datapoints.ColorSpace.RGB, datapoints.ColorSpace.GRAY]
-        ),
+        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=["RGB", "GRAY"]),
+        # Use default tolerances of `torch.testing.assert_close`
+        closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
         prototype_transforms.ConvertDtype,
@@ -171,13 +188,13 @@ CONSISTENCY_CONFIGS = [
     ConsistencyConfig(
         prototype_transforms.ToPILImage,
         legacy_transforms.ToPILImage,
-        [ArgsKwargs()],
+        [NotScriptableArgsKwargs()],
         make_images_kwargs=dict(
             color_spaces=[
-                datapoints.ColorSpace.GRAY,
-                datapoints.ColorSpace.GRAY_ALPHA,
-                datapoints.ColorSpace.RGB,
-                datapoints.ColorSpace.RGB_ALPHA,
+                "GRAY",
+                "GRAY_ALPHA",
+                "RGB",
+                "RGBA",
             ],
             extra_dims=[()],
         ),
@@ -187,7 +204,7 @@ CONSISTENCY_CONFIGS = [
         prototype_transforms.Lambda,
         legacy_transforms.Lambda,
         [
-            ArgsKwargs(lambda image: image / 2),
+            NotScriptableArgsKwargs(lambda image: image / 2),
         ],
         # Technically, this also supports PIL, but it is overkill to write a function here that supports tensor and PIL
         # images given that the transform does nothing but call it anyway.
@@ -275,6 +292,9 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(p=0),
             ArgsKwargs(p=1),
         ],
+        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, color_spaces=["RGB", "GRAY"]),
+        # Use default tolerances of `torch.testing.assert_close`
+        closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
         prototype_transforms.RandomResizedCrop,
@@ -316,7 +336,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(saturation=(0.8, 0.9)),
             ArgsKwargs(hue=0.3),
             ArgsKwargs(hue=(-0.1, 0.2)),
-            ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.5, hue=0.6),
+            ArgsKwargs(brightness=0.1, contrast=0.4, saturation=0.5, hue=0.3),
         ],
         closeness_kwargs={"atol": 1e-5, "rtol": 1e-5},
     ),
@@ -378,14 +398,15 @@ CONSISTENCY_CONFIGS = [
         [
             ArgsKwargs(12),
             ArgsKwargs((15, 17)),
-            ArgsKwargs(11, padding=1),
+            NotScriptableArgsKwargs(11, padding=1),
+            ArgsKwargs(11, padding=[1]),
             ArgsKwargs((8, 13), padding=(2, 3)),
             ArgsKwargs((14, 9), padding=(0, 2, 1, 0)),
             ArgsKwargs(36, pad_if_needed=True),
             ArgsKwargs((7, 8), fill=1),
-            ArgsKwargs(5, fill=(1, 2, 3)),
+            NotScriptableArgsKwargs(5, fill=(1, 2, 3)),
             ArgsKwargs(12),
-            ArgsKwargs(15, padding=2, padding_mode="edge"),
+            NotScriptableArgsKwargs(15, padding=2, padding_mode="edge"),
             ArgsKwargs(17, padding=(1, 0), padding_mode="reflect"),
             ArgsKwargs(8, padding=(3, 0, 0, 1), padding_mode="symmetric"),
         ],
@@ -558,15 +579,15 @@ def check_call_consistency(
             output_prototype_image = prototype_transform(image)
         except Exception as exc:
             raise AssertionError(
-                f"Transforming a feature image with shape {image_repr} failed in the prototype transform with "
+                f"Transforming a image datapoint with shape {image_repr} failed in the prototype transform with "
                 f"the error above. This means there is a consistency bug either in `_get_params` or in the "
-                f"`features.Image` path in `_transform`."
+                f"`datapoints.Image` path in `_transform`."
             ) from exc
 
         assert_close(
             output_prototype_image,
             output_prototype_tensor,
-            msg=lambda msg: f"Output for feature and tensor images is not equal: \n\n{msg}",
+            msg=lambda msg: f"Output for datapoint and tensor images is not equal: \n\n{msg}",
             **closeness_kwargs,
         )
 
@@ -640,6 +661,92 @@ def test_call_consistency(config, args_kwargs):
     )
 
 
+get_params_parametrization = pytest.mark.parametrize(
+    ("config", "get_params_args_kwargs"),
+    [
+        pytest.param(
+            next(config for config in CONSISTENCY_CONFIGS if config.prototype_cls is transform_cls),
+            get_params_args_kwargs,
+            id=transform_cls.__name__,
+        )
+        for transform_cls, get_params_args_kwargs in [
+            (prototype_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
+            (prototype_transforms.RandomErasing, ArgsKwargs(make_image(), scale=(0.3, 0.7), ratio=(0.5, 1.5))),
+            (prototype_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
+            (prototype_transforms.ElasticTransform, ArgsKwargs(alpha=[15.3, 27.2], sigma=[2.5, 3.9], size=[17, 31])),
+            (prototype_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
+            (
+                prototype_transforms.RandomAffine,
+                ArgsKwargs(degrees=[-20.0, 10.0], translate=None, scale_ranges=None, shears=None, img_size=[15, 29]),
+            ),
+            (prototype_transforms.RandomCrop, ArgsKwargs(make_image(size=(61, 47)), output_size=(19, 25))),
+            (prototype_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
+            (prototype_transforms.RandomRotation, ArgsKwargs(degrees=[-20.0, 10.0])),
+            (prototype_transforms.AutoAugment, ArgsKwargs(5)),
+        ]
+    ],
+)
+
+
+@get_params_parametrization
+def test_get_params_alias(config, get_params_args_kwargs):
+    assert config.prototype_cls.get_params is config.legacy_cls.get_params
+
+    if not config.args_kwargs:
+        return
+    args, kwargs = config.args_kwargs[0]
+    legacy_transform = config.legacy_cls(*args, **kwargs)
+    prototype_transform = config.prototype_cls(*args, **kwargs)
+
+    assert prototype_transform.get_params is legacy_transform.get_params
+
+
+@get_params_parametrization
+def test_get_params_jit(config, get_params_args_kwargs):
+    get_params_args, get_params_kwargs = get_params_args_kwargs
+
+    torch.jit.script(config.prototype_cls.get_params)(*get_params_args, **get_params_kwargs)
+
+    if not config.args_kwargs:
+        return
+    args, kwargs = config.args_kwargs[0]
+    transform = config.prototype_cls(*args, **kwargs)
+
+    torch.jit.script(transform.get_params)(*get_params_args, **get_params_kwargs)
+
+
+@pytest.mark.parametrize(
+    ("config", "args_kwargs"),
+    [
+        pytest.param(
+            config, args_kwargs, id=f"{config.legacy_cls.__name__}-{idx:0{len(str(len(config.args_kwargs)))}d}"
+        )
+        for config in CONSISTENCY_CONFIGS
+        for idx, args_kwargs in enumerate(config.args_kwargs)
+        if not isinstance(args_kwargs, NotScriptableArgsKwargs)
+    ],
+)
+def test_jit_consistency(config, args_kwargs):
+    args, kwargs = args_kwargs
+
+    prototype_transform_eager = config.prototype_cls(*args, **kwargs)
+    legacy_transform_eager = config.legacy_cls(*args, **kwargs)
+
+    legacy_transform_scripted = torch.jit.script(legacy_transform_eager)
+    prototype_transform_scripted = torch.jit.script(prototype_transform_eager)
+
+    for image in make_images(**config.make_images_kwargs):
+        image = image.as_subclass(torch.Tensor)
+
+        torch.manual_seed(0)
+        output_legacy_scripted = legacy_transform_scripted(image)
+
+        torch.manual_seed(0)
+        output_prototype_scripted = prototype_transform_scripted(image)
+
+        assert_close(output_prototype_scripted, output_legacy_scripted, **config.closeness_kwargs)
+
+
 class TestContainerTransforms:
     """
     Since we are testing containers here, we also need some transforms to wrap. Thus, testing a container transform for
@@ -666,19 +773,24 @@ class TestContainerTransforms:
         check_call_consistency(prototype_transform, legacy_transform)
 
     @pytest.mark.parametrize("p", [0, 0.1, 0.5, 0.9, 1])
-    def test_random_apply(self, p):
+    @pytest.mark.parametrize("sequence_type", [list, nn.ModuleList])
+    def test_random_apply(self, p, sequence_type):
         prototype_transform = prototype_transforms.RandomApply(
-            [
-                prototype_transforms.Resize(256),
-                prototype_transforms.CenterCrop(224),
-            ],
+            sequence_type(
+                [
+                    prototype_transforms.Resize(256),
+                    prototype_transforms.CenterCrop(224),
+                ]
+            ),
             p=p,
         )
         legacy_transform = legacy_transforms.RandomApply(
-            [
-                legacy_transforms.Resize(256),
-                legacy_transforms.CenterCrop(224),
-            ],
+            sequence_type(
+                [
+                    legacy_transforms.Resize(256),
+                    legacy_transforms.CenterCrop(224),
+                ]
+            ),
             p=p,
         )
 
@@ -911,7 +1023,7 @@ class TestRefDetTransforms:
         size = (600, 800)
         num_objects = 22
 
-        pil_image = to_image_pil(make_image(size=size, color_space=datapoints.ColorSpace.RGB))
+        pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -921,7 +1033,7 @@ class TestRefDetTransforms:
 
         yield (pil_image, target)
 
-        tensor_image = torch.Tensor(make_image(size=size, color_space=datapoints.ColorSpace.RGB))
+        tensor_image = torch.Tensor(make_image(size=size, color_space="RGB"))
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -931,7 +1043,7 @@ class TestRefDetTransforms:
 
         yield (tensor_image, target)
 
-        feature_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB)
+        datapoint_image = make_image(size=size, color_space="RGB")
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
             "labels": make_label(extra_dims=(num_objects,), categories=80),
@@ -939,7 +1051,7 @@ class TestRefDetTransforms:
         if with_mask:
             target["masks"] = make_detection_mask(size=size, num_objects=num_objects, dtype=torch.long)
 
-        yield (feature_image, target)
+        yield (datapoint_image, target)
 
     @pytest.mark.parametrize(
         "t_ref, t, data_kwargs",
@@ -1015,13 +1127,13 @@ class TestRefSegTransforms:
         conv_fns.extend([torch.Tensor, lambda x: x])
 
         for conv_fn in conv_fns:
-            feature_image = make_image(size=size, color_space=datapoints.ColorSpace.RGB, dtype=image_dtype)
-            feature_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
+            datapoint_image = make_image(size=size, color_space="RGB", dtype=image_dtype)
+            datapoint_mask = make_segmentation_mask(size=size, num_categories=num_categories, dtype=torch.uint8)
 
-            dp = (conv_fn(feature_image), feature_mask)
+            dp = (conv_fn(datapoint_image), datapoint_mask)
             dp_ref = (
-                to_image_pil(feature_image) if supports_pil else feature_image.as_subclass(torch.Tensor),
-                to_image_pil(feature_mask),
+                to_image_pil(datapoint_image) if supports_pil else datapoint_image.as_subclass(torch.Tensor),
+                to_image_pil(datapoint_mask),
             )
 
             yield dp, dp_ref

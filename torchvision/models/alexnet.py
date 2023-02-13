@@ -68,7 +68,7 @@ class AlexNet_Weights(WeightsEnum):
                 }
             },
             "_ops": 0.714,
-            "_weight_size": 233.087,
+            "_file_size": 233.087,
             "_docs": """
                 These weights reproduce closely the results of the paper using a simplified training recipe.
             """,
@@ -117,14 +117,3 @@ def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True,
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
-
-
-# The dictionary below is internal implementation detail and will be removed in v0.15
-from ._utils import _ModelURLs
-
-
-model_urls = _ModelURLs(
-    {
-        "alexnet": AlexNet_Weights.IMAGENET1K_V1.url,
-    }
-)

@@ -1,6 +1,27 @@
 import pytest
 import torch
+
+from PIL import Image
 from torchvision.prototype import datapoints
+
+
+@pytest.mark.parametrize(
+    ("data", "input_requires_grad", "expected_requires_grad"),
+    [
+        ([0.0], None, False),
+        ([0.0], False, False),
+        ([0.0], True, True),
+        (torch.tensor([0.0], requires_grad=False), None, False),
+        (torch.tensor([0.0], requires_grad=False), False, False),
+        (torch.tensor([0.0], requires_grad=False), True, True),
+        (torch.tensor([0.0], requires_grad=True), None, True),
+        (torch.tensor([0.0], requires_grad=True), False, False),
+        (torch.tensor([0.0], requires_grad=True), True, True),
+    ],
+)
+def test_new_requires_grad(data, input_requires_grad, expected_requires_grad):
+    datapoint = datapoints.Label(data, requires_grad=input_requires_grad)
+    assert datapoint.requires_grad is expected_requires_grad
 
 
 def test_isinstance():
@@ -28,7 +49,7 @@ def test_to_wrapping():
     assert label_to.categories is label.categories
 
 
-def test_to_feature_reference():
+def test_to_datapoint_reference():
     tensor = torch.tensor([0, 1, 0], dtype=torch.int64)
     label = datapoints.Label(tensor, categories=["foo", "bar"]).to(torch.int32)
 
@@ -111,3 +132,30 @@ def test_wrap_like():
     assert type(label_new) is datapoints.Label
     assert label_new.data_ptr() == output.data_ptr()
     assert label_new.categories is label.categories
+
+
+@pytest.mark.parametrize("data", [torch.rand(3, 32, 32), Image.new("RGB", (32, 32), color=123)])
+def test_image_instance(data):
+    image = datapoints.Image(data)
+    assert isinstance(image, torch.Tensor)
+    assert image.ndim == 3 and image.shape[0] == 3
+
+
+@pytest.mark.parametrize("data", [torch.randint(0, 10, size=(1, 32, 32)), Image.new("L", (32, 32), color=2)])
+def test_mask_instance(data):
+    mask = datapoints.Mask(data)
+    assert isinstance(mask, torch.Tensor)
+    assert mask.ndim == 3 and mask.shape[0] == 1
+
+
+@pytest.mark.parametrize("data", [torch.randint(0, 32, size=(5, 4)), [[0, 0, 5, 5], [2, 2, 7, 7]]])
+@pytest.mark.parametrize(
+    "format", ["XYXY", "CXCYWH", datapoints.BoundingBoxFormat.XYXY, datapoints.BoundingBoxFormat.XYWH]
+)
+def test_bbox_instance(data, format):
+    bboxes = datapoints.BoundingBox(data, format=format, spatial_size=(32, 32))
+    assert isinstance(bboxes, torch.Tensor)
+    assert bboxes.ndim == 2 and bboxes.shape[1] == 4
+    if isinstance(format, str):
+        format = datapoints.BoundingBoxFormat.from_str(format.upper())
+    assert bboxes.format == format
