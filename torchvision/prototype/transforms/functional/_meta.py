@@ -186,11 +186,9 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xyxy
 
 
-def convert_format_bounding_box(
+def _convert_format_bounding_box(
     bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(convert_format_bounding_box)
 
     if new_format == old_format:
         return bounding_box
@@ -207,6 +205,37 @@ def convert_format_bounding_box(
         bounding_box = _xyxy_to_cxcywh(bounding_box, inplace)
 
     return bounding_box
+
+
+def convert_format_bounding_box(
+    inpt: datapoints.InputTypeJIT,
+    old_format: Optional[BoundingBoxFormat] = None,
+    new_format: Optional[BoundingBoxFormat] = None,
+    inplace: bool = False,
+) -> datapoints.InputTypeJIT:
+    # This being a kernel / dispatcher hybrid, we need an option to pass `old_format` explicitly for simple tensor
+    # inputs as well as extract it from `datapoints.BoundingBox` inputs. However, putting a default value on
+    # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
+    # default error that would be thrown if `new_format` had no default value.
+    if new_format is None:
+        raise TypeError("convert_format_bounding_box() missing 1 required argument: 'new_format'")
+
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(convert_format_bounding_box)
+
+    if torch.jit.is_scripting() or is_simple_tensor(inpt):
+        if old_format is None:
+            raise ValueError("For simple tensor inputs, `old_format` has to be passed.")
+        return _convert_format_bounding_box(inpt, old_format=old_format, new_format=new_format, inplace=inplace)
+    elif isinstance(inpt, datapoints.BoundingBox):
+        if old_format is not None:
+            raise ValueError("For bounding box datapoint inputs, `old_format` must not be passed.")
+        output = _convert_format_bounding_box(inpt, old_format=inpt.format, new_format=new_format, inplace=inplace)
+        return datapoints.BoundingBox.wrap_like(inpt, output)
+    else:
+        raise TypeError(
+            f"Input can either be a plain tensor or a bounding box datapoint, but got {type(inpt)} instead."
+        )
 
 
 def _clamp_bounding_box(
