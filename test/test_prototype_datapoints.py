@@ -2,6 +2,8 @@ import pytest
 import torch
 
 from PIL import Image
+
+from torchvision import datasets
 from torchvision.prototype import datapoints
 
 
@@ -159,3 +161,13 @@ def test_bbox_instance(data, format):
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat.from_str(format.upper())
     assert bboxes.format == format
+
+
+def test_dataset_wrapper_subclass():
+    class MyFakeData(datasets.FakeData):
+        pass
+
+    dataset = MyFakeData()
+    wrapped_dataset = datapoints.wrap_dataset_for_transforms_v2(dataset)
+
+    assert wrapped_dataset[0] is not None

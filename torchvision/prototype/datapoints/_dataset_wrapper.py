@@ -151,6 +151,7 @@ for dataset_cls in [
     datasets.GTSRB,
     datasets.DatasetFolder,
     datasets.ImageFolder,
+    datasets.FakeData,
 ]:
     WRAPPER_FACTORIES.register(dataset_cls)(classification_wrapper_factory)
 
