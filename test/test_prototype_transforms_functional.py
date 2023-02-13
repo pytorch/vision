@@ -346,7 +346,6 @@ class TestDispatchers:
     @pytest.mark.parametrize(
         "dispatcher",
         [
-            F.clamp_bounding_box,
             F.get_dimensions,
             F.get_image_num_channels,
             F.get_image_size,
