@@ -107,6 +107,10 @@ def identity(item):
     return item
 
 
+def identity_wrapper_factory(dataset):
+    return identity
+
+
 def pil_image_to_mask(pil_image):
     return datapoints.Mask(pil_image)
 
@@ -134,7 +138,7 @@ def wrap_target_by_type(target, *, target_types, type_wrappers):
 
 
 def classification_wrapper_factory(dataset):
-    return identity
+    return identity_wrapper_factory(dataset)
 
 
 for dataset_cls in [
@@ -238,6 +242,9 @@ def coco_dectection_wrapper_factory(dataset):
         return image, batched_target
 
     return wrapper
+
+
+WRAPPER_FACTORIES.register(datasets.CocoCaptions)(identity_wrapper_factory)
 
 
 VOC_DETECTION_CATEGORIES = [
