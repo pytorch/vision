@@ -236,7 +236,7 @@ def clamp_bounding_box(
         return _clamp_bounding_box(inpt, format=format, spatial_size=spatial_size)
     elif isinstance(inpt, datapoints.BoundingBox):
         if format is not None or spatial_size is not None:
-            raise ValueError("For bounding box datapoints inputs, `format` and `spatial_size` must not be passed.")
+            raise ValueError("For bounding box datapoint inputs, `format` and `spatial_size` must not be passed.")
         output = _clamp_bounding_box(inpt, format=inpt.format, spatial_size=inpt.spatial_size)
         return datapoints.BoundingBox.wrap_like(inpt, output)
     else:

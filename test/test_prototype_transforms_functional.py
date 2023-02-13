@@ -560,6 +560,36 @@ def test_normalize_image_tensor_stats(device, num_channels):
     assert_samples_from_standard_normal(F.normalize_image_tensor(image, mean, std))
 
 
+class TestClampBoundingBox:
+    @pytest.mark.parametrize(
+        "metadata",
+        [
+            dict(),
+            dict(format=datapoints.BoundingBoxFormat.XYXY),
+            dict(spatial_size=(1, 1)),
+        ],
+    )
+    def test_simple_tensor_insufficient_metadata(self, metadata):
+        simple_tensor = next(make_bounding_boxes()).as_subclass(torch.Tensor)
+
+        with pytest.raises(ValueError, match="simple tensor"):
+            F.clamp_bounding_box(simple_tensor, **metadata)
+
+    @pytest.mark.parametrize(
+        "metadata",
+        [
+            dict(format=datapoints.BoundingBoxFormat.XYXY),
+            dict(spatial_size=(1, 1)),
+            dict(format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(1, 1)),
+        ],
+    )
+    def test_datapoint_explicit_metadata(self, metadata):
+        datapoint = next(make_bounding_boxes())
+
+        with pytest.raises(ValueError, match="bounding box datapoint"):
+            F.clamp_bounding_box(datapoint, **metadata)
+
+
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
 #  `prototype_transforms_kernel_infos.py`
 
