@@ -85,7 +85,14 @@ def auto_augment_adapter(transform, input, device):
 
 
 def linear_transformation_adapter(transform, input, device):
-    c, h, w = query_chw(input.values())
+    flat_inputs = list(input.values())
+    c, h, w = query_chw(
+        [
+            item
+            for item, needs_transform in zip(flat_inputs, transforms.Transform()._needs_transform_list(flat_inputs))
+            if needs_transform
+        ]
+    )
     num_elements = c * h * w
     transform.transformation_matrix = torch.randn((num_elements, num_elements), device=device)
     transform.mean_vector = torch.randn((num_elements,), device=device)
