@@ -74,7 +74,7 @@ class VisionDatasetDatapointWrapper(Dataset):
         # of this class
         sample = self._dataset[idx]
 
-        sample = self._wrapper(sample)
+        sample = self._wrapper(sample, idx) # TODO: this is breaking all other datasets :'(
 
         # Regardless of whether the user has supplied the transforms individually (`transform` and `target_transform`)
         # or joint (`transforms`), we can access the full functionality through `transforms`
@@ -201,30 +201,39 @@ def coco_dectection_wrapper_factory(dataset):
         )
         return torch.from_numpy(mask.decode(segmentation))
 
-    def wrapper(sample):
+
+    # TODO: passing idx is breaking all other datasets :'(
+    def wrapper(sample, idx):
         image, target = sample
 
         batched_target = list_of_dicts_to_dict_of_lists(target)
 
-        image_ids = batched_target.pop("image_id")
-        image_id = batched_target["image_id"] = image_ids.pop()
-        assert all(other_image_id == image_id for other_image_id in image_ids)
+        # image_ids = batched_target.pop("image_id")
+        # image_id = batched_target["image_id"] = image_ids.pop()
+        # assert all(other_image_id == image_id for other_image_id in image_ids)
+        batched_target["image_id"] = dataset.ids[idx]
 
-        spatial_size = tuple(F.get_spatial_size(image))
-        batched_target["boxes"] = datapoints.BoundingBox(
-            batched_target["bbox"],
-            format=datapoints.BoundingBoxFormat.XYWH,
-            spatial_size=spatial_size,
-        )
-        batched_target["masks"] = datapoints.Mask(
-            torch.stack(
-                [
-                    segmentation_to_mask(segmentation, spatial_size=spatial_size)
-                    for segmentation in batched_target["segmentation"]
-                ]
-            ),
-        )
-        batched_target["labels"] = torch.tensor(batched_target["category_id"])
+        # TODO: Need to protect all key access as some samples don't have any
+        if "bbox" in batched_target:
+            spatial_size = tuple(F.get_spatial_size(image))
+            # TODO: we don't remove "bbox" so we end-up with both boxes and bbox keys
+            # Also should we keep bbox instead of renaming to boxes??
+            batched_target["boxes"] = datapoints.BoundingBox(
+                batched_target["bbox"],
+                format=datapoints.BoundingBoxFormat.XYWH,
+                spatial_size=spatial_size,
+            )
+        if "masks" in batched_target:
+            batched_target["masks"] = datapoints.Mask(
+                torch.stack(
+                    [
+                        segmentation_to_mask(segmentation, spatial_size=spatial_size)
+                        for segmentation in batched_target["segmentation"]
+                    ]
+                ),
+            )
+        if "category_id" in batched_target:
+            batched_target["labels"] = torch.tensor(batched_target["category_id"])
 
         return image, batched_target
 

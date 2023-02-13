@@ -179,9 +179,6 @@ def main(args):
     print("Loading data")
 
     dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path)
-    # img, target = dataset[0]
-    # print(target)
-    # return
     dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path)
 
     print("Creating data loaders")
