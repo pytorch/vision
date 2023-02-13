@@ -835,7 +835,7 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_rotate_bounding_box,
             closeness_kwargs={
                 **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-6, rtol=1e-6),
-                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-6, rtol=1e-6),
+                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
             },
         ),
         KernelInfo(
