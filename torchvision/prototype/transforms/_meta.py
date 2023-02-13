@@ -47,7 +47,7 @@ class ConvertDtype(Transform):
 ConvertImageDtype = ConvertDtype
 
 
-class ClampBoundingBoxes(Transform):
+class ClampBoundingBox(Transform):
     _transformed_types = (datapoints.BoundingBox,)
 
     def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
