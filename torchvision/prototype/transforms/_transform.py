@@ -48,7 +48,7 @@ class Transform(nn.Module):
 
         return tree_unflatten(flat_outputs, spec)
 
-    def _needs_transform_list(self, flat_inputs):
+    def _needs_transform_list(self, flat_inputs: List[Any]) -> List[bool]:
         # Below is a heuristic on how to deal with simple tensor inputs:
         # 1. Simple tensors, i.e. tensors that are not a datapoint, are passed through if there is an explicit image
         #    (`datapoints.Image` or `PIL.Image.Image`) or video (`datapoints.Video`) in the sample.
@@ -171,7 +171,7 @@ class _RandomApplyTransform(Transform):
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
         params = self._get_params(
-            inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform
+            [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
         )
 
         flat_outputs = [
