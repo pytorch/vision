@@ -21,7 +21,6 @@ from prototype_common_utils import (
     make_image,
     make_images,
     make_label,
-    make_masks,
     make_one_hot_labels,
     make_segmentation_mask,
     make_video,
@@ -67,32 +66,6 @@ def parametrize(transforms_with_inputs):
             for idx, input in enumerate(inputs)
         ],
     )
-
-
-def parametrize_from_transforms(*transforms):
-    transforms_with_inputs = []
-    for transform in transforms:
-        for creation_fn in [
-            make_images,
-            make_bounding_boxes,
-            make_one_hot_labels,
-            make_vanilla_tensor_images,
-            make_pil_images,
-            make_masks,
-            make_videos,
-        ]:
-            inputs = list(creation_fn())
-            try:
-                output = transform(inputs[0])
-            except Exception:
-                continue
-            else:
-                if output is inputs[0]:
-                    continue
-
-            transforms_with_inputs.append((transform, inputs))
-
-    return parametrize(transforms_with_inputs)
 
 
 def auto_augment_adapter(transform, input, device):
