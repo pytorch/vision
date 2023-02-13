@@ -1230,11 +1230,10 @@ def reference_inputs_perspective_mask():
 
 
 def sample_inputs_perspective_video():
-    # Skip tests on dtype float64, otherwise scripted vs eager are failing
     for video_loader in make_video_loaders(
         sizes=["random"],
         num_frames=["random"],
-        dtypes=(torch.uint8, torch.float32),
+        dtypes=(torch.uint8, torch.float32, torch.float64),
     ):
         yield ArgsKwargs(video_loader, None, None, coefficients=_PERSPECTIVE_COEFFS[0])
 
@@ -1272,7 +1271,11 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.perspective_video,
             sample_inputs_fn=sample_inputs_perspective_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
+            closeness_kwargs={
+                **cuda_vs_cpu_pixel_difference(),
+                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+            }
         ),
     ]
 )
