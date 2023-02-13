@@ -17,8 +17,9 @@ class ClassificationPresetTrain:
         random_erase_prob=0.0,
         backend="pil",
     ):
-        backend = backend.lower()
         trans = []
+
+        backend = backend.lower()
         if backend == "datapoint":
             trans.append(transforms.ToImageTensor())
         elif backend == "tensor":
@@ -70,9 +71,9 @@ class ClassificationPresetEval:
         interpolation=transforms.InterpolationMode.BILINEAR,
         backend="pil",
     ):
-        backend = backend.lower()
-
         trans = []
+
+        backend = backend.lower()
         if backend == "datapoint":
             trans.append(transforms.ToImageTensor())
         elif backend == "tensor":

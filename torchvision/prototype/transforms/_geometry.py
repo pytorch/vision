@@ -749,7 +749,7 @@ class RandomIoUCrop(Transform):
             bboxes = output
             bboxes[~is_within_crop_area] = 0
 
-            bboxes = F.clamp_bounding_box(bboxes, output.format, output.spatial_size)
+            bboxes = F.clamp_bounding_box(bboxes)  #  TODO: this was failing after 7227 was merged, we need a proper fix in main
             output = datapoints.BoundingBox.wrap_like(output, bboxes)
         # TODO: is a output still a Mask? Is it OK to comment that out?
         # elif isinstance(output, datapoints.Mask):

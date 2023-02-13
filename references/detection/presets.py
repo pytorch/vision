@@ -23,64 +23,74 @@ class Sanitize(torch.nn.Module):
 
 
 class DetectionPresetTrain(T.Compose):
-    def __init__(self, *, data_augmentation, hflip_prob=0.5, mean=(123.0, 117.0, 104.0)):
+    def __init__(self, *, data_augmentation, hflip_prob=0.5, mean=(123.0, 117.0, 104.0), backend="PIL"):
+        transforms = []
+
+        backend = backend.lower()
+        if backend == "datapoint":
+            transforms.append(T.ToImageTensor())
+        elif backend == "tensor":
+            transforms.append(T.PILToTensor())
+        else:
+            assert backend == "pil"
+
         if data_augmentation == "hflip":
-            transforms = [
+            transforms += [
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ConvertImageDtype(torch.float),
             ]
         elif data_augmentation == "lsj":
-            transforms = [
+            transforms += [
                 T.ScaleJitter(target_size=(1024, 1024), antialias=True),
                 reference_transforms.FixedSizeCrop(
                     size=(1024, 1024), fill=defaultdict(lambda: mean, {datapoints.Mask: 0})
                 ),
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ConvertImageDtype(torch.float),
             ]
         elif data_augmentation == "multiscale":
-            transforms = [
+            transforms += [
                 T.RandomShortestSize(
                     min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333, antialias=True
                 ),
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ConvertImageDtype(torch.float),
             ]
         elif data_augmentation == "ssd":
-            transforms = [
-                T.ToImageTensor(),  # Here?
+            transforms += [
                 T.RandomPhotometricDistort(),
                 T.RandomZoomOut(fill=defaultdict(lambda: mean, {datapoints.Mask: 0})),
                 T.RandomIoUCrop(),
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ConvertImageDtype(torch.float),
-                Sanitize(),
             ]
         elif data_augmentation == "ssdlite":
-            transforms = [
-                T.ToImageTensor(),  # Here?
+            transforms += [
                 T.RandomIoUCrop(),
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ConvertImageDtype(torch.float),
-                Sanitize(),
             ]
         else:
             raise ValueError(f'Unknown data augmentation policy "{data_augmentation}"')
 
-        # TODO: we should convert to tensor *somewhere* (where?) because
-        # otherwise `.to()` would fail during training on PIL.Image.
-        # Can't do it here because ConvertImageDtype is pass-through for PIL
-        # (see todo in its functional part)
-        # transforms += [T.ToImageTensor()]
+        if backend == "pil":
+            # Note: we could also just use pure tensors?
+            transforms.append(T.ToImageTensor())
+
+        transforms += [
+            T.ConvertImageDtype(torch.float),
+            Sanitize(),
+        ]
 
         super().__init__(transforms)
 
 
 class DetectionPresetEval(T.Compose):
-    def __init__(self):
-        super().__init__(
-            [
-                T.ToImageTensor(),
-                T.ConvertImageDtype(torch.float),
-            ]
-        )
+    def __init__(self, backend="pil"):
+
+        transforms = []
+
+        backend = backend.lower()
+        if backend == "tensor":
+            transforms.append(T.PILToTensor())
+        else: #  for datapoint **and** PIL
+            transforms.append(T.ToImageTensor())
+
+
+        transforms.append(T.ConvertImageDtype(torch.float))
+        super().__init__(transforms)

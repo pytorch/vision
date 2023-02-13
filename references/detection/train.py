@@ -50,13 +50,13 @@ def get_dataset(name, image_set, transform, data_path):
 
 def get_transform(train, args):
     if train:
-        return presets.DetectionPresetTrain(data_augmentation=args.data_augmentation)
+        return presets.DetectionPresetTrain(data_augmentation=args.data_augmentation, backend=args.backend)
     elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
         return lambda img, target: (trans(img), target)
     else:
-        return presets.DetectionPresetEval()
+        return presets.DetectionPresetEval(backend=args.backend)
 
 
 def get_args_parser(add_help=True):
@@ -158,6 +158,7 @@ def get_args_parser(add_help=True):
         action="store_true",
         help="Use CopyPaste data augmentation. Works only with data-augmentation='lsj'.",
     )
+    parser.add_argument("--backend", default="PIL", type=str, help="PIL, tensor or datapoint - case insensitive")
 
     return parser
 
