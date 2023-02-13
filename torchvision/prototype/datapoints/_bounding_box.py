@@ -175,11 +175,10 @@ class BoundingBox(Datapoint):
         fill: FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> BoundingBox:
-        # FIXME: why didn't this trigger CI???
         output = self._F.perspective_bounding_box(
             self.as_subclass(torch.Tensor),
-            self.format,
-            self.spatial_size,
+            format=self.format,
+            spatial_size=self.spatial_size,
             startpoints=startpoints,
             endpoints=endpoints,
             coefficients=coefficients,

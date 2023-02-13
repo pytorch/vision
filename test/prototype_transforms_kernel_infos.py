@@ -12,16 +12,21 @@ import torchvision.prototype.transforms.functional as F
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
+    BoundingBoxLoader,
     get_num_channels,
     ImageLoader,
     InfoBase,
+    make_bounding_box_loader,
     make_bounding_box_loaders,
+    make_detection_mask_loader,
     make_image_loader,
     make_image_loaders,
     make_image_loaders_for_interpolation,
     make_mask_loaders,
+    make_video_loader,
     make_video_loaders,
     mark_framework_limitation,
+    TensorLoader,
     TestMark,
 )
 from torch.utils._pytree import tree_map
@@ -1168,12 +1173,18 @@ _PERSPECTIVE_COEFFS = [
     [1.2405, 0.1772, -6.9113, 0.0463, 1.251, -5.235, 0.00013, 0.0018],
     [0.7366, -0.11724, 1.45775, -0.15012, 0.73406, 2.6019, -0.0072, -0.0063],
 ]
+_STARTPOINTS = [[0, 1], [2, 3], [4, 5], [6, 7]]
+_ENDPOINTS = [[9, 8], [7, 6], [5, 4], [3, 2]]
 
 
 def sample_inputs_perspective_image_tensor():
     for image_loader in make_image_loaders(sizes=["random"]):
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
-            yield ArgsKwargs(image_loader, None, None, fill=fill, coefficients=_PERSPECTIVE_COEFFS[0])
+            yield ArgsKwargs(
+                image_loader, startpoints=None, endpoints=None, fill=fill, coefficients=_PERSPECTIVE_COEFFS[0]
+            )
+
+    yield ArgsKwargs(make_image_loader(), startpoints=_STARTPOINTS, endpoints=_ENDPOINTS)
 
 
 def reference_inputs_perspective_image_tensor():
@@ -1200,25 +1211,38 @@ def reference_inputs_perspective_image_tensor():
 def sample_inputs_perspective_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         yield ArgsKwargs(
-            bounding_box_loader, bounding_box_loader.format, None, None, coefficients=_PERSPECTIVE_COEFFS[0]
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            startpoints=None,
+            endpoints=None,
+            coefficients=_PERSPECTIVE_COEFFS[0],
         )
+
+    format = datapoints.BoundingBoxFormat.XYXY
+    yield ArgsKwargs(
+        make_bounding_box_loader(format=format), format=format, startpoints=_STARTPOINTS, endpoints=_ENDPOINTS
+    )
 
 
 def sample_inputs_perspective_mask():
     for mask_loader in make_mask_loaders(sizes=["random"]):
-        yield ArgsKwargs(mask_loader, None, None, coefficients=_PERSPECTIVE_COEFFS[0])
+        yield ArgsKwargs(mask_loader, startpoints=None, endpoints=None, coefficients=_PERSPECTIVE_COEFFS[0])
+
+    yield ArgsKwargs(make_detection_mask_loader(), startpoints=_STARTPOINTS, endpoints=_ENDPOINTS)
 
 
 def reference_inputs_perspective_mask():
     for mask_loader, perspective_coeffs in itertools.product(
         make_mask_loaders(extra_dims=[()], num_objects=[1]), _PERSPECTIVE_COEFFS
     ):
-        yield ArgsKwargs(mask_loader, None, None, coefficients=perspective_coeffs)
+        yield ArgsKwargs(mask_loader, startpoints=None, endpoints=None, coefficients=perspective_coeffs)
 
 
 def sample_inputs_perspective_video():
     for video_loader in make_video_loaders(sizes=["random"], num_frames=["random"]):
-        yield ArgsKwargs(video_loader, None, None, coefficients=_PERSPECTIVE_COEFFS[0])
+        yield ArgsKwargs(video_loader, startpoints=None, endpoints=None, coefficients=_PERSPECTIVE_COEFFS[0])
+
+    yield ArgsKwargs(make_video_loader(), startpoints=_STARTPOINTS, endpoints=_ENDPOINTS)
 
 
 KERNEL_INFOS.extend(
@@ -1988,8 +2012,15 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_clamp_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
+        yield ArgsKwargs(bounding_box_loader)
+
+        simple_tensor_loader = TensorLoader(
+            fn=lambda shape, dtype, device: bounding_box_loader.fn(shape, dtype, device).as_subclass(torch.Tensor),
+            shape=bounding_box_loader.shape,
+            dtype=bounding_box_loader.dtype,
+        )
         yield ArgsKwargs(
-            bounding_box_loader, format=bounding_box_loader.format, spatial_size=bounding_box_loader.spatial_size
+            simple_tensor_loader, format=bounding_box_loader.format, spatial_size=bounding_box_loader.spatial_size
         )
 
 
@@ -1998,6 +2029,19 @@ KERNEL_INFOS.append(
         F.clamp_bounding_box,
         sample_inputs_fn=sample_inputs_clamp_bounding_box,
         logs_usage=True,
+        test_marks=[
+            mark_framework_limitation(
+                ("TestKernels", "test_scripted_vs_eager"),
+                reason=(
+                    "The function is hybrid kernel / dispatcher. JIT unwraps a `datapoints.BoundingBox` into a "
+                    "`torch.Tensor`, but then the kernel (rightfully) complains that neither `format` nor "
+                    "`spatial_size` was passed"
+                ),
+                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader)
+                and arg_kwargs.kwargs.get("format") is None
+                and arg_kwargs.kwargs.get("spatial_size") is None,
+            )
+        ],
     )
 )
 
