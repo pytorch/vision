@@ -14,7 +14,7 @@ import torch
 import torch.testing
 from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
-from torch.testing._comparison import assert_equal as _assert_equal, BooleanPair, NonePair, NumberPair, TensorLikePair
+from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms.functional import convert_dtype_image_tensor, to_image_tensor
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
@@ -73,7 +73,7 @@ class ImagePair(TensorLikePair):
             actual, expected = self._promote_for_comparison(actual, expected)
             mae = float(torch.abs(actual - expected).float().mean())
             if mae > self.atol:
-                raise self._make_error_meta(
+                self._fail(
                     AssertionError,
                     f"The MAE of the images is {mae}, but only {self.atol} is allowed.",
                 )
@@ -99,7 +99,7 @@ def assert_close(
     """Superset of :func:`torch.testing.assert_close` with support for PIL vs. tensor image comparison"""
     __tracebackhide__ = True
 
-    _assert_equal(
+    error_metas = not_close_error_metas(
         actual,
         expected,
         pair_types=(
@@ -117,9 +117,11 @@ def assert_close(
         check_dtype=check_dtype,
         check_layout=check_layout,
         check_stride=check_stride,
-        msg=msg,
         **kwargs,
     )
+
+    if error_metas:
+        raise error_metas[0].to_error(msg)
 
 
 assert_equal = functools.partial(assert_close, rtol=0, atol=0)
@@ -295,7 +297,7 @@ def make_image_loaders(
         "RGBA",
     ),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.float32, torch.uint8),
+    dtypes=(torch.float32, torch.float64, torch.uint8),
     constant_alpha=True,
 ):
     for params in combinations_grid(size=sizes, color_space=color_spaces, extra_dims=extra_dims, dtype=dtypes):
@@ -417,7 +419,7 @@ def make_bounding_box_loaders(
     extra_dims=DEFAULT_EXTRA_DIMS,
     formats=tuple(datapoints.BoundingBoxFormat),
     spatial_size="random",
-    dtypes=(torch.float32, torch.int64),
+    dtypes=(torch.float32, torch.float64, torch.int64),
 ):
     for params in combinations_grid(extra_dims=extra_dims, format=formats, dtype=dtypes):
         yield make_bounding_box_loader(**params, spatial_size=spatial_size)
@@ -609,7 +611,7 @@ def make_video_loaders(
     ),
     num_frames=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.uint8,),
+    dtypes=(torch.uint8, torch.float32, torch.float64),
 ):
     for params in combinations_grid(
         size=sizes, color_space=color_spaces, num_frames=num_frames, extra_dims=extra_dims, dtype=dtypes
@@ -638,14 +640,14 @@ class TestMark:
         self.condition = condition or (lambda args_kwargs: True)
 
 
-def mark_framework_limitation(test_id, reason):
+def mark_framework_limitation(test_id, reason, condition=None):
     # The purpose of this function is to have a single entry point for skip marks that are only there, because the test
     # framework cannot handle the kernel in general or a specific parameter combination.
     # As development progresses, we can change the `mark.skip` to `mark.xfail` from time to time to see if the skip is
     # still justified.
     # We don't want to use `mark.xfail` all the time, because that actually runs the test until an error happens. Thus,
     # we are wasting CI resources for no reason for most of the time
-    return TestMark(test_id, pytest.mark.skip(reason=reason))
+    return TestMark(test_id, pytest.mark.skip(reason=reason), condition=condition)
 
 
 class InfoBase:

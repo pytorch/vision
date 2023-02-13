@@ -41,10 +41,14 @@ class StereoMatching(torch.nn.Module):
 
     def forward(self, left_image: Tensor, right_image: Tensor) -> Tuple[Tensor, Tensor]:
         def _process_image(img: PIL.Image.Image) -> Tensor:
-            if self.resize_size is not None:
-                img = F.resize(img, self.resize_size, interpolation=self.interpolation)
             if not isinstance(img, Tensor):
                 img = F.pil_to_tensor(img)
+            if self.resize_size is not None:
+                # We hard-code antialias=False to preserve results after we changed
+                # its default from None to True (see
+                # https://github.com/pytorch/vision/pull/7160)
+                # TODO: we could re-train the stereo models with antialias=True?
+                img = F.resize(img, self.resize_size, interpolation=self.interpolation, antialias=False)
             if self.use_gray_scale is True:
                 img = F.rgb_to_grayscale(img)
             img = F.convert_image_dtype(img, torch.float)

@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
@@ -63,6 +64,11 @@ class LinearTransformation(Transform):
                 f"Input tensors should be on the same device. Got {transformation_matrix.device} and {mean_vector.device}"
             )
 
+        if transformation_matrix.dtype != mean_vector.dtype:
+            raise ValueError(
+                f"Input tensors should have the same dtype. Got {transformation_matrix.dtype} and {mean_vector.dtype}"
+            )
+
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
@@ -92,7 +98,9 @@ class LinearTransformation(Transform):
             )
 
         flat_tensor = inpt.reshape(-1, n) - self.mean_vector
-        transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
+
+        transformation_matrix = self.transformation_matrix.to(flat_tensor.dtype)
+        transformed_tensor = torch.mm(flat_tensor, transformation_matrix)
         return transformed_tensor.reshape(shape)
 
 
@@ -155,6 +163,12 @@ class ToDtype(Transform):
         super().__init__()
         if not isinstance(dtype, dict):
             dtype = _get_defaultdict(dtype)
+        if torch.Tensor in dtype and any(cls in dtype for cls in [datapoints.Image, datapoints.Video]):
+            warnings.warn(
+                "Got `dtype` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
+                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
+                "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
+            )
         self.dtype = dtype
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -171,6 +185,12 @@ class PermuteDimensions(Transform):
         super().__init__()
         if not isinstance(dims, dict):
             dims = _get_defaultdict(dims)
+        if torch.Tensor in dims and any(cls in dims for cls in [datapoints.Image, datapoints.Video]):
+            warnings.warn(
+                "Got `dims` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
+                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
+                "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
+            )
         self.dims = dims
 
     def _transform(
@@ -189,6 +209,12 @@ class TransposeDimensions(Transform):
         super().__init__()
         if not isinstance(dims, dict):
             dims = _get_defaultdict(dims)
+        if torch.Tensor in dims and any(cls in dims for cls in [datapoints.Image, datapoints.Video]):
+            warnings.warn(
+                "Got `dims` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
+                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
+                "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
+            )
         self.dims = dims
 
     def _transform(

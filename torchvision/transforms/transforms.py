@@ -298,8 +298,6 @@ class Resize(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
-            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         max_size (int, optional): The maximum allowed for the longer edge of
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
@@ -308,13 +306,27 @@ class Resize(torch.nn.Module):
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
-        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
-            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
-            This can help making the output for PIL images and tensors closer.
+        antialias (bool, optional): Whether to apply antialiasing.
+            It only affects **tensors** with bilinear or bicubic modes and it is
+            ignored otherwise: on PIL images, antialiasing is always applied on
+            bilinear or bicubic modes; on other modes (for PIL images and
+            tensors), antialiasing makes no sense and this parameter is ignored.
+            Possible values are:
+
+            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+              Other mode aren't affected. This is probably what you want to use.
+            - ``False``: will not apply antialiasing for tensors on any mode. PIL
+              images are still antialiased on bilinear or bicubic modes, because
+              PIL doesn't support no antialias.
+            - ``None``: equivalent to ``False`` for tensors and ``True`` for
+              PIL images. This value exists for legacy reasons and you probably
+              don't want to use it unless you really know what you are doing.
+
+            The current default is ``None`` **but will change to** ``True`` **in
+            v0.17** for the PIL and Tensor backends to be consistent.
     """
 
-    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias=None):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias="warn"):
         super().__init__()
         _log_api_usage_once(self)
         if not isinstance(size, (int, Sequence)):
@@ -323,14 +335,6 @@ class Resize(torch.nn.Module):
             raise ValueError("If size is a sequence, it should have 1 or 2 values")
         self.size = size
         self.max_size = max_size
-
-        # Backward compatibility with integer value
-        if isinstance(interpolation, int):
-            warnings.warn(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-                "Please use InterpolationMode enum."
-            )
-            interpolation = _interpolation_modes_from_int(interpolation)
 
         self.interpolation = interpolation
         self.antialias = antialias
@@ -752,8 +756,6 @@ class RandomPerspective(torch.nn.Module):
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
-            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         fill (sequence or number): Pixel fill value for the area outside the transformed
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
     """
@@ -762,14 +764,6 @@ class RandomPerspective(torch.nn.Module):
         super().__init__()
         _log_api_usage_once(self)
         self.p = p
-
-        # Backward compatibility with integer value
-        if isinstance(interpolation, int):
-            warnings.warn(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-                "Please use InterpolationMode enum."
-            )
-            interpolation = _interpolation_modes_from_int(interpolation)
 
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
@@ -867,12 +861,24 @@ class RandomResizedCrop(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
-            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
-        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
-            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
-            This can help making the output for PIL images and tensors closer.
+        antialias (bool, optional): Whether to apply antialiasing.
+            It only affects **tensors** with bilinear or bicubic modes and it is
+            ignored otherwise: on PIL images, antialiasing is always applied on
+            bilinear or bicubic modes; on other modes (for PIL images and
+            tensors), antialiasing makes no sense and this parameter is ignored.
+            Possible values are:
+
+            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+              Other mode aren't affected. This is probably what you want to use.
+            - ``False``: will not apply antialiasing for tensors on any mode. PIL
+              images are still antialiased on bilinear or bicubic modes, because
+              PIL doesn't support no antialias.
+            - ``None``: equivalent to ``False`` for tensors and ``True`` for
+              PIL images. This value exists for legacy reasons and you probably
+              don't want to use it unless you really know what you are doing.
+
+            The current default is ``None`` **but will change to** ``True`` **in
+            v0.17** for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -881,7 +887,7 @@ class RandomResizedCrop(torch.nn.Module):
         scale=(0.08, 1.0),
         ratio=(3.0 / 4.0, 4.0 / 3.0),
         interpolation=InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -894,16 +900,9 @@ class RandomResizedCrop(torch.nn.Module):
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")
 
-        # Backward compatibility with integer value
-        if isinstance(interpolation, int):
-            warnings.warn(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-                "Please use InterpolationMode enum."
-            )
-            interpolation = _interpolation_modes_from_int(interpolation)
-
         self.interpolation = interpolation
         self.antialias = antialias
+        self.interpolation = interpolation
         self.scale = scale
         self.ratio = ratio
 
@@ -1108,6 +1107,11 @@ class LinearTransformation(torch.nn.Module):
                 f"Input tensors should be on the same device. Got {transformation_matrix.device} and {mean_vector.device}"
             )
 
+        if transformation_matrix.dtype != mean_vector.dtype:
+            raise ValueError(
+                f"Input tensors should have the same dtype. Got {transformation_matrix.dtype} and {mean_vector.dtype}"
+            )
+
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
@@ -1135,9 +1139,10 @@ class LinearTransformation(torch.nn.Module):
             )
 
         flat_tensor = tensor.view(-1, n) - self.mean_vector
-        transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
-        tensor = transformed_tensor.view(shape)
-        return tensor
+
+        transformation_matrix = self.transformation_matrix.to(flat_tensor.dtype)
+        transformed_tensor = torch.mm(flat_tensor, transformation_matrix)
+        return transformed_tensor.view(shape)
 
     def __repr__(self) -> str:
         s = (
@@ -1288,8 +1293,6 @@ class RandomRotation(torch.nn.Module):
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
-            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -1306,14 +1309,6 @@ class RandomRotation(torch.nn.Module):
     def __init__(self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=0):
         super().__init__()
         _log_api_usage_once(self)
-
-        # Backward compatibility with integer value
-        if isinstance(interpolation, int):
-            warnings.warn(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-                "Please use InterpolationMode enum."
-            )
-            interpolation = _interpolation_modes_from_int(interpolation)
 
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
 
@@ -1398,8 +1393,6 @@ class RandomAffine(torch.nn.Module):
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still accepted,
-            but deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.
         fill (sequence or number): Pixel fill value for the area outside the transformed
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
@@ -1421,14 +1414,6 @@ class RandomAffine(torch.nn.Module):
     ):
         super().__init__()
         _log_api_usage_once(self)
-
-        # Backward compatibility with integer value
-        if isinstance(interpolation, int):
-            warnings.warn(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
-                "Please use InterpolationMode enum."
-            )
-            interpolation = _interpolation_modes_from_int(interpolation)
 
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
 

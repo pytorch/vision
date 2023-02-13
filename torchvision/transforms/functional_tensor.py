@@ -440,6 +440,8 @@ def resize(
     img: Tensor,
     size: List[int],
     interpolation: str = "bilinear",
+    # TODO: in v0.17, change the default to True. This will a private function
+    # by then, so we don't care about warning here.
     antialias: Optional[bool] = None,
 ) -> Tensor:
     _assert_image_tensor(img)
@@ -451,7 +453,11 @@ def resize(
         antialias = False
 
     if antialias and interpolation not in ["bilinear", "bicubic"]:
-        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
+        # We manually set it to False to avoid an error downstream in interpolate()
+        # This behaviour is documented: the parameter is irrelevant for modes
+        # that are not bilinear or bicubic. We used to raise an error here, but
+        # now we don't as True is the default.
+        antialias = False
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [torch.float32, torch.float64])
 

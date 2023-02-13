@@ -1,15 +1,18 @@
 import itertools
+import re
+import warnings
+from collections import defaultdict
 
 import numpy as np
 
 import PIL.Image
-
 import pytest
 import torch
 
 import torchvision.prototype.transforms.utils
-from common_utils import assert_equal, cpu_and_gpu
+from common_utils import cpu_and_gpu
 from prototype_common_utils import (
+    assert_equal,
     DEFAULT_EXTRA_DIMS,
     make_bounding_box,
     make_bounding_boxes,
@@ -25,7 +28,7 @@ from prototype_common_utils import (
 )
 from torchvision.ops.boxes import box_iou
 from torchvision.prototype import datapoints, transforms
-from torchvision.prototype.transforms.utils import check_type
+from torchvision.prototype.transforms.utils import check_type, is_simple_tensor
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
@@ -92,7 +95,7 @@ def parametrize_from_transforms(*transforms):
 class TestSmoke:
     @parametrize_from_transforms(
         transforms.RandomErasing(p=1.0),
-        transforms.Resize([16, 16]),
+        transforms.Resize([16, 16], antialias=True),
         transforms.CenterCrop([16, 16]),
         transforms.ConvertDtype(),
         transforms.RandomHorizontalFlip(),
@@ -237,7 +240,7 @@ class TestSmoke:
     @parametrize(
         [
             (
-                transforms.RandomResizedCrop([16, 16]),
+                transforms.RandomResizedCrop([16, 16], antialias=True),
                 itertools.chain(
                     make_images(extra_dims=[(4,)]),
                     make_vanilla_tensor_images(),
@@ -249,6 +252,67 @@ class TestSmoke:
     )
     def test_random_resized_crop(self, transform, input):
         transform(input)
+
+
+@pytest.mark.parametrize(
+    "flat_inputs",
+    itertools.permutations(
+        [
+            next(make_vanilla_tensor_images()),
+            next(make_vanilla_tensor_images()),
+            next(make_pil_images()),
+            make_image(),
+            next(make_videos()),
+        ],
+        3,
+    ),
+)
+def test_simple_tensor_heuristic(flat_inputs):
+    def split_on_simple_tensor(to_split):
+        # This takes a sequence that is structurally aligned with `flat_inputs` and splits its items into three parts:
+        # 1. The first simple tensor. If none is present, this will be `None`
+        # 2. A list of the remaining simple tensors
+        # 3. A list of all other items
+        simple_tensors = []
+        others = []
+        # Splitting always happens on the original `flat_inputs` to avoid any erroneous type changes by the transform to
+        # affect the splitting.
+        for item, inpt in zip(to_split, flat_inputs):
+            (simple_tensors if is_simple_tensor(inpt) else others).append(item)
+        return simple_tensors[0] if simple_tensors else None, simple_tensors[1:], others
+
+    class CopyCloneTransform(transforms.Transform):
+        def _transform(self, inpt, params):
+            return inpt.clone() if isinstance(inpt, torch.Tensor) else inpt.copy()
+
+        @staticmethod
+        def was_applied(output, inpt):
+            identity = output is inpt
+            if identity:
+                return False
+
+            # Make sure nothing fishy is going on
+            assert_equal(output, inpt)
+            return True
+
+    first_simple_tensor_input, other_simple_tensor_inputs, other_inputs = split_on_simple_tensor(flat_inputs)
+
+    transform = CopyCloneTransform()
+    transformed_sample = transform(flat_inputs)
+
+    first_simple_tensor_output, other_simple_tensor_outputs, other_outputs = split_on_simple_tensor(transformed_sample)
+
+    if first_simple_tensor_input is not None:
+        if other_inputs:
+            assert not transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+        else:
+            assert transform.was_applied(first_simple_tensor_output, first_simple_tensor_input)
+
+    for output, inpt in zip(other_simple_tensor_outputs, other_simple_tensor_inputs):
+        assert not transform.was_applied(output, inpt)
+
+    for input, output in zip(other_inputs, other_outputs):
+        assert transform.was_applied(output, input)
 
 
 @pytest.mark.parametrize("p", [0.0, 1.0])
@@ -1784,117 +1848,158 @@ class TestRandomResize:
         )
 
 
-@pytest.mark.parametrize(
-    ("dtype", "expected_dtypes"),
-    [
-        (
-            torch.float64,
-            {torch.Tensor: torch.float64, datapoints.Image: torch.float64, datapoints.BoundingBox: torch.float64},
-        ),
-        (
-            {torch.Tensor: torch.int32, datapoints.Image: torch.float32, datapoints.BoundingBox: torch.float64},
-            {torch.Tensor: torch.int32, datapoints.Image: torch.float32, datapoints.BoundingBox: torch.float64},
-        ),
-    ],
-)
-def test_to_dtype(dtype, expected_dtypes):
-    sample = dict(
-        plain_tensor=torch.testing.make_tensor(5, dtype=torch.int64, device="cpu"),
-        image=make_image(dtype=torch.uint8),
-        bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, dtype=torch.float32),
-        str="str",
-        int=0,
+class TestToDtype:
+    @pytest.mark.parametrize(
+        ("dtype", "expected_dtypes"),
+        [
+            (
+                torch.float64,
+                {
+                    datapoints.Video: torch.float64,
+                    datapoints.Image: torch.float64,
+                    datapoints.BoundingBox: torch.float64,
+                },
+            ),
+            (
+                {datapoints.Video: torch.int32, datapoints.Image: torch.float32, datapoints.BoundingBox: torch.float64},
+                {datapoints.Video: torch.int32, datapoints.Image: torch.float32, datapoints.BoundingBox: torch.float64},
+            ),
+        ],
     )
+    def test_call(self, dtype, expected_dtypes):
+        sample = dict(
+            video=make_video(dtype=torch.int64),
+            image=make_image(dtype=torch.uint8),
+            bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY, dtype=torch.float32),
+            str="str",
+            int=0,
+        )
 
-    transform = transforms.ToDtype(dtype)
-    transformed_sample = transform(sample)
+        transform = transforms.ToDtype(dtype)
+        transformed_sample = transform(sample)
 
-    for key, value in sample.items():
-        value_type = type(value)
-        transformed_value = transformed_sample[key]
+        for key, value in sample.items():
+            value_type = type(value)
+            transformed_value = transformed_sample[key]
 
-        # make sure the transformation retains the type
-        assert isinstance(transformed_value, value_type)
+            # make sure the transformation retains the type
+            assert isinstance(transformed_value, value_type)
 
-        if isinstance(value, torch.Tensor):
-            assert transformed_value.dtype is expected_dtypes[value_type]
-        else:
-            assert transformed_value is value
+            if isinstance(value, torch.Tensor):
+                assert transformed_value.dtype is expected_dtypes[value_type]
+            else:
+                assert transformed_value is value
+
+    @pytest.mark.filterwarnings("error")
+    def test_plain_tensor_call(self):
+        tensor = torch.empty((), dtype=torch.float32)
+        transform = transforms.ToDtype({torch.Tensor: torch.float64})
+
+        assert transform(tensor).dtype is torch.float64
+
+    @pytest.mark.parametrize("other_type", [datapoints.Image, datapoints.Video])
+    def test_plain_tensor_warning(self, other_type):
+        with pytest.warns(UserWarning, match=re.escape("`torch.Tensor` will *not* be transformed")):
+            transforms.ToDtype(dtype={torch.Tensor: torch.float32, other_type: torch.float64})
 
 
-@pytest.mark.parametrize(
-    ("dims", "inverse_dims"),
-    [
-        (
-            {torch.Tensor: (1, 2, 0), datapoints.Image: (2, 1, 0), datapoints.Video: None},
-            {torch.Tensor: (2, 0, 1), datapoints.Image: (2, 1, 0), datapoints.Video: None},
-        ),
-        (
-            {torch.Tensor: (1, 2, 0), datapoints.Image: (2, 1, 0), datapoints.Video: (1, 2, 3, 0)},
-            {torch.Tensor: (2, 0, 1), datapoints.Image: (2, 1, 0), datapoints.Video: (3, 0, 1, 2)},
-        ),
-    ],
-)
-def test_permute_dimensions(dims, inverse_dims):
-    sample = dict(
-        plain_tensor=torch.testing.make_tensor((3, 28, 28), dtype=torch.uint8, device="cpu"),
-        image=make_image(),
-        bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY),
-        video=make_video(),
-        str="str",
-        int=0,
+class TestPermuteDimensions:
+    @pytest.mark.parametrize(
+        ("dims", "inverse_dims"),
+        [
+            (
+                {datapoints.Image: (2, 1, 0), datapoints.Video: None},
+                {datapoints.Image: (2, 1, 0), datapoints.Video: None},
+            ),
+            (
+                {datapoints.Image: (2, 1, 0), datapoints.Video: (1, 2, 3, 0)},
+                {datapoints.Image: (2, 1, 0), datapoints.Video: (3, 0, 1, 2)},
+            ),
+        ],
     )
+    def test_call(self, dims, inverse_dims):
+        sample = dict(
+            image=make_image(),
+            bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY),
+            video=make_video(),
+            str="str",
+            int=0,
+        )
 
-    transform = transforms.PermuteDimensions(dims)
-    transformed_sample = transform(sample)
+        transform = transforms.PermuteDimensions(dims)
+        transformed_sample = transform(sample)
 
-    for key, value in sample.items():
-        value_type = type(value)
-        transformed_value = transformed_sample[key]
+        for key, value in sample.items():
+            value_type = type(value)
+            transformed_value = transformed_sample[key]
 
-        if check_type(
-            value, (datapoints.Image, torchvision.prototype.transforms.utils.is_simple_tensor, datapoints.Video)
-        ):
-            if transform.dims.get(value_type) is not None:
-                assert transformed_value.permute(inverse_dims[value_type]).equal(value)
-            assert type(transformed_value) == torch.Tensor
-        else:
-            assert transformed_value is value
+            if check_type(
+                value, (datapoints.Image, torchvision.prototype.transforms.utils.is_simple_tensor, datapoints.Video)
+            ):
+                if transform.dims.get(value_type) is not None:
+                    assert transformed_value.permute(inverse_dims[value_type]).equal(value)
+                assert type(transformed_value) == torch.Tensor
+            else:
+                assert transformed_value is value
+
+    @pytest.mark.filterwarnings("error")
+    def test_plain_tensor_call(self):
+        tensor = torch.empty((2, 3, 4))
+        transform = transforms.PermuteDimensions(dims=(1, 2, 0))
+
+        assert transform(tensor).shape == (3, 4, 2)
+
+    @pytest.mark.parametrize("other_type", [datapoints.Image, datapoints.Video])
+    def test_plain_tensor_warning(self, other_type):
+        with pytest.warns(UserWarning, match=re.escape("`torch.Tensor` will *not* be transformed")):
+            transforms.PermuteDimensions(dims={torch.Tensor: (0, 1), other_type: (1, 0)})
 
 
-@pytest.mark.parametrize(
-    "dims",
-    [
-        (-1, -2),
-        {torch.Tensor: (-1, -2), datapoints.Image: (1, 2), datapoints.Video: None},
-    ],
-)
-def test_transpose_dimensions(dims):
-    sample = dict(
-        plain_tensor=torch.testing.make_tensor((3, 28, 28), dtype=torch.uint8, device="cpu"),
-        image=make_image(),
-        bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY),
-        video=make_video(),
-        str="str",
-        int=0,
+class TestTransposeDimensions:
+    @pytest.mark.parametrize(
+        "dims",
+        [
+            (-1, -2),
+            {datapoints.Image: (1, 2), datapoints.Video: None},
+        ],
     )
+    def test_call(self, dims):
+        sample = dict(
+            image=make_image(),
+            bounding_box=make_bounding_box(format=datapoints.BoundingBoxFormat.XYXY),
+            video=make_video(),
+            str="str",
+            int=0,
+        )
 
-    transform = transforms.TransposeDimensions(dims)
-    transformed_sample = transform(sample)
+        transform = transforms.TransposeDimensions(dims)
+        transformed_sample = transform(sample)
 
-    for key, value in sample.items():
-        value_type = type(value)
-        transformed_value = transformed_sample[key]
+        for key, value in sample.items():
+            value_type = type(value)
+            transformed_value = transformed_sample[key]
 
-        transposed_dims = transform.dims.get(value_type)
-        if check_type(
-            value, (datapoints.Image, torchvision.prototype.transforms.utils.is_simple_tensor, datapoints.Video)
-        ):
-            if transposed_dims is not None:
-                assert transformed_value.transpose(*transposed_dims).equal(value)
-            assert type(transformed_value) == torch.Tensor
-        else:
-            assert transformed_value is value
+            transposed_dims = transform.dims.get(value_type)
+            if check_type(
+                value, (datapoints.Image, torchvision.prototype.transforms.utils.is_simple_tensor, datapoints.Video)
+            ):
+                if transposed_dims is not None:
+                    assert transformed_value.transpose(*transposed_dims).equal(value)
+                assert type(transformed_value) == torch.Tensor
+            else:
+                assert transformed_value is value
+
+    @pytest.mark.filterwarnings("error")
+    def test_plain_tensor_call(self):
+        tensor = torch.empty((2, 3, 4))
+        transform = transforms.TransposeDimensions(dims=(0, 2))
+
+        assert transform(tensor).shape == (4, 3, 2)
+
+    @pytest.mark.parametrize("other_type", [datapoints.Image, datapoints.Video])
+    def test_plain_tensor_warning(self, other_type):
+        with pytest.warns(UserWarning, match=re.escape("`torch.Tensor` will *not* be transformed")):
+            transforms.TransposeDimensions(dims={torch.Tensor: (0, 1), other_type: (1, 0)})
 
 
 class TestUniformTemporalSubsample:
@@ -1914,3 +2019,218 @@ class TestUniformTemporalSubsample:
         assert type(output) is type(inpt)
         assert output.shape[-4] == num_samples
         assert output.dtype == inpt.dtype
+
+
+# TODO: remove this test in 0.17 when the default of antialias changes to True
+def test_antialias_warning():
+    pil_img = PIL.Image.new("RGB", size=(10, 10), color=127)
+    tensor_img = torch.randint(0, 256, size=(3, 10, 10), dtype=torch.uint8)
+    tensor_video = torch.randint(0, 256, size=(2, 3, 10, 10), dtype=torch.uint8)
+
+    match = "The default value of the antialias parameter"
+    with pytest.warns(UserWarning, match=match):
+        transforms.Resize((20, 20))(tensor_img)
+    with pytest.warns(UserWarning, match=match):
+        transforms.RandomResizedCrop((20, 20))(tensor_img)
+    with pytest.warns(UserWarning, match=match):
+        transforms.ScaleJitter((20, 20))(tensor_img)
+    with pytest.warns(UserWarning, match=match):
+        transforms.RandomShortestSize((20, 20))(tensor_img)
+    with pytest.warns(UserWarning, match=match):
+        transforms.RandomResize(10, 20)(tensor_img)
+
+    with pytest.warns(UserWarning, match=match):
+        transforms.functional.resize(tensor_img, (20, 20))
+    with pytest.warns(UserWarning, match=match):
+        transforms.functional.resize_image_tensor(tensor_img, (20, 20))
+
+    with pytest.warns(UserWarning, match=match):
+        transforms.functional.resize(tensor_video, (20, 20))
+    with pytest.warns(UserWarning, match=match):
+        transforms.functional.resize_video(tensor_video, (20, 20))
+
+    with pytest.warns(UserWarning, match=match):
+        datapoints.Image(tensor_img).resize((20, 20))
+    with pytest.warns(UserWarning, match=match):
+        datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20))
+
+    with pytest.warns(UserWarning, match=match):
+        datapoints.Video(tensor_video).resize((20, 20))
+    with pytest.warns(UserWarning, match=match):
+        datapoints.Video(tensor_video).resized_crop(0, 0, 10, 10, (20, 20))
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        transforms.Resize((20, 20))(pil_img)
+        transforms.RandomResizedCrop((20, 20))(pil_img)
+        transforms.ScaleJitter((20, 20))(pil_img)
+        transforms.RandomShortestSize((20, 20))(pil_img)
+        transforms.RandomResize(10, 20)(pil_img)
+        transforms.functional.resize(pil_img, (20, 20))
+
+        transforms.Resize((20, 20), antialias=True)(tensor_img)
+        transforms.RandomResizedCrop((20, 20), antialias=True)(tensor_img)
+        transforms.ScaleJitter((20, 20), antialias=True)(tensor_img)
+        transforms.RandomShortestSize((20, 20), antialias=True)(tensor_img)
+        transforms.RandomResize(10, 20, antialias=True)(tensor_img)
+
+        transforms.functional.resize(tensor_img, (20, 20), antialias=True)
+        transforms.functional.resize_image_tensor(tensor_img, (20, 20), antialias=True)
+        transforms.functional.resize(tensor_video, (20, 20), antialias=True)
+        transforms.functional.resize_video(tensor_video, (20, 20), antialias=True)
+
+        datapoints.Image(tensor_img).resize((20, 20), antialias=True)
+        datapoints.Image(tensor_img).resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
+        datapoints.Video(tensor_video).resize((20, 20), antialias=True)
+        datapoints.Video(tensor_video).resized_crop(0, 0, 10, 10, (20, 20), antialias=True)
+
+
+@pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
+@pytest.mark.parametrize("label_type", (torch.Tensor, int))
+@pytest.mark.parametrize("dataset_return_type", (dict, tuple))
+@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
+def test_classif_preset(image_type, label_type, dataset_return_type, to_tensor):
+
+    image = datapoints.Image(torch.randint(0, 256, size=(1, 3, 250, 250), dtype=torch.uint8))
+    if image_type is PIL.Image:
+        image = to_pil_image(image[0])
+    elif image_type is torch.Tensor:
+        image = image.as_subclass(torch.Tensor)
+        assert is_simple_tensor(image)
+
+    label = 1 if label_type is int else torch.tensor([1])
+
+    if dataset_return_type is dict:
+        sample = {
+            "image": image,
+            "label": label,
+        }
+    else:
+        sample = image, label
+
+    t = transforms.Compose(
+        [
+            transforms.RandomResizedCrop((224, 224)),
+            transforms.RandomHorizontalFlip(p=1),
+            transforms.RandAugment(),
+            transforms.TrivialAugmentWide(),
+            transforms.AugMix(),
+            transforms.AutoAugment(),
+            to_tensor(),
+            # TODO: ConvertImageDtype is a pass-through on PIL images, is that
+            # intended?  This results in a failure if we convert to tensor after
+            # it, because the image would still be uint8 which make Normalize
+            # fail.
+            transforms.ConvertImageDtype(torch.float),
+            transforms.Normalize(mean=[0, 0, 0], std=[1, 1, 1]),
+            transforms.RandomErasing(p=1),
+        ]
+    )
+
+    out = t(sample)
+
+    assert type(out) == type(sample)
+
+    if dataset_return_type is tuple:
+        out_image, out_label = out
+    else:
+        assert out.keys() == sample.keys()
+        out_image, out_label = out.values()
+
+    assert out_image.shape[-2:] == (224, 224)
+    assert out_label == label
+
+
+@pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, datapoints.Image))
+@pytest.mark.parametrize("label_type", (torch.Tensor, list))
+@pytest.mark.parametrize("data_augmentation", ("hflip", "lsj", "multiscale", "ssd", "ssdlite"))
+@pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImageTensor))
+def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
+    if data_augmentation == "hflip":
+        t = [
+            transforms.RandomHorizontalFlip(p=1),
+            to_tensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
+    elif data_augmentation == "lsj":
+        t = [
+            transforms.ScaleJitter(target_size=(1024, 1024), antialias=True),
+            # Note: replaced FixedSizeCrop with RandomCrop, becuase we're
+            # leaving FixedSizeCrop in prototype for now, and it expects Label
+            # classes which we won't release yet.
+            # transforms.FixedSizeCrop(
+            #     size=(1024, 1024), fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0})
+            # ),
+            transforms.RandomCrop((1024, 1024), pad_if_needed=True),
+            transforms.RandomHorizontalFlip(p=1),
+            to_tensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
+    elif data_augmentation == "multiscale":
+        t = [
+            transforms.RandomShortestSize(
+                min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333, antialias=True
+            ),
+            transforms.RandomHorizontalFlip(p=1),
+            to_tensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
+    elif data_augmentation == "ssd":
+        t = [
+            transforms.RandomPhotometricDistort(p=1),
+            transforms.RandomZoomOut(fill=defaultdict(lambda: (123.0, 117.0, 104.0), {datapoints.Mask: 0})),
+            # TODO: put back IoUCrop once we remove its hard requirement for Labels
+            # transforms.RandomIoUCrop(),
+            transforms.RandomHorizontalFlip(p=1),
+            to_tensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
+    elif data_augmentation == "ssdlite":
+        t = [
+            # TODO: put back IoUCrop once we remove its hard requirement for Labels
+            # transforms.RandomIoUCrop(),
+            transforms.RandomHorizontalFlip(p=1),
+            to_tensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
+    t = transforms.Compose(t)
+
+    num_boxes = 5
+    H = W = 250
+
+    image = datapoints.Image(torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8))
+    if image_type is PIL.Image:
+        image = to_pil_image(image[0])
+    elif image_type is torch.Tensor:
+        image = image.as_subclass(torch.Tensor)
+        assert is_simple_tensor(image)
+
+    label = torch.randint(0, 10, size=(num_boxes,))
+    if label_type is list:
+        label = label.tolist()
+
+    # TODO: is the shape of the boxes OK? Should it be (1, num_boxes, 4)?? Same for masks
+    boxes = torch.randint(0, min(H, W) // 2, size=(num_boxes, 4))
+    boxes[:, 2:] += boxes[:, :2]
+    boxes = boxes.clamp(min=0, max=min(H, W))
+    boxes = datapoints.BoundingBox(boxes, format="XYXY", spatial_size=(H, W))
+
+    masks = datapoints.Mask(torch.randint(0, 2, size=(num_boxes, H, W), dtype=torch.uint8))
+
+    sample = {
+        "image": image,
+        "label": label,
+        "boxes": boxes,
+        "masks": masks,
+    }
+
+    out = t(sample)
+
+    if to_tensor is transforms.ToTensor and image_type is not datapoints.Image:
+        assert is_simple_tensor(out["image"])
+    else:
+        assert isinstance(out["image"], datapoints.Image)
+    assert isinstance(out["label"], type(sample["label"]))
+
+    out["label"] = torch.tensor(out["label"])
+    assert out["boxes"].shape[0] == out["masks"].shape[0] == out["label"].shape[0] == num_boxes
