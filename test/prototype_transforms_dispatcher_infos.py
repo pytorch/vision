@@ -64,13 +64,21 @@ class DispatcherInfo(InfoBase):
 
             if not filter_metadata:
                 yield from sample_inputs
-            else:
-                for args_kwargs in sample_inputs:
-                    for attribute in datapoint_type.__annotations__.keys():
-                        if attribute in args_kwargs.kwargs:
-                            del args_kwargs.kwargs[attribute]
+                return
 
-                    yield args_kwargs
+            import itertools
+
+            for args_kwargs in sample_inputs:
+                for name in itertools.chain(
+                    datapoint_type.__annotations__.keys(),
+                    # FIXME: this seems ok for conversion dispatchers, but we should probably handle this on a
+                    #  per-dispatcher level. However, so far there is no option for that.
+                    (f"old_{name}" for name in datapoint_type.__annotations__.keys()),
+                ):
+                    if name in args_kwargs.kwargs:
+                        del args_kwargs.kwargs[name]
+
+                yield args_kwargs
 
 
 def xfail_jit(reason, *, condition=None):
@@ -454,6 +462,20 @@ DISPATCHER_INFOS = [
         kernels={
             datapoints.Video: F.uniform_temporal_subsample_video,
         },
+        test_marks=[
+            skip_dispatch_datapoint,
+        ],
+    ),
+    DispatcherInfo(
+        F.clamp_bounding_box,
+        kernels={datapoints.BoundingBox: F.clamp_bounding_box},
+        test_marks=[
+            skip_dispatch_datapoint,
+        ],
+    ),
+    DispatcherInfo(
+        F.convert_format_bounding_box,
+        kernels={datapoints.BoundingBox: F.convert_format_bounding_box},
         test_marks=[
             skip_dispatch_datapoint,
         ],

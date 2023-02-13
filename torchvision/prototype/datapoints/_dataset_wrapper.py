@@ -206,10 +206,14 @@ def coco_dectection_wrapper_factory(dataset):
 
         batched_target = list_of_dicts_to_dict_of_lists(target)
 
+        image_ids = batched_target.pop("image_id")
+        image_id = batched_target["image_id"] = image_ids.pop()
+        assert all(other_image_id == image_id for other_image_id in image_ids)
+
         spatial_size = tuple(F.get_spatial_size(image))
         batched_target["boxes"] = datapoints.BoundingBox(
             batched_target["bbox"],
-            format=datapoints.BoundingBoxFormat.XYXY,
+            format=datapoints.BoundingBoxFormat.XYWH,
             spatial_size=spatial_size,
         )
         batched_target["masks"] = datapoints.Mask(
