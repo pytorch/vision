@@ -22,8 +22,7 @@ def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
     chws = {
         tuple(get_dimensions(inpt))
         for inpt in flat_inputs
-        if isinstance(inpt, (datapoints.Image, PIL.Image.Image, datapoints.Video))
-        or is_simple_tensor(inpt)
+        if isinstance(inpt, (datapoints.Image, PIL.Image.Image, datapoints.Video)) or is_simple_tensor(inpt)
     }
     if not chws:
         raise TypeError("No image or video was found in the sample")
