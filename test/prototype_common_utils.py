@@ -640,14 +640,14 @@ class TestMark:
         self.condition = condition or (lambda args_kwargs: True)
 
 
-def mark_framework_limitation(test_id, reason):
+def mark_framework_limitation(test_id, reason, condition=None):
     # The purpose of this function is to have a single entry point for skip marks that are only there, because the test
     # framework cannot handle the kernel in general or a specific parameter combination.
     # As development progresses, we can change the `mark.skip` to `mark.xfail` from time to time to see if the skip is
     # still justified.
     # We don't want to use `mark.xfail` all the time, because that actually runs the test until an error happens. Thus,
     # we are wasting CI resources for no reason for most of the time
-    return TestMark(test_id, pytest.mark.skip(reason=reason))
+    return TestMark(test_id, pytest.mark.skip(reason=reason), condition=condition)
 
 
 class InfoBase:

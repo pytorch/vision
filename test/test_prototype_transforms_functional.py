@@ -155,12 +155,14 @@ class TestKernels:
         if batched_tensor.ndim == data_dims:
             return batch
 
-        return [
-            self._unbatch(unbatched, data_dims=data_dims)
-            for unbatched in (
-                batched_tensor.unbind(0) if not metadata else [(t, *metadata) for t in batched_tensor.unbind(0)]
-            )
-        ]
+        unbatcheds = []
+        for unbatched in (
+            batched_tensor.unbind(0) if not metadata else [(t, *metadata) for t in batched_tensor.unbind(0)]
+        ):
+            if isinstance(batch, datapoints._datapoint.Datapoint):
+                unbatched = type(batch).wrap_like(batch, unbatched)
+            unbatcheds.append(self._unbatch(unbatched, data_dims=data_dims))
+        return unbatcheds
 
     @sample_inputs
     @pytest.mark.parametrize("device", cpu_and_gpu())
