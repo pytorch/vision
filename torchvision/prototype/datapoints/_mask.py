@@ -23,7 +23,7 @@ class Mask(Datapoint):
         requires_grad: Optional[bool] = None,
     ) -> Mask:
         if isinstance(data, PIL.Image.Image):
-            from ..transforms import functional as F
+            from torchvision.prototype.transforms import functional as F
 
             data = F.pil_to_tensor(data)
 

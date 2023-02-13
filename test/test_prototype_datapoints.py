@@ -149,7 +149,13 @@ def test_mask_instance(data):
 
 
 @pytest.mark.parametrize("data", [torch.randint(0, 32, size=(5, 4)), [[0, 0, 5, 5], [2, 2, 7, 7]]])
-def test_bbox_instance(data):
-    bboxes = datapoints.BoundingBox(data, format="XYXY", spatial_size=(32, 32))
+@pytest.mark.parametrize(
+    "format", ["XYXY", "CXCYWH", datapoints.BoundingBoxFormat.XYXY, datapoints.BoundingBoxFormat.XYWH]
+)
+def test_bbox_instance(data, format):
+    bboxes = datapoints.BoundingBox(data, format=format, spatial_size=(32, 32))
     assert isinstance(bboxes, torch.Tensor)
     assert bboxes.ndim == 2 and bboxes.shape[1] == 4
+    if isinstance(format, str):
+        format = datapoints.BoundingBoxFormat.from_str(format.upper())
+    assert bboxes.format == format
