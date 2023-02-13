@@ -12,7 +12,6 @@ import torchvision.prototype.transforms.functional as F
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
-    BoundingBoxLoader,
     get_num_channels,
     ImageLoader,
     InfoBase,
@@ -337,7 +336,6 @@ def sample_inputs_resize_video():
 
 
 def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=None):
-
     old_height, old_width = spatial_size
     new_height, new_width = F._geometry._compute_resized_output_size(spatial_size, size=size, max_size=max_size)
 
@@ -350,13 +348,15 @@ def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=bounding_box.format, affine_matrix=affine_matrix
+        bounding_box, format=datapoints.BoundingBoxFormat.XYXY, affine_matrix=affine_matrix
     )
     return expected_bboxes, (new_height, new_width)
 
 
 def reference_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(extra_dims=((), (4,))):
+    for bounding_box_loader in make_bounding_box_loaders(
+        formats=[datapoints.BoundingBoxFormat.XYXY], extra_dims=((), (4,))
+    ):
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
             yield ArgsKwargs(bounding_box_loader, size=size, spatial_size=bounding_box_loader.spatial_size)
 
@@ -668,8 +668,7 @@ KERNEL_INFOS.extend(
 def sample_inputs_convert_format_bounding_box():
     formats = list(datapoints.BoundingBoxFormat)
     for bounding_box_loader, new_format in itertools.product(make_bounding_box_loaders(formats=formats), formats):
-        yield ArgsKwargs(bounding_box_loader, new_format=new_format)
-        yield ArgsKwargs(bounding_box_loader.unwrap(), old_format=bounding_box_loader.format, new_format=new_format)
+        yield ArgsKwargs(bounding_box_loader, old_format=bounding_box_loader.format, new_format=new_format)
 
 
 def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
@@ -680,14 +679,8 @@ def reference_convert_format_bounding_box(bounding_box, old_format, new_format):
 
 def reference_inputs_convert_format_bounding_box():
     for args_kwargs in sample_inputs_convert_format_bounding_box():
-        if len(args_kwargs.args[0].shape) != 2:
-            continue
-
-        (loader, *other_args), kwargs = args_kwargs
-        if isinstance(loader, BoundingBoxLoader):
-            kwargs["old_format"] = loader.format
-            loader = loader.unwrap()
-        yield ArgsKwargs(loader, *other_args, **kwargs)
+        if len(args_kwargs.args[0].shape) == 2:
+            yield args_kwargs
 
 
 KERNEL_INFOS.append(
@@ -697,18 +690,6 @@ KERNEL_INFOS.append(
         reference_fn=reference_convert_format_bounding_box,
         reference_inputs_fn=reference_inputs_convert_format_bounding_box,
         logs_usage=True,
-        test_marks=[
-            mark_framework_limitation(
-                ("TestKernels", "test_scripted_vs_eager"),
-                reason=(
-                    "The function is hybrid kernel / dispatcher. JIT unwraps a `datapoints.BoundingBox` into a "
-                    "`torch.Tensor`, but then the kernel (rightfully) complains that neither `format` nor "
-                    "`spatial_size` was passed"
-                ),
-                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader)
-                and arg_kwargs.kwargs.get("old_format") is None,
-            )
-        ],
     ),
 )
 
@@ -2049,10 +2030,8 @@ KERNEL_INFOS.extend(
 
 def sample_inputs_clamp_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
-        yield ArgsKwargs(bounding_box_loader)
-
         yield ArgsKwargs(
-            bounding_box_loader.unwrap(),
+            bounding_box_loader,
             format=bounding_box_loader.format,
             spatial_size=bounding_box_loader.spatial_size,
         )
@@ -2063,19 +2042,6 @@ KERNEL_INFOS.append(
         F.clamp_bounding_box,
         sample_inputs_fn=sample_inputs_clamp_bounding_box,
         logs_usage=True,
-        test_marks=[
-            mark_framework_limitation(
-                ("TestKernels", "test_scripted_vs_eager"),
-                reason=(
-                    "The function is hybrid kernel / dispatcher. JIT unwraps a `datapoints.BoundingBox` into a "
-                    "`torch.Tensor`, but then the kernel (rightfully) complains that neither `format` nor "
-                    "`spatial_size` was passed"
-                ),
-                condition=lambda arg_kwargs: isinstance(arg_kwargs.args[0], BoundingBoxLoader)
-                and arg_kwargs.kwargs.get("format") is None
-                and arg_kwargs.kwargs.get("spatial_size") is None,
-            )
-        ],
     )
 )
 
