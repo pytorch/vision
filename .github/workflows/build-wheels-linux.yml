@@ -33,7 +33,7 @@ jobs:
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_wheels_linux.yml@add_rc_support
+    uses: pytorch/test-infra/.github/workflows/build_wheels_linux.yml@main
     with:
       repository: ${{ matrix.repository }}
       ref: ""
