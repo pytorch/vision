@@ -36,7 +36,7 @@ class VisionDataset(data.Dataset):
         target_transform: Optional[Callable] = None,
     ) -> None:
         _log_api_usage_once(self)
-        if isinstance(root, torch._six.string_classes):
+        if isinstance(root, str):
             root = os.path.expanduser(root)
         self.root = root
 
