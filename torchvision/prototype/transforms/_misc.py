@@ -230,12 +230,27 @@ class SanitizeBoundingBoxes(Transform):
     # This removes boxes and their corresponding labels:
     # - small or degenerate bboxes based on min_size (this includes those where X2 <= X1 or Y2 <= Y1)
     # - boxes with any coordinate outside the range of the image (negative, or > spatial_size)
-    _transformed_types = (datapoints.BoundingBox)
+    _transformed_types = datapoints.BoundingBox
 
     def __init__(self, min_size: float = 1.0, labels="default") -> None:
         super().__init__()
+
+        if min_size < 1:
+            raise ValueError(f"min_size must be >= 1, got {min_size}.")
         self.min_size = min_size
+
         self.labels = labels
+        if labels == "default":
+            self._get_labels = self._find_label_default_heuristic
+        elif callable(self.labels):
+            self._get_labels = labels
+        elif isinstance(self.labels, str):
+            self._get_labels = lambda inputs: inputs[labels]
+        else:
+            raise ValueError(
+                "labels parameter should either be a str, callable, or 'default'. "
+                f"Got {labels} of type {type(labels)}."
+            )
 
     def _find_label_default_heuristic(self, inputs):
         # Tries to find a "label" key, otherwise tries for the first key that contains "label" - case insensitive
@@ -243,38 +258,40 @@ class SanitizeBoundingBoxes(Transform):
         labels = None
         candidate_key = None
         with suppress(StopIteration):
-            candidate_key = next(key for key in inputs.keys() if key.lower() == "label")
+            candidate_key = next(key for key in inputs.keys() if key.lower() == "labels")
         if candidate_key is None:
             with suppress(StopIteration):
                 candidate_key = next(key for key in inputs.keys() if "label" in key.lower())
         labels = inputs.get(candidate_key)
+
+        if labels is None:
+            raise ValueError(
+                "Could not infer where the labels are in the sample. Try passing a callable as the label parameter?"
+            )
         return labels
 
     def forward(self, *inputs: Any) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
+
         if isinstance(self.labels, str) and not isinstance(inputs, dict):
             raise ValueError(
-                f"If labels is a str or 'default' (got {labels}), then the input to forward() must be a dict. "
+                f"If labels is a str or 'default' (got {self.labels}), then the input to forward() must be a dict. "
                 f"Got {type(inputs)} instead"
             )
-
-        if self.labels == "default":
-            labels = self._find_label_default_heuristic(inputs)
-        elif callable(self.labels):
-            labels = self.labels(inputs)
-        elif isinstance(self.labels, str):
-            labels = inputs[self.labels]
-        else:
-            raise ValueError(
-                "labels parameter should either be a str, callable, or 'default'. "
-                f"Got {labels} of type {type(labels)}."
-            )
+        labels = self._get_labels(inputs)
+        if not isinstance(labels, torch.Tensor):
+            raise ValueError(f"The labels in the input to forward() must be a tensor, got {type(labels)} instead.")
 
         flat_inputs, spec = tree_flatten(inputs)
         # TODO: this enforces one single BoundingBox entry.
         # Assuming this transform needs to be called at the end of *any* pipeline that has bboxes...
         # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
         boxes = query_bounding_box(flat_inputs)
+
+        if boxes.shape[-2] != labels.shape[0]:
+            raise ValueError(
+                f"Number of boxes ({boxes.shape[-2]}) and number of labels ({labels.shape[0]}) do not match."
+            )
 
         boxes = F.convert_format_bounding_box(
             boxes,
@@ -284,10 +301,9 @@ class SanitizeBoundingBoxes(Transform):
         keep = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(axis=1)
         # TODO: Do we really need to check for out of bounds here? All
         # transforms should be clamping anyway, so this should never happen?
-        # TODO: Also... should this is <= instead of < ???
         image_h, image_w = boxes.spatial_size
-        keep &= (boxes[:, 0] < image_w).all() & (boxes[:, 2] < image_w).all()
-        keep &= (boxes[:, 1] < image_h).all() & (boxes[:, 3] < image_h).all()
+        keep &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
+        keep &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
         valid_indices = torch.where(keep)[0]
 
         params = dict(valid_indices=valid_indices, labels=labels)

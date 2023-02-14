@@ -1,5 +1,6 @@
 import itertools
 import pathlib
+import random
 import re
 import warnings
 from collections import defaultdict
@@ -2357,20 +2358,39 @@ def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
     assert out["boxes"].shape[0] == out["masks"].shape[0] == out["label"].shape[0] == num_boxes
 
 
-def test_sanitize_bounding_boxes():
+@pytest.mark.parametrize("min_size", (1, 10))
+def test_sanitize_bounding_boxes(min_size):
 
-    H, W = 256, 256
+    H, W = 256, 128
+
+    boxes_and_validity = [
+        ([0, 1, 10, 1], False),  # Y1 == Y2
+        ([0, 1, 0, 20], False),  # X1 == X2
+        ([0, 0, min_size - 1, 10], False),  # H < min_size
+        ([0, 0, 10, min_size - 1], False),  # W < min_size
+        ([0, 0, 10, H + 1], False),  # Y2 > H
+        ([0, 0, W + 1, 10], False),  # X2 > W
+        ([-1, 1, 10, 20], False),  # any < 0
+        ([0, 0, -1, 20], False),  # any < 0
+        ([0, 0, -10, -1], False),  # any < 0
+        ([0, 0, min_size, 10], True),  # H < min_size
+        ([0, 0, 10, min_size], True),  # W < min_size
+        ([0, 0, W, H], True),  # TODO: Is that actually OK?? Should it be -1?
+        ([1, 1, 30, 20], True),
+        ([0, 0, 10, 10], True),
+        ([1, 1, 30, 20], True),
+    ]
+
+    random.shuffle(boxes_and_validity)  # For test robustness: mix order of wrong and correct cases
+    boxes, is_valid_mask = zip(*boxes_and_validity)
+    valid_indices = [i for (i, is_valid) in enumerate(is_valid_mask) if is_valid]
+
     boxes = datapoints.BoundingBox(
-        [
-            [1, 1, 30, 20],
-            [0, 1, 10, 1],
-            [0, 0, 10, 10],
-            [1, 1, 30, 20],
-            [0, 1, 0, 20],
-        ],
+        boxes,
         format=datapoints.BoundingBoxFormat.XYXY,
         spatial_size=(H, W),
     )
+
     sample = {
         "image": torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8),
         "labels": torch.arange(boxes.shape[0]),
@@ -2378,9 +2398,20 @@ def test_sanitize_bounding_boxes():
         "whatever": torch.rand(10),
     }
 
-    out = transforms.SanitizeBoundingBoxes()(sample)
+    out = transforms.SanitizeBoundingBoxes(min_size=min_size)(sample)
 
     assert out["image"] is sample["image"]
     assert out["whatever"] is sample["whatever"]
+    assert type(out["labels"]) is type(sample["labels"])
+
+    out["labels"] = torch.tensor(out["labels"])
     assert out["boxes"].shape[0] == out["labels"].shape[0]
-    assert out["labels"].tolist() == [0, 2, 3]
+
+    # This works because we conveniently set labels to arange(num_boxes)
+    assert out["labels"].tolist() == valid_indices
+
+
+# def test_sanitize_bounding_boxes_errors():
+
+#     with pytest.raises(ValueError, match=)
+#     out = transforms.SanitizeBoundingBoxes(min_size=min_size)(sample)
