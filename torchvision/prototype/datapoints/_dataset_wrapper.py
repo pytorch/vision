@@ -39,16 +39,26 @@ WRAPPER_FACTORIES = WrapperFactories()
 class VisionDatasetDatapointWrapper(Dataset):
     def __init__(self, dataset):
         dataset_cls = type(dataset)
-        wrapper_factory = WRAPPER_FACTORIES.get(dataset_cls)
-        if wrapper_factory is None:
-            # TODO: If we have documentation on how to do that, put a link in the error message.
-            msg = f"No wrapper exist for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
-            if dataset_cls in datasets.__dict__.values():
-                msg = (
-                    f"{msg} If an automated wrapper for this dataset would be useful for you, "
-                    f"please open an issue at https://github.com/pytorch/vision/issues."
-                )
-            raise TypeError(msg)
+
+        if not isinstance(dataset, datasets.VisionDataset):
+            raise TypeError(
+                f"This wrapper is meant for subclasses of `torchvision.datasets.VisionDataset`, "
+                f"but got a '{dataset_cls.__name__}' instead."
+            )
+
+        for cls in dataset_cls.mro():
+            if cls in WRAPPER_FACTORIES:
+                wrapper_factory = WRAPPER_FACTORIES[cls]
+                break
+            elif cls is datasets.VisionDataset:
+                # TODO: If we have documentation on how to do that, put a link in the error message.
+                msg = f"No wrapper exists for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
+                if dataset_cls in datasets.__dict__.values():
+                    msg = (
+                        f"{msg} If an automated wrapper for this dataset would be useful for you, "
+                        f"please open an issue at https://github.com/pytorch/vision/issues."
+                    )
+                raise TypeError(msg)
 
         self._dataset = dataset
         self._wrapper = wrapper_factory(dataset)
@@ -98,6 +108,13 @@ def identity(item):
     return item
 
 
+def identity_wrapper_factory(dataset):
+    def wrapper(idx, sample):
+        return sample
+
+    return wrapper
+
+
 def pil_image_to_mask(pil_image):
     return datapoints.Mask(pil_image)
 
@@ -125,10 +142,7 @@ def wrap_target_by_type(target, *, target_types, type_wrappers):
 
 
 def classification_wrapper_factory(dataset):
-    def wrapper(idx, sample):
-        return sample
-
-    return wrapper
+    return identity_wrapper_factory(dataset)
 
 
 for dataset_cls in [
@@ -235,6 +249,9 @@ def coco_dectection_wrapper_factory(dataset):
         return image, batched_target
 
     return wrapper
+
+
+WRAPPER_FACTORIES.register(datasets.CocoCaptions)(identity_wrapper_factory)
 
 
 VOC_DETECTION_CATEGORIES = [
