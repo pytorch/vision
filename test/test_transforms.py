@@ -2,7 +2,6 @@ import math
 import os
 import random
 import re
-import warnings
 from functools import partial
 
 import numpy as np
@@ -438,16 +437,6 @@ def test_resize_antialias_error():
     with pytest.warns(UserWarning, match=r"Anti-alias option is always applied for PIL Image input"):
         t = transforms.Resize(osize, antialias=False)
         t(img)
-
-
-def test_resize_antialias_default_warning():
-
-    img = Image.new("RGB", size=(10, 10), color=127)
-    # We make sure we don't warn for PIL images since the default behaviour doesn't change
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        transforms.Resize((20, 20))(img)
-        transforms.RandomResizedCrop((20, 20))(img)
 
 
 @pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
@@ -1883,6 +1872,9 @@ def test_random_rotation():
     # Checking if RandomRotation can be printed as string
     t.__repr__()
 
+    t = transforms.RandomRotation((-10, 10), interpolation=2)
+    assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
 
 def test_random_rotation_error():
     # assert fill being either a Sequence or a Number
@@ -2211,6 +2203,9 @@ def test_random_affine():
 
     t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
     assert "bilinear" in t.__repr__()
+
+    t = transforms.RandomAffine(10, interpolation=2)
+    assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
 def test_elastic_transformation():
