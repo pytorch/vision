@@ -212,22 +212,17 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
 
 
 def resize_bounding_box(
-    bounding_box: torch.Tensor,
-    spatial_size: Tuple[int, int],
-    size: List[int],
-    max_size: Optional[int] = None,
+    bounding_box: torch.Tensor, spatial_size: Tuple[int, int], size: List[int], max_size: Optional[int] = None
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     old_height, old_width = spatial_size
-
     new_height, new_width = _compute_resized_output_size(spatial_size, size=size, max_size=max_size)
-    spatial_size = (new_height, new_width)
-
     w_ratio = new_width / old_width
     h_ratio = new_height / old_height
     ratios = torch.tensor([w_ratio, h_ratio, w_ratio, h_ratio], device=bounding_box.device)
-
-    bounding_box = bounding_box.mul(ratios).to(bounding_box.dtype)
-    return bounding_box, spatial_size
+    return (
+        bounding_box.mul(ratios).to(bounding_box.dtype),
+        (new_height, new_width),
+    )
 
 
 def resize_video(
