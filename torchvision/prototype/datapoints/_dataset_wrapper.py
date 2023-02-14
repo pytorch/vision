@@ -6,7 +6,6 @@ import contextlib
 from collections import defaultdict
 
 import torch
-from torch.utils.data import Dataset
 
 from torchvision import datasets
 from torchvision.prototype import datapoints
@@ -17,7 +16,7 @@ __all__ = ["wrap_dataset_for_transforms_v2"]
 
 # TODO: naming!
 def wrap_dataset_for_transforms_v2(dataset):
-    return VisionDatasetDatapointWrapper(dataset)
+    return type(f"Wrapped{type(dataset).__name__}", (VisionDatasetDatapointWrapper, type(dataset)), {})(dataset)
 
 
 class WrapperFactories(dict):
@@ -36,7 +35,7 @@ class WrapperFactories(dict):
 WRAPPER_FACTORIES = WrapperFactories()
 
 
-class VisionDatasetDatapointWrapper(Dataset):
+class VisionDatasetDatapointWrapper:
     def __init__(self, dataset):
         dataset_cls = type(dataset)
 

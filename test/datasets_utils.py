@@ -591,9 +591,10 @@ class DatasetTestCase(unittest.TestCase):
         from torchvision.prototype.datapoints._datapoint import Datapoint
 
         try:
-            with self.create_dataset(config) as (dataset, _):
+            with self.create_dataset(config) as (dataset, info):
                 wrapped_dataset = wrap_dataset_for_transforms_v2(dataset)
                 assert isinstance(wrapped_dataset, self.DATASET_CLASS)
+                assert len(wrapped_dataset) == info["num_examples"]
 
                 wrapped_sample = wrapped_dataset[0]
                 assert tree_any(lambda item: isinstance(item, (Datapoint, PIL.Image.Image)), wrapped_sample)
