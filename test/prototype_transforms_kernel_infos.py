@@ -108,6 +108,12 @@ def float32_vs_uint8_pixel_difference(atol=1, mae=False):
     }
 
 
+def scripted_vs_eager_double_pixel_difference(device, atol=1e-6, rtol=1e-6):
+    return {
+        (("TestKernels", "test_scripted_vs_eager"), torch.float64, device): {"atol": atol, "rtol": rtol, "mae": False},
+    }
+
+
 def pil_reference_wrapper(pil_kernel):
     @functools.wraps(pil_kernel)
     def wrapper(input_tensor, *other_args, **kwargs):
@@ -330,7 +336,6 @@ def sample_inputs_resize_video():
 
 
 def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=None):
-
     old_height, old_width = spatial_size
     new_height, new_width = F._geometry._compute_resized_output_size(spatial_size, size=size, max_size=max_size)
 
@@ -343,13 +348,15 @@ def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=bounding_box.format, affine_matrix=affine_matrix
+        bounding_box, format=datapoints.BoundingBoxFormat.XYXY, affine_matrix=affine_matrix
     )
     return expected_bboxes, (new_height, new_width)
 
 
 def reference_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(extra_dims=((), (4,))):
+    for bounding_box_loader in make_bounding_box_loaders(
+        formats=[datapoints.BoundingBoxFormat.XYXY], extra_dims=((), (4,))
+    ):
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
             yield ArgsKwargs(bounding_box_loader, size=size, spatial_size=bounding_box_loader.spatial_size)
 
@@ -540,8 +547,10 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix)
     def transform(bbox, affine_matrix_, format_):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
+        if not torch.is_floating_point(bbox):
+            bbox = bbox.float()
         bbox_xyxy = F.convert_format_bounding_box(
-            bbox.float(), old_format=format_, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+            bbox, old_format=format_, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
         )
         points = np.array(
             [
@@ -559,6 +568,7 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix)
                 np.max(transformed_points[:, 0]).item(),
                 np.max(transformed_points[:, 1]).item(),
             ],
+            dtype=bbox_xyxy.dtype,
         )
         out_bbox = F.convert_format_bounding_box(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
@@ -824,6 +834,10 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.rotate_bounding_box,
             sample_inputs_fn=sample_inputs_rotate_bounding_box,
+            closeness_kwargs={
+                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+            },
         ),
         KernelInfo(
             F.rotate_mask,
@@ -1255,6 +1269,8 @@ KERNEL_INFOS.extend(
                 **pil_reference_pixel_difference(2, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(),
+                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
             },
         ),
         KernelInfo(
@@ -1274,7 +1290,11 @@ KERNEL_INFOS.extend(
         KernelInfo(
             F.perspective_video,
             sample_inputs_fn=sample_inputs_perspective_video,
-            closeness_kwargs=cuda_vs_cpu_pixel_difference(),
+            closeness_kwargs={
+                **cuda_vs_cpu_pixel_difference(),
+                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+            },
         ),
     ]
 )
@@ -2011,7 +2031,9 @@ KERNEL_INFOS.extend(
 def sample_inputs_clamp_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         yield ArgsKwargs(
-            bounding_box_loader, format=bounding_box_loader.format, spatial_size=bounding_box_loader.spatial_size
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
         )
 
 

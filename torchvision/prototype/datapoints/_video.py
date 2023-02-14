@@ -59,7 +59,7 @@ class Video(Datapoint):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Video:
         output = self._F.resize_video(
             self.as_subclass(torch.Tensor),
@@ -86,7 +86,7 @@ class Video(Datapoint):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Video:
         output = self._F.resized_crop_video(
             self.as_subclass(torch.Tensor),

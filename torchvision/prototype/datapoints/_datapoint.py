@@ -145,7 +145,7 @@ class Datapoint(torch.Tensor):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Datapoint:
         return self
 
@@ -163,7 +163,7 @@ class Datapoint(torch.Tensor):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Datapoint:
         return self
 
