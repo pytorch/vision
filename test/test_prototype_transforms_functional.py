@@ -683,6 +683,10 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         (48.56528888843238, 9.611532109828834, 53.35347829361575, 14.39972151501221),
     ]
 
+    expected_bboxes = clamp_bounding_box(
+        datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
+    ).tolist()
+
     output_boxes = F.affine_bounding_box(
         in_boxes,
         format=format,
@@ -909,6 +913,10 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
     in_boxes = torch.tensor(in_boxes, device=device)
     if format != datapoints.BoundingBoxFormat.XYXY:
         in_boxes = convert_format_bounding_box(in_boxes, datapoints.BoundingBoxFormat.XYXY, format)
+
+    expected_bboxes = clamp_bounding_box(
+        datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
+    ).tolist()
 
     output_boxes, output_spatial_size = F.crop_bounding_box(
         in_boxes,

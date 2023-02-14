@@ -579,12 +579,10 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, 
         out_bbox = F.convert_format_bounding_box(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
         )
-        print("1 expected: ", out_bbox)
-        print("2 expected: ", out_bbox.to(dtype=in_dtype))
-        out_bbox = F.clamp_bounding_box(out_bbox.to(dtype=in_dtype), format=format_, spatial_size=spatial_size_)
-        print("3 expected: ", out_bbox)
+        # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
+        out_bbox = F.clamp_bounding_box(out_bbox, format=format_, spatial_size=spatial_size_)
+        out_bbox = out_bbox.to(dtype=in_dtype)
         return out_bbox
-        # return out_bbox.to(dtype=in_dtype)
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
@@ -656,9 +654,6 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_bounding_box,
             reference_fn=reference_affine_bounding_box,
             reference_inputs_fn=reference_inputs_affine_bounding_box,
-            closeness_kwargs={
-                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
-            },
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
             ],
@@ -891,7 +886,6 @@ KERNEL_INFOS.extend(
             closeness_kwargs={
                 **scripted_vs_eager_float64_tolerances("cpu", atol=1e-6, rtol=1e-6),
                 **scripted_vs_eager_float64_tolerances("cuda", atol=1e-5, rtol=1e-5),
-                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
             },
         ),
         KernelInfo(
@@ -1183,9 +1177,8 @@ def reference_pad_bounding_box(bounding_box, *, format, spatial_size, padding, p
     width = spatial_size[1] + left + right
 
     expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+        bounding_box, format=format, spatial_size=(height, width), affine_matrix=affine_matrix
     )
-    expected_bboxes = F.clamp_bounding_box(expected_bboxes, format=format, spatial_size=(height, width))
     return expected_bboxes, (height, width)
 
 

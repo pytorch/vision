@@ -585,8 +585,9 @@ def affine_image_pil(
     return _FP.affine(image, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
-def _affine_bounding_box_xyxy(
+def _affine_bounding_box_with_expand(
     bounding_box: torch.Tensor,
+    format: datapoints.BoundingBoxFormat,
     spatial_size: Tuple[int, int],
     angle: Union[int, float],
     translate: List[float],
@@ -598,6 +599,17 @@ def _affine_bounding_box_xyxy(
     if bounding_box.numel() == 0:
         return bounding_box, spatial_size
 
+    original_shape = bounding_box.shape
+    original_dtype = bounding_box.dtype
+    bounding_box = bounding_box.clone() if bounding_box.is_floating_point() else bounding_box.float()
+    dtype = bounding_box.dtype
+    device = bounding_box.device
+    bounding_box = (
+        convert_format_bounding_box(
+            bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+        )
+    ).reshape(-1, 4)
+
     angle, translate, shear, center = _affine_parse_args(
         angle, translate, scale, shear, InterpolationMode.NEAREST, center
     )
@@ -605,9 +617,6 @@ def _affine_bounding_box_xyxy(
     if center is None:
         height, width = spatial_size
         center = [width * 0.5, height * 0.5]
-
-    dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
-    device = bounding_box.device
 
     affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear, inverted=False)
     transposed_affine_matrix = (
@@ -656,10 +665,12 @@ def _affine_bounding_box_xyxy(
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         spatial_size = (new_height, new_width)
 
-    out_bboxes = clamp_bounding_box(
-        out_bboxes.to(bounding_box.dtype), format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size
-    )
+    out_bboxes = clamp_bounding_box(out_bboxes, format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size)
+    out_bboxes = convert_format_bounding_box(
+        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+    ).reshape(original_shape)
 
+    out_bboxes = out_bboxes.to(original_dtype)
     return out_bboxes, spatial_size
 
 
@@ -673,19 +684,18 @@ def affine_bounding_box(
     shear: List[float],
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    original_shape = bounding_box.shape
-
-    bounding_box = (
-        convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
-    ).reshape(-1, 4)
-
-    out_bboxes, _ = _affine_bounding_box_xyxy(bounding_box, spatial_size, angle, translate, scale, shear, center)
-
-    # out_bboxes should be of shape [N boxes, 4]
-
-    return convert_format_bounding_box(
-        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-    ).reshape(original_shape)
+    out_box, _ = _affine_bounding_box_with_expand(
+        bounding_box,
+        format=format,
+        spatial_size=spatial_size,
+        angle=angle,
+        translate=translate,
+        scale=scale,
+        shear=shear,
+        center=center,
+        expand=False,
+    )
+    return out_box
 
 
 def affine_mask(
@@ -861,14 +871,10 @@ def rotate_bounding_box(
         warnings.warn("The provided center argument has no effect on the result if expand is True")
         center = None
 
-    original_shape = bounding_box.shape
-    bounding_box = (
-        convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
-    ).reshape(-1, 4)
-
-    out_bboxes, spatial_size = _affine_bounding_box_xyxy(
+    return _affine_bounding_box_with_expand(
         bounding_box,
-        spatial_size,
+        format=format,
+        spatial_size=spatial_size,
         angle=-angle,
         translate=[0.0, 0.0],
         scale=1.0,
@@ -876,12 +882,6 @@ def rotate_bounding_box(
         center=center,
         expand=expand,
     )
-
-    out_bboxes = clamp_bounding_box(out_bboxes, format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size)
-    out_bboxes = convert_format_bounding_box(
-        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-    ).reshape(original_shape)
-    return out_bboxes, spatial_size
 
 
 def rotate_mask(
@@ -1353,6 +1353,7 @@ def perspective_bounding_box(
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
 
     original_shape = bounding_box.shape
+    # TODO: first cast to float if bbox is int64 before convert_format_bounding_box
     bounding_box = (
         convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
@@ -1578,6 +1579,7 @@ def elastic_bounding_box(
         displacement = displacement.to(dtype=dtype, device=device)
 
     original_shape = bounding_box.shape
+    # TODO: first cast to float if bbox is int64 before convert_format_bounding_box
     bounding_box = (
         convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
