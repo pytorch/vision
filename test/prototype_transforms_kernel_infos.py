@@ -162,20 +162,6 @@ def xfail_jit_tuple_instead_of_list(name, *, reason=None):
     )
 
 
-def is_list_of_ints(args_kwargs):
-    # FIXME: why special case fill here?
-    fill = args_kwargs.kwargs.get("fill")
-    return isinstance(fill, list) and any(isinstance(scalar_fill, int) for scalar_fill in fill)
-
-
-# FIXME: maybe remove since it is only used once?
-def xfail_jit_list_of_ints(name, *, reason=None):
-    return xfail_jit(
-        reason or f"Passing a list of integers for `{name}` is not supported when scripting",
-        condition=is_list_of_ints,
-    )
-
-
 KERNEL_INFOS = []
 
 
