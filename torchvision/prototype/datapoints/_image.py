@@ -103,7 +103,7 @@ class Image(Datapoint):
 
     def pad(
         self,
-        padding: Union[int, List[int]],
+        padding: List[int],
         fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> Image:

@@ -965,7 +965,7 @@ def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
 
 def pad_image_tensor(
     image: torch.Tensor,
-    padding: Union[int, List[int]],
+    padding: List[int],
     fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
@@ -1070,7 +1070,7 @@ pad_image_pil = _FP.pad
 
 def pad_mask(
     mask: torch.Tensor,
-    padding: Union[int, List[int]],
+    padding: List[int],
     padding_mode: str = "constant",
     fill: datapoints.FillTypeJIT = None,
 ) -> torch.Tensor:
@@ -1095,7 +1095,7 @@ def pad_bounding_box(
     bounding_box: torch.Tensor,
     format: datapoints.BoundingBoxFormat,
     spatial_size: Tuple[int, int],
-    padding: Union[int, List[int]],
+    padding: List[int],
     padding_mode: str = "constant",
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     if padding_mode not in ["constant"]:
@@ -1119,7 +1119,7 @@ def pad_bounding_box(
 
 def pad_video(
     video: torch.Tensor,
-    padding: Union[int, List[int]],
+    padding: List[int],
     fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
@@ -1128,7 +1128,7 @@ def pad_video(
 
 def pad(
     inpt: datapoints.InputTypeJIT,
-    padding: Union[int, List[int]],
+    padding: List[int],
     fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> datapoints.InputTypeJIT:

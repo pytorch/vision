@@ -96,14 +96,6 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
     )
 
 
-# FIXME: same treatment as for kernels
-def xfail_jit_tuple_instead_of_list(name, *, reason=None):
-    return xfail_jit(
-        reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting",
-        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
-    )
-
-
 skip_dispatch_datapoint = TestMark(
     ("TestDispatchers", "test_dispatch_datapoint"),
     pytest.mark.skip(reason="Dispatcher doesn't support arbitrary datapoint dispatch."),
@@ -247,7 +239,7 @@ DISPATCHER_INFOS = [
                 and args_kwargs.kwargs.get("padding_mode", "constant") == "constant",
             ),
             xfail_jit("F.pad only supports vector fills for list of floats", condition=pad_xfail_jit_fill_condition),
-            xfail_jit_tuple_instead_of_list("padding"),
+            xfail_jit_python_scalar_arg("padding"),
         ],
     ),
     DispatcherInfo(
