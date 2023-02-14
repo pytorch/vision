@@ -230,7 +230,7 @@ class SanitizeBoundingBoxes(Transform):
     # This removes boxes and their corresponding labels:
     # - small or degenerate bboxes based on min_size (this includes those where X2 <= X1 or Y2 <= Y1)
     # - boxes with any coordinate outside the range of the image (negative, or > spatial_size)
-    _transformed_types = (datapoints.BoundingBox, datapoints.Mas)
+    _transformed_types = (datapoints.BoundingBox)
 
     def __init__(self, min_size: float = 1.0, labels="default") -> None:
         super().__init__()
@@ -240,6 +240,7 @@ class SanitizeBoundingBoxes(Transform):
     def _find_label_default_heuristic(self, inputs):
         # Tries to find a "label" key, otherwise tries for the first key that contains "label" - case insensitive
         # Returns None if nothing is found
+        labels = None
         candidate_key = None
         with suppress(StopIteration):
             candidate_key = next(key for key in inputs.keys() if key.lower() == "label")
@@ -251,13 +252,12 @@ class SanitizeBoundingBoxes(Transform):
 
     def forward(self, *inputs: Any) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
-        if isinstance(labels, str) and not isinstance(inputs, dict):
+        if isinstance(self.labels, str) and not isinstance(inputs, dict):
             raise ValueError(
                 f"If labels is a str or 'default' (got {labels}), then the input to forward() must be a dict. "
                 f"Got {type(inputs)} instead"
             )
 
-        labels = None
         if self.labels == "default":
             labels = self._find_label_default_heuristic(inputs)
         elif callable(self.labels):

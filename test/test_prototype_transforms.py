@@ -2355,3 +2355,32 @@ def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
 
     out["label"] = torch.tensor(out["label"])
     assert out["boxes"].shape[0] == out["masks"].shape[0] == out["label"].shape[0] == num_boxes
+
+
+def test_sanitize_bounding_boxes():
+
+    H, W = 256, 256
+    boxes = datapoints.BoundingBox(
+        [
+            [1, 1, 30, 20],
+            [0, 1, 10, 1],
+            [0, 0, 10, 10],
+            [1, 1, 30, 20],
+            [0, 1, 0, 20],
+        ],
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=(H, W),
+    )
+    sample = {
+        "image": torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8),
+        "labels": torch.arange(boxes.shape[0]),
+        "boxes": boxes,
+        "whatever": torch.rand(10),
+    }
+
+    out = transforms.SanitizeBoundingBoxes()(sample)
+
+    assert out["image"] is sample["image"]
+    assert out["whatever"] is sample["whatever"]
+    assert out["boxes"].shape[0] == out["labels"].shape[0]
+    assert out["labels"].tolist() == [0, 2, 3]
