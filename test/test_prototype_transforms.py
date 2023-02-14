@@ -255,8 +255,10 @@ class TestSmoke:
 
         assert output_spec == input_spec
 
-        for output_item, input_item in zip(output_flat, input_flat):
-            if check_type(input_item, transform._transformed_types):
+        for output_item, input_item, should_be_transformed in zip(
+            output_flat, input_flat, transforms.Transform()._needs_transform_list(input_flat)
+        ):
+            if should_be_transformed:
                 assert type(output_item) is type(input_item)
             else:
                 assert output_item is input_item
