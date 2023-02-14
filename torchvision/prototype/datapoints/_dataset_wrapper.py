@@ -52,7 +52,7 @@ class VisionDatasetDatapointWrapper(Dataset):
                 break
             elif cls is datasets.VisionDataset:
                 # TODO: If we have documentation on how to do that, put a link in the error message.
-                msg = f"No wrapper exist for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
+                msg = f"No wrapper exists for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
                 if dataset_cls in datasets.__dict__.values():
                     msg = (
                         f"{msg} If an automated wrapper for this dataset would be useful for you, "
@@ -155,7 +155,6 @@ for dataset_cls in [
     datasets.GTSRB,
     datasets.DatasetFolder,
     datasets.ImageFolder,
-    datasets.FakeData,
 ]:
     WRAPPER_FACTORIES.register(dataset_cls)(classification_wrapper_factory)
 
