@@ -324,12 +324,7 @@ def reference_inputs_resize_image_tensor():
 def sample_inputs_resize_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
-            yield ArgsKwargs(
-                bounding_box_loader,
-                format=bounding_box_loader.format,
-                spatial_size=bounding_box_loader.spatial_size,
-                size=size,
-            )
+            yield ArgsKwargs(bounding_box_loader, spatial_size=bounding_box_loader.spatial_size, size=size)
 
 
 def sample_inputs_resize_mask():
@@ -342,7 +337,7 @@ def sample_inputs_resize_video():
         yield ArgsKwargs(video_loader, size=[min(video_loader.shape[-2:]) + 1])
 
 
-def reference_resize_bounding_box(bounding_box, *, format, spatial_size, size, max_size=None):
+def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=None):
     old_height, old_width = spatial_size
     new_height, new_width = F._geometry._compute_resized_output_size(spatial_size, size=size, max_size=max_size)
 
@@ -355,20 +350,20 @@ def reference_resize_bounding_box(bounding_box, *, format, spatial_size, size, m
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=format, spatial_size=(new_height, new_width), affine_matrix=affine_matrix
+        bounding_box,
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=(new_height, new_width),
+        affine_matrix=affine_matrix,
     )
     return expected_bboxes, (new_height, new_width)
 
 
 def reference_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(extra_dims=((), (4,))):
+    for bounding_box_loader in make_bounding_box_loaders(
+        extra_dims=((), (4,)), formats=[datapoints.BoundingBoxFormat.XYXY]
+    ):
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
-            yield ArgsKwargs(
-                bounding_box_loader,
-                size=size,
-                format=bounding_box_loader.format,
-                spatial_size=bounding_box_loader.spatial_size,
-            )
+            yield ArgsKwargs(bounding_box_loader, size=size, spatial_size=bounding_box_loader.spatial_size)
 
 
 KERNEL_INFOS.extend(

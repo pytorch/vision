@@ -82,7 +82,6 @@ class BoundingBox(Datapoint):
     ) -> BoundingBox:
         output, spatial_size = self._F.resize_bounding_box(
             self.as_subclass(torch.Tensor),
-            format=self.format,
             spatial_size=self.spatial_size,
             size=size,
             max_size=max_size,

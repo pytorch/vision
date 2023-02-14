@@ -213,7 +213,6 @@ def resize_mask(mask: torch.Tensor, size: List[int], max_size: Optional[int] = N
 
 def resize_bounding_box(
     bounding_box: torch.Tensor,
-    format: datapoints.BoundingBoxFormat,
     spatial_size: Tuple[int, int],
     size: List[int],
     max_size: Optional[int] = None,
@@ -1813,7 +1812,7 @@ def resized_crop_bounding_box(
     size: List[int],
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     bounding_box, _ = crop_bounding_box(bounding_box, format, top, left, height, width)
-    return resize_bounding_box(bounding_box, format=format, spatial_size=(height, width), size=size)
+    return resize_bounding_box(bounding_box, spatial_size=(height, width), size=size)
 
 
 def resized_crop_mask(
