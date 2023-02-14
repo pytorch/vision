@@ -1,12 +1,13 @@
 import warnings
+from contextlib import suppress
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 
 import torch
+from torch.utils._pytree import tree_flatten, tree_unflatten
 
 from torchvision import transforms as _transforms
-from torchvision.ops import remove_small_boxes
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F, Transform
 
@@ -225,28 +226,83 @@ class TransposeDimensions(Transform):
         return inpt.transpose(*dims)
 
 
-class RemoveSmallBoundingBoxes(Transform):
-    _transformed_types = (datapoints.BoundingBox, datapoints.Mask, datapoints.Label, datapoints.OneHotLabel)
+class SanitizeBoundingBoxes(Transform):
+    # This removes boxes and their corresponding labels:
+    # - small or degenerate bboxes based on min_size (this includes those where X2 <= X1 or Y2 <= Y1)
+    # - boxes with any coordinate outside the range of the image (negative, or > spatial_size)
+    _transformed_types = (datapoints.BoundingBox, datapoints.Mas)
 
-    def __init__(self, min_size: float = 1.0) -> None:
+    def __init__(self, min_size: float = 1.0, labels="default") -> None:
         super().__init__()
         self.min_size = min_size
+        self.labels = labels
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        bounding_box = query_bounding_box(flat_inputs)
+    def _find_label_default_heuristic(self, inputs):
+        # Tries to find a "label" key, otherwise tries for the first key that contains "label" - case insensitive
+        # Returns None if nothing is found
+        candidate_key = None
+        with suppress(StopIteration):
+            candidate_key = next(key for key in inputs.keys() if key.lower() == "label")
+        if candidate_key is None:
+            with suppress(StopIteration):
+                candidate_key = next(key for key in inputs.keys() if "label" in key.lower())
+        labels = inputs.get(candidate_key)
+        return labels
 
-        # TODO: We can improve performance here by not using the `remove_small_boxes` function. It requires the box to
-        #  be in XYXY format only to calculate the width and height internally. Thus, if the box is in XYWH or CXCYWH
-        #  format,we need to convert first just to afterwards compute the width and height again, although they were
-        #  there in the first place for these formats.
-        bounding_box = F.convert_format_bounding_box(
-            bounding_box.as_subclass(torch.Tensor),
-            old_format=bounding_box.format,
+    def forward(self, *inputs: Any) -> Any:
+        inputs = inputs if len(inputs) > 1 else inputs[0]
+        if isinstance(labels, str) and not isinstance(inputs, dict):
+            raise ValueError(
+                f"If labels is a str or 'default' (got {labels}), then the input to forward() must be a dict. "
+                f"Got {type(inputs)} instead"
+            )
+
+        labels = None
+        if self.labels == "default":
+            labels = self._find_label_default_heuristic(inputs)
+        elif callable(self.labels):
+            labels = self.labels(inputs)
+        elif isinstance(self.labels, str):
+            labels = inputs[self.labels]
+        else:
+            raise ValueError(
+                "labels parameter should either be a str, callable, or 'default'. "
+                f"Got {labels} of type {type(labels)}."
+            )
+
+        flat_inputs, spec = tree_flatten(inputs)
+        # TODO: this enforces one single BoundingBox entry.
+        # Assuming this transform needs to be called at the end of *any* pipeline that has bboxes...
+        # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
+        boxes = query_bounding_box(flat_inputs)
+
+        boxes = F.convert_format_bounding_box(
+            boxes,
             new_format=datapoints.BoundingBoxFormat.XYXY,
         )
-        valid_indices = remove_small_boxes(bounding_box, min_size=self.min_size)
+        ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
+        keep = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(axis=1)
+        # TODO: Do we really need to check for out of bounds here? All
+        # transforms should be clamping anyway, so this should never happen?
+        # TODO: Also... should this is <= instead of < ???
+        image_h, image_w = boxes.spatial_size
+        keep &= (boxes[:, 0] < image_w).all() & (boxes[:, 2] < image_w).all()
+        keep &= (boxes[:, 1] < image_h).all() & (boxes[:, 3] < image_h).all()
+        valid_indices = torch.where(keep)[0]
 
-        return dict(valid_indices=valid_indices)
+        params = dict(valid_indices=valid_indices, labels=labels)
+        flat_outputs = [
+            # Even-though it may look like we're transforming all inputs, we don't:
+            # _transform() will only care about BoundingBoxes and the labels
+            self._transform(inpt, params)
+            for inpt in flat_inputs
+        ]
+
+        return tree_unflatten(flat_outputs, spec)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return inpt.wrap_like(inpt, inpt[params["valid_indices"]])
+
+        if inpt is params["labels"] or isinstance(inpt, datapoints.BoundingBox):
+            inpt = inpt[params["valid_indices"]]
+
+        return inpt
