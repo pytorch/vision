@@ -297,7 +297,7 @@ def make_image_loaders(
         "RGBA",
     ),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.float32, torch.uint8),
+    dtypes=(torch.float32, torch.float64, torch.uint8),
     constant_alpha=True,
 ):
     for params in combinations_grid(size=sizes, color_space=color_spaces, extra_dims=extra_dims, dtype=dtypes):
@@ -419,7 +419,7 @@ def make_bounding_box_loaders(
     extra_dims=DEFAULT_EXTRA_DIMS,
     formats=tuple(datapoints.BoundingBoxFormat),
     spatial_size="random",
-    dtypes=(torch.float32, torch.int64),
+    dtypes=(torch.float32, torch.float64, torch.int64),
 ):
     for params in combinations_grid(extra_dims=extra_dims, format=formats, dtype=dtypes):
         yield make_bounding_box_loader(**params, spatial_size=spatial_size)
@@ -611,7 +611,7 @@ def make_video_loaders(
     ),
     num_frames=(1, 0, "random"),
     extra_dims=DEFAULT_EXTRA_DIMS,
-    dtypes=(torch.uint8,),
+    dtypes=(torch.uint8, torch.float32, torch.float64),
 ):
     for params in combinations_grid(
         size=sizes, color_space=color_spaces, num_frames=num_frames, extra_dims=extra_dims, dtype=dtypes
@@ -640,14 +640,14 @@ class TestMark:
         self.condition = condition or (lambda args_kwargs: True)
 
 
-def mark_framework_limitation(test_id, reason):
+def mark_framework_limitation(test_id, reason, condition=None):
     # The purpose of this function is to have a single entry point for skip marks that are only there, because the test
     # framework cannot handle the kernel in general or a specific parameter combination.
     # As development progresses, we can change the `mark.skip` to `mark.xfail` from time to time to see if the skip is
     # still justified.
     # We don't want to use `mark.xfail` all the time, because that actually runs the test until an error happens. Thus,
     # we are wasting CI resources for no reason for most of the time
-    return TestMark(test_id, pytest.mark.skip(reason=reason))
+    return TestMark(test_id, pytest.mark.skip(reason=reason), condition=condition)
 
 
 class InfoBase:
