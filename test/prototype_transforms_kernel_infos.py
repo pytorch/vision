@@ -450,21 +450,21 @@ _DIVERSE_AFFINE_PARAMS = [
 ]
 
 
-def get_fills(*, num_channels, dtype, vector=True):
+def get_fills(*, num_channels, dtype):
     yield None
 
-    max_value = get_max_value(dtype)
-    # This intentionally gives us a float and an int scalar fill value
-    yield max_value / 2
-    yield max_value
+    int_value = get_max_value(dtype)
+    float_value = int_value / 2
+    yield int_value
+    yield float_value
 
-    if not vector:
-        return
+    for vector_type in [list, tuple]:
+        yield vector_type([int_value])
+        yield vector_type([float_value])
 
-    if dtype.is_floating_point:
-        yield [0.1 + c / 10 for c in range(num_channels)]
-    else:
-        yield [12.0 + c for c in range(num_channels)]
+        if num_channels > 1:
+            yield vector_type(float_value * c / 10 for c in range(num_channels))
+            yield vector_type(int_value if c % 2 == 0 else 0 for c in range(num_channels))
 
 
 def float32_vs_uint8_fill_adapter(other_args, kwargs):
@@ -1070,12 +1070,14 @@ def reference_inputs_pad_image_tensor():
     for image_loader, params in itertools.product(
         make_image_loaders(extra_dims=[()], dtypes=[torch.uint8]), _PAD_PARAMS
     ):
-        # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
         for fill in get_fills(
             num_channels=image_loader.num_channels,
             dtype=image_loader.dtype,
-            vector=params["padding_mode"] == "constant",
         ):
+            # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
+            if isinstance(fill, (list, tuple)):
+                continue
+
             yield ArgsKwargs(image_loader, fill=fill, **params)
 
 
@@ -1141,6 +1143,16 @@ def reference_inputs_pad_bounding_box():
         )
 
 
+def pad_xfail_jit_fill_condition(args_kwargs):
+    fill = args_kwargs.kwargs.get("fill")
+    if not isinstance(fill, (list, tuple)):
+        return False
+    elif isinstance(fill, tuple):
+        return True
+    else:  # isinstance(fill, list):
+        return all(isinstance(f, int) for f in fill)
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -1150,12 +1162,11 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_pad_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
             closeness_kwargs=float32_vs_uint8_pixel_difference(),
-            # FIXME: pad is a little different
             test_marks=[
                 xfail_jit_tuple_instead_of_list("padding"),
-                xfail_jit_tuple_instead_of_list("fill"),
-                # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-                xfail_jit_list_of_ints("fill"),
+                xfail_jit(
+                    "F.pad only supports vector fills for list of floats", condition=pad_xfail_jit_fill_condition
+                ),
             ],
         ),
         KernelInfo(
@@ -1208,8 +1219,11 @@ def reference_inputs_perspective_image_tensor():
             F.InterpolationMode.BILINEAR,
         ],
     ):
-        # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
+            # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
+            if isinstance(fill, (list, tuple)):
+                continue
+
             yield ArgsKwargs(
                 image_loader,
                 startpoints=None,
