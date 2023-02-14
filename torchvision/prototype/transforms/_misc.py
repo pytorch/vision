@@ -76,9 +76,7 @@ class LinearTransformation(Transform):
         if has_any(sample, PIL.Image.Image):
             raise TypeError("LinearTransformation does not work on PIL Images")
 
-    def _transform(
-        self, inpt: Union[datapoints.TensorImageType, datapoints.TensorVideoType], params: Dict[str, Any]
-    ) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         shape = inpt.shape
         n = shape[-3] * shape[-2] * shape[-1]
         if n != self.transformation_matrix.shape[0]:
