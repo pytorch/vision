@@ -481,6 +481,8 @@ def resize(
     if (image_height, image_width) == output_size:
         return img
 
+    antialias = _check_antialias(img, antialias, interpolation)
+
     if not isinstance(img, torch.Tensor):
         if antialias is not None and not antialias:
             warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
@@ -613,7 +615,7 @@ def resized_crop(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    antialias: Optional[bool] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
 ) -> Tensor:
     """Crop the given image and resize it to desired size.
     If the image is torch Tensor, it is expected

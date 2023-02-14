@@ -2,13 +2,13 @@ import math
 import os
 import random
 import re
+import warnings
 from functools import partial
 
 import numpy as np
 import pytest
 import torch
 import torchvision.transforms as transforms
-import torchvision.transforms._pil_constants as _pil_constants
 import torchvision.transforms.functional as F
 import torchvision.transforms.functional_tensor as F_t
 from PIL import Image
@@ -437,6 +437,16 @@ def test_resize_antialias_error():
     with pytest.warns(UserWarning, match=r"Anti-alias option is always applied for PIL Image input"):
         t = transforms.Resize(osize, antialias=False)
         t(img)
+
+
+def test_resize_antialias_default_warning():
+
+    img = Image.new("RGB", size=(10, 10), color=127)
+    # We make sure we don't warn for PIL images since the default behaviour doesn't change
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        transforms.Resize((20, 20))(img)
+        transforms.RandomResizedCrop((20, 20))(img)
 
 
 @pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
@@ -1522,10 +1532,10 @@ def test_ten_crop(should_vflip, single_dim):
     five_crop.__repr__()
 
     if should_vflip:
-        vflipped_img = img.transpose(_pil_constants.FLIP_TOP_BOTTOM)
+        vflipped_img = img.transpose(Image.FLIP_TOP_BOTTOM)
         expected_output += five_crop(vflipped_img)
     else:
-        hflipped_img = img.transpose(_pil_constants.FLIP_LEFT_RIGHT)
+        hflipped_img = img.transpose(Image.FLIP_LEFT_RIGHT)
         expected_output += five_crop(hflipped_img)
 
     assert len(results) == 10
@@ -2223,9 +2233,8 @@ def test_elastic_transformation():
     with pytest.raises(ValueError, match=r"sigma is a sequence its length should be 2"):
         transforms.ElasticTransform(alpha=2.0, sigma=[1.0, 0.0, 1.0])
 
-    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
-        t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
+    t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=2)
+    assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
     with pytest.raises(TypeError, match=r"fill should be int or float"):
         transforms.ElasticTransform(alpha=1.0, sigma=1.0, fill={})

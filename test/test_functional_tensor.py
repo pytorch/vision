@@ -357,7 +357,7 @@ class TestAffine:
         _test_fn_on_batch(batch_tensors, F.affine, angle=-43, translate=[-3, 4], scale=1.2, shear=[4.0, 5.0])
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_warnings(self, device):
+    def test_interpolation_type(self, device):
         tensor, pil_img = _create_data(26, 26, device=device)
 
         res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
@@ -462,7 +462,7 @@ def test_perspective_batch(device, dims_and_points, dt):
     )
 
 
-def test_perspective_interpolation_warning():
+def test_perspective_interpolation_type():
     # assert changed type warning
     spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
     epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
@@ -514,9 +514,7 @@ def test_resize(device, dt, size, max_size, interpolation):
 
     assert resized_tensor.size()[1:] == resized_pil_img.size[::-1]
 
-    if interpolation not in [
-        NEAREST,
-    ]:
+    if interpolation not in [NEAREST]:
         # We can not check values if mode = NEAREST, as results are different
         # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
         # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]
@@ -529,9 +527,7 @@ def test_resize(device, dt, size, max_size, interpolation):
         _assert_approx_equal_tensor_to_pil(resized_tensor_f, resized_pil_img, tol=8.0)
 
     if isinstance(size, int):
-        script_size = [
-            size,
-        ]
+        script_size = [size]
     else:
         script_size = size
 
