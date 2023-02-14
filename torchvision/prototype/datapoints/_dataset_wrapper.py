@@ -39,16 +39,26 @@ WRAPPER_FACTORIES = WrapperFactories()
 class VisionDatasetDatapointWrapper(Dataset):
     def __init__(self, dataset):
         dataset_cls = type(dataset)
-        wrapper_factory = WRAPPER_FACTORIES.get(dataset_cls)
-        if wrapper_factory is None:
-            # TODO: If we have documentation on how to do that, put a link in the error message.
-            msg = f"No wrapper exist for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
-            if dataset_cls in datasets.__dict__.values():
-                msg = (
-                    f"{msg} If an automated wrapper for this dataset would be useful for you, "
-                    f"please open an issue at https://github.com/pytorch/vision/issues."
-                )
-            raise TypeError(msg)
+
+        if not isinstance(dataset, datasets.VisionDataset):
+            raise TypeError(
+                f"This wrapper is meant for subclasses of `torchvision.datasets.VisionDataset`, "
+                f"but got a '{dataset_cls.__name__}' instead."
+            )
+
+        for cls in dataset_cls.mro():
+            if cls in WRAPPER_FACTORIES:
+                wrapper_factory = WRAPPER_FACTORIES[cls]
+                break
+            elif cls is datasets.VisionDataset:
+                # TODO: If we have documentation on how to do that, put a link in the error message.
+                msg = f"No wrapper exists for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
+                if dataset_cls in datasets.__dict__.values():
+                    msg = (
+                        f"{msg} If an automated wrapper for this dataset would be useful for you, "
+                        f"please open an issue at https://github.com/pytorch/vision/issues."
+                    )
+                raise TypeError(msg)
 
         self._dataset = dataset
         self._wrapper = wrapper_factory(dataset)
@@ -74,7 +84,7 @@ class VisionDatasetDatapointWrapper(Dataset):
         # of this class
         sample = self._dataset[idx]
 
-        sample = self._wrapper(sample)
+        sample = self._wrapper(idx, sample)
 
         # Regardless of whether the user has supplied the transforms individually (`transform` and `target_transform`)
         # or joint (`transforms`), we can access the full functionality through `transforms`
@@ -96,6 +106,13 @@ def raise_not_supported(description):
 
 def identity(item):
     return item
+
+
+def identity_wrapper_factory(dataset):
+    def wrapper(idx, sample):
+        return sample
+
+    return wrapper
 
 
 def pil_image_to_mask(pil_image):
@@ -125,7 +142,7 @@ def wrap_target_by_type(target, *, target_types, type_wrappers):
 
 
 def classification_wrapper_factory(dataset):
-    return identity
+    return identity_wrapper_factory(dataset)
 
 
 for dataset_cls in [
@@ -143,7 +160,7 @@ for dataset_cls in [
 
 
 def segmentation_wrapper_factory(dataset):
-    def wrapper(sample):
+    def wrapper(idx, sample):
         image, mask = sample
         return image, pil_image_to_mask(mask)
 
@@ -163,7 +180,7 @@ def video_classification_wrapper_factory(dataset):
             f"since it is not compatible with the transformations. Please use `output_format='TCHW'` instead."
         )
 
-    def wrapper(sample):
+    def wrapper(idx, sample):
         video, audio, label = sample
 
         video = datapoints.Video(video)
@@ -201,14 +218,17 @@ def coco_dectection_wrapper_factory(dataset):
         )
         return torch.from_numpy(mask.decode(segmentation))
 
-    def wrapper(sample):
+    def wrapper(idx, sample):
+        image_id = dataset.ids[idx]
+
         image, target = sample
+
+        if not target:
+            return image, dict(image_id=image_id)
 
         batched_target = list_of_dicts_to_dict_of_lists(target)
 
-        image_ids = batched_target.pop("image_id")
-        image_id = batched_target["image_id"] = image_ids.pop()
-        assert all(other_image_id == image_id for other_image_id in image_ids)
+        batched_target["image_id"] = image_id
 
         spatial_size = tuple(F.get_spatial_size(image))
         batched_target["boxes"] = datapoints.BoundingBox(
@@ -229,6 +249,9 @@ def coco_dectection_wrapper_factory(dataset):
         return image, batched_target
 
     return wrapper
+
+
+WRAPPER_FACTORIES.register(datasets.CocoCaptions)(identity_wrapper_factory)
 
 
 VOC_DETECTION_CATEGORIES = [
@@ -259,7 +282,7 @@ VOC_DETECTION_CATEGORY_TO_IDX = dict(zip(VOC_DETECTION_CATEGORIES, range(len(VOC
 
 @WRAPPER_FACTORIES.register(datasets.VOCDetection)
 def voc_detection_wrapper_factory(dataset):
-    def wrapper(sample):
+    def wrapper(idx, sample):
         image, target = sample
 
         batched_instances = list_of_dicts_to_dict_of_lists(target["annotation"]["object"])
@@ -294,7 +317,7 @@ def celeba_wrapper_factory(dataset):
     if any(target_type in dataset.target_type for target_type in ["attr", "landmarks"]):
         raise_not_supported("`CelebA` dataset with `target_type=['attr', 'landmarks', ...]`")
 
-    def wrapper(sample):
+    def wrapper(idx, sample):
         image, target = sample
 
         target = wrap_target_by_type(
@@ -318,7 +341,7 @@ KITTI_CATEGORY_TO_IDX = dict(zip(KITTI_CATEGORIES, range(len(KITTI_CATEGORIES)))
 
 @WRAPPER_FACTORIES.register(datasets.Kitti)
 def kitti_wrapper_factory(dataset):
-    def wrapper(sample):
+    def wrapper(idx, sample):
         image, target = sample
 
         if target is not None:
@@ -336,7 +359,7 @@ def kitti_wrapper_factory(dataset):
 
 @WRAPPER_FACTORIES.register(datasets.OxfordIIITPet)
 def oxford_iiit_pet_wrapper_factor(dataset):
-    def wrapper(sample):
+    def wrapper(idx, sample):
         image, target = sample
 
         if target is not None:
@@ -371,7 +394,7 @@ def cityscapes_wrapper_factory(dataset):
             labels.append(label)
         return dict(masks=datapoints.Mask(torch.stack(masks)), labels=torch.stack(labels))
 
-    def wrapper(sample):
+    def wrapper(idx, sample):
         image, target = sample
 
         target = wrap_target_by_type(
@@ -390,7 +413,7 @@ def cityscapes_wrapper_factory(dataset):
 
 @WRAPPER_FACTORIES.register(datasets.WIDERFace)
 def widerface_wrapper(dataset):
-    def wrapper(sample):
+    def wrapper(idx, sample):
         image, target = sample
 
         if target is not None:
