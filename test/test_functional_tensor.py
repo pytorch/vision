@@ -463,7 +463,6 @@ def test_perspective_batch(device, dims_and_points, dt):
 
 
 def test_perspective_interpolation_type():
-    # assert changed type warning
     spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
     epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
     tensor = torch.randint(0, 256, (3, 26, 26))
