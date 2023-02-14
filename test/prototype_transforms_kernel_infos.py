@@ -350,7 +350,7 @@ def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box.as_subclass(torch.Tensor),
+        bounding_box,
         format=bounding_box.format,
         spatial_size=(new_height, new_width),
         affine_matrix=affine_matrix,
@@ -553,7 +553,10 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, 
         if not torch.is_floating_point(bbox):
             bbox = bbox.float()
         bbox_xyxy = F.convert_format_bounding_box(
-            bbox, old_format=format_, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+            bbox.as_subclass(torch.Tensor),
+            old_format=format_,
+            new_format=datapoints.BoundingBoxFormat.XYXY,
+            inplace=True,
         )
         points = np.array(
             [
