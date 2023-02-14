@@ -825,7 +825,9 @@ def sample_inputs_rotate_bounding_box():
 
 
 def reference_inputs_rotate_bounding_box():
-    for bounding_box_loader, angle in itertools.product(make_bounding_box_loaders(extra_dims=((), (4,))), _ROTATE_ANGLES):
+    for bounding_box_loader, angle in itertools.product(
+        make_bounding_box_loaders(extra_dims=((), (4,))), _ROTATE_ANGLES
+    ):
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
