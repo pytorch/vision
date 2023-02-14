@@ -1882,7 +1882,7 @@ def test_random_rotation():
     # Checking if RandomRotation can be printed as string
     t.__repr__()
 
-    t = transforms.RandomRotation((-10, 10), interpolation=2)
+    t = transforms.RandomRotation((-10, 10), interpolation=Image.BILINEAR)
     assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
@@ -2214,7 +2214,7 @@ def test_random_affine():
     t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
     assert "bilinear" in t.__repr__()
 
-    t = transforms.RandomAffine(10, interpolation=2)
+    t = transforms.RandomAffine(10, interpolation=Image.BILINEAR)
     assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
@@ -2233,7 +2233,7 @@ def test_elastic_transformation():
     with pytest.raises(ValueError, match=r"sigma is a sequence its length should be 2"):
         transforms.ElasticTransform(alpha=2.0, sigma=[1.0, 0.0, 1.0])
 
-    t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=2)
+    t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=Image.BILINEAR)
     assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
     with pytest.raises(TypeError, match=r"fill should be int or float"):
