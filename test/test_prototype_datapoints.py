@@ -163,11 +163,17 @@ def test_bbox_instance(data, format):
     assert bboxes.format == format
 
 
-def test_dataset_wrapper_subclass():
-    class MyFakeData(datasets.FakeData):
-        pass
+class TestDatasetWrapper:
+    def test_unknown_type(self):
+        unknown_object = object()
+        with pytest.raises(TypeError, match=type(unknown_object).__name__):
+            datapoints.wrap_dataset_for_transforms_v2(unknown_object)
 
-    dataset = MyFakeData()
-    wrapped_dataset = datapoints.wrap_dataset_for_transforms_v2(dataset)
+    def test_subclass(self):
+        class MyFakeData(datasets.FakeData):
+            pass
 
-    assert wrapped_dataset[0] is not None
+        dataset = MyFakeData()
+        wrapped_dataset = datapoints.wrap_dataset_for_transforms_v2(dataset)
+
+        assert wrapped_dataset[0] is not None

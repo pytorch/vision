@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import itertools
 from collections import defaultdict
 
 import torch
@@ -40,21 +39,26 @@ WRAPPER_FACTORIES = WrapperFactories()
 class VisionDatasetDatapointWrapper(Dataset):
     def __init__(self, dataset):
         dataset_cls = type(dataset)
-        for cls in itertools.takewhile(
-            lambda dataset_cls: dataset_cls is not datasets.VisionDataset, dataset_cls.mro()
-        ):
+
+        if not isinstance(dataset, datasets.VisionDataset):
+            raise TypeError(
+                f"This wrapper is meant for subclasses of `torchvision.datasets.VisionDataset`, "
+                f"but got a '{dataset_cls.__name__}' instead."
+            )
+
+        for cls in dataset_cls.mro():
             if cls in WRAPPER_FACTORIES:
                 wrapper_factory = WRAPPER_FACTORIES[cls]
                 break
-        else:
-            # TODO: If we have documentation on how to do that, put a link in the error message.
-            msg = f"No wrapper exist for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
-            if dataset_cls in datasets.__dict__.values():
-                msg = (
-                    f"{msg} If an automated wrapper for this dataset would be useful for you, "
-                    f"please open an issue at https://github.com/pytorch/vision/issues."
-                )
-            raise TypeError(msg)
+            elif cls is datasets.VisionDataset:
+                # TODO: If we have documentation on how to do that, put a link in the error message.
+                msg = f"No wrapper exist for dataset class {dataset_cls.__name__}. Please wrap the output yourself."
+                if dataset_cls in datasets.__dict__.values():
+                    msg = (
+                        f"{msg} If an automated wrapper for this dataset would be useful for you, "
+                        f"please open an issue at https://github.com/pytorch/vision/issues."
+                    )
+                raise TypeError(msg)
 
         self._dataset = dataset
         self._wrapper = wrapper_factory(dataset)
