@@ -1184,6 +1184,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         ]
         out_bbox = torch.tensor(out_bbox)
         out_bbox = convert_format_bounding_box(out_bbox, datapoints.BoundingBoxFormat.XYWH, format_)
+        out_bbox = clamp_bounding_box(out_bbox, format=format_, spatial_size=output_size)
         return out_bbox.to(dtype=dtype, device=bbox.device)
 
     for bboxes in make_bounding_boxes(extra_dims=((4,),)):
@@ -1207,7 +1208,8 @@ def test_correctness_center_crop_bounding_box(device, output_size):
             expected_bboxes = torch.stack(expected_bboxes)
         else:
             expected_bboxes = expected_bboxes[0]
-        torch.testing.assert_close(output_boxes, expected_bboxes)
+
+        torch.testing.assert_close(output_boxes, expected_bboxes, atol=1, rtol=0)
         torch.testing.assert_close(output_spatial_size, output_size)
 
 

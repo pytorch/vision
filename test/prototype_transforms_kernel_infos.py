@@ -211,7 +211,7 @@ def reference_horizontal_flip_bounding_box(bounding_box, *, format, spatial_size
             [-1, 0, spatial_size[1]],
             [0, 1, 0],
         ],
-        dtype="float32",
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
@@ -579,11 +579,12 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, 
         out_bbox = F.convert_format_bounding_box(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
         )
-
-        # new_spatial_size = F._geometry._compute_affine_output_size(FIXME, w=spatial_size_[1], h=spatial_size_[0])
-        new_spatial_size = spatial_size_
-        out_bbox = F.clamp_bounding_box(out_bbox, format=format_, spatial_size=new_spatial_size)
-        return out_bbox.to(dtype=in_dtype)
+        print("1 expected: ", out_bbox)
+        print("2 expected: ", out_bbox.to(dtype=in_dtype))
+        out_bbox = F.clamp_bounding_box(out_bbox.to(dtype=in_dtype), format=format_, spatial_size=spatial_size_)
+        print("3 expected: ", out_bbox)
+        return out_bbox
+        # return out_bbox.to(dtype=in_dtype)
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
@@ -741,7 +742,7 @@ def reference_vertical_flip_bounding_box(bounding_box, *, format, spatial_size):
             [1, 0, 0],
             [0, -1, spatial_size[0]],
         ],
-        dtype="float32",
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
@@ -956,7 +957,7 @@ def reference_crop_bounding_box(bounding_box, *, format, top, left, height, widt
             [1, 0, -left],
             [0, 1, -top],
         ],
-        dtype="float32",
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
     )
 
     spatial_size = (height, width)
@@ -1175,7 +1176,7 @@ def reference_pad_bounding_box(bounding_box, *, format, spatial_size, padding, p
             [1, 0, left],
             [0, 1, top],
         ],
-        dtype="float32",
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
     )
 
     height = spatial_size[0] + top + bottom
