@@ -252,7 +252,8 @@ class SanitizeBoundingBoxes(Transform):
                 f"Got {labels} of type {type(labels)}."
             )
 
-    def _find_label_default_heuristic(self, inputs):
+    @staticmethod
+    def _find_label_default_heuristic(inputs):
         # Tries to find a "label" key, otherwise tries for the first key that contains "label" - case insensitive
         # Returns None if nothing is found
         labels = None

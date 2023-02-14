@@ -2412,13 +2412,38 @@ def test_sanitize_bounding_boxes(min_size, labels_param):
     assert out["labels"].tolist() == valid_indices
 
 
-# def test_sanitize_bounding_boxes_errors():
+@pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))
+def test_sanitize_bounding_boxes_default_heuristic(key):
+    labels = torch.arange(10)
+    d = {key: labels}
+    assert transforms.SanitizeBoundingBoxes._find_label_default_heuristic(d) is labels
 
-#     with pytest.raises(ValueError, match="min_size must be >= 1"):
-#         transforms.SanitizeBoundingBoxes(min_size=0)
-#     with pytest.raises(ValueError, match="labels parameter should either be a str"):
-#         transforms.SanitizeBoundingBoxes(labels=12)
 
-#     with pytest.raises(ValueError, match="labels parameter should either be a str"):
-#         bad_labels = 
-#         transforms.SanitizeBoundingBoxes()
+def test_sanitize_bounding_boxes_errors():
+
+    good_bbox = datapoints.BoundingBox(
+        [[0, 0, 10, 10]],
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=(20, 20),
+    )
+
+    with pytest.raises(ValueError, match="min_size must be >= 1"):
+        transforms.SanitizeBoundingBoxes(min_size=0)
+    with pytest.raises(ValueError, match="labels parameter should either be a str"):
+        transforms.SanitizeBoundingBoxes(labels=12)
+
+    with pytest.raises(ValueError, match="Could not infer where the labels are"):
+        bad_labels_key = {"bbox": good_bbox, "BAD_KEY": torch.arange(good_bbox.shape[0])}
+        transforms.SanitizeBoundingBoxes()(bad_labels_key)
+
+    with pytest.raises(ValueError, match="If labels is a str or 'default'"):
+        not_a_dict = (good_bbox, torch.arange(good_bbox.shape[0]))
+        transforms.SanitizeBoundingBoxes()(not_a_dict)
+
+    with pytest.raises(ValueError, match="must be a tensor"):
+        not_a_tensor = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0]).tolist()}
+        transforms.SanitizeBoundingBoxes()(not_a_tensor)
+
+    with pytest.raises(ValueError, match="Number of boxes"):
+        different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
+        transforms.SanitizeBoundingBoxes()(different_sizes)
