@@ -514,7 +514,7 @@ def test_resize(device, dt, size, max_size, interpolation):
 
     assert resized_tensor.size()[1:] == resized_pil_img.size[::-1]
 
-    if interpolation not in [NEAREST]:
+    if interpolation != NEAREST:
         # We can not check values if mode = NEAREST, as results are different
         # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
         # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]

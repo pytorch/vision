@@ -459,7 +459,7 @@ def resize(
         interpolation = _interpolation_modes_from_int(interpolation)
     elif not isinstance(interpolation, InterpolationMode):
         raise TypeError(
-            "Argument interpolation should be a InterpolationMode or an corresponding Pillow integer constant"
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
         )
 
     if isinstance(size, (list, tuple)):
@@ -752,7 +752,7 @@ def perspective(
         interpolation = _interpolation_modes_from_int(interpolation)
     elif not isinstance(interpolation, InterpolationMode):
         raise TypeError(
-            "Argument interpolation should be a InterpolationMode or an corresponding Pillow integer constant"
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
         )
 
     if not isinstance(img, torch.Tensor):
@@ -1113,7 +1113,7 @@ def rotate(
         interpolation = _interpolation_modes_from_int(interpolation)
     elif not isinstance(interpolation, InterpolationMode):
         raise TypeError(
-            "Argument interpolation should be a InterpolationMode or an corresponding Pillow integer constant"
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
         )
 
     if not isinstance(angle, (int, float)):
@@ -1183,7 +1183,7 @@ def affine(
         interpolation = _interpolation_modes_from_int(interpolation)
     elif not isinstance(interpolation, InterpolationMode):
         raise TypeError(
-            "Argument interpolation should be a InterpolationMode or an corresponding Pillow integer constant"
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
         )
 
     if not isinstance(angle, (int, float)):
