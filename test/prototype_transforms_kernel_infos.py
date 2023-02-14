@@ -153,6 +153,7 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
     )
 
 
+# FIXME: does this also apply to padding???
 def xfail_jit_tuple_instead_of_list(name, *, reason=None):
     reason = reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting"
     return xfail_jit(
@@ -162,10 +163,12 @@ def xfail_jit_tuple_instead_of_list(name, *, reason=None):
 
 
 def is_list_of_ints(args_kwargs):
+    # FIXME: why special case fill here?
     fill = args_kwargs.kwargs.get("fill")
     return isinstance(fill, list) and any(isinstance(scalar_fill, int) for scalar_fill in fill)
 
 
+# FIXME: maybe remove since it is only used once?
 def xfail_jit_list_of_ints(name, *, reason=None):
     return xfail_jit(
         reason or f"Passing a list of integers for `{name}` is not supported when scripting",
@@ -633,9 +636,7 @@ KERNEL_INFOS.extend(
             closeness_kwargs=pil_reference_pixel_difference(10, mae=True),
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
-                xfail_jit_tuple_instead_of_list("fill"),
-                # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-                xfail_jit_list_of_ints("fill"),
+                xfail_jit_python_scalar_arg("fill"),
             ],
         ),
         KernelInfo(
@@ -826,9 +827,7 @@ KERNEL_INFOS.extend(
             float32_vs_uint8=True,
             closeness_kwargs=pil_reference_pixel_difference(1, mae=True),
             test_marks=[
-                xfail_jit_tuple_instead_of_list("fill"),
-                # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-                xfail_jit_list_of_ints("fill"),
+                xfail_jit_python_scalar_arg("fill"),
             ],
         ),
         KernelInfo(
@@ -1151,6 +1150,7 @@ KERNEL_INFOS.extend(
             reference_inputs_fn=reference_inputs_pad_image_tensor,
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
             closeness_kwargs=float32_vs_uint8_pixel_difference(),
+            # FIXME: pad is a little different
             test_marks=[
                 xfail_jit_tuple_instead_of_list("padding"),
                 xfail_jit_tuple_instead_of_list("fill"),
@@ -1272,6 +1272,7 @@ KERNEL_INFOS.extend(
                 **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
                 **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
             },
+            test_marks=[xfail_jit_python_scalar_arg("fill")],
         ),
         KernelInfo(
             F.perspective_bounding_box,
@@ -1358,6 +1359,7 @@ KERNEL_INFOS.extend(
                 **float32_vs_uint8_pixel_difference(6, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
             },
+            test_marks=[xfail_jit_python_scalar_arg("fill")],
         ),
         KernelInfo(
             F.elastic_bounding_box,

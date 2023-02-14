@@ -96,6 +96,7 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
     )
 
 
+# FIXME: same treatment as for kernels
 def xfail_jit_tuple_instead_of_list(name, *, reason=None):
     return xfail_jit(
         reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting",
@@ -103,11 +104,13 @@ def xfail_jit_tuple_instead_of_list(name, *, reason=None):
     )
 
 
+# FIXME: same treatment as for kernels
 def is_list_of_ints(args_kwargs):
     fill = args_kwargs.kwargs.get("fill")
     return isinstance(fill, list) and any(isinstance(scalar_fill, int) for scalar_fill in fill)
 
 
+# FIXME: same treatment as for kernels
 def xfail_jit_list_of_ints(name, *, reason=None):
     return xfail_jit(
         reason or f"Passing a list of integers for `{name}` is not supported when scripting",
@@ -188,9 +191,7 @@ DISPATCHER_INFOS = [
         test_marks=[
             xfail_dispatch_pil_if_fill_sequence_needs_broadcast,
             xfail_jit_python_scalar_arg("shear"),
-            xfail_jit_tuple_instead_of_list("fill"),
-            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-            xfail_jit_list_of_ints("fill"),
+            xfail_jit_python_scalar_arg("fill"),
         ],
     ),
     DispatcherInfo(
@@ -212,11 +213,7 @@ DISPATCHER_INFOS = [
             datapoints.Mask: F.rotate_mask,
         },
         pil_kernel_info=PILKernelInfo(F.rotate_image_pil),
-        test_marks=[
-            xfail_jit_tuple_instead_of_list("fill"),
-            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-            xfail_jit_list_of_ints("fill"),
-        ],
+        test_marks=[xfail_jit_python_scalar_arg("fill")],
     ),
     DispatcherInfo(
         F.crop,
@@ -260,9 +257,6 @@ DISPATCHER_INFOS = [
                 and args_kwargs.kwargs.get("padding_mode", "constant") == "constant",
             ),
             xfail_jit_tuple_instead_of_list("padding"),
-            xfail_jit_tuple_instead_of_list("fill"),
-            # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-            xfail_jit_list_of_ints("fill"),
         ],
     ),
     DispatcherInfo(
@@ -276,6 +270,7 @@ DISPATCHER_INFOS = [
         pil_kernel_info=PILKernelInfo(F.perspective_image_pil),
         test_marks=[
             xfail_dispatch_pil_if_fill_sequence_needs_broadcast,
+            xfail_jit_python_scalar_arg("fill"),
         ],
     ),
     DispatcherInfo(
@@ -287,6 +282,7 @@ DISPATCHER_INFOS = [
             datapoints.Mask: F.elastic_mask,
         },
         pil_kernel_info=PILKernelInfo(F.elastic_image_pil),
+        test_marks=[xfail_jit_python_scalar_arg("fill")],
     ),
     DispatcherInfo(
         F.center_crop,

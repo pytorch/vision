@@ -84,7 +84,7 @@ class Mask(Datapoint):
     def pad(
         self,
         padding: Union[int, List[int]],
-        fill: FillTypeJIT = None,
+        fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> Mask:
         output = self._F.pad_mask(self.as_subclass(torch.Tensor), padding, padding_mode=padding_mode, fill=fill)

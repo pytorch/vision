@@ -966,7 +966,7 @@ def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
 def pad_image_tensor(
     image: torch.Tensor,
     padding: Union[int, List[int]],
-    fill: datapoints.FillTypeJIT = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     # Be aware that while `padding` has order `[left, top, right, bottom]` has order, `torch_padding` uses
@@ -981,11 +981,15 @@ def pad_image_tensor(
         )
 
     if fill is None:
-        fill = 0
+        fill = [0.0]
+    elif isinstance(fill, (int, float)):
+        fill = [float(fill)]
+    elif isinstance(fill, (list, tuple)):
+        fill = [float(f) for f in fill]
+    else:
+        raise ValueError
 
-    if isinstance(fill, (int, float)):
-        return _pad_with_scalar_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
-    elif len(fill) == 1:
+    if len(fill) == 1:
         return _pad_with_scalar_fill(image, torch_padding, fill=fill[0], padding_mode=padding_mode)
     else:
         return _pad_with_vector_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
@@ -994,7 +998,7 @@ def pad_image_tensor(
 def _pad_with_scalar_fill(
     image: torch.Tensor,
     torch_padding: List[int],
-    fill: Union[int, float],
+    fill: float,
     padding_mode: str,
 ) -> torch.Tensor:
     shape = image.shape
@@ -1013,7 +1017,7 @@ def _pad_with_scalar_fill(
         padding_mode = "replicate"
 
     if padding_mode == "constant":
-        image = torch_pad(image, torch_padding, mode=padding_mode, value=float(fill))
+        image = torch_pad(image, torch_padding, mode=padding_mode, value=fill)
     elif padding_mode in ("reflect", "replicate"):
         # `torch_pad` only supports `"reflect"` or `"replicate"` padding for floating point inputs.
         # TODO: See https://github.com/pytorch/pytorch/issues/40763
@@ -1046,7 +1050,7 @@ def _pad_with_vector_fill(
     if padding_mode != "constant":
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
-    output = _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode="constant")
+    output = _pad_with_scalar_fill(image, torch_padding, fill=0.0, padding_mode="constant")
     left, right, top, bottom = torch_padding
     fill = torch.tensor(fill, dtype=image.dtype, device=image.device).reshape(-1, 1, 1)
 
@@ -1070,10 +1074,7 @@ def pad_mask(
     padding_mode: str = "constant",
     fill: datapoints.FillTypeJIT = None,
 ) -> torch.Tensor:
-    if fill is None:
-        fill = 0
-
-    if isinstance(fill, list):
+    if isinstance(fill, (list, tuple)) and len(fill) > 1:
         raise ValueError("Non-scalar fill value is not supported")
 
     if mask.ndim < 3:
@@ -1119,7 +1120,7 @@ def pad_bounding_box(
 def pad_video(
     video: torch.Tensor,
     padding: Union[int, List[int]],
-    fill: datapoints.FillTypeJIT = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     return pad_image_tensor(video, padding, fill=fill, padding_mode=padding_mode)
@@ -1128,7 +1129,7 @@ def pad_video(
 def pad(
     inpt: datapoints.InputTypeJIT,
     padding: Union[int, List[int]],
-    fill: datapoints.FillTypeJIT = None,
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
@@ -1162,7 +1163,7 @@ def crop_image_tensor(image: torch.Tensor, top: int, left: int, height: int, wid
             max(min(bottom, 0) - top, 0),
             max(bottom - max(h, top), 0),
         ]
-        return _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode="constant")
+        return _pad_with_scalar_fill(image, torch_padding, fill=0.0, padding_mode="constant")
     return image[..., top:bottom, left:right]
 
 

@@ -104,7 +104,7 @@ class Image(Datapoint):
     def pad(
         self,
         padding: Union[int, List[int]],
-        fill: FillTypeJIT = None,
+        fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> Image:
         output = self._F.pad_image_tensor(self.as_subclass(torch.Tensor), padding, fill=fill, padding_mode=padding_mode)

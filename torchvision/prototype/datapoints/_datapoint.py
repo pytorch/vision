@@ -12,7 +12,7 @@ from torchvision.transforms import InterpolationMode
 
 D = TypeVar("D", bound="Datapoint")
 FillType = Union[int, float, Sequence[int], Sequence[float], None]
-FillTypeJIT = Union[int, float, List[float], None]
+FillTypeJIT = Optional[List[float]]
 
 
 class Datapoint(torch.Tensor):
@@ -170,7 +170,7 @@ class Datapoint(torch.Tensor):
     def pad(
         self,
         padding: Union[int, List[int]],
-        fill: FillTypeJIT = None,
+        fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> Datapoint:
         return self
