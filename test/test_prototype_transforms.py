@@ -145,7 +145,7 @@ class TestSmoke:
             (transforms.RandomVerticalFlip(p=1.0), None),
             (transforms.RandomZoomOut(p=1.0), None),
             (transforms.Resize([16, 16], antialias=True), None),
-            (transforms.ScaleJitter((16, 16)), None),
+            (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2)), None),
             (transforms.ClampBoundingBoxes(), None),
             (transforms.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.CXCYWH), None),
             (transforms.ConvertDtype(), None),
@@ -250,6 +250,7 @@ class TestSmoke:
         input_flat = [item.to(device) if isinstance(item, torch.Tensor) else item for item in input_flat]
         input = tree_unflatten(input_flat, input_spec)
 
+        torch.manual_seed(0)
         output = transform(input)
         output_flat, output_spec = tree_flatten(output)
 
