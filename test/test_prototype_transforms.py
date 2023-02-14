@@ -146,7 +146,7 @@ class TestSmoke:
             (transforms.RandomZoomOut(p=1.0), None),
             (transforms.Resize([16, 16], antialias=True), None),
             (transforms.ScaleJitter((16, 16), scale_range=(0.8, 1.2)), None),
-            (transforms.ClampBoundingBoxes(), None),
+            (transforms.ClampBoundingBox(), None),
             (transforms.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.CXCYWH), None),
             (transforms.ConvertDtype(), None),
             (transforms.GaussianBlur(kernel_size=3), None),
