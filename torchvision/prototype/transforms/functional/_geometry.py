@@ -432,7 +432,7 @@ def _apply_grid_transform(
     if fill is not None:
         float_img, mask = torch.tensor_split(float_img, indices=(-1,), dim=-3)
         mask = mask.expand_as(float_img)
-        fill_list = fill if isinstance(fill, (tuple, list)) else [float(fill)]
+        fill_list = fill if isinstance(fill, (tuple, list)) else [float(fill)]  # type: ignore[arg-type]
         fill_img = torch.tensor(fill_list, dtype=float_img.dtype, device=float_img.device).view(1, -1, 1, 1)
         if mode == "nearest":
             bool_mask = mask < 0.5
