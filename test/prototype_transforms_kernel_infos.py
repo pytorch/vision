@@ -350,8 +350,8 @@ def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box,
-        format=datapoints.BoundingBoxFormat.XYXY,
+        bounding_box.as_subclass(torch.Tensor),
+        format=bounding_box.format,
         spatial_size=(new_height, new_width),
         affine_matrix=affine_matrix,
     )
@@ -359,9 +359,7 @@ def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=
 
 
 def reference_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(
-        extra_dims=((), (4,)), formats=[datapoints.BoundingBoxFormat.XYXY]
-    ):
+    for bounding_box_loader in make_bounding_box_loaders(extra_dims=((), (4,))):
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
             yield ArgsKwargs(bounding_box_loader, size=size, spatial_size=bounding_box_loader.spatial_size)
 

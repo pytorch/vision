@@ -257,9 +257,10 @@ class TestKernels:
     @reference_inputs
     def test_against_reference(self, test_id, info, args_kwargs):
         (input, *other_args), kwargs = args_kwargs.load("cpu")
-        input = input.as_subclass(torch.Tensor)
 
-        actual = info.kernel(input, *other_args, **kwargs)
+        actual = info.kernel(input.as_subclass(torch.Tensor), *other_args, **kwargs)
+        # We intnetionally don't unwrap the input of the reference function in order for it to have access to all
+        # metadata regardless of whether the kernel takes it explicitly or not
         expected = info.reference_fn(input, *other_args, **kwargs)
 
         assert_close(
