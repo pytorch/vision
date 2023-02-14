@@ -763,7 +763,8 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_format_bounding_box(out_bbox, new_format=bbox.format), (height, width)
+        out_bbox = clamp_bounding_box(convert_format_bounding_box(out_bbox, new_format=bbox.format))
+        return out_bbox, (height, width)
 
     spatial_size = (32, 38)
 
@@ -840,6 +841,9 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
             [69.27564928, 12.39339828, 74.93250353, 18.05025253],
             [18.36396103, 1.07968978, 46.64823228, 29.36396103],
         ]
+        expected_bboxes = clamp_bounding_box(
+            datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
+        ).tolist()
 
     output_boxes, _ = F.rotate_bounding_box(
         in_boxes,
