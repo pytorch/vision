@@ -108,7 +108,7 @@ def float32_vs_uint8_pixel_difference(atol=1, mae=False):
     }
 
 
-def scripted_vs_eager_double_pixel_difference(device, atol=1e-6, rtol=1e-6):
+def scripted_vs_eager_float64_tolerances(device, atol=1e-6, rtol=1e-6):
     return {
         (("TestKernels", "test_scripted_vs_eager"), torch.float64, device): {"atol": atol, "rtol": rtol, "mae": False},
     }
@@ -153,26 +153,6 @@ def xfail_jit_python_scalar_arg(name, *, reason=None):
     )
 
 
-def xfail_jit_tuple_instead_of_list(name, *, reason=None):
-    reason = reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting"
-    return xfail_jit(
-        reason or f"Passing a tuple instead of a list for `{name}` is not supported when scripting",
-        condition=lambda args_kwargs: isinstance(args_kwargs.kwargs.get(name), tuple),
-    )
-
-
-def is_list_of_ints(args_kwargs):
-    fill = args_kwargs.kwargs.get("fill")
-    return isinstance(fill, list) and any(isinstance(scalar_fill, int) for scalar_fill in fill)
-
-
-def xfail_jit_list_of_ints(name, *, reason=None):
-    return xfail_jit(
-        reason or f"Passing a list of integers for `{name}` is not supported when scripting",
-        condition=is_list_of_ints,
-    )
-
-
 KERNEL_INFOS = []
 
 
@@ -211,10 +191,12 @@ def reference_horizontal_flip_bounding_box(bounding_box, *, format, spatial_size
             [-1, 0, spatial_size[1]],
             [0, 1, 0],
         ],
-        dtype="float32",
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
     )
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
 
     return expected_bboxes
 
@@ -322,7 +304,7 @@ def reference_inputs_resize_image_tensor():
 def sample_inputs_resize_bounding_box():
     for bounding_box_loader in make_bounding_box_loaders():
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
-            yield ArgsKwargs(bounding_box_loader, size=size, spatial_size=bounding_box_loader.spatial_size)
+            yield ArgsKwargs(bounding_box_loader, spatial_size=bounding_box_loader.spatial_size, size=size)
 
 
 def sample_inputs_resize_mask():
@@ -344,19 +326,20 @@ def reference_resize_bounding_box(bounding_box, *, spatial_size, size, max_size=
             [new_width / old_width, 0, 0],
             [0, new_height / old_height, 0],
         ],
-        dtype="float32",
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
     )
 
     expected_bboxes = reference_affine_bounding_box_helper(
-        bounding_box, format=datapoints.BoundingBoxFormat.XYXY, affine_matrix=affine_matrix
+        bounding_box,
+        format=bounding_box.format,
+        spatial_size=(new_height, new_width),
+        affine_matrix=affine_matrix,
     )
     return expected_bboxes, (new_height, new_width)
 
 
 def reference_inputs_resize_bounding_box():
-    for bounding_box_loader in make_bounding_box_loaders(
-        formats=[datapoints.BoundingBoxFormat.XYXY], extra_dims=((), (4,))
-    ):
+    for bounding_box_loader in make_bounding_box_loaders(extra_dims=((), (4,))):
         for size in _get_resize_sizes(bounding_box_loader.spatial_size):
             yield ArgsKwargs(bounding_box_loader, size=size, spatial_size=bounding_box_loader.spatial_size)
 
@@ -447,21 +430,21 @@ _DIVERSE_AFFINE_PARAMS = [
 ]
 
 
-def get_fills(*, num_channels, dtype, vector=True):
+def get_fills(*, num_channels, dtype):
     yield None
 
-    max_value = get_max_value(dtype)
-    # This intentionally gives us a float and an int scalar fill value
-    yield max_value / 2
-    yield max_value
+    int_value = get_max_value(dtype)
+    float_value = int_value / 2
+    yield int_value
+    yield float_value
 
-    if not vector:
-        return
+    for vector_type in [list, tuple]:
+        yield vector_type([int_value])
+        yield vector_type([float_value])
 
-    if dtype.is_floating_point:
-        yield [0.1 + c / 10 for c in range(num_channels)]
-    else:
-        yield [12.0 + c for c in range(num_channels)]
+        if num_channels > 1:
+            yield vector_type(float_value * c / 10 for c in range(num_channels))
+            yield vector_type(int_value if c % 2 == 0 else 0 for c in range(num_channels))
 
 
 def float32_vs_uint8_fill_adapter(other_args, kwargs):
@@ -543,14 +526,17 @@ def _compute_affine_matrix(angle, translate, scale, shear, center):
     return true_matrix
 
 
-def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix):
-    def transform(bbox, affine_matrix_, format_):
+def reference_affine_bounding_box_helper(bounding_box, *, format, spatial_size, affine_matrix):
+    def transform(bbox, affine_matrix_, format_, spatial_size_):
         # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
         in_dtype = bbox.dtype
         if not torch.is_floating_point(bbox):
             bbox = bbox.float()
         bbox_xyxy = F.convert_format_bounding_box(
-            bbox, old_format=format_, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+            bbox.as_subclass(torch.Tensor),
+            old_format=format_,
+            new_format=datapoints.BoundingBoxFormat.XYXY,
+            inplace=True,
         )
         points = np.array(
             [
@@ -573,12 +559,15 @@ def reference_affine_bounding_box_helper(bounding_box, *, format, affine_matrix)
         out_bbox = F.convert_format_bounding_box(
             out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format_, inplace=True
         )
-        return out_bbox.to(dtype=in_dtype)
+        # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
+        out_bbox = F.clamp_bounding_box(out_bbox, format=format_, spatial_size=spatial_size_)
+        out_bbox = out_bbox.to(dtype=in_dtype)
+        return out_bbox
 
     if bounding_box.ndim < 2:
         bounding_box = [bounding_box]
 
-    expected_bboxes = [transform(bbox, affine_matrix, format) for bbox in bounding_box]
+    expected_bboxes = [transform(bbox, affine_matrix, format, spatial_size) for bbox in bounding_box]
     if len(expected_bboxes) > 1:
         expected_bboxes = torch.stack(expected_bboxes)
     else:
@@ -594,7 +583,9 @@ def reference_affine_bounding_box(bounding_box, *, format, spatial_size, angle, 
     affine_matrix = _compute_affine_matrix(angle, translate, scale, shear, center)
     affine_matrix = affine_matrix[:2, :]
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
 
     return expected_bboxes
 
@@ -633,9 +624,7 @@ KERNEL_INFOS.extend(
             closeness_kwargs=pil_reference_pixel_difference(10, mae=True),
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
-                xfail_jit_tuple_instead_of_list("fill"),
-                # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-                xfail_jit_list_of_ints("fill"),
+                xfail_jit_python_scalar_arg("fill"),
             ],
         ),
         KernelInfo(
@@ -643,9 +632,6 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_affine_bounding_box,
             reference_fn=reference_affine_bounding_box,
             reference_inputs_fn=reference_inputs_affine_bounding_box,
-            closeness_kwargs={
-                (("TestKernels", "test_against_reference"), torch.int64, "cpu"): dict(atol=1, rtol=0),
-            },
             test_marks=[
                 xfail_jit_python_scalar_arg("shear"),
             ],
@@ -729,10 +715,12 @@ def reference_vertical_flip_bounding_box(bounding_box, *, format, spatial_size):
             [1, 0, 0],
             [0, -1, spatial_size[0]],
         ],
-        dtype="float32",
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
     )
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
 
     return expected_bboxes
 
@@ -806,6 +794,43 @@ def sample_inputs_rotate_bounding_box():
         )
 
 
+def reference_inputs_rotate_bounding_box():
+    for bounding_box_loader, angle in itertools.product(
+        make_bounding_box_loaders(extra_dims=((), (4,))), _ROTATE_ANGLES
+    ):
+        yield ArgsKwargs(
+            bounding_box_loader,
+            format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
+            angle=angle,
+        )
+
+    # TODO: add samples with expand=True and center
+
+
+def reference_rotate_bounding_box(bounding_box, *, format, spatial_size, angle, expand=False, center=None):
+
+    if center is None:
+        center = [spatial_size[1] * 0.5, spatial_size[0] * 0.5]
+
+    a = np.cos(angle * np.pi / 180.0)
+    b = np.sin(angle * np.pi / 180.0)
+    cx = center[0]
+    cy = center[1]
+    affine_matrix = np.array(
+        [
+            [a, b, cx - cx * a - b * cy],
+            [-b, a, cy + cx * b - a * cy],
+        ],
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
+    )
+
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
+    return expected_bboxes, spatial_size
+
+
 def sample_inputs_rotate_mask():
     for mask_loader in make_mask_loaders(sizes=["random"], num_categories=["random"], num_objects=["random"]):
         yield ArgsKwargs(mask_loader, angle=15.0)
@@ -826,17 +851,17 @@ KERNEL_INFOS.extend(
             float32_vs_uint8=True,
             closeness_kwargs=pil_reference_pixel_difference(1, mae=True),
             test_marks=[
-                xfail_jit_tuple_instead_of_list("fill"),
-                # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-                xfail_jit_list_of_ints("fill"),
+                xfail_jit_python_scalar_arg("fill"),
             ],
         ),
         KernelInfo(
             F.rotate_bounding_box,
             sample_inputs_fn=sample_inputs_rotate_bounding_box,
+            reference_fn=reference_rotate_bounding_box,
+            reference_inputs_fn=reference_inputs_rotate_bounding_box,
             closeness_kwargs={
-                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
-                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-6, rtol=1e-6),
+                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-5, rtol=1e-5),
             },
         ),
         KernelInfo(
@@ -897,17 +922,19 @@ def sample_inputs_crop_video():
 
 
 def reference_crop_bounding_box(bounding_box, *, format, top, left, height, width):
-
     affine_matrix = np.array(
         [
             [1, 0, -left],
             [0, 1, -top],
         ],
-        dtype="float32",
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
     )
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
-    return expected_bboxes, (height, width)
+    spatial_size = (height, width)
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=spatial_size, affine_matrix=affine_matrix
+    )
+    return expected_bboxes, spatial_size
 
 
 def reference_inputs_crop_bounding_box():
@@ -1071,12 +1098,14 @@ def reference_inputs_pad_image_tensor():
     for image_loader, params in itertools.product(
         make_image_loaders(extra_dims=[()], dtypes=[torch.uint8]), _PAD_PARAMS
     ):
-        # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
         for fill in get_fills(
             num_channels=image_loader.num_channels,
             dtype=image_loader.dtype,
-            vector=params["padding_mode"] == "constant",
         ):
+            # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
+            if isinstance(fill, (list, tuple)):
+                continue
+
             yield ArgsKwargs(image_loader, fill=fill, **params)
 
 
@@ -1119,13 +1148,15 @@ def reference_pad_bounding_box(bounding_box, *, format, spatial_size, padding, p
             [1, 0, left],
             [0, 1, top],
         ],
-        dtype="float32",
+        dtype="float64" if bounding_box.dtype == torch.float64 else "float32",
     )
 
     height = spatial_size[0] + top + bottom
     width = spatial_size[1] + left + right
 
-    expected_bboxes = reference_affine_bounding_box_helper(bounding_box, format=format, affine_matrix=affine_matrix)
+    expected_bboxes = reference_affine_bounding_box_helper(
+        bounding_box, format=format, spatial_size=(height, width), affine_matrix=affine_matrix
+    )
     return expected_bboxes, (height, width)
 
 
@@ -1142,6 +1173,16 @@ def reference_inputs_pad_bounding_box():
         )
 
 
+def pad_xfail_jit_fill_condition(args_kwargs):
+    fill = args_kwargs.kwargs.get("fill")
+    if not isinstance(fill, (list, tuple)):
+        return False
+    elif isinstance(fill, tuple):
+        return True
+    else:  # isinstance(fill, list):
+        return all(isinstance(f, int) for f in fill)
+
+
 KERNEL_INFOS.extend(
     [
         KernelInfo(
@@ -1152,10 +1193,10 @@ KERNEL_INFOS.extend(
             float32_vs_uint8=float32_vs_uint8_fill_adapter,
             closeness_kwargs=float32_vs_uint8_pixel_difference(),
             test_marks=[
-                xfail_jit_tuple_instead_of_list("padding"),
-                xfail_jit_tuple_instead_of_list("fill"),
-                # TODO: check if this is a regression since it seems that should be supported if `int` is ok
-                xfail_jit_list_of_ints("fill"),
+                xfail_jit_python_scalar_arg("padding"),
+                xfail_jit(
+                    "F.pad only supports vector fills for list of floats", condition=pad_xfail_jit_fill_condition
+                ),
             ],
         ),
         KernelInfo(
@@ -1164,7 +1205,7 @@ KERNEL_INFOS.extend(
             reference_fn=reference_pad_bounding_box,
             reference_inputs_fn=reference_inputs_pad_bounding_box,
             test_marks=[
-                xfail_jit_tuple_instead_of_list("padding"),
+                xfail_jit_python_scalar_arg("padding"),
             ],
         ),
         KernelInfo(
@@ -1208,8 +1249,11 @@ def reference_inputs_perspective_image_tensor():
             F.InterpolationMode.BILINEAR,
         ],
     ):
-        # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
         for fill in get_fills(num_channels=image_loader.num_channels, dtype=image_loader.dtype):
+            # FIXME: PIL kernel doesn't support sequences of length 1 if the number of channels is larger. Shouldn't it?
+            if isinstance(fill, (list, tuple)):
+                continue
+
             yield ArgsKwargs(
                 image_loader,
                 startpoints=None,
@@ -1225,14 +1269,16 @@ def sample_inputs_perspective_bounding_box():
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
             startpoints=None,
             endpoints=None,
             coefficients=_PERSPECTIVE_COEFFS[0],
         )
 
     format = datapoints.BoundingBoxFormat.XYXY
+    loader = make_bounding_box_loader(format=format)
     yield ArgsKwargs(
-        make_bounding_box_loader(format=format), format=format, startpoints=_STARTPOINTS, endpoints=_ENDPOINTS
+        loader, format=format, spatial_size=loader.spatial_size, startpoints=_STARTPOINTS, endpoints=_ENDPOINTS
     )
 
 
@@ -1269,13 +1315,18 @@ KERNEL_INFOS.extend(
                 **pil_reference_pixel_difference(2, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
                 **float32_vs_uint8_pixel_difference(),
-                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
-                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-5, rtol=1e-5),
             },
+            test_marks=[xfail_jit_python_scalar_arg("fill")],
         ),
         KernelInfo(
             F.perspective_bounding_box,
             sample_inputs_fn=sample_inputs_perspective_bounding_box,
+            closeness_kwargs={
+                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-6, rtol=1e-6),
+                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-6, rtol=1e-6),
+            },
         ),
         KernelInfo(
             F.perspective_mask,
@@ -1292,8 +1343,8 @@ KERNEL_INFOS.extend(
             sample_inputs_fn=sample_inputs_perspective_video,
             closeness_kwargs={
                 **cuda_vs_cpu_pixel_difference(),
-                **scripted_vs_eager_double_pixel_difference("cpu", atol=1e-5, rtol=1e-5),
-                **scripted_vs_eager_double_pixel_difference("cuda", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cpu", atol=1e-5, rtol=1e-5),
+                **scripted_vs_eager_float64_tolerances("cuda", atol=1e-5, rtol=1e-5),
             },
         ),
     ]
@@ -1331,6 +1382,7 @@ def sample_inputs_elastic_bounding_box():
         yield ArgsKwargs(
             bounding_box_loader,
             format=bounding_box_loader.format,
+            spatial_size=bounding_box_loader.spatial_size,
             displacement=displacement,
         )
 
@@ -1358,6 +1410,7 @@ KERNEL_INFOS.extend(
                 **float32_vs_uint8_pixel_difference(6, mae=True),
                 **cuda_vs_cpu_pixel_difference(),
             },
+            test_marks=[xfail_jit_python_scalar_arg("fill")],
         ),
         KernelInfo(
             F.elastic_bounding_box,
