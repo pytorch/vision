@@ -1457,7 +1457,7 @@ class TestRandomIoUCrop:
         transform = transforms.RandomIoUCrop()
         with pytest.raises(
             TypeError,
-            match="requires input sample to contain Images or PIL Images, BoundingBoxes and Labels or OneHotLabels",
+            match="requires input sample to contain tensor or PIL images and bounding boxes",
         ):
             transform(torch.tensor(0))
 
@@ -1466,11 +1466,9 @@ class TestRandomIoUCrop:
 
         image = datapoints.Image(torch.rand(3, 32, 24))
         bboxes = make_bounding_box(format="XYXY", spatial_size=(32, 24), extra_dims=(6,))
-        label = proto_datapoints.Label(torch.randint(0, 10, size=(6,)))
-        ohe_label = proto_datapoints.OneHotLabel(torch.zeros(6, 10).scatter_(1, label.unsqueeze(1), 1))
         masks = make_detection_mask((32, 24), num_objects=6)
 
-        sample = [image, bboxes, label, ohe_label, masks]
+        sample = [image, bboxes, masks]
 
         fn = mocker.patch("torchvision.transforms.v2.functional.crop", side_effect=lambda x, **params: x)
         is_within_crop_area = torch.tensor([0, 1, 0, 1, 0, 1], dtype=torch.bool)
@@ -1496,17 +1494,7 @@ class TestRandomIoUCrop:
         assert isinstance(output_bboxes, datapoints.BoundingBox)
         assert len(output_bboxes) == expected_within_targets
 
-        # check labels
-        output_label = output[2]
-        assert isinstance(output_label, proto_datapoints.Label)
-        assert len(output_label) == expected_within_targets
-        torch.testing.assert_close(output_label, label[is_within_crop_area])
-
-        output_ohe_label = output[3]
-        assert isinstance(output_ohe_label, proto_datapoints.OneHotLabel)
-        torch.testing.assert_close(output_ohe_label, ohe_label[is_within_crop_area])
-
-        output_masks = output[4]
+        output_masks = output[2]
         assert isinstance(output_masks, datapoints.Mask)
         assert len(output_masks) == expected_within_targets
 

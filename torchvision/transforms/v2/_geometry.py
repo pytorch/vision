@@ -8,7 +8,6 @@ import torch
 
 from torchvision import datapoints, transforms as _transforms
 from torchvision.ops.boxes import box_iou
-from torchvision.prototype import datapoints as proto_datapoints
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
@@ -168,22 +167,22 @@ class FiveCrop(Transform):
     """
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], proto_datapoints.Label]):
+        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], int]):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
         ...         image_or_video = images_or_videos[0]
         ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
-        ...         labels = proto_datapoints.Label.wrap_like(labels, labels.repeat(batch_size))
+        ...         labels = torch.full((batch_size,), label, device=images_or_videos.device)
         ...         return images_or_videos, labels
         ...
         >>> image = datapoints.Image(torch.rand(3, 256, 256))
-        >>> label = proto_datapoints.Label(0)
-        >>> transform = transforms.Compose([transforms.FiveCrop(), BatchMultiCrop()])
+        >>> label = 3
+        >>> transform = transforms.Compose([transforms.FiveCrop(224), BatchMultiCrop()])
         >>> images, labels = transform(image, label)
         >>> images.shape
         torch.Size([5, 3, 224, 224])
-        >>> labels.shape
-        torch.Size([5])
+        >>> labels
+        tensor([3, 3, 3, 3, 3])
     """
 
     _v1_transform_cls = _transforms.FiveCrop
@@ -687,11 +686,10 @@ class RandomIoUCrop(Transform):
         if not (
             has_all(flat_inputs, datapoints.BoundingBox)
             and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
-            and has_any(flat_inputs, proto_datapoints.Label, proto_datapoints.OneHotLabel)
         ):
             raise TypeError(
-                f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
-                "BoundingBoxes and Labels or OneHotLabels. Sample can also contain Masks."
+                f"{type(self).__name__}() requires input sample to contain tensor or PIL images "
+                "and bounding boxes. Sample can also contain masks."
             )
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -723,6 +721,8 @@ class RandomIoUCrop(Transform):
                 if left == right or top == bottom:
                     continue
 
+                # FIXME: I think we can stop here?
+
                 # check for any valid boxes with centers within the crop area
                 xyxy_bboxes = F.convert_format_bounding_box(
                     bboxes.as_subclass(torch.Tensor), bboxes.format, datapoints.BoundingBoxFormat.XYXY
@@ -745,13 +745,12 @@ class RandomIoUCrop(Transform):
                 return dict(top=top, left=left, height=new_h, width=new_w, is_within_crop_area=is_within_crop_area)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # FIXME: refactor this to not remove anything
+
         if len(params) < 1:
             return inpt
 
         is_within_crop_area = params["is_within_crop_area"]
-
-        if isinstance(inpt, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
-            return inpt.wrap_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
