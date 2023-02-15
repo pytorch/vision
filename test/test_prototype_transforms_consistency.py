@@ -26,10 +26,11 @@ from prototype_common_utils import (
 from torch import nn
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
-from torchvision.prototype import datapoints, transforms as prototype_transforms
-from torchvision.prototype.transforms import functional as prototype_F
-from torchvision.prototype.transforms.functional import to_image_pil
-from torchvision.prototype.transforms.utils import query_spatial_size
+from torchvision import datapoints
+import torchvision.transforms.v2 as prototype_transforms
+from torchvision.transforms.v2 import functional as prototype_F
+from torchvision.transforms.v2.functional import to_image_pil
+from torchvision.transforms.v2.utils import query_spatial_size
 from torchvision.transforms import functional as legacy_F
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
