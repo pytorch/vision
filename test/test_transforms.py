@@ -1848,7 +1848,7 @@ def test_random_erasing(seed):
     random.seed(42)
     trial = 1000
     for _ in range(trial):
-        y, x, h, w, v = t.__class__.get_params(
+        y, x, h, w, v = t.get_params(
             img,
             t.scale,
             t.ratio,
@@ -1882,12 +1882,11 @@ def test_random_rotation():
     assert t.fill == defaultdict()
 
     t = transforms.RandomRotation(10)
-    # angle = t.get_params(t.degrees)
-    angle = t.__class__.get_params(t.degrees)
+    angle = t.get_params(t.degrees)
     assert angle > -10 and angle < 10
 
     t = transforms.RandomRotation((-10, 10))
-    angle = t.__class__.get_params(t.degrees)
+    angle = t.get_params(t.degrees)
     assert -10 < angle < 10
 
     # Checking if RandomRotation can be printed as string
