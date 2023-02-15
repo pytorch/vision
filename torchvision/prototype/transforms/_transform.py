@@ -108,9 +108,8 @@ class Transform(nn.Module):
 
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
         # This method is called by `__prepare_scriptable__` to instantiate the equivalent v1 transform from the current
-        # v2 transform instance. It does two things:
-        # 1. Extract all available public attributes that are specific to that transform and not `nn.Module` in general
-        # 2. If available handle the `fill` attribute for v1 compatibility (see below for details)
+        # v2 transform instance. It extracts all available public attributes that are specific to that transform and
+        # not `nn.Module` in general.
         # Overwrite this method on the v2 transform class if the above is not sufficient. For example, this might happen
         # if the v2 transform introduced new parameters that are not support by the v1 transform.
         common_attrs = nn.Module().__dict__.keys()
