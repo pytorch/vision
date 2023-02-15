@@ -95,9 +95,7 @@ class TestRotate:
             [
                 1,
             ],
-            [
-                2.0,
-            ],
+            (2.0,),
         ],
     )
     @pytest.mark.parametrize("fn", [F.rotate, scripted_rotate])
