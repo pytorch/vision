@@ -1049,7 +1049,7 @@ class TenCrop(torch.nn.Module):
 
     Example:
          >>> transform = Compose([
-         >>>    TenCrop(size), # this is a list of PIL Images
+         >>>    TenCrop(size), # this is a tuple of PIL Images
          >>>    Lambda(lambda crops: torch.stack([PILToTensor()(crop) for crop in crops])) # returns a 4D tensor
          >>> ])
          >>> #In your test loop you can do the following:
