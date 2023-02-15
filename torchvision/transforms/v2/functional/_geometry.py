@@ -2089,10 +2089,10 @@ def ten_crop(
         return ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
     elif isinstance(inpt, datapoints.Image):
         output = ten_crop_image_tensor(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)
-        return [datapoints.Image.wrap_like(inpt, item) for item in output]
+        return tuple(datapoints.Image.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
     elif isinstance(inpt, datapoints.Video):
         output = ten_crop_video(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)
-        return [datapoints.Video.wrap_like(inpt, item) for item in output]
+        return tuple(datapoints.Video.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
     elif isinstance(inpt, PIL.Image.Image):
         return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)
     else:
