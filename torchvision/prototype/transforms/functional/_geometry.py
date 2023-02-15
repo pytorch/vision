@@ -148,6 +148,11 @@ def _compute_resized_output_size(
 ) -> List[int]:
     if isinstance(size, int):
         size = [size]
+    elif max_size is not None and len(size) != 1:
+        raise ValueError(
+            "max_size should only be passed if size specifies the length of the smaller edge, "
+            "i.e. size should be an int or a sequence of length 1 in torchscript mode."
+        )
     return __compute_resized_output_size(spatial_size, size=size, max_size=max_size)
 
 
@@ -1533,9 +1538,20 @@ def elastic_image_tensor(
 
     device = image.device
     dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+
+    # Patch: elastic transform should support (cpu,f16) input
+    is_cpu_half = device.type == "cpu" and dtype == torch.float16
+    if is_cpu_half:
+        image = image.to(torch.float32)
+        dtype = torch.float32
+
     # We are aware that if input image dtype is uint8 and displacement is float64 then
     # displacement will be casted to float32 and all computations will be done with float32
     # We can fix this later if needed
+
+    expected_shape = (1,) + shape[-2:] + (2,)
+    if expected_shape != displacement.shape:
+        raise ValueError(f"Argument displacement shape should be {expected_shape}, but given {displacement.shape}")
 
     if ndim > 4:
         image = image.reshape((-1,) + shape[-3:])
@@ -1555,6 +1571,9 @@ def elastic_image_tensor(
 
     if needs_unsquash:
         output = output.reshape(shape)
+
+    if is_cpu_half:
+        output = output.to(torch.float16)
 
     return output
 
@@ -1670,6 +1689,9 @@ def elastic(
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(elastic)
+
+    if not isinstance(displacement, torch.Tensor):
+        raise TypeError("Argument displacement should be a Tensor")
 
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return elastic_image_tensor(inpt, displacement, interpolation=interpolation, fill=fill)
@@ -1959,8 +1981,6 @@ def five_crop(
     if not torch.jit.is_scripting():
         _log_api_usage_once(five_crop)
 
-    # TODO: consider breaking BC here to return List[datapoints.ImageTypeJIT/VideoTypeJIT] to align this op with
-    #  `ten_crop`
     if torch.jit.is_scripting() or is_simple_tensor(inpt):
         return five_crop_image_tensor(inpt, size)
     elif isinstance(inpt, datapoints.Image):
@@ -1978,40 +1998,90 @@ def five_crop(
         )
 
 
-def ten_crop_image_tensor(image: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
-    tl, tr, bl, br, center = five_crop_image_tensor(image, size)
+def ten_crop_image_tensor(
+    image: torch.Tensor, size: List[int], vertical_flip: bool = False
+) -> Tuple[
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+]:
+    non_flipped = five_crop_image_tensor(image, size)
 
     if vertical_flip:
         image = vertical_flip_image_tensor(image)
     else:
         image = horizontal_flip_image_tensor(image)
 
-    tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_tensor(image, size)
+    flipped = five_crop_image_tensor(image, size)
 
-    return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
+    return non_flipped + flipped
 
 
 @torch.jit.unused
-def ten_crop_image_pil(image: PIL.Image.Image, size: List[int], vertical_flip: bool = False) -> List[PIL.Image.Image]:
-    tl, tr, bl, br, center = five_crop_image_pil(image, size)
+def ten_crop_image_pil(
+    image: PIL.Image.Image, size: List[int], vertical_flip: bool = False
+) -> Tuple[
+    PIL.Image.Image,
+    PIL.Image.Image,
+    PIL.Image.Image,
+    PIL.Image.Image,
+    PIL.Image.Image,
+    PIL.Image.Image,
+    PIL.Image.Image,
+    PIL.Image.Image,
+    PIL.Image.Image,
+    PIL.Image.Image,
+]:
+    non_flipped = five_crop_image_pil(image, size)
 
     if vertical_flip:
         image = vertical_flip_image_pil(image)
     else:
         image = horizontal_flip_image_pil(image)
 
-    tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_pil(image, size)
+    flipped = five_crop_image_pil(image, size)
 
-    return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
+    return non_flipped + flipped
 
 
-def ten_crop_video(video: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
+def ten_crop_video(
+    video: torch.Tensor, size: List[int], vertical_flip: bool = False
+) -> Tuple[
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+]:
     return ten_crop_image_tensor(video, size, vertical_flip=vertical_flip)
 
 
 def ten_crop(
     inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], size: List[int], vertical_flip: bool = False
-) -> Union[List[datapoints.ImageTypeJIT], List[datapoints.VideoTypeJIT]]:
+) -> Tuple[
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+    ImageOrVideoTypeJIT,
+]:
     if not torch.jit.is_scripting():
         _log_api_usage_once(ten_crop)
 
@@ -2019,10 +2089,10 @@ def ten_crop(
         return ten_crop_image_tensor(inpt, size, vertical_flip=vertical_flip)
     elif isinstance(inpt, datapoints.Image):
         output = ten_crop_image_tensor(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)
-        return [datapoints.Image.wrap_like(inpt, item) for item in output]
+        return tuple(datapoints.Image.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
     elif isinstance(inpt, datapoints.Video):
         output = ten_crop_video(inpt.as_subclass(torch.Tensor), size, vertical_flip=vertical_flip)
-        return [datapoints.Video.wrap_like(inpt, item) for item in output]
+        return tuple(datapoints.Video.wrap_like(inpt, item) for item in output)  # type: ignore[return-value]
     elif isinstance(inpt, PIL.Image.Image):
         return ten_crop_image_pil(inpt, size, vertical_flip=vertical_flip)
     else:
