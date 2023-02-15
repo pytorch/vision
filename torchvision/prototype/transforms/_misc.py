@@ -1,7 +1,7 @@
 import collections
 import warnings
 from contextlib import suppress
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 
@@ -232,7 +232,11 @@ class SanitizeBoundingBoxes(Transform):
     # - small or degenerate bboxes based on min_size (this includes those where X2 <= X1 or Y2 <= Y1)
     # - boxes with any coordinate outside the range of the image (negative, or > spatial_size)
 
-    def __init__(self, min_size: float = 1.0, labels_getter="default") -> None:
+    def __init__(
+        self,
+        min_size: float = 1.0,
+        labels_getter: Union[Callable[[Any], Optional[torch.Tensor]], str, None] = "default",
+    ) -> None:
         super().__init__()
 
         if min_size < 1:
@@ -240,6 +244,7 @@ class SanitizeBoundingBoxes(Transform):
         self.min_size = min_size
 
         self.labels_getter = labels_getter
+        self._labels_getter: Optional[Callable[[Any], Optional[torch.Tensor]]]
         if labels_getter == "default":
             self._labels_getter = self._find_labels_default_heuristic
         elif callable(labels_getter):
@@ -255,7 +260,7 @@ class SanitizeBoundingBoxes(Transform):
             )
 
     @staticmethod
-    def _find_labels_default_heuristic(inputs):
+    def _find_labels_default_heuristic(inputs: Dict[str, Any]) -> Optional[torch.Tensor]:
         # Tries to find a "label" key, otherwise tries for the first key that contains "label" - case insensitive
         # Returns None if nothing is found
         candidate_key = None
@@ -301,12 +306,15 @@ class SanitizeBoundingBoxes(Transform):
                 f"Number of boxes (shape={boxes.shape}) and number of labels (shape={labels.shape}) do not match."
             )
 
-        boxes = F.convert_format_bounding_box(
-            boxes,
-            new_format=datapoints.BoundingBoxFormat.XYXY,
+        boxes = cast(
+            datapoints.BoundingBox,
+            F.convert_format_bounding_box(
+                boxes,
+                new_format=datapoints.BoundingBoxFormat.XYXY,
+            ),
         )
         ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
-        mask = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(axis=-1)
+        mask = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
         # TODO: Do we really need to check for out of bounds here? All
         # transforms should be clamping anyway, so this should never happen?
         image_h, image_w = boxes.spatial_size
