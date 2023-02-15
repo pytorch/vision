@@ -1,15 +1,14 @@
 import collections
 import warnings
 from contextlib import suppress
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Union
 
 import PIL.Image
 
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 
-from torchvision import transforms as _transforms
-from torchvision import datapoints
+from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
 from ._utils import _get_defaultdict, _setup_float_or_seq, _setup_size
@@ -177,54 +176,6 @@ class ToDtype(Transform):
         if dtype is None:
             return inpt
         return inpt.to(dtype=dtype)
-
-
-class PermuteDimensions(Transform):
-    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
-
-    def __init__(self, dims: Union[Sequence[int], Dict[Type, Optional[Sequence[int]]]]) -> None:
-        super().__init__()
-        if not isinstance(dims, dict):
-            dims = _get_defaultdict(dims)
-        if torch.Tensor in dims and any(cls in dims for cls in [datapoints.Image, datapoints.Video]):
-            warnings.warn(
-                "Got `dims` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
-                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
-                "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
-            )
-        self.dims = dims
-
-    def _transform(
-        self, inpt: Union[datapoints.TensorImageType, datapoints.TensorVideoType], params: Dict[str, Any]
-    ) -> torch.Tensor:
-        dims = self.dims[type(inpt)]
-        if dims is None:
-            return inpt.as_subclass(torch.Tensor)
-        return inpt.permute(*dims)
-
-
-class TransposeDimensions(Transform):
-    _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
-
-    def __init__(self, dims: Union[Tuple[int, int], Dict[Type, Optional[Tuple[int, int]]]]) -> None:
-        super().__init__()
-        if not isinstance(dims, dict):
-            dims = _get_defaultdict(dims)
-        if torch.Tensor in dims and any(cls in dims for cls in [datapoints.Image, datapoints.Video]):
-            warnings.warn(
-                "Got `dims` values for `torch.Tensor` and either `datapoints.Image` or `datapoints.Video`. "
-                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
-                "in case a `datapoints.Image` or `datapoints.Video` is present in the input."
-            )
-        self.dims = dims
-
-    def _transform(
-        self, inpt: Union[datapoints.TensorImageType, datapoints.TensorVideoType], params: Dict[str, Any]
-    ) -> torch.Tensor:
-        dims = self.dims[type(inpt)]
-        if dims is None:
-            return inpt.as_subclass(torch.Tensor)
-        return inpt.transpose(*dims)
 
 
 class SanitizeBoundingBoxes(Transform):

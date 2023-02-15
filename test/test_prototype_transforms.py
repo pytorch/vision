@@ -10,6 +10,9 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch
+import torchvision.prototype.datapoints as proto_datapoints
+import torchvision.prototype.transforms as proto_transforms
+import torchvision.transforms.v2 as transforms
 
 import torchvision.transforms.v2.utils
 from common_utils import cpu_and_gpu
@@ -28,14 +31,11 @@ from prototype_common_utils import (
     make_videos,
 )
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.ops.boxes import box_iou
 from torchvision import datapoints
-import torchvision.prototype.datapoints as proto_datapoints
-import torchvision.prototype.transforms as proto_transforms
-import torchvision.transforms.v2 as transforms
+from torchvision.ops.boxes import box_iou
+from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
-from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
 
@@ -2051,7 +2051,7 @@ class TestPermuteDimensions:
             int=0,
         )
 
-        transform = transforms.PermuteDimensions(dims)
+        transform = proto_transforms.PermuteDimensions(dims)
         transformed_sample = transform(sample)
 
         for key, value in sample.items():
@@ -2070,14 +2070,14 @@ class TestPermuteDimensions:
     @pytest.mark.filterwarnings("error")
     def test_plain_tensor_call(self):
         tensor = torch.empty((2, 3, 4))
-        transform = transforms.PermuteDimensions(dims=(1, 2, 0))
+        transform = proto_transforms.PermuteDimensions(dims=(1, 2, 0))
 
         assert transform(tensor).shape == (3, 4, 2)
 
     @pytest.mark.parametrize("other_type", [datapoints.Image, datapoints.Video])
     def test_plain_tensor_warning(self, other_type):
         with pytest.warns(UserWarning, match=re.escape("`torch.Tensor` will *not* be transformed")):
-            transforms.PermuteDimensions(dims={torch.Tensor: (0, 1), other_type: (1, 0)})
+            proto_transforms.PermuteDimensions(dims={torch.Tensor: (0, 1), other_type: (1, 0)})
 
 
 class TestTransposeDimensions:
@@ -2097,7 +2097,7 @@ class TestTransposeDimensions:
             int=0,
         )
 
-        transform = transforms.TransposeDimensions(dims)
+        transform = proto_transforms.TransposeDimensions(dims)
         transformed_sample = transform(sample)
 
         for key, value in sample.items():
@@ -2117,14 +2117,14 @@ class TestTransposeDimensions:
     @pytest.mark.filterwarnings("error")
     def test_plain_tensor_call(self):
         tensor = torch.empty((2, 3, 4))
-        transform = transforms.TransposeDimensions(dims=(0, 2))
+        transform = proto_transforms.TransposeDimensions(dims=(0, 2))
 
         assert transform(tensor).shape == (4, 3, 2)
 
     @pytest.mark.parametrize("other_type", [datapoints.Image, datapoints.Video])
     def test_plain_tensor_warning(self, other_type):
         with pytest.warns(UserWarning, match=re.escape("`torch.Tensor` will *not* be transformed")):
-            transforms.TransposeDimensions(dims={torch.Tensor: (0, 1), other_type: (1, 0)})
+            proto_transforms.TransposeDimensions(dims={torch.Tensor: (0, 1), other_type: (1, 0)})
 
 
 class TestUniformTemporalSubsample:

@@ -7,6 +7,7 @@ from ._presets import StereoMatching  # usort: skip
 
 # from ._augment import RandomCutmix, RandomErasing, RandomMixup, SimpleCopyPaste
 from ._augment import RandomCutmix, RandomMixup, SimpleCopyPaste
+
 # from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
 # from ._color import (
 #     ColorJitter,
@@ -43,17 +44,8 @@ from ._augment import RandomCutmix, RandomMixup, SimpleCopyPaste
 #     TenCrop,
 # )
 # from ._meta import ClampBoundingBox, ConvertBoundingBoxFormat, ConvertDtype, ConvertImageDtype
-# from ._misc import (
-#     GaussianBlur,
-#     Identity,
-#     Lambda,
-#     LinearTransformation,
-#     Normalize,
-#     PermuteDimensions,
-#     SanitizeBoundingBoxes,
-#     ToDtype,
-#     TransposeDimensions,
-# )
+from ._misc import PermuteDimensions, TransposeDimensions
+
 # from ._temporal import UniformTemporalSubsample
 # from ._type_conversion import LabelToOneHot, PILToTensor, ToImagePIL, ToImageTensor, ToPILImage
 from ._type_conversion import LabelToOneHot
