@@ -245,12 +245,17 @@ def _clamp_bounding_box(
 ) -> torch.Tensor:
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
+    in_dtype = bounding_box.dtype
+    bounding_box = bounding_box.clone() if bounding_box.is_floating_point() else bounding_box.float()
     xyxy_boxes = convert_format_bounding_box(
-        bounding_box.clone(), old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+        bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
     )
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
-    return convert_format_bounding_box(xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True)
+    out_boxes = convert_format_bounding_box(
+        xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True
+    )
+    return out_boxes.to(in_dtype)
 
 
 def clamp_bounding_box(
