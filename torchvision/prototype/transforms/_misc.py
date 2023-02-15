@@ -293,10 +293,10 @@ class SanitizeBoundingBoxes(Transform):
         # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
         boxes = query_bounding_box(flat_inputs)
 
-        if boxes.ndim > 3 or (boxes.ndim == 3 and boxes.shape[0] != 1):
-            raise ValueError(f"boxes must be of shape (num_boxes, 4) or (1, num_boxes, 4), got {boxes.shape}")
+        if boxes.ndim != 2:
+            raise ValueError(f"boxes must be of shape (num_boxes, 4), got {boxes.shape}")
 
-        if labels is not None and boxes.shape[:-1] != labels.shape:
+        if labels is not None and boxes.shape[0] != labels.shape[0]:
             raise ValueError(
                 f"Number of boxes (shape={boxes.shape}) and number of labels (shape={labels.shape}) do not match."
             )
@@ -305,13 +305,13 @@ class SanitizeBoundingBoxes(Transform):
             boxes,
             new_format=datapoints.BoundingBoxFormat.XYXY,
         )
-        ws, hs = boxes[..., 2] - boxes[..., 0], boxes[..., 3] - boxes[..., 1]
+        ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
         mask = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(axis=-1)
         # TODO: Do we really need to check for out of bounds here? All
         # transforms should be clamping anyway, so this should never happen?
         image_h, image_w = boxes.spatial_size
-        mask &= (boxes[..., 0] <= image_w) & (boxes[..., 2] <= image_w)
-        mask &= (boxes[..., 1] <= image_h) & (boxes[..., 3] <= image_h)
+        mask &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
+        mask &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
 
         params = dict(mask=mask, labels=labels)
         flat_outputs = [
@@ -325,12 +325,7 @@ class SanitizeBoundingBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
 
-        if inpt is None or not (inpt is params["labels"] or isinstance(inpt, datapoints.BoundingBox)):
-            return inpt
+        if inpt is not None and (inpt is params["labels"] or isinstance(inpt, datapoints.BoundingBox)):
+            inpt = inpt[params["mask"]]
 
-        out = inpt[params["mask"]]
-        if inpt.ndim != out.ndim:
-            # Add extra batch dim
-            out = out[None]
-
-        return out
+        return inpt

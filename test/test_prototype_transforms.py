@@ -2362,8 +2362,7 @@ def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
 @pytest.mark.parametrize(
     "labels_getter", ("default", "labels", lambda inputs: inputs["labels"], None, lambda inputs: None)
 )
-@pytest.mark.parametrize("batch", (True, False))
-def test_sanitize_bounding_boxes(min_size, labels_getter, batch):
+def test_sanitize_bounding_boxes(min_size, labels_getter):
     H, W = 256, 128
 
     boxes_and_validity = [
@@ -2390,11 +2389,6 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, batch):
 
     boxes = torch.tensor(boxes)
     labels = torch.arange(boxes.shape[-2])
-
-    if batch:
-        boxes = boxes[None]
-        labels = labels[None]
-        valid_indices = [valid_indices]
 
     boxes = datapoints.BoundingBox(
         boxes,
