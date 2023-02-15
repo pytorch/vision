@@ -1548,8 +1548,7 @@ def test_ten_crop(should_vflip, single_dim):
         expected_output += five_crop(hflipped_img)
 
     assert len(results) == 10
-    # TODO: figure out what's going on
-    # assert results == expected_output
+    assert results == expected_output
 
 
 @pytest.mark.parametrize("single_dim", [True, False])
@@ -1799,9 +1798,7 @@ def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
 
 
 def test_color_jitter():
-    # TODO: this is a BC-break, ints aren't allowed anymore
-    # color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
-    color_jitter = transforms.ColorJitter(2., 2., 2., 0.1)
+    color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
 
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -2033,7 +2030,6 @@ class TestAffine:
         return input_img
 
     def test_affine_translate_seq(self, input_img):
-        # TODO: LOL, wait, we support np arrays???? (see input_img fixture above)
         input_img = torch.randint(0, 256, size=(224, 224), dtype=torch.uint8)
         with pytest.raises(TypeError, match=r"Argument translate should be a sequence"):
             F.affine(input_img, 10, translate=0, scale=1, shear=1)
@@ -2220,9 +2216,7 @@ def test_random_affine():
 
     t = transforms.RandomAffine(10, translate=[0.5, 0.3], scale=[0.7, 1.3], shear=[-10, 10, 20, 40])
     for _ in range(100):
-        angle, translations, scale, shear = t.get_params(
-            t.degrees, t.translate, t.scale, t.shear, img_size=img.size
-        )
+        angle, translations, scale, shear = t.get_params(t.degrees, t.translate, t.scale, t.shear, img_size=img.size)
         assert -10 < angle < 10
         assert -img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5
         assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5
