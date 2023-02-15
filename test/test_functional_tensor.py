@@ -147,10 +147,9 @@ class TestRotate:
 
     def test_rotate_interpolation_type(self):
         tensor, _ = _create_data(26, 26)
-        # TODO: Waiting on https://github.com/pytorch/vision/pull/7248
-        # res1 = F.rotate(tensor, 45, interpolation=PIL.Image.BILINEAR)
+        res1 = F.rotate(tensor, 45, interpolation=PIL.Image.BILINEAR)
         res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
-        # assert_equal(res1, res2)
+        assert_equal(res1, res2)
 
 
 class TestAffine:
@@ -362,10 +361,9 @@ class TestAffine:
     def test_interpolation_type(self, device):
         tensor, pil_img = _create_data(26, 26, device=device)
 
-        # TODO Waiting on https://github.com/pytorch/vision/pull/7248
-        # res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=PIL.Image.BILINEAR)
+        res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=PIL.Image.BILINEAR)
         res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
-        # assert_equal(res1, res2)
+        assert_equal(res1, res2)
 
 
 def _get_data_dims_and_points_for_perspective():
@@ -470,10 +468,9 @@ def test_perspective_interpolation_type():
     epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
     tensor = torch.randint(0, 256, (3, 26, 26))
 
-    # TODO Waiting on https://github.com/pytorch/vision/pull/7248
-    # res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=PIL.Image.BILINEAR)
+    res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=PIL.Image.BILINEAR)
     res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
-    # assert_equal(res1, res2)
+    assert_equal(res1, res2)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -547,16 +544,14 @@ def test_resize_asserts(device):
 
     tensor, pil_img = _create_data(26, 36, device=device)
 
-    # TODO Waiting on https://github.com/pytorch/vision/pull/7248
-    # res1 = F.resize(tensor, size=32, interpolation=PIL.Image.BILINEAR)
+    res1 = F.resize(tensor, size=32, interpolation=PIL.Image.BILINEAR)
     res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
-    # assert_equal(res1, res2)
+    assert_equal(res1, res2)
 
     for img in (tensor, pil_img):
         exp_msg = "max_size should only be passed if size specifies the length of the smaller edge"
-        # TODO: is this a BC break or something we handle smoothly now?
-        # with pytest.raises(ValueError, match=exp_msg):
-        #     F.resize(img, size=(32, 34), max_size=35)
+        with pytest.raises(ValueError, match=exp_msg):
+            F.resize(img, size=(32, 34), max_size=35)
         with pytest.raises(ValueError, match="max_size = 32 must be strictly greater"):
             F.resize(img, size=32, max_size=32)
 
