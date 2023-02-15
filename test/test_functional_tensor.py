@@ -1327,15 +1327,15 @@ def test_elastic_transform_asserts():
     # TODO: passing None currently fails with:
     # grid = _create_identity_grid((image_height, image_width), device=device).add_(displacement.to(device))
     # AttributeError: 'NoneType' object has no attribute 'to'
-    # with pytest.raises(TypeError, match="Argument displacement should be a Tensor"):
-    #     _ = F.elastic_transform(img_tensor, displacement=None)
+    with pytest.raises(TypeError, match="Argument displacement should be a Tensor"):
+        _ = F.elastic_transform(img_tensor, displacement=None)
 
     with pytest.raises(TypeError, match="Input can either be"):
         _ = F.elastic_transform("abc", displacement=torch.rand(1))
 
     # TODO: this doesnt raise
-    # with pytest.raises(ValueError, match="Argument displacement shape should"):
-    #     _ = F.elastic_transform(img_tensor, displacement=torch.rand(1, 2))
+    with pytest.raises(ValueError, match="Argument displacement shape should"):
+        _ = F.elastic_transform(img_tensor, displacement=torch.rand(1, 2))
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -1358,7 +1358,6 @@ def test_elastic_transform_asserts():
 # One thing is clear is that float16 is clearly not supported anymore. But there
 # are other underlying issues that I don't understand yet.
 def test_elastic_transform_consistency(device, interpolation, dt, fill):
-    return  # FIXME!!!!!!
     script_elastic_transform = torch.jit.script(F.elastic_transform)
     img_tensor, _ = _create_data(32, 34, device=device)
     # As there is no PIL implementation for elastic_transform,
