@@ -1223,7 +1223,7 @@ class TestRefSegTransforms:
         self.check(t, t_ref, data_kwargs)
 
     def check_resize(self, mocker, t_ref, t):
-        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        mock = mocker.patch("torchvision.transforms.v2._geometry.F.resize")
         mock_ref = mocker.patch("torchvision.transforms.functional.resize")
 
         for dp, dp_ref in self.make_datapoints():
@@ -1266,7 +1266,7 @@ class TestRefSegTransforms:
         # normally
         t = prototype_transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
         mocker.patch(
-            "torchvision.prototype.transforms._geometry.torch.randint",
+            "torchvision.transforms.v2._geometry.torch.randint",
             new=patched_randint,
         )
 

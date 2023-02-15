@@ -31,6 +31,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.ops.boxes import box_iou
 from torchvision import datapoints
 import torchvision.prototype.datapoints as proto_datapoints
+import torchvision.prototype.transforms as proto_transforms
 import torchvision.transforms.v2 as transforms
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
@@ -283,8 +284,8 @@ class TestSmoke:
                 ],
             )
             for transform in [
-                transforms.RandomMixup(alpha=1.0),
-                transforms.RandomCutmix(alpha=1.0),
+                proto_transforms.RandomMixup(alpha=1.0),
+                proto_transforms.RandomCutmix(alpha=1.0),
             ]
         ]
     )
@@ -1615,7 +1616,7 @@ class TestSimpleCopyPaste:
         return mocker.MagicMock(spec=image_type)
 
     def test__extract_image_targets_assertion(self, mocker):
-        transform = transforms.SimpleCopyPaste()
+        transform = proto_transforms.SimpleCopyPaste()
 
         flat_sample = [
             # images, batch size = 2
@@ -1635,7 +1636,7 @@ class TestSimpleCopyPaste:
     @pytest.mark.parametrize("image_type", [datapoints.Image, PIL.Image.Image, torch.Tensor])
     @pytest.mark.parametrize("label_type", [proto_datapoints.Label, proto_datapoints.OneHotLabel])
     def test__extract_image_targets(self, image_type, label_type, mocker):
-        transform = transforms.SimpleCopyPaste()
+        transform = proto_transforms.SimpleCopyPaste()
 
         flat_sample = [
             # images, batch size = 2
@@ -1706,7 +1707,7 @@ class TestSimpleCopyPaste:
             "labels": label_type(paste_labels),
         }
 
-        transform = transforms.SimpleCopyPaste()
+        transform = proto_transforms.SimpleCopyPaste()
         random_selection = torch.tensor([0, 1])
         output_image, output_target = transform._copy_paste(
             image, target, paste_image, paste_target, random_selection, blending, resize_interpolation, antialias
@@ -1925,7 +1926,7 @@ class TestLabelToOneHot:
     def test__transform(self):
         categories = ["apple", "pear", "pineapple"]
         labels = proto_datapoints.Label(torch.tensor([0, 1, 2, 1]), categories=categories)
-        transform = transforms.LabelToOneHot()
+        transform = proto_transforms.LabelToOneHot()
         ohe_labels = transform(labels)
         assert isinstance(ohe_labels, proto_datapoints.OneHotLabel)
         assert ohe_labels.shape == (4, 3)
