@@ -806,6 +806,11 @@ class TestContainerTransforms:
 
         check_call_consistency(prototype_transform, legacy_transform)
 
+        if sequence_type is nn.ModuleList:
+            # quick and dirty test that it is jit-scriptable
+            scripted = torch.jit.script(prototype_transform)
+            scripted(torch.rand(1, 3, 300, 300))
+
     # We can't test other values for `p` since the random parameter generation is different
     @pytest.mark.parametrize("probabilities", [(0, 1), (1, 0)])
     def test_random_choice(self, probabilities):
