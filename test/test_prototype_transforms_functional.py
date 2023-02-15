@@ -25,7 +25,7 @@ from torch.utils._pytree import tree_map
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import functional as F
 from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
-from torchvision.prototype.transforms.functional._meta import convert_format_bounding_box
+from torchvision.prototype.transforms.functional._meta import clamp_bounding_box, convert_format_bounding_box
 from torchvision.transforms.functional import _get_perspective_coeffs
 
 
@@ -257,16 +257,17 @@ class TestKernels:
     @reference_inputs
     def test_against_reference(self, test_id, info, args_kwargs):
         (input, *other_args), kwargs = args_kwargs.load("cpu")
-        input = input.as_subclass(torch.Tensor)
 
-        actual = info.kernel(input, *other_args, **kwargs)
+        actual = info.kernel(input.as_subclass(torch.Tensor), *other_args, **kwargs)
+        # We intnetionally don't unwrap the input of the reference function in order for it to have access to all
+        # metadata regardless of whether the kernel takes it explicitly or not
         expected = info.reference_fn(input, *other_args, **kwargs)
 
         assert_close(
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(input, *other_args, **kwargs),
         )
 
     @make_info_args_kwargs_parametrization(
@@ -682,6 +683,10 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         (48.56528888843238, 9.611532109828834, 53.35347829361575, 14.39972151501221),
     ]
 
+    expected_bboxes = clamp_bounding_box(
+        datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
+    ).tolist()
+
     output_boxes = F.affine_bounding_box(
         in_boxes,
         format=format,
@@ -762,7 +767,8 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_format_bounding_box(out_bbox, new_format=bbox.format), (height, width)
+        out_bbox = clamp_bounding_box(convert_format_bounding_box(out_bbox, new_format=bbox.format))
+        return out_bbox, (height, width)
 
     spatial_size = (32, 38)
 
@@ -839,6 +845,9 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
             [69.27564928, 12.39339828, 74.93250353, 18.05025253],
             [18.36396103, 1.07968978, 46.64823228, 29.36396103],
         ]
+        expected_bboxes = clamp_bounding_box(
+            datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
+        ).tolist()
 
     output_boxes, _ = F.rotate_bounding_box(
         in_boxes,
@@ -904,6 +913,10 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
     in_boxes = torch.tensor(in_boxes, device=device)
     if format != datapoints.BoundingBoxFormat.XYXY:
         in_boxes = convert_format_bounding_box(in_boxes, datapoints.BoundingBoxFormat.XYXY, format)
+
+    expected_bboxes = clamp_bounding_box(
+        datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
+    ).tolist()
 
     output_boxes, output_spatial_size = F.crop_bounding_box(
         in_boxes,
@@ -1121,7 +1134,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_format_bounding_box(out_bbox, new_format=bbox.format)
+        return clamp_bounding_box(convert_format_bounding_box(out_bbox, new_format=bbox.format))
 
     spatial_size = (32, 38)
 
@@ -1134,6 +1147,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         output_bboxes = F.perspective_bounding_box(
             bboxes.as_subclass(torch.Tensor),
             format=bboxes.format,
+            spatial_size=bboxes.spatial_size,
             startpoints=None,
             endpoints=None,
             coefficients=pcoeffs,
@@ -1178,6 +1192,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         ]
         out_bbox = torch.tensor(out_bbox)
         out_bbox = convert_format_bounding_box(out_bbox, datapoints.BoundingBoxFormat.XYWH, format_)
+        out_bbox = clamp_bounding_box(out_bbox, format=format_, spatial_size=output_size)
         return out_bbox.to(dtype=dtype, device=bbox.device)
 
     for bboxes in make_bounding_boxes(extra_dims=((4,),)):
@@ -1201,7 +1216,8 @@ def test_correctness_center_crop_bounding_box(device, output_size):
             expected_bboxes = torch.stack(expected_bboxes)
         else:
             expected_bboxes = expected_bboxes[0]
-        torch.testing.assert_close(output_boxes, expected_bboxes)
+
+        torch.testing.assert_close(output_boxes, expected_bboxes, atol=1, rtol=0)
         torch.testing.assert_close(output_spatial_size, output_size)
 
 

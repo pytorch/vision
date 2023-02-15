@@ -1,7 +1,6 @@
 import os
 from typing import Any, Callable, List, Optional, Tuple
 
-import torch
 import torch.utils.data as data
 
 from ..utils import _log_api_usage_once
