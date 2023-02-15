@@ -225,7 +225,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+9a97e2c ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+f695edc ) &#x25BC</a>
     </div>
     
 
@@ -375,7 +375,7 @@ made. If provided a sequence of length 1, it will be interpreted as (size[0], si
 </dl>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">transform</span> <span class="o">=</span> <span class="n">Compose</span><span class="p">([</span>
-<span class="gp">&gt;&gt;&gt; </span>   <span class="n">TenCrop</span><span class="p">(</span><span class="n">size</span><span class="p">),</span> <span class="c1"># this is a list of PIL Images</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="n">TenCrop</span><span class="p">(</span><span class="n">size</span><span class="p">),</span> <span class="c1"># this is a tuple of PIL Images</span>
 <span class="gp">&gt;&gt;&gt; </span>   <span class="n">Lambda</span><span class="p">(</span><span class="k">lambda</span> <span class="n">crops</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">PILToTensor</span><span class="p">()(</span><span class="n">crop</span><span class="p">)</span> <span class="k">for</span> <span class="n">crop</span> <span class="ow">in</span> <span class="n">crops</span><span class="p">]))</span> <span class="c1"># returns a 4D tensor</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1">#In your test loop you can do the following:</span>
