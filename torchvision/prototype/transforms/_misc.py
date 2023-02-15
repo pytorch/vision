@@ -1,3 +1,4 @@
+import collections
 import warnings
 from contextlib import suppress
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
@@ -274,7 +275,7 @@ class SanitizeBoundingBoxes(Transform):
     def forward(self, *inputs: Any) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
 
-        if isinstance(self.labels, str) and not isinstance(inputs, dict):
+        if isinstance(self.labels, str) and not isinstance(inputs, collections.abc.Mapping):
             raise ValueError(
                 f"If labels is a str or 'default' (got {self.labels}), then the input to forward() must be a dict. "
                 f"Got {type(inputs)} instead"
@@ -289,25 +290,27 @@ class SanitizeBoundingBoxes(Transform):
         # should we just enforce it for all transforms?? What are the benefits of *not* enforcing this?
         boxes = query_bounding_box(flat_inputs)
 
-        if boxes.shape[-2] != labels.shape[0]:
+        if boxes.ndim > 3 or (boxes.ndim == 3 and boxes.shape[0] != 1):
+            raise ValueError(f"boxes must be of shape (num_boxes, 4) or (1, num_boxes, 4), got {boxes.shape}")
+
+        if boxes.shape[:-1] != labels.shape:
             raise ValueError(
-                f"Number of boxes ({boxes.shape[-2]}) and number of labels ({labels.shape[0]}) do not match."
+                f"Number of boxes (shape={boxes.shape}) and number of labels (shape={labels.shape}) do not match."
             )
 
         boxes = F.convert_format_bounding_box(
             boxes,
             new_format=datapoints.BoundingBoxFormat.XYXY,
         )
-        ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
-        keep = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(axis=1)
+        ws, hs = boxes[..., 2] - boxes[..., 0], boxes[..., 3] - boxes[..., 1]
+        mask = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(axis=-1)
         # TODO: Do we really need to check for out of bounds here? All
         # transforms should be clamping anyway, so this should never happen?
         image_h, image_w = boxes.spatial_size
-        keep &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
-        keep &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
-        valid_indices = torch.where(keep)[0]
+        mask &= (boxes[..., 0] <= image_w) & (boxes[..., 2] <= image_w)
+        mask &= (boxes[..., 1] <= image_h) & (boxes[..., 3] <= image_h)
 
-        params = dict(valid_indices=valid_indices, labels=labels)
+        params = dict(mask=mask, labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
             # _transform() will only care about BoundingBoxes and the labels
@@ -319,7 +322,12 @@ class SanitizeBoundingBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
 
-        if inpt is params["labels"] or isinstance(inpt, datapoints.BoundingBox):
-            inpt = inpt[params["valid_indices"]]
+        if not (inpt is params["labels"] or isinstance(inpt, datapoints.BoundingBox)):
+            return inpt
 
-        return inpt
+        out = inpt[params["mask"]]
+        if inpt.ndim != out.ndim:
+            # Add extra batch dim
+            out = out[None]
+
+        return out

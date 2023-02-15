@@ -2360,8 +2360,8 @@ def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
 
 @pytest.mark.parametrize("min_size", (1, 10))
 @pytest.mark.parametrize("labels_param", ("default", "labels", lambda inputs: inputs["labels"]))
-def test_sanitize_bounding_boxes(min_size, labels_param):
-
+@pytest.mark.parametrize("batch", (True, False))
+def test_sanitize_bounding_boxes(min_size, labels_param, batch):
     H, W = 256, 128
 
     boxes_and_validity = [
@@ -2386,6 +2386,14 @@ def test_sanitize_bounding_boxes(min_size, labels_param):
     boxes, is_valid_mask = zip(*boxes_and_validity)
     valid_indices = [i for (i, is_valid) in enumerate(is_valid_mask) if is_valid]
 
+    boxes = torch.tensor(boxes)
+    labels = torch.arange(boxes.shape[-2])
+
+    if batch:
+        boxes = boxes[None]
+        labels = labels[None]
+        valid_indices = [valid_indices]
+
     boxes = datapoints.BoundingBox(
         boxes,
         format=datapoints.BoundingBoxFormat.XYXY,
@@ -2394,7 +2402,7 @@ def test_sanitize_bounding_boxes(min_size, labels_param):
 
     sample = {
         "image": torch.randint(0, 256, size=(1, 3, H, W), dtype=torch.uint8),
-        "labels": torch.arange(boxes.shape[0]),
+        "labels": labels,
         "boxes": boxes,
         "whatever": torch.rand(10),
     }
@@ -2403,10 +2411,9 @@ def test_sanitize_bounding_boxes(min_size, labels_param):
 
     assert out["image"] is sample["image"]
     assert out["whatever"] is sample["whatever"]
-    assert type(out["labels"]) is type(sample["labels"])
+    assert isinstance(out["labels"], torch.Tensor)
 
-    out["labels"] = torch.tensor(out["labels"])
-    assert out["boxes"].shape[0] == out["labels"].shape[0]
+    assert out["boxes"].shape[:-1] == out["labels"].shape
 
     # This works because we conveniently set labels to arange(num_boxes)
     assert out["labels"].tolist() == valid_indices
@@ -2446,4 +2453,16 @@ def test_sanitize_bounding_boxes_errors():
 
     with pytest.raises(ValueError, match="Number of boxes"):
         different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
+        transforms.SanitizeBoundingBoxes()(different_sizes)
+
+    with pytest.raises(ValueError, match="boxes must be of shape"):
+        bad_bbox = datapoints.BoundingBox(  # batch with 2 elements
+            [
+                [[0, 0, 10, 10]],
+                [[0, 0, 10, 10]],
+            ],
+            format=datapoints.BoundingBoxFormat.XYXY,
+            spatial_size=(20, 20),
+        )
+        different_sizes = {"bbox": bad_bbox, "labels": torch.arange(bad_bbox.shape[0])}
         transforms.SanitizeBoundingBoxes()(different_sizes)
