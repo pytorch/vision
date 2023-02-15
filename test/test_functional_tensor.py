@@ -1324,16 +1324,12 @@ def test_ten_crop(device):
 
 def test_elastic_transform_asserts():
     img_tensor = torch.rand(1, 3, 32, 24)
-    # TODO: passing None currently fails with:
-    # grid = _create_identity_grid((image_height, image_width), device=device).add_(displacement.to(device))
-    # AttributeError: 'NoneType' object has no attribute 'to'
     with pytest.raises(TypeError, match="Argument displacement should be a Tensor"):
         _ = F.elastic_transform(img_tensor, displacement=None)
 
     with pytest.raises(TypeError, match="Input can either be"):
         _ = F.elastic_transform("abc", displacement=torch.rand(1))
 
-    # TODO: this doesnt raise
     with pytest.raises(ValueError, match="Argument displacement shape should"):
         _ = F.elastic_transform(img_tensor, displacement=torch.rand(1, 2))
 
@@ -1345,18 +1341,6 @@ def test_elastic_transform_asserts():
     "fill",
     [None, [255, 255, 255], (2.0,)],
 )
-# TODO: This one is completly broken and mostly fails with:
-#   File "/home/nicolashug/dev/vision/torchvision/prototype/transforms/functional/_geometry.py", line 420, in _apply_grid_transform
-#     float_img = grid_sample(float_img, grid, mode=mode, padding_mode="zeros", align_corners=False)
-#   File "/home/nicolashug/.miniconda3/envs/pt/lib/python3.9/site-packages/torch/nn/functional.py", line 4243, in grid_sample
-#     return torch.grid_sampler(input, grid, mode_enum, padding_mode_enum, align_corners)
-# RuntimeError: expected scalar type Double but found Float
-# TODO: EDIT This is still failing!
-
-# I couldn't make it work even when just setting dt to float64 and fixing the
-# fill param as for the other tests.
-# One thing is clear is that float16 is clearly not supported anymore. But there
-# are other underlying issues that I don't understand yet.
 def test_elastic_transform_consistency(device, interpolation, dt, fill):
     script_elastic_transform = torch.jit.script(F.elastic_transform)
     img_tensor, _ = _create_data(32, 34, device=device)
