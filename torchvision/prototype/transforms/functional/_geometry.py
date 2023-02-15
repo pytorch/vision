@@ -183,7 +183,10 @@ def resize_image_tensor(
         image = image.reshape(-1, num_channels, old_height, old_width)
 
         dtype = image.dtype
-        need_cast = dtype not in (torch.float32, torch.float64)
+        acceptable_dtypes = [torch.float32, torch.float64]
+        if interpolation.value in ["nearest", "bilinear"]:
+            acceptable_dtypes.append(torch.uint8)
+        need_cast = dtype not in acceptable_dtypes
         if need_cast:
             image = image.to(dtype=torch.float32)
 
