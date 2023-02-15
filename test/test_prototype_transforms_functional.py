@@ -11,7 +11,7 @@ import pytest
 
 import torch
 
-import torchvision.prototype.transforms.utils
+import torchvision.transforms.v2.utils
 from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
 from prototype_common_utils import (
     assert_close,
@@ -22,10 +22,10 @@ from prototype_common_utils import (
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
 from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torch.utils._pytree import tree_map
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F
-from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
-from torchvision.prototype.transforms.functional._meta import clamp_bounding_box, convert_format_bounding_box
+from torchvision import datapoints
+from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2.functional._geometry import _center_crop_compute_padding
+from torchvision.transforms.v2.functional._meta import clamp_bounding_box, convert_format_bounding_box
 from torchvision.transforms.functional import _get_perspective_coeffs
 
 

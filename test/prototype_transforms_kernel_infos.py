@@ -8,7 +8,7 @@ import PIL.Image
 import pytest
 import torch.testing
 import torchvision.ops
-import torchvision.prototype.transforms.functional as F
+import torchvision.transforms.v2.functional as F
 from datasets_utils import combinations_grid
 from prototype_common_utils import (
     ArgsKwargs,
@@ -28,7 +28,7 @@ from prototype_common_utils import (
     TestMark,
 )
 from torch.utils._pytree import tree_map
-from torchvision.prototype import datapoints
+from torchvision import datapoints
 from torchvision.transforms.functional_tensor import _max_value as get_max_value, _parse_pad_padding
 
 __all__ = ["KernelInfo", "KERNEL_INFOS"]
