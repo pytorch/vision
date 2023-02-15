@@ -27,6 +27,7 @@ from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.functional._geometry import _center_crop_compute_padding
 from torchvision.transforms.v2.functional._meta import clamp_bounding_box, convert_format_bounding_box
 from torchvision.transforms.functional import _get_perspective_coeffs
+from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 KERNEL_INFOS_MAP = {info.kernel: info for info in KERNEL_INFOS}
@@ -170,7 +171,7 @@ class TestKernels:
 
         datapoint_type = (
             datapoints.Image
-            if torchvision.prototype.transforms.utils.is_simple_tensor(batched_input)
+            if is_simple_tensor(batched_input)
             else type(batched_input)
         )
         # This dictionary contains the number of rightmost dimensions that contain the actual data.
