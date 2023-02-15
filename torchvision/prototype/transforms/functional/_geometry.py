@@ -13,6 +13,7 @@ from torchvision.transforms.functional import (
     _check_antialias,
     _compute_resized_output_size as __compute_resized_output_size,
     _get_perspective_coeffs,
+    _interpolation_modes_from_int,
     InterpolationMode,
     pil_modes_mapping,
     pil_to_tensor,
@@ -22,9 +23,20 @@ from torchvision.transforms.functional_tensor import _pad_symmetric
 
 from torchvision.utils import _log_api_usage_once
 
-from ._meta import convert_format_bounding_box, get_spatial_size_image_pil
+from ._meta import clamp_bounding_box, convert_format_bounding_box, get_spatial_size_image_pil
 
 from ._utils import is_simple_tensor
+
+
+def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
+    if isinstance(interpolation, int):
+        interpolation = _interpolation_modes_from_int(interpolation)
+    elif not isinstance(interpolation, InterpolationMode):
+        raise ValueError(
+            f"Argument interpolation should be an `InterpolationMode` or a corresponding Pillow integer constant, "
+            f"but got {interpolation}."
+        )
+    return interpolation
 
 
 def horizontal_flip_image_tensor(image: torch.Tensor) -> torch.Tensor:
@@ -142,10 +154,11 @@ def _compute_resized_output_size(
 def resize_image_tensor(
     image: torch.Tensor,
     size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
+    interpolation = _check_interpolation(interpolation)
     antialias = _check_antialias(img=image, antialias=antialias, interpolation=interpolation)
     assert not isinstance(antialias, str)
     antialias = False if antialias is None else antialias
@@ -189,9 +202,10 @@ def resize_image_tensor(
 def resize_image_pil(
     image: PIL.Image.Image,
     size: Union[Sequence[int], int],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
+    interpolation = _check_interpolation(interpolation)
     size = _compute_resized_output_size(image.size[::-1], size=size, max_size=max_size)  # type: ignore[arg-type]
     return _FP.resize(image, size, interpolation=pil_modes_mapping[interpolation])
 
@@ -228,7 +242,7 @@ def resize_bounding_box(
 def resize_video(
     video: torch.Tensor,
     size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
@@ -238,7 +252,7 @@ def resize_video(
 def resize(
     inpt: datapoints.InputTypeJIT,
     size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[Union[str, bool]] = "warn",
 ) -> datapoints.InputTypeJIT:
@@ -432,7 +446,7 @@ def _apply_grid_transform(
     if fill is not None:
         float_img, mask = torch.tensor_split(float_img, indices=(-1,), dim=-3)
         mask = mask.expand_as(float_img)
-        fill_list = fill if isinstance(fill, (tuple, list)) else [float(fill)]
+        fill_list = fill if isinstance(fill, (tuple, list)) else [float(fill)]  # type: ignore[arg-type]
         fill_img = torch.tensor(fill_list, dtype=float_img.dtype, device=float_img.device).view(1, -1, 1, 1)
         if mode == "nearest":
             bool_mask = mask < 0.5
@@ -513,10 +527,12 @@ def affine_image_tensor(
     translate: List[float],
     scale: float,
     shear: List[float],
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     fill: datapoints.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    interpolation = _check_interpolation(interpolation)
+
     if image.numel() == 0:
         return image
 
@@ -563,10 +579,11 @@ def affine_image_pil(
     translate: List[float],
     scale: float,
     shear: List[float],
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     fill: datapoints.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
+    interpolation = _check_interpolation(interpolation)
     angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
 
     # center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)
@@ -580,8 +597,9 @@ def affine_image_pil(
     return _FP.affine(image, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
-def _affine_bounding_box_xyxy(
+def _affine_bounding_box_with_expand(
     bounding_box: torch.Tensor,
+    format: datapoints.BoundingBoxFormat,
     spatial_size: Tuple[int, int],
     angle: Union[int, float],
     translate: List[float],
@@ -593,6 +611,17 @@ def _affine_bounding_box_xyxy(
     if bounding_box.numel() == 0:
         return bounding_box, spatial_size
 
+    original_shape = bounding_box.shape
+    original_dtype = bounding_box.dtype
+    bounding_box = bounding_box.clone() if bounding_box.is_floating_point() else bounding_box.float()
+    dtype = bounding_box.dtype
+    device = bounding_box.device
+    bounding_box = (
+        convert_format_bounding_box(
+            bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+        )
+    ).reshape(-1, 4)
+
     angle, translate, shear, center = _affine_parse_args(
         angle, translate, scale, shear, InterpolationMode.NEAREST, center
     )
@@ -600,9 +629,6 @@ def _affine_bounding_box_xyxy(
     if center is None:
         height, width = spatial_size
         center = [width * 0.5, height * 0.5]
-
-    dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
-    device = bounding_box.device
 
     affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear, inverted=False)
     transposed_affine_matrix = (
@@ -651,7 +677,13 @@ def _affine_bounding_box_xyxy(
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         spatial_size = (new_height, new_width)
 
-    return out_bboxes.to(bounding_box.dtype), spatial_size
+    out_bboxes = clamp_bounding_box(out_bboxes, format=datapoints.BoundingBoxFormat.XYXY, spatial_size=spatial_size)
+    out_bboxes = convert_format_bounding_box(
+        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+    ).reshape(original_shape)
+
+    out_bboxes = out_bboxes.to(original_dtype)
+    return out_bboxes, spatial_size
 
 
 def affine_bounding_box(
@@ -664,19 +696,18 @@ def affine_bounding_box(
     shear: List[float],
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    original_shape = bounding_box.shape
-
-    bounding_box = (
-        convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
-    ).reshape(-1, 4)
-
-    out_bboxes, _ = _affine_bounding_box_xyxy(bounding_box, spatial_size, angle, translate, scale, shear, center)
-
-    # out_bboxes should be of shape [N boxes, 4]
-
-    return convert_format_bounding_box(
-        out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-    ).reshape(original_shape)
+    out_box, _ = _affine_bounding_box_with_expand(
+        bounding_box,
+        format=format,
+        spatial_size=spatial_size,
+        angle=angle,
+        translate=translate,
+        scale=scale,
+        shear=shear,
+        center=center,
+        expand=False,
+    )
+    return out_box
 
 
 def affine_mask(
@@ -717,7 +748,7 @@ def affine_video(
     translate: List[float],
     scale: float,
     shear: List[float],
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     fill: datapoints.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
@@ -739,7 +770,7 @@ def affine(
     translate: List[float],
     scale: float,
     shear: List[float],
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     fill: datapoints.FillTypeJIT = None,
     center: Optional[List[float]] = None,
 ) -> datapoints.InputTypeJIT:
@@ -783,11 +814,13 @@ def affine(
 def rotate_image_tensor(
     image: torch.Tensor,
     angle: float,
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[List[float]] = None,
     fill: datapoints.FillTypeJIT = None,
 ) -> torch.Tensor:
+    interpolation = _check_interpolation(interpolation)
+
     shape = image.shape
     num_channels, height, width = shape[-3:]
 
@@ -826,11 +859,13 @@ def rotate_image_tensor(
 def rotate_image_pil(
     image: PIL.Image.Image,
     angle: float,
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[List[float]] = None,
     fill: datapoints.FillTypeJIT = None,
 ) -> PIL.Image.Image:
+    interpolation = _check_interpolation(interpolation)
+
     if center is not None and expand:
         warnings.warn("The provided center argument has no effect on the result if expand is True")
         center = None
@@ -852,27 +887,16 @@ def rotate_bounding_box(
         warnings.warn("The provided center argument has no effect on the result if expand is True")
         center = None
 
-    original_shape = bounding_box.shape
-    bounding_box = (
-        convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
-    ).reshape(-1, 4)
-
-    out_bboxes, spatial_size = _affine_bounding_box_xyxy(
+    return _affine_bounding_box_with_expand(
         bounding_box,
-        spatial_size,
+        format=format,
+        spatial_size=spatial_size,
         angle=-angle,
         translate=[0.0, 0.0],
         scale=1.0,
         shear=[0.0, 0.0],
         center=center,
         expand=expand,
-    )
-
-    return (
-        convert_format_bounding_box(
-            out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
-        ).reshape(original_shape),
-        spatial_size,
     )
 
 
@@ -907,7 +931,7 @@ def rotate_mask(
 def rotate_video(
     video: torch.Tensor,
     angle: float,
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[List[float]] = None,
     fill: datapoints.FillTypeJIT = None,
@@ -918,7 +942,7 @@ def rotate_video(
 def rotate(
     inpt: datapoints.InputTypeJIT,
     angle: float,
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[List[float]] = None,
     fill: datapoints.FillTypeJIT = None,
@@ -965,8 +989,8 @@ def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
 
 def pad_image_tensor(
     image: torch.Tensor,
-    padding: Union[int, List[int]],
-    fill: datapoints.FillTypeJIT = None,
+    padding: List[int],
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     # Be aware that while `padding` has order `[left, top, right, bottom]` has order, `torch_padding` uses
@@ -1066,14 +1090,14 @@ pad_image_pil = _FP.pad
 
 def pad_mask(
     mask: torch.Tensor,
-    padding: Union[int, List[int]],
+    padding: List[int],
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
-    fill: datapoints.FillTypeJIT = None,
 ) -> torch.Tensor:
     if fill is None:
         fill = 0
 
-    if isinstance(fill, list):
+    if isinstance(fill, (tuple, list)):
         raise ValueError("Non-scalar fill value is not supported")
 
     if mask.ndim < 3:
@@ -1094,7 +1118,7 @@ def pad_bounding_box(
     bounding_box: torch.Tensor,
     format: datapoints.BoundingBoxFormat,
     spatial_size: Tuple[int, int],
-    padding: Union[int, List[int]],
+    padding: List[int],
     padding_mode: str = "constant",
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     if padding_mode not in ["constant"]:
@@ -1112,14 +1136,15 @@ def pad_bounding_box(
     height, width = spatial_size
     height += top + bottom
     width += left + right
+    spatial_size = (height, width)
 
-    return bounding_box, (height, width)
+    return clamp_bounding_box(bounding_box, format=format, spatial_size=spatial_size), spatial_size
 
 
 def pad_video(
     video: torch.Tensor,
-    padding: Union[int, List[int]],
-    fill: datapoints.FillTypeJIT = None,
+    padding: List[int],
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     return pad_image_tensor(video, padding, fill=fill, padding_mode=padding_mode)
@@ -1127,8 +1152,8 @@ def pad_video(
 
 def pad(
     inpt: datapoints.InputTypeJIT,
-    padding: Union[int, List[int]],
-    fill: datapoints.FillTypeJIT = None,
+    padding: List[int],
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
@@ -1185,8 +1210,9 @@ def crop_bounding_box(
         sub = [left, top, 0, 0]
 
     bounding_box = bounding_box - torch.tensor(sub, dtype=bounding_box.dtype, device=bounding_box.device)
+    spatial_size = (height, width)
 
-    return bounding_box, (height, width)
+    return clamp_bounding_box(bounding_box, format=format, spatial_size=spatial_size), spatial_size
 
 
 def crop_mask(mask: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
@@ -1276,11 +1302,13 @@ def perspective_image_tensor(
     image: torch.Tensor,
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: datapoints.FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
+    interpolation = _check_interpolation(interpolation)
+
     if image.numel() == 0:
         return image
 
@@ -1321,17 +1349,19 @@ def perspective_image_pil(
     image: PIL.Image.Image,
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
-    interpolation: InterpolationMode = InterpolationMode.BICUBIC,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BICUBIC,
     fill: datapoints.FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
+    interpolation = _check_interpolation(interpolation)
     return _FP.perspective(image, perspective_coeffs, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
 def perspective_bounding_box(
     bounding_box: torch.Tensor,
     format: datapoints.BoundingBoxFormat,
+    spatial_size: Tuple[int, int],
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
     coefficients: Optional[List[float]] = None,
@@ -1342,6 +1372,7 @@ def perspective_bounding_box(
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
 
     original_shape = bounding_box.shape
+    # TODO: first cast to float if bbox is int64 before convert_format_bounding_box
     bounding_box = (
         convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
@@ -1408,7 +1439,11 @@ def perspective_bounding_box(
     transformed_points = transformed_points.reshape(-1, 4, 2)
     out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
 
-    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
+    out_bboxes = clamp_bounding_box(
+        torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype),
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=spatial_size,
+    )
 
     # out_bboxes should be of shape [N boxes, 4]
 
@@ -1444,7 +1479,7 @@ def perspective_video(
     video: torch.Tensor,
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: datapoints.FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> torch.Tensor:
@@ -1457,7 +1492,7 @@ def perspective(
     inpt: datapoints.InputTypeJIT,
     startpoints: Optional[List[List[int]]],
     endpoints: Optional[List[List[int]]],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: datapoints.FillTypeJIT = None,
     coefficients: Optional[List[float]] = None,
 ) -> datapoints.InputTypeJIT:
@@ -1485,9 +1520,11 @@ def perspective(
 def elastic_image_tensor(
     image: torch.Tensor,
     displacement: torch.Tensor,
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: datapoints.FillTypeJIT = None,
 ) -> torch.Tensor:
+    interpolation = _check_interpolation(interpolation)
+
     if image.numel() == 0:
         return image
 
@@ -1526,7 +1563,7 @@ def elastic_image_tensor(
 def elastic_image_pil(
     image: PIL.Image.Image,
     displacement: torch.Tensor,
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: datapoints.FillTypeJIT = None,
 ) -> PIL.Image.Image:
     t_img = pil_to_tensor(image)
@@ -1549,6 +1586,7 @@ def _create_identity_grid(size: Tuple[int, int], device: torch.device, dtype: to
 def elastic_bounding_box(
     bounding_box: torch.Tensor,
     format: datapoints.BoundingBoxFormat,
+    spatial_size: Tuple[int, int],
     displacement: torch.Tensor,
 ) -> torch.Tensor:
     if bounding_box.numel() == 0:
@@ -1562,13 +1600,10 @@ def elastic_bounding_box(
         displacement = displacement.to(dtype=dtype, device=device)
 
     original_shape = bounding_box.shape
+    # TODO: first cast to float if bbox is int64 before convert_format_bounding_box
     bounding_box = (
         convert_format_bounding_box(bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY)
     ).reshape(-1, 4)
-
-    # Question (vfdev-5): should we rely on good displacement shape and fetch image size from it
-    # Or add spatial_size arg and check displacement shape
-    spatial_size = displacement.shape[-3], displacement.shape[-2]
 
     id_grid = _create_identity_grid(spatial_size, device=device, dtype=dtype)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
@@ -1588,7 +1623,11 @@ def elastic_bounding_box(
 
     transformed_points = transformed_points.reshape(-1, 4, 2)
     out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
-    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype)
+    out_bboxes = clamp_bounding_box(
+        torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_box.dtype),
+        format=datapoints.BoundingBoxFormat.XYXY,
+        spatial_size=spatial_size,
+    )
 
     return convert_format_bounding_box(
         out_bboxes, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=format, inplace=True
@@ -1617,7 +1656,7 @@ def elastic_mask(
 def elastic_video(
     video: torch.Tensor,
     displacement: torch.Tensor,
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: datapoints.FillTypeJIT = None,
 ) -> torch.Tensor:
     return elastic_image_tensor(video, displacement, interpolation=interpolation, fill=fill)
@@ -1626,7 +1665,7 @@ def elastic_video(
 def elastic(
     inpt: datapoints.InputTypeJIT,
     displacement: torch.Tensor,
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: datapoints.FillTypeJIT = None,
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
@@ -1765,7 +1804,7 @@ def resized_crop_image_tensor(
     height: int,
     width: int,
     size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
     image = crop_image_tensor(image, top, left, height, width)
@@ -1780,7 +1819,7 @@ def resized_crop_image_pil(
     height: int,
     width: int,
     size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
 ) -> PIL.Image.Image:
     image = crop_image_pil(image, top, left, height, width)
     return resize_image_pil(image, size, interpolation=interpolation)
@@ -1796,7 +1835,7 @@ def resized_crop_bounding_box(
     size: List[int],
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     bounding_box, _ = crop_bounding_box(bounding_box, format, top, left, height, width)
-    return resize_bounding_box(bounding_box, (height, width), size)
+    return resize_bounding_box(bounding_box, spatial_size=(height, width), size=size)
 
 
 def resized_crop_mask(
@@ -1818,7 +1857,7 @@ def resized_crop_video(
     height: int,
     width: int,
     size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     antialias: Optional[Union[str, bool]] = "warn",
 ) -> torch.Tensor:
     return resized_crop_image_tensor(
@@ -1833,7 +1872,7 @@ def resized_crop(
     height: int,
     width: int,
     size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     antialias: Optional[Union[str, bool]] = "warn",
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
