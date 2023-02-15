@@ -1800,7 +1800,8 @@ def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
 
 def test_color_jitter():
     # TODO: this is a BC-break, ints aren't allowed anymore
-    color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
+    # color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
+    color_jitter = transforms.ColorJitter(2., 2., 2., 0.1)
 
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -2254,7 +2255,7 @@ def test_elastic_transformation():
     with pytest.raises(ValueError, match=r"If sigma is a sequence"):
         transforms.ElasticTransform(alpha=2.0, sigma=[1.0, 0.0, 1.0])
 
-    t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=Image.BILINEAR)
+    t = transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=Image.BILINEAR)
     assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
     with pytest.raises(TypeError, match=r"Got inappropriate fill arg"):
