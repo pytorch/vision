@@ -1,7 +1,9 @@
 import warnings
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence, Union
 
 import torch
+
+from torch import nn
 from torchvision.prototype.transforms import Transform
 
 
@@ -25,9 +27,13 @@ class Compose(Transform):
         return "\n".join(format_string)
 
 
-class RandomApply(Compose):
-    def __init__(self, transforms: Sequence[Callable], p: float = 0.5) -> None:
-        super().__init__(transforms)
+class RandomApply(Transform):
+    def __init__(self, transforms: Union[Sequence[Callable], nn.ModuleList], p: float = 0.5) -> None:
+        super().__init__()
+
+        if not isinstance(transforms, (Sequence, nn.ModuleList)):
+            raise TypeError("Argument transforms should be a sequence of callables or a `nn.ModuleList`")
+        self.transforms = transforms
 
         if not (0.0 <= p <= 1.0):
             raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
@@ -39,7 +45,15 @@ class RandomApply(Compose):
         if torch.rand(1) >= self.p:
             return sample
 
-        return super().forward(sample)
+        for transform in self.transforms:
+            sample = transform(sample)
+        return sample
+
+    def extra_repr(self) -> str:
+        format_string = []
+        for t in self.transforms:
+            format_string.append(f"    {t}")
+        return "\n".join(format_string)
 
 
 class RandomChoice(Transform):

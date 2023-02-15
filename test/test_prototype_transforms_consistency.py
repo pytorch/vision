@@ -23,6 +23,7 @@ from prototype_common_utils import (
     make_label,
     make_segmentation_mask,
 )
+from torch import nn
 from torchvision import transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datapoints, transforms as prototype_transforms
@@ -137,17 +138,28 @@ CONSISTENCY_CONFIGS = [
             NotScriptableArgsKwargs(5, padding_mode="symmetric"),
         ],
     ),
-    ConsistencyConfig(
-        prototype_transforms.LinearTransformation,
-        legacy_transforms.LinearTransformation,
-        [
-            ArgsKwargs(LINEAR_TRANSFORMATION_MATRIX, LINEAR_TRANSFORMATION_MEAN),
-        ],
-        # Make sure that the product of the height, width and number of channels matches the number of elements in
-        # `LINEAR_TRANSFORMATION_MEAN`. For example 2 * 6 * 3 == 4 * 3 * 3 == 36.
-        make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=["RGB"]),
-        supports_pil=False,
-    ),
+    *[
+        ConsistencyConfig(
+            prototype_transforms.LinearTransformation,
+            legacy_transforms.LinearTransformation,
+            [
+                ArgsKwargs(LINEAR_TRANSFORMATION_MATRIX.to(matrix_dtype), LINEAR_TRANSFORMATION_MEAN.to(matrix_dtype)),
+            ],
+            # Make sure that the product of the height, width and number of channels matches the number of elements in
+            # `LINEAR_TRANSFORMATION_MEAN`. For example 2 * 6 * 3 == 4 * 3 * 3 == 36.
+            make_images_kwargs=dict(
+                DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(2, 6), (4, 3)], color_spaces=["RGB"], dtypes=[image_dtype]
+            ),
+            supports_pil=False,
+        )
+        for matrix_dtype, image_dtype in [
+            (torch.float32, torch.float32),
+            (torch.float64, torch.float64),
+            (torch.float32, torch.uint8),
+            (torch.float64, torch.float32),
+            (torch.float32, torch.float64),
+        ]
+    ],
     ConsistencyConfig(
         prototype_transforms.Grayscale,
         legacy_transforms.Grayscale,
@@ -676,7 +688,7 @@ get_params_parametrization = pytest.mark.parametrize(
 )
 
 
-@get_paramsl_parametrization
+@get_params_parametrization
 def test_get_params_alias(config, get_params_args_kwargs):
     assert config.prototype_cls.get_params is config.legacy_cls.get_params
 
@@ -689,7 +701,7 @@ def test_get_params_alias(config, get_params_args_kwargs):
     assert prototype_transform.get_params is legacy_transform.get_params
 
 
-@get_paramsl_parametrization
+@get_params_parametrization
 def test_get_params_jit(config, get_params_args_kwargs):
     get_params_args, get_params_kwargs = get_params_args_kwargs
 
@@ -761,19 +773,24 @@ class TestContainerTransforms:
         check_call_consistency(prototype_transform, legacy_transform)
 
     @pytest.mark.parametrize("p", [0, 0.1, 0.5, 0.9, 1])
-    def test_random_apply(self, p):
+    @pytest.mark.parametrize("sequence_type", [list, nn.ModuleList])
+    def test_random_apply(self, p, sequence_type):
         prototype_transform = prototype_transforms.RandomApply(
-            [
-                prototype_transforms.Resize(256),
-                prototype_transforms.CenterCrop(224),
-            ],
+            sequence_type(
+                [
+                    prototype_transforms.Resize(256),
+                    prototype_transforms.CenterCrop(224),
+                ]
+            ),
             p=p,
         )
         legacy_transform = legacy_transforms.RandomApply(
-            [
-                legacy_transforms.Resize(256),
-                legacy_transforms.CenterCrop(224),
-            ],
+            sequence_type(
+                [
+                    legacy_transforms.Resize(256),
+                    legacy_transforms.CenterCrop(224),
+                ]
+            ),
             p=p,
         )
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Tuple, Union
 
+import PIL.Image
 import torch
 from torchvision.transforms import InterpolationMode
 
@@ -21,6 +22,11 @@ class Mask(Datapoint):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
     ) -> Mask:
+        if isinstance(data, PIL.Image.Image):
+            from torchvision.prototype.transforms import functional as F
+
+            data = F.pil_to_tensor(data)
+
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor)
 
@@ -49,7 +55,7 @@ class Mask(Datapoint):
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         max_size: Optional[int] = None,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Mask:
         output = self._F.resize_mask(self.as_subclass(torch.Tensor), size, max_size=max_size)
         return Mask.wrap_like(self, output)
@@ -70,15 +76,15 @@ class Mask(Datapoint):
         width: int,
         size: List[int],
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Mask:
         output = self._F.resized_crop_mask(self.as_subclass(torch.Tensor), top, left, height, width, size=size)
         return Mask.wrap_like(self, output)
 
     def pad(
         self,
-        padding: Union[int, List[int]],
-        fill: FillTypeJIT = None,
+        padding: List[int],
+        fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> Mask:
         output = self._F.pad_mask(self.as_subclass(torch.Tensor), padding, padding_mode=padding_mode, fill=fill)

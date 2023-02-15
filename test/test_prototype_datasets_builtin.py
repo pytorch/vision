@@ -1,4 +1,3 @@
-import functools
 import io
 import pickle
 from collections import deque
@@ -9,20 +8,29 @@ import torch
 
 import torchvision.prototype.transforms.utils
 from builtin_dataset_mocks import DATASET_MOCKS, parametrize_dataset_mocks
-from torch.testing._comparison import assert_equal, ObjectPair, TensorLikePair
+from torch.testing._comparison import not_close_error_metas, ObjectPair, TensorLikePair
+
+# TODO: replace with torchdata.dataloader2.DataLoader2 as soon as it is stable-ish
 from torch.utils.data import DataLoader
-from torch.utils.data.graph import traverse_dps
+
+# TODO: replace with torchdata equivalent as soon as it is available
 from torch.utils.data.graph_settings import get_all_graph_pipes
+
+from torchdata.dataloader2.graph.utils import traverse_dps
 from torchdata.datapipes.iter import ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import datapoints, datasets, transforms
+from torchvision.prototype.datasets.utils import EncodedImage
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
 
-assert_samples_equal = functools.partial(
-    assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
-)
+def assert_samples_equal(*args, msg=None, **kwargs):
+    error_metas = not_close_error_metas(
+        *args, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True, **kwargs
+    )
+    if error_metas:
+        raise error_metas[0].to_error(msg)
 
 
 def extract_datapipes(dp):
@@ -129,18 +137,21 @@ class TestCommon:
             raise AssertionError(make_msg_and_close("The following streams were not closed after a full iteration:"))
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_no_simple_tensors(self, dataset_mock, config):
+    def test_no_unaccompanied_simple_tensors(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
+        sample = next_consume(iter(dataset))
 
         simple_tensors = {
-            key
-            for key, value in next_consume(iter(dataset)).items()
-            if torchvision.prototype.transforms.utils.is_simple_tensor(value)
+            key for key, value in sample.items() if torchvision.prototype.transforms.utils.is_simple_tensor(value)
         }
-        if simple_tensors:
+
+        if simple_tensors and not any(
+            isinstance(item, (datapoints.Image, datapoints.Video, EncodedImage)) for item in sample.values()
+        ):
             raise AssertionError(
                 f"The values of key(s) "
-                f"{sequence_to_str(sorted(simple_tensors), separate_last='and ')} contained simple tensors."
+                f"{sequence_to_str(sorted(simple_tensors), separate_last='and ')} contained simple tensors, "
+                f"but didn't find any (encoded) image or video."
             )
 
     @parametrize_dataset_mocks(DATASET_MOCKS)

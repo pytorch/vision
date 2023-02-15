@@ -2,14 +2,14 @@ import math
 import os
 import random
 from collections import defaultdict
+import warnings
 from functools import partial
 
 import numpy as np
 import pytest
 import torch
-import torchvision.prototype.transforms as transforms
-import torchvision.prototype.transforms.functional as F
-import torchvision.transforms._pil_constants as _pil_constants
+import torchvision.transforms as transforms
+import torchvision.transforms.functional as F
 import torchvision.transforms.functional_tensor as F_t
 from PIL import Image
 from torch._utils_internal import get_file_path_2
@@ -174,7 +174,7 @@ class TestAccImage:
     def test_accimage_resize(self):
         trans = transforms.Compose(
             [
-                transforms.Resize(256, interpolation=_pil_constants.LINEAR),
+                transforms.Resize(256, interpolation=Image.LINEAR),
                 transforms.PILToTensor(),
                 transforms.ConvertImageDtype(dtype=torch.float),
             ]
@@ -240,11 +240,8 @@ class TestToTensor:
         trans = transforms.ToTensor()
         np_rng = np.random.RandomState(0)
 
-        # TODO: Doesn't raise anymore, but still fails on the other ones below
-        # with pytest.raises(TypeError):
-        #     trans(np_rng.rand(1, height, width).tolist())
-        out = trans(np_rng.rand(1, height, width).tolist())
-        assert isinstance(out, list)
+        with pytest.raises(TypeError):
+            trans(np_rng.rand(1, height, width).tolist())
 
         with pytest.raises(ValueError):
             trans(np_rng.rand(height))
@@ -301,16 +298,11 @@ class TestToTensor:
         trans = transforms.PILToTensor()
         np_rng = np.random.RandomState(0)
 
-        # TODO: these don't fail anymore, they're pass-through. Is that a good thing?
-        # with pytest.raises(TypeError):
-        #     trans(np_rng.rand(1, height, width).tolist())
-        out = trans(np_rng.rand(1, height, width).tolist())
-        assert isinstance(out, list)
+        with pytest.raises(TypeError):
+            trans(np_rng.rand(1, height, width).tolist())
 
-        # with pytest.raises(TypeError):
-        #     trans(np_rng.rand(1, height, width))
-        out = trans(np_rng.rand(1, height, width))
-        assert isinstance(out, np.ndarray)
+        with pytest.raises(TypeError):
+            trans(np_rng.rand(1, height, width))
 
 
 def test_randomresized_params():
@@ -327,7 +319,7 @@ def test_randomresized_params():
         scale_range = (scale_min, scale_min + round(random.random(), 2))
         aspect_min = max(round(random.random(), 2), epsilon)
         aspect_ratio_range = (aspect_min, aspect_min + round(random.random(), 2))
-        randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
+        randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range, antialias=True)
         # TODO: get_params() broken on instances
         i, j, h, w = randresizecrop.__class__.get_params(img, scale_range, aspect_ratio_range)
         aspect_ratio_obtained = w / h
@@ -375,7 +367,7 @@ def test_randomresized_params():
 def test_resize(height, width, osize, max_size):
     img = Image.new("RGB", size=(width, height), color=127)
 
-    t = transforms.Resize(osize, max_size=max_size)
+    t = transforms.Resize(osize, max_size=max_size, antialias=True)
     result = t(img)
 
     msg = f"{height}, {width} - {osize} - {max_size}"
@@ -433,7 +425,7 @@ def test_resize_sequence_output(height, width, osize):
     img = Image.new("RGB", size=(width, height), color=127)
     oheight, owidth = osize
 
-    t = transforms.Resize(osize)
+    t = transforms.Resize(osize, antialias=True)
     result = t(img)
 
     assert (owidth, oheight) == result.size
@@ -448,6 +440,16 @@ def test_resize_antialias_error():
         t(img)
 
 
+def test_resize_antialias_default_warning():
+
+    img = Image.new("RGB", size=(10, 10), color=127)
+    # We make sure we don't warn for PIL images since the default behaviour doesn't change
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        transforms.Resize((20, 20))(img)
+        transforms.RandomResizedCrop((20, 20))(img)
+
+
 @pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
 def test_resize_size_equals_small_edge_size(height, width):
     # Non-regression test for https://github.com/pytorch/vision/issues/5405
@@ -456,7 +458,7 @@ def test_resize_size_equals_small_edge_size(height, width):
     img = Image.new("RGB", size=(width, height), color=127)
 
     small_edge = min(height, width)
-    t = transforms.Resize(small_edge, max_size=max_size)
+    t = transforms.Resize(small_edge, max_size=max_size, antialias=True)
     result = t(img)
     assert max(result.size) == max_size
 
@@ -1229,7 +1231,7 @@ def test_rotate():
     x = np.zeros((100, 100, 3), dtype=np.uint8)
     x[40, 40] = [255, 255, 255]
 
-    with pytest.raises(TypeError, match=r"Input can either be"):
+    with pytest.raises(TypeError, match=r"img should be PIL"):
         F.rotate(x, 10)
 
     img = F.to_pil_image(x)
@@ -1304,10 +1306,7 @@ def test_gaussian_blur_asserts():
 
     with pytest.raises(ValueError, match=r"If sigma is a sequence, its length should be 2"):
         F.gaussian_blur(img, 3, [1, 1, 1])
-    # TODO: Not critical, but is it really better to distinguish between
-    # TypeError and ValueError?  Would it be easier to treat any user-provided
-    # input failure as ValueError?
-    with pytest.raises(TypeError, match=r"sigma should be a single "):
+    with pytest.raises(ValueError, match=r"sigma should be a single "):
         transforms.GaussianBlur(3, [1, 1, 1])
 
     with pytest.raises(ValueError, match=r"sigma should have positive values"):
@@ -1315,14 +1314,17 @@ def test_gaussian_blur_asserts():
     with pytest.raises(ValueError, match=r"If sigma is a single number, it must be positive"):
         transforms.GaussianBlur(3, -1.0)
 
-    with pytest.raises(ValueError, match=r"If kernel_size is a sequence"):
+    # TODO: Not critical, but is it really better to distinguish between
+    # TypeError and ValueError?  Would it be easier to treat any user-provided
+    # input failure as ValueError?
+    with pytest.raises(TypeError, match=r"kernel_size should be int"):
         F.gaussian_blur(img, "kernel_size_string")
     with pytest.raises(ValueError, match=r"Kernel size should be a tuple/list of two integers"):
         transforms.GaussianBlur("kernel_size_string")
 
     with pytest.raises(TypeError, match=r"sigma should be "):
         F.gaussian_blur(img, 3, "sigma_string")
-    with pytest.raises(TypeError, match=r"sigma should be "):
+    with pytest.raises(ValueError, match=r"sigma should be "):
         transforms.GaussianBlur(3, "sigma_string")
 
 
@@ -1436,11 +1438,11 @@ def test_random_choice(proba_passthrough, seed):
 def test_random_order():
     random_state = random.getstate()
     random.seed(42)
-    random_order_transform = transforms.RandomOrder([transforms.Resize(20), transforms.CenterCrop(10)])
+    random_order_transform = transforms.RandomOrder([transforms.Resize(20, antialias=True), transforms.CenterCrop(10)])
     img = transforms.ToPILImage()(torch.rand(3, 25, 25))
     num_samples = 250
     num_normal_order = 0
-    resize_crop_out = transforms.CenterCrop(10)(transforms.Resize(20)(img))
+    resize_crop_out = transforms.CenterCrop(10)(transforms.Resize(20, antialias=True)(img))
     for _ in range(num_samples):
         out = random_order_transform(img)
         if out == resize_crop_out:
@@ -1534,10 +1536,10 @@ def test_ten_crop(should_vflip, single_dim):
     five_crop.__repr__()
 
     if should_vflip:
-        vflipped_img = img.transpose(_pil_constants.FLIP_TOP_BOTTOM)
+        vflipped_img = img.transpose(Image.FLIP_TOP_BOTTOM)
         expected_output += five_crop(vflipped_img)
     else:
-        hflipped_img = img.transpose(_pil_constants.FLIP_LEFT_RIGHT)
+        hflipped_img = img.transpose(Image.FLIP_LEFT_RIGHT)
         expected_output += five_crop(hflipped_img)
 
     assert len(results) == 10
@@ -1889,6 +1891,9 @@ def test_random_rotation():
     # Checking if RandomRotation can be printed as string
     t.__repr__()
 
+    t = transforms.RandomRotation((-10, 10), interpolation=Image.BILINEAR)
+    assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
 
 def test_random_rotation_error():
     # assert fill being either a Sequence or a Number
@@ -2228,6 +2233,9 @@ def test_random_affine():
     t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
     assert "bilinear" in t.__repr__().lower()
 
+    t = transforms.RandomAffine(10, interpolation=Image.BILINEAR)
+    assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
 
 def test_elastic_transformation():
     with pytest.raises(TypeError, match=r"alpha should be float or a sequence of floats"):
@@ -2248,6 +2256,8 @@ def test_elastic_transformation():
     # with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
     #     t = transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=2)
     #     assert t.interpolation == transforms.InterpolationMode.BILINEAR
+    t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=Image.BILINEAR)
+    assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
     with pytest.raises(TypeError, match=r"Got inappropriate fill arg"):
         # Had to change {} to a str because {} is actually valid now

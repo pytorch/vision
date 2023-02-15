@@ -2,10 +2,12 @@ import colorsys
 import itertools
 import math
 import os
+import warnings
 from functools import partial
 from typing import Sequence
 
 import numpy as np
+import PIL.Image
 import pytest
 import torch
 import torchvision.prototype.transforms as T
@@ -87,16 +89,11 @@ class TestRotate:
         "fill",
         [
             None,
-            # TODO: torscript fails with errors like
-            # RuntimeError: rotate() Expected a value of type 'Union[List[float], float, int, NoneType]' for argument 'fill' but instead found type 'tuple'.
-            # Position: 5
-            # Value: (1.0, 2.0, 3.0)
-            # We don't support ints (only float) nor tuples
-            [0.0, 0.0, 0.0],
-            [1.0, 2.0, 3.0],
-            [255.0, 255.0, 255.0],
+            [0, 0, 0],
+            (1, 2, 3),
+            [255, 255, 255],
             [
-                1.0,
+                1,
             ],
             [
                 2.0,
@@ -149,6 +146,13 @@ class TestRotate:
 
         center = (20, 22)
         _test_fn_on_batch(batch_tensors, F.rotate, angle=32, interpolation=NEAREST, expand=True, center=center)
+
+    def test_rotate_interpolation_type(self):
+        tensor, _ = _create_data(26, 26)
+        # TODO: Waiting on https://github.com/pytorch/vision/pull/7248
+        # res1 = F.rotate(tensor, 45, interpolation=PIL.Image.BILINEAR)
+        res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
+        # assert_equal(res1, res2)
 
 
 class TestAffine:
@@ -319,10 +323,6 @@ class TestAffine:
     @pytest.mark.parametrize("fn", [F.affine, scripted_affine])
     def test_all_ops(self, device, height, width, dt, a, t, s, sh, f, fn):
         # 4) Test rotation + translation + scale + shear
-        # TODO: similar breakage as for rotate(): we don't support ints nor
-        # tuples(of anything) anymore
-        if isinstance(f, (tuple, list)):
-            f = [float(x) for x in f]
         tensor, pil_img = _create_data(height, width, device=device)
 
         if dt == torch.float16 and device == "cpu":
@@ -359,6 +359,15 @@ class TestAffine:
             batch_tensors = batch_tensors.to(dtype=dt)
 
         _test_fn_on_batch(batch_tensors, F.affine, angle=-43, translate=[-3, 4], scale=1.2, shear=[4.0, 5.0])
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_interpolation_type(self, device):
+        tensor, pil_img = _create_data(26, 26, device=device)
+
+        # TODO Waiting on https://github.com/pytorch/vision/pull/7248
+        # res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=PIL.Image.BILINEAR)
+        res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
+        # assert_equal(res1, res2)
 
 
 def _get_data_dims_and_points_for_perspective():
@@ -402,10 +411,6 @@ def _get_data_dims_and_points_for_perspective():
 )
 @pytest.mark.parametrize("fn", [F.perspective, torch.jit.script(F.perspective)])
 def test_perspective_pil_vs_tensor(device, dims_and_points, dt, fill, fn):
-
-    # TODO: see test_rotate()
-    if fill is not None:
-        fill = [float(x) for x in fill]
 
     if dt == torch.float16 and device == "cpu":
         # skip float16 on CPU case
@@ -462,6 +467,17 @@ def test_perspective_batch(device, dims_and_points, dt):
     )
 
 
+def test_perspective_interpolation_type():
+    spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
+    epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
+    tensor = torch.randint(0, 256, (3, 26, 26))
+
+    # TODO Waiting on https://github.com/pytorch/vision/pull/7248
+    # res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=PIL.Image.BILINEAR)
+    res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
+    # assert_equal(res1, res2)
+
+
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
 @pytest.mark.parametrize(
@@ -498,14 +514,12 @@ def test_resize(device, dt, size, max_size, interpolation):
         tensor = tensor.to(dt)
         batch_tensors = batch_tensors.to(dt)
 
-    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, max_size=max_size)
-    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, max_size=max_size)
+    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, max_size=max_size, antialias=True)
+    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, max_size=max_size, antialias=True)
 
     assert resized_tensor.size()[1:] == resized_pil_img.size[::-1]
 
-    if interpolation not in [
-        NEAREST,
-    ]:
+    if interpolation != NEAREST:
         # We can not check values if mode = NEAREST, as results are different
         # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
         # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]
@@ -515,25 +529,30 @@ def test_resize(device, dt, size, max_size, interpolation):
             resized_tensor_f = resized_tensor_f.to(torch.float)
 
         # Pay attention to high tolerance for MAE
-        _assert_approx_equal_tensor_to_pil(resized_tensor_f, resized_pil_img, tol=8.0)
+        _assert_approx_equal_tensor_to_pil(resized_tensor_f, resized_pil_img, tol=3.0)
 
     if isinstance(size, int):
-        script_size = [
-            size,
-        ]
+        script_size = [size]
     else:
         script_size = size
 
-    resize_result = script_fn(tensor, size=script_size, interpolation=interpolation, max_size=max_size)
+    resize_result = script_fn(tensor, size=script_size, interpolation=interpolation, max_size=max_size, antialias=True)
     assert_equal(resized_tensor, resize_result)
 
-    _test_fn_on_batch(batch_tensors, F.resize, size=script_size, interpolation=interpolation, max_size=max_size)
+    _test_fn_on_batch(
+        batch_tensors, F.resize, size=script_size, interpolation=interpolation, max_size=max_size, antialias=True
+    )
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 def test_resize_asserts(device):
 
     tensor, pil_img = _create_data(26, 36, device=device)
+
+    # TODO Waiting on https://github.com/pytorch/vision/pull/7248
+    # res1 = F.resize(tensor, size=32, interpolation=PIL.Image.BILINEAR)
+    res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
+    # assert_equal(res1, res2)
 
     for img in (tensor, pil_img):
         exp_msg = "max_size should only be passed if size specifies the length of the smaller edge"
@@ -563,7 +582,7 @@ def test_resize_antialias(device, dt, size, interpolation):
         tensor = tensor.to(dt)
 
     resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, antialias=True)
-    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation)
+    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, antialias=True)
 
     assert resized_tensor.size()[1:] == resized_pil_img.size[::-1]
 
@@ -610,6 +629,23 @@ def test_assert_resize_antialias(interpolation):
     # with pytest.raises(RuntimeError, match=r"Provided interpolation parameters can not be handled"):
     with pytest.raises(RuntimeError, match=r"Too much shared memory required"):
         F.resize(tensor, size=(5, 5), interpolation=interpolation, antialias=True)
+
+
+def test_resize_antialias_default_warning():
+
+    img = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8)
+
+    match = "The default value of the antialias"
+    with pytest.warns(UserWarning, match=match):
+        F.resize(img, size=(20, 20))
+    with pytest.warns(UserWarning, match=match):
+        F.resized_crop(img, 0, 0, 10, 10, size=(20, 20))
+
+    # For modes that aren't bicubic or bilinear, don't throw a warning
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        F.resize(img, size=(20, 20), interpolation=NEAREST)
+        F.resized_crop(img, 0, 0, 10, 10, size=(20, 20), interpolation=NEAREST)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -901,9 +937,6 @@ def test_pad(device, dt, pad, config):
     script_fn = torch.jit.script(F.pad)
     tensor, pil_img = _create_data(7, 8, device=device)
     batch_tensors = _create_data_batch(16, 18, num_samples=4, device=device)
-    # TODO: we don't support tuples in jit anymore. Not sure if floats are an issue (or relevant)
-    if isinstance(pad, tuple):
-        pad = [x for x in pad]
 
     if dt == torch.float16 and device == "cpu":
         # skip float16 on CPU case
@@ -943,7 +976,9 @@ def test_resized_crop(device, mode):
     # 1) resize to the same size, crop to the same size => should be identity
     tensor, _ = _create_data(26, 36, device=device)
 
-    out_tensor = F.resized_crop(tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=mode)
+    out_tensor = F.resized_crop(
+        tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=mode, antialias=True
+    )
     assert_equal(tensor, out_tensor, msg=f"{out_tensor[0, :5, :5]} vs {tensor[0, :5, :5]}")
 
     # 2) resize by half and crop a TL corner
@@ -958,7 +993,14 @@ def test_resized_crop(device, mode):
 
     batch_tensors = _create_data_batch(26, 36, num_samples=4, device=device)
     _test_fn_on_batch(
-        batch_tensors, F.resized_crop, top=1, left=2, height=20, width=30, size=[10, 15], interpolation=NEAREST
+        batch_tensors,
+        F.resized_crop,
+        top=1,
+        left=2,
+        height=20,
+        width=30,
+        size=[10, 15],
+        interpolation=NEAREST,
     )
 
 
@@ -1316,6 +1358,7 @@ def test_elastic_transform_asserts():
 #   File "/home/nicolashug/.miniconda3/envs/pt/lib/python3.9/site-packages/torch/nn/functional.py", line 4243, in grid_sample
 #     return torch.grid_sampler(input, grid, mode_enum, padding_mode_enum, align_corners)
 # RuntimeError: expected scalar type Double but found Float
+# TODO: EDIT This is still failing!
 
 # I couldn't make it work even when just setting dt to float64 and fixing the
 # fill param as for the other tests.
