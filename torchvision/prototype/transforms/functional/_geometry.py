@@ -984,15 +984,11 @@ def pad_image_tensor(
         )
 
     if fill is None:
-        fill = [0.0]
-    elif isinstance(fill, (int, float)):
-        fill = [float(fill)]
-    elif isinstance(fill, (list, tuple)):
-        fill = [float(f) for f in fill]
-    else:
-        raise ValueError
+        fill = 0
 
-    if len(fill) == 1:
+    if isinstance(fill, (int, float)):
+        return _pad_with_scalar_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
+    elif len(fill) == 1:
         return _pad_with_scalar_fill(image, torch_padding, fill=fill[0], padding_mode=padding_mode)
     else:
         return _pad_with_vector_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
@@ -1001,7 +997,7 @@ def pad_image_tensor(
 def _pad_with_scalar_fill(
     image: torch.Tensor,
     torch_padding: List[int],
-    fill: float,
+    fill: Union[int, float],
     padding_mode: str,
 ) -> torch.Tensor:
     shape = image.shape
@@ -1020,7 +1016,7 @@ def _pad_with_scalar_fill(
         padding_mode = "replicate"
 
     if padding_mode == "constant":
-        image = torch_pad(image, torch_padding, mode=padding_mode, value=fill)
+        image = torch_pad(image, torch_padding, mode=padding_mode, value=float(fill))
     elif padding_mode in ("reflect", "replicate"):
         # `torch_pad` only supports `"reflect"` or `"replicate"` padding for floating point inputs.
         # TODO: See https://github.com/pytorch/pytorch/issues/40763
@@ -1053,7 +1049,7 @@ def _pad_with_vector_fill(
     if padding_mode != "constant":
         raise ValueError(f"Padding mode '{padding_mode}' is not supported if fill is not scalar")
 
-    output = _pad_with_scalar_fill(image, torch_padding, fill=0.0, padding_mode="constant")
+    output = _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode="constant")
     left, right, top, bottom = torch_padding
     fill = torch.tensor(fill, dtype=image.dtype, device=image.device).reshape(-1, 1, 1)
 
@@ -1074,10 +1070,13 @@ pad_image_pil = _FP.pad
 def pad_mask(
     mask: torch.Tensor,
     padding: List[int],
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
-    fill: datapoints.FillTypeJIT = None,
 ) -> torch.Tensor:
-    if isinstance(fill, (list, tuple)) and len(fill) > 1:
+    if fill is None:
+        fill = 0
+
+    if isinstance(fill, (tuple, list)):
         raise ValueError("Non-scalar fill value is not supported")
 
     if mask.ndim < 3:
@@ -1167,7 +1166,7 @@ def crop_image_tensor(image: torch.Tensor, top: int, left: int, height: int, wid
             max(min(bottom, 0) - top, 0),
             max(bottom - max(h, top), 0),
         ]
-        return _pad_with_scalar_fill(image, torch_padding, fill=0.0, padding_mode="constant")
+        return _pad_with_scalar_fill(image, torch_padding, fill=0, padding_mode="constant")
     return image[..., top:bottom, left:right]
 
 
