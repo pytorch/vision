@@ -1,8 +1,8 @@
 import math
 import os
 import random
-from collections import defaultdict
 import warnings
+from collections import defaultdict
 from functools import partial
 
 import numpy as np

@@ -842,16 +842,8 @@ def test_compose(device):
             lambda x: x,
         ]
     )
-    # TODO: Funnily enough this fails with 
-    #   File "/home/nicolashug/dev/vision/torchvision/prototype/transforms/_transform.py", line 106, in __prepare_scriptable__
-    #     f"Transform {type(self.__name__)} cannot be JIT scripted. "
-    #   File "/home/nicolashug/.miniconda3/envs/pt/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1591, in __getattr__
-    #     raise AttributeError("'{}' object has no attribute '{}'".format(
-    # AttributeError: 'Compose' object has no attribute '__name__'
-
-    # Looks like our error message is buggy?
-    # with pytest.raises(RuntimeError, match="cannot call a value of type 'Tensor'"):
-    #     torch.jit.script(t)
+    with pytest.raises(RuntimeError, match="cannot be JIT scripted"):
+        torch.jit.script(t)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -866,9 +858,6 @@ def test_random_apply(device):
         ],
         p=0.4,
     )
-    # TODO: Fails with
-    # TypeError: Argument transforms should be a sequence of callables
-    return
 
     s_transforms = T.RandomApply(
         torch.nn.ModuleList(
@@ -879,6 +868,13 @@ def test_random_apply(device):
         ),
         p=0.4,
     )
+
+    # TODO: FIXME this fails with
+    # RuntimeError: Transform RandomApply cannot be JIT scripted. This is only
+    # support for backward compatibility with transforms which already in v1.For
+    # torchscript support (on tensors only), you can use the functional API
+    # instead.
+    return
 
     scripted_fn = torch.jit.script(s_transforms)
     torch.manual_seed(12)
