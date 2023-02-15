@@ -406,7 +406,7 @@ class TestDispatchers:
         [info for info in DISPATCHER_INFOS if info.pil_kernel_info is not None],
         args_kwargs_fn=lambda info: info.sample_inputs(datapoints.Image),
     )
-    def test_pil_output_type(self, request, info, args_kwargs):
+    def test_pil_output_type(self, info, args_kwargs):
         (image_datapoint, *other_args), kwargs = args_kwargs.load()
 
         if image_datapoint.ndim > 3:
