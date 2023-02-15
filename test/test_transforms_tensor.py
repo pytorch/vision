@@ -869,12 +869,7 @@ def test_random_apply(device):
         p=0.4,
     )
 
-    # TODO: FIXME this fails with
-    # RuntimeError: Transform RandomApply cannot be JIT scripted. This is only
-    # support for backward compatibility with transforms which already in v1.For
-    # torchscript support (on tensors only), you can use the functional API
-    # instead.
-    return
+
 
     scripted_fn = torch.jit.script(s_transforms)
     torch.manual_seed(12)
