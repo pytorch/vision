@@ -2359,7 +2359,9 @@ def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
 
 
 @pytest.mark.parametrize("min_size", (1, 10))
-@pytest.mark.parametrize("labels_getter", ("default", "labels", lambda inputs: inputs["labels"]))
+@pytest.mark.parametrize(
+    "labels_getter", ("default", "labels", lambda inputs: inputs["labels"], None, lambda inputs: None)
+)
 @pytest.mark.parametrize("batch", (True, False))
 def test_sanitize_bounding_boxes(min_size, labels_getter, batch):
     H, W = 256, 128
@@ -2405,18 +2407,21 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, batch):
         "labels": labels,
         "boxes": boxes,
         "whatever": torch.rand(10),
+        "None": None,
     }
 
     out = transforms.SanitizeBoundingBoxes(min_size=min_size, labels_getter=labels_getter)(sample)
 
     assert out["image"] is sample["image"]
     assert out["whatever"] is sample["whatever"]
-    assert isinstance(out["labels"], torch.Tensor)
 
-    assert out["boxes"].shape[:-1] == out["labels"].shape
-
-    # This works because we conveniently set labels to arange(num_boxes)
-    assert out["labels"].tolist() == valid_indices
+    if labels_getter is None or (callable(labels_getter) and labels_getter({"labels": "blah"}) is None):
+        assert out["labels"] is sample["labels"]
+    else:
+        assert isinstance(out["labels"], torch.Tensor)
+        assert out["boxes"].shape[:-1] == out["labels"].shape
+        # This works because we conveniently set labels to arange(num_boxes)
+        assert out["labels"].tolist() == valid_indices
 
 
 @pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))

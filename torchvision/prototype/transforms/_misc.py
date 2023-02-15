@@ -240,13 +240,15 @@ class SanitizeBoundingBoxes(Transform):
             raise ValueError(f"min_size must be >= 1, got {min_size}.")
         self.min_size = min_size
 
-        self.labels_getter = labels_getter 
+        self.labels_getter = labels_getter
         if labels_getter == "default":
-            self._labels_getter= self._find_label_default_heuristic
+            self._labels_getter = self._find_label_default_heuristic
         elif callable(labels_getter):
-            self._labels_getter = labels_getter 
+            self._labels_getter = labels_getter
         elif isinstance(labels_getter, str):
-            self._labels_getter= lambda inputs: inputs[labels_getter]
+            self._labels_getter = lambda inputs: inputs[labels_getter]
+        elif labels_getter is None:
+            self._labels_getter = None
         else:
             raise ValueError(
                 "labels_getter should either be a str, callable, or 'default'. "
@@ -268,7 +270,8 @@ class SanitizeBoundingBoxes(Transform):
 
         if labels is None:
             raise ValueError(
-                "Could not infer where the labels are in the sample. Try passing a callable as the label parameter?"
+                "Could not infer where the labels are in the sample. Try passing a callable as the labels_getter parameter?"
+                "If there are no samples and it is by design, pass labels_getter=None."
             )
         return labels
 
@@ -280,8 +283,9 @@ class SanitizeBoundingBoxes(Transform):
                 f"If labels_getter is a str or 'default' (got {self.labels_getter}), "
                 f"then the input to forward() must be a dict. Got {type(inputs)} instead."
             )
-        labels = self._labels_getter(inputs)
-        if not isinstance(labels, torch.Tensor):
+
+        labels = self._labels_getter(inputs) if self._labels_getter is not None else None
+        if labels is not None and not isinstance(labels, torch.Tensor):
             raise ValueError(f"The labels in the input to forward() must be a tensor, got {type(labels)} instead.")
 
         flat_inputs, spec = tree_flatten(inputs)
@@ -293,7 +297,7 @@ class SanitizeBoundingBoxes(Transform):
         if boxes.ndim > 3 or (boxes.ndim == 3 and boxes.shape[0] != 1):
             raise ValueError(f"boxes must be of shape (num_boxes, 4) or (1, num_boxes, 4), got {boxes.shape}")
 
-        if boxes.shape[:-1] != labels.shape:
+        if labels is not None and boxes.shape[:-1] != labels.shape:
             raise ValueError(
                 f"Number of boxes (shape={boxes.shape}) and number of labels (shape={labels.shape}) do not match."
             )
@@ -322,7 +326,7 @@ class SanitizeBoundingBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
 
-        if not (inpt is params["labels"] or isinstance(inpt, datapoints.BoundingBox)):
+        if inpt is None or not (inpt is params["labels"] or isinstance(inpt, datapoints.BoundingBox)):
             return inpt
 
         out = inpt[params["mask"]]
