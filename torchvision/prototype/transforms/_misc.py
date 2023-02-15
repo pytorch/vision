@@ -233,24 +233,24 @@ class SanitizeBoundingBoxes(Transform):
     # - boxes with any coordinate outside the range of the image (negative, or > spatial_size)
     _transformed_types = datapoints.BoundingBox
 
-    def __init__(self, min_size: float = 1.0, labels="default") -> None:
+    def __init__(self, min_size: float = 1.0, labels_getter="default") -> None:
         super().__init__()
 
         if min_size < 1:
             raise ValueError(f"min_size must be >= 1, got {min_size}.")
         self.min_size = min_size
 
-        self.labels = labels
-        if labels == "default":
-            self._get_labels = self._find_label_default_heuristic
-        elif callable(self.labels):
-            self._get_labels = labels
-        elif isinstance(self.labels, str):
-            self._get_labels = lambda inputs: inputs[labels]
+        self.labels_getter = labels_getter 
+        if labels_getter == "default":
+            self._labels_getter= self._find_label_default_heuristic
+        elif callable(labels_getter):
+            self._labels_getter = labels_getter 
+        elif isinstance(labels_getter, str):
+            self._labels_getter= lambda inputs: inputs[labels_getter]
         else:
             raise ValueError(
-                "labels parameter should either be a str, callable, or 'default'. "
-                f"Got {labels} of type {type(labels)}."
+                "labels_getter should either be a str, callable, or 'default'. "
+                f"Got {labels_getter} of type {type(labels_getter)}."
             )
 
     @staticmethod
@@ -275,12 +275,12 @@ class SanitizeBoundingBoxes(Transform):
     def forward(self, *inputs: Any) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
 
-        if isinstance(self.labels, str) and not isinstance(inputs, collections.abc.Mapping):
+        if isinstance(self.labels_getter, str) and not isinstance(inputs, collections.abc.Mapping):
             raise ValueError(
-                f"If labels is a str or 'default' (got {self.labels}), then the input to forward() must be a dict. "
-                f"Got {type(inputs)} instead"
+                f"If labels_getter is a str or 'default' (got {self.labels_getter}), "
+                f"then the input to forward() must be a dict. Got {type(inputs)} instead."
             )
-        labels = self._get_labels(inputs)
+        labels = self._labels_getter(inputs)
         if not isinstance(labels, torch.Tensor):
             raise ValueError(f"The labels in the input to forward() must be a tensor, got {type(labels)} instead.")
 

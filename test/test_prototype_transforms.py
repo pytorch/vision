@@ -2359,9 +2359,9 @@ def test_detection_preset(image_type, label_type, data_augmentation, to_tensor):
 
 
 @pytest.mark.parametrize("min_size", (1, 10))
-@pytest.mark.parametrize("labels_param", ("default", "labels", lambda inputs: inputs["labels"]))
+@pytest.mark.parametrize("labels_getter", ("default", "labels", lambda inputs: inputs["labels"]))
 @pytest.mark.parametrize("batch", (True, False))
-def test_sanitize_bounding_boxes(min_size, labels_param, batch):
+def test_sanitize_bounding_boxes(min_size, labels_getter, batch):
     H, W = 256, 128
 
     boxes_and_validity = [
@@ -2407,7 +2407,7 @@ def test_sanitize_bounding_boxes(min_size, labels_param, batch):
         "whatever": torch.rand(10),
     }
 
-    out = transforms.SanitizeBoundingBoxes(min_size=min_size, labels=labels_param)(sample)
+    out = transforms.SanitizeBoundingBoxes(min_size=min_size, labels_getter=labels_getter)(sample)
 
     assert out["image"] is sample["image"]
     assert out["whatever"] is sample["whatever"]
@@ -2436,14 +2436,14 @@ def test_sanitize_bounding_boxes_errors():
 
     with pytest.raises(ValueError, match="min_size must be >= 1"):
         transforms.SanitizeBoundingBoxes(min_size=0)
-    with pytest.raises(ValueError, match="labels parameter should either be a str"):
-        transforms.SanitizeBoundingBoxes(labels=12)
+    with pytest.raises(ValueError, match="labels_getter should either be a str"):
+        transforms.SanitizeBoundingBoxes(labels_getter=12)
 
     with pytest.raises(ValueError, match="Could not infer where the labels are"):
         bad_labels_key = {"bbox": good_bbox, "BAD_KEY": torch.arange(good_bbox.shape[0])}
         transforms.SanitizeBoundingBoxes()(bad_labels_key)
 
-    with pytest.raises(ValueError, match="If labels is a str or 'default'"):
+    with pytest.raises(ValueError, match="If labels_getter is a str or 'default'"):
         not_a_dict = (good_bbox, torch.arange(good_bbox.shape[0]))
         transforms.SanitizeBoundingBoxes()(not_a_dict)
 
