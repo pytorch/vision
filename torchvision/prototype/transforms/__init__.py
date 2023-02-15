@@ -49,7 +49,7 @@ from ._misc import (
     LinearTransformation,
     Normalize,
     PermuteDimensions,
-    RemoveSmallBoundingBoxes,
+    SanitizeBoundingBoxes,
     ToDtype,
     TransposeDimensions,
 )
