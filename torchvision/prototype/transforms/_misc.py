@@ -231,7 +231,6 @@ class SanitizeBoundingBoxes(Transform):
     # This removes boxes and their corresponding labels:
     # - small or degenerate bboxes based on min_size (this includes those where X2 <= X1 or Y2 <= Y1)
     # - boxes with any coordinate outside the range of the image (negative, or > spatial_size)
-    _transformed_types = datapoints.BoundingBox
 
     def __init__(self, min_size: float = 1.0, labels_getter="default") -> None:
         super().__init__()
@@ -259,21 +258,18 @@ class SanitizeBoundingBoxes(Transform):
     def _find_labels_default_heuristic(inputs):
         # Tries to find a "label" key, otherwise tries for the first key that contains "label" - case insensitive
         # Returns None if nothing is found
-        labels = None
         candidate_key = None
         with suppress(StopIteration):
             candidate_key = next(key for key in inputs.keys() if key.lower() == "labels")
         if candidate_key is None:
             with suppress(StopIteration):
                 candidate_key = next(key for key in inputs.keys() if "label" in key.lower())
-        labels = inputs.get(candidate_key)
-
-        if labels is None:
+        if candidate_key is None:
             raise ValueError(
                 "Could not infer where the labels are in the sample. Try passing a callable as the labels_getter parameter?"
                 "If there are no samples and it is by design, pass labels_getter=None."
             )
-        return labels
+        return inputs[candidate_key]
 
     def forward(self, *inputs: Any) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
@@ -284,9 +280,12 @@ class SanitizeBoundingBoxes(Transform):
                 f"then the input to forward() must be a dict. Got {type(inputs)} instead."
             )
 
-        labels = self._labels_getter(inputs) if self._labels_getter is not None else None
-        if labels is not None and not isinstance(labels, torch.Tensor):
-            raise ValueError(f"The labels in the input to forward() must be a tensor, got {type(labels)} instead.")
+        if self._labels_getter is None:
+            labels = None
+        else:
+            labels = self._labels_getter(inputs)
+            if labels is not None and not isinstance(labels, torch.Tensor):
+                raise ValueError(f"The labels in the input to forward() must be a tensor, got {type(labels)} instead.")
 
         flat_inputs, spec = tree_flatten(inputs)
         # TODO: this enforces one single BoundingBox entry.
