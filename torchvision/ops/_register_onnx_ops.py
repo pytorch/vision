@@ -28,11 +28,8 @@ def _register_custom_op():
         return squeeze(g, select(g, nms_out, 1, g.op("Constant", value_t=torch.tensor([2], dtype=torch.long))), 1)
 
     def _process_batch_indices_for_roi_align(g, rois):
-        indices = squeeze(
-            g, select(g, rois, 1, g.op("Constant", value_t=torch.tensor([0], dtype=torch.long))), 1
-        )
+        indices = squeeze(g, select(g, rois, 1, g.op("Constant", value_t=torch.tensor([0], dtype=torch.long))), 1)
         return g.op("Cast", indices, to_i=torch.onnx.TensorProtoDataType.INT64)
-
 
     def _process_rois_for_roi_align(g, rois):
         return select(g, rois, 1, g.op("Constant", value_t=torch.tensor([1, 2, 3, 4], dtype=torch.long)))
