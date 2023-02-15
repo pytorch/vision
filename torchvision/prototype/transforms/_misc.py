@@ -242,7 +242,7 @@ class SanitizeBoundingBoxes(Transform):
 
         self.labels_getter = labels_getter
         if labels_getter == "default":
-            self._labels_getter = self._find_label_default_heuristic
+            self._labels_getter = self._find_labels_default_heuristic
         elif callable(labels_getter):
             self._labels_getter = labels_getter
         elif isinstance(labels_getter, str):
@@ -256,7 +256,7 @@ class SanitizeBoundingBoxes(Transform):
             )
 
     @staticmethod
-    def _find_label_default_heuristic(inputs):
+    def _find_labels_default_heuristic(inputs):
         # Tries to find a "label" key, otherwise tries for the first key that contains "label" - case insensitive
         # Returns None if nothing is found
         labels = None

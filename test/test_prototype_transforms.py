@@ -2428,13 +2428,13 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, batch):
 def test_sanitize_bounding_boxes_default_heuristic(key):
     labels = torch.arange(10)
     d = {key: labels}
-    assert transforms.SanitizeBoundingBoxes._find_label_default_heuristic(d) is labels
+    assert transforms.SanitizeBoundingBoxes._find_labels_default_heuristic(d) is labels
 
     if key.lower() != "labels":
         # If "labels" is in the dict (case-insensitive),
         # it takes precedence over other keys which would otherwise be a match
         d = {key: "something_else", "labels": labels}
-        assert transforms.SanitizeBoundingBoxes._find_label_default_heuristic(d) is labels
+        assert transforms.SanitizeBoundingBoxes._find_labels_default_heuristic(d) is labels
 
 
 def test_sanitize_bounding_boxes_errors():
