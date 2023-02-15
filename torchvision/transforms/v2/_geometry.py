@@ -8,9 +8,10 @@ import torch
 
 from torchvision import transforms as _transforms
 from torchvision.ops.boxes import box_iou
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
-from torchvision.prototype.transforms.functional._geometry import _check_interpolation
+from torchvision.prototype import datapoints as proto_datapoints
+from torchvision import datapoints
+from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
+from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.functional import _get_perspective_coeffs
 
 from ._transform import _RandomApplyTransform
@@ -168,16 +169,16 @@ class FiveCrop(Transform):
     """
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], datapoints.Label]):
+        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], proto_datapoints.Label]):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
         ...         image_or_video = images_or_videos[0]
         ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
-        ...         labels = datapoints.Label.wrap_like(labels, labels.repeat(batch_size))
+        ...         labels = proto_datapoints.Label.wrap_like(labels, labels.repeat(batch_size))
         ...         return images_or_videos, labels
         ...
         >>> image = datapoints.Image(torch.rand(3, 256, 256))
-        >>> label = datapoints.Label(0)
+        >>> label = proto_datapoints.Label(0)
         >>> transform = transforms.Compose([transforms.FiveCrop(), BatchMultiCrop()])
         >>> images, labels = transform(image, label)
         >>> images.shape
@@ -211,7 +212,7 @@ class FiveCrop(Transform):
 
 class TenCrop(Transform):
     """
-    See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
+    See :class:`~torchvision.transforms.v2.FiveCrop` for an example.
     """
 
     _v1_transform_cls = _transforms.TenCrop
@@ -687,7 +688,7 @@ class RandomIoUCrop(Transform):
         if not (
             has_all(flat_inputs, datapoints.BoundingBox)
             and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
-            and has_any(flat_inputs, datapoints.Label, datapoints.OneHotLabel)
+            and has_any(flat_inputs, proto_datapoints.Label, proto_datapoints.OneHotLabel)
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
@@ -750,7 +751,7 @@ class RandomIoUCrop(Transform):
 
         is_within_crop_area = params["is_within_crop_area"]
 
-        if isinstance(inpt, (datapoints.Label, datapoints.OneHotLabel)):
+        if isinstance(inpt, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
             return inpt.wrap_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
@@ -855,7 +856,7 @@ class FixedSizeCrop(Transform):
             )
 
         if has_any(flat_inputs, datapoints.BoundingBox) and not has_any(
-            flat_inputs, datapoints.Label, datapoints.OneHotLabel
+            flat_inputs, proto_datapoints.Label, proto_datapoints.OneHotLabel
         ):
             raise TypeError(
                 f"If a BoundingBox is contained in the input sample, "
@@ -927,7 +928,7 @@ class FixedSizeCrop(Transform):
             )
 
         if params["is_valid"] is not None:
-            if isinstance(inpt, (datapoints.Label, datapoints.OneHotLabel, datapoints.Mask)):
+            if isinstance(inpt, (proto_datapoints.Label, proto_datapoints.OneHotLabel, datapoints.Mask)):
                 inpt = inpt.wrap_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
             elif isinstance(inpt, datapoints.BoundingBox):
                 inpt = datapoints.BoundingBox.wrap_like(
