@@ -5,8 +5,8 @@ from typing import Any, Callable, List, Tuple, Type, Union
 import PIL.Image
 
 from torchvision._utils import sequence_to_str
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms.functional import get_dimensions, get_spatial_size, is_simple_tensor
+from torchvision import datapoints
+from torchvision.transforms.v2.functional import get_dimensions, get_spatial_size, is_simple_tensor
 
 
 def query_bounding_box(flat_inputs: List[Any]) -> datapoints.BoundingBox:
