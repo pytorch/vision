@@ -8,9 +8,10 @@ import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import transforms as _transforms
 from torchvision.ops import masks_to_boxes
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
-from torchvision.prototype.transforms.functional._geometry import _check_interpolation
+from torchvision import datapoints
+from torchvision.prototype import datapoints as proto_datapoints
+from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
+from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
 from ._transform import _RandomApplyTransform
 from .utils import has_any, is_simple_tensor, query_chw, query_spatial_size
@@ -118,19 +119,19 @@ class _BaseMixupCutmix(_RandomApplyTransform):
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
             has_any(flat_inputs, datapoints.Image, datapoints.Video, is_simple_tensor)
-            and has_any(flat_inputs, datapoints.OneHotLabel)
+            and has_any(flat_inputs, proto_datapoints.OneHotLabel)
         ):
             raise TypeError(f"{type(self).__name__}() is only defined for tensor images/videos and one-hot labels.")
-        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBox, datapoints.Mask, datapoints.Label):
+        if has_any(flat_inputs, PIL.Image.Image, datapoints.BoundingBox, datapoints.Mask, proto_datapoints.Label):
             raise TypeError(
                 f"{type(self).__name__}() does not support PIL images, bounding boxes, masks and plain labels."
             )
 
-    def _mixup_onehotlabel(self, inpt: datapoints.OneHotLabel, lam: float) -> datapoints.OneHotLabel:
+    def _mixup_onehotlabel(self, inpt: proto_datapoints.OneHotLabel, lam: float) -> proto_datapoints.OneHotLabel:
         if inpt.ndim < 2:
             raise ValueError("Need a batch of one hot labels")
         output = inpt.roll(1, 0).mul_(1.0 - lam).add_(inpt.mul(lam))
-        return datapoints.OneHotLabel.wrap_like(inpt, output)
+        return proto_datapoints.OneHotLabel.wrap_like(inpt, output)
 
 
 class RandomMixup(_BaseMixupCutmix):
@@ -149,7 +150,7 @@ class RandomMixup(_BaseMixupCutmix):
                 output = type(inpt).wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
-        elif isinstance(inpt, datapoints.OneHotLabel):
+        elif isinstance(inpt, proto_datapoints.OneHotLabel):
             return self._mixup_onehotlabel(inpt, lam)
         else:
             return inpt
@@ -193,7 +194,7 @@ class RandomCutmix(_BaseMixupCutmix):
                 output = inpt.wrap_like(inpt, output)  # type: ignore[arg-type]
 
             return output
-        elif isinstance(inpt, datapoints.OneHotLabel):
+        elif isinstance(inpt, proto_datapoints.OneHotLabel):
             lam_adjusted = params["lam_adjusted"]
             return self._mixup_onehotlabel(inpt, lam_adjusted)
         else:
@@ -307,7 +308,7 @@ class SimpleCopyPaste(Transform):
                 bboxes.append(obj)
             elif isinstance(obj, datapoints.Mask):
                 masks.append(obj)
-            elif isinstance(obj, (datapoints.Label, datapoints.OneHotLabel)):
+            elif isinstance(obj, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
                 labels.append(obj)
 
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
@@ -345,7 +346,7 @@ class SimpleCopyPaste(Transform):
             elif isinstance(obj, datapoints.Mask):
                 flat_sample[i] = datapoints.Mask.wrap_like(obj, output_targets[c2]["masks"])
                 c2 += 1
-            elif isinstance(obj, (datapoints.Label, datapoints.OneHotLabel)):
+            elif isinstance(obj, (proto_datapoints.Label, proto_datapoints.OneHotLabel)):
                 flat_sample[i] = obj.wrap_like(obj, output_targets[c3]["labels"])  # type: ignore[arg-type]
                 c3 += 1
 

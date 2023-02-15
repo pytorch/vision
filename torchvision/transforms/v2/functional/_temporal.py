@@ -1,6 +1,6 @@
 import torch
 
-from torchvision.prototype import datapoints
+from torchvision import datapoints
 
 from torchvision.utils import _log_api_usage_once
 
