@@ -5,8 +5,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import PIL.Image
 import torch
-from torchvision import transforms as _transforms
-from torchvision import datapoints
+from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F
 
 from ._transform import _RandomApplyTransform

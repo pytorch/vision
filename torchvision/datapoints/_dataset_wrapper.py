@@ -8,8 +8,7 @@ from collections import defaultdict
 import torch
 from torch.utils.data import Dataset
 
-from torchvision import datasets
-from torchvision import datapoints
+from torchvision import datapoints, datasets
 from torchvision.transforms.v2 import functional as F
 
 __all__ = ["wrap_dataset_for_transforms_v2"]
