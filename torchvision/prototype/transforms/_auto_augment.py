@@ -8,6 +8,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
 from torchvision import transforms as _transforms
 from torchvision.prototype import datapoints
 from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
+from torchvision.prototype.transforms.functional._geometry import _check_interpolation
 from torchvision.prototype.transforms.functional._meta import get_spatial_size
 from torchvision.transforms import functional_tensor as _FT
 
@@ -19,11 +20,11 @@ class _AutoAugmentBase(Transform):
     def __init__(
         self,
         *,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ) -> None:
         super().__init__()
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.fill = _setup_fill_arg(fill)
 
     def _get_random_item(self, dct: Dict[str, Tuple[Callable, bool]]) -> Tuple[str, Tuple[Callable, bool]]:
@@ -79,7 +80,7 @@ class _AutoAugmentBase(Transform):
         image: Union[datapoints.ImageType, datapoints.VideoType],
         transform_id: str,
         magnitude: float,
-        interpolation: InterpolationMode,
+        interpolation: Union[InterpolationMode, int],
         fill: Dict[Type, datapoints.FillTypeJIT],
     ) -> Union[datapoints.ImageType, datapoints.VideoType]:
         fill_ = fill[type(image)]
@@ -193,7 +194,7 @@ class AutoAugment(_AutoAugmentBase):
     def __init__(
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
@@ -350,7 +351,7 @@ class RandAugment(_AutoAugmentBase):
         num_ops: int = 2,
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
@@ -403,7 +404,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
     def __init__(
         self,
         num_magnitude_bins: int = 31,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
@@ -461,7 +462,7 @@ class AugMix(_AutoAugmentBase):
         chain_depth: int = -1,
         alpha: float = 1.0,
         all_ops: bool = True,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)

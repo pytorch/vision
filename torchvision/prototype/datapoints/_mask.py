@@ -53,7 +53,7 @@ class Mask(Datapoint):
     def resize(  # type: ignore[override]
         self,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         max_size: Optional[int] = None,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> Mask:
@@ -75,7 +75,7 @@ class Mask(Datapoint):
         height: int,
         width: int,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> Mask:
         output = self._F.resized_crop_mask(self.as_subclass(torch.Tensor), top, left, height, width, size=size)
@@ -93,7 +93,7 @@ class Mask(Datapoint):
     def rotate(
         self,
         angle: float,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
         fill: FillTypeJIT = None,
@@ -107,7 +107,7 @@ class Mask(Datapoint):
         translate: List[float],
         scale: float,
         shear: List[float],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Mask:
@@ -126,7 +126,7 @@ class Mask(Datapoint):
         self,
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> Mask:
@@ -138,7 +138,7 @@ class Mask(Datapoint):
     def elastic(
         self,
         displacement: torch.Tensor,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
     ) -> Mask:
         output = self._F.elastic_mask(self.as_subclass(torch.Tensor), displacement, fill=fill)
