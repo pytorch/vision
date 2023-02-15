@@ -22,27 +22,8 @@ from ._augment import RandomCutmix, RandomMixup, SimpleCopyPaste
 #     RandomSolarize,
 # )
 # from ._container import Compose, RandomApply, RandomChoice, RandomOrder
-# from ._geometry import (
-#     CenterCrop,
-#     ElasticTransform,
-#     FiveCrop,
-#     FixedSizeCrop,
-#     Pad,
-#     RandomAffine,
-#     RandomCrop,
-#     RandomHorizontalFlip,
-#     RandomIoUCrop,
-#     RandomPerspective,
-#     RandomResize,
-#     RandomResizedCrop,
-#     RandomRotation,
-#     RandomShortestSize,
-#     RandomVerticalFlip,
-#     RandomZoomOut,
-#     Resize,
-#     ScaleJitter,
-#     TenCrop,
-# )
+from ._geometry import FixedSizeCrop
+
 # from ._meta import ClampBoundingBox, ConvertBoundingBoxFormat, ConvertDtype, ConvertImageDtype
 from ._misc import PermuteDimensions, TransposeDimensions
 

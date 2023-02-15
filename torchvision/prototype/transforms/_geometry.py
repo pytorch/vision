@@ -6,12 +6,13 @@ from typing import Any, cast, Dict, List, Literal, Optional, Sequence, Tuple, Ty
 import PIL.Image
 import torch
 
-from torchvision import transforms as _transforms
+from torchvision import datapoints, transforms as _transforms
 from torchvision.ops.boxes import box_iou
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
-from torchvision.prototype.transforms.functional._geometry import _check_interpolation
+from torchvision.prototype.datapoints import Label, OneHotLabel
 from torchvision.transforms.functional import _get_perspective_coeffs
+from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
+from torchvision.transforms.v2.functional._geometry import _check_interpolation
+from torchvision.transforms.v2.utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_spatial_size
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
@@ -23,7 +24,6 @@ from ._utils import (
     _setup_float_or_seq,
     _setup_size,
 )
-from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_spatial_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
@@ -687,7 +687,7 @@ class RandomIoUCrop(Transform):
         if not (
             has_all(flat_inputs, datapoints.BoundingBox)
             and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
-            and has_any(flat_inputs, datapoints.Label, datapoints.OneHotLabel)
+            and has_any(flat_inputs, Label, OneHotLabel)
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
@@ -750,7 +750,7 @@ class RandomIoUCrop(Transform):
 
         is_within_crop_area = params["is_within_crop_area"]
 
-        if isinstance(inpt, (datapoints.Label, datapoints.OneHotLabel)):
+        if isinstance(inpt, (Label, OneHotLabel)):
             return inpt.wrap_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
@@ -854,9 +854,7 @@ class FixedSizeCrop(Transform):
                 f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
             )
 
-        if has_any(flat_inputs, datapoints.BoundingBox) and not has_any(
-            flat_inputs, datapoints.Label, datapoints.OneHotLabel
-        ):
+        if has_any(flat_inputs, datapoints.BoundingBox) and not has_any(flat_inputs, Label, OneHotLabel):
             raise TypeError(
                 f"If a BoundingBox is contained in the input sample, "
                 f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
@@ -927,7 +925,7 @@ class FixedSizeCrop(Transform):
             )
 
         if params["is_valid"] is not None:
-            if isinstance(inpt, (datapoints.Label, datapoints.OneHotLabel, datapoints.Mask)):
+            if isinstance(inpt, (Label, OneHotLabel, datapoints.Mask)):
                 inpt = inpt.wrap_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
             elif isinstance(inpt, datapoints.BoundingBox):
                 inpt = datapoints.BoundingBox.wrap_like(

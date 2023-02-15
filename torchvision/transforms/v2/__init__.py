@@ -23,7 +23,6 @@ from ._geometry import (
     CenterCrop,
     ElasticTransform,
     FiveCrop,
-    FixedSizeCrop,
     Pad,
     RandomAffine,
     RandomCrop,
