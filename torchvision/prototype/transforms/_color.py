@@ -80,14 +80,15 @@ class ColorJitter(Transform):
         if value is None:
             return None
 
-        if isinstance(value, float):
+        if isinstance(value, (int, float)):
             if value < 0:
                 raise ValueError(f"If {name} is a single number, it must be non negative.")
             value = [center - value, center + value]
             if clip_first_on_zero:
                 value[0] = max(value[0], 0.0)
-        elif not (isinstance(value, collections.abc.Sequence) and len(value) == 2):
-            # TODO: not related to tests or BC but we should really print the input.
+        elif isinstance(value, collections.abc.Sequence) and len(value) == 2:
+            value = [float(v) for v in value]
+        else:
             raise TypeError(f"{name}={value} should be a single number or a sequence with length 2.")
 
         if not bound[0] <= value[0] <= value[1] <= bound[1]:
