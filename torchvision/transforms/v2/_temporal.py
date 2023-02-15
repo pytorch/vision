@@ -1,9 +1,9 @@
 from typing import Any, Dict
 
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F, Transform
+from torchvision import datapoints
+from torchvision.transforms.v2 import functional as F, Transform
 
-from torchvision.prototype.transforms.utils import is_simple_tensor
+from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 class UniformTemporalSubsample(Transform):

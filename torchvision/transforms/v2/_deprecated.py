@@ -5,7 +5,7 @@ import numpy as np
 import PIL.Image
 import torch
 
-from torchvision.prototype.transforms import Transform
+from torchvision.transforms.v2 import Transform
 from torchvision.transforms import functional as _F
 
 

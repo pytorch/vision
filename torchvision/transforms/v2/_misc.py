@@ -9,8 +9,8 @@ import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 
 from torchvision import transforms as _transforms
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F, Transform
+from torchvision import datapoints
+from torchvision.transforms.v2 import functional as F, Transform
 
 from ._utils import _get_defaultdict, _setup_float_or_seq, _setup_size
 from .utils import has_any, is_simple_tensor, query_bounding_box
