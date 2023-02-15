@@ -6,14 +6,13 @@ from typing import Any, cast, Dict, List, Optional, Tuple, Union
 import PIL.Image
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision import transforms as _transforms
+from torchvision import datapoints, transforms as _transforms
 from torchvision.ops import masks_to_boxes
-from torchvision import datapoints
 from torchvision.prototype import datapoints as proto_datapoints
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
 from torchvision.transforms.v2._transform import _RandomApplyTransform
+from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.utils import has_any, is_simple_tensor, query_chw, query_spatial_size
 
 

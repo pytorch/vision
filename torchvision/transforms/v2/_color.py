@@ -3,8 +3,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
-from torchvision import transforms as _transforms
-from torchvision import datapoints
+from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
 from ._transform import _RandomApplyTransform

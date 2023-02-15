@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Any, Callable, List, Tuple, Type, Union
 
 import PIL.Image
+from torchvision import datapoints
 
 from torchvision._utils import sequence_to_str
-from torchvision import datapoints
 from torchvision.transforms.v2.functional import get_dimensions, get_spatial_size, is_simple_tensor
 
 

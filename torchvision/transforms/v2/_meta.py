@@ -2,8 +2,7 @@ from typing import Any, Dict, Union
 
 import torch
 
-from torchvision import transforms as _transforms
-from torchvision import datapoints
+from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
 from .utils import is_simple_tensor
