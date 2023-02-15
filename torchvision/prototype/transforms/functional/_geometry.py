@@ -432,7 +432,7 @@ def _apply_grid_transform(
     if fill is not None:
         float_img, mask = torch.tensor_split(float_img, indices=(-1,), dim=-3)
         mask = mask.expand_as(float_img)
-        fill_list = fill if isinstance(fill, (tuple, list)) else [float(fill)]
+        fill_list = fill if isinstance(fill, (tuple, list)) else [float(fill)]  # type: ignore[arg-type]
         fill_img = torch.tensor(fill_list, dtype=float_img.dtype, device=float_img.device).view(1, -1, 1, 1)
         if mode == "nearest":
             bool_mask = mask < 0.5
@@ -968,8 +968,8 @@ def _parse_pad_padding(padding: Union[int, List[int]]) -> List[int]:
 
 def pad_image_tensor(
     image: torch.Tensor,
-    padding: Union[int, List[int]],
-    fill: datapoints.FillTypeJIT = None,
+    padding: List[int],
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     # Be aware that while `padding` has order `[left, top, right, bottom]` has order, `torch_padding` uses
@@ -1069,14 +1069,14 @@ pad_image_pil = _FP.pad
 
 def pad_mask(
     mask: torch.Tensor,
-    padding: Union[int, List[int]],
+    padding: List[int],
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
-    fill: datapoints.FillTypeJIT = None,
 ) -> torch.Tensor:
     if fill is None:
         fill = 0
 
-    if isinstance(fill, list):
+    if isinstance(fill, (tuple, list)):
         raise ValueError("Non-scalar fill value is not supported")
 
     if mask.ndim < 3:
@@ -1097,7 +1097,7 @@ def pad_bounding_box(
     bounding_box: torch.Tensor,
     format: datapoints.BoundingBoxFormat,
     spatial_size: Tuple[int, int],
-    padding: Union[int, List[int]],
+    padding: List[int],
     padding_mode: str = "constant",
 ) -> Tuple[torch.Tensor, Tuple[int, int]]:
     if padding_mode not in ["constant"]:
@@ -1122,8 +1122,8 @@ def pad_bounding_box(
 
 def pad_video(
     video: torch.Tensor,
-    padding: Union[int, List[int]],
-    fill: datapoints.FillTypeJIT = None,
+    padding: List[int],
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> torch.Tensor:
     return pad_image_tensor(video, padding, fill=fill, padding_mode=padding_mode)
@@ -1131,8 +1131,8 @@ def pad_video(
 
 def pad(
     inpt: datapoints.InputTypeJIT,
-    padding: Union[int, List[int]],
-    fill: datapoints.FillTypeJIT = None,
+    padding: List[int],
+    fill: Optional[Union[int, float, List[float]]] = None,
     padding_mode: str = "constant",
 ) -> datapoints.InputTypeJIT:
     if not torch.jit.is_scripting():
