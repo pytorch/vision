@@ -8,9 +8,9 @@ from functools import partial
 import numpy as np
 import pytest
 import torch
-import torchvision.prototype.transforms as transforms
-import torchvision.prototype.transforms.functional as F
 import torchvision.transforms.functional_tensor as F_t
+import torchvision.transforms.v2 as transforms
+import torchvision.transforms.v2.functional as F
 from PIL import Image
 from torch._utils_internal import get_file_path_2
 

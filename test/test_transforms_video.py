@@ -15,7 +15,7 @@ except ImportError:
 
 with warnings.catch_warnings(record=True):
     warnings.simplefilter("always")
-    import torchvision.prototype.transforms as transforms
+    import torchvision.transforms._transforms_video as transforms
 
 
 class TestVideoTransforms:
@@ -28,14 +28,14 @@ class TestVideoTransforms:
         clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
         result = Compose(
             [
-                transforms.ToTensor(),
-                transforms.RandomCrop((oheight, owidth)),
+                transforms.ToTensorVideo(),
+                transforms.RandomCropVideo((oheight, owidth)),
             ]
         )(clip)
         assert result.size(2) == oheight
         assert result.size(3) == owidth
 
-        transforms.RandomCrop((oheight, owidth)).__repr__()
+        transforms.RandomCropVideo((oheight, owidth)).__repr__()
 
     def test_random_resized_crop_video(self):
         numFrames = random.randint(4, 128)
@@ -46,14 +46,14 @@ class TestVideoTransforms:
         clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
         result = Compose(
             [
-                transforms.ToTensor(),
-                transforms.RandomResizedCrop((oheight, owidth)),
+                transforms.ToTensorVideo(),
+                transforms.RandomResizedCropVideo((oheight, owidth)),
             ]
         )(clip)
         assert result.size(2) == oheight
         assert result.size(3) == owidth
 
-        transforms.RandomResizedCrop((oheight, owidth)).__repr__()
+        transforms.RandomResizedCropVideo((oheight, owidth)).__repr__()
 
     def test_center_crop_video(self):
         numFrames = random.randint(4, 128)
@@ -69,8 +69,8 @@ class TestVideoTransforms:
         clipNarrow.fill_(0)
         result = Compose(
             [
-                transforms.ToTensor(),
-                transforms.CenterCrop((oheight, owidth)),
+                transforms.ToTensorVideo(),
+                transforms.CenterCropVideo((oheight, owidth)),
             ]
         )(clip)
 
@@ -83,8 +83,8 @@ class TestVideoTransforms:
         owidth += 1
         result = Compose(
             [
-                transforms.ToTensor(),
-                transforms.CenterCrop((oheight, owidth)),
+                transforms.ToTensorVideo(),
+                transforms.CenterCropVideo((oheight, owidth)),
             ]
         )(clip)
         sum1 = result.sum()
@@ -98,8 +98,8 @@ class TestVideoTransforms:
         owidth += 1
         result = Compose(
             [
-                transforms.ToTensor(),
-                transforms.CenterCrop((oheight, owidth)),
+                transforms.ToTensorVideo(),
+                transforms.CenterCropVideo((oheight, owidth)),
             ]
         )(clip)
         sum2 = result.sum()
@@ -128,20 +128,20 @@ class TestVideoTransforms:
         clip = torch.normal(mean, std, size=(channels, numFrames, height, width))
         mean = [clip[c].mean().item() for c in range(channels)]
         std = [clip[c].std().item() for c in range(channels)]
-        normalized = transforms.Normalize(mean, std)(clip)
+        normalized = transforms.NormalizeVideo(mean, std)(clip)
         assert samples_from_standard_normal(normalized)
         random.setstate(random_state)
 
         # Checking the optional in-place behaviour
         tensor = torch.rand((3, 128, 16, 16))
-        tensor_inplace = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)(tensor)
+        tensor_inplace = transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)(tensor)
         assert_equal(tensor, tensor_inplace)
 
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True).__repr__()
+        transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True).__repr__()
 
     def test_to_tensor_video(self):
         numFrames, height, width = 64, 4, 4
-        trans = transforms.ToTensor()
+        trans = transforms.ToTensorVideo()
 
         with pytest.raises(TypeError):
             np_rng = np.random.RandomState(0)
@@ -165,13 +165,13 @@ class TestVideoTransforms:
         clip = torch.rand((3, 4, 112, 112), dtype=torch.float)
         hclip = clip.flip(-1)
 
-        out = transforms.RandomHorizontalFlip(p=p)(clip)
+        out = transforms.RandomHorizontalFlipVideo(p=p)(clip)
         if p == 0:
             torch.testing.assert_close(out, clip)
         elif p == 1:
             torch.testing.assert_close(out, hclip)
 
-        transforms.RandomHorizontalFlip().__repr__()
+        transforms.RandomHorizontalFlipVideo().__repr__()
 
 
 if __name__ == "__main__":
