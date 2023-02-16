@@ -11,7 +11,6 @@ import pytest
 
 import torch
 
-import torchvision.transforms.v2.utils
 from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
 from prototype_common_utils import (
     assert_close,

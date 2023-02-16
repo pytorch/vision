@@ -9,7 +9,7 @@ from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms.v2 import functional as F
 
 from ._transform import _RandomApplyTransform
-from .utils import has_any, is_simple_tensor, query_chw, query_spatial_size
+from .utils import is_simple_tensor, query_chw
 
 
 class RandomErasing(_RandomApplyTransform):
