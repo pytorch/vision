@@ -25,6 +25,7 @@ set CUDNN_LIB_FOLDER="lib\x64"
 
 if %CUDA_VER% EQU 116 goto cuda116
 if %CUDA_VER% EQU 117 goto cuda117
+if %CUDA_VER% EQU 118 goto cuda118
 
 echo CUDA %CUDA_VERSION_STR% is not supported
 exit /b 1
@@ -67,6 +68,32 @@ if not exist "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%" (
 
 set CUDNN_INSTALL_ZIP=cudnn-windows-x86_64-8.3.2.44_cuda11.5-archive.zip
 set CUDNN_FOLDER=cudnn-windows-x86_64-8.3.2.44_cuda11.5-archive
+set CUDNN_LIB_FOLDER="lib"
+if not exist "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%" (
+    curl -k -L "http://s3.amazonaws.com/ossci-windows/%CUDNN_INSTALL_ZIP%" --output "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
+    if errorlevel 1 exit /b 1
+    set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
+
+    rem Make sure windows path contains zlib dll
+    curl -k -L "http://s3.amazonaws.com/ossci-windows/zlib123dllx64.zip" --output "%SRC_DIR%\temp_build\zlib123dllx64.zip"
+    7z x "%SRC_DIR%\temp_build\zlib123dllx64.zip" -o"%SRC_DIR%\temp_build\zlib"
+    xcopy /Y "%SRC_DIR%\temp_build\zlib\dll_x64\*.dll" "C:\Windows\System32"
+)
+
+goto cuda_common
+
+:cuda118
+
+set CUDA_INSTALL_EXE=cuda_11.8.0_522.06_windows.exe
+if not exist "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%" (
+    curl -k -L "https://ossci-windows.s3.amazonaws.com/%CUDA_INSTALL_EXE%" --output "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%"
+    if errorlevel 1 exit /b 1
+    set "CUDA_SETUP_FILE=%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%"
+    set "ARGS=cuda_profiler_api_11.8 thrust_11.8 nvcc_11.8 cuobjdump_11.8 nvprune_11.8 nvprof_11.8 cupti_11.8 cublas_11.8 cublas_dev_11.8 cudart_11.8 cufft_11.8 cufft_dev_11.8 curand_11.8 curand_dev_11.8 cusolver_11.8 cusolver_dev_11.8 cusparse_11.8 cusparse_dev_11.8 npp_11.8 npp_dev_11.8 nvjpeg_11.8 nvjpeg_dev_11.8 nvrtc_11.8 nvrtc_dev_11.8 nvml_dev_11.8"
+)
+
+set CUDNN_INSTALL_ZIP=cudnn-windows-x86_64-8.5.0.96_cuda11-archive.zip
+set CUDNN_FOLDER=cudnn-windows-x86_64-8.5.0.96_cuda11-archive
 set CUDNN_LIB_FOLDER="lib"
 if not exist "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%" (
     curl -k -L "http://s3.amazonaws.com/ossci-windows/%CUDNN_INSTALL_ZIP%" --output "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"

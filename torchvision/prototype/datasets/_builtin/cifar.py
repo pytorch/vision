@@ -6,6 +6,7 @@ from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Tuple, U
 
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
+from torchvision.prototype.datapoints import Image, Label
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
@@ -13,7 +14,6 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     read_categories_file,
 )
-from torchvision.prototype.features import Image, Label
 
 from .._api import register_dataset, register_info
 

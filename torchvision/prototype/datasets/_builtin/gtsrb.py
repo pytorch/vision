@@ -2,6 +2,7 @@ import pathlib
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import CSVDictParser, Demultiplexer, Filter, IterDataPipe, Mapper, Zipper
+from torchvision.prototype.datapoints import BoundingBox, Label
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
@@ -9,7 +10,6 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     path_comparator,
 )
-from torchvision.prototype.features import BoundingBox, Label
 
 from .._api import register_dataset, register_info
 

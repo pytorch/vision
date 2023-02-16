@@ -2,6 +2,7 @@ import contextlib
 import itertools
 import tempfile
 import time
+import traceback
 import unittest.mock
 import warnings
 from datetime import datetime
@@ -127,19 +128,23 @@ def log_download_attempts(
 
 
 def retry(fn, times=1, wait=5.0):
-    msgs = []
+    tbs = []
     for _ in range(times + 1):
         try:
             return fn()
         except AssertionError as error:
-            msgs.append(str(error))
+            tbs.append("".join(traceback.format_exception(type(error), error, error.__traceback__)))
             time.sleep(wait)
     else:
         raise AssertionError(
             "\n".join(
                 (
-                    f"Assertion failed {times + 1} times with {wait:.1f} seconds intermediate wait time.\n",
-                    *(f"{idx}: {error}" for idx, error in enumerate(msgs, 1)),
+                    "\n",
+                    *[f"{'_' * 40}  {idx:2d}  {'_' * 40}\n\n{tb}" for idx, tb in enumerate(tbs, 1)],
+                    (
+                        f"Assertion failed {times + 1} times with {wait:.1f} seconds intermediate wait time. "
+                        f"You can find the the full tracebacks above."
+                    ),
                 )
             )
         )
@@ -149,10 +154,12 @@ def retry(fn, times=1, wait=5.0):
 def assert_server_response_ok():
     try:
         yield
-    except URLError as error:
-        raise AssertionError("The request timed out.") from error
     except HTTPError as error:
         raise AssertionError(f"The server returned {error.code}: {error.reason}.") from error
+    except URLError as error:
+        raise AssertionError(
+            "Connection not possible due to SSL." if "SSL" in str(error) else "The request timed out."
+        ) from error
     except RecursionError as error:
         raise AssertionError(str(error)) from error
 
@@ -287,6 +294,10 @@ def qmnist():
             for what in ("train", "test", "nist")
         ]
     )
+
+
+def moving_mnist():
+    return collect_download_configs(lambda: datasets.MovingMNIST(ROOT, download=True), name="MovingMNIST")
 
 
 def omniglot():
@@ -448,7 +459,6 @@ def make_parametrize_kwargs(download_configs):
             omniglot(),
             phototour(),
             sbdataset(),
-            sbu(),
             semeion(),
             stl10(),
             svhn(),
@@ -457,6 +467,7 @@ def make_parametrize_kwargs(download_configs):
             widerface(),
             kinetics(),
             kitti(),
+            places365(),
         )
     )
 )
@@ -471,7 +482,7 @@ def test_url_is_accessible(url, md5):
 @pytest.mark.parametrize(
     **make_parametrize_kwargs(
         itertools.chain(
-            places365(),  # https://github.com/pytorch/vision/issues/6268
+            sbu(),  # https://github.com/pytorch/vision/issues/7005
         )
     )
 )

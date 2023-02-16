@@ -48,19 +48,6 @@ def _urlretrieve(url: str, filename: str, chunk_size: int = 1024 * 32) -> None:
         _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
 
 
-def gen_bar_updater() -> Callable[[int, int, int], None]:
-    warnings.warn("The function `gen_bar_update` is deprecated since 0.13 and will be removed in 0.15.")
-    pbar = tqdm(total=None)
-
-    def bar_update(count, block_size, total_size):
-        if pbar.total is None and total_size:
-            pbar.total = total_size
-        progress_bytes = count * block_size
-        pbar.update(progress_bytes - pbar.n)
-
-    return bar_update
-
-
 def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
     # Setting the `usedforsecurity` flag does not change anything about the functionality, but indicates that we are
     # not using the MD5 checksum for cryptography. This enables its usage in restricted environments like FIPS. Without
@@ -464,7 +451,7 @@ def verify_str_arg(
     valid_values: Optional[Iterable[T]] = None,
     custom_msg: Optional[str] = None,
 ) -> T:
-    if not isinstance(value, torch._six.string_classes):
+    if not isinstance(value, str):
         if arg is None:
             msg = "Expected type str, but got type {type}."
         else:
@@ -520,3 +507,9 @@ def _read_pfm(file_name: str, slice_channels: int = 2) -> np.ndarray:
     data = np.flip(data, axis=1)  # flip on h dimension
     data = data[:slice_channels, :, :]
     return data.astype(np.float32)
+
+
+def _flip_byte_order(t: torch.Tensor) -> torch.Tensor:
+    return (
+        t.contiguous().view(torch.uint8).view(*t.shape, t.element_size()).flip(-1).view(*t.shape[:-1], -1).view(t.dtype)
+    )

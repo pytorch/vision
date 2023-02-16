@@ -56,7 +56,7 @@ torchrun --nproc_per_node 1 --nnodes 1 train.py --val-dataset sintel --batch-siz
 
 This should give an epe of about 1.3822 on the clean pass and 2.7161 on the
 final pass of Sintel-train. Results may vary slightly depending on the batch
-size and the number of GPUs. For the most accurate resuts use 1 GPU and
+size and the number of GPUs. For the most accurate results use 1 GPU and
 `--batch-size 1`:
 
 ```

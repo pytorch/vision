@@ -164,7 +164,7 @@ class RandomResizeAndCrop(torch.nn.Module):
     # The reason we don't rely on RandomResizedCrop is because of a significant
     # difference in the parametrization of both transforms, in particular,
     # because of the way the random parameters are sampled in both transforms,
-    # which leads to fairly different resuts (and different epe). For more details see
+    # which leads to fairly different results (and different epe). For more details see
     # https://github.com/pytorch/vision/pull/5026/files#r762932579
     def __init__(self, crop_size, min_scale=-0.2, max_scale=0.5, stretch_prob=0.8):
         super().__init__()
@@ -196,8 +196,12 @@ class RandomResizeAndCrop(torch.nn.Module):
 
         if torch.rand(1).item() < self.resize_prob:
             # rescale the images
-            img1 = F.resize(img1, size=(new_h, new_w))
-            img2 = F.resize(img2, size=(new_h, new_w))
+            # We hard-code antialias=False to preserve results after we changed
+            # its default from None to True (see
+            # https://github.com/pytorch/vision/pull/7160)
+            # TODO: we could re-train the OF models with antialias=True?
+            img1 = F.resize(img1, size=(new_h, new_w), antialias=False)
+            img2 = F.resize(img2, size=(new_h, new_w), antialias=False)
             if valid_flow_mask is None:
                 flow = F.resize(flow, size=(new_h, new_w))
                 flow = flow * torch.tensor([scale_x, scale_y])[:, None, None]
@@ -208,7 +212,7 @@ class RandomResizeAndCrop(torch.nn.Module):
 
         # Note: For sparse datasets (Kitti), the original code uses a "margin"
         # See e.g. https://github.com/princeton-vl/RAFT/blob/master/core/utils/augmentor.py#L220:L220
-        # We don't, not sure it matters much
+        # We don't, not sure if it matters much
         y0 = torch.randint(0, img1.shape[1] - self.crop_size[0], size=(1,)).item()
         x0 = torch.randint(0, img1.shape[2] - self.crop_size[1], size=(1,)).item()
 

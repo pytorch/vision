@@ -7,13 +7,13 @@ from typing import Any, BinaryIO, Optional, Tuple, Type, TypeVar, Union
 import PIL.Image
 import torch
 
-from torchvision.prototype.features._feature import _Feature
+from torchvision.prototype.datapoints._datapoint import Datapoint
 from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
 D = TypeVar("D", bound="EncodedData")
 
 
-class EncodedData(_Feature):
+class EncodedData(Datapoint):
     @classmethod
     def _wrap(cls: Type[D], tensor: torch.Tensor) -> D:
         return tensor.as_subclass(cls)

@@ -1,16 +1,17 @@
 import math
 import numbers
 import warnings
-from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, cast, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
 
 import PIL.Image
 import torch
-from torchvision.ops.boxes import box_iou
-from torchvision.prototype import features
-from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
-from torchvision.transforms.functional import _get_perspective_coeffs
 
-from typing_extensions import Literal
+from torchvision import transforms as _transforms
+from torchvision.ops.boxes import box_iou
+from torchvision.prototype import datapoints
+from torchvision.prototype.transforms import functional as F, InterpolationMode, Transform
+from torchvision.prototype.transforms.functional._geometry import _check_interpolation
+from torchvision.transforms.functional import _get_perspective_coeffs
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
@@ -21,39 +22,47 @@ from ._utils import (
     _setup_fill_arg,
     _setup_float_or_seq,
     _setup_size,
-    has_all,
-    has_any,
-    query_bounding_box,
-    query_spatial_size,
 )
+from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query_spatial_size
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomHorizontalFlip
+
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.horizontal_flip(inpt)
 
 
 class RandomVerticalFlip(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomVerticalFlip
+
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return F.vertical_flip(inpt)
 
 
 class Resize(Transform):
+    _v1_transform_cls = _transforms.Resize
+
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> None:
         super().__init__()
 
-        self.size = (
-            [size]
-            if isinstance(size, int)
-            else _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
-        )
-        self.interpolation = interpolation
+        if isinstance(size, int):
+            size = [size]
+        elif isinstance(size, (list, tuple)) and len(size) in {1, 2}:
+            size = list(size)
+        else:
+            raise ValueError(
+                f"size can either be an integer or a list or tuple of one or two integers, " f"but got {size} instead."
+            )
+        self.size = size
+
+        self.interpolation = _check_interpolation(interpolation)
         self.max_size = max_size
         self.antialias = antialias
 
@@ -68,6 +77,8 @@ class Resize(Transform):
 
 
 class CenterCrop(Transform):
+    _v1_transform_cls = _transforms.CenterCrop
+
     def __init__(self, size: Union[int, Sequence[int]]):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -77,13 +88,15 @@ class CenterCrop(Transform):
 
 
 class RandomResizedCrop(Transform):
+    _v1_transform_cls = _transforms.RandomResizedCrop
+
     def __init__(
         self,
         size: Union[int, Sequence[int]],
         scale: Tuple[float, float] = (0.08, 1.0),
         ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -99,7 +112,7 @@ class RandomResizedCrop(Transform):
 
         self.scale = scale
         self.ratio = ratio
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
@@ -148,23 +161,23 @@ class RandomResizedCrop(Transform):
         )
 
 
-ImageOrVideoTypeJIT = Union[features.ImageTypeJIT, features.VideoTypeJIT]
+ImageOrVideoTypeJIT = Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]
 
 
 class FiveCrop(Transform):
     """
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[Tuple[Union[features.Image, features.Video], ...], features.Label]):
+        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], datapoints.Label]):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
         ...         image_or_video = images_or_videos[0]
         ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
-        ...         labels = features.Label.wrap_like(labels, labels.repeat(batch_size))
+        ...         labels = datapoints.Label.wrap_like(labels, labels.repeat(batch_size))
         ...         return images_or_videos, labels
         ...
-        >>> image = features.Image(torch.rand(3, 256, 256))
-        >>> label = features.Label(0)
+        >>> image = datapoints.Image(torch.rand(3, 256, 256))
+        >>> label = datapoints.Label(0)
         >>> transform = transforms.Compose([transforms.FiveCrop(), BatchMultiCrop()])
         >>> images, labels = transform(image, label)
         >>> images.shape
@@ -173,7 +186,14 @@ class FiveCrop(Transform):
         torch.Size([5])
     """
 
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
+    _v1_transform_cls = _transforms.FiveCrop
+
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
@@ -185,7 +205,7 @@ class FiveCrop(Transform):
         return F.five_crop(inpt, self.size)
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, features.BoundingBox, features.Mask):
+        if has_any(flat_inputs, datapoints.BoundingBox, datapoints.Mask):
             raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
 
 
@@ -194,7 +214,14 @@ class TenCrop(Transform):
     See :class:`~torchvision.prototype.transforms.FiveCrop` for an example.
     """
 
-    _transformed_types = (features.Image, PIL.Image.Image, features.is_simple_tensor, features.Video)
+    _v1_transform_cls = _transforms.TenCrop
+
+    _transformed_types = (
+        datapoints.Image,
+        PIL.Image.Image,
+        is_simple_tensor,
+        datapoints.Video,
+    )
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
@@ -202,20 +229,43 @@ class TenCrop(Transform):
         self.vertical_flip = vertical_flip
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if has_any(flat_inputs, features.BoundingBox, features.Mask):
+        if has_any(flat_inputs, datapoints.BoundingBox, datapoints.Mask):
             raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
 
     def _transform(
-        self, inpt: Union[features.ImageType, features.VideoType], params: Dict[str, Any]
-    ) -> Union[List[features.ImageTypeJIT], List[features.VideoTypeJIT]]:
+        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
+    ) -> Tuple[
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+        ImageOrVideoTypeJIT,
+    ]:
         return F.ten_crop(inpt, self.size, vertical_flip=self.vertical_flip)
 
 
 class Pad(Transform):
+    _v1_transform_cls = _transforms.Pad
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        params = super()._extract_params_for_v1_transform()
+
+        if not (params["fill"] is None or isinstance(params["fill"], (int, float))):
+            raise ValueError(
+                f"{type(self.__name__)}() can only be scripted for a scalar `fill`, but got {self.fill} for images."
+            )
+
+        return params
+
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -232,13 +282,13 @@ class Pad(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = self.fill[type(inpt)]
-        return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)
+        return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
 
 class RandomZoomOut(_RandomApplyTransform):
     def __init__(
         self,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -274,17 +324,19 @@ class RandomZoomOut(_RandomApplyTransform):
 
 
 class RandomRotation(Transform):
+    _v1_transform_cls = _transforms.RandomRotation
+
     def __init__(
         self,
         degrees: Union[numbers.Number, Sequence],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.expand = expand
 
         self.fill = _setup_fill_arg(fill)
@@ -311,14 +363,16 @@ class RandomRotation(Transform):
 
 
 class RandomAffine(Transform):
+    _v1_transform_cls = _transforms.RandomAffine
+
     def __init__(
         self,
         degrees: Union[numbers.Number, Sequence],
         translate: Optional[Sequence[float]] = None,
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -341,7 +395,7 @@ class RandomAffine(Transform):
         else:
             self.shear = shear
 
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.fill = _setup_fill_arg(fill)
 
         if center is not None:
@@ -388,12 +442,30 @@ class RandomAffine(Transform):
 
 
 class RandomCrop(Transform):
+    _v1_transform_cls = _transforms.RandomCrop
+
+    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+        params = super()._extract_params_for_v1_transform()
+
+        if not (params["fill"] is None or isinstance(params["fill"], (int, float))):
+            raise ValueError(
+                f"{type(self.__name__)}() can only be scripted for a scalar `fill`, but got {self.fill} for images."
+            )
+
+        padding = self.padding
+        if padding is not None:
+            pad_left, pad_right, pad_top, pad_bottom = padding
+            padding = [pad_left, pad_top, pad_right, pad_bottom]
+        params["padding"] = padding
+
+        return params
+
     def __init__(
         self,
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -480,11 +552,13 @@ class RandomCrop(Transform):
 
 
 class RandomPerspective(_RandomApplyTransform):
+    _v1_transform_cls = _transforms.RandomPerspective
+
     def __init__(
         self,
         distortion_scale: float = 0.5,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         p: float = 0.5,
     ) -> None:
         super().__init__(p=p)
@@ -493,7 +567,7 @@ class RandomPerspective(_RandomApplyTransform):
             raise ValueError("Argument distortion_scale value should be between 0 and 1")
 
         self.distortion_scale = distortion_scale
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -539,18 +613,20 @@ class RandomPerspective(_RandomApplyTransform):
 
 
 class ElasticTransform(Transform):
+    _v1_transform_cls = _transforms.ElasticTransform
+
     def __init__(
         self,
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
         self.alpha = _setup_float_or_seq(alpha, "alpha", 2)
         self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
 
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -609,9 +685,9 @@ class RandomIoUCrop(Transform):
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not (
-            has_all(flat_inputs, features.BoundingBox)
-            and has_any(flat_inputs, PIL.Image.Image, features.Image, features.is_simple_tensor)
-            and has_any(flat_inputs, features.Label, features.OneHotLabel)
+            has_all(flat_inputs, datapoints.BoundingBox)
+            and has_any(flat_inputs, PIL.Image.Image, datapoints.Image, is_simple_tensor)
+            and has_any(flat_inputs, datapoints.Label, datapoints.OneHotLabel)
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain Images or PIL Images, "
@@ -649,7 +725,7 @@ class RandomIoUCrop(Transform):
 
                 # check for any valid boxes with centers within the crop area
                 xyxy_bboxes = F.convert_format_bounding_box(
-                    bboxes.as_subclass(torch.Tensor), bboxes.format, features.BoundingBoxFormat.XYXY
+                    bboxes.as_subclass(torch.Tensor), bboxes.format, datapoints.BoundingBoxFormat.XYXY
                 )
                 cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])
                 cy = 0.5 * (xyxy_bboxes[..., 1] + xyxy_bboxes[..., 3])
@@ -674,19 +750,19 @@ class RandomIoUCrop(Transform):
 
         is_within_crop_area = params["is_within_crop_area"]
 
-        if isinstance(inpt, (features.Label, features.OneHotLabel)):
+        if isinstance(inpt, (datapoints.Label, datapoints.OneHotLabel)):
             return inpt.wrap_like(inpt, inpt[is_within_crop_area])  # type: ignore[arg-type]
 
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
-        if isinstance(output, features.BoundingBox):
+        if isinstance(output, datapoints.BoundingBox):
             bboxes = output[is_within_crop_area]
             bboxes = F.clamp_bounding_box(bboxes, output.format, output.spatial_size)
-            output = features.BoundingBox.wrap_like(output, bboxes)
-        elif isinstance(output, features.Mask):
+            output = datapoints.BoundingBox.wrap_like(output, bboxes)
+        elif isinstance(output, datapoints.Mask):
             # apply is_within_crop_area if mask is one-hot encoded
             masks = output[is_within_crop_area]
-            output = features.Mask.wrap_like(output, masks)
+            output = datapoints.Mask.wrap_like(output, masks)
 
         return output
 
@@ -696,13 +772,13 @@ class ScaleJitter(Transform):
         self,
         target_size: Tuple[int, int],
         scale_range: Tuple[float, float] = (0.1, 2.0),
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        antialias: Optional[Union[str, bool]] = "warn",
     ):
         super().__init__()
         self.target_size = target_size
         self.scale_range = scale_range
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -724,13 +800,13 @@ class RandomShortestSize(Transform):
         self,
         min_size: Union[List[int], Tuple[int], int],
         max_size: Optional[int] = None,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        antialias: Optional[Union[str, bool]] = "warn",
     ):
         super().__init__()
         self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
         self.max_size = max_size
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -754,7 +830,7 @@ class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[features.FillType, Dict[Type, features.FillType]] = 0,
+        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()
@@ -767,13 +843,19 @@ class FixedSizeCrop(Transform):
         self.padding_mode = padding_mode
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
-        if not has_any(flat_inputs, PIL.Image.Image, features.Image, features.is_simple_tensor, features.Video):
+        if not has_any(
+            flat_inputs,
+            PIL.Image.Image,
+            datapoints.Image,
+            is_simple_tensor,
+            datapoints.Video,
+        ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain an tensor or PIL image or a Video."
             )
 
-        if has_any(flat_inputs, features.BoundingBox) and not has_any(
-            flat_inputs, features.Label, features.OneHotLabel
+        if has_any(flat_inputs, datapoints.BoundingBox) and not has_any(
+            flat_inputs, datapoints.Label, datapoints.OneHotLabel
         ):
             raise TypeError(
                 f"If a BoundingBox is contained in the input sample, "
@@ -812,7 +894,7 @@ class FixedSizeCrop(Transform):
             )
             bounding_boxes = F.clamp_bounding_box(bounding_boxes, format=format, spatial_size=spatial_size)
             height_and_width = F.convert_format_bounding_box(
-                bounding_boxes, old_format=format, new_format=features.BoundingBoxFormat.XYWH
+                bounding_boxes, old_format=format, new_format=datapoints.BoundingBoxFormat.XYWH
             )[..., 2:]
             is_valid = torch.all(height_and_width > 0, dim=-1)
         else:
@@ -845,10 +927,10 @@ class FixedSizeCrop(Transform):
             )
 
         if params["is_valid"] is not None:
-            if isinstance(inpt, (features.Label, features.OneHotLabel, features.Mask)):
+            if isinstance(inpt, (datapoints.Label, datapoints.OneHotLabel, datapoints.Mask)):
                 inpt = inpt.wrap_like(inpt, inpt[params["is_valid"]])  # type: ignore[arg-type]
-            elif isinstance(inpt, features.BoundingBox):
-                inpt = features.BoundingBox.wrap_like(
+            elif isinstance(inpt, datapoints.BoundingBox):
+                inpt = datapoints.BoundingBox.wrap_like(
                     inpt,
                     F.clamp_bounding_box(inpt[params["is_valid"]], format=inpt.format, spatial_size=inpt.spatial_size),
                 )
@@ -865,13 +947,13 @@ class RandomResize(Transform):
         self,
         min_size: int,
         max_size: int,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> None:
         super().__init__()
         self.min_size = min_size
         self.max_size = max_size
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
