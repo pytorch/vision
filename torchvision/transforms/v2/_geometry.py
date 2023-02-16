@@ -338,6 +338,8 @@ class RandomRotation(Transform):
         self.interpolation = _check_interpolation(interpolation)
         self.expand = expand
 
+        if fill is None:
+            fill = 0
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -396,6 +398,9 @@ class RandomAffine(Transform):
             self.shear = shear
 
         self.interpolation = _check_interpolation(interpolation)
+
+        if fill is None:
+            fill = 0
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -568,6 +573,9 @@ class RandomPerspective(_RandomApplyTransform):
 
         self.distortion_scale = distortion_scale
         self.interpolation = _check_interpolation(interpolation)
+
+        if fill is None:
+            fill = 0
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
