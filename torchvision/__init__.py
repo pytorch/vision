@@ -95,3 +95,11 @@ def get_video_backend():
 
 def _is_tracing():
     return torch._C._get_tracing_state()
+
+
+_WARN_ABOUT_BETA_TRANSFORMS = True
+
+
+def disable_beta_transforms_warning():
+    global _WARN_ABOUT_BETA_TRANSFORMS
+    _WARN_ABOUT_BETA_TRANSFORMS = False
