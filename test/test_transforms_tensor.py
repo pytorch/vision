@@ -524,13 +524,7 @@ def test_random_affine_fill(device, interpolation, fill):
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("center", [(0, 0), [10, 10], None, (56, 44)])
-# Most cases fail with expand=True, either a because of different values or even
-# because of a shape mismatch.
-# Needs to be verified but I think the shape mismatch is expected if the
-# rotation isn't exactly the same.
-# I assume it's because the random parameters are sampled differently between V1 and V2 (and so between V2 and jitted-V2)
-# Do we care?
-@pytest.mark.parametrize("expand", [False])
+@pytest.mark.parametrize("expand", [True, False])
 @pytest.mark.parametrize("degrees", [45, 35.0, (-45, 45), [-90.0, 90.0]])
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
 @pytest.mark.parametrize("fill", [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
