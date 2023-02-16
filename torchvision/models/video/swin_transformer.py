@@ -124,7 +124,7 @@ def shifted_window_attention_3d(
     dropout: float = 0.0,
     qkv_bias: Optional[Tensor] = None,
     proj_bias: Optional[Tensor] = None,
-    training: bool = False,
+    training: bool = True,
 ) -> Tensor:
     """
     Window based multi-head self attention (W-MSA) module with relative position bias.
@@ -141,6 +141,7 @@ def shifted_window_attention_3d(
         dropout (float): Dropout ratio of output. Default: 0.0.
         qkv_bias (Tensor[out_dim], optional): The bias tensor of query, key, value. Default: None.
         proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
+        training (bool, True): If you set the dropout parameters, set training=True while training.
     Returns:
         Tensor[B, T, H, W, C]: The output tensor after shifted window attention.
     """
