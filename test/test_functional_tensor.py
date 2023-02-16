@@ -10,8 +10,8 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch
-import torchvision.transforms.functional_pil as F_pil
-import torchvision.transforms.functional_tensor as F_t
+import torchvision.transforms._functional_pil as F_pil
+import torchvision.transforms._functional_tensor as F_t
 import torchvision.transforms.v2 as T
 import torchvision.transforms.v2.functional as F
 from common_utils import (

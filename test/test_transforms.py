@@ -8,7 +8,7 @@ from functools import partial
 import numpy as np
 import pytest
 import torch
-import torchvision.transforms.functional_tensor as F_t
+import torchvision.transforms._functional_tensor as F_t
 import torchvision.transforms.v2 as transforms
 import torchvision.transforms.v2.functional as F
 from PIL import Image
