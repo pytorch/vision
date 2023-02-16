@@ -1,6 +1,6 @@
 import warnings
 
-from torchvision.transforms._functional_pil import *
+from torchvision.transforms._functional_pil import *  # noqa
 
 warnings.warn(
     "The torchvision.transforms.functional_pil module is deprecated "
