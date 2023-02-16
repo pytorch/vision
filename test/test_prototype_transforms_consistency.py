@@ -12,6 +12,8 @@ import PIL.Image
 import pytest
 
 import torch
+import torchvision.prototype.transforms as prototype_transforms
+import torchvision.transforms.v2 as v2_transforms
 from prototype_common_utils import (
     ArgsKwargs,
     assert_close,
@@ -24,13 +26,13 @@ from prototype_common_utils import (
     make_segmentation_mask,
 )
 from torch import nn
-from torchvision import transforms as legacy_transforms
+from torchvision import datapoints, transforms as legacy_transforms
 from torchvision._utils import sequence_to_str
-from torchvision.prototype import datapoints, transforms as prototype_transforms
-from torchvision.prototype.transforms import functional as prototype_F
-from torchvision.prototype.transforms.functional import to_image_pil
-from torchvision.prototype.transforms.utils import query_spatial_size
+
 from torchvision.transforms import functional as legacy_F
+from torchvision.transforms.v2 import functional as prototype_F
+from torchvision.transforms.v2.functional import to_image_pil
+from torchvision.transforms.v2.utils import query_spatial_size
 
 DEFAULT_MAKE_IMAGES_KWARGS = dict(color_spaces=["RGB"], extra_dims=[(4,)])
 
@@ -71,7 +73,7 @@ LINEAR_TRANSFORMATION_MATRIX = torch.rand([LINEAR_TRANSFORMATION_MEAN.numel()] *
 
 CONSISTENCY_CONFIGS = [
     ConsistencyConfig(
-        prototype_transforms.Normalize,
+        v2_transforms.Normalize,
         legacy_transforms.Normalize,
         [
             ArgsKwargs(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
@@ -80,14 +82,14 @@ CONSISTENCY_CONFIGS = [
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.float]),
     ),
     ConsistencyConfig(
-        prototype_transforms.Resize,
+        v2_transforms.Resize,
         legacy_transforms.Resize,
         [
             NotScriptableArgsKwargs(32),
             ArgsKwargs([32]),
             ArgsKwargs((32, 29)),
-            ArgsKwargs((31, 28), interpolation=prototype_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs((33, 26), interpolation=prototype_transforms.InterpolationMode.BICUBIC),
+            ArgsKwargs((31, 28), interpolation=v2_transforms.InterpolationMode.NEAREST),
+            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC),
             ArgsKwargs((30, 27), interpolation=PIL.Image.NEAREST),
             ArgsKwargs((35, 29), interpolation=PIL.Image.BILINEAR),
             ArgsKwargs((34, 25), interpolation=PIL.Image.BICUBIC),
@@ -100,7 +102,7 @@ CONSISTENCY_CONFIGS = [
         ],
     ),
     ConsistencyConfig(
-        prototype_transforms.CenterCrop,
+        v2_transforms.CenterCrop,
         legacy_transforms.CenterCrop,
         [
             ArgsKwargs(18),
@@ -108,7 +110,7 @@ CONSISTENCY_CONFIGS = [
         ],
     ),
     ConsistencyConfig(
-        prototype_transforms.FiveCrop,
+        v2_transforms.FiveCrop,
         legacy_transforms.FiveCrop,
         [
             ArgsKwargs(18),
@@ -117,7 +119,7 @@ CONSISTENCY_CONFIGS = [
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(20, 19)]),
     ),
     ConsistencyConfig(
-        prototype_transforms.TenCrop,
+        v2_transforms.TenCrop,
         legacy_transforms.TenCrop,
         [
             ArgsKwargs(18),
@@ -127,7 +129,7 @@ CONSISTENCY_CONFIGS = [
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(20, 19)]),
     ),
     ConsistencyConfig(
-        prototype_transforms.Pad,
+        v2_transforms.Pad,
         legacy_transforms.Pad,
         [
             NotScriptableArgsKwargs(3),
@@ -143,7 +145,7 @@ CONSISTENCY_CONFIGS = [
     ),
     *[
         ConsistencyConfig(
-            prototype_transforms.LinearTransformation,
+            v2_transforms.LinearTransformation,
             legacy_transforms.LinearTransformation,
             [
                 ArgsKwargs(LINEAR_TRANSFORMATION_MATRIX.to(matrix_dtype), LINEAR_TRANSFORMATION_MEAN.to(matrix_dtype)),
@@ -164,7 +166,7 @@ CONSISTENCY_CONFIGS = [
         ]
     ],
     ConsistencyConfig(
-        prototype_transforms.Grayscale,
+        v2_transforms.Grayscale,
         legacy_transforms.Grayscale,
         [
             ArgsKwargs(num_output_channels=1),
@@ -175,7 +177,7 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        prototype_transforms.ConvertDtype,
+        v2_transforms.ConvertDtype,
         legacy_transforms.ConvertImageDtype,
         [
             ArgsKwargs(torch.float16),
@@ -189,7 +191,7 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        prototype_transforms.ToPILImage,
+        v2_transforms.ToPILImage,
         legacy_transforms.ToPILImage,
         [NotScriptableArgsKwargs()],
         make_images_kwargs=dict(
@@ -204,7 +206,7 @@ CONSISTENCY_CONFIGS = [
         supports_pil=False,
     ),
     ConsistencyConfig(
-        prototype_transforms.Lambda,
+        v2_transforms.Lambda,
         legacy_transforms.Lambda,
         [
             NotScriptableArgsKwargs(lambda image: image / 2),
@@ -214,7 +216,7 @@ CONSISTENCY_CONFIGS = [
         supports_pil=False,
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomHorizontalFlip,
+        v2_transforms.RandomHorizontalFlip,
         legacy_transforms.RandomHorizontalFlip,
         [
             ArgsKwargs(p=0),
@@ -222,7 +224,7 @@ CONSISTENCY_CONFIGS = [
         ],
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomVerticalFlip,
+        v2_transforms.RandomVerticalFlip,
         legacy_transforms.RandomVerticalFlip,
         [
             ArgsKwargs(p=0),
@@ -230,7 +232,7 @@ CONSISTENCY_CONFIGS = [
         ],
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomEqualize,
+        v2_transforms.RandomEqualize,
         legacy_transforms.RandomEqualize,
         [
             ArgsKwargs(p=0),
@@ -239,7 +241,7 @@ CONSISTENCY_CONFIGS = [
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.uint8]),
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomInvert,
+        v2_transforms.RandomInvert,
         legacy_transforms.RandomInvert,
         [
             ArgsKwargs(p=0),
@@ -247,7 +249,7 @@ CONSISTENCY_CONFIGS = [
         ],
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomPosterize,
+        v2_transforms.RandomPosterize,
         legacy_transforms.RandomPosterize,
         [
             ArgsKwargs(p=0, bits=5),
@@ -257,7 +259,7 @@ CONSISTENCY_CONFIGS = [
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, dtypes=[torch.uint8]),
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomSolarize,
+        v2_transforms.RandomSolarize,
         legacy_transforms.RandomSolarize,
         [
             ArgsKwargs(p=0, threshold=0.5),
@@ -267,7 +269,7 @@ CONSISTENCY_CONFIGS = [
     ),
     *[
         ConsistencyConfig(
-            prototype_transforms.RandomAutocontrast,
+            v2_transforms.RandomAutocontrast,
             legacy_transforms.RandomAutocontrast,
             [
                 ArgsKwargs(p=0),
@@ -279,7 +281,7 @@ CONSISTENCY_CONFIGS = [
         for dt, ckw in [(torch.uint8, dict(atol=1, rtol=0)), (torch.float32, dict(rtol=None, atol=None))]
     ],
     ConsistencyConfig(
-        prototype_transforms.RandomAdjustSharpness,
+        v2_transforms.RandomAdjustSharpness,
         legacy_transforms.RandomAdjustSharpness,
         [
             ArgsKwargs(p=0, sharpness_factor=0.5),
@@ -289,7 +291,7 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs={"atol": 1e-6, "rtol": 1e-6},
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomGrayscale,
+        v2_transforms.RandomGrayscale,
         legacy_transforms.RandomGrayscale,
         [
             ArgsKwargs(p=0),
@@ -300,14 +302,14 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs=dict(rtol=None, atol=None),
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomResizedCrop,
+        v2_transforms.RandomResizedCrop,
         legacy_transforms.RandomResizedCrop,
         [
             ArgsKwargs(16),
             ArgsKwargs(17, scale=(0.3, 0.7)),
             ArgsKwargs(25, ratio=(0.5, 1.5)),
-            ArgsKwargs((31, 28), interpolation=prototype_transforms.InterpolationMode.NEAREST),
-            ArgsKwargs((33, 26), interpolation=prototype_transforms.InterpolationMode.BICUBIC),
+            ArgsKwargs((31, 28), interpolation=v2_transforms.InterpolationMode.NEAREST),
+            ArgsKwargs((33, 26), interpolation=v2_transforms.InterpolationMode.BICUBIC),
             ArgsKwargs((31, 28), interpolation=PIL.Image.NEAREST),
             ArgsKwargs((33, 26), interpolation=PIL.Image.BICUBIC),
             ArgsKwargs((29, 32), antialias=False),
@@ -315,7 +317,7 @@ CONSISTENCY_CONFIGS = [
         ],
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomErasing,
+        v2_transforms.RandomErasing,
         legacy_transforms.RandomErasing,
         [
             ArgsKwargs(p=0),
@@ -329,7 +331,7 @@ CONSISTENCY_CONFIGS = [
         supports_pil=False,
     ),
     ConsistencyConfig(
-        prototype_transforms.ColorJitter,
+        v2_transforms.ColorJitter,
         legacy_transforms.ColorJitter,
         [
             ArgsKwargs(),
@@ -347,7 +349,7 @@ CONSISTENCY_CONFIGS = [
     ),
     *[
         ConsistencyConfig(
-            prototype_transforms.ElasticTransform,
+            v2_transforms.ElasticTransform,
             legacy_transforms.ElasticTransform,
             [
                 ArgsKwargs(),
@@ -355,8 +357,8 @@ CONSISTENCY_CONFIGS = [
                 ArgsKwargs(alpha=(15.3, 27.2)),
                 ArgsKwargs(sigma=3.0),
                 ArgsKwargs(sigma=(2.5, 3.9)),
-                ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.NEAREST),
-                ArgsKwargs(interpolation=prototype_transforms.InterpolationMode.BICUBIC),
+                ArgsKwargs(interpolation=v2_transforms.InterpolationMode.NEAREST),
+                ArgsKwargs(interpolation=v2_transforms.InterpolationMode.BICUBIC),
                 ArgsKwargs(interpolation=PIL.Image.NEAREST),
                 ArgsKwargs(interpolation=PIL.Image.BICUBIC),
                 ArgsKwargs(fill=1),
@@ -370,7 +372,7 @@ CONSISTENCY_CONFIGS = [
         for dt, ckw in [(torch.uint8, {"rtol": 1e-1, "atol": 1}), (torch.float32, {"rtol": 1e-2, "atol": 1e-3})]
     ],
     ConsistencyConfig(
-        prototype_transforms.GaussianBlur,
+        v2_transforms.GaussianBlur,
         legacy_transforms.GaussianBlur,
         [
             ArgsKwargs(kernel_size=3),
@@ -381,7 +383,7 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs={"rtol": 1e-5, "atol": 1e-5},
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomAffine,
+        v2_transforms.RandomAffine,
         legacy_transforms.RandomAffine,
         [
             ArgsKwargs(degrees=30.0),
@@ -392,7 +394,7 @@ CONSISTENCY_CONFIGS = [
             ArgsKwargs(degrees=0.0, shear=(8, 17)),
             ArgsKwargs(degrees=0.0, shear=(4, 5, 4, 13)),
             ArgsKwargs(degrees=(-20.0, 10.0), translate=(0.4, 0.6), scale=(0.3, 0.8), shear=(4, 5, 4, 13)),
-            ArgsKwargs(degrees=30.0, interpolation=prototype_transforms.InterpolationMode.NEAREST),
+            ArgsKwargs(degrees=30.0, interpolation=v2_transforms.InterpolationMode.NEAREST),
             ArgsKwargs(degrees=30.0, interpolation=PIL.Image.NEAREST),
             ArgsKwargs(degrees=30.0, fill=1),
             ArgsKwargs(degrees=30.0, fill=(2, 3, 4)),
@@ -401,7 +403,7 @@ CONSISTENCY_CONFIGS = [
         removed_params=["fillcolor", "resample"],
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomCrop,
+        v2_transforms.RandomCrop,
         legacy_transforms.RandomCrop,
         [
             ArgsKwargs(12),
@@ -421,13 +423,13 @@ CONSISTENCY_CONFIGS = [
         make_images_kwargs=dict(DEFAULT_MAKE_IMAGES_KWARGS, sizes=[(26, 26), (18, 33), (29, 22)]),
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomPerspective,
+        v2_transforms.RandomPerspective,
         legacy_transforms.RandomPerspective,
         [
             ArgsKwargs(p=0),
             ArgsKwargs(p=1),
             ArgsKwargs(p=1, distortion_scale=0.3),
-            ArgsKwargs(p=1, distortion_scale=0.2, interpolation=prototype_transforms.InterpolationMode.NEAREST),
+            ArgsKwargs(p=1, distortion_scale=0.2, interpolation=v2_transforms.InterpolationMode.NEAREST),
             ArgsKwargs(p=1, distortion_scale=0.2, interpolation=PIL.Image.NEAREST),
             ArgsKwargs(p=1, distortion_scale=0.1, fill=1),
             ArgsKwargs(p=1, distortion_scale=0.4, fill=(1, 2, 3)),
@@ -435,12 +437,12 @@ CONSISTENCY_CONFIGS = [
         closeness_kwargs={"atol": None, "rtol": None},
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomRotation,
+        v2_transforms.RandomRotation,
         legacy_transforms.RandomRotation,
         [
             ArgsKwargs(degrees=30.0),
             ArgsKwargs(degrees=(-20.0, 10.0)),
-            ArgsKwargs(degrees=30.0, interpolation=prototype_transforms.InterpolationMode.BILINEAR),
+            ArgsKwargs(degrees=30.0, interpolation=v2_transforms.InterpolationMode.BILINEAR),
             ArgsKwargs(degrees=30.0, interpolation=PIL.Image.BILINEAR),
             ArgsKwargs(degrees=30.0, expand=True),
             ArgsKwargs(degrees=30.0, center=(0, 0)),
@@ -450,43 +452,43 @@ CONSISTENCY_CONFIGS = [
         removed_params=["resample"],
     ),
     ConsistencyConfig(
-        prototype_transforms.PILToTensor,
+        v2_transforms.PILToTensor,
         legacy_transforms.PILToTensor,
     ),
     ConsistencyConfig(
-        prototype_transforms.ToTensor,
+        v2_transforms.ToTensor,
         legacy_transforms.ToTensor,
     ),
     ConsistencyConfig(
-        prototype_transforms.Compose,
+        v2_transforms.Compose,
         legacy_transforms.Compose,
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomApply,
+        v2_transforms.RandomApply,
         legacy_transforms.RandomApply,
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomChoice,
+        v2_transforms.RandomChoice,
         legacy_transforms.RandomChoice,
     ),
     ConsistencyConfig(
-        prototype_transforms.RandomOrder,
+        v2_transforms.RandomOrder,
         legacy_transforms.RandomOrder,
     ),
     ConsistencyConfig(
-        prototype_transforms.AugMix,
+        v2_transforms.AugMix,
         legacy_transforms.AugMix,
     ),
     ConsistencyConfig(
-        prototype_transforms.AutoAugment,
+        v2_transforms.AutoAugment,
         legacy_transforms.AutoAugment,
     ),
     ConsistencyConfig(
-        prototype_transforms.RandAugment,
+        v2_transforms.RandAugment,
         legacy_transforms.RandAugment,
     ),
     ConsistencyConfig(
-        prototype_transforms.TrivialAugmentWide,
+        v2_transforms.TrivialAugmentWide,
         legacy_transforms.TrivialAugmentWide,
     ),
 ]
@@ -680,19 +682,19 @@ get_params_parametrization = pytest.mark.parametrize(
             id=transform_cls.__name__,
         )
         for transform_cls, get_params_args_kwargs in [
-            (prototype_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
-            (prototype_transforms.RandomErasing, ArgsKwargs(make_image(), scale=(0.3, 0.7), ratio=(0.5, 1.5))),
-            (prototype_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
-            (prototype_transforms.ElasticTransform, ArgsKwargs(alpha=[15.3, 27.2], sigma=[2.5, 3.9], size=[17, 31])),
-            (prototype_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
+            (v2_transforms.RandomResizedCrop, ArgsKwargs(make_image(), scale=[0.3, 0.7], ratio=[0.5, 1.5])),
+            (v2_transforms.RandomErasing, ArgsKwargs(make_image(), scale=(0.3, 0.7), ratio=(0.5, 1.5))),
+            (v2_transforms.ColorJitter, ArgsKwargs(brightness=None, contrast=None, saturation=None, hue=None)),
+            (v2_transforms.ElasticTransform, ArgsKwargs(alpha=[15.3, 27.2], sigma=[2.5, 3.9], size=[17, 31])),
+            (v2_transforms.GaussianBlur, ArgsKwargs(0.3, 1.4)),
             (
-                prototype_transforms.RandomAffine,
+                v2_transforms.RandomAffine,
                 ArgsKwargs(degrees=[-20.0, 10.0], translate=None, scale_ranges=None, shears=None, img_size=[15, 29]),
             ),
-            (prototype_transforms.RandomCrop, ArgsKwargs(make_image(size=(61, 47)), output_size=(19, 25))),
-            (prototype_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
-            (prototype_transforms.RandomRotation, ArgsKwargs(degrees=[-20.0, 10.0])),
-            (prototype_transforms.AutoAugment, ArgsKwargs(5)),
+            (v2_transforms.RandomCrop, ArgsKwargs(make_image(size=(61, 47)), output_size=(19, 25))),
+            (v2_transforms.RandomPerspective, ArgsKwargs(23, 17, 0.5)),
+            (v2_transforms.RandomRotation, ArgsKwargs(degrees=[-20.0, 10.0])),
+            (v2_transforms.AutoAugment, ArgsKwargs(5)),
         ]
     ],
 )
@@ -767,10 +769,10 @@ class TestContainerTransforms:
     """
 
     def test_compose(self):
-        prototype_transform = prototype_transforms.Compose(
+        prototype_transform = v2_transforms.Compose(
             [
-                prototype_transforms.Resize(256),
-                prototype_transforms.CenterCrop(224),
+                v2_transforms.Resize(256),
+                v2_transforms.CenterCrop(224),
             ]
         )
         legacy_transform = legacy_transforms.Compose(
@@ -785,11 +787,11 @@ class TestContainerTransforms:
     @pytest.mark.parametrize("p", [0, 0.1, 0.5, 0.9, 1])
     @pytest.mark.parametrize("sequence_type", [list, nn.ModuleList])
     def test_random_apply(self, p, sequence_type):
-        prototype_transform = prototype_transforms.RandomApply(
+        prototype_transform = v2_transforms.RandomApply(
             sequence_type(
                 [
-                    prototype_transforms.Resize(256),
-                    prototype_transforms.CenterCrop(224),
+                    v2_transforms.Resize(256),
+                    v2_transforms.CenterCrop(224),
                 ]
             ),
             p=p,
@@ -814,9 +816,9 @@ class TestContainerTransforms:
     # We can't test other values for `p` since the random parameter generation is different
     @pytest.mark.parametrize("probabilities", [(0, 1), (1, 0)])
     def test_random_choice(self, probabilities):
-        prototype_transform = prototype_transforms.RandomChoice(
+        prototype_transform = v2_transforms.RandomChoice(
             [
-                prototype_transforms.Resize(256),
+                v2_transforms.Resize(256),
                 legacy_transforms.CenterCrop(224),
             ],
             probabilities=probabilities,
@@ -834,7 +836,7 @@ class TestContainerTransforms:
 
 class TestToTensorTransforms:
     def test_pil_to_tensor(self):
-        prototype_transform = prototype_transforms.PILToTensor()
+        prototype_transform = v2_transforms.PILToTensor()
         legacy_transform = legacy_transforms.PILToTensor()
 
         for image in make_images(extra_dims=[()]):
@@ -844,7 +846,7 @@ class TestToTensorTransforms:
 
     def test_to_tensor(self):
         with pytest.warns(UserWarning, match=re.escape("The transform `ToTensor()` is deprecated")):
-            prototype_transform = prototype_transforms.ToTensor()
+            prototype_transform = v2_transforms.ToTensor()
         legacy_transform = legacy_transforms.ToTensor()
 
         for image in make_images(extra_dims=[()]):
@@ -867,14 +869,14 @@ class TestAATransforms:
     @pytest.mark.parametrize(
         "interpolation",
         [
-            prototype_transforms.InterpolationMode.NEAREST,
-            prototype_transforms.InterpolationMode.BILINEAR,
+            v2_transforms.InterpolationMode.NEAREST,
+            v2_transforms.InterpolationMode.BILINEAR,
             PIL.Image.NEAREST,
         ],
     )
     def test_randaug(self, inpt, interpolation, mocker):
         t_ref = legacy_transforms.RandAugment(interpolation=interpolation, num_ops=1)
-        t = prototype_transforms.RandAugment(interpolation=interpolation, num_ops=1)
+        t = v2_transforms.RandAugment(interpolation=interpolation, num_ops=1)
 
         le = len(t._AUGMENTATION_SPACE)
         keys = list(t._AUGMENTATION_SPACE.keys())
@@ -909,14 +911,14 @@ class TestAATransforms:
     @pytest.mark.parametrize(
         "interpolation",
         [
-            prototype_transforms.InterpolationMode.NEAREST,
-            prototype_transforms.InterpolationMode.BILINEAR,
+            v2_transforms.InterpolationMode.NEAREST,
+            v2_transforms.InterpolationMode.BILINEAR,
             PIL.Image.NEAREST,
         ],
     )
     def test_trivial_aug(self, inpt, interpolation, mocker):
         t_ref = legacy_transforms.TrivialAugmentWide(interpolation=interpolation)
-        t = prototype_transforms.TrivialAugmentWide(interpolation=interpolation)
+        t = v2_transforms.TrivialAugmentWide(interpolation=interpolation)
 
         le = len(t._AUGMENTATION_SPACE)
         keys = list(t._AUGMENTATION_SPACE.keys())
@@ -961,15 +963,15 @@ class TestAATransforms:
     @pytest.mark.parametrize(
         "interpolation",
         [
-            prototype_transforms.InterpolationMode.NEAREST,
-            prototype_transforms.InterpolationMode.BILINEAR,
+            v2_transforms.InterpolationMode.NEAREST,
+            v2_transforms.InterpolationMode.BILINEAR,
             PIL.Image.NEAREST,
         ],
     )
     def test_augmix(self, inpt, interpolation, mocker):
         t_ref = legacy_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
         t_ref._sample_dirichlet = lambda t: t.softmax(dim=-1)
-        t = prototype_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
+        t = v2_transforms.AugMix(interpolation=interpolation, mixture_width=1, chain_depth=1)
         t._sample_dirichlet = lambda t: t.softmax(dim=-1)
 
         le = len(t._AUGMENTATION_SPACE)
@@ -1014,15 +1016,15 @@ class TestAATransforms:
     @pytest.mark.parametrize(
         "interpolation",
         [
-            prototype_transforms.InterpolationMode.NEAREST,
-            prototype_transforms.InterpolationMode.BILINEAR,
+            v2_transforms.InterpolationMode.NEAREST,
+            v2_transforms.InterpolationMode.BILINEAR,
             PIL.Image.NEAREST,
         ],
     )
     def test_aa(self, inpt, interpolation):
         aa_policy = legacy_transforms.AutoAugmentPolicy("imagenet")
         t_ref = legacy_transforms.AutoAugment(aa_policy, interpolation=interpolation)
-        t = prototype_transforms.AutoAugment(aa_policy, interpolation=interpolation)
+        t = v2_transforms.AutoAugment(aa_policy, interpolation=interpolation)
 
         torch.manual_seed(12)
         expected_output = t_ref(inpt)
@@ -1087,10 +1089,16 @@ class TestRefDetTransforms:
     @pytest.mark.parametrize(
         "t_ref, t, data_kwargs",
         [
-            (det_transforms.RandomHorizontalFlip(p=1.0), prototype_transforms.RandomHorizontalFlip(p=1.0), {}),
-            (det_transforms.RandomIoUCrop(), prototype_transforms.RandomIoUCrop(), {"with_mask": False}),
-            (det_transforms.RandomZoomOut(), prototype_transforms.RandomZoomOut(), {"with_mask": False}),
-            (det_transforms.ScaleJitter((1024, 1024)), prototype_transforms.ScaleJitter((1024, 1024)), {}),
+            (det_transforms.RandomHorizontalFlip(p=1.0), v2_transforms.RandomHorizontalFlip(p=1.0), {}),
+            # FIXME: make
+            #  v2_transforms.Compose([
+            #      v2_transforms.RandomIoUCrop(),
+            #      v2_transforms.SanitizeBoundingBoxes()
+            #  ])
+            #  work
+            # (det_transforms.RandomIoUCrop(), v2_transforms.RandomIoUCrop(), {"with_mask": False}),
+            (det_transforms.RandomZoomOut(), v2_transforms.RandomZoomOut(), {"with_mask": False}),
+            (det_transforms.ScaleJitter((1024, 1024)), v2_transforms.ScaleJitter((1024, 1024)), {}),
             (
                 det_transforms.FixedSizeCrop((1024, 1024), fill=0),
                 prototype_transforms.FixedSizeCrop((1024, 1024), fill=0),
@@ -1100,7 +1108,7 @@ class TestRefDetTransforms:
                 det_transforms.RandomShortestSize(
                     min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
                 ),
-                prototype_transforms.RandomShortestSize(
+                v2_transforms.RandomShortestSize(
                     min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
                 ),
                 {},
@@ -1127,11 +1135,11 @@ seg_transforms = import_transforms_from_references("segmentation")
 # 1. transforms.RandomCrop uses a different scheme to pad images and masks of insufficient size than its name
 #    counterpart in the detection references. Thus, we cannot use it with `pad_if_needed=True`
 # 2. transforms.Pad only supports a fixed padding, but the segmentation datasets don't have a fixed image size.
-class PadIfSmaller(prototype_transforms.Transform):
+class PadIfSmaller(v2_transforms.Transform):
     def __init__(self, size, fill=0):
         super().__init__()
         self.size = size
-        self.fill = prototype_transforms._geometry._setup_fill_arg(fill)
+        self.fill = v2_transforms._geometry._setup_fill_arg(fill)
 
     def _get_params(self, sample):
         height, width = query_spatial_size(sample)
@@ -1193,27 +1201,27 @@ class TestRefSegTransforms:
         [
             (
                 seg_transforms.RandomHorizontalFlip(flip_prob=1.0),
-                prototype_transforms.RandomHorizontalFlip(p=1.0),
+                v2_transforms.RandomHorizontalFlip(p=1.0),
                 dict(),
             ),
             (
                 seg_transforms.RandomHorizontalFlip(flip_prob=0.0),
-                prototype_transforms.RandomHorizontalFlip(p=0.0),
+                v2_transforms.RandomHorizontalFlip(p=0.0),
                 dict(),
             ),
             (
                 seg_transforms.RandomCrop(size=480),
-                prototype_transforms.Compose(
+                v2_transforms.Compose(
                     [
                         PadIfSmaller(size=480, fill=defaultdict(lambda: 0, {datapoints.Mask: 255})),
-                        prototype_transforms.RandomCrop(size=480),
+                        v2_transforms.RandomCrop(size=480),
                     ]
                 ),
                 dict(),
             ),
             (
                 seg_transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-                prototype_transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+                v2_transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
                 dict(supports_pil=False, image_dtype=torch.float),
             ),
         ],
@@ -1222,7 +1230,7 @@ class TestRefSegTransforms:
         self.check(t, t_ref, data_kwargs)
 
     def check_resize(self, mocker, t_ref, t):
-        mock = mocker.patch("torchvision.prototype.transforms._geometry.F.resize")
+        mock = mocker.patch("torchvision.transforms.v2._geometry.F.resize")
         mock_ref = mocker.patch("torchvision.transforms.functional.resize")
 
         for dp, dp_ref in self.make_datapoints():
@@ -1263,9 +1271,9 @@ class TestRefSegTransforms:
 
         # We are patching torch.randint -> random.randint here, because we can't patch the modules that are not imported
         # normally
-        t = prototype_transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
+        t = v2_transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
         mocker.patch(
-            "torchvision.prototype.transforms._geometry.torch.randint",
+            "torchvision.transforms.v2._geometry.torch.randint",
             new=patched_randint,
         )
 
@@ -1277,7 +1285,7 @@ class TestRefSegTransforms:
         torch.manual_seed(0)
         base_size = 520
 
-        t = prototype_transforms.Resize(size=base_size, antialias=True)
+        t = v2_transforms.Resize(size=base_size, antialias=True)
 
         t_ref = seg_transforms.RandomResize(min_size=base_size, max_size=base_size)
 

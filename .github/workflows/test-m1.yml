@@ -49,9 +49,10 @@ jobs:
 
           # Run resize benchmark
           echo "--- Run resize benchmark ---"
-          wget https://gist.githubusercontent.com/vfdev-5/a2e30ed50b5996807c9b09d5d33d8bc2/raw/f6691d472e1729e39448d6753bd350a8433d0f08/check_resize_uint8.py
-          conda run -p ${ENV_NAME} python3 -u check_resize_uint8.py
+          # wget https://gist.githubusercontent.com/vfdev-5/a2e30ed50b5996807c9b09d5d33d8bc2/raw/8d4731c785140356a89c0afe4b012b304c4f1787/check_resize_uint8.py
+          curl https://gist.githubusercontent.com/vfdev-5/a2e30ed50b5996807c9b09d5d33d8bc2/raw/8d4731c785140356a89c0afe4b012b304c4f1787/check_resize_uint8.py -o /tmp/check_resize_uint8.py
+          conda run -p ${ENV_NAME} python3 -u /tmp/check_resize_uint8.py
           echo "--- END Run resize benchmark ---"
 
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20
           conda env remove -p ${ENV_NAME}

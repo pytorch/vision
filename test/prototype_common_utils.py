@@ -12,12 +12,13 @@ import PIL.Image
 import pytest
 import torch
 import torch.testing
+import torchvision.prototype.datapoints as proto_datapoints
 from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms.functional import convert_dtype_image_tensor, to_image_tensor
+from torchvision import datapoints
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
+from torchvision.transforms.v2.functional import convert_dtype_image_tensor, to_image_tensor
 
 __all__ = [
     "assert_close",
@@ -457,7 +458,7 @@ def make_label_loader(*, extra_dims=(), categories=None, dtype=torch.int64):
         # The idiom `make_tensor(..., dtype=torch.int64).to(dtype)` is intentional to only get integer values,
         # regardless of the requested dtype, e.g. 0 or 0.0 rather than 0 or 0.123
         data = torch.testing.make_tensor(shape, low=0, high=num_categories, dtype=torch.int64, device=device).to(dtype)
-        return datapoints.Label(data, categories=categories)
+        return proto_datapoints.Label(data, categories=categories)
 
     return LabelLoader(fn, shape=extra_dims, dtype=dtype, categories=categories)
 
@@ -481,7 +482,7 @@ def make_one_hot_label_loader(*, categories=None, extra_dims=(), dtype=torch.int
             # since `one_hot` only supports int64
             label = make_label_loader(extra_dims=extra_dims, categories=num_categories, dtype=torch.int64).load(device)
             data = one_hot(label, num_classes=num_categories).to(dtype)
-        return datapoints.OneHotLabel(data, categories=categories)
+        return proto_datapoints.OneHotLabel(data, categories=categories)
 
     return OneHotLabelLoader(fn, shape=(*extra_dims, num_categories), dtype=dtype, categories=categories)
 
