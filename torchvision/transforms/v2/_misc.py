@@ -272,7 +272,7 @@ class SanitizeBoundingBoxes(Transform):
         valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
         valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
 
-        params = dict(valid_indices=valid, labels=labels)
+        params = dict(valid=valid, labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
             # _transform() will only care about BoundingBoxes and the labels

@@ -1493,6 +1493,9 @@ class TestRandomIoUCrop:
         assert isinstance(output_bboxes, datapoints.BoundingBox)
         assert (output_bboxes[~is_within_crop_area] == 0).all()
 
+        output_masks = output[2]
+        assert isinstance(output_masks, datapoints.Mask)
+
 
 class TestScaleJitter:
     def test__get_params(self, mocker):
