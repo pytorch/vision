@@ -35,6 +35,7 @@ from torchvision import datapoints
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2._utils import _convert_fill_arg
 from torchvision.transforms.v2.utils import check_type, is_simple_tensor, query_chw
 
 BATCH_EXTRA_DIMS = [extra_dims for extra_dims in DEFAULT_EXTRA_DIMS if extra_dims]
@@ -1752,7 +1753,6 @@ class TestFixedSizeCrop:
 
         transform = proto_transforms.FixedSizeCrop((-1, -1), fill=fill_sentinel, padding_mode=padding_mode_sentinel)
         transform._transformed_types = (mocker.MagicMock,)
-        mocker.patch("torchvision.prototype.transforms._geometry.has_all", return_value=True)
         mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
 
         needs_crop, needs_pad = needs
@@ -1801,7 +1801,7 @@ class TestFixedSizeCrop:
             if not needs_crop:
                 assert args[0] is inpt_sentinel
             assert args[1] is padding_sentinel
-            fill_sentinel = proto_transforms._utils._convert_fill_arg(fill_sentinel)
+            fill_sentinel = _convert_fill_arg(fill_sentinel)
             assert kwargs == dict(fill=fill_sentinel, padding_mode=padding_mode_sentinel)
         else:
             mock_pad.assert_not_called()
@@ -1831,7 +1831,6 @@ class TestFixedSizeCrop:
         labels = make_label(extra_dims=(batch_size,))
 
         transform = proto_transforms.FixedSizeCrop((-1, -1))
-        mocker.patch("torchvision.prototype.transforms._geometry.has_all", return_value=True)
         mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
 
         output = transform(
@@ -1869,7 +1868,6 @@ class TestFixedSizeCrop:
         mock = mocker.patch("torchvision.prototype.transforms._geometry.F.clamp_bounding_box")
 
         transform = proto_transforms.FixedSizeCrop((-1, -1))
-        mocker.patch("torchvision.prototype.transforms._geometry.has_all", return_value=True)
         mocker.patch("torchvision.prototype.transforms._geometry.has_any", return_value=True)
 
         transform(bounding_box)
