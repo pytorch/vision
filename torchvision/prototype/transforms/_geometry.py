@@ -22,7 +22,8 @@ class FixedSizeCrop(Transform):
         self.crop_height = size[0]
         self.crop_width = size[1]
 
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
 
         self.padding_mode = padding_mode
 
@@ -118,7 +119,7 @@ class FixedSizeCrop(Transform):
                 )
 
         if params["needs_pad"]:
-            fill = self.fill[type(inpt)]
+            fill = self._fill[type(inpt)]
             inpt = F.pad(inpt, params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         return inpt
