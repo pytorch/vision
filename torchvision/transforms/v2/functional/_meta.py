@@ -2,10 +2,10 @@ from typing import List, Optional, Tuple, Union
 
 import PIL.Image
 import torch
-from torchvision.prototype import datapoints
-from torchvision.prototype.datapoints import BoundingBoxFormat
-from torchvision.transforms import functional_pil as _FP
-from torchvision.transforms.functional_tensor import _max_value
+from torchvision import datapoints
+from torchvision.datapoints import BoundingBoxFormat
+from torchvision.transforms import _functional_pil as _FP
+from torchvision.transforms._functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
 
@@ -27,7 +27,7 @@ def get_dimensions_image_tensor(image: torch.Tensor) -> List[int]:
 get_dimensions_image_pil = _FP.get_dimensions
 
 
-def get_dimensions(inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]) -> List[int]:
+def get_dimensions(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> List[int]:
     if not torch.jit.is_scripting():
         _log_api_usage_once(get_dimensions)
 
@@ -64,7 +64,7 @@ def get_num_channels_video(video: torch.Tensor) -> int:
     return get_num_channels_image_tensor(video)
 
 
-def get_num_channels(inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]) -> int:
+def get_num_channels(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> int:
     if not torch.jit.is_scripting():
         _log_api_usage_once(get_num_channels)
 
@@ -114,7 +114,7 @@ def get_spatial_size_bounding_box(bounding_box: datapoints.BoundingBox) -> List[
     return list(bounding_box.spatial_size)
 
 
-def get_spatial_size(inpt: datapoints.InputTypeJIT) -> List[int]:
+def get_spatial_size(inpt: datapoints._InputTypeJIT) -> List[int]:
     if not torch.jit.is_scripting():
         _log_api_usage_once(get_spatial_size)
 
@@ -135,7 +135,7 @@ def get_num_frames_video(video: torch.Tensor) -> int:
     return video.shape[-4]
 
 
-def get_num_frames(inpt: datapoints.VideoTypeJIT) -> int:
+def get_num_frames(inpt: datapoints._VideoTypeJIT) -> int:
     if not torch.jit.is_scripting():
         _log_api_usage_once(get_num_frames)
 
@@ -208,11 +208,11 @@ def _convert_format_bounding_box(
 
 
 def convert_format_bounding_box(
-    inpt: datapoints.InputTypeJIT,
+    inpt: datapoints._InputTypeJIT,
     old_format: Optional[BoundingBoxFormat] = None,
     new_format: Optional[BoundingBoxFormat] = None,
     inplace: bool = False,
-) -> datapoints.InputTypeJIT:
+) -> datapoints._InputTypeJIT:
     # This being a kernel / dispatcher hybrid, we need an option to pass `old_format` explicitly for simple tensor
     # inputs as well as extract it from `datapoints.BoundingBox` inputs. However, putting a default value on
     # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
@@ -245,19 +245,24 @@ def _clamp_bounding_box(
 ) -> torch.Tensor:
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
+    in_dtype = bounding_box.dtype
+    bounding_box = bounding_box.clone() if bounding_box.is_floating_point() else bounding_box.float()
     xyxy_boxes = convert_format_bounding_box(
-        bounding_box.clone(), old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
+        bounding_box, old_format=format, new_format=datapoints.BoundingBoxFormat.XYXY, inplace=True
     )
     xyxy_boxes[..., 0::2].clamp_(min=0, max=spatial_size[1])
     xyxy_boxes[..., 1::2].clamp_(min=0, max=spatial_size[0])
-    return convert_format_bounding_box(xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True)
+    out_boxes = convert_format_bounding_box(
+        xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True
+    )
+    return out_boxes.to(in_dtype)
 
 
 def clamp_bounding_box(
-    inpt: datapoints.InputTypeJIT,
+    inpt: datapoints._InputTypeJIT,
     format: Optional[BoundingBoxFormat] = None,
     spatial_size: Optional[Tuple[int, int]] = None,
-) -> datapoints.InputTypeJIT:
+) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(clamp_bounding_box)
 
@@ -350,7 +355,7 @@ def convert_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float) -
 
 
 def convert_dtype(
-    inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT], dtype: torch.dtype = torch.float
+    inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT], dtype: torch.dtype = torch.float
 ) -> torch.Tensor:
     if not torch.jit.is_scripting():
         _log_api_usage_once(convert_dtype)

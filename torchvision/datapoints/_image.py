@@ -6,7 +6,7 @@ import PIL.Image
 import torch
 from torchvision.transforms.functional import InterpolationMode
 
-from ._datapoint import Datapoint, FillTypeJIT
+from ._datapoint import _FillTypeJIT, Datapoint
 
 
 class Image(Datapoint):
@@ -24,7 +24,7 @@ class Image(Datapoint):
         requires_grad: Optional[bool] = None,
     ) -> Image:
         if isinstance(data, PIL.Image.Image):
-            from torchvision.prototype.transforms import functional as F
+            from torchvision.transforms.v2 import functional as F
 
             data = F.pil_to_tensor(data)
 
@@ -62,7 +62,7 @@ class Image(Datapoint):
     def resize(  # type: ignore[override]
         self,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> Image:
@@ -86,7 +86,7 @@ class Image(Datapoint):
         height: int,
         width: int,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> Image:
         output = self._F.resized_crop_image_tensor(
@@ -103,8 +103,8 @@ class Image(Datapoint):
 
     def pad(
         self,
-        padding: Union[int, List[int]],
-        fill: FillTypeJIT = None,
+        padding: List[int],
+        fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> Image:
         output = self._F.pad_image_tensor(self.as_subclass(torch.Tensor), padding, fill=fill, padding_mode=padding_mode)
@@ -113,10 +113,10 @@ class Image(Datapoint):
     def rotate(
         self,
         angle: float,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Image:
         output = self._F.rotate_image_tensor(
             self.as_subclass(torch.Tensor), angle, interpolation=interpolation, expand=expand, fill=fill, center=center
@@ -129,8 +129,8 @@ class Image(Datapoint):
         translate: List[float],
         scale: float,
         shear: List[float],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Image:
         output = self._F.affine_image_tensor(
@@ -149,8 +149,8 @@ class Image(Datapoint):
         self,
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> Image:
         output = self._F.perspective_image_tensor(
@@ -166,8 +166,8 @@ class Image(Datapoint):
     def elastic(
         self,
         displacement: torch.Tensor,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        fill: _FillTypeJIT = None,
     ) -> Image:
         output = self._F.elastic_image_tensor(
             self.as_subclass(torch.Tensor), displacement, interpolation=interpolation, fill=fill
@@ -241,7 +241,7 @@ class Image(Datapoint):
         return Image.wrap_like(self, output)
 
 
-ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
-ImageTypeJIT = torch.Tensor
-TensorImageType = Union[torch.Tensor, Image]
-TensorImageTypeJIT = torch.Tensor
+_ImageType = Union[torch.Tensor, PIL.Image.Image, Image]
+_ImageTypeJIT = torch.Tensor
+_TensorImageType = Union[torch.Tensor, Image]
+_TensorImageTypeJIT = torch.Tensor

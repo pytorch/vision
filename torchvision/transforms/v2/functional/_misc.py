@@ -5,7 +5,7 @@ import PIL.Image
 import torch
 from torch.nn.functional import conv2d, pad as torch_pad
 
-from torchvision.prototype import datapoints
+from torchvision import datapoints
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 from torchvision.utils import _log_api_usage_once
@@ -53,7 +53,7 @@ def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], in
 
 
 def normalize(
-    inpt: Union[datapoints.TensorImageTypeJIT, datapoints.TensorVideoTypeJIT],
+    inpt: Union[datapoints._TensorImageTypeJIT, datapoints._TensorVideoTypeJIT],
     mean: List[float],
     std: List[float],
     inplace: bool = False,
@@ -166,8 +166,8 @@ def gaussian_blur_video(
 
 
 def gaussian_blur(
-    inpt: datapoints.InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
-) -> datapoints.InputTypeJIT:
+    inpt: datapoints._InputTypeJIT, kernel_size: List[int], sigma: Optional[List[float]] = None
+) -> datapoints._InputTypeJIT:
     if not torch.jit.is_scripting():
         _log_api_usage_once(gaussian_blur)
 

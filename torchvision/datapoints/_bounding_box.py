@@ -6,7 +6,7 @@ import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms import InterpolationMode  # TODO: this needs to be moved out of transforms
 
-from ._datapoint import Datapoint, FillTypeJIT
+from ._datapoint import _FillTypeJIT, Datapoint
 
 
 class BoundingBoxFormat(StrEnum):
@@ -76,12 +76,15 @@ class BoundingBox(Datapoint):
     def resize(  # type: ignore[override]
         self,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> BoundingBox:
         output, spatial_size = self._F.resize_bounding_box(
-            self.as_subclass(torch.Tensor), spatial_size=self.spatial_size, size=size, max_size=max_size
+            self.as_subclass(torch.Tensor),
+            spatial_size=self.spatial_size,
+            size=size,
+            max_size=max_size,
         )
         return BoundingBox.wrap_like(self, output, spatial_size=spatial_size)
 
@@ -104,7 +107,7 @@ class BoundingBox(Datapoint):
         height: int,
         width: int,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> BoundingBox:
         output, spatial_size = self._F.resized_crop_bounding_box(
@@ -115,7 +118,7 @@ class BoundingBox(Datapoint):
     def pad(
         self,
         padding: Union[int, Sequence[int]],
-        fill: FillTypeJIT = None,
+        fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> BoundingBox:
         output, spatial_size = self._F.pad_bounding_box(
@@ -130,10 +133,10 @@ class BoundingBox(Datapoint):
     def rotate(
         self,
         angle: float,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> BoundingBox:
         output, spatial_size = self._F.rotate_bounding_box(
             self.as_subclass(torch.Tensor),
@@ -151,8 +154,8 @@ class BoundingBox(Datapoint):
         translate: List[float],
         scale: float,
         shear: List[float],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.affine_bounding_box(
@@ -171,13 +174,14 @@ class BoundingBox(Datapoint):
         self,
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> BoundingBox:
         output = self._F.perspective_bounding_box(
             self.as_subclass(torch.Tensor),
             format=self.format,
+            spatial_size=self.spatial_size,
             startpoints=startpoints,
             endpoints=endpoints,
             coefficients=coefficients,
@@ -187,8 +191,10 @@ class BoundingBox(Datapoint):
     def elastic(
         self,
         displacement: torch.Tensor,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        fill: _FillTypeJIT = None,
     ) -> BoundingBox:
-        output = self._F.elastic_bounding_box(self.as_subclass(torch.Tensor), self.format, displacement)
+        output = self._F.elastic_bounding_box(
+            self.as_subclass(torch.Tensor), self.format, self.spatial_size, displacement=displacement
+        )
         return BoundingBox.wrap_like(self, output)

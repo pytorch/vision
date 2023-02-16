@@ -2,9 +2,8 @@ from typing import Any, Dict, Union
 
 import torch
 
-from torchvision import transforms as _transforms
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F, Transform
+from torchvision import datapoints, transforms as _transforms
+from torchvision.transforms.v2 import functional as F, Transform
 
 from .utils import is_simple_tensor
 
@@ -36,8 +35,8 @@ class ConvertDtype(Transform):
         self.dtype = dtype
 
     def _transform(
-        self, inpt: Union[datapoints.TensorImageType, datapoints.TensorVideoType], params: Dict[str, Any]
-    ) -> Union[datapoints.TensorImageType, datapoints.TensorVideoType]:
+        self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
+    ) -> Union[datapoints._TensorImageType, datapoints._TensorVideoType]:
         return F.convert_dtype(inpt, self.dtype)
 
 
@@ -46,7 +45,7 @@ class ConvertDtype(Transform):
 ConvertImageDtype = ConvertDtype
 
 
-class ClampBoundingBoxes(Transform):
+class ClampBoundingBox(Transform):
     _transformed_types = (datapoints.BoundingBox,)
 
     def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:

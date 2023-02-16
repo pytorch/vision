@@ -3,8 +3,8 @@ import numbers
 from collections import defaultdict
 from typing import Any, Dict, Literal, Sequence, Type, TypeVar, Union
 
-from torchvision.prototype import datapoints
-from torchvision.prototype.datapoints._datapoint import FillType, FillTypeJIT
+from torchvision import datapoints
+from torchvision.datapoints._datapoint import _FillType, _FillTypeJIT
 
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
 
@@ -26,7 +26,7 @@ def _setup_float_or_seq(arg: Union[float, Sequence[float]], name: str, req_size:
     return arg
 
 
-def _check_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> None:
+def _check_fill_arg(fill: Union[_FillType, Dict[Type, _FillType]]) -> None:
     if isinstance(fill, dict):
         for key, value in fill.items():
             # Check key for type
@@ -52,7 +52,7 @@ def _get_defaultdict(default: T) -> Dict[Any, T]:
     return defaultdict(functools.partial(_default_arg, default))
 
 
-def _convert_fill_arg(fill: datapoints.FillType) -> datapoints.FillTypeJIT:
+def _convert_fill_arg(fill: datapoints._FillType) -> datapoints._FillTypeJIT:
     # Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517
     # So, we can't reassign fill to 0
     # if fill is None:
@@ -60,13 +60,12 @@ def _convert_fill_arg(fill: datapoints.FillType) -> datapoints.FillTypeJIT:
     if fill is None:
         return fill
 
-    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
     if not isinstance(fill, (int, float)):
         fill = [float(v) for v in list(fill)]
-    return fill
+    return fill  # type: ignore[return-value]
 
 
-def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillTypeJIT]:
+def _setup_fill_arg(fill: Union[_FillType, Dict[Type, _FillType]]) -> Dict[Type, _FillTypeJIT]:
     _check_fill_arg(fill)
 
     if isinstance(fill, dict):

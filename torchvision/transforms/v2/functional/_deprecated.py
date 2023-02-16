@@ -4,7 +4,7 @@ from typing import Any, List, Union
 import PIL.Image
 import torch
 
-from torchvision.prototype import datapoints
+from torchvision import datapoints
 from torchvision.transforms import functional as _F
 
 
@@ -31,7 +31,7 @@ def to_tensor(inpt: Any) -> torch.Tensor:
     return _F.to_tensor(inpt)
 
 
-def get_image_size(inpt: Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]) -> List[int]:
+def get_image_size(inpt: Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]) -> List[int]:
     warnings.warn(
         "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
         "Instead, please use `get_spatial_size(...)` which returns `[h, w]` instead of `[w, h]`."

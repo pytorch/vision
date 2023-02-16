@@ -3,9 +3,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
-from torchvision import transforms as _transforms
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F, Transform
+from torchvision import datapoints, transforms as _transforms
+from torchvision.transforms.v2 import functional as F, Transform
 
 from ._transform import _RandomApplyTransform
 from .utils import is_simple_tensor, query_chw
@@ -80,14 +79,16 @@ class ColorJitter(Transform):
         if value is None:
             return None
 
-        if isinstance(value, float):
+        if isinstance(value, (int, float)):
             if value < 0:
                 raise ValueError(f"If {name} is a single number, it must be non negative.")
             value = [center - value, center + value]
             if clip_first_on_zero:
                 value[0] = max(value[0], 0.0)
-        elif not (isinstance(value, collections.abc.Sequence) and len(value) == 2):
-            raise TypeError(f"{name} should be a single number or a sequence with length 2.")
+        elif isinstance(value, collections.abc.Sequence) and len(value) == 2:
+            value = [float(v) for v in value]
+        else:
+            raise TypeError(f"{name}={value} should be a single number or a sequence with length 2.")
 
         if not bound[0] <= value[0] <= value[1] <= bound[1]:
             raise ValueError(f"{name} values should be between {bound}, but got {value}.")
@@ -162,8 +163,8 @@ class RandomPhotometricDistort(Transform):
         )
 
     def _permute_channels(
-        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], permutation: torch.Tensor
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
+        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], permutation: torch.Tensor
+    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
 
         orig_inpt = inpt
         if isinstance(orig_inpt, PIL.Image.Image):
@@ -178,8 +179,8 @@ class RandomPhotometricDistort(Transform):
         return output
 
     def _transform(
-        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
+        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
+    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])

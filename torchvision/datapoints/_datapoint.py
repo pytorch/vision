@@ -11,8 +11,8 @@ from torchvision.transforms import InterpolationMode
 
 
 D = TypeVar("D", bound="Datapoint")
-FillType = Union[int, float, Sequence[int], Sequence[float], None]
-FillTypeJIT = Union[int, float, List[float], None]
+_FillType = Union[int, float, Sequence[int], Sequence[float], None]
+_FillTypeJIT = Optional[List[float]]
 
 
 class Datapoint(torch.Tensor):
@@ -105,7 +105,7 @@ class Datapoint(torch.Tensor):
         # the class. This approach avoids the DataLoader issue described at
         # https://github.com/pytorch/vision/pull/6476#discussion_r953588621
         if Datapoint.__F is None:
-            from ..transforms import functional
+            from ..transforms.v2 import functional
 
             Datapoint.__F = functional
         return Datapoint.__F
@@ -143,7 +143,7 @@ class Datapoint(torch.Tensor):
     def resize(  # type: ignore[override]
         self,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> Datapoint:
@@ -162,15 +162,15 @@ class Datapoint(torch.Tensor):
         height: int,
         width: int,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: Optional[Union[str, bool]] = "warn",
     ) -> Datapoint:
         return self
 
     def pad(
         self,
-        padding: Union[int, List[int]],
-        fill: FillTypeJIT = None,
+        padding: List[int],
+        fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> Datapoint:
         return self
@@ -178,10 +178,10 @@ class Datapoint(torch.Tensor):
     def rotate(
         self,
         angle: float,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Datapoint:
         return self
 
@@ -191,8 +191,8 @@ class Datapoint(torch.Tensor):
         translate: List[float],
         scale: float,
         shear: List[float],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Datapoint:
         return self
@@ -201,8 +201,8 @@ class Datapoint(torch.Tensor):
         self,
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> Datapoint:
         return self
@@ -210,8 +210,8 @@ class Datapoint(torch.Tensor):
     def elastic(
         self,
         displacement: torch.Tensor,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        fill: _FillTypeJIT = None,
     ) -> Datapoint:
         return self
 
@@ -255,5 +255,5 @@ class Datapoint(torch.Tensor):
         return self
 
 
-InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
-InputTypeJIT = torch.Tensor
+_InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
+_InputTypeJIT = torch.Tensor
