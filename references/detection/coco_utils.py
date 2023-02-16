@@ -6,8 +6,7 @@ import torchvision
 
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
-from torchvision.prototype import datapoints, transforms as T
-from torchvision.prototype.transforms import functional as F
+from torchvision.datapoints import wrap_dataset_for_transforms_v2
 
 
 def convert_coco_poly_to_mask(segmentations, height, width):
@@ -208,7 +207,6 @@ def get_coco(root, image_set, transforms, mode="instances"):
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
 
-    from torchvision.prototype.datapoints import wrap_dataset_for_transforms_v2
 
     dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
     dataset = wrap_dataset_for_transforms_v2(dataset)

@@ -2,24 +2,11 @@ from collections import defaultdict
 
 import torch
 import transforms as reference_transforms
-from torchvision.prototype import datapoints, transforms as T
+from torchvision import datapoints
+import torchvision.transforms.v2 as T
 
 
 # TODO: Should we provide a transforms that filters-out keys?
-
-# TODO: Make this public, implement it properly
-class Sanitize(torch.nn.Module):
-    def forward(self, inpt):
-        # TODO: why are some img Tensor while others are datapoints.Image??????
-        img, target = inpt
-        boxes = target["boxes"]
-        labels = target["labels"]
-
-        ok_idx = (boxes[:, 2:] > boxes[:, :2]).all(axis=1)
-        target["boxes"] = boxes[ok_idx]  # TODO: does this preserve the DataPoint subclass?
-        target["labels"] = labels[ok_idx]
-
-        return img, target
 
 
 class DetectionPresetTrain(T.Compose):
@@ -74,7 +61,8 @@ class DetectionPresetTrain(T.Compose):
 
         transforms += [
             T.ConvertImageDtype(torch.float),
-            Sanitize(),
+            T.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.XYXY),
+            T.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"])  # TODO: sad it's not the default!
         ]
 
         super().__init__(transforms)
