@@ -3,7 +3,7 @@ from typing import Union
 import PIL.Image
 
 import torch
-from torchvision.prototype import datapoints
+from torchvision import datapoints
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 from torchvision.utils import _log_api_usage_once
 

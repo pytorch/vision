@@ -3,7 +3,8 @@ from typing import Any, Dict, List, Union
 
 import torch
 from torchdata.datapipes.iter import Decompressor, IterDataPipe, LineReader, Mapper
-from torchvision.prototype.datapoints import Image, Label
+from torchvision.datapoints import Image
+from torchvision.prototype.datapoints import Label
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 
