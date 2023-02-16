@@ -46,5 +46,12 @@ jobs:
         run: |
           . ~/miniconda3/etc/profile.d/conda.sh
           set -ex
+
+          # Run resize benchmark
+          echo "--- Run resize benchmark ---"
+          wget https://gist.githubusercontent.com/vfdev-5/a2e30ed50b5996807c9b09d5d33d8bc2/raw/f6691d472e1729e39448d6753bd350a8433d0f08/check_resize_uint8.py
+          conda run -p ${ENV_NAME} python3 -u check_resize_uint8.py
+          echo "--- END Run resize benchmark ---"
+
           conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20
           conda env remove -p ${ENV_NAME}
