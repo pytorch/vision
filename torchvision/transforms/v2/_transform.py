@@ -7,8 +7,8 @@ import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms.utils import check_type, has_any, is_simple_tensor
+from torchvision import datapoints
+from torchvision.transforms.v2.utils import check_type, has_any, is_simple_tensor
 from torchvision.utils import _log_api_usage_once
 
 
@@ -141,8 +141,9 @@ class Transform(nn.Module):
         if self._v1_transform_cls is None:
             raise RuntimeError(
                 f"Transform {type(self).__name__} cannot be JIT scripted. "
-                f"This is only support for backward compatibility with transforms which already in v1."
-                f"For torchscript support (on tensors only), you can use the functional API instead."
+                "torchscript is only supported for backward compatibility with transforms "
+                "which are already in torchvision.transforms. "
+                "For torchscript support (on tensors only), you can use the functional API instead."
             )
 
         return self._v1_transform_cls(**self._extract_params_for_v1_transform())
