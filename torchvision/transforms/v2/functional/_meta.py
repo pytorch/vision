@@ -4,8 +4,8 @@ import PIL.Image
 import torch
 from torchvision import datapoints
 from torchvision.datapoints import BoundingBoxFormat
-from torchvision.transforms import functional_pil as _FP
-from torchvision.transforms.functional_tensor import _max_value
+from torchvision.transforms import _functional_pil as _FP
+from torchvision.transforms._functional_tensor import _max_value
 
 from torchvision.utils import _log_api_usage_once
 
