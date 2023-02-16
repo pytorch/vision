@@ -5,7 +5,7 @@ from typing import Any, Optional, Sequence, Type, TypeVar, Union
 import torch
 from torch.utils._pytree import tree_map
 
-from ._datapoint import Datapoint
+from torchvision.datapoints._datapoint import Datapoint
 
 
 L = TypeVar("L", bound="_LabelBase")
