@@ -23,6 +23,11 @@ class Image(Datapoint):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
     ) -> Image:
+        if isinstance(data, PIL.Image.Image):
+            from torchvision.transforms.v2 import functional as F
+
+            data = F.pil_to_tensor(data)
+
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if tensor.ndim < 2:
             raise ValueError
@@ -57,9 +62,9 @@ class Image(Datapoint):
     def resize(  # type: ignore[override]
         self,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
-        antialias: Optional[bool] = None,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Image:
         output = self._F.resize_image_tensor(
             self.as_subclass(torch.Tensor), size, interpolation=interpolation, max_size=max_size, antialias=antialias
@@ -81,8 +86,8 @@ class Image(Datapoint):
         height: int,
         width: int,
         size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        antialias: Optional[bool] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        antialias: Optional[Union[str, bool]] = "warn",
     ) -> Image:
         output = self._F.resized_crop_image_tensor(
             self.as_subclass(torch.Tensor),
@@ -98,8 +103,8 @@ class Image(Datapoint):
 
     def pad(
         self,
-        padding: Union[int, List[int]],
-        fill: FillTypeJIT = None,
+        padding: List[int],
+        fill: Optional[Union[int, float, List[float]]] = None,
         padding_mode: str = "constant",
     ) -> Image:
         output = self._F.pad_image_tensor(self.as_subclass(torch.Tensor), padding, fill=fill, padding_mode=padding_mode)
@@ -108,7 +113,7 @@ class Image(Datapoint):
     def rotate(
         self,
         angle: float,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
         fill: FillTypeJIT = None,
@@ -124,7 +129,7 @@ class Image(Datapoint):
         translate: List[float],
         scale: float,
         shear: List[float],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Image:
@@ -144,7 +149,7 @@ class Image(Datapoint):
         self,
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> Image:
@@ -161,7 +166,7 @@ class Image(Datapoint):
     def elastic(
         self,
         displacement: torch.Tensor,
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: FillTypeJIT = None,
     ) -> Image:
         output = self._F.elastic_image_tensor(

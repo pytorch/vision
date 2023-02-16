@@ -7,8 +7,8 @@ import PIL.Image
 import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms.utils import check_type, has_any, is_simple_tensor
+from torchvision import datapoints
+from torchvision.transforms.v2.utils import check_type, has_any, is_simple_tensor
 from torchvision.utils import _log_api_usage_once
 
 
@@ -36,8 +36,19 @@ class Transform(nn.Module):
 
         self._check_inputs(flat_inputs)
 
-        params = self._get_params(flat_inputs)
+        needs_transform_list = self._needs_transform_list(flat_inputs)
+        params = self._get_params(
+            [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
+        )
 
+        flat_outputs = [
+            self._transform(inpt, params) if needs_transform else inpt
+            for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
+        ]
+
+        return tree_unflatten(flat_outputs, spec)
+
+    def _needs_transform_list(self, flat_inputs: List[Any]) -> List[bool]:
         # Below is a heuristic on how to deal with simple tensor inputs:
         # 1. Simple tensors, i.e. tensors that are not a datapoint, are passed through if there is an explicit image
         #    (`datapoints.Image` or `PIL.Image.Image`) or video (`datapoints.Video`) in the sample.
@@ -53,7 +64,8 @@ class Transform(nn.Module):
         # The heuristic should work well for most people in practice. The only case where it doesn't is if someone
         # tries to transform multiple simple tensors at the same time, expecting them all to be treated as images.
         # However, this case wasn't supported by transforms v1 either, so there is no BC concern.
-        flat_outputs = []
+
+        needs_transform_list = []
         transform_simple_tensor = not has_any(flat_inputs, datapoints.Image, datapoints.Video, PIL.Image.Image)
         for inpt in flat_inputs:
             needs_transform = True
@@ -65,10 +77,8 @@ class Transform(nn.Module):
                     transform_simple_tensor = False
                 else:
                     needs_transform = False
-
-            flat_outputs.append(self._transform(inpt, params) if needs_transform else inpt)
-
-        return tree_unflatten(flat_outputs, spec)
+            needs_transform_list.append(needs_transform)
+        return needs_transform_list
 
     def extra_repr(self) -> str:
         extra = []
@@ -131,8 +141,9 @@ class Transform(nn.Module):
         if self._v1_transform_cls is None:
             raise RuntimeError(
                 f"Transform {type(self).__name__} cannot be JIT scripted. "
-                f"This is only support for backward compatibility with transforms which already in v1."
-                f"For torchscript support (on tensors only), you can use the functional API instead."
+                "torchscript is only supported for backward compatibility with transforms "
+                "which are already in torchvision.transforms. "
+                "For torchscript support (on tensors only), you can use the functional API instead."
             )
 
         return self._v1_transform_cls(**self._extract_params_for_v1_transform())
@@ -159,10 +170,14 @@ class _RandomApplyTransform(Transform):
         if torch.rand(1) >= self.p:
             return inputs
 
-        params = self._get_params(flat_inputs)
+        needs_transform_list = self._needs_transform_list(flat_inputs)
+        params = self._get_params(
+            [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
+        )
 
         flat_outputs = [
-            self._transform(inpt, params) if check_type(inpt, self._transformed_types) else inpt for inpt in flat_inputs
+            self._transform(inpt, params) if needs_transform else inpt
+            for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
         ]
 
         return tree_unflatten(flat_outputs, spec)

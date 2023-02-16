@@ -3,8 +3,8 @@ import numbers
 from collections import defaultdict
 from typing import Any, Dict, Literal, Sequence, Type, TypeVar, Union
 
-from torchvision.prototype import datapoints
-from torchvision.prototype.datapoints._datapoint import FillType, FillTypeJIT
+from torchvision import datapoints
+from torchvision.datapoints._datapoint import FillType, FillTypeJIT
 
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
 
@@ -60,10 +60,9 @@ def _convert_fill_arg(fill: datapoints.FillType) -> datapoints.FillTypeJIT:
     if fill is None:
         return fill
 
-    # This cast does Sequence -> List[float] to please mypy and torch.jit.script
     if not isinstance(fill, (int, float)):
         fill = [float(v) for v in list(fill)]
-    return fill
+    return fill  # type: ignore[return-value]
 
 
 def _setup_fill_arg(fill: Union[FillType, Dict[Type, FillType]]) -> Dict[Type, FillTypeJIT]:

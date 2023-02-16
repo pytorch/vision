@@ -11,7 +11,6 @@ import pytest
 
 import torch
 
-import torchvision.prototype.transforms.utils
 from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
 from prototype_common_utils import (
     assert_close,
@@ -22,11 +21,12 @@ from prototype_common_utils import (
 from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
 from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torch.utils._pytree import tree_map
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import functional as F
-from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
-from torchvision.prototype.transforms.functional._meta import convert_format_bounding_box
+from torchvision import datapoints
 from torchvision.transforms.functional import _get_perspective_coeffs
+from torchvision.transforms.v2 import functional as F
+from torchvision.transforms.v2.functional._geometry import _center_crop_compute_padding
+from torchvision.transforms.v2.functional._meta import clamp_bounding_box, convert_format_bounding_box
+from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 KERNEL_INFOS_MAP = {info.kernel: info for info in KERNEL_INFOS}
@@ -121,8 +121,8 @@ class TestKernels:
     def test_logging(self, spy_on, info, args_kwargs, device):
         spy = spy_on(torch._C._log_api_usage_once)
 
-        args, kwargs = args_kwargs.load(device)
-        info.kernel(*args, **kwargs)
+        (input, *other_args), kwargs = args_kwargs.load(device)
+        info.kernel(input.as_subclass(torch.Tensor), *other_args, **kwargs)
 
         spy.assert_any_call(f"{info.kernel.__module__}.{info.id}")
 
@@ -134,6 +134,7 @@ class TestKernels:
         kernel_scripted = script(kernel_eager)
 
         (input, *other_args), kwargs = args_kwargs.load(device)
+        input = input.as_subclass(torch.Tensor)
 
         actual = kernel_scripted(input, *other_args, **kwargs)
         expected = kernel_eager(input, *other_args, **kwargs)
@@ -142,7 +143,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(*([actual, expected] + other_args), **kwargs),
         )
 
     def _unbatch(self, batch, *, data_dims):
@@ -167,11 +168,7 @@ class TestKernels:
     def test_batched_vs_single(self, test_id, info, args_kwargs, device):
         (batched_input, *other_args), kwargs = args_kwargs.load(device)
 
-        datapoint_type = (
-            datapoints.Image
-            if torchvision.prototype.transforms.utils.is_simple_tensor(batched_input)
-            else type(batched_input)
-        )
+        datapoint_type = datapoints.Image if is_simple_tensor(batched_input) else type(batched_input)
         # This dictionary contains the number of rightmost dimensions that contain the actual data.
         # Everything to the left is considered a batch dimension.
         data_dims = {
@@ -193,6 +190,7 @@ class TestKernels:
         elif not all(batched_input.shape[:-data_dims]):
             pytest.skip("Input has a degenerate batch shape.")
 
+        batched_input = batched_input.as_subclass(torch.Tensor)
         batched_output = info.kernel(batched_input, *other_args, **kwargs)
         actual = self._unbatch(batched_output, data_dims=data_dims)
 
@@ -210,6 +208,7 @@ class TestKernels:
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_no_inplace(self, info, args_kwargs, device):
         (input, *other_args), kwargs = args_kwargs.load(device)
+        input = input.as_subclass(torch.Tensor)
 
         if input.numel() == 0:
             pytest.skip("The input has a degenerate shape.")
@@ -223,6 +222,7 @@ class TestKernels:
     @needs_cuda
     def test_cuda_vs_cpu(self, test_id, info, args_kwargs):
         (input_cpu, *other_args), kwargs = args_kwargs.load("cpu")
+        input_cpu = input_cpu.as_subclass(torch.Tensor)
         input_cuda = input_cpu.to("cuda")
 
         output_cpu = info.kernel(input_cpu, *other_args, **kwargs)
@@ -240,6 +240,7 @@ class TestKernels:
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_dtype_and_device_consistency(self, info, args_kwargs, device):
         (input, *other_args), kwargs = args_kwargs.load(device)
+        input = input.as_subclass(torch.Tensor)
 
         output = info.kernel(input, *other_args, **kwargs)
         # Most kernels just return a tensor, but some also return some additional metadata
@@ -253,14 +254,16 @@ class TestKernels:
     def test_against_reference(self, test_id, info, args_kwargs):
         (input, *other_args), kwargs = args_kwargs.load("cpu")
 
-        actual = info.kernel(input, *other_args, **kwargs)
+        actual = info.kernel(input.as_subclass(torch.Tensor), *other_args, **kwargs)
+        # We intnetionally don't unwrap the input of the reference function in order for it to have access to all
+        # metadata regardless of whether the kernel takes it explicitly or not
         expected = info.reference_fn(input, *other_args, **kwargs)
 
         assert_close(
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(input, *other_args, **kwargs),
         )
 
     @make_info_args_kwargs_parametrization(
@@ -269,6 +272,7 @@ class TestKernels:
     )
     def test_float32_vs_uint8(self, test_id, info, args_kwargs):
         (input, *other_args), kwargs = args_kwargs.load("cpu")
+        input = input.as_subclass(torch.Tensor)
 
         if input.dtype != torch.uint8:
             pytest.skip(f"Input dtype is {input.dtype}.")
@@ -339,7 +343,6 @@ class TestDispatchers:
     @pytest.mark.parametrize(
         "dispatcher",
         [
-            F.clamp_bounding_box,
             F.get_dimensions,
             F.get_image_num_channels,
             F.get_image_size,
@@ -558,6 +561,63 @@ def test_normalize_image_tensor_stats(device, num_channels):
     assert_samples_from_standard_normal(F.normalize_image_tensor(image, mean, std))
 
 
+class TestClampBoundingBox:
+    @pytest.mark.parametrize(
+        "metadata",
+        [
+            dict(),
+            dict(format=datapoints.BoundingBoxFormat.XYXY),
+            dict(spatial_size=(1, 1)),
+        ],
+    )
+    def test_simple_tensor_insufficient_metadata(self, metadata):
+        simple_tensor = next(make_bounding_boxes()).as_subclass(torch.Tensor)
+
+        with pytest.raises(ValueError, match=re.escape("`format` and `spatial_size` has to be passed")):
+            F.clamp_bounding_box(simple_tensor, **metadata)
+
+    @pytest.mark.parametrize(
+        "metadata",
+        [
+            dict(format=datapoints.BoundingBoxFormat.XYXY),
+            dict(spatial_size=(1, 1)),
+            dict(format=datapoints.BoundingBoxFormat.XYXY, spatial_size=(1, 1)),
+        ],
+    )
+    def test_datapoint_explicit_metadata(self, metadata):
+        datapoint = next(make_bounding_boxes())
+
+        with pytest.raises(ValueError, match=re.escape("`format` and `spatial_size` must not be passed")):
+            F.clamp_bounding_box(datapoint, **metadata)
+
+
+class TestConvertFormatBoundingBox:
+    @pytest.mark.parametrize(
+        ("inpt", "old_format"),
+        [
+            (next(make_bounding_boxes()), None),
+            (next(make_bounding_boxes()).as_subclass(torch.Tensor), datapoints.BoundingBoxFormat.XYXY),
+        ],
+    )
+    def test_missing_new_format(self, inpt, old_format):
+        with pytest.raises(TypeError, match=re.escape("missing 1 required argument: 'new_format'")):
+            F.convert_format_bounding_box(inpt, old_format)
+
+    def test_simple_tensor_insufficient_metadata(self):
+        simple_tensor = next(make_bounding_boxes()).as_subclass(torch.Tensor)
+
+        with pytest.raises(ValueError, match=re.escape("`old_format` has to be passed")):
+            F.convert_format_bounding_box(simple_tensor, new_format=datapoints.BoundingBoxFormat.CXCYWH)
+
+    def test_datapoint_explicit_metadata(self):
+        datapoint = next(make_bounding_boxes())
+
+        with pytest.raises(ValueError, match=re.escape("`old_format` must not be passed")):
+            F.convert_format_bounding_box(
+                datapoint, old_format=datapoint.format, new_format=datapoints.BoundingBoxFormat.CXCYWH
+            )
+
+
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
 #  `prototype_transforms_kernel_infos.py`
 
@@ -588,21 +648,15 @@ def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 def test_correctness_affine_bounding_box_on_fixed_input(device):
     # Check transformation against known expected output
+    format = datapoints.BoundingBoxFormat.XYXY
     spatial_size = (64, 64)
-    # xyxy format
     in_boxes = [
         [20, 25, 35, 45],
         [50, 5, 70, 22],
         [spatial_size[1] // 2 - 10, spatial_size[0] // 2 - 10, spatial_size[1] // 2 + 10, spatial_size[0] // 2 + 10],
         [1, 1, 5, 5],
     ]
-    in_boxes = datapoints.BoundingBox(
-        in_boxes,
-        format=datapoints.BoundingBoxFormat.XYXY,
-        spatial_size=spatial_size,
-        dtype=torch.float64,
-        device=device,
-    )
+    in_boxes = torch.tensor(in_boxes, dtype=torch.float64, device=device)
     # Tested parameters
     angle = 63
     scale = 0.89
@@ -625,13 +679,17 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         (48.56528888843238, 9.611532109828834, 53.35347829361575, 14.39972151501221),
     ]
 
+    expected_bboxes = clamp_bounding_box(
+        datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
+    ).tolist()
+
     output_boxes = F.affine_bounding_box(
         in_boxes,
-        in_boxes.format,
-        in_boxes.spatial_size,
-        angle,
-        (dx * spatial_size[1], dy * spatial_size[0]),
-        scale,
+        format=format,
+        spatial_size=spatial_size,
+        angle=angle,
+        translate=(dx * spatial_size[1], dy * spatial_size[0]),
+        scale=scale,
         shear=(0, 0),
     )
 
@@ -666,9 +724,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
         affine_matrix = affine_matrix[:2, :]
 
         height, width = bbox.spatial_size
-        bbox_xyxy = convert_format_bounding_box(
-            bbox, old_format=bbox.format, new_format=datapoints.BoundingBoxFormat.XYXY
-        )
+        bbox_xyxy = convert_format_bounding_box(bbox, new_format=datapoints.BoundingBoxFormat.XYXY)
         points = np.array(
             [
                 [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
@@ -707,10 +763,8 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return (
-            convert_format_bounding_box(out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox.format),
-            (height, width),
-        )
+        out_bbox = clamp_bounding_box(convert_format_bounding_box(out_bbox, new_format=bbox.format))
+        return out_bbox, (height, width)
 
     spatial_size = (32, 38)
 
@@ -719,8 +773,8 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
         bboxes_spatial_size = bboxes.spatial_size
 
         output_bboxes, output_spatial_size = F.rotate_bounding_box(
-            bboxes,
-            bboxes_format,
+            bboxes.as_subclass(torch.Tensor),
+            format=bboxes_format,
             spatial_size=bboxes_spatial_size,
             angle=angle,
             expand=expand,
@@ -751,6 +805,7 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
 @pytest.mark.parametrize("expand", [False])  # expand=True does not match D2
 def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
     # Check transformation against known expected output
+    format = datapoints.BoundingBoxFormat.XYXY
     spatial_size = (64, 64)
     # xyxy format
     in_boxes = [
@@ -759,13 +814,7 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
         [spatial_size[1] - 6, spatial_size[0] - 6, spatial_size[1] - 2, spatial_size[0] - 2],
         [spatial_size[1] // 2 - 10, spatial_size[0] // 2 - 10, spatial_size[1] // 2 + 10, spatial_size[0] // 2 + 10],
     ]
-    in_boxes = datapoints.BoundingBox(
-        in_boxes,
-        format=datapoints.BoundingBoxFormat.XYXY,
-        spatial_size=spatial_size,
-        dtype=torch.float64,
-        device=device,
-    )
+    in_boxes = torch.tensor(in_boxes, dtype=torch.float64, device=device)
     # Tested parameters
     angle = 45
     center = None if expand else [12, 23]
@@ -792,12 +841,15 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
             [69.27564928, 12.39339828, 74.93250353, 18.05025253],
             [18.36396103, 1.07968978, 46.64823228, 29.36396103],
         ]
+        expected_bboxes = clamp_bounding_box(
+            datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
+        ).tolist()
 
     output_boxes, _ = F.rotate_bounding_box(
         in_boxes,
-        in_boxes.format,
-        in_boxes.spatial_size,
-        angle,
+        format=format,
+        spatial_size=spatial_size,
+        angle=angle,
         expand=expand,
         center=center,
     )
@@ -847,33 +899,35 @@ def test_correctness_crop_bounding_box(device, format, top, left, height, width,
     #     out_box = denormalize_bbox(n_out_box, height, width)
     #     expected_bboxes.append(out_box)
 
-    size = (64, 76)
-    # xyxy format
+    format = datapoints.BoundingBoxFormat.XYXY
+    spatial_size = (64, 76)
     in_boxes = [
         [10.0, 15.0, 25.0, 35.0],
         [50.0, 5.0, 70.0, 22.0],
         [45.0, 46.0, 56.0, 62.0],
     ]
-    in_boxes = datapoints.BoundingBox(
-        in_boxes, format=datapoints.BoundingBoxFormat.XYXY, spatial_size=size, device=device
-    )
+    in_boxes = torch.tensor(in_boxes, device=device)
     if format != datapoints.BoundingBoxFormat.XYXY:
         in_boxes = convert_format_bounding_box(in_boxes, datapoints.BoundingBoxFormat.XYXY, format)
+
+    expected_bboxes = clamp_bounding_box(
+        datapoints.BoundingBox(expected_bboxes, format="XYXY", spatial_size=spatial_size)
+    ).tolist()
 
     output_boxes, output_spatial_size = F.crop_bounding_box(
         in_boxes,
         format,
         top,
         left,
-        size[0],
-        size[1],
+        spatial_size[0],
+        spatial_size[1],
     )
 
     if format != datapoints.BoundingBoxFormat.XYXY:
         output_boxes = convert_format_bounding_box(output_boxes, format, datapoints.BoundingBoxFormat.XYXY)
 
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
-    torch.testing.assert_close(output_spatial_size, size)
+    torch.testing.assert_close(output_spatial_size, spatial_size)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -921,8 +975,8 @@ def test_correctness_resized_crop_bounding_box(device, format, top, left, height
         bbox[3] = (bbox[3] - top_) * size_[0] / height_
         return bbox
 
+    format = datapoints.BoundingBoxFormat.XYXY
     spatial_size = (100, 100)
-    # xyxy format
     in_boxes = [
         [10.0, 10.0, 20.0, 20.0],
         [5.0, 10.0, 15.0, 20.0],
@@ -965,22 +1019,22 @@ def test_correctness_pad_bounding_box(device, padding):
     def _compute_expected_bbox(bbox, padding_):
         pad_left, pad_up, _, _ = _parse_padding(padding_)
 
-        bbox_format = bbox.format
-        bbox_dtype = bbox.dtype
+        dtype = bbox.dtype
+        format = bbox.format
         bbox = (
             bbox.clone()
-            if bbox_format == datapoints.BoundingBoxFormat.XYXY
-            else convert_format_bounding_box(bbox, bbox_format, datapoints.BoundingBoxFormat.XYXY)
+            if format == datapoints.BoundingBoxFormat.XYXY
+            else convert_format_bounding_box(bbox, new_format=datapoints.BoundingBoxFormat.XYXY)
         )
 
         bbox[0::2] += pad_left
         bbox[1::2] += pad_up
 
-        bbox = convert_format_bounding_box(bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox_format)
-        if bbox.dtype != bbox_dtype:
+        bbox = convert_format_bounding_box(bbox, new_format=format)
+        if bbox.dtype != dtype:
             # Temporary cast to original dtype
             # e.g. float32 -> int
-            bbox = bbox.to(bbox_dtype)
+            bbox = bbox.to(dtype)
         return bbox
 
     def _compute_expected_spatial_size(bbox, padding_):
@@ -1049,9 +1103,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             ]
         )
 
-        bbox_xyxy = convert_format_bounding_box(
-            bbox, old_format=bbox.format, new_format=datapoints.BoundingBoxFormat.XYXY
-        )
+        bbox_xyxy = convert_format_bounding_box(bbox, new_format=datapoints.BoundingBoxFormat.XYXY)
         points = np.array(
             [
                 [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
@@ -1063,22 +1115,22 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
         numer = np.matmul(points, m1.T)
         denom = np.matmul(points, m2.T)
         transformed_points = numer / denom
-        out_bbox = [
-            np.min(transformed_points[:, 0]),
-            np.min(transformed_points[:, 1]),
-            np.max(transformed_points[:, 0]),
-            np.max(transformed_points[:, 1]),
-        ]
+        out_bbox = np.array(
+            [
+                np.min(transformed_points[:, 0]),
+                np.min(transformed_points[:, 1]),
+                np.max(transformed_points[:, 0]),
+                np.max(transformed_points[:, 1]),
+            ]
+        )
         out_bbox = datapoints.BoundingBox(
-            np.array(out_bbox),
+            out_bbox,
             format=datapoints.BoundingBoxFormat.XYXY,
             spatial_size=bbox.spatial_size,
             dtype=bbox.dtype,
             device=bbox.device,
         )
-        return convert_format_bounding_box(
-            out_bbox, old_format=datapoints.BoundingBoxFormat.XYXY, new_format=bbox.format
-        )
+        return clamp_bounding_box(convert_format_bounding_box(out_bbox, new_format=bbox.format))
 
     spatial_size = (32, 38)
 
@@ -1087,14 +1139,13 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
 
     for bboxes in make_bounding_boxes(spatial_size=spatial_size, extra_dims=((4,),)):
         bboxes = bboxes.to(device)
-        bboxes_format = bboxes.format
-        bboxes_spatial_size = bboxes.spatial_size
 
         output_bboxes = F.perspective_bounding_box(
-            bboxes,
-            bboxes_format,
-            None,
-            None,
+            bboxes.as_subclass(torch.Tensor),
+            format=bboxes.format,
+            spatial_size=bboxes.spatial_size,
+            startpoints=None,
+            endpoints=None,
             coefficients=pcoeffs,
         )
 
@@ -1103,7 +1154,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
 
         expected_bboxes = []
         for bbox in bboxes:
-            bbox = datapoints.BoundingBox(bbox, format=bboxes_format, spatial_size=bboxes_spatial_size)
+            bbox = datapoints.BoundingBox(bbox, format=bboxes.format, spatial_size=bboxes.spatial_size)
             expected_bboxes.append(_compute_expected_bbox(bbox, inv_pcoeffs))
         if len(expected_bboxes) > 1:
             expected_bboxes = torch.stack(expected_bboxes)
@@ -1137,6 +1188,7 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         ]
         out_bbox = torch.tensor(out_bbox)
         out_bbox = convert_format_bounding_box(out_bbox, datapoints.BoundingBoxFormat.XYWH, format_)
+        out_bbox = clamp_bounding_box(out_bbox, format=format_, spatial_size=output_size)
         return out_bbox.to(dtype=dtype, device=bbox.device)
 
     for bboxes in make_bounding_boxes(extra_dims=((4,),)):
@@ -1160,7 +1212,8 @@ def test_correctness_center_crop_bounding_box(device, output_size):
             expected_bboxes = torch.stack(expected_bboxes)
         else:
             expected_bboxes = expected_bboxes[0]
-        torch.testing.assert_close(output_boxes, expected_bboxes)
+
+        torch.testing.assert_close(output_boxes, expected_bboxes, atol=1, rtol=0)
         torch.testing.assert_close(output_spatial_size, output_size)
 
 

@@ -9,7 +9,9 @@ import PIL.Image
 import torch
 from torch import Tensor
 
-from . import functional as F, InterpolationMode
+from torchvision.transforms.v2 import functional as F, InterpolationMode
+
+from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
 __all__ = ["StereoMatching"]
 
@@ -22,7 +24,7 @@ class StereoMatching(torch.nn.Module):
         resize_size: Optional[Tuple[int, ...]],
         mean: Tuple[float, ...] = (0.5, 0.5, 0.5),
         std: Tuple[float, ...] = (0.5, 0.5, 0.5),
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
 
@@ -36,15 +38,19 @@ class StereoMatching(torch.nn.Module):
 
         self.mean = list(mean)
         self.std = list(std)
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.use_gray_scale = use_gray_scale
 
     def forward(self, left_image: Tensor, right_image: Tensor) -> Tuple[Tensor, Tensor]:
         def _process_image(img: PIL.Image.Image) -> Tensor:
-            if self.resize_size is not None:
-                img = F.resize(img, self.resize_size, interpolation=self.interpolation)
             if not isinstance(img, Tensor):
                 img = F.pil_to_tensor(img)
+            if self.resize_size is not None:
+                # We hard-code antialias=False to preserve results after we changed
+                # its default from None to True (see
+                # https://github.com/pytorch/vision/pull/7160)
+                # TODO: we could re-train the stereo models with antialias=True?
+                img = F.resize(img, self.resize_size, interpolation=self.interpolation, antialias=False)
             if self.use_gray_scale is True:
                 img = F.rgb_to_grayscale(img)
             img = F.convert_image_dtype(img, torch.float)

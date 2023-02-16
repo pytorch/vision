@@ -1,7 +1,7 @@
 from typing import Any
 
 import torch
-from torchvision.prototype.datapoints._datapoint import Datapoint
+from torchvision.datapoints._datapoint import Datapoint
 
 
 def is_simple_tensor(inpt: Any) -> bool:
