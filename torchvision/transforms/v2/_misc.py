@@ -284,7 +284,9 @@ class SanitizeBoundingBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
 
-        if (inpt is not None and inpt is params["labels"]) or isinstance(inpt, datapoints.BoundingBox):
+        if (inpt is not None and inpt is params["labels"]) or isinstance(
+            inpt, (datapoints.BoundingBox, datapoints.Mask)
+        ):
             inpt = inpt[params["mask"]]
 
         return inpt
