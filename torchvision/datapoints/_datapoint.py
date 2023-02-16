@@ -11,8 +11,8 @@ from torchvision.transforms import InterpolationMode
 
 
 D = TypeVar("D", bound="Datapoint")
-FillType = Union[int, float, Sequence[int], Sequence[float], None]
-FillTypeJIT = Optional[List[float]]
+_FillType = Union[int, float, Sequence[int], Sequence[float], None]
+_FillTypeJIT = Optional[List[float]]
 
 
 class Datapoint(torch.Tensor):
@@ -181,7 +181,7 @@ class Datapoint(torch.Tensor):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Datapoint:
         return self
 
@@ -192,7 +192,7 @@ class Datapoint(torch.Tensor):
         scale: float,
         shear: List[float],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Datapoint:
         return self
@@ -202,7 +202,7 @@ class Datapoint(torch.Tensor):
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> Datapoint:
         return self
@@ -211,7 +211,7 @@ class Datapoint(torch.Tensor):
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Datapoint:
         return self
 
@@ -255,5 +255,5 @@ class Datapoint(torch.Tensor):
         return self
 
 
-InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
-InputTypeJIT = torch.Tensor
+_InputType = Union[torch.Tensor, PIL.Image.Image, Datapoint]
+_InputTypeJIT = torch.Tensor
