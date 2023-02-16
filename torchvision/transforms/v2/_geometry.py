@@ -338,6 +338,8 @@ class RandomRotation(Transform):
         self.interpolation = _check_interpolation(interpolation)
         self.expand = expand
 
+        # This is just here for BC
+        # TODO: investigate if this actually has a significant effect on model acc
         if fill is None:
             fill = 0
         self.fill = fill
@@ -399,6 +401,8 @@ class RandomAffine(Transform):
 
         self.interpolation = _check_interpolation(interpolation)
 
+        # This is just here for BC
+        # TODO: investigate if this actually has a significant effect on model acc
         if fill is None:
             fill = 0
         self.fill = fill
@@ -574,6 +578,8 @@ class RandomPerspective(_RandomApplyTransform):
         self.distortion_scale = distortion_scale
         self.interpolation = _check_interpolation(interpolation)
 
+        # This is just here for BC
+        # TODO: investigate if this actually has a significant effect on model acc
         if fill is None:
             fill = 0
         self.fill = fill
