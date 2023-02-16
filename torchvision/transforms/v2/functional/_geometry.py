@@ -8,7 +8,8 @@ import torch
 from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
 
 from torchvision import datapoints
-from torchvision.transforms import functional_pil as _FP
+from torchvision.transforms import _functional_pil as _FP
+from torchvision.transforms._functional_tensor import _pad_symmetric
 from torchvision.transforms.functional import (
     _check_antialias,
     _compute_resized_output_size as __compute_resized_output_size,
@@ -19,7 +20,6 @@ from torchvision.transforms.functional import (
     pil_to_tensor,
     to_pil_image,
 )
-from torchvision.transforms.functional_tensor import _pad_symmetric
 
 from torchvision.utils import _log_api_usage_once
 
@@ -832,10 +832,10 @@ def rotate_image_tensor(
     center_f = [0.0, 0.0]
     if center is not None:
         if expand:
+            # TODO: Do we actually want to warn, or just document this?
             warnings.warn("The provided center argument has no effect on the result if expand is True")
-        else:
-            # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-            center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+        center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.

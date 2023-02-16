@@ -11,9 +11,9 @@ import PIL.Image
 import pytest
 import torch
 import torchvision.transforms as T
+import torchvision.transforms._functional_pil as F_pil
+import torchvision.transforms._functional_tensor as F_t
 import torchvision.transforms.functional as F
-import torchvision.transforms.functional_pil as F_pil
-import torchvision.transforms.functional_tensor as F_t
 from common_utils import (
     _assert_approx_equal_tensor_to_pil,
     _assert_equal_tensor_to_pil,
