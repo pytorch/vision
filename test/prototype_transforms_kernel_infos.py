@@ -29,7 +29,7 @@ from prototype_common_utils import (
 )
 from torch.utils._pytree import tree_map
 from torchvision import datapoints
-from torchvision.transforms.functional_tensor import _max_value as get_max_value, _parse_pad_padding
+from torchvision.transforms._functional_tensor import _max_value as get_max_value, _parse_pad_padding
 
 __all__ = ["KernelInfo", "KERNEL_INFOS"]
 

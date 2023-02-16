@@ -14,7 +14,7 @@ class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()
