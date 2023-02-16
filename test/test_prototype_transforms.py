@@ -1488,16 +1488,10 @@ class TestRandomIoUCrop:
 
         fn.assert_has_calls(expected_calls)
 
-        expected_within_targets = sum(is_within_crop_area)
-
         # check number of bboxes vs number of labels:
         output_bboxes = output[1]
         assert isinstance(output_bboxes, datapoints.BoundingBox)
-        assert len(output_bboxes) == expected_within_targets
-
-        output_masks = output[2]
-        assert isinstance(output_masks, datapoints.Mask)
-        assert len(output_masks) == expected_within_targets
+        assert (output_bboxes[~is_within_crop_area] == 0).all()
 
 
 class TestScaleJitter:
@@ -2350,7 +2344,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
         # Note that the values below are probably specific to the random seed
         # set above (which is fine).
         (True, "ssd"): 4,
-        (True, "ssdlite"): 3,
+        (True, "ssdlite"): 4,
     }.get((sanitize, data_augmentation), num_boxes)
 
     assert out["boxes"].shape[0] == out["masks"].shape[0] == out["label"].shape[0] == num_boxes_expected

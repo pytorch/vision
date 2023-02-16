@@ -752,8 +752,7 @@ class RandomIoUCrop(Transform):
         if isinstance(output, datapoints.BoundingBox):
             # We "mark" the invalid boxes as degenreate, and they can be
             # removed by a later call to SanitizeBoundingBoxes()
-            output[params["is_within_crop_area"]] = 0
-            output = datapoints.BoundingBox.wrap_like(output, inpt)
+            output[~params["is_within_crop_area"]] = 0
 
         return output
 
