@@ -3,8 +3,6 @@ from typing import Tuple
 
 import torch
 from torch import Tensor
-from torchvision.prototype import features
-from torchvision.prototype.transforms import functional as PF
 from torchvision.transforms import functional as F
 
 

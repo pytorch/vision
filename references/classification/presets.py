@@ -1,5 +1,5 @@
 import torch
-from torchvision.prototype import transforms
+import torchvision.transforms.v2 as transforms
 
 
 class ClassificationPresetTrain:

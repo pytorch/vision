@@ -14,7 +14,7 @@ import torchvision
 import transforms
 from torch import nn
 from torch.utils.data.dataloader import default_collate
-from torchvision.prototype.transforms import InterpolationMode
+from torchvision.transforms.v2 import InterpolationMode
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
