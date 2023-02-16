@@ -5,12 +5,11 @@ import PIL.Image
 import torch
 
 from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
-from torchvision import transforms as _transforms
-from torchvision.prototype import datapoints
-from torchvision.prototype.transforms import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
-from torchvision.prototype.transforms.functional._geometry import _check_interpolation
-from torchvision.prototype.transforms.functional._meta import get_spatial_size
+from torchvision import datapoints, transforms as _transforms
 from torchvision.transforms import functional_tensor as _FT
+from torchvision.transforms.v2 import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
+from torchvision.transforms.v2.functional._geometry import _check_interpolation
+from torchvision.transforms.v2.functional._meta import get_spatial_size
 
 from ._utils import _setup_fill_arg
 from .utils import check_type, is_simple_tensor
