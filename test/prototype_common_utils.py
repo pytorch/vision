@@ -17,7 +17,7 @@ from datasets_utils import combinations_grid
 from torch.nn.functional import one_hot
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import datapoints
-from torchvision.transforms.functional_tensor import _max_value as get_max_value
+from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.v2.functional import convert_dtype_image_tensor, to_image_tensor
 
 __all__ = [
