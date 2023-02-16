@@ -141,7 +141,7 @@ def shifted_window_attention_3d(
         dropout (float): Dropout ratio of output. Default: 0.0.
         qkv_bias (Tensor[out_dim], optional): The bias tensor of query, key, value. Default: None.
         proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
-        training (bool, True): If you set the dropout parameters, set training=True while training.
+        training (bool, optional): Training flag used by the dropout parameters. Default: True.
     Returns:
         Tensor[B, T, H, W, C]: The output tensor after shifted window attention.
     """

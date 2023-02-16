@@ -144,7 +144,7 @@ def shifted_window_attention(
         qkv_bias (Tensor[out_dim], optional): The bias tensor of query, key, value. Default: None.
         proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
         logit_scale (Tensor[out_dim], optional): Logit scale of cosine attention for Swin Transformer V2. Default: None.
-        training (bool, True): If you set the dropout parameters, set training=True while training.
+        training (bool, optional): Training flag used by the dropout parameters. Default: True.
     Returns:
         Tensor[N, H, W, C]: The output tensor after shifted window attention.
     """
@@ -394,6 +394,7 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
             qkv_bias=self.qkv.bias,
             proj_bias=self.proj.bias,
             logit_scale=self.logit_scale,
+            training=self.training,
         )
 
 
