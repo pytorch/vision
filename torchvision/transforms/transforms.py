@@ -46,6 +46,7 @@ __all__ = [
     "RandomPerspective",
     "RandomErasing",
     "GaussianBlur",
+    "GaussianNoise",
     "InterpolationMode",
     "RandomInvert",
     "RandomPosterize",
@@ -1813,6 +1814,64 @@ class GaussianBlur(torch.nn.Module):
 
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}(kernel_size={self.kernel_size}, sigma={self.sigma})"
+        return s
+
+
+class GaussianNoise(torch.nn.Module):
+    """Adds Gaussian noise to the image with specified mean and standard deviation.
+    If the image is torch Tensor, it is expected
+    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        mean (float or sequence): Mean of the sampling gaussian distribution .
+        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+            sampling the gaussian noise. If float, sigma is fixed. If it is tuple
+            of float (min, max), sigma is chosen uniformly at random to lie in the
+            given range.
+
+    Returns:
+        PIL Image or Tensor: Input image perturbed with Gaussian Noise.
+
+    """
+
+    def __init__(self, mean, sigma=(0.1, 0.5)):
+        super().__init__()
+        _log_api_usage_once(self)
+
+        if mean < 0:
+            raise ValueError("Mean should be a positive number")
+
+        if isinstance(sigma, numbers.Number):
+            if sigma <= 0:
+                raise ValueError("If sigma is a single number, it must be positive.")
+            sigma = (sigma, sigma)
+        elif isinstance(sigma, Sequence) and len(sigma) == 2:
+            if not 0.0 < sigma[0] <= sigma[1]:
+                raise ValueError("sigma values should be positive and of the form (min, max).")
+        else:
+            raise ValueError("sigma should be a single number or a list/tuple with length 2.")
+
+        self.mean = mean
+        self.sigma = sigma
+
+    @staticmethod
+    def get_params(sigma_min: float, sigma_max: float) -> float:
+        return torch.empty(1).uniform_(sigma_min, sigma_max).item()
+
+    def forward(self, image: Tensor) -> Tensor:
+        """
+        Args:
+            image (PIL Image or Tensor): image to be perturbed with gaussian noise.
+
+        Returns:
+            PIL Image or Tensor: Image added with gaussian noise.
+        """
+        sigma = self.get_params(self.sigma[0], self.sigma[1])
+        output = F.gaussian_noise(image, self.mean, sigma)
+        return output
+
+    def __repr__(self) -> str:
+        s = f"{self.__class__.__name__}(mean={self.mean}, sigma={self.sigma})"
         return s
 
 

@@ -764,6 +764,21 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
     return img
 
 
+def gaussian_noise(img: Tensor, mean: float, sigma: float) -> Tensor:
+    if not (isinstance(img, torch.Tensor)):
+        raise TypeError(f"img should be Tensor. Got {type(img)}")
+
+    _assert_image_tensor(img)
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [dtype])
+    # add the gaussian noise with the given mean and sigma.
+    noise = sigma * torch.randn_like(img) + mean
+    img = img + noise
+
+    img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
+    return img
+
+
 def invert(img: Tensor) -> Tensor:
 
     _assert_image_tensor(img)

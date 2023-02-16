@@ -1390,6 +1390,49 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
     return output
 
 
+def gaussian_noise(img: Tensor, mean: float, sigma: float) -> Tensor:
+    """Performs Gaussian blurring on the image by given kernel.
+    If the image is torch Tensor, it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        img (PIL Image or Tensor): Image to be blurred
+        mean (float): Mean of the desired noise corruption.
+        sigma (float): Gaussian noise standard deviation. Can be a single float.
+
+            .. note::
+                In torchscript mode sigma as single float is
+                not supported, use a sequence of length 1: ``[sigma, ]``.
+
+    Returns:
+        PIL Image or Tensor: Gaussian Blurred version of the image.
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(gaussian_noise)
+
+    if sigma is None:
+        raise ValueError("The value of sigma cannot be None.")
+
+    if sigma is not None and not isinstance(sigma, (int, float)):
+        raise TypeError(f"sigma should be a float. Got {type(sigma)}")
+    if sigma <= 0.0:
+        raise ValueError(f"sigma should have positive values. Got {sigma}")
+
+    t_img = img
+    if not isinstance(img, torch.Tensor):
+        if not F_pil._is_pil_image(img):
+            raise TypeError(f"img should be PIL Image or Tensor. Got {type(img)}")
+
+        t_img = pil_to_tensor(img)
+
+    output = F_t.gaussian_noise(t_img, mean, sigma)
+
+    if not isinstance(img, torch.Tensor):
+        output = to_pil_image(output, mode=img.mode)
+
+    return output
+
+
 def invert(img: Tensor) -> Tensor:
     """Invert the colors of an RGB/grayscale image.
 
