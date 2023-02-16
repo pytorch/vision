@@ -31,8 +31,8 @@ class ConvertDtype(Transform):
         self.dtype = dtype
 
     def _transform(
-        self, inpt: Union[datapoints.TensorImageType, datapoints.TensorVideoType], params: Dict[str, Any]
-    ) -> Union[datapoints.TensorImageType, datapoints.TensorVideoType]:
+        self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
+    ) -> Union[datapoints._TensorImageType, datapoints._TensorVideoType]:
         return F.convert_dtype(inpt, self.dtype)
 
 
