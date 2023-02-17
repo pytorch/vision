@@ -130,6 +130,12 @@ __all__ = (
 )
 
 
+# We override current module's attributes to handle the import:
+# from torchvision.datasets import wrap_dataset_for_transforms_v2
+# with beta state v2 warning from torchvision.datapoints
+# We also want to avoid raising the warning when importing other attributes
+# from torchvision.datasets
+# Ref: https://peps.python.org/pep-0562/
 def __getattr__(name):
     if name in ("wrap_dataset_for_transforms_v2",):
         from torchvision.datapoints._dataset_wrapper import wrap_dataset_for_transforms_v2
