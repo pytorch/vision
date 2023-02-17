@@ -54,6 +54,4 @@ jobs:
 
         # Run Tests
         python3 -m torch.utils.collect_env
-        rm -rf torchvision/prototype
-        rm test/*prototype*
         python3 -m pytest --junitxml=test-results/junit.xml -v --durations 20
