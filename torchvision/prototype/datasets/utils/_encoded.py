@@ -7,7 +7,7 @@ from typing import Any, BinaryIO, Optional, Tuple, Type, TypeVar, Union
 import PIL.Image
 import torch
 
-from torchvision.prototype.datapoints._datapoint import Datapoint
+from torchvision.datapoints._datapoint import Datapoint
 from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
 D = TypeVar("D", bound="EncodedData")

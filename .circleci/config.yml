@@ -1282,6 +1282,23 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_conda_py3.10_cu118
           python_version: '3.10'
+      - binary_win_conda:
+          cu_version: cpu
+          name: binary_win_conda_py3.11_cpu
+          python_version: '3.11'
+      - binary_win_conda:
+          cu_version: cu117
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_conda_py3.11_cu117
+          python_version: '3.11'
+      - binary_win_conda:
+          cu_version: cu118
+          name: binary_win_conda_py3.11_cu118
+          python_version: '3.11'
       - build_docs:
           filters:
             branches:
@@ -1903,6 +1920,63 @@ workflows:
           name: nightly_binary_win_conda_py3.10_cu118_upload
           requires:
           - nightly_binary_win_conda_py3.10_cu118
+      - binary_win_conda:
+          cu_version: cpu
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cpu
+          python_version: '3.11'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cpu_upload
+          requires:
+          - nightly_binary_win_conda_py3.11_cpu
+      - binary_win_conda:
+          cu_version: cu117
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cu117
+          python_version: '3.11'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cu117_upload
+          requires:
+          - nightly_binary_win_conda_py3.11_cu117
+      - binary_win_conda:
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cu118
+          python_version: '3.11'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cu118_upload
+          requires:
+          - nightly_binary_win_conda_py3.11_cu118
   docker_build:
     triggers:
       - schedule:

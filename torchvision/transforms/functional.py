@@ -15,7 +15,7 @@ except ImportError:
     accimage = None
 
 from ..utils import _log_api_usage_once
-from . import functional_pil as F_pil, functional_tensor as F_t
+from . import _functional_pil as F_pil, _functional_tensor as F_t
 
 
 class InterpolationMode(Enum):
@@ -827,7 +827,9 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
     return tl, tr, bl, br, center
 
 
-def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[Tensor]:
+def ten_crop(
+    img: Tensor, size: List[int], vertical_flip: bool = False
+) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
     """Generate ten cropped images from the given image.
     Crop the given image into four corners and the central crop plus the
     flipped version of these (horizontal flipping is used by default).
