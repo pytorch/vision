@@ -269,6 +269,11 @@ class TestSmoke:
             else:
                 assert output_item is input_item
 
+            if isinstance(input_item, datapoints.BoundingBox) and not isinstance(
+                transform, transforms.ConvertBoundingBoxFormat
+            ):
+                assert output_item.format == input_item.format
+
         # Enforce that the transform does not turn a degenerate box marked by RandomIoUCrop (or any other future
         # transform that does this), back into a valid one.
         for format in list(datapoints.BoundingBoxFormat):
