@@ -128,3 +128,12 @@ __all__ = (
     "InStereo2k",
     "ETH3DStereo",
 )
+
+
+def __getattr__(name):
+    if name in ("wrap_dataset_for_transforms_v2",):
+        from torchvision.datapoints._dataset_wrapper import wrap_dataset_for_transforms_v2
+
+        return wrap_dataset_for_transforms_v2
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
