@@ -1,10 +1,9 @@
-import re
-
 import pytest
 import torch
 
 from PIL import Image
 
+from torchvision import datapoints
 from torchvision.prototype import datapoints as proto_datapoints
 
 
