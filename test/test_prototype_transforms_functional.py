@@ -508,6 +508,22 @@ class TestDispatchers:
         with pytest.raises(TypeError, match=re.escape(str(type(unkown_input)))):
             info.dispatcher(unkown_input, *other_args, **kwargs)
 
+    @make_info_args_kwargs_parametrization(
+        [
+            info
+            for info in DISPATCHER_INFOS
+            if datapoints.BoundingBox in info.kernels and info.dispatcher is not F.convert_format_bounding_box
+        ],
+        args_kwargs_fn=lambda info: info.sample_inputs(datapoints.BoundingBox),
+    )
+    def test_bounding_box_format_consistency(self, info, args_kwargs):
+        (bounding_box, *other_args), kwargs = args_kwargs.load()
+        format = bounding_box.format
+
+        output = info.dispatcher(bounding_box, *other_args, **kwargs)
+
+        assert output.format == format
+
 
 @pytest.mark.parametrize(
     ("alias", "target"),

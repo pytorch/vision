@@ -269,6 +269,21 @@ class TestSmoke:
             else:
                 assert output_item is input_item
 
+            if isinstance(input_item, datapoints.BoundingBox) and not isinstance(
+                transform, transforms.ConvertBoundingBoxFormat
+            ):
+                assert output_item.format == input_item.format
+
+        # Enforce that the transform does not turn a degenerate box marked by RandomIoUCrop (or any other future
+        # transform that does this), back into a valid one.
+        # TODO: we should test that against all degenerate boxes above
+        for format in list(datapoints.BoundingBoxFormat):
+            sample = dict(
+                boxes=datapoints.BoundingBox([[0, 0, 0, 0]], format=format, spatial_size=(224, 244)),
+                labels=torch.tensor([3]),
+            )
+            assert transforms.SanitizeBoundingBoxes()(sample)["boxes"].shape == (0, 4)
+
     @parametrize(
         [
             (
