@@ -1,19 +1,35 @@
-import pytest
+import warnings
+
+import torchvision
 
 
-def test_warns_if_imported_from_datasets(mocker):
-    mocker.patch("torchvision._WARN_ABOUT_BETA_TRANSFORMS", return_value=True)
-
-    import torchvision
-
-    with pytest.warns(UserWarning, match=torchvision._BETA_TRANSFORMS_WARNING):
+def test_warns_if_imported_from_datasets():
+    with warnings.catch_warnings(record=True) as w:
         from torchvision.datasets import wrap_dataset_for_transforms_v2
 
         assert callable(wrap_dataset_for_transforms_v2)
 
+        assert len(w) == 2
+        assert "torchvision.transforms.v2" in str(w[-1].message)
 
-@pytest.mark.filterwarnings("error")
+
 def test_no_warns_if_imported_from_datasets():
-    from torchvision.datasets import wrap_dataset_for_transforms_v2
 
-    assert callable(wrap_dataset_for_transforms_v2)
+    torchvision.disable_beta_transforms_warning()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+
+        from torchvision.datasets import wrap_dataset_for_transforms_v2
+
+        assert callable(wrap_dataset_for_transforms_v2)
+
+        from torchvision.datasets import cifar
+
+        assert hasattr(cifar, "CIFAR10")
+
+
+if __name__ == "__main__":
+    # We can't rely on pytest due to various side-effects, e.g. conftest etc
+    test_warns_if_imported_from_datasets()
+    test_no_warns_if_imported_from_datasets()

@@ -60,4 +60,4 @@ jobs:
         # We keep them separate to avoid any side effects due to warnings / imports.
         # TODO: Remove this and add proper tests (possibly using a sub-process solution as described
         # in https://github.com/pytorch/vision/pull/7269).
-        python3 -m pytest -v test/check_v2_dataset_warnings.py
+        python3 test/check_v2_dataset_warnings.py
