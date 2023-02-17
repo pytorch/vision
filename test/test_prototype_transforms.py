@@ -248,6 +248,7 @@ class TestSmoke:
         if adapter is not None:
             input = adapter(transform, input, device)
 
+        keys = list(input.keys())
         if container_type in {tuple, list}:
             input = container_type(input.values())
 
@@ -268,6 +269,20 @@ class TestSmoke:
                 assert type(output_item) is type(input_item)
             else:
                 assert output_item is input_item
+
+        sanitize = transforms.SanitizeBoundingBoxes()
+        for output_degenerate_bounding_box, input_degenerate_bounding_box in (
+            (output_item, input_item)
+            for key, output_item, input_item in zip(keys, output_flat, input_flat)
+            if "degenerate" in key
+        ):
+            sample = dict(
+                bounding_box=output_degenerate_bounding_box,
+                labels=torch.randint(
+                    10, input_degenerate_bounding_box.shape[:-1], device=input_degenerate_bounding_box.device
+                ),
+            )
+            assert sanitize(sample)["bounding_box"].shape == (0, 4)
 
     @parametrize(
         [
