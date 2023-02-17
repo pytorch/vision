@@ -11,15 +11,16 @@ import pytest
 
 import torch
 
-from common_utils import cache, cpu_and_gpu, needs_cuda, set_rng_seed
-from prototype_common_utils import (
+from common_utils import (
     assert_close,
+    cache,
+    cpu_and_gpu,
     DEFAULT_SQUARE_SPATIAL_SIZE,
     make_bounding_boxes,
+    needs_cuda,
     parametrized_error_message,
+    set_rng_seed,
 )
-from prototype_transforms_dispatcher_infos import DISPATCHER_INFOS
-from prototype_transforms_kernel_infos import KERNEL_INFOS
 from torch.utils._pytree import tree_map
 from torchvision import datapoints
 from torchvision.transforms.functional import _get_perspective_coeffs
@@ -27,6 +28,8 @@ from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2.functional._geometry import _center_crop_compute_padding
 from torchvision.transforms.v2.functional._meta import clamp_bounding_box, convert_format_bounding_box
 from torchvision.transforms.v2.utils import is_simple_tensor
+from transforms_v2_dispatcher_infos import DISPATCHER_INFOS
+from transforms_v2_kernel_infos import KERNEL_INFOS
 
 
 KERNEL_INFOS_MAP = {info.kernel: info for info in KERNEL_INFOS}
@@ -635,7 +638,7 @@ class TestConvertFormatBoundingBox:
 
 
 # TODO: All correctness checks below this line should be ported to be references on a `KernelInfo` in
-#  `prototype_transforms_kernel_infos.py`
+#  `transforms_v2_kernel_infos.py`
 
 
 def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
