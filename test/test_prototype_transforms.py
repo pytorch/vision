@@ -248,7 +248,6 @@ class TestSmoke:
         if adapter is not None:
             input = adapter(transform, input, device)
 
-        keys = list(input.keys())
         if container_type in {tuple, list}:
             input = container_type(input.values())
 
@@ -270,19 +269,14 @@ class TestSmoke:
             else:
                 assert output_item is input_item
 
-        sanitize = transforms.SanitizeBoundingBoxes()
-        for output_degenerate_bounding_box, input_degenerate_bounding_box in (
-            (output_item, input_item)
-            for key, output_item, input_item in zip(keys, output_flat, input_flat)
-            if "degenerate" in key
-        ):
+        # Enforce that the transform does not turn a degenerate box marked by RandomIoUCrop (or any other future
+        # transform that does this), back into a valid one.
+        for format in list(datapoints.BoundingBoxFormat):
             sample = dict(
-                bounding_box=output_degenerate_bounding_box,
-                labels=torch.randint(
-                    10, input_degenerate_bounding_box.shape[:-1], device=input_degenerate_bounding_box.device
-                ),
+                boxes=datapoints.BoundingBox([[0, 0, 0, 0]], format=format, spatial_size=(224, 244)),
+                labels=torch.tensor([3]),
             )
-            assert sanitize(sample)["bounding_box"].shape == (0, 4)
+            assert transforms.SanitizeBoundingBoxes()(sample)["boxes"].shape == (0, 4)
 
     @parametrize(
         [
