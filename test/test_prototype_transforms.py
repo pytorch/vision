@@ -276,6 +276,7 @@ class TestSmoke:
 
         # Enforce that the transform does not turn a degenerate box marked by RandomIoUCrop (or any other future
         # transform that does this), back into a valid one.
+        # TODO: we should test that against all degenerate boxes above
         for format in list(datapoints.BoundingBoxFormat):
             sample = dict(
                 boxes=datapoints.BoundingBox([[0, 0, 0, 0]], format=format, spatial_size=(224, 244)),
