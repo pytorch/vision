@@ -1,11 +1,9 @@
-import re
-
 import pytest
 import torch
 
 from PIL import Image
 
-from torchvision import datapoints, datasets
+from torchvision import datapoints
 from torchvision.prototype import datapoints as proto_datapoints
 
 
@@ -163,43 +161,3 @@ def test_bbox_instance(data, format):
     if isinstance(format, str):
         format = datapoints.BoundingBoxFormat.from_str(format.upper())
     assert bboxes.format == format
-
-
-class TestDatasetWrapper:
-    def test_unknown_type(self):
-        unknown_object = object()
-        with pytest.raises(
-            TypeError, match=re.escape("is meant for subclasses of `torchvision.datasets.VisionDataset`")
-        ):
-            datapoints.wrap_dataset_for_transforms_v2(unknown_object)
-
-    def test_unknown_dataset(self):
-        class MyVisionDataset(datasets.VisionDataset):
-            pass
-
-        dataset = MyVisionDataset("root")
-
-        with pytest.raises(TypeError, match="No wrapper exist"):
-            datapoints.wrap_dataset_for_transforms_v2(dataset)
-
-    def test_missing_wrapper(self):
-        dataset = datasets.FakeData()
-
-        with pytest.raises(TypeError, match="please open an issue"):
-            datapoints.wrap_dataset_for_transforms_v2(dataset)
-
-    def test_subclass(self, mocker):
-        sentinel = object()
-        mocker.patch.dict(
-            datapoints._dataset_wrapper.WRAPPER_FACTORIES,
-            clear=False,
-            values={datasets.FakeData: lambda dataset: lambda idx, sample: sentinel},
-        )
-
-        class MyFakeData(datasets.FakeData):
-            pass
-
-        dataset = MyFakeData()
-        wrapped_dataset = datapoints.wrap_dataset_for_transforms_v2(dataset)
-
-        assert wrapped_dataset[0] is sentinel
