@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from ..utils import _log_api_usage_once
 
 
+# Implementation adapted from https://kornia.readthedocs.io/en/latest/_modules/kornia/losses/dice.html#dice_loss
 def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "none", eps: float = 1e-7) -> torch.Tensor:
     r"""Criterion that computes Sørensen-Dice Coefficient loss.
 
@@ -24,8 +25,8 @@ def dice_loss(inputs: torch.Tensor, targets: torch.Tensor, reduction: str = "non
         \text{loss}(x, class) = 1 - \text{Dice}(x, class)
 
     Args:
-        inputs: (Tensor): A float tensor with rank >= 2 and shape (B, C, N1, .... NK)
-                where B is the Batch Size and C is the number of classes.
+        inputs: (Tensor): A float tensor with rank >= 2 and shape (B, num_classes, N1, .... NK)
+                where B is the Batch Size and num_classes is the number of classes.
                 The predictions for each example.
         targets: (Tensor): A one-hot tensor with the same shape as inputs.
                 The first dimension is the batch size and the second dimension is the
