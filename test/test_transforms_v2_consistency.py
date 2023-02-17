@@ -1103,12 +1103,6 @@ class TestRefDetTransforms:
             ),
             (det_transforms.RandomZoomOut(), v2_transforms.RandomZoomOut(), {"with_mask": False}),
             (det_transforms.ScaleJitter((1024, 1024)), v2_transforms.ScaleJitter((1024, 1024)), {}),
-            # FIXME
-            # (
-            #     det_transforms.FixedSizeCrop((1024, 1024), fill=0),
-            #     prototype_transforms.FixedSizeCrop((1024, 1024), fill=0),
-            #     {},
-            # ),
             (
                 det_transforms.RandomShortestSize(
                     min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
