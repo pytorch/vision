@@ -901,7 +901,7 @@ jobs:
     <<: *binary_common
     macos:
       xcode: "14.0"
-    resource_class: macos.x86.metal.gen1
+    resource_class: large
     steps:
       - checkout
       - designate_upload_channel
