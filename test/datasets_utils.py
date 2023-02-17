@@ -170,23 +170,6 @@ def test_all_configs(test):
     return wrapper
 
 
-def combinations_grid(**kwargs):
-    """Creates a grid of input combinations.
-
-    Each element in the returned sequence is a dictionary containing one possible combination as values.
-
-    Example:
-        >>> combinations_grid(foo=("bar", "baz"), spam=("eggs", "ham"))
-        [
-            {'foo': 'bar', 'spam': 'eggs'},
-            {'foo': 'bar', 'spam': 'ham'},
-            {'foo': 'baz', 'spam': 'eggs'},
-            {'foo': 'baz', 'spam': 'ham'}
-        ]
-    """
-    return [dict(zip(kwargs.keys(), values)) for values in itertools.product(*kwargs.values())]
-
-
 class DatasetTestCase(unittest.TestCase):
     """Abstract base class for all dataset testcases.
 

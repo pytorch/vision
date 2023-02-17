@@ -15,9 +15,9 @@ import torchvision.prototype.transforms as proto_transforms
 import torchvision.transforms.v2 as transforms
 
 import torchvision.transforms.v2.utils
-from common_utils import cpu_and_gpu
-from prototype_common_utils import (
+from common_utils import (
     assert_equal,
+    cpu_and_gpu,
     DEFAULT_EXTRA_DIMS,
     make_bounding_box,
     make_bounding_boxes,
