@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.detection
+
+
+ssd300_vgg16
+============
+
+.. autofunction:: ssd300_vgg16

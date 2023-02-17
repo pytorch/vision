@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+SEMEION
+=======
+
+.. autoclass:: SEMEION
+    :members:
+        __getitem__,
+        
+    :special-members:

@@ -1,0 +1,10 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.ops
+
+
+DropBlock3d
+===========
+
+.. autoclass:: DropBlock3d
+    :members:
