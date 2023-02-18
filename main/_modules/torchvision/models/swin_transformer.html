@@ -222,7 +222,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+59150a7 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+726102e ) &#x25BC</a>
     </div>
     
 
@@ -471,7 +471,8 @@
     <span class="n">qkv_bias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">proj_bias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">logit_scale</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">):</span>
+    <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Window based multi-head self attention (W-MSA) module with relative position bias.</span>
 <span class="sd">    It supports both of shifted and non-shifted window.</span>
@@ -488,6 +489,7 @@
 <span class="sd">        qkv_bias (Tensor[out_dim], optional): The bias tensor of query, key, value. Default: None.</span>
 <span class="sd">        proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.</span>
 <span class="sd">        logit_scale (Tensor[out_dim], optional): Logit scale of cosine attention for Swin Transformer V2. Default: None.</span>
+<span class="sd">        training (bool, optional): Training flag used by the dropout parameters. Default: True.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        Tensor[N, H, W, C]: The output tensor after shifted window attention.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -552,11 +554,11 @@
         <span class="n">attn</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_heads</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
     <span class="n">attn</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">attn</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">attn</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">attn</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">)</span>
+    <span class="n">attn</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">attn</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
 
     <span class="n">x</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">C</span><span class="p">)</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">proj_weight</span><span class="p">,</span> <span class="n">proj_bias</span><span class="p">)</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
 
     <span class="c1"># reverse windows</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">pad_H</span> <span class="o">//</span> <span class="n">window_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pad_W</span> <span class="o">//</span> <span class="n">window_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">window_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">window_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">C</span><span class="p">)</span>
@@ -631,7 +633,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">relative_position_bias_table</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_position_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span>  <span class="c1"># type: ignore[arg-type]</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (Tensor): Tensor with layout of [B, H, W, C]</span>
@@ -651,6 +653,7 @@
             <span class="n">dropout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
             <span class="n">qkv_bias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">qkv</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span>
             <span class="n">proj_bias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span>
+            <span class="n">training</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
         <span class="p">)</span>
 
 
@@ -736,6 +739,7 @@
             <span class="n">qkv_bias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">qkv</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span>
             <span class="n">proj_bias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span>
             <span class="n">logit_scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logit_scale</span><span class="p">,</span>
+            <span class="n">training</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
         <span class="p">)</span>
 
 
