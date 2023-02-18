@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Tuple, Union
 import torch
 from torchvision.transforms.functional import InterpolationMode
 
-from ._datapoint import Datapoint, FillTypeJIT
+from ._datapoint import _FillTypeJIT, Datapoint
 
 
 class Video(Datapoint):
@@ -115,7 +115,7 @@ class Video(Datapoint):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
         center: Optional[List[float]] = None,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Video:
         output = self._F.rotate_video(
             self.as_subclass(torch.Tensor), angle, interpolation=interpolation, expand=expand, fill=fill, center=center
@@ -129,7 +129,7 @@ class Video(Datapoint):
         scale: float,
         shear: List[float],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         center: Optional[List[float]] = None,
     ) -> Video:
         output = self._F.affine_video(
@@ -149,7 +149,7 @@ class Video(Datapoint):
         startpoints: Optional[List[List[int]]],
         endpoints: Optional[List[List[int]]],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
         coefficients: Optional[List[float]] = None,
     ) -> Video:
         output = self._F.perspective_video(
@@ -166,7 +166,7 @@ class Video(Datapoint):
         self,
         displacement: torch.Tensor,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: FillTypeJIT = None,
+        fill: _FillTypeJIT = None,
     ) -> Video:
         output = self._F.elastic_video(
             self.as_subclass(torch.Tensor), displacement, interpolation=interpolation, fill=fill
@@ -232,7 +232,7 @@ class Video(Datapoint):
         return Video.wrap_like(self, output)
 
 
-VideoType = Union[torch.Tensor, Video]
-VideoTypeJIT = torch.Tensor
-TensorVideoType = Union[torch.Tensor, Video]
-TensorVideoTypeJIT = torch.Tensor
+_VideoType = Union[torch.Tensor, Video]
+_VideoTypeJIT = torch.Tensor
+_TensorVideoType = Union[torch.Tensor, Video]
+_TensorVideoTypeJIT = torch.Tensor

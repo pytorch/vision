@@ -9,9 +9,9 @@ import pytest
 import torch.testing
 import torchvision.ops
 import torchvision.transforms.v2.functional as F
-from datasets_utils import combinations_grid
-from prototype_common_utils import (
+from common_utils import (
     ArgsKwargs,
+    combinations_grid,
     get_num_channels,
     ImageLoader,
     InfoBase,

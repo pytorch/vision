@@ -163,8 +163,8 @@ class RandomPhotometricDistort(Transform):
         )
 
     def _permute_channels(
-        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], permutation: torch.Tensor
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
+        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], permutation: torch.Tensor
+    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
 
         orig_inpt = inpt
         if isinstance(orig_inpt, PIL.Image.Image):
@@ -179,8 +179,8 @@ class RandomPhotometricDistort(Transform):
         return output
 
     def _transform(
-        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
-    ) -> Union[datapoints.ImageType, datapoints.VideoType]:
+        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
+    ) -> Union[datapoints._ImageType, datapoints._VideoType]:
         if params["brightness"]:
             inpt = F.adjust_brightness(
                 inpt, brightness_factor=ColorJitter._generate_value(self.brightness[0], self.brightness[1])

@@ -160,7 +160,7 @@ class RandomResizedCrop(Transform):
         )
 
 
-ImageOrVideoTypeJIT = Union[datapoints.ImageTypeJIT, datapoints.VideoTypeJIT]
+ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
 
 
 class FiveCrop(Transform):
@@ -232,7 +232,7 @@ class TenCrop(Transform):
             raise TypeError(f"BoundingBox'es and Mask's are not supported by {type(self).__name__}()")
 
     def _transform(
-        self, inpt: Union[datapoints.ImageType, datapoints.VideoType], params: Dict[str, Any]
+        self, inpt: Union[datapoints._ImageType, datapoints._VideoType], params: Dict[str, Any]
     ) -> Tuple[
         ImageOrVideoTypeJIT,
         ImageOrVideoTypeJIT,
@@ -255,16 +255,14 @@ class Pad(Transform):
         params = super()._extract_params_for_v1_transform()
 
         if not (params["fill"] is None or isinstance(params["fill"], (int, float))):
-            raise ValueError(
-                f"{type(self.__name__)}() can only be scripted for a scalar `fill`, but got {self.fill} for images."
-            )
+            raise ValueError(f"{type(self).__name__}() can only be scripted for a scalar `fill`, but got {self.fill}.")
 
         return params
 
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -276,24 +274,26 @@ class Pad(Transform):
         if not isinstance(padding, int):
             padding = list(padding)
         self.padding = padding
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self._fill[type(inpt)]
         return F.pad(inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
 
 class RandomZoomOut(_RandomApplyTransform):
     def __init__(
         self,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
         super().__init__(p=p)
 
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
 
         _check_sequence_input(side_range, "side_range", req_sizes=(2,))
 
@@ -318,7 +318,7 @@ class RandomZoomOut(_RandomApplyTransform):
         return dict(padding=padding)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self._fill[type(inpt)]
         return F.pad(inpt, **params, fill=fill)
 
 
@@ -330,7 +330,7 @@ class RandomRotation(Transform):
         degrees: Union[numbers.Number, Sequence],
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -338,7 +338,8 @@ class RandomRotation(Transform):
         self.interpolation = _check_interpolation(interpolation)
         self.expand = expand
 
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
 
         if center is not None:
             _check_sequence_input(center, "center", req_sizes=(2,))
@@ -350,7 +351,7 @@ class RandomRotation(Transform):
         return dict(angle=angle)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self._fill[type(inpt)]
         return F.rotate(
             inpt,
             **params,
@@ -371,7 +372,7 @@ class RandomAffine(Transform):
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
         center: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
@@ -395,7 +396,8 @@ class RandomAffine(Transform):
             self.shear = shear
 
         self.interpolation = _check_interpolation(interpolation)
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
 
         if center is not None:
             _check_sequence_input(center, "center", req_sizes=(2,))
@@ -430,7 +432,7 @@ class RandomAffine(Transform):
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self._fill[type(inpt)]
         return F.affine(
             inpt,
             **params,
@@ -447,9 +449,7 @@ class RandomCrop(Transform):
         params = super()._extract_params_for_v1_transform()
 
         if not (params["fill"] is None or isinstance(params["fill"], (int, float))):
-            raise ValueError(
-                f"{type(self.__name__)}() can only be scripted for a scalar `fill`, but got {self.fill} for images."
-            )
+            raise ValueError(f"{type(self).__name__}() can only be scripted for a scalar `fill`, but got {self.fill}.")
 
         padding = self.padding
         if padding is not None:
@@ -464,7 +464,7 @@ class RandomCrop(Transform):
         size: Union[int, Sequence[int]],
         padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -478,7 +478,8 @@ class RandomCrop(Transform):
 
         self.padding = F._geometry._parse_pad_padding(padding) if padding else None  # type: ignore[arg-type]
         self.pad_if_needed = pad_if_needed
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
@@ -541,7 +542,7 @@ class RandomCrop(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
-            fill = self.fill[type(inpt)]
+            fill = self._fill[type(inpt)]
             inpt = F.pad(inpt, padding=params["padding"], fill=fill, padding_mode=self.padding_mode)
 
         if params["needs_crop"]:
@@ -556,7 +557,7 @@ class RandomPerspective(_RandomApplyTransform):
     def __init__(
         self,
         distortion_scale: float = 0.5,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         p: float = 0.5,
     ) -> None:
@@ -567,7 +568,8 @@ class RandomPerspective(_RandomApplyTransform):
 
         self.distortion_scale = distortion_scale
         self.interpolation = _check_interpolation(interpolation)
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         height, width = query_spatial_size(flat_inputs)
@@ -600,7 +602,7 @@ class RandomPerspective(_RandomApplyTransform):
         return dict(coefficients=perspective_coeffs)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self._fill[type(inpt)]
         return F.perspective(
             inpt,
             None,
@@ -618,7 +620,7 @@ class ElasticTransform(Transform):
         self,
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
-        fill: Union[datapoints.FillType, Dict[Type, datapoints.FillType]] = 0,
+        fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
@@ -626,7 +628,8 @@ class ElasticTransform(Transform):
         self.sigma = _setup_float_or_seq(sigma, "sigma", 2)
 
         self.interpolation = _check_interpolation(interpolation)
-        self.fill = _setup_fill_arg(fill)
+        self.fill = fill
+        self._fill = _setup_fill_arg(fill)
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         size = list(query_spatial_size(flat_inputs))
@@ -652,7 +655,7 @@ class ElasticTransform(Transform):
         return dict(displacement=displacement)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        fill = self.fill[type(inpt)]
+        fill = self._fill[type(inpt)]
         return F.elastic(
             inpt,
             **params,
@@ -721,8 +724,6 @@ class RandomIoUCrop(Transform):
                 if left == right or top == bottom:
                     continue
 
-                # FIXME: I think we can stop here?
-
                 # check for any valid boxes with centers within the crop area
                 xyxy_bboxes = F.convert_format_bounding_box(
                     bboxes.as_subclass(torch.Tensor), bboxes.format, datapoints.BoundingBoxFormat.XYXY
@@ -745,23 +746,16 @@ class RandomIoUCrop(Transform):
                 return dict(top=top, left=left, height=new_h, width=new_w, is_within_crop_area=is_within_crop_area)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        # FIXME: refactor this to not remove anything
 
         if len(params) < 1:
             return inpt
 
-        is_within_crop_area = params["is_within_crop_area"]
-
         output = F.crop(inpt, top=params["top"], left=params["left"], height=params["height"], width=params["width"])
 
         if isinstance(output, datapoints.BoundingBox):
-            bboxes = output[is_within_crop_area]
-            bboxes = F.clamp_bounding_box(bboxes, output.format, output.spatial_size)
-            output = datapoints.BoundingBox.wrap_like(output, bboxes)
-        elif isinstance(output, datapoints.Mask):
-            # apply is_within_crop_area if mask is one-hot encoded
-            masks = output[is_within_crop_area]
-            output = datapoints.Mask.wrap_like(output, masks)
+            # We "mark" the invalid boxes as degenreate, and they can be
+            # removed by a later call to SanitizeBoundingBoxes()
+            output[~params["is_within_crop_area"]] = 0
 
         return output
 
