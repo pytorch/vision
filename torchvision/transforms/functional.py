@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from PIL import Image
 from torch import Tensor
+import torch.nn.functional as P
 
 try:
     import accimage
@@ -1615,3 +1616,121 @@ def _check_antialias(
         antialias = None
 
     return antialias
+
+def richardson_lucy(
+    image: Tensor,
+    psf: Tensor,
+    pad: str,
+    num_iter: int,
+    clip: bool,
+    eps: float,
+) -> Tensor:
+    """It helps deblurring the blurry and noisy image (Gray Scale).
+        Can be most helpful in Outer Space dataset and Medical imaging dataset
+    Args:
+        image : ndarray   [1, H, W]
+           Input degraded image (can be n-dimensional).
+        psf : ndarray
+           The point spread function. [1, K, k]
+        pad : tensor padding constant, reflect (default), circular
+        Helps in keeping up edges after mathematical operations.
+        num_iter : int, optional (default = 30)
+           Number of iterations. This parameter plays the role of
+           regularisation.
+        clip : boolean, optional
+           True by default. If true, pixel value of the result above 1 or
+           under -1
+        eps: float, optional (default = 1e-12)
+           Value below which intermediate results become 0 to avoid division
+           by small numbers.
+    Returns:
+        im_deconv : ndarray
+                The deconvolved image.
+    Example:
+        import torch
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from scipy.signal import convolve2d as conv2
+        from skimage import color, data, restoration
+
+        rng = np.random.default_rng()
+        astro = color.rgb2gray(data.astronaut())
+        psf = np.ones((3, 3)) / 25
+        psf = torch.from_numpy(psf)
+
+        #blur the image
+        astro = conv2(astro, psf, 'same')
+
+        # Add Noise to Image
+        astro_noisy = astro.copy()
+        astro_noisy += (rng.poisson(lam=25, size=astro.shape) - 10) / 255.
+        astro_noisy = torch.from_numpy(astro_noisy)
+
+        #proper dimension of image and point spread function tensors
+        psf=psf.unsqueeze(0).unsqueeze(0)
+        astro_noisy=astro_noisy.unsqueeze(0).unsqueeze(0)
+
+        # Restore Image using Richardson-Lucy algorithm
+        deconvolved_RL = F.richardson_lucy(astro_noisy, psf, pad = 'reflect', clip = True, num_iter=50, eps = 1e-12)
+        print(type(deconvolved_RL))
+
+        deconvolved_RL_0=deconvolved_RL.squeeze().squeeze()
+        astro_noisy=astro_noisy.squeeze().squeeze()
+
+        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(8, 5))
+        plt.gray()
+        for a in (ax[0], ax[1], ax[2]):
+            a.axis('off')
+        ax[0].imshow(astro)
+        ax[0].set_title('Original Data')
+        ax[1].imshow(astro_noisy)
+        ax[1].set_title('Noisy data')
+        ax[2].imshow(deconvolved_RL_0, vmin=astro_noisy.min(), vmax=astro_noisy.max())
+        ax[2].set_title('Restoration using\nRichardson-Lucy')
+
+        fig.subplots_adjust(wspace=0.02, hspace=0.2,
+                            top=0.9, bottom=0.05, left=0, right=1)
+        plt.show()
+
+    reference :
+        https://github.com/ctom2/torch-deconvolution/blob/main/richardsonlucy.py
+         https://github.com/scikit-image/scikit-image/tree/main/skimage/restoration
+    """
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    padding = psf.shape[-1]//2 + 1
+
+    if not torch.is_tensor(image) and not torch.is_type(psf):
+                raise ValueError("Only torch tensors are acceptable")
+                
+    if not image.shape[0]==1 and len(image.shape)==3:
+        raise ValueError("Acceptable dimension for image is [1,H, W] (Gray Scale).")
+    
+    if not isinstance(image.dtype, str) or isinstance(image.dtype, torch.dtype):
+        
+        if pad =='constant':
+            image = P.pad(image, (padding, padding, padding, padding), mode='constant', value=1)
+
+        elif pad == 'reflect':
+            image = P.pad(image, (padding, padding, padding, padding), mode='reflect')
+            
+        elif pad == 'circular':
+            image = P.pad(image, (padding, padding,), mode='circular')
+            
+        elif pad == 'none':
+            image = image
+        
+    else:
+        raise ValueError("%s valued input is not supported" % type(image))
+
+    im_deconv = torch.full(image.shape, 0.5).to(device)
+    psf_mirror = torch.flip(psf, (-2,-1))
+    
+    for _ in range(num_iter):
+        conv = torch.conv2d(im_deconv.float(), psf.float(), stride=1, padding=psf.shape[-1]//2) + eps
+        relative_blur = image / conv
+        im_deconv *= torch.conv2d(relative_blur.float(), psf_mirror.float(), stride=1, padding=psf.shape[-1]//2) + eps
+    
+        if clip:
+            return torch.clip(im_deconv, -1, 1)
+        else:
+            return im_deconv
