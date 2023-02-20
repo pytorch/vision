@@ -107,6 +107,7 @@ Transforms on PIL Image and torch.\*Tensor
     :template: class.rst
 
     CenterCrop
+    v2.CenterCrop
     ColorJitter
     FiveCrop
     Grayscale

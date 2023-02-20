@@ -76,6 +76,7 @@ class Resize(Transform):
 
 
 class CenterCrop(Transform):
+    """[BETA] Crops the given image at the center."""
     _v1_transform_cls = _transforms.CenterCrop
 
     def __init__(self, size: Union[int, Sequence[int]]):
