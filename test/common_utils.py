@@ -856,6 +856,6 @@ def assert_run_python_script(source_code):
         try:
             out = check_output(cmd, stderr=STDOUT)
         except CalledProcessError as e:
-            raise RuntimeError("script errored with output:\n%s" % e.output.decode())
+            raise RuntimeError(f"script errored with output:\n{e.output.decode()}")
         if out != b"":
             raise AssertionError(out.decode())
