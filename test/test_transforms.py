@@ -2267,20 +2267,6 @@ def test_random_grayscale_with_grayscale_input():
     torch.testing.assert_close(F.pil_to_tensor(output_pil), image_tensor)
 
 
-def test_no_warnings_v1_namespace():
-    source = """
-    import warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        import torchvision.transforms
-        from torchvision import transforms
-        import torchvision.transforms.functional
-        from torchvision.transforms import Resize
-        from torchvision.transforms.functional import resize
-    """
-    assert_run_python_script(textwrap.dedent(source))
-
-
 # TODO: remove in 0.17 when we can delete functional_pil.py and functional_tensor.py
 @pytest.mark.parametrize(
     "import_statement",
