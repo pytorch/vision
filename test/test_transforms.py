@@ -2281,19 +2281,19 @@ def test_random_grayscale_with_grayscale_input():
 def test_functional_deprecation_warning(import_statement, from_private):
     if from_private:
         import_statement = import_statement.replace("functional", "_functional")
-        prelude = """
+        source = f"""
         import warnings
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")
+            {import_statement}
         """
     else:
-        prelude = """
+        source = f"""
         import pytest
         with pytest.warns(UserWarning, match="removed in 0.17"):
+            {import_statement}
         """
-
-    source = prelude + " " * 4 + import_statement
     assert_run_python_script(textwrap.dedent(source))
 
 

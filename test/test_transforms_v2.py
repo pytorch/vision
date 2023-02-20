@@ -2065,20 +2065,20 @@ def test_sanitize_bounding_boxes_errors():
 @pytest.mark.parametrize("call_disable_warning", (True, False))
 def test_warnings_v2_namespaces(import_statement, call_disable_warning):
     if call_disable_warning:
-        prelude = """
+        source = f"""
         import warnings
         import torchvision
         torchvision.disable_beta_transforms_warning()
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-
+            {import_statement}
         """
     else:
-        prelude = """
+        source = f"""
         import pytest
         with pytest.warns(UserWarning, match="v2 namespaces are still Beta"):
+            {import_statement}
         """
-    source = prelude + " " * 4 + import_statement
     assert_run_python_script(textwrap.dedent(source))
 
 
