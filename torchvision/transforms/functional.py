@@ -15,7 +15,7 @@ except ImportError:
     accimage = None
 
 from ..utils import _log_api_usage_once
-from . import functional_pil as F_pil, functional_tensor as F_t
+from . import _functional_pil as F_pil, _functional_tensor as F_t
 
 
 class InterpolationMode(Enum):
@@ -393,7 +393,7 @@ def resize(
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
 ) -> Tensor:
     r"""Resize the input image to the given size.
     If the image is torch Tensor, it is expected
@@ -421,6 +421,7 @@ def resize(
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
             supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         max_size (int, optional): The maximum allowed for the longer edge of
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
@@ -429,10 +430,24 @@ def resize(
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
-        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
-            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
-            This can help making the output for PIL images and tensors closer.
+        antialias (bool, optional): Whether to apply antialiasing.
+            It only affects **tensors** with bilinear or bicubic modes and it is
+            ignored otherwise: on PIL images, antialiasing is always applied on
+            bilinear or bicubic modes; on other modes (for PIL images and
+            tensors), antialiasing makes no sense and this parameter is ignored.
+            Possible values are:
+
+            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+              Other mode aren't affected. This is probably what you want to use.
+            - ``False``: will not apply antialiasing for tensors on any mode. PIL
+              images are still antialiased on bilinear or bicubic modes, because
+              PIL doesn't support no antialias.
+            - ``None``: equivalent to ``False`` for tensors and ``True`` for
+              PIL images. This value exists for legacy reasons and you probably
+              don't want to use it unless you really know what you are doing.
+
+            The current default is ``None`` **but will change to** ``True`` **in
+            v0.17** for the PIL and Tensor backends to be consistent.
 
     Returns:
         PIL Image or Tensor: Resized image.
@@ -440,8 +455,12 @@ def resize(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(resize)
 
-    if not isinstance(interpolation, InterpolationMode):
-        raise TypeError("Argument interpolation should be a InterpolationMode")
+    if isinstance(interpolation, int):
+        interpolation = _interpolation_modes_from_int(interpolation)
+    elif not isinstance(interpolation, InterpolationMode):
+        raise TypeError(
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
+        )
 
     if isinstance(size, (list, tuple)):
         if len(size) not in [1, 2]:
@@ -462,8 +481,10 @@ def resize(
     if (image_height, image_width) == output_size:
         return img
 
+    antialias = _check_antialias(img, antialias, interpolation)
+
     if not isinstance(img, torch.Tensor):
-        if antialias is not None and not antialias:
+        if antialias is False:
             warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.resize(img, size=output_size, interpolation=pil_interpolation)
@@ -594,7 +615,7 @@ def resized_crop(
     width: int,
     size: List[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    antialias: Optional[bool] = None,
+    antialias: Optional[Union[str, bool]] = "warn",
 ) -> Tensor:
     """Crop the given image and resize it to desired size.
     If the image is torch Tensor, it is expected
@@ -614,10 +635,25 @@ def resized_crop(
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.NEAREST_EXACT``, ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are
             supported.
-        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
-            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
-            This can help making the output for PIL images and tensors closer.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
+        antialias (bool, optional): Whether to apply antialiasing.
+            It only affects **tensors** with bilinear or bicubic modes and it is
+            ignored otherwise: on PIL images, antialiasing is always applied on
+            bilinear or bicubic modes; on other modes (for PIL images and
+            tensors), antialiasing makes no sense and this parameter is ignored.
+            Possible values are:
+
+            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+              Other mode aren't affected. This is probably what you want to use.
+            - ``False``: will not apply antialiasing for tensors on any mode. PIL
+              images are still antialiased on bilinear or bicubic modes, because
+              PIL doesn't support no antialias.
+            - ``None``: equivalent to ``False`` for tensors and ``True`` for
+              PIL images. This value exists for legacy reasons and you probably
+              don't want to use it unless you really know what you are doing.
+
+            The current default is ``None`` **but will change to** ``True`` **in
+            v0.17** for the PIL and Tensor backends to be consistent.
     Returns:
         PIL Image or Tensor: Cropped image.
     """
@@ -696,6 +732,7 @@ def perspective(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
 
@@ -711,8 +748,12 @@ def perspective(
 
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
 
-    if not isinstance(interpolation, InterpolationMode):
-        raise TypeError("Argument interpolation should be a InterpolationMode")
+    if isinstance(interpolation, int):
+        interpolation = _interpolation_modes_from_int(interpolation)
+    elif not isinstance(interpolation, InterpolationMode):
+        raise TypeError(
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
+        )
 
     if not isinstance(img, torch.Tensor):
         pil_interpolation = pil_modes_mapping[interpolation]
@@ -786,7 +827,9 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
     return tl, tr, bl, br, center
 
 
-def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[Tensor]:
+def ten_crop(
+    img: Tensor, size: List[int], vertical_flip: bool = False
+) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
     """Generate ten cropped images from the given image.
     Crop the given image into four corners and the central crop plus the
     flipped version of these (horizontal flipping is used by default).
@@ -1046,6 +1089,7 @@ def rotate(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -1067,14 +1111,18 @@ def rotate(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(rotate)
 
+    if isinstance(interpolation, int):
+        interpolation = _interpolation_modes_from_int(interpolation)
+    elif not isinstance(interpolation, InterpolationMode):
+        raise TypeError(
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
+        )
+
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
 
     if center is not None and not isinstance(center, (list, tuple)):
         raise TypeError("Argument center should be a sequence")
-
-    if not isinstance(interpolation, InterpolationMode):
-        raise TypeError("Argument interpolation should be a InterpolationMode")
 
     if not isinstance(img, torch.Tensor):
         pil_interpolation = pil_modes_mapping[interpolation]
@@ -1117,6 +1165,7 @@ def affine(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
 
@@ -1132,6 +1181,13 @@ def affine(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(affine)
 
+    if isinstance(interpolation, int):
+        interpolation = _interpolation_modes_from_int(interpolation)
+    elif not isinstance(interpolation, InterpolationMode):
+        raise TypeError(
+            "Argument interpolation should be a InterpolationMode or a corresponding Pillow integer constant"
+        )
+
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
 
@@ -1146,9 +1202,6 @@ def affine(
 
     if not isinstance(shear, (numbers.Number, (list, tuple))):
         raise TypeError("Shear should be either a single value or a sequence of two values")
-
-    if not isinstance(interpolation, InterpolationMode):
-        raise TypeError("Argument interpolation should be a InterpolationMode")
 
     if isinstance(angle, int):
         angle = float(angle)
@@ -1494,7 +1547,7 @@ def elastic_transform(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``.
-            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
@@ -1537,3 +1590,28 @@ def elastic_transform(
     if not isinstance(img, torch.Tensor):
         output = to_pil_image(output, mode=img.mode)
     return output
+
+
+# TODO in v0.17: remove this helper and change default of antialias to True everywhere
+def _check_antialias(
+    img: Tensor, antialias: Optional[Union[str, bool]], interpolation: InterpolationMode
+) -> Optional[bool]:
+    if isinstance(antialias, str):  # it should be "warn", but we don't bother checking against that
+        if isinstance(img, Tensor) and (
+            interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC
+        ):
+            warnings.warn(
+                "The default value of the antialias parameter of all the resizing transforms "
+                "(Resize(), RandomResizedCrop(), etc.) "
+                "will change from None to True in v0.17, "
+                "in order to be consistent across the PIL and Tensor backends. "
+                "To suppress this warning, directly pass "
+                "antialias=True (recommended, future default), antialias=None (current default, "
+                "which means False for Tensors and True for PIL), "
+                "or antialias=False (only works on Tensors - PIL will still use antialiasing). "
+                "This also applies if you are using the inference transforms from the models weights: "
+                "update the call to weights.transforms(antialias=True)."
+            )
+        antialias = None
+
+    return antialias
