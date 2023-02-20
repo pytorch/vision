@@ -14,11 +14,10 @@ transformations.
 This is useful if you have to build a more complex transformation pipeline
 (e.g. in the case of segmentation tasks).
 
-Most transformations accept both `PIL <https://pillow.readthedocs.io>`_
-images and tensor images, although some transformations are :ref:`PIL-only
-<transforms_pil_only>` and some are :ref:`tensor-only
-<transforms_tensor_only>`. The :ref:`conversion_transforms` may be used to
-convert to and from PIL images.
+Most transformations accept both `PIL <https://pillow.readthedocs.io>`_ images
+and tensor images, although some transformations are PIL-only and some are
+tensor-only. The :ref:`conversion_transforms` may be used to convert to and from
+PIL images, or for converting dtypes and ranges.
 
 The transformations that accept tensor images also accept batches of tensor
 images. A Tensor Image is a tensor with ``(C, H, W)`` shape, where ``C`` is a
@@ -140,8 +139,6 @@ Composition
     RandomApply
     RandomChoice
     RandomOrder
-
-.. _transforms_tensor_only:
 
 Misc
 ----
