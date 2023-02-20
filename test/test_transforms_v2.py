@@ -2,6 +2,7 @@ import itertools
 import pathlib
 import random
 import re
+import textwrap
 import warnings
 from collections import defaultdict
 
@@ -14,6 +15,7 @@ import torchvision.transforms.v2 as transforms
 
 from common_utils import (
     assert_equal,
+    assert_run_python_script,
     cpu_and_gpu,
     make_bounding_box,
     make_bounding_boxes,
@@ -2045,3 +2047,46 @@ def test_sanitize_bounding_boxes_errors():
         )
         different_sizes = {"bbox": bad_bbox, "labels": torch.arange(bad_bbox.shape[0])}
         transforms.SanitizeBoundingBoxes()(different_sizes)
+
+
+@pytest.mark.parametrize(
+    "import_statement",
+    (
+        "from torchvision.transforms import v2",
+        "import torchvision.transforms.v2",
+        "from torchvision.transforms.v2 import Resize",
+        "import torchvision.transforms.v2.functional",
+        "from torchvision.transforms.v2.functional import resize",
+        "from torchvision import datapoints",
+        "from torchvision.datapoints import Image",
+    ),
+)
+@pytest.mark.parametrize("call_disable_warning", (True, False))
+def test_warnings(import_statement, call_disable_warning):
+    if call_disable_warning:
+        prelude = """
+        import warnings
+        import torchvision
+        torchvision.disable_beta_transforms_warning()
+        with warnings.catch_warnings():
+        """
+    else:
+        prelude = """
+        import pytest
+        with pytest.warns(UserWarning, match="v2 namespaces are still Beta"):
+        """
+    source = prelude + " " * 4 + import_statement
+    assert_run_python_script(textwrap.dedent(source))
+
+    # TODO: Also do these below + the depreacted functional_pil.py and functional_ tensor.py + dataset wrapper
+    # source = """
+    # import warnings
+    # with warnings.catch_warnings():
+    #     warnings.simplefilter("error")
+    #     import torchvision.transforms
+    #     from torchvision import transforms
+    #     import torchvision.transforms.functional
+    #     from torchvision.transforms import Resize
+    #     from torchvision.transforms.functional import resize
+    # """
+    # assert_run_python_script(textwrap.dedent(source))
