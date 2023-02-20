@@ -2297,7 +2297,6 @@ def test_functional_deprecation_warning(import_statement, from_private):
         import_statement = import_statement.replace("functional", "_functional")
         prelude = """
         import warnings
-        import torchvision
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")
