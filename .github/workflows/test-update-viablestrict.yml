@@ -1,0 +1,21 @@
+name: Test the update viable/strict
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/update-viablestrict.yml
+      - .github/workflows/test-update-viablestrict.yml
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    uses: ./.github/workflows/update-viablestrict.yml
+    with:
+      repository: DanilBaibak/vision
+      required_check: "pull,trunk,lint,linux-binary,windows-binary"
+    secrets:
+      GITHUB_ACCESS_TOKEN : ${{ secrets.TMP_GITHUB_TOKEN }}

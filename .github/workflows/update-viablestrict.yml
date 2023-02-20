@@ -1,0 +1,65 @@
+name: Update viable/strict
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        description: 'Repository to checkout, defaults to "".'
+        default: ""
+        type: string
+      required_check:
+        description: 'A comma-separated string of workflows to be completed  successfully.'
+        required: true
+        type: string
+    secrets:
+      GITHUB_ACCESS_TOKEN:
+        required: true
+        description: 'GitHub token'
+
+
+jobs:
+  do_update_viablestrict:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.repository }}
+          ref: main
+          fetch-depth: 0
+          path: ${{ inputs.repository }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+          architecture: x64
+          cache: pip
+
+      - name: Install Python Packages
+        run: |
+          pip3 install rockset==1.0.3
+          pip3 install boto3==1.19.12
+
+      - name: Push SHA to viable/strict branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
+        run: |
+          cd DanilBaibak/vision/
+          pwd
+          git remote -v
+
+          git status
+
+          git config --global user.email "danil.baibak@gmail.com"
+          git config --global user.name "DanilBaibak"
+          git config --global credential.helper store
+
+          # echo $GITHUB_TOKEN | cut -c 1-5
+          git config --global --get-all credential.helper
+
+          echo "Set the latest sha variable to be e405f3c319cd5d4127fc4d03644dd429a7556153"
+          # echo "Set the latest sha variable to be ${{ steps.get-latest-commit.outputs.latest_viable_sha }}"
+          # Pushing an older green commit here will fail because it's non-fast-forward, which is ok
+          # to ignore because we already have the later green commit in viable/strict
+          git push origin "e405f3c319cd5d4127fc4d03644dd429a7556153":viable/strict
