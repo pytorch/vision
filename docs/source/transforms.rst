@@ -70,8 +70,10 @@ The following examples illustrate the use of the available transforms:
     produce the same results.
 
 
-Scriptable transforms
----------------------
+Transforms scriptability
+------------------------
+
+.. TODO: Add note about v2 scriptability (in next PR)
 
 In order to script the transformations, please use ``torch.nn.Sequential`` instead of :class:`Compose`.
 
@@ -89,39 +91,36 @@ Make sure to use only scriptable transformations, i.e. that work with ``torch.Te
 For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
 
 
-Compositions of transforms
---------------------------
+Geometry
+--------
 
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
-    Compose
-
-
-Transforms on PIL Image and torch.\*Tensor
-------------------------------------------
-
-.. autosummary::
-    :toctree: generated/
-    :template: class.rst
-
+    Resize
+    RandomCrop
+    RandomResizedCrop
     CenterCrop
-    ColorJitter
     FiveCrop
-    Grayscale
+    TenCrop
     Pad
     RandomAffine
-    RandomApply
-    RandomCrop
-    RandomGrayscale
-    RandomHorizontalFlip
     RandomPerspective
-    RandomResizedCrop
     RandomRotation
+    RandomHorizontalFlip
     RandomVerticalFlip
-    Resize
-    TenCrop
+
+Color
+-----
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    ColorJitter
+    Grayscale
+    RandomGrayscale
     GaussianBlur
     RandomInvert
     RandomPosterize
@@ -130,23 +129,22 @@ Transforms on PIL Image and torch.\*Tensor
     RandomAutocontrast
     RandomEqualize
 
-
-.. _transforms_pil_only:
-
-Transforms on PIL Image only
-----------------------------
+Composition
+-----------
 
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
+    Compose
+    RandomApply
     RandomChoice
     RandomOrder
 
 .. _transforms_tensor_only:
 
-Transforms on torch.\*Tensor only
----------------------------------
+Misc
+----
 
 .. autosummary::
     :toctree: generated/
@@ -155,12 +153,12 @@ Transforms on torch.\*Tensor only
     LinearTransformation
     Normalize
     RandomErasing
-    ConvertImageDtype
+    Lambda
 
 .. _conversion_transforms:
 
-Conversion Transforms
----------------------
+Conversion
+----------
 
 .. autosummary::
     :toctree: generated/
@@ -169,20 +167,10 @@ Conversion Transforms
     ToPILImage
     ToTensor
     PILToTensor
+    ConvertImageDtype
 
-
-Generic Transforms
-------------------
-
-.. autosummary::
-    :toctree: generated/
-    :template: class.rst
-
-    Lambda
-
-
-Automatic Augmentation Transforms
----------------------------------
+Auto-Augmentation
+-----------------
 
 `AutoAugment <https://arxiv.org/pdf/1805.09501.pdf>`_ is a common Data Augmentation technique that can improve the accuracy of Image Classification models.
 Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
