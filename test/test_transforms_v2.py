@@ -2059,16 +2059,19 @@ def test_sanitize_bounding_boxes_errors():
         "from torchvision.transforms.v2.functional import resize",
         "from torchvision import datapoints",
         "from torchvision.datapoints import Image",
+        "from torchvision.datasets import wrap_dataset_for_transforms_v2",
     ),
 )
 @pytest.mark.parametrize("call_disable_warning", (True, False))
-def test_warnings(import_statement, call_disable_warning):
+def test_warnings_v2_namespaces(import_statement, call_disable_warning):
     if call_disable_warning:
         prelude = """
         import warnings
         import torchvision
         torchvision.disable_beta_transforms_warning()
         with warnings.catch_warnings():
+            warnings.simplefilter("error")
+
         """
     else:
         prelude = """
@@ -2078,15 +2081,18 @@ def test_warnings(import_statement, call_disable_warning):
     source = prelude + " " * 4 + import_statement
     assert_run_python_script(textwrap.dedent(source))
 
-    # TODO: Also do these below + the depreacted functional_pil.py and functional_ tensor.py + dataset wrapper
-    # source = """
-    # import warnings
-    # with warnings.catch_warnings():
-    #     warnings.simplefilter("error")
-    #     import torchvision.transforms
-    #     from torchvision import transforms
-    #     import torchvision.transforms.functional
-    #     from torchvision.transforms import Resize
-    #     from torchvision.transforms.functional import resize
-    # """
-    # assert_run_python_script(textwrap.dedent(source))
+
+def test_no_warnings_v1_namespace():
+    source = """
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        import torchvision.transforms
+        from torchvision import transforms
+        import torchvision.transforms.functional
+        from torchvision.transforms import Resize
+        from torchvision.transforms.functional import resize
+        from torchvision import datasets
+        from torchvision.datasets import ImageNet
+    """
+    assert_run_python_script(textwrap.dedent(source))

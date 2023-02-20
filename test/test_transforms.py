@@ -2,6 +2,7 @@ import math
 import os
 import random
 import re
+import textwrap
 import warnings
 from functools import partial
 
@@ -24,7 +25,7 @@ try:
 except ImportError:
     stats = None
 
-from common_utils import assert_equal, cycle_over, float_dtypes, int_dtypes
+from common_utils import assert_equal, assert_run_python_script, cycle_over, float_dtypes, int_dtypes
 
 
 GRACE_HOPPER = get_file_path_2(
@@ -2264,6 +2265,51 @@ def test_random_grayscale_with_grayscale_input():
     image_pil = F.to_pil_image(image_tensor)
     output_pil = transform(image_pil)
     torch.testing.assert_close(F.pil_to_tensor(output_pil), image_tensor)
+
+
+def test_no_warnings_v1_namespace():
+    source = """
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        import torchvision.transforms
+        from torchvision import transforms
+        import torchvision.transforms.functional
+        from torchvision.transforms import Resize
+        from torchvision.transforms.functional import resize
+    """
+    assert_run_python_script(textwrap.dedent(source))
+
+
+# TODO: remove in 0.17 when we can delete functional_pil.py and functional_tensor.py
+@pytest.mark.parametrize(
+    "import_statement",
+    (
+        "from torchvision.transforms import functional_pil",
+        "from torchvision.transforms import functional_tensor",
+        "from torchvision.transforms.functional_tensor import resize",
+        "from torchvision.transforms.functional_pil import resize",
+    ),
+)
+@pytest.mark.parametrize("from_private", (True, False))
+def test_functional_deprecation_warning(import_statement, from_private):
+    if from_private:
+        import_statement = import_statement.replace("functional", "_functional")
+        prelude = """
+        import warnings
+        import torchvision
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+        """
+    else:
+        prelude = """
+        import pytest
+        with pytest.warns(UserWarning, match="removed in 0.17"):
+        """
+
+    source = prelude + " " * 4 + import_statement
+    assert_run_python_script(textwrap.dedent(source))
 
 
 if __name__ == "__main__":
