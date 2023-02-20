@@ -2,10 +2,9 @@
 
 set -euo pipefail
 
-echo '::group::Prepare conda'
+# Prepare conda
 CONDA_PATH=$(which conda)
 eval "$(${CONDA_PATH} shell.bash hook)"
-echo '::endgroup::'
 
 echo '::group::Set PyTorch conda channel and wheel index'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
@@ -15,7 +14,7 @@ else
   CHANNEL_ID=nightly
 fi
 PYTORCH_CONDA_CHANNEL=pytorch-"${CHANNEL_ID}"
-echo "${PYTORCH_CONDA_CHANNEL}"
+echo "PYTORCH_CONDA_CHANNEL=${PYTORCH_CONDA_CHANNEL}"
 
 case $GPU_ARCH_TYPE in
   cpu)
@@ -31,7 +30,7 @@ case $GPU_ARCH_TYPE in
     ;;
 esac
 PYTORCH_WHEEL_INDEX="https://download.pytorch.org/whl/${CHANNEL_ID}/${GPU_ARCH_ID}"
-echo "${PYTORCH_WHEEL_INDEX}"
+echo "PYTORCH_WHEEL_INDEX=${PYTORCH_WHEEL_INDEX}"
 echo '::endgroup::'
 
 echo '::group::Create build environment'
