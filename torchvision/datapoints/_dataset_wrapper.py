@@ -229,27 +229,24 @@ def coco_dectection_wrapper_factory(dataset):
 
         batched_target["image_id"] = image_id
 
-        # TODO: Need to protect all key access as some samples don't have any
-        if "bbox" in batched_target:
-            spatial_size = tuple(F.get_spatial_size(image))
-            # TODO: we don't remove "bbox" so we end-up with both boxes and bbox keys
-            # Also should we keep bbox instead of renaming to boxes??
-            batched_target["boxes"] = datapoints.BoundingBox(
+        spatial_size = tuple(F.get_spatial_size(image))
+        batched_target["boxes"] = F.convert_format_bounding_box(
+            datapoints.BoundingBox(
                 batched_target["bbox"],
                 format=datapoints.BoundingBoxFormat.XYWH,
                 spatial_size=spatial_size,
-            )
-        if "masks" in batched_target:
-            batched_target["masks"] = datapoints.Mask(
-                torch.stack(
-                    [
-                        segmentation_to_mask(segmentation, spatial_size=spatial_size)
-                        for segmentation in batched_target["segmentation"]
-                    ]
-                ),
-            )
-        if "category_id" in batched_target:
-            batched_target["labels"] = torch.tensor(batched_target["category_id"])
+            ),
+            new_format=datapoints.BoundingBoxFormat.XYXY,
+        )
+        batched_target["masks"] = datapoints.Mask(
+            torch.stack(
+                [
+                    segmentation_to_mask(segmentation, spatial_size=spatial_size)
+                    for segmentation in batched_target["segmentation"]
+                ]
+            ),
+        )
+        batched_target["labels"] = torch.tensor(batched_target["category_id"])
 
         return image, batched_target
 
@@ -329,8 +326,13 @@ def celeba_wrapper_factory(dataset):
             target,
             target_types=dataset.target_type,
             type_wrappers={
-                "bbox": lambda item: datapoints.BoundingBox(
-                    item, format=datapoints.BoundingBoxFormat.XYWH, spatial_size=(image.height, image.width)
+                "bbox": lambda item: F.convert_format_bounding_box(
+                    datapoints.BoundingBox(
+                        item,
+                        format=datapoints.BoundingBoxFormat.XYWH,
+                        spatial_size=(image.height, image.width),
+                    ),
+                    new_format=datapoints.BoundingBoxFormat.XYXY,
                 ),
             },
         )
@@ -422,8 +424,11 @@ def widerface_wrapper(dataset):
         image, target = sample
 
         if target is not None:
-            target["bbox"] = datapoints.BoundingBox(
-                target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, spatial_size=(image.height, image.width)
+            target["bbox"] = F.convert_format_bounding_box(
+                datapoints.BoundingBox(
+                    target["bbox"], format=datapoints.BoundingBoxFormat.XYWH, spatial_size=(image.height, image.width)
+                ),
+                new_format=datapoints.BoundingBoxFormat.XYXY,
             )
 
         return image, target
