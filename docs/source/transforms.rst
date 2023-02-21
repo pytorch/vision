@@ -140,8 +140,8 @@ Composition
     RandomChoice
     RandomOrder
 
-Misc
-----
+Miscellaneous
+-------------
 
 .. autosummary::
     :toctree: generated/
