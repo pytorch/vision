@@ -6,7 +6,7 @@ import torchvision
 
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
-from torchvision.datapoints import wrap_dataset_for_transforms_v2
+from torchvision.datasets import wrap_dataset_for_transforms_v2
 
 
 def convert_coco_poly_to_mask(segmentations, height, width):

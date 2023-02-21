@@ -2,6 +2,8 @@ from collections import defaultdict
 
 import torch
 import transforms as reference_transforms
+import torchvision
+torchvision.disable_beta_transforms_warning()
 from torchvision import datapoints
 import torchvision.transforms.v2 as T
 

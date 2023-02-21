@@ -164,6 +164,7 @@ def get_args_parser(add_help=True):
 
 
 def main(args):
+
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
