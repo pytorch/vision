@@ -22,6 +22,27 @@ class ConvertBoundingBoxFormat(Transform):
 
 
 class ConvertDtype(Transform):
+    """[BETA] Convert a tensor image/box/mask to the given ``dtype`` and scale the values accordingly
+
+    .. betastatus:: ConvertDtype transform
+
+    This function does not support PIL Image.
+
+    Args:
+        dtype (torch.dtype): Desired data type of the output
+
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
+    Raises:
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
+    """
+
     _v1_transform_cls = _transforms.ConvertImageDtype
 
     _transformed_types = (is_simple_tensor, datapoints.Image, datapoints.Video)
