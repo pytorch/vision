@@ -38,7 +38,7 @@ conda create \
   --name ci \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
-  ninja libpng jpeg ffmpeg \
+  ninja libpng jpeg 'ffmpeg<5' \
   -c "${PYTORCH_CONDA_CHANNEL}" \
   -c conda-forge
 conda activate ci
