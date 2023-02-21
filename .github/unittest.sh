@@ -42,7 +42,7 @@ conda create \
   -c "${PYTORCH_CONDA_CHANNEL}" \
   -c conda-forge
 conda activate ci
-pip install --progress-bar=off --upgrade setuptools
+pip install --progress-bar=off --upgrade setuptools av!=10.0.0
 echo '::endgroup::'
 
 echo '::group::Install PyTorch'
