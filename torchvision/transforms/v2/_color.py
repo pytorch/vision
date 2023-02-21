@@ -11,7 +11,7 @@ from .utils import is_simple_tensor, query_chw
 
 
 class Grayscale(Transform):
-    """[BETA] Convert image to grayscale.
+    """[BETA] Convert images or videos to grayscale.
 
     .. betastatus:: Grayscale transform
 

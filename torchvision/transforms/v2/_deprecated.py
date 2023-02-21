@@ -15,7 +15,7 @@ class ToTensor(Transform):
     .. betastatus:: ToTensor transform
 
     .. warning::
-        v2.ToTensor is deprecated and will be removed in a future release.
+        :class:`v2.ToTensor` is deprecated and will be removed in a future release.
         Please use instead ``transforms.Compose([transforms.ToImageTensor(), transforms.ConvertImageDtype()])``.
 
     This transform does not support torchscript.

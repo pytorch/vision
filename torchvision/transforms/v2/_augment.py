@@ -14,7 +14,7 @@ from .utils import is_simple_tensor, query_chw
 
 # TODO: Just move that to _misc.py?
 class RandomErasing(_RandomApplyTransform):
-    """[BETA] Randomly selects a rectangle region in a torch.Tensor image and erases its pixels.
+    """[BETA] Randomly selects a rectangle region in the input image or video and erases its pixels.
 
     .. betastatus:: RandomErasing transform
 
@@ -32,9 +32,11 @@ class RandomErasing(_RandomApplyTransform):
          inplace: boolean to make this transform inplace. Default set to False.
 
     Returns:
-        Erased Image.
+        Erased input.
 
     Example:
+        >>> from torchvision.transforms import v2 as transforms
+        >>>
         >>> transform = transforms.Compose([
         >>>   transforms.RandomHorizontalFlip(),
         >>>   transforms.PILToTensor(),
