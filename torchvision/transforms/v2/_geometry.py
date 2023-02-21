@@ -322,6 +322,25 @@ class FiveCrop(Transform):
          size (sequence or int): Desired output size of the crop. If size is an ``int``
             instead of sequence like (h, w), a square crop of size (size, size) is made.
             If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
+
+    Example:
+        >>> class BatchMultiCrop(transforms.Transform):
+        ...     def forward(self, sample: Tuple[Tuple[Union[datapoints.Image, datapoints.Video], ...], int]):
+        ...         images_or_videos, labels = sample
+        ...         batch_size = len(images_or_videos)
+        ...         image_or_video = images_or_videos[0]
+        ...         images_or_videos = image_or_video.wrap_like(image_or_video, torch.stack(images_or_videos))
+        ...         labels = torch.full((batch_size,), label, device=images_or_videos.device)
+        ...         return images_or_videos, labels
+        ...
+        >>> image = datapoints.Image(torch.rand(3, 256, 256))
+        >>> label = 3
+        >>> transform = transforms.Compose([transforms.FiveCrop(224), BatchMultiCrop()])
+        >>> images, labels = transform(image, label)
+        >>> images.shape
+        torch.Size([5, 3, 224, 224])
+        >>> labels
+        tensor([3, 3, 3, 3, 3])
     """
 
     _v1_transform_cls = _transforms.FiveCrop
@@ -355,7 +374,9 @@ class TenCrop(Transform):
 
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions
+    dimensions.
+
+    See :class:`~torchvision.transforms.v2.FiveCrop` for an example.
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of

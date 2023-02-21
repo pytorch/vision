@@ -174,7 +174,6 @@ class Normalize(Transform):
         return F.normalize(inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
-# TODO: This should be in the _color.py file!
 class GaussianBlur(Transform):
     """[BETA] Blurs image with randomly chosen Gaussian blur.
 

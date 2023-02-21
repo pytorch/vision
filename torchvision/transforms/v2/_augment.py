@@ -12,7 +12,6 @@ from ._transform import _RandomApplyTransform
 from .utils import is_simple_tensor, query_chw
 
 
-# TODO: Just move that to _misc.py?
 class RandomErasing(_RandomApplyTransform):
     """[BETA] Randomly selects a rectangle region in the input image or video and erases its pixels.
 
