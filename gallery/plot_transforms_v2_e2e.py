@@ -1,3 +1,10 @@
+"""
+==================================================
+transforms v2: End-to-end object detection example
+==================================================
+
+"""
+
 import pathlib
 from collections import defaultdict
 
@@ -43,8 +50,7 @@ import torchvision.transforms.v2 as transforms
 
 
 def load_example_coco_detection_dataset(**kwargs):
-    here = pathlib.Path(__file__).parent
-    root = here / "assets" / "coco"
+    root = pathlib.Path("assets") / "coco"
     return datasets.CocoDetection(str(root / "images"), str(root / "instances.json"), **kwargs)
 
 
@@ -95,6 +101,7 @@ transform = transforms.Compose(
 dataset = load_example_coco_detection_dataset(transforms=transform)
 dataset = datasets.wrap_dataset_for_transforms_v2(dataset)
 
+torch.manual_seed(0)
 sample = dataset[0]
 image, target = sample
 
@@ -114,5 +121,6 @@ model = models.get_model("ssd300_vgg16", weights=None, weights_backbone=None).tr
 
 for images, targets in data_loader:
     prediction = model(images, targets)
+    print(prediction)
     # put your training logic here
     break
