@@ -248,6 +248,13 @@ def coco_dectection_wrapper_factory(dataset):
         )
         batched_target["labels"] = torch.tensor(batched_target["category_id"])
 
+        if "keypoints" in batched_target:
+            batched_target["keypoints"] = torch.as_tensor(batched_target["keypoints"], dtype=torch.float32).reshape(
+                len(batched_target["keypoints"]), -1, 3
+            )
+
+
+
         return image, batched_target
 
     return wrapper
