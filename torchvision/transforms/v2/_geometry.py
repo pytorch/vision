@@ -503,9 +503,20 @@ class Pad(Transform):
 
 
 class RandomZoomOut(_RandomApplyTransform):
-    """[BETA] TODO: Pad the given image/video/boxes/mask on all sides with the given "pad" value.
+    """[BETA] "Zoom out" transformation from
+    `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
     .. betastatus:: RandomZoomOut transform
+
+    This transformation randomly pads the input image/video/boxes/mask creating a zoom out effect.
+    Output spatial size is randomly sampled from original size up to a maximum size configured
+    with ``side_range`` arg:
+
+    .. code-block:: python
+
+        r = uniform_sample(side_range[0], side_range[1])
+        output_width = input_width * r
+        output_height = input_height * r
 
     If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
     it can have arbitrary number of leading dimensions. For example,
@@ -517,7 +528,8 @@ class RandomZoomOut(_RandomApplyTransform):
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
-        side_range (sequence of floats, optional): TODO
+        side_range (sequence of floats, optional): tuple of two floats defines minimum and maximum factors to
+            scale the input size.
         p (float, optional): probability of the image being flipped. Default value is 0.5
     """
 
@@ -1082,7 +1094,26 @@ class ElasticTransform(Transform):
 
 
 class RandomIoUCrop(Transform):
-    """TODO:
+    """[BETA] Random IoU crop transformation from
+    `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
+
+    .. betastatus:: RandomIoUCrop transform
+
+    This transformation requires an image or video data and ``datapoints.BoundingBox`` in the input.
+
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+
+    Args:
+        min_scale (float, optional): minimum factors to scale the input size.
+        max_scale (float, optional): maximum factors to scale the input size.
+        min_aspect_ratio (float, optional): minimum aspect ratio for the cropped image or video.
+        max_aspect_ratio (float, optional): maximum aspect ratio for the cropped image or video.
+        sampler_options (list of float, optional): list of minimal IoU (Jaccard) overlap between all the boxes and
+            a cropped image or video. Default, ``None`` which corresponds to ``[0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]``
+        trials (int, optional): number of trials to find a crop for a given value of minimal IoU (Jaccard) overlap.
+            Default, 40.
     """
 
     def __init__(
@@ -1246,7 +1277,52 @@ class RandomShortestSize(Transform):
 
 
 class RandomResize(Transform):
-    """TODO:
+    """[BETA] Randomly resize the image/video/boxes/mask.
+
+    .. betastatus:: RandomResize transform
+
+    This transformation can be used together with ``RandomCrop`` as data augmentations to train
+    models on image segmentation task.
+
+    Output spatial size is randomly sampled from the interval ``[min_size, max_size]``:
+
+    .. code-block:: python
+
+        size = uniform_sample(min_size, max_size)
+        output_width = size
+        output_height = size
+
+
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+
+    Args:
+        min_size (int): minimum output size for random sampling
+        max_size (int): maximum output size for random sampling
+        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
+        antialias (bool, optional): Whether to apply antialiasing.
+            It only affects **tensors** with bilinear or bicubic modes and it is
+            ignored otherwise: on PIL images, antialiasing is always applied on
+            bilinear or bicubic modes; on other modes (for PIL images and
+            tensors), antialiasing makes no sense and this parameter is ignored.
+            Possible values are:
+
+            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+              Other mode aren't affected. This is probably what you want to use.
+            - ``False``: will not apply antialiasing for tensors on any mode. PIL
+              images are still antialiased on bilinear or bicubic modes, because
+              PIL doesn't support no antialias.
+            - ``None``: equivalent to ``False`` for tensors and ``True`` for
+              PIL images. This value exists for legacy reasons and you probably
+              don't want to use it unless you really know what you are doing.
+
+            The current default is ``None`` **but will change to** ``True`` **in
+            v0.17** for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(

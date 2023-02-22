@@ -111,6 +111,7 @@ Geometry
     v2.TenCrop
     Pad
     v2.Pad
+    v2.RandomZoomOut
     RandomAffine
     v2.RandomAffine
     RandomPerspective
@@ -121,6 +122,11 @@ Geometry
     v2.RandomHorizontalFlip
     RandomVerticalFlip
     v2.RandomVerticalFlip
+    v2.RandomIoUCrop
+    v2.ScaleJitter
+    v2.RandomShortestSize
+    v2.RandomResize
+
 
 Color
 -----
