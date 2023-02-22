@@ -26,16 +26,16 @@ from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
-    """[BETA] Horizontally flip the given image/box/mask randomly with a given probability.
+    """[BETA] Horizontally randomly flip the given image/video/boxes/mask with a given probability.
 
     .. betastatus:: RandomHorizontalFlip transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     Args:
-        p (float): probability of the image being flipped. Default value is 0.5
+        p (float, optional): probability of the image being flipped. Default value is 0.5
     """
 
     _v1_transform_cls = _transforms.RandomHorizontalFlip
@@ -45,16 +45,16 @@ class RandomHorizontalFlip(_RandomApplyTransform):
 
 
 class RandomVerticalFlip(_RandomApplyTransform):
-    """[BETA] Vertically flip the given image/box/mask randomly with a given probability.
+    """[BETA] Vertically randomly flip the given image/video/boxes/mask with a given probability.
 
     .. betastatus:: RandomVerticalFlip transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     Args:
-        p (float): probability of the image being flipped. Default value is 0.5
+        p (float, optional): probability of the image being flipped. Default value is 0.5
     """
 
     _v1_transform_cls = _transforms.RandomVerticalFlip
@@ -64,12 +64,13 @@ class RandomVerticalFlip(_RandomApplyTransform):
 
 
 class Resize(Transform):
-    """[BETA] Resize the input image/box/mask to the given size.
+    """[BETA] Resize the input image/video/boxes/mask to the given size.
 
     .. betastatus:: Resize transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     .. warning::
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images
@@ -87,7 +88,7 @@ class Resize(Transform):
 
             .. note::
                 In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
-        interpolation (InterpolationMode): Desired interpolation enum defined by
+        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
@@ -156,12 +157,14 @@ class Resize(Transform):
 
 
 class CenterCrop(Transform):
-    """[BETA] Crops the given image/box/mask at the center.
+    """[BETA] Crop the given image/video/boxes/mask at the center.
 
     .. betastatus:: CenterCrop transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+
     If image size is smaller than output size along any edge, image is padded with 0 and then center cropped.
 
     Args:
@@ -181,12 +184,13 @@ class CenterCrop(Transform):
 
 
 class RandomResizedCrop(Transform):
-    """[BETA] Crop a random portion of image/box/mask and resize it to a given size.
+    """[BETA] Crop a random portion of image/video/boxes/mask and resize it to a given size.
 
     .. betastatus:: RandomResizedCrop transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     A crop of the original image is made: the crop has a random area (H * W)
     and a random aspect ratio. This crop is finally resized to the given
@@ -199,11 +203,11 @@ class RandomResizedCrop(Transform):
 
             .. note::
                 In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
-        scale (tuple of float): Specifies the lower and upper bounds for the random area of the crop,
+        scale (tuple of float, optional): Specifies the lower and upper bounds for the random area of the crop,
             before resizing. The scale is defined with respect to the area of the original image.
-        ratio (tuple of float): lower and upper bounds for the random aspect ratio of the crop, before
+        ratio (tuple of float, optional): lower and upper bounds for the random aspect ratio of the crop, before
             resizing.
-        interpolation (InterpolationMode): Desired interpolation enum defined by
+        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
@@ -305,13 +309,13 @@ ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
 
 
 class FiveCrop(Transform):
-    """[BETA] Crop the given image/box/mask into four corners and the central crop.
+    """[BETA] Crop the given image or video into four corners and the central crop.
 
     .. betastatus:: FiveCrop transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions
+    If the input is a ``torch.Tensor`` or an ``Image`` or a ``Video``
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -367,14 +371,14 @@ class FiveCrop(Transform):
 
 
 class TenCrop(Transform):
-    """[BETA] Crop the given image/box/mask into four corners and the central crop plus the flipped version of
+    """[BETA] Crop the given image or video into four corners and the central crop plus the flipped version of
     these (horizontal flipping is used by default).
 
     .. betastatus:: TenCrop transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions.
+    If the input is a ``torch.Tensor`` or an ``Image`` or a ``Video``
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     See :class:`~torchvision.transforms.v2.FiveCrop` for an example.
 
@@ -387,7 +391,7 @@ class TenCrop(Transform):
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
             made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
-        vertical_flip (bool): Use vertical flipping instead of horizontal
+        vertical_flip (bool, optional): Use vertical flipping instead of horizontal
     """
 
     _v1_transform_cls = _transforms.TenCrop
@@ -426,14 +430,13 @@ class TenCrop(Transform):
 
 
 class Pad(Transform):
-    """[BETA] Pad the given image/box/mask on all sides with the given "pad" value.
+    """[BETA] Pad the given image/video/boxes/mask on all sides with the given "pad" value.
 
     .. betastatus:: Pad transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,
-    at most 3 leading dimensions for mode edge,
-    and an arbitrary number of leading dimensions for mode constant
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     Args:
         padding (int or sequence): Padding on each border. If a single int is provided this
@@ -444,18 +447,17 @@ class Pad(Transform):
             .. note::
                 In torchscript mode padding as single int is not supported, use a sequence of
                 length 1: ``[padding, ]``.
-        fill (number or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
-            length 3, it is used to fill R, G, B channels respectively.
-            This value is only used when the padding_mode is constant.
-            Only number is supported for torch Tensor.
-            Only int or tuple value is supported for PIL Image.
-        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
-            Default is constant.
+        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            Fill value can be also a dictionary mapping data type to the fill value, e.g.
+            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+        padding_mode (str, optional): Type of padding. Should be: constant, edge, reflect or symmetric.
+            Default is "constant".
 
             - constant: pads with a constant value, this value is specified with fill
 
             - edge: pads with the last value at the edge of the image.
-              If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
             - reflect: pads with reflection of image without repeating the last value on the edge.
               For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
@@ -501,6 +503,24 @@ class Pad(Transform):
 
 
 class RandomZoomOut(_RandomApplyTransform):
+    """[BETA] TODO: Pad the given image/video/boxes/mask on all sides with the given "pad" value.
+
+    .. betastatus:: RandomZoomOut transform
+
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+
+    Args:
+        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            Fill value can be also a dictionary mapping data type to the fill value, e.g.
+            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+        side_range (sequence of floats, optional): TODO
+        p (float, optional): probability of the image being flipped. Default value is 0.5
+    """
+
     def __init__(
         self,
         fill: Union[datapoints._FillType, Dict[Type, datapoints._FillType]] = 0,
@@ -540,18 +560,19 @@ class RandomZoomOut(_RandomApplyTransform):
 
 
 class RandomRotation(Transform):
-    """[BETA] Rotate the image/box/mask by angle.
+    """[BETA] Rotate the image/video/boxes/mask by angle.
 
     .. betastatus:: RandomRotation transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     Args:
         degrees (sequence or number): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees).
-        interpolation (InterpolationMode): Desired interpolation enum defined by
+        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
@@ -561,8 +582,11 @@ class RandomRotation(Transform):
             Note that the expand flag assumes rotation around the center and no translation.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
-        fill (sequence or number): Pixel fill value for the area outside the rotated
-            image. Default is ``0``. If given a number, the value is used for all bands respectively.
+        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            Fill value can be also a dictionary mapping data type to the fill value, e.g.
+            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -608,12 +632,13 @@ class RandomRotation(Transform):
 
 
 class RandomAffine(Transform):
-    """[BETA] Random affine transformation of the image/box/mask keeping center invariant.
+    """[BETA] Random affine transformation of the image/video/boxes/mask keeping center invariant.
 
     .. betastatus:: RandomAffine transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     Args:
         degrees (sequence or number): Range of degrees to select from.
@@ -631,12 +656,15 @@ class RandomAffine(Transform):
             range (shear[0], shear[1]) will be applied. Else if shear is a sequence of 4 values,
             an x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
             Will not apply shear by default.
-        interpolation (InterpolationMode): Desired interpolation enum defined by
+        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
-        fill (sequence or number): Pixel fill value for the area outside the transformed
-            image. Default is ``0``. If given a number, the value is used for all bands respectively.
+        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            Fill value can be also a dictionary mapping data type to the fill value, e.g.
+            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
 
@@ -724,13 +752,13 @@ class RandomAffine(Transform):
 
 
 class RandomCrop(Transform):
-    """[BETA] Crop the given image/box/mask at a random location.
+    """[BETA] Crop the given image/video/boxes/mask at a random location.
 
     .. betastatus:: RandomCrop transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions,
-    but if non-constant padding is used, the input is expected to have at most 2 leading dimensions
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
@@ -745,21 +773,20 @@ class RandomCrop(Transform):
             .. note::
                 In torchscript mode padding as single int is not supported, use a sequence of
                 length 1: ``[padding, ]``.
-        pad_if_needed (boolean): It will pad the image if smaller than the
+        pad_if_needed (boolean, optional): It will pad the image if smaller than the
             desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
-        fill (number or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
-            length 3, it is used to fill R, G, B channels respectively.
-            This value is only used when the padding_mode is constant.
-            Only number is supported for torch Tensor.
-            Only int or tuple value is supported for PIL Image.
-        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
+        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            Fill value can be also a dictionary mapping data type to the fill value, e.g.
+            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+        padding_mode (str, optional): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
             - constant: pads with a constant value, this value is specified with fill
 
             - edge: pads with the last value at the edge of the image.
-              If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
             - reflect: pads with reflection of image without repeating the last value on the edge.
               For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
@@ -879,23 +906,28 @@ class RandomCrop(Transform):
 
 
 class RandomPerspective(_RandomApplyTransform):
-    """[BETA] Performs a random perspective transformation of the given image/box/mask with a given probability.
+    """[BETA] Perform a random perspective transformation of the given image/video/boxes/mask
+    with a given probability.
 
     .. betastatus:: RandomPerspective transform
 
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     Args:
-        distortion_scale (float): argument to control the degree of distortion and ranges from 0 to 1.
+        distortion_scale (float, optional): argument to control the degree of distortion and ranges from 0 to 1.
             Default is 0.5.
-        p (float): probability of the image being transformed. Default is 0.5.
-        interpolation (InterpolationMode): Desired interpolation enum defined by
+        p (float, optional): probability of the image being transformed. Default is 0.5.
+        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
-        fill (sequence or number): Pixel fill value for the area outside the transformed
-            image. Default is ``0``. If given a number, the value is used for all bands respectively.
+        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            Fill value can be also a dictionary mapping data type to the fill value, e.g.
+            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
     """
 
     _v1_transform_cls = _transforms.RandomPerspective
@@ -960,6 +992,45 @@ class RandomPerspective(_RandomApplyTransform):
 
 
 class ElasticTransform(Transform):
+    """[BETA] Transform input image/video/boxes/mask with elastic transformations.
+
+    .. betastatus:: RandomPerspective transform
+
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+
+    Given alpha and sigma, it will generate displacement
+    vectors for all pixels based on random offsets. Alpha controls the strength
+    and sigma controls the smoothness of the displacements.
+    The displacements are added to an identity grid and the resulting grid is
+    used to transform the input.
+
+    .. note::
+        Implementation to transform bounding boxes is approximative (not exact).
+        We construct an approximation of the inverse grid as ``inverse_grid = idenity - displacement``.
+        This is not an exact inverse of the grid used to transform images, i.e. ``grid = identity + displacement``.
+        Our assumption is that ``displacement * displacement`` is small and can be ignored.
+        Large displacements would lead to large errors in the approximation.
+
+    Applications:
+        Randomly transforms the morphology of objects in images and produces a
+        see-through-water-like effect.
+
+    Args:
+        alpha (float or sequence of floats, optional): Magnitude of displacements. Default is 50.0.
+        sigma (float or sequence of floats, optional): Smoothness of displacements. Default is 5.0.
+        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
+        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+            Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            Fill value can be also a dictionary mapping data type to the fill value, e.g.
+            ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+    """
+
     _v1_transform_cls = _transforms.ElasticTransform
 
     def __init__(
@@ -1011,6 +1082,9 @@ class ElasticTransform(Transform):
 
 
 class RandomIoUCrop(Transform):
+    """TODO:
+    """
+
     def __init__(
         self,
         min_scale: float = 0.3,
@@ -1107,6 +1181,9 @@ class RandomIoUCrop(Transform):
 
 
 class ScaleJitter(Transform):
+    """TODO:
+    """
+
     def __init__(
         self,
         target_size: Tuple[int, int],
@@ -1135,6 +1212,9 @@ class ScaleJitter(Transform):
 
 
 class RandomShortestSize(Transform):
+    """TODO:
+    """
+
     def __init__(
         self,
         min_size: Union[List[int], Tuple[int], int],
@@ -1166,6 +1246,9 @@ class RandomShortestSize(Transform):
 
 
 class RandomResize(Transform):
+    """TODO:
+    """
+
     def __init__(
         self,
         min_size: int,
