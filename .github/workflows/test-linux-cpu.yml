@@ -41,7 +41,6 @@ jobs:
         # Create Conda Env
         conda create -yp ci_env --quiet python="${PYTHON_VERSION}" numpy libpng jpeg scipy 'ffmpeg<4.3'
         conda activate /work/ci_env
-        
         # Install PyTorch, Torchvision, and testing libraries
         set -ex
         conda install \
