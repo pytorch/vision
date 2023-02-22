@@ -36,7 +36,7 @@ def show(sample):
 
 
 ########################################################################################################################
-# To use ``transforms.v2``, you can use the stable datasets and models and just have import transforms differently
+# To use ``transforms.v2``, you can use the stable datasets and models and you just need to import the transforms differently
 
 # We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
 # some APIs may slightly change in the future
@@ -47,7 +47,8 @@ import torchvision.transforms.v2 as transforms
 
 
 ########################################################################################################################
-# We start off by loading the :class:`~torchvision.datasets.CocoDetection` dataset to have a look at the status quo.
+# We start off by loading the :class:`~torchvision.datasets.CocoDetection` dataset to have a look at what
+# it currently returns, and we'll see how to convert it to a format that is compatible with our new transforms.```
 
 
 def load_example_coco_detection_dataset(**kwargs):
@@ -70,7 +71,7 @@ print(list(target[0].keys()))
 ########################################################################################################################
 # The dataset returns a two-tuple with the first item being a :class:`PIL.Image.Image` and second one a list of
 # dictionaries, which each containing the annotations for a single object instance. As is, this format is not compatible
-# with the transforms v2, but also the models. To overcome that, we provide the
+# with the transforms v2, nor with the models. To overcome that, we provide the
 # :func:`~datasets.wrap_dataset_for_transforms_v2` function. For :class:`~datasets.CocoDetection` this changes the
 # target structure to a single dictionary of lists. It also adds the key-value-pairs `"boxes"`, `"masks"`, and
 # `"labels"` wrapped in the corresponding `torchvision.datapoints`.
@@ -85,19 +86,19 @@ print(list(target.keys()))
 print(type(target["boxes"]))
 
 ########################################################################################################################
-# As baseline, let's have a look how a sample looks like without transformations
+# As baseline, let's have a look at a sample without transformations
 
 show(sample)
 
 
 ########################################################################################################################
 # With the dataset properly set up, we can now define the augmentation pipeline. This is done the same way it is done in
-# transforms v1, but now handles bounding boxes without any extra configuration.
+# transforms v1, but now handles bounding boxes and masks without any extra configuration.
 #
 # .. note::
-#    Although the :class:`SanitizeBoundingBoxes` transform is a no-op in this example, it should be placed at least once
+#    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, it should be placed at least once
 #    at the end of a detection pipeline to remove degenerate bounding boxes as well as the corresponding labels and
-#    optionally masks.
+#    optionally masks. It is particularly critical to add it if class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
 
 transform = transforms.Compose(
     [
