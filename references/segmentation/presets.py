@@ -1,39 +1,82 @@
+from collections import defaultdict
+
 import torch
-import transforms as T
+import torchvision
+
+torchvision.disable_beta_transforms_warning()
+import torchvision.transforms.v2 as T
+from torchvision import datapoints
+from transforms import PadIfSmaller, WrapIntoFeatures
 
 
-class SegmentationPresetTrain:
-    def __init__(self, *, base_size, crop_size, hflip_prob=0.5, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
-        min_size = int(0.5 * base_size)
-        max_size = int(2.0 * base_size)
+class SegmentationPresetTrain(T.Compose):
+    def __init__(
+        self,
+        *,
+        base_size,
+        crop_size,
+        hflip_prob=0.5,
+        mean=(0.485, 0.456, 0.406),
+        std=(0.229, 0.224, 0.225),
+        backend="pil",
+    ):
 
-        trans = [T.RandomResize(min_size, max_size)]
+        transforms = []
+
+        transforms.append(WrapIntoFeatures())
+
+        backend = backend.lower()
+        if backend == "datapoint":
+            transforms.append(T.ToImageTensor())
+        elif backend == "tensor":
+            transforms.append(T.PILToTensor())
+        else:
+            assert backend == "pil"
+
+        transforms.append(T.RandomResize(min_size=int(0.5 * base_size), max_size=int(2.0 * base_size), antialias=True))
+
         if hflip_prob > 0:
-            trans.append(T.RandomHorizontalFlip(hflip_prob))
-        trans.extend(
-            [
-                T.RandomCrop(crop_size),
-                T.PILToTensor(),
-                T.ConvertImageDtype(torch.float),
-                T.Normalize(mean=mean, std=std),
-            ]
-        )
-        self.transforms = T.Compose(trans)
+            transforms.append(T.RandomHorizontalFlip(hflip_prob))
 
-    def __call__(self, img, target):
-        return self.transforms(img, target)
+        transforms += [
+            # We need a custom pad transform here, since the padding we want to perform here is fundamentally
+            # different from the padding in `RandomCrop` if `pad_if_needed=True`.
+            PadIfSmaller(crop_size, fill=defaultdict(lambda: 0, {datapoints.Mask: 255})),
+            T.RandomCrop(crop_size),
+        ]
+
+        if backend == "pil":
+            transforms.append(T.ToImageTensor())
+
+        transforms += [
+            T.ConvertImageDtype(torch.float),
+            T.Normalize(mean=mean, std=std),
+        ]
+
+        super().__init__(transforms)
 
 
-class SegmentationPresetEval:
-    def __init__(self, *, base_size, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
-        self.transforms = T.Compose(
-            [
-                T.RandomResize(base_size, base_size),
-                T.PILToTensor(),
-                T.ConvertImageDtype(torch.float),
-                T.Normalize(mean=mean, std=std),
-            ]
-        )
+class SegmentationPresetEval(T.Compose):
+    def __init__(self, *, base_size, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), backend="pil"):
+        transforms = []
 
-    def __call__(self, img, target):
-        return self.transforms(img, target)
+        transforms.append(WrapIntoFeatures())
+
+        backend = backend.lower()
+        if backend == "datapoint":
+            transforms.append(T.ToImageTensor())
+        elif backend == "tensor":
+            transforms.append(T.PILToTensor())
+        else:
+            assert backend == "pil"
+
+        transforms.append(T.Resize(base_size, antialias=True))
+
+        if backend == "pil":
+            transforms.append(T.ToImageTensor())
+
+        transforms += [
+            T.ConvertImageDtype(torch.float),
+            T.Normalize(mean=mean, std=std),
+        ]
+        super().__init__(transforms)

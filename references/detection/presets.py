@@ -1,11 +1,12 @@
 from collections import defaultdict
 
 import torch
-import transforms as reference_transforms
 import torchvision
+import transforms as reference_transforms
+
 torchvision.disable_beta_transforms_warning()
-from torchvision import datapoints
 import torchvision.transforms.v2 as T
+from torchvision import datapoints
 
 
 # TODO: Should we provide a transforms that filters-out keys?
@@ -64,7 +65,9 @@ class DetectionPresetTrain(T.Compose):
         transforms += [
             T.ConvertImageDtype(torch.float),
             T.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.XYXY),
-            T.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"])  # TODO: sad it's not the default!
+            T.SanitizeBoundingBoxes(
+                labels_getter=lambda sample: sample[1]["labels"]
+            ),  # TODO: sad it's not the default!
         ]
 
         super().__init__(transforms)
@@ -78,9 +81,8 @@ class DetectionPresetEval(T.Compose):
         backend = backend.lower()
         if backend == "tensor":
             transforms.append(T.PILToTensor())
-        else: #  for datapoint **and** PIL
+        else:  #  for datapoint **and** PIL
             transforms.append(T.ToImageTensor())
-
 
         transforms.append(T.ConvertImageDtype(torch.float))
         super().__init__(transforms)

@@ -207,7 +207,6 @@ def get_coco(root, image_set, transforms, mode="instances"):
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
 
-
     dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
     dataset = wrap_dataset_for_transforms_v2(dataset)
 

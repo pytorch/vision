@@ -31,7 +31,7 @@ def get_dataset(dir_path, name, image_set, transform):
 
 def get_transform(train, args):
     if train:
-        return presets.SegmentationPresetTrain(base_size=520, crop_size=480)
+        return presets.SegmentationPresetTrain(base_size=520, crop_size=480, backend=args.backend)
     elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
@@ -44,7 +44,7 @@ def get_transform(train, args):
 
         return preprocessing
     else:
-        return presets.SegmentationPresetEval(base_size=520)
+        return presets.SegmentationPresetEval(base_size=520, backend=args.backend)
 
 
 def criterion(inputs, target):
@@ -306,6 +306,7 @@ def get_args_parser(add_help=True):
 
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
+    parser.add_argument("--backend", default="PIL", type=str, help="PIL, tensor or datapoint - case insensitive")
 
     return parser
 

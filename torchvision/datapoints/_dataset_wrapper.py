@@ -253,8 +253,6 @@ def coco_dectection_wrapper_factory(dataset):
                 len(batched_target["keypoints"]), -1, 3
             )
 
-
-
         return image, batched_target
 
     return wrapper
