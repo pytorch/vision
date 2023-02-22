@@ -26,7 +26,7 @@ class PermuteDimensions(Transform):
         self.dims = dims
 
     def _transform(
-        self, inpt: Union[datapoints.TensorImageType, datapoints.TensorVideoType], params: Dict[str, Any]
+        self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
     ) -> torch.Tensor:
         dims = self.dims[type(inpt)]
         if dims is None:
@@ -50,7 +50,7 @@ class TransposeDimensions(Transform):
         self.dims = dims
 
     def _transform(
-        self, inpt: Union[datapoints.TensorImageType, datapoints.TensorVideoType], params: Dict[str, Any]
+        self, inpt: Union[datapoints._TensorImageType, datapoints._TensorVideoType], params: Dict[str, Any]
     ) -> torch.Tensor:
         dims = self.dims[type(inpt)]
         if dims is None:

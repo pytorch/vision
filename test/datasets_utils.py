@@ -170,23 +170,6 @@ def test_all_configs(test):
     return wrapper
 
 
-def combinations_grid(**kwargs):
-    """Creates a grid of input combinations.
-
-    Each element in the returned sequence is a dictionary containing one possible combination as values.
-
-    Example:
-        >>> combinations_grid(foo=("bar", "baz"), spam=("eggs", "ham"))
-        [
-            {'foo': 'bar', 'spam': 'eggs'},
-            {'foo': 'bar', 'spam': 'ham'},
-            {'foo': 'baz', 'spam': 'eggs'},
-            {'foo': 'baz', 'spam': 'ham'}
-        ]
-    """
-    return [dict(zip(kwargs.keys(), values)) for values in itertools.product(*kwargs.values())]
-
-
 class DatasetTestCase(unittest.TestCase):
     """Abstract base class for all dataset testcases.
 
@@ -584,8 +567,8 @@ class DatasetTestCase(unittest.TestCase):
 
     @test_all_configs
     def test_transforms_v2_wrapper(self, config):
-        from torchvision.datapoints import wrap_dataset_for_transforms_v2
         from torchvision.datapoints._datapoint import Datapoint
+        from torchvision.datasets import wrap_dataset_for_transforms_v2
 
         try:
             with self.create_dataset(config) as (dataset, _):

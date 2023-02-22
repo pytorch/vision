@@ -12,9 +12,8 @@ import PIL.Image
 import pytest
 
 import torch
-import torchvision.prototype.transforms as prototype_transforms
 import torchvision.transforms.v2 as v2_transforms
-from prototype_common_utils import (
+from common_utils import (
     ArgsKwargs,
     assert_close,
     assert_equal,
@@ -22,7 +21,6 @@ from prototype_common_utils import (
     make_detection_mask,
     make_image,
     make_images,
-    make_label,
     make_segmentation_mask,
 )
 from torch import nn
@@ -1056,6 +1054,9 @@ class TestRefDetTransforms:
         size = (600, 800)
         num_objects = 22
 
+        def make_label(extra_dims, categories):
+            return torch.randint(categories, extra_dims, dtype=torch.int64)
+
         pil_image = to_image_pil(make_image(size=size, color_space="RGB"))
         target = {
             "boxes": make_bounding_box(spatial_size=size, format="XYXY", extra_dims=(num_objects,), dtype=torch.float),
@@ -1090,20 +1091,18 @@ class TestRefDetTransforms:
         "t_ref, t, data_kwargs",
         [
             (det_transforms.RandomHorizontalFlip(p=1.0), v2_transforms.RandomHorizontalFlip(p=1.0), {}),
-            # FIXME: make
-            #  v2_transforms.Compose([
-            #      v2_transforms.RandomIoUCrop(),
-            #      v2_transforms.SanitizeBoundingBoxes()
-            #  ])
-            #  work
-            # (det_transforms.RandomIoUCrop(), v2_transforms.RandomIoUCrop(), {"with_mask": False}),
+            (
+                det_transforms.RandomIoUCrop(),
+                v2_transforms.Compose(
+                    [
+                        v2_transforms.RandomIoUCrop(),
+                        v2_transforms.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"]),
+                    ]
+                ),
+                {"with_mask": False},
+            ),
             (det_transforms.RandomZoomOut(), v2_transforms.RandomZoomOut(), {"with_mask": False}),
             (det_transforms.ScaleJitter((1024, 1024)), v2_transforms.ScaleJitter((1024, 1024)), {}),
-            (
-                det_transforms.FixedSizeCrop((1024, 1024), fill=0),
-                prototype_transforms.FixedSizeCrop((1024, 1024), fill=0),
-                {},
-            ),
             (
                 det_transforms.RandomShortestSize(
                     min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
