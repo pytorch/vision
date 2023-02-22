@@ -1106,13 +1106,13 @@ class RandomIoUCrop(Transform):
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     Args:
-        min_scale (float, optional): minimum factors to scale the input size.
-        max_scale (float, optional): maximum factors to scale the input size.
-        min_aspect_ratio (float, optional): minimum aspect ratio for the cropped image or video.
-        max_aspect_ratio (float, optional): maximum aspect ratio for the cropped image or video.
-        sampler_options (list of float, optional): list of minimal IoU (Jaccard) overlap between all the boxes and
+        min_scale (float, optional): Minimum factors to scale the input size.
+        max_scale (float, optional): Maximum factors to scale the input size.
+        min_aspect_ratio (float, optional): Minimum aspect ratio for the cropped image or video.
+        max_aspect_ratio (float, optional): Maximum aspect ratio for the cropped image or video.
+        sampler_options (list of float, optional): List of minimal IoU (Jaccard) overlap between all the boxes and
             a cropped image or video. Default, ``None`` which corresponds to ``[0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]``
-        trials (int, optional): number of trials to find a crop for a given value of minimal IoU (Jaccard) overlap.
+        trials (int, optional): Number of trials to find a crop for a given value of minimal IoU (Jaccard) overlap.
             Default, 40.
     """
 
@@ -1212,7 +1212,42 @@ class RandomIoUCrop(Transform):
 
 
 class ScaleJitter(Transform):
-    """TODO:
+    """[BETA] Perform Large Scale Jitter on the input image/video/boxes/mask according to
+    `"Simple Copy-Paste is a Strong Data Augmentation Method for Instance Segmentation" <https://arxiv.org/abs/2012.07177>`_.
+
+    .. betastatus:: ScaleJitter transform
+
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+
+    Args:
+        target_size (tuple of int): Target size. This parameter defines base scale for jittering,
+            e.g. ``min(target_size[0] / width, target_size[1] / height)``.
+        scale_range (tuple of float, optional): Minimum and maximum of the scale range. Default, ``(0.1, 2.0)``.
+        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
+        antialias (bool, optional): Whether to apply antialiasing.
+            It only affects **tensors** with bilinear or bicubic modes and it is
+            ignored otherwise: on PIL images, antialiasing is always applied on
+            bilinear or bicubic modes; on other modes (for PIL images and
+            tensors), antialiasing makes no sense and this parameter is ignored.
+            Possible values are:
+
+            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+              Other mode aren't affected. This is probably what you want to use.
+            - ``False``: will not apply antialiasing for tensors on any mode. PIL
+              images are still antialiased on bilinear or bicubic modes, because
+              PIL doesn't support no antialias.
+            - ``None``: equivalent to ``False`` for tensors and ``True`` for
+              PIL images. This value exists for legacy reasons and you probably
+              don't want to use it unless you really know what you are doing.
+
+            The current default is ``None`` **but will change to** ``True`` **in
+            v0.17** for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -1243,7 +1278,40 @@ class ScaleJitter(Transform):
 
 
 class RandomShortestSize(Transform):
-    """TODO:
+    """[BETA] Randomly resize the input image/video/boxes/mask
+
+    .. betastatus:: RandomShortestSize transform
+
+    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
+    it can have arbitrary number of leading dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+
+    Args:
+        min_size (int or sequence of int): Minimum spatial size. Single integer value or a sequence of integer values.
+        max_size (int, optional): Maximum spatial size. Default, None.
+        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
+        antialias (bool, optional): Whether to apply antialiasing.
+            It only affects **tensors** with bilinear or bicubic modes and it is
+            ignored otherwise: on PIL images, antialiasing is always applied on
+            bilinear or bicubic modes; on other modes (for PIL images and
+            tensors), antialiasing makes no sense and this parameter is ignored.
+            Possible values are:
+
+            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+              Other mode aren't affected. This is probably what you want to use.
+            - ``False``: will not apply antialiasing for tensors on any mode. PIL
+              images are still antialiased on bilinear or bicubic modes, because
+              PIL doesn't support no antialias.
+            - ``None``: equivalent to ``False`` for tensors and ``True`` for
+              PIL images. This value exists for legacy reasons and you probably
+              don't want to use it unless you really know what you are doing.
+
+            The current default is ``None`` **but will change to** ``True`` **in
+            v0.17** for the PIL and Tensor backends to be consistent.
     """
 
     def __init__(
@@ -1298,8 +1366,8 @@ class RandomResize(Transform):
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
 
     Args:
-        min_size (int): minimum output size for random sampling
-        max_size (int): maximum output size for random sampling
+        min_size (int): Minimum output size for random sampling
+        max_size (int): Maximum output size for random sampling
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
