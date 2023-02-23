@@ -555,7 +555,7 @@ We can generate a dataloader and test the dataset.
 
     /home/circleci/project/torchvision/transforms/functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
       warnings.warn(
-    {'video': ['./dataset/2/v_SoccerJuggling_g24_c01.avi', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/2/v_SoccerJuggling_g23_c01.avi'], 'start': [0.5106679103891979, 0.1037104594101595, 1.997757773964076, 0.24142342926106983, 3.3970355461558075], 'end': [1.034367, 0.633967, 2.5025, 0.766667, 3.9038999999999997], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+    {'video': ['./dataset/1/WUzgd7C1pWA.mp4', './dataset/1/WUzgd7C1pWA.mp4', './dataset/2/v_SoccerJuggling_g24_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi', './dataset/2/v_SoccerJuggling_g24_c01.avi'], 'start': [0.592517175887085, 5.505168036963167, 1.783680081093899, 0.5868409214309763, 5.341975473526439], 'end': [1.1011, 6.005999999999999, 2.3023, 1.0999999999999999, 5.872533], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 
 
 
@@ -613,7 +613,7 @@ Cleanup the video and dataset:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.064 seconds)
+   **Total running time of the script:** ( 0 minutes  2.163 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_video_api.py:
