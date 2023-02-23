@@ -1100,6 +1100,9 @@ class RandomIoUCrop(Transform):
     .. betastatus:: RandomIoUCrop transform
 
     This transformation requires an image or video data and ``datapoints.BoundingBox`` in the input.
+    
+    .. warning::
+        In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop` must be followed by `~torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately after or later in the transforms pipeline.
 
     If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
     it can have arbitrary number of leading dimensions. For example,
