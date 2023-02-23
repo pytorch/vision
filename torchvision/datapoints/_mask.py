@@ -10,6 +10,38 @@ from ._datapoint import _FillTypeJIT, Datapoint
 
 
 class Mask(Datapoint):
+    """[BETA] Randomly selects a rectangle region in the input image or video and erases its pixels.
+
+    .. betastatus:: RandomErasing transform
+
+    This transform does not support PIL Image.
+    'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
+
+    Args:
+         p: probability that the random erasing operation will be performed.
+         scale: range of proportion of erased area against input image.
+         ratio: range of aspect ratio of erased area.
+         value: erasing value. Default is 0. If a single int, it is used to
+            erase all pixels. If a tuple of length 3, it is used to erase
+            R, G, B channels respectively.
+            If a str of 'random', erasing each pixel with random values.
+         inplace: boolean to make this transform inplace. Default set to False.
+
+    Returns:
+        Erased input.
+
+    Example:
+        >>> from torchvision.transforms import v2 as transforms
+        >>>
+        >>> transform = transforms.Compose([
+        >>>   transforms.RandomHorizontalFlip(),
+        >>>   transforms.PILToTensor(),
+        >>>   transforms.ConvertImageDtype(torch.float),
+        >>>   transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        >>>   transforms.RandomErasing(),
+        >>> ])
+    """
+
     @classmethod
     def _wrap(cls, tensor: torch.Tensor) -> Mask:
         return tensor.as_subclass(cls)
