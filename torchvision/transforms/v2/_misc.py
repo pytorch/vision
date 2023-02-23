@@ -1,7 +1,7 @@
 import collections
 import warnings
 from contextlib import suppress
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Sequence, Type, Union
 
 import PIL.Image
 
@@ -269,7 +269,9 @@ class SanitizeBoundingBoxes(Transform):
         elif callable(labels_getter):
             self._labels_getter = labels_getter
         elif isinstance(labels_getter, str):
-            self._labels_getter = lambda inputs: inputs[labels_getter]
+            self._labels_getter = lambda inputs: SanitizeBoundingBoxes._get_dict_or_second_tuple_entry(inputs)[
+                labels_getter  # type: ignore[index]
+            ]
         elif labels_getter is None:
             self._labels_getter = None
         else:
@@ -279,9 +281,26 @@ class SanitizeBoundingBoxes(Transform):
             )
 
     @staticmethod
+    def _get_dict_or_second_tuple_entry(inputs: Any) -> Mapping[str, Any]:
+        # datasets outputs may be plain dicts like {"img": ..., "labels": ..., "bbox": ...}
+        # or tuples like (img, {"labels":..., "bbox": ...})
+        # This hacky helper accounts for both structures.
+        if isinstance(inputs, tuple):
+            inputs = inputs[1]
+
+        if not isinstance(inputs, collections.abc.Mapping):
+            raise ValueError(
+                f"If labels_getter is a str or 'default', "
+                f"then the input to forward() must be a dict or a tuple whose second element is a dict."
+                f" Got {type(inputs)} instead."
+            )
+        return inputs
+
+    @staticmethod
     def _find_labels_default_heuristic(inputs: Dict[str, Any]) -> Optional[torch.Tensor]:
-        # Tries to find a "label" key, otherwise tries for the first key that contains "label" - case insensitive
+        # Tries to find a "labels" key, otherwise tries for the first key that contains "label" - case insensitive
         # Returns None if nothing is found
+        inputs = SanitizeBoundingBoxes._get_dict_or_second_tuple_entry(inputs)
         candidate_key = None
         with suppress(StopIteration):
             candidate_key = next(key for key in inputs.keys() if key.lower() == "labels")
@@ -297,12 +316,6 @@ class SanitizeBoundingBoxes(Transform):
 
     def forward(self, *inputs: Any) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
-
-        if isinstance(self.labels_getter, str) and not isinstance(inputs, collections.abc.Mapping):
-            raise ValueError(
-                f"If labels_getter is a str or 'default' (got {self.labels_getter}), "
-                f"then the input to forward() must be a dict. Got {type(inputs)} instead."
-            )
 
         if self._labels_getter is None:
             labels = None
