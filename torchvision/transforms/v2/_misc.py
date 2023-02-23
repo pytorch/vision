@@ -298,7 +298,7 @@ class SanitizeBoundingBoxes(Transform):
 
     @staticmethod
     def _find_labels_default_heuristic(inputs: Dict[str, Any]) -> Optional[torch.Tensor]:
-        # Tries to find a "label" key, otherwise tries for the first key that contains "label" - case insensitive
+        # Tries to find a "labels" key, otherwise tries for the first key that contains "label" - case insensitive
         # Returns None if nothing is found
         inputs = SanitizeBoundingBoxes._get_dict_or_second_tuple_entry(inputs)
         candidate_key = None
