@@ -26,16 +26,17 @@ from .utils import has_all, has_any, is_simple_tensor, query_bounding_box, query
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
-    """[BETA] Horizontally randomly flip the given image/video/boxes/mask with a given probability.
+    """[BETA] Horizontally flip the input with a given probability.
 
     .. betastatus:: RandomHorizontalFlip transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
-        p (float, optional): probability of the image being flipped. Default value is 0.5
+        p (float, optional): probability of the input being flipped. Default value is 0.5
     """
 
     _v1_transform_cls = _transforms.RandomHorizontalFlip
@@ -45,16 +46,17 @@ class RandomHorizontalFlip(_RandomApplyTransform):
 
 
 class RandomVerticalFlip(_RandomApplyTransform):
-    """[BETA] Vertically randomly flip the given image/video/boxes/mask with a given probability.
+    """[BETA] Vertically flip the input with a given probability.
 
     .. betastatus:: RandomVerticalFlip transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
-        p (float, optional): probability of the image being flipped. Default value is 0.5
+        p (float, optional): probability of the input being flipped. Default value is 0.5
     """
 
     _v1_transform_cls = _transforms.RandomVerticalFlip
@@ -64,13 +66,14 @@ class RandomVerticalFlip(_RandomApplyTransform):
 
 
 class Resize(Transform):
-    """[BETA] Resize the input image/video/boxes/mask to the given size.
+    """[BETA] Resize the input to the given size.
 
     .. betastatus:: Resize transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     .. warning::
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images
@@ -157,13 +160,14 @@ class Resize(Transform):
 
 
 class CenterCrop(Transform):
-    """[BETA] Crop the given image/video/boxes/mask at the center.
+    """[BETA] Crop the input at the center.
 
     .. betastatus:: CenterCrop transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     If image size is smaller than output size along any edge, image is padded with 0 and then center cropped.
 
@@ -184,15 +188,16 @@ class CenterCrop(Transform):
 
 
 class RandomResizedCrop(Transform):
-    """[BETA] Crop a random portion of image/video/boxes/mask and resize it to a given size.
+    """[BETA] Crop a random portion of the input and resize it to a given size.
 
     .. betastatus:: RandomResizedCrop transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
-    A crop of the original image is made: the crop has a random area (H * W)
+    A crop of the original input is made: the crop has a random area (H * W)
     and a random aspect ratio. This crop is finally resized to the given
     size. This is popularly used to train the Inception networks.
 
@@ -309,13 +314,13 @@ ImageOrVideoTypeJIT = Union[datapoints._ImageTypeJIT, datapoints._VideoTypeJIT]
 
 
 class FiveCrop(Transform):
-    """[BETA] Crop the given image or video into four corners and the central crop.
+    """[BETA] Crop the image or video into four corners and the central crop.
 
     .. betastatus:: FiveCrop transform
 
-    If the input is a ``torch.Tensor`` or an ``Image`` or a ``Video``
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.datapoints.Image` or a
+    :class:`~torchvision.datapoints.Video` it can have arbitrary number of leading batch dimensions.
+    For example, the image can have ``[..., C, H, W]`` shape.
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -371,14 +376,14 @@ class FiveCrop(Transform):
 
 
 class TenCrop(Transform):
-    """[BETA] Crop the given image or video into four corners and the central crop plus the flipped version of
+    """[BETA] Crop the image or video into four corners and the central crop plus the flipped version of
     these (horizontal flipping is used by default).
 
     .. betastatus:: TenCrop transform
 
-    If the input is a ``torch.Tensor`` or an ``Image`` or a ``Video``
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.datapoints.Image` or a
+    :class:`~torchvision.datapoints.Video` it can have arbitrary number of leading batch dimensions.
+    For example, the image can have ``[..., C, H, W]`` shape.
 
     See :class:`~torchvision.transforms.v2.FiveCrop` for an example.
 
@@ -430,13 +435,14 @@ class TenCrop(Transform):
 
 
 class Pad(Transform):
-    """[BETA] Pad the given image/video/boxes/mask on all sides with the given "pad" value.
+    """[BETA] Pad the input on all sides with the given "pad" value.
 
     .. betastatus:: Pad transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         padding (int or sequence): Padding on each border. If a single int is provided this
@@ -451,7 +457,7 @@ class Pad(Transform):
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+            ``Mask`` will be filled with 0.
         padding_mode (str, optional): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is "constant".
 
@@ -508,9 +514,9 @@ class RandomZoomOut(_RandomApplyTransform):
 
     .. betastatus:: RandomZoomOut transform
 
-    This transformation randomly pads the input image/video/boxes/mask creating a zoom out effect.
+    This transformation randomly pads images, videos, bounding boxes and masks creating a zoom out effect.
     Output spatial size is randomly sampled from original size up to a maximum size configured
-    with ``side_range`` arg:
+    with ``side_range`` parameter:
 
     .. code-block:: python
 
@@ -518,19 +524,20 @@ class RandomZoomOut(_RandomApplyTransform):
         output_width = input_width * r
         output_height = input_height * r
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+            ``Mask`` will be filled with 0.
         side_range (sequence of floats, optional): tuple of two floats defines minimum and maximum factors to
             scale the input size.
-        p (float, optional): probability of the image being flipped. Default value is 0.5
+        p (float, optional): probability of the input being flipped. Default value is 0.5
     """
 
     def __init__(
@@ -572,13 +579,14 @@ class RandomZoomOut(_RandomApplyTransform):
 
 
 class RandomRotation(Transform):
-    """[BETA] Rotate the image/video/boxes/mask by angle.
+    """[BETA] Rotate the input by angle.
 
     .. betastatus:: RandomRotation transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         degrees (sequence or number): Range of degrees to select from.
@@ -598,7 +606,7 @@ class RandomRotation(Transform):
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+            ``Mask`` will be filled with 0.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -644,13 +652,14 @@ class RandomRotation(Transform):
 
 
 class RandomAffine(Transform):
-    """[BETA] Random affine transformation of the image/video/boxes/mask keeping center invariant.
+    """[BETA] Random affine transformation the input keeping center invariant.
 
     .. betastatus:: RandomAffine transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         degrees (sequence or number): Range of degrees to select from.
@@ -676,7 +685,7 @@ class RandomAffine(Transform):
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+            ``Mask`` will be filled with 0.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
 
@@ -764,13 +773,14 @@ class RandomAffine(Transform):
 
 
 class RandomCrop(Transform):
-    """[BETA] Crop the given image/video/boxes/mask at a random location.
+    """[BETA] Crop the input at a random location.
 
     .. betastatus:: RandomCrop transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
@@ -792,7 +802,7 @@ class RandomCrop(Transform):
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+            ``Mask`` will be filled with 0.
         padding_mode (str, optional): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
@@ -918,19 +928,19 @@ class RandomCrop(Transform):
 
 
 class RandomPerspective(_RandomApplyTransform):
-    """[BETA] Perform a random perspective transformation of the given image/video/boxes/mask
-    with a given probability.
+    """[BETA] Perform a random perspective transformation of the input with a given probability.
 
     .. betastatus:: RandomPerspective transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         distortion_scale (float, optional): argument to control the degree of distortion and ranges from 0 to 1.
             Default is 0.5.
-        p (float, optional): probability of the image being transformed. Default is 0.5.
+        p (float, optional): probability of the input being transformed. Default is 0.5.
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -939,7 +949,7 @@ class RandomPerspective(_RandomApplyTransform):
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+            ``Mask`` will be filled with 0.
     """
 
     _v1_transform_cls = _transforms.RandomPerspective
@@ -1004,13 +1014,14 @@ class RandomPerspective(_RandomApplyTransform):
 
 
 class ElasticTransform(Transform):
-    """[BETA] Transform input image/video/boxes/mask with elastic transformations.
+    """[BETA] Transform the input with elastic transformations.
 
     .. betastatus:: RandomPerspective transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Given alpha and sigma, it will generate displacement
     vectors for all pixels based on random offsets. Alpha controls the strength
@@ -1040,7 +1051,7 @@ class ElasticTransform(Transform):
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={datapoints.Image: 127, datapoints.Mask: 0}`` where ``Image`` will be filled with 127 and
-            ``Mask`` will be filled with 0. Only int or tuple value is supported for PIL Image.
+            ``Mask`` will be filled with 0.
     """
 
     _v1_transform_cls = _transforms.ElasticTransform
@@ -1100,13 +1111,16 @@ class RandomIoUCrop(Transform):
     .. betastatus:: RandomIoUCrop transform
 
     This transformation requires an image or video data and ``datapoints.BoundingBox`` in the input.
-    
-    .. warning::
-        In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop` must be followed by `~torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately after or later in the transforms pipeline.
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    .. warning::
+        In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop`
+        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately
+        after or later in the transforms pipeline.
+
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         min_scale (float, optional): Minimum factors to scale the input size.
@@ -1215,14 +1229,15 @@ class RandomIoUCrop(Transform):
 
 
 class ScaleJitter(Transform):
-    """[BETA] Perform Large Scale Jitter on the input image/video/boxes/mask according to
+    """[BETA] Perform Large Scale Jitter on the input according to
     `"Simple Copy-Paste is a Strong Data Augmentation Method for Instance Segmentation" <https://arxiv.org/abs/2012.07177>`_.
 
     .. betastatus:: ScaleJitter transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         target_size (tuple of int): Target size. This parameter defines base scale for jittering,
@@ -1281,13 +1296,14 @@ class ScaleJitter(Transform):
 
 
 class RandomShortestSize(Transform):
-    """[BETA] Randomly resize the input image/video/boxes/mask
+    """[BETA] Randomly resize the input.
 
     .. betastatus:: RandomShortestSize transform
 
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         min_size (int or sequence of int): Minimum spatial size. Single integer value or a sequence of integer values.
@@ -1348,7 +1364,7 @@ class RandomShortestSize(Transform):
 
 
 class RandomResize(Transform):
-    """[BETA] Randomly resize the image/video/boxes/mask.
+    """[BETA] Randomly resize the input.
 
     .. betastatus:: RandomResize transform
 
@@ -1363,10 +1379,10 @@ class RandomResize(Transform):
         output_width = size
         output_height = size
 
-
-    If the input is a ``torch.Tensor`` or a ``Datapoint`` (e.g. ``Image``, ``Video``, ``BoundingBox`` etc)
-    it can have arbitrary number of leading dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., N, 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
+    :class:`~torchvision.datapoints.Video`, :class:`~torchvision.datapoints.BoundingBox` etc.)
+    it can have arbitrary number of leading batch dimensions. For example,
+    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         min_size (int): Minimum output size for random sampling
