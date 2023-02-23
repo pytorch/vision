@@ -77,7 +77,7 @@ class RandomApply(Transform):
 
     Args:
         transforms (sequence or torch.nn.Module): list of transformations
-        p (float): probability
+        p (float): probability of applying the lsit of transforms
     """
 
     _v1_transform_cls = _transforms.RandomApply
@@ -123,7 +123,7 @@ class RandomChoice(Transform):
     Args:
         transforms (sequence or torch.nn.Module): list of transformations
         p (list of floats or None): probability of each transform being picked.
-            If `p` doesn't sum to 1, it is automatically normalized. If ``None``
+            If ``p`` doesn't sum to 1, it is automatically normalized. If ``None``
             (default), all transforms have the same probability.
     """
 
