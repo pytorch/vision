@@ -540,9 +540,12 @@ def test_signature_consistency(config):
             f"not. Please add a default value."
         )
 
-    legacy_kinds = {name: param.kind for name, param in legacy_params.items()}
-    prototype_kinds = {name: prototype_params[name].kind for name in legacy_kinds.keys()}
-    assert prototype_kinds == legacy_kinds
+    legacy_signature = list(legacy_params.keys())
+    # Since we made sure that we don't have any extra parameters without default above, we clamp the prototype signature
+    # to the same number of parameters as the legacy one
+    prototype_signature = list(prototype_params.keys())[: len(legacy_signature)]
+
+    assert prototype_signature == legacy_signature
 
 
 def check_call_consistency(
