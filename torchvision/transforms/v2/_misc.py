@@ -282,8 +282,8 @@ class SanitizeBoundingBoxes(Transform):
 
     @staticmethod
     def _get_dict_or_second_tuple_entry(inputs: Any) -> Mapping[str, Any]:
-        # Often, datasets outputs are plain dicts like {"img": ..., "labels": ..., "bbox": ...}
-        # But they can also be tuples (img, {"labels":..., "bbox": ...})
+        # datasets outputs may be plain dicts like {"img": ..., "labels": ..., "bbox": ...}
+        # or tuples like (img, {"labels":..., "bbox": ...})
         # This hacky helper accounts for both structures.
         if isinstance(inputs, tuple):
             inputs = inputs[1]

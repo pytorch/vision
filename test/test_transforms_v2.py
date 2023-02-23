@@ -1939,7 +1939,8 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
 def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
 
     if sample_type is tuple and not isinstance(labels_getter, str):
-        # The labels_getter callable used in this test don't work if the input is a tuple.
+        # The "lambda inputs: inputs["labels"]" labels_getter used in this test
+        # doesn't work if the input is a tuple.
         return
 
     H, W = 256, 128
