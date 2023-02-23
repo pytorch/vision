@@ -11,6 +11,23 @@ from .utils import is_simple_tensor, query_chw
 
 
 class Grayscale(Transform):
+    """[BETA] Convert images or videos to grayscale.
+
+    .. betastatus:: Grayscale transform
+
+    If the image is torch Tensor, it is expected
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    Args:
+        num_output_channels (int): (1 or 3) number of channels desired for output image
+
+    Returns:
+        PIL Image: Grayscale version of the input.
+
+        - If ``num_output_channels == 1`` : returned image is single channel
+        - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
+    """
+
     _v1_transform_cls = _transforms.Grayscale
 
     _transformed_types = (
@@ -29,6 +46,24 @@ class Grayscale(Transform):
 
 
 class RandomGrayscale(_RandomApplyTransform):
+    """[BETA] Randomly convert image to grayscale with a probability of p (default 0.1).
+
+    .. betastatus:: RandomGrayscale transform
+
+    If the image is torch Tensor, it is expected
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    Args:
+        p (float): probability that image should be converted to grayscale.
+
+    Returns:
+        PIL Image or Tensor: Grayscale version of the input image with probability p and unchanged
+        with probability (1-p).
+        - If input image is 1 channel: grayscale version is 1 channel
+        - If input image is 3 channel: grayscale version is 3 channel with r == g == b
+
+    """
+
     _v1_transform_cls = _transforms.RandomGrayscale
 
     _transformed_types = (
@@ -50,6 +85,32 @@ class RandomGrayscale(_RandomApplyTransform):
 
 
 class ColorJitter(Transform):
+    """[BETA] Randomly change the brightness, contrast, saturation and hue of an image.
+
+    .. betastatus:: ColorJitter transform
+
+    If the image is torch Tensor, it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
+
+    Args:
+        brightness (float or tuple of float (min, max)): How much to jitter brightness.
+            brightness_factor is chosen uniformly from [max(0, 1 - brightness), 1 + brightness]
+            or the given [min, max]. Should be non negative numbers.
+        contrast (float or tuple of float (min, max)): How much to jitter contrast.
+            contrast_factor is chosen uniformly from [max(0, 1 - contrast), 1 + contrast]
+            or the given [min, max]. Should be non-negative numbers.
+        saturation (float or tuple of float (min, max)): How much to jitter saturation.
+            saturation_factor is chosen uniformly from [max(0, 1 - saturation), 1 + saturation]
+            or the given [min, max]. Should be non negative numbers.
+        hue (float or tuple of float (min, max)): How much to jitter hue.
+            hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
+            Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
+            To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
+            thus it does not work if you normalize your image to an interval with negative values,
+            or use an interpolation that generates negative values before using this function.
+    """
+
     _v1_transform_cls = _transforms.ColorJitter
 
     def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
@@ -205,6 +266,18 @@ class RandomPhotometricDistort(Transform):
 
 
 class RandomEqualize(_RandomApplyTransform):
+    """[BETA] Equalize the histogram of the given image randomly with a given probability.
+
+    .. betastatus:: RandomEqualize transform
+
+    If the image is torch Tensor, it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
+
+    Args:
+        p (float): probability of the image being equalized. Default value is 0.5
+    """
+
     _v1_transform_cls = _transforms.RandomEqualize
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -212,6 +285,18 @@ class RandomEqualize(_RandomApplyTransform):
 
 
 class RandomInvert(_RandomApplyTransform):
+    """[BETA] Inverts the colors of the given image randomly with a given probability.
+
+    .. betastatus:: RandomInvert transform
+
+    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+    where ... means it can have an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+
+    Args:
+        p (float): probability of the image being color inverted. Default value is 0.5
+    """
+
     _v1_transform_cls = _transforms.RandomInvert
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -219,6 +304,20 @@ class RandomInvert(_RandomApplyTransform):
 
 
 class RandomPosterize(_RandomApplyTransform):
+    """[BETA] Posterize the image randomly with a given probability by reducing the
+    number of bits for each color channel.
+
+    .. betastatus:: RandomPosterize transform
+
+    If the image is torch Tensor, it should be of type torch.uint8,
+    and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+
+    Args:
+        bits (int): number of bits to keep for each channel (0-8)
+        p (float): probability of the image being posterized. Default value is 0.5
+    """
+
     _v1_transform_cls = _transforms.RandomPosterize
 
     def __init__(self, bits: int, p: float = 0.5) -> None:
@@ -230,6 +329,20 @@ class RandomPosterize(_RandomApplyTransform):
 
 
 class RandomSolarize(_RandomApplyTransform):
+    """[BETA] Solarize the image randomly with a given probability by inverting all pixel
+    values above a threshold.
+
+    .. betastatus:: RandomSolarize transform
+
+    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+    where ... means it can have an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+
+    Args:
+        threshold (float): all pixels equal or above this value are inverted.
+        p (float): probability of the image being solarized. Default value is 0.5
+    """
+
     _v1_transform_cls = _transforms.RandomSolarize
 
     def __init__(self, threshold: float, p: float = 0.5) -> None:
@@ -241,6 +354,18 @@ class RandomSolarize(_RandomApplyTransform):
 
 
 class RandomAutocontrast(_RandomApplyTransform):
+    """[BETA] Autocontrast the pixels of the given image randomly with a given probability.
+
+    .. betastatus:: RandomAutocontrast transform
+
+    If the image is torch Tensor, it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+
+    Args:
+        p (float): probability of the image being autocontrasted. Default value is 0.5
+    """
+
     _v1_transform_cls = _transforms.RandomAutocontrast
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -248,6 +373,20 @@ class RandomAutocontrast(_RandomApplyTransform):
 
 
 class RandomAdjustSharpness(_RandomApplyTransform):
+    """[BETA] Adjust the sharpness of the image randomly with a given probability.
+
+    .. betastatus:: RandomAdjustSharpness transform
+
+    If the image is torch Tensor,
+    it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        sharpness_factor (float):  How much to adjust the sharpness. Can be
+            any non-negative number. 0 gives a blurred image, 1 gives the
+            original image while 2 increases the sharpness by a factor of 2.
+        p (float): probability of the image being sharpened. Default value is 0.5
+    """
+
     _v1_transform_cls = _transforms.RandomAdjustSharpness
 
     def __init__(self, sharpness_factor: float, p: float = 0.5) -> None:
