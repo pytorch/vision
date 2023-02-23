@@ -106,14 +106,13 @@ transform = transforms.Compose(
         transforms.RandomHorizontalFlip(),
         transforms.ToImageTensor(),
         transforms.ConvertImageDtype(torch.float32),
-        # FIXME: this is not good UX
-        transforms.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"]),
+        transforms.SanitizeBoundingBoxes(),
     ]
 )
 
 ########################################################################################################################
 # .. note::
-#    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, it
+#    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, but it
 #    should be placed at least once at the end of a detection pipeline to remove degenerate bounding boxes as well as
 #    the corresponding labels and optionally masks. It is particularly critical to add it if
 #    :class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
