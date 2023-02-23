@@ -77,7 +77,7 @@ class RandomApply(Transform):
 
     Args:
         transforms (sequence or torch.nn.Module): list of transformations
-        p (float): probability of applying the lsit of transforms
+        p (float): probability of applying the list of transforms
     """
 
     _v1_transform_cls = _transforms.RandomApply
