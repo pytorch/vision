@@ -47,7 +47,38 @@ std = (0.229, 0.224, 0.225)
 #######################################
 # Object detection pipeline
 # -------------------------
-# TODO
+# For the object detection task, we can take as example MS Coco
+# training data augmentation pipeline from our references scripts (TODO: add a link to ref script).
+# For example, let us consider data augmentation policy for RetinaNet training:
+
+import transforms as T
+
+mean = (123.0, 117.0, 104.0)
+
+t = T.Compose([
+    T.RandomShortestSize(
+        min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
+    ),
+    T.RandomHorizontalFlip(),
+    T.PILToTensor(),
+    T.ConvertImageDtype(torch.float),
+])
+
+from torchvision.transforms import v2 as T
+
+t = T.Compose([
+    T.RandomShortestSize(
+        min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
+    ),
+    T.RandomHorizontalFlip(),
+    T.PILToTensor(),
+    T.ConvertImageDtype(torch.float),
+    T.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.XYXY),
+    T.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"])  # TODO: sad it's not the default!
+])
+
+
+
 
 
 
