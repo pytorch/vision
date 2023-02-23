@@ -15,13 +15,14 @@ from ._utils import _get_defaultdict, _setup_float_or_seq, _setup_size
 from .utils import has_any, is_simple_tensor, query_bounding_box
 
 
+# TODO: do we want/need to expose this?
 class Identity(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return inpt
 
 
 class Lambda(Transform):
-    """[BETA] Apply a user-defined lambda as a transform.
+    """[BETA] Apply a user-defined function as a transform.
 
     .. betastatus:: Lambda transform
 
@@ -52,7 +53,7 @@ class Lambda(Transform):
 
 
 class LinearTransformation(Transform):
-    """[BETA] Transform a tensor image with a square transformation matrix and a mean_vector computed offline.
+    """[BETA] Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.
 
     .. betastatus:: LinearTransformation transform
 
@@ -135,7 +136,7 @@ class LinearTransformation(Transform):
 
 
 class Normalize(Transform):
-    """[BETA] Normalize a tensor image with mean and standard deviation.
+    """[BETA] Normalize a tensor image or video with mean and standard deviation.
 
     .. betastatus:: Normalize transform
 
@@ -179,7 +180,7 @@ class GaussianBlur(Transform):
 
     .. betastatus:: GausssianBlur transform
 
-    If the image is torch Tensor, it is expected
+    If the input is a Tensor, it is expected
     to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
@@ -188,9 +189,6 @@ class GaussianBlur(Transform):
             creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
-
-    Returns:
-        PIL Image or Tensor: Gaussian blurred version of the input image.
     """
 
     _v1_transform_cls = _transforms.GaussianBlur
