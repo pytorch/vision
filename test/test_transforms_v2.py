@@ -1359,11 +1359,8 @@ class TestContainers:
 
 class TestRandomChoice:
     def test_assertions(self):
-        with pytest.warns(UserWarning, match="Argument p is deprecated and will be removed"):
-            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1, 2])
-
         with pytest.raises(ValueError, match="The number of probabilities doesn't match the number of transforms"):
-            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], probabilities=[1])
+            transforms.RandomChoice([transforms.Pad(2), transforms.RandomCrop(28)], p=[1])
 
 
 class TestRandomIoUCrop:
