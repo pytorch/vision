@@ -1,7 +1,7 @@
 import collections
 import warnings
 from contextlib import suppress
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, cast, Dict, List, Mapping, Optional, Sequence, Type, Union
 
 import PIL.Image
 
@@ -270,7 +270,7 @@ class SanitizeBoundingBoxes(Transform):
             self._labels_getter = labels_getter
         elif isinstance(labels_getter, str):
             self._labels_getter = lambda inputs: SanitizeBoundingBoxes._get_dict_or_second_tuple_entry(inputs)[
-                labels_getter
+                labels_getter  # type: ignore[index]
             ]
         elif labels_getter is None:
             self._labels_getter = None
@@ -281,7 +281,7 @@ class SanitizeBoundingBoxes(Transform):
             )
 
     @staticmethod
-    def _get_dict_or_second_tuple_entry(inputs):
+    def _get_dict_or_second_tuple_entry(inputs: Any) -> Mapping[str, Any]:
         # Often, datasets outputs are plain dicts like {"img": ..., "labels": ..., "bbox": ...}
         # But they can also be tuples (img, {"labels":..., "bbox": ...})
         # This hacky helper accounts for both structures.
