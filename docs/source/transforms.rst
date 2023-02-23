@@ -182,6 +182,7 @@ Miscellaneous
     v2.RandomErasing
     Lambda
     v2.Lambda
+    v2.SanitizeBoundingBoxes
 
 .. _conversion_transforms:
 
@@ -202,6 +203,7 @@ Conversion
     ConvertImageDtype
     v2.ConvertImageDtype
     v2.ConvertDtype
+    v2.ToDtype
 
 Auto-Augmentation
 -----------------
