@@ -11,72 +11,84 @@ new Torchvision Transforms API v2 (:ref:`image transformations <transforms>`).
 #######################################
 # Classification pipeline
 # -----------------------
-# For the classification task, let us take as example ImageNet
-# training data augmentation pipeline (TODO: add a link to ref script).
-# The only change needed is to replace the imported module `transforms` by `v2`:
-
-import torch
-from torchvision.transforms import autoaugment
-from torchvision.transforms import InterpolationMode
-
-mode = InterpolationMode.BILINEAR
-aa_policy = autoaugment.AutoAugmentPolicy("imagenet")
-mean = (0.485, 0.456, 0.406)
-std = (0.229, 0.224, 0.225)
+# For the classification task, let us take as an example
+# training data augmentation pipeline for the ImageNet (`classification reference script <https://github.com/pytorch/vision/tree/96dbada4d588cabbd24ab1eee57cd261c9b93d20/references/classification>`_).
+# The only change we need is to replace the imported module `transforms` by `v2`:
 
 #######################################
 #
 #   .. code-block:: diff
 #
-#       - from torchvision.transforms import transforms
-#       + from torchvision.transforms import v2 as transforms
+#       - from torchvision.transforms import transforms as T
+#       + from torchvision.transforms import v2 as T
 #
 #
-#       t = transforms.Compose([
-#           transforms.RandomResizedCrop(224, interpolation=mode),
-#           transforms.RandomHorizontalFlip(),
+#       t = T.Compose([
+#           T.RandomResizedCrop(224, interpolation=mode),
+#           T.RandomHorizontalFlip(),
 #       -   autoaugment.AutoAugment(policy=aa_policy, interpolation=mode),
-#       +   transforms.AutoAugment(policy=aa_policy, interpolation=mode),
-#           transforms.PILToTensor(),  # optionally, we can use transforms.ToImageTensor() instead
-#           transforms.ConvertImageDtype(torch.float),
-#           transforms.Normalize(mean=mean, std=std),
-#           transforms.RandomErasing()
+#       +   T.AutoAugment(policy=aa_policy, interpolation=mode),
+#           T.PILToTensor(),  # optionally, we can use T.ToImageTensor() instead
+#           T.ConvertImageDtype(torch.float),
+#           T.Normalize(mean=mean, std=std),
+#           T.RandomErasing()
 #       ])
 #
 
 #######################################
 # Object detection pipeline
 # -------------------------
-# For the object detection task, we can take as example MS Coco
-# training data augmentation pipeline from our references scripts (TODO: add a link to ref script).
-# For example, let us consider data augmentation policy for RetinaNet training:
+# For the object detection task, we can take the
+# training data augmentation pipeline for MSCoco from our references scripts (`detection reference script <https://github.com/pytorch/vision/tree/96dbada4d588cabbd24ab1eee57cd261c9b93d20/references/detection>`_).
+# For example, let us consider data augmentation policy for RetinaNet training.
+# Below ``transforms`` module refers to `transforms file <https://github.com/pytorch/vision/blob/96dbada4d588cabbd24ab1eee57cd261c9b93d20/references/detection/transforms.py>`_.
 
-import transforms as T
+#######################################
+#
+#   .. code-block:: diff
+#
+#       - import transforms as T
+#       + from torchvision.transforms import v2 as T
+#
+#
+#       t = T.Compose([
+#           T.RandomShortestSize(
+#               min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
+#           ),
+#           T.RandomHorizontalFlip(),
+#           T.PILToTensor(),  # optionally, we can use T.ToImageTensor() instead
+#           T.ConvertImageDtype(torch.float),
+#       +   T.SanitizeBoundingBoxes(),  # explicitly remove invalid bounding boxes (and labels)
+#       ])
+#
+# For an end-to-end object detection example using Transforms API v2, please check out :ref:`this tutorial <e2e_object_detection_v2>`.
 
-mean = (123.0, 117.0, 104.0)
 
-t = T.Compose([
-    T.RandomShortestSize(
-        min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
-    ),
-    T.RandomHorizontalFlip(),
-    T.PILToTensor(),
-    T.ConvertImageDtype(torch.float),
-])
+#######################################
+# Semantic segmentation pipeline
+# ------------------------------
+# Finally, here is how we can update the code of the training data augmentation pipeline
+# for semantic image segmentation task.
+# Below ``transforms`` module refers to `segmentation transforms file <https://github.com/pytorch/vision/blob/96dbada4d588cabbd24ab1eee57cd261c9b93d20/references/segmentation/transforms.py>`_.
+#
 
-from torchvision.transforms import v2 as T
-
-t = T.Compose([
-    T.RandomShortestSize(
-        min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
-    ),
-    T.RandomHorizontalFlip(),
-    T.PILToTensor(),
-    T.ConvertImageDtype(torch.float),
-    T.ConvertBoundingBoxFormat(datapoints.BoundingBoxFormat.XYXY),
-    T.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"])  # TODO: sad it's not the default!
-])
-
+#######################################
+#
+#   .. code-block:: diff
+#
+#       - import transforms as T
+#       + from torchvision.transforms import v2 as T
+#
+#
+#       t = T.Compose([
+#           T.RandomResize(min_size, max_size),
+#           T.RandomHorizontalFlip(),
+#           T.RandomCrop(480),
+#           T.PILToTensor(),  # optionally, we can use T.ToImageTensor() instead
+#           T.ConvertImageDtype(torch.float),
+#           T.Normalize(mean=mean, std=std),
+#       ])
+#
 
 
 
