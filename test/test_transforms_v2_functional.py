@@ -504,7 +504,7 @@ class TestDispatchers:
         assert dispatcher_params == datapoint_params
 
     @pytest.mark.parametrize("info", DISPATCHER_INFOS, ids=lambda info: info.id)
-    def test_unkown_type(self, info):
+    def test_unknown_type(self, info):
         unkown_input = object()
         (_, *other_args), kwargs = next(iter(info.sample_inputs())).load("cpu")
 

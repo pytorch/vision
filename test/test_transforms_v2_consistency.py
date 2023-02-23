@@ -1350,15 +1350,10 @@ def test_dispatcher_signature_consistency(legacy_dispatcher, name_only_params):
     prototype_signature = inspect.signature(prototype_dispatcher)
     prototype_params = list(prototype_signature.parameters.values())[1:]
 
-    # Some dispatchers got extra parameters. This makes sure they have a default argument and thus are BC. We don't
-    # need to check if parameters were added in the middle rather than at the end, since that will be caught by the
-    # regular check below.
-    prototype_params, new_prototype_params = (
-        prototype_params[: len(legacy_params)],
-        prototype_params[len(legacy_params) :],
-    )
-    for param in new_prototype_params:
-        assert param.default is not param.empty
+    if legacy_dispatcher.__name__ == "perspective":
+        # We added "coefficients" arg as the last arg to v2, so ignoring it
+        assert prototype_params[-1].name == "coefficients"
+        prototype_params = prototype_params[:-1]
 
     # Some annotations were changed mostly to supersets of what was there before. Plus, some legacy dispatchers had no
     # annotations. In these cases we simply drop the annotation and default argument from the comparison
