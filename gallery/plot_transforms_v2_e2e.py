@@ -17,6 +17,8 @@ import PIL.Image
 import torch
 import torch.utils.data
 
+import torchvision
+
 
 # sphinx_gallery_thumbnail_number = -1
 def show(sample):
@@ -38,6 +40,10 @@ def show(sample):
 
     fig.show()
 
+
+# We are using BETA APIs, so we deactivate the associated warning, thereby acknowledging that
+# some APIs may slightly change in the future
+torchvision.disable_beta_transforms_warning()
 
 from torchvision import models, datasets
 import torchvision.transforms.v2 as transforms
@@ -93,7 +99,9 @@ show(sample)
 transform = transforms.Compose(
     [
         transforms.RandomPhotometricDistort(),
-        transforms.RandomZoomOut(fill=defaultdict(lambda: 0, {PIL.Image.Image: (123, 117, 104)})),
+        transforms.RandomZoomOut(
+            fill=defaultdict(lambda: 0, {PIL.Image.Image: (123, 117, 104)})
+        ),
         transforms.RandomIoUCrop(),
         transforms.RandomHorizontalFlip(),
         transforms.ToImageTensor(),
