@@ -99,10 +99,14 @@ Geometry
 
     Resize
     v2.Resize
+    v2.ScaleJitter
+    v2.RandomShortestSize
+    v2.RandomResize
     RandomCrop
     v2.RandomCrop
     RandomResizedCrop
     v2.RandomResizedCrop
+    v2.RandomIoUCrop
     CenterCrop
     v2.CenterCrop
     FiveCrop
@@ -112,20 +116,18 @@ Geometry
     Pad
     v2.Pad
     v2.RandomZoomOut
+    RandomRotation
+    v2.RandomRotation
     RandomAffine
     v2.RandomAffine
     RandomPerspective
     v2.RandomPerspective
-    RandomRotation
-    v2.RandomRotation
+    ElasticTransform
+    v2.ElasticTransform
     RandomHorizontalFlip
     v2.RandomHorizontalFlip
     RandomVerticalFlip
     v2.RandomVerticalFlip
-    v2.RandomIoUCrop
-    v2.ScaleJitter
-    v2.RandomShortestSize
-    v2.RandomResize
 
 
 Color
