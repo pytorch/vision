@@ -108,7 +108,7 @@ transform = transforms.Compose(
 #    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, it
 #    should be placed at least once at the end of a detection pipeline to remove degenerate bounding boxes as well as
 #    the corresponding labels and optionally masks. It is particularly critical to add it if
-#    class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
+#    :class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
 #
 # Let's look how the sample looks like with our augmentation pipeline in place:
 
