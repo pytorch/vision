@@ -33,6 +33,8 @@ from tabulate import tabulate
 
 sys.path.append(os.path.abspath("."))
 
+torchvision.disable_beta_transforms_warning()
+
 # -- General configuration ------------------------------------------------
 
 # Required version of sphinx is set from docs/requirements.txt
@@ -60,6 +62,7 @@ sphinx_gallery_conf = {
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
     "backreferences_dir": "gen_modules/backreferences",
     "doc_module": ("torchvision",),
+    "remove_config_comments": True,
 }
 
 napoleon_use_ivar = True
