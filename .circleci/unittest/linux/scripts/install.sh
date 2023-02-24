@@ -5,7 +5,7 @@ unset PYTORCH_VERSION
 # so no need to set PYTORCH_VERSION.
 # In fact, keeping PYTORCH_VERSION forces us to hardcode PyTorch version in config.
 
-set -e
+set -ex
 
 eval "$(./conda/bin/conda shell.bash hook)"
 conda activate ./env
