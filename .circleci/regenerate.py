@@ -290,7 +290,7 @@ def cmake_workflows(indentation=6):
 
             job["cu_version"] = "cu117" if device == "gpu" else "cpu"
             if device == "gpu" and os_type == "linux":
-                job["wheel_docker_image"] = "pytorch/manylinux-cuda116"
+                job["wheel_docker_image"] = "pytorch/manylinux-cuda117"
             jobs.append({f"cmake_{os_type}_{device}": job})
     return indent(indentation, jobs)
 

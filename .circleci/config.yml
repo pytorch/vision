@@ -767,7 +767,7 @@ jobs:
       image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.medium
     environment:
-      image_name: "pytorch/manylinux-cuda116"
+      image_name: "pytorch/manylinux-cuda117"
       CU_VERSION: << parameters.cu_version >>
       PYTHON_VERSION: << parameters.python_version >>
     steps:
@@ -1446,7 +1446,7 @@ workflows:
           cu_version: cu117
           name: cmake_linux_gpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda116
+          wheel_docker_image: pytorch/manylinux-cuda117
       - cmake_windows_cpu:
           cu_version: cpu
           name: cmake_windows_cpu
