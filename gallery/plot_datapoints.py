@@ -36,7 +36,8 @@ assert image.data_ptr() == tensor.data_ptr()
 
 
 ########################################################################################################################
-# They are needed in :mod:`torchvision.transforms.v2` for the automatic dispatch to the correct kernel.
+# Under the hood, they are needed in :mod:`torchvision.transforms.v2` to correctly dispatch to the appropriate low-level
+# kernel.
 #
 # What datapoints are supported?
 # ------------------------------
