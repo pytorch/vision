@@ -44,4 +44,8 @@ if [[ "${PYTHON_VERSION}" = "3.9" ]]; then
 fi
 
 conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
-conda env update --file "${this_dir}/environment.yml" --prune
+if [[ "${PYTHON_VERSION}" = "3.11" ]]; then
+  pip install pytest pytest-cov pytest-mock libpng jpeg ca-certificates h5py future
+else
+  conda env update --file "${this_dir}/environment.yml" --prune
+fi

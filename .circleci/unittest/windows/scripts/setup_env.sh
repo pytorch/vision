@@ -36,7 +36,11 @@ conda activate "${env_dir}"
 
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
-conda env update --file "${this_dir}/environment.yml" --prune
+if [[ "${PYTHON_VERSION}" == '3.7' ]]; then
+  pip install pytest pytest-cov pytest-mock libpng jpeg ca-certificates hdf5 setuptools future dataclasses h5py
+else
+  conda env update --file "${this_dir}/environment.yml" --prune
+fi
 
 # 4. Downgrade setuptools on Python 3.7.
 #    See https://github.com/pytorch/vision/pull/5868
