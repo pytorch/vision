@@ -37,7 +37,8 @@ conda activate "${env_dir}"
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
 if [[ "${PYTHON_VERSION}" == '3.7' ]]; then
-  pip install pytest pytest-cov pytest-mock libpng jpeg ca-certificates hdf5 setuptools future dataclasses h5py
+  conda install libpng jpeg hdf5 ca-certificates
+  pip install pytest pytest-cov pytest-mock setuptools future dataclasses h5py
 else
   conda env update --file "${this_dir}/environment.yml" --prune
 fi
