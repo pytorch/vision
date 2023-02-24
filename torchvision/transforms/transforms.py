@@ -105,7 +105,7 @@ class Compose:
 
 
 class ToTensor:
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor and scale the values accordingly.
+    """Convert a PIL Image or ndarray to tensor and scale the values accordingly.
 
     This transform does not support torchscript.
 
