@@ -2,7 +2,7 @@
 .. _e2e_object_detection_v2:
 
 ==================================================
-transforms v2: End-to-end object detection example
+Transforms v2: End-to-end object detection example
 ==================================================
 
 Object detection is not supported out of the box by ``torchvision.transforms`` v1, since it only supports images.
@@ -22,7 +22,6 @@ import torch.utils.data
 import torchvision
 
 
-# sphinx_gallery_thumbnail_number = -1
 def show(sample):
     import matplotlib.pyplot as plt
 
@@ -108,13 +107,13 @@ transform = transforms.Compose(
         transforms.RandomHorizontalFlip(),
         transforms.ToImageTensor(),
         transforms.ConvertImageDtype(torch.float32),
-        transforms.SanitizeBoundingBoxes(),
+        transforms.SanitizeBoundingBox(),
     ]
 )
 
 ########################################################################################################################
 # .. note::
-#    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes` transform is a no-op in this example, but it
+#    Although the :class:`~torchvision.transforms.v2.SanitizeBoundingBox` transform is a no-op in this example, but it
 #    should be placed at least once at the end of a detection pipeline to remove degenerate bounding boxes as well as
 #    the corresponding labels and optionally masks. It is particularly critical to add it if
 #    :class:`~torchvision.transforms.v2.RandomIoUCrop` was used.
@@ -127,6 +126,7 @@ dataset = datasets.wrap_dataset_for_transforms_v2(dataset)
 torch.manual_seed(3141)
 sample = dataset[0]
 
+# sphinx_gallery_thumbnail_number = 2
 show(sample)
 
 
