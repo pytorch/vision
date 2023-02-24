@@ -11,7 +11,7 @@ from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 class PILToTensor(Transform):
-    """[BETA] Convert a ``PIL Image`` to a tensor of the same type - this does not scale values.
+    """[BETA] Convert a PIL Image to a tensor of the same type - this does not scale values.
 
     .. betastatus:: PILToTensor transform
 
