@@ -1,6 +1,6 @@
 """
 ==================================================
-transforms v2: End-to-end object detection example
+Transforms v2: End-to-end object detection example
 ==================================================
 
 Object detection is not supported out of the box by ``torchvision.transforms`` v1, since it only supports images.
@@ -20,7 +20,6 @@ import torch.utils.data
 import torchvision
 
 
-# sphinx_gallery_thumbnail_number = -1
 def show(sample):
     import matplotlib.pyplot as plt
 
@@ -125,6 +124,7 @@ dataset = datasets.wrap_dataset_for_transforms_v2(dataset)
 torch.manual_seed(3141)
 sample = dataset[0]
 
+# sphinx_gallery_thumbnail_number = 2
 show(sample)
 
 
