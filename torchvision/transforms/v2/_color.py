@@ -15,7 +15,7 @@ class Grayscale(Transform):
 
     .. betastatus:: Grayscale transform
 
-    If the input is a Tensor, it is expected
+    If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 3 or 1, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
