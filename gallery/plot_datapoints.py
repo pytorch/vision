@@ -101,7 +101,8 @@ assert type(image) is datapoints.Image
 
 new_image = image + 0
 
-assert type(new_image) is torch.Tensor
+assert isinstance(new_image, torch.Tensor)
+assert not isinstance(new_image, datapoints.Image)
 
 ########################################################################################################################
 # There are two exceptions to this rule:
