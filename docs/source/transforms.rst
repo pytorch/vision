@@ -8,8 +8,8 @@ Transforming and augmenting images
 
 .. note::
     In 0.15, we released a new set of transforms available in the
-    ``torchvision.transforms.v2`` namespace, which add suppotr for transforming
-    not just images but also bounding boxes, masks, or videos.  These transforms
+    ``torchvision.transforms.v2`` namespace, which add support for transforming
+    not just images but also bounding boxes, masks, or videos. These transforms
     are fully backward compatible with the current ones, and you'll see them
     documented below with a `v2.` prefix. To get started with those new
     transforms, you can check out
