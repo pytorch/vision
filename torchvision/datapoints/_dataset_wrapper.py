@@ -14,23 +14,28 @@ from torchvision.transforms.v2 import functional as F
 __all__ = ["wrap_dataset_for_transforms_v2"]
 
 
-# TODO: naming!
 def wrap_dataset_for_transforms_v2(dataset):
-    """Wrap a ``torchvision.dataset`` for usage with :mod:`torchvision.transforms.v2`.
+    """[BETA] Wrap a ``torchvision.dataset`` for usage with :mod:`torchvision.transforms.v2`.
+
+    .. v2betastatus:: wrap_dataset_for_transforms_v2 function
+
+    Example:
+        >>> coco = torchvision.datasets.CocoDetection()
+        >>> coco = wrap_dataset_for_transforms_v2(coco)
 
     .. note::
 
-       So far we only provide wrappers for the most popular datasets. Furthermore, the wrappers only support dataset
+       For now, only the most popular datasets are supported. Furthermore, the wrapper only supports dataset
        configurations that are fully supported by ``torchvision.transforms.v2``. If you encounter an error prompting you
-       to raise an issue to ``torchvision`` for a dataset or configuration that you need, please act on it.
+       to raise an issue to ``torchvision`` for a dataset or configuration that you need, please do so.
 
     The dataset samples are wrapped according to the description below.
 
-    Special
+    Special cases:
 
-        * :class:`~torchvision.datasets.CocoDetection`: Instead returning the target as list of dicts, now returns it as
-            dict of lists. In addition, the key-value-pairs ``"boxes"``, ``"masks"``, and ``"labels"`` are added which
-            wrap the data in the corresponding ``torchvision.datapoints``.
+        * :class:`~torchvision.datasets.CocoDetection`: Instead of returning the target as list of dicts, the wrapper returns a
+          dict of lists. In addition, the key-value-pairs ``"boxes"``, ``"masks"``, and ``"labels"`` are added and
+          wrap the data in the corresponding ``torchvision.datapoints``. The original keys are preserved.
         * :class:`~torchvision.datasets.VOCDetection`
         * :class:`~torchvision.datasets.SBDataset`
         * :class:`~torchvision.datasets.CelebA`
@@ -47,12 +52,12 @@ def wrap_dataset_for_transforms_v2(dataset):
     Segmentation datasets
 
         Segmentation datasets, e.g. :class:`~torchvision.datasets.VOCSegmentation` return a two-tuple of
-        :class:`PIL.Image.Image`'s. This wrapper leaves the image, i.e. the first item, as is, while wrapping the
-        segmentation mask, i.e. the second item, into a :class:`~torchvision.datapoints.Mask`.
+        :class:`PIL.Image.Image`'s. This wrapper leaves the image as is (first item), while wrapping the
+        segmentation mask into a :class:`~torchvision.datapoints.Mask` (second item).
 
     Video classification datasets
 
-        Video classification datasets, e.g. :class:`~torchvision.datasets.Kinetics` return a three-tuple contained a
+        Video classification datasets, e.g. :class:`~torchvision.datasets.Kinetics` return a three-tuple containing a
         :class:`torch.Tensor` for the video and audio and a :class:`int` as label. This wrapper wraps the video into a
         :class:`~torchvision.datapoints.Video` while leaving the other items as is.
 
@@ -60,6 +65,9 @@ def wrap_dataset_for_transforms_v2(dataset):
 
             Only datasets constructed with ``output_format="TCHW"`` are supported, since the alternative
             ``output_format="THWC"`` is not supported by :mod:`torchvision.transforms.v2`.
+
+    Args:
+        dataset: the dataset instance to wrap for compatibility with transforms v2.
     """
     return VisionDatasetDatapointWrapper(dataset)
 

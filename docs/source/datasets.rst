@@ -173,4 +173,8 @@ Base classes for custom datasets
 Transforms v2
 -------------
 
-.. autofunction:: wrap_dataset_for_transforms_v2
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    wrap_dataset_for_transforms_v2
