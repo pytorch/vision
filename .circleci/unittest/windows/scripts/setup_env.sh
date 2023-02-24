@@ -34,10 +34,6 @@ if [ ! -d "${env_dir}" ]; then
 fi
 conda activate "${env_dir}"
 
-if [[ "${PYTHON_VERSION}" == "3.11" ]]; then
-   conda config --env --add channels malfet
-fi
-
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
 conda env update --file "${this_dir}/environment.yml" --prune
