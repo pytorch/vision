@@ -98,7 +98,9 @@ show(sample)
 transform = transforms.Compose(
     [
         transforms.RandomPhotometricDistort(),
-        transforms.RandomZoomOut(fill=defaultdict(lambda: 0, {PIL.Image.Image: (123, 117, 104)})),
+        transforms.RandomZoomOut(
+            fill=defaultdict(lambda: 0, {PIL.Image.Image: (123, 117, 104)})
+        ),
         transforms.RandomIoUCrop(),
         transforms.RandomHorizontalFlip(),
         transforms.ToImageTensor(),
