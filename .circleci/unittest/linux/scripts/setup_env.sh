@@ -43,5 +43,9 @@ if [[ "${PYTHON_VERSION}" = "3.9" ]]; then
     FFMPEG_PIN=">=4.2"
 fi
 
-conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
+if [[ "${PYTHON_VERSION}" = "3.11" ]]; then
+     conda install -y -c malfet -c pytorch "ffmpeg${FFMPEG_PIN}"
+else
+    conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
+fi
 conda env update --file "${this_dir}/environment.yml" --prune
