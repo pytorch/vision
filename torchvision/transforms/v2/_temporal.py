@@ -11,9 +11,9 @@ class UniformTemporalSubsample(Transform):
 
     .. betastatus:: UniformTemporalSubsample transform
 
-    Videos are expected to be of shape ``(..., T, C, H, W)`` where ``T`` is the temporal dimesion.
+    Videos are expected to be of shape ``[..., T, C, H, W]`` where ``T`` denotes the temporal dimension.
 
-    When num_samples is larger than the size of temporal dimension of the video, it
+    When ``num_samples`` is larger than the size of temporal dimension of the video, it
     will sample frames based on nearest neighbor interpolation.
 
     Args:
