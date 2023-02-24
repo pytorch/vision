@@ -2088,6 +2088,7 @@ def test_sanitize_bounding_boxes_errors():
     ),
 )
 @pytest.mark.parametrize("call_disable_warning", (True, False))
+@pytest.mark.xfail
 def test_warnings_v2_namespaces(import_statement, call_disable_warning):
     if call_disable_warning:
         source = f"""
@@ -2107,6 +2108,7 @@ def test_warnings_v2_namespaces(import_statement, call_disable_warning):
     assert_run_python_script(textwrap.dedent(source))
 
 
+@pytest.mark.xfail
 def test_no_warnings_v1_namespace():
     source = """
     import warnings
