@@ -191,6 +191,7 @@ Miscellaneous
     Lambda
     v2.Lambda
     v2.SanitizeBoundingBox
+    v2.UniformTemporalSubsample
 
 .. _conversion_transforms:
 
