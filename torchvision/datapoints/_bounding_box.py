@@ -30,7 +30,7 @@ class BoundingBox(Datapoint):
     Args:
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         format (BoundingBoxFormat, str): Format of the bounding box.
-        spatial_size (two-tuple of ints): Height and width of the image or video the bounding box corresponds to.
+        spatial_size (two-tuple of ints): Height and width of the corresponding image or video.
         dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
             ``data``.
         device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
@@ -82,8 +82,8 @@ class BoundingBox(Datapoint):
             tensor (Tensor): Tensor to be wrapped as :class:`BoundingBox`
             format (BoundingBoxFormat, str, optional): Format of the bounding box.  If omitted, it is taken from the
                 reference.
-            spatial_size (two-tuple of ints, optional): Height and width of the image or video the bounding box
-                corresponds to. If omitted, it is taken from the reference.
+            spatial_size (two-tuple of ints, optional): Height and width of the corresponding image or video. If
+                omitted, it is taken from the reference.
 
         """
         if isinstance(format, str):
