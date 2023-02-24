@@ -171,7 +171,7 @@ class AutoAugment(_AutoAugmentBase):
 
     If the input is :class:`torch.Tensor`, it should be of type ``torch.uint8``, and it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is ``PIL.Image``, it is expected to be in mode "L" or "RGB".
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         policy (AutoAugmentPolicy, optional): Desired policy enum defined by
@@ -348,7 +348,7 @@ class RandAugment(_AutoAugmentBase):
 
     If the input is :class:`torch.Tensor`, it should be of type ``torch.uint8``, and it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is ``PIL.Image``, it is expected to be in mode "L" or "RGB".
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         num_ops (int, optional): Number of augmentation transformations to apply sequentially.
@@ -431,7 +431,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
     If the input is :class:`torch.Tensor`, it should be of type ``torch.uint8``, and it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is ``PIL.Image``, it is expected to be in mode "L" or "RGB".
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         num_magnitude_bins (int, optional): The number of different magnitude values.
@@ -502,7 +502,7 @@ class AugMix(_AutoAugmentBase):
 
     If the input is :class:`torch.Tensor`, it should be of type ``torch.uint8``, and it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is ``PIL.Image``, it is expected to be in mode "L" or "RGB".
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         severity (int, optional): The severity of base augmentation operators. Default is ``3``.
