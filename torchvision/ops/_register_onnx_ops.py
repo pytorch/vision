@@ -94,10 +94,10 @@ def roi_align_opset16(g, input, rois, spatial_scale, pooled_height, pooled_width
 
 @parse_args("v", "v", "f", "i", "i")
 def roi_pool(g, input, rois, spatial_scale, pooled_height, pooled_width):
-    roi_pool = g.op(
+    max_roi_pool = g.op(
         "MaxRoiPool", input, rois, pooled_shape_i=(pooled_height, pooled_width), spatial_scale_f=spatial_scale
     )
-    return roi_pool, None
+    return max_roi_pool, None
 
 
 def _register_custom_op():
