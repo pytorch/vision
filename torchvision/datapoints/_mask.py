@@ -10,36 +10,17 @@ from ._datapoint import _FillTypeJIT, Datapoint
 
 
 class Mask(Datapoint):
-    """[BETA] Randomly selects a rectangle region in the input image or video and erases its pixels.
-
-    .. betastatus:: RandomErasing transform
-
-    This transform does not support PIL Image.
-    'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
+    """[BETA] :class:`torch.Tensor` subclass for segmentation and detection masks.
 
     Args:
-         p: probability that the random erasing operation will be performed.
-         scale: range of proportion of erased area against input image.
-         ratio: range of aspect ratio of erased area.
-         value: erasing value. Default is 0. If a single int, it is used to
-            erase all pixels. If a tuple of length 3, it is used to erase
-            R, G, B channels respectively.
-            If a str of 'random', erasing each pixel with random values.
-         inplace: boolean to make this transform inplace. Default set to False.
-
-    Returns:
-        Erased input.
-
-    Example:
-        >>> from torchvision.transforms import v2 as transforms
-        >>>
-        >>> transform = transforms.Compose([
-        >>>   transforms.RandomHorizontalFlip(),
-        >>>   transforms.PILToTensor(),
-        >>>   transforms.ConvertImageDtype(torch.float),
-        >>>   transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        >>>   transforms.RandomErasing(),
-        >>> ])
+        data (tensor-like, PIL.Image.Image): Any data that can be turned into a tensor with :func:`torch.as_tensor` as
+            well as PIL images.
+        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
+            ``data``.
+        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
+            :class:`torch.Tensor`, the device is taken from it. Otherwise, the bounding box is constructed on the CPU.
+        requires_grad (bool, optional): Whether autograd should record operations on the bounding box. If omitted and
+            ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
     """
 
     @classmethod
