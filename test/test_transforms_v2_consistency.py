@@ -540,9 +540,12 @@ def test_signature_consistency(config):
             f"not. Please add a default value."
         )
 
-    legacy_kinds = {name: param.kind for name, param in legacy_params.items()}
-    prototype_kinds = {name: prototype_params[name].kind for name in legacy_kinds.keys()}
-    assert prototype_kinds == legacy_kinds
+    legacy_signature = list(legacy_params.keys())
+    # Since we made sure that we don't have any extra parameters without default above, we clamp the prototype signature
+    # to the same number of parameters as the legacy one
+    prototype_signature = list(prototype_params.keys())[: len(legacy_signature)]
+
+    assert prototype_signature == legacy_signature
 
 
 def check_call_consistency(
@@ -819,7 +822,7 @@ class TestContainerTransforms:
                 v2_transforms.Resize(256),
                 legacy_transforms.CenterCrop(224),
             ],
-            probabilities=probabilities,
+            p=probabilities,
         )
         legacy_transform = legacy_transforms.RandomChoice(
             [
@@ -1096,7 +1099,7 @@ class TestRefDetTransforms:
                 v2_transforms.Compose(
                     [
                         v2_transforms.RandomIoUCrop(),
-                        v2_transforms.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"]),
+                        v2_transforms.SanitizeBoundingBox(labels_getter=lambda sample: sample[1]["labels"]),
                     ]
                 ),
                 {"with_mask": False},
