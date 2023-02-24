@@ -4,7 +4,10 @@ Datapoints FAQ
 ==============
 
 The :mod:`torchvision.datapoints` namespace was introduced to ``torchvision.transforms.v2``. This example showcases what
-these datapoints are and how they behave.
+these datapoints are and how they behave. This is a fairly low-level topic that most users will not need to worry about:
+you do not need to understand the internals of datapoints to efficiently rely on ``torchvision.transforms.v2``. It may
+however be useful for advanced users trying to implement their own datasets, transforms, or work directly with the
+datapoints.
 """
 
 import PIL.Image
@@ -50,7 +53,7 @@ assert image.data_ptr() == tensor.data_ptr()
 #
 # Each datapoint class takes any tensor-like data that can be turned into a :class:`~torch.Tensor`
 
-image = datapoints.Image([[0, 1], [1, 0]])
+image = datapoints.Image([[[[0, 1], [1, 0]]]])
 print(image)
 
 
@@ -58,7 +61,7 @@ print(image)
 # Similar to other PyTorch creations ops, the constructor also takes the ``dtype``, ``device``, and ``requires_grad``
 # parameters.
 
-float_image = datapoints.Image([[0, 1], [1, 0]], dtype=torch.float32, requires_grad=True)
+float_image = datapoints.Image([[[0, 1], [1, 0]]], dtype=torch.float32, requires_grad=True)
 print(float_image)
 
 
@@ -71,8 +74,8 @@ print(image.shape, image.dtype)
 
 ########################################################################################################################
 # In general, the datapoints can also store additional metadata that complements the underlying tensor. For example,
-# :class:`~torchvision.datapoints.BoundingBox` stores the coordinates format as well as the spatial size of the corresponding image
-# alongside the actual values:
+# :class:`~torchvision.datapoints.BoundingBox` stores the coordinate format as well as the spatial size of the
+# corresponding image alongside the actual values:
 
 bounding_box = datapoints.BoundingBox(
     [17, 16, 344, 495], format=datapoints.BoundingBoxFormat.XYXY, spatial_size=image.shape[-2:]
@@ -92,17 +95,16 @@ print(bounding_box)
 # How do the datapoints behave inside a computation?
 # --------------------------------------------------
 #
-# Datapoints look and feel just like regular tensors. Everything that is supported on plain :class:`torch.Tensor`'s
+# Datapoints look and feel just like regular tensors. Everything that is supported on a plain :class:`torch.Tensor`
 # also works on datapoints.
 # Since for most operations involving datapoints, it cannot be safely inferred whether the result should retain the
 # datapoint type, we choose to return a plain tensor instead of a datapoint (this might change, see note below):
 
-assert type(image) is datapoints.Image
+assert isinstance(image, datapoints.Image)
 
 new_image = image + 0
 
-assert isinstance(new_image, torch.Tensor)
-assert not isinstance(new_image, datapoints.Image)
+assert isinstance(new_image, torch.Tensor) and not isinstance(new_image, datapoints.Image)
 
 ########################################################################################################################
 # There are two exceptions to this rule:
@@ -112,12 +114,19 @@ assert not isinstance(new_image, datapoints.Image)
 # 2. Inplace operations on datapoints cannot change the type of the datapoint they are called on. However, if you use
 #    the flow style, the returned value will be unwrapped:
 
-image = datapoints.Image([[0, 1], [1, 0]])
+image = datapoints.Image([[[0, 1], [1, 0]]])
 
 new_image = image.add_(1)
 
-assert type(image) is datapoints.Image
+assert isinstance(image, torch.Tensor)
 print(image)
 
-assert type(new_image) is torch.Tensor
+assert isinstance(new_image, torch.Tensor) and not isinstance(new_image, datapoints.Image)
 assert (new_image == image).all()
+
+########################################################################################################################
+# .. note::
+#
+#    This "unwrapping" behaviour is something we're actively seeking feedback on. If you find this surprising or if you
+#    have any suggestions on how to better support your use-cases, please reach out to us via this issue:
+#    https://github.com/pytorch/vision/issues/7319
