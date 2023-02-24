@@ -7,7 +7,7 @@ from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 class UniformTemporalSubsample(Transform):
-    """[BETA] Uniformly subsamples ``num_samples`` indices from the temporal dimension of the video.
+    """[BETA] Uniformly subsample ``num_samples`` indices from the temporal dimension of the video.
 
     .. betastatus:: UniformTemporalSubsample transform
 
