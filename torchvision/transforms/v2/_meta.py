@@ -9,8 +9,7 @@ from .utils import is_simple_tensor
 
 
 class ConvertBoundingBoxFormat(Transform):
-    """[BETA] Convert bounding box coordinates to the given ``format``, i.e.
-    from "CXCYWH" to "XYXY".
+    """[BETA] Convert bounding box coordinates to the given ``format``, e.g. from "CXCYWH" to "XYXY".
 
     .. betastatus:: ConvertBoundingBoxFormat transform
 
@@ -71,8 +70,9 @@ ConvertImageDtype = ConvertDtype
 
 
 class ClampBoundingBox(Transform):
-    """[BETA] Clamp bounding boxes coordinates between ``[0, spatial_size[0]]`` for x-axis and
-    ``[0, spatial_size[1]]`` for y-axis.
+    """[BETA] Clamp bounding boxes to their corresponding image dimensions.
+    
+    The clamping is done according to the bounding boxes' ``spatial_size`` meta-data.
 
     .. betastatus:: ClampBoundingBox transform
 
