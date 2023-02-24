@@ -44,7 +44,7 @@ class RandomGrayscale(_RandomApplyTransform):
 
     .. betastatus:: RandomGrayscale transform
 
-    If the input is a Tensor, it is expected to have [..., 3 or 1, H, W] shape,
+    If the input is a :class:`torch.Tensor`, it is expected to have [..., 3 or 1, H, W] shape,
     where ... means an arbitrary number of leading dimensions
 
     The output has the same number of channels as the input.
@@ -78,7 +78,7 @@ class ColorJitter(Transform):
 
     .. betastatus:: ColorJitter transform
 
-    If the input is a Tensor, it is expected
+    If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
 
@@ -284,7 +284,7 @@ class RandomEqualize(_RandomApplyTransform):
 
     .. betastatus:: RandomEqualize transform
 
-    If the input is a Tensor, it is expected
+    If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
 
@@ -323,7 +323,7 @@ class RandomPosterize(_RandomApplyTransform):
 
     .. betastatus:: RandomPosterize transform
 
-    If the input is a Tensor, it should be of type torch.uint8,
+    If the input is a :class:`torch.Tensor`, it should be of type torch.uint8,
     and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
@@ -372,7 +372,7 @@ class RandomAutocontrast(_RandomApplyTransform):
 
     .. betastatus:: RandomAutocontrast transform
 
-    If the input is a Tensor, it is expected
+    If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
@@ -391,7 +391,7 @@ class RandomAdjustSharpness(_RandomApplyTransform):
 
     .. betastatus:: RandomAdjustSharpness transform
 
-    If the input is a Tensor,
+    If the input is a :class:`torch.Tensor`,
     it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
