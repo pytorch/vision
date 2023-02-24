@@ -15,6 +15,8 @@ class ConvertBoundingBoxFormat(Transform):
 
     Args:
         format (str or datapoints.BoundingBoxFormat): output bounding box format.
+            Possible values are defined by :class:`~torchvision.datapoints.BoundingBoxFormat` and
+            string values match the enums, e.g. "XYXY" or "XYWH" etc.
     """
     _transformed_types = (datapoints.BoundingBox,)
 
@@ -71,7 +73,7 @@ ConvertImageDtype = ConvertDtype
 
 class ClampBoundingBox(Transform):
     """[BETA] Clamp bounding boxes to their corresponding image dimensions.
-    
+
     The clamping is done according to the bounding boxes' ``spatial_size`` meta-data.
 
     .. betastatus:: ClampBoundingBox transform
