@@ -28,5 +28,5 @@ def test_bbox_instance(data, format):
     assert isinstance(bboxes, torch.Tensor)
     assert bboxes.ndim == 2 and bboxes.shape[1] == 4
     if isinstance(format, str):
-        format = datapoints.BoundingBoxFormat.from_str(format.upper())
+        format = datapoints.BoundingBoxFormat[(format.upper())]
     assert bboxes.format == format
