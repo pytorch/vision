@@ -1114,7 +1114,7 @@ class RandomIoUCrop(Transform):
 
     .. warning::
         In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop`
-        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately
+        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBox`, either immediately
         after or later in the transforms pipeline.
 
     If the input is a :class:`torch.Tensor` or a ``Datapoint`` (e.g. :class:`~torchvision.datapoints.Image`,
@@ -1222,7 +1222,7 @@ class RandomIoUCrop(Transform):
 
         if isinstance(output, datapoints.BoundingBox):
             # We "mark" the invalid boxes as degenreate, and they can be
-            # removed by a later call to SanitizeBoundingBoxes()
+            # removed by a later call to SanitizeBoundingBox()
             output[~params["is_within_crop_area"]] = 0
 
         return output
