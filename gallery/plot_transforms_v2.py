@@ -1,11 +1,11 @@
 """
-=============
-Transforms v2
-=============
+==================================
+Getting started with transforms v2
+==================================
 
 Most computer vision tasks are not supported out of the box by ``torchvision.transforms`` v1, since it only supports
 images. ``torchvision.transforms.v2`` enables jointly transforming images, videos, bounding boxes, and masks. This
-example showcases the core functionality of the new ``torchvision.transforms.v2`` v2 API.
+example showcases the core functionality of the new ``torchvision.transforms.v2`` API.
 """
 
 import pathlib
@@ -63,10 +63,12 @@ transform = transforms.Compose(
 path, image, bounding_boxes, masks, labels = load_data()
 
 torch.manual_seed(0)
-transform(image)  # Image Classification
-transform(image, bounding_boxes, labels)  # Object Detection
-transform(image, bounding_boxes, masks, labels)  # Instance Segmentation
-transform((image, {"boxes": bounding_boxes, "labels": labels}))  # Arbitrary Structure
+new_image = transform(image)  # Image Classification
+new_image, new_bounding_boxes, new_labels = transform(image, bounding_boxes, labels)  # Object Detection
+new_image, new_bounding_boxes, new_masks, new_labels = transform(
+    image, bounding_boxes, masks, labels
+)  # Instance Segmentation
+new_image, new_target = transform((image, {"boxes": bounding_boxes, "labels": labels}))  # Arbitrary Structure
 
 ########################################################################################################################
 # Under the hood, :mod:`torchvision.transforms.v2` relies on :mod:`torchvision.datapoints` for the dispatch to the
@@ -78,9 +80,9 @@ transform((image, {"boxes": bounding_boxes, "labels": labels}))  # Arbitrary Str
 # information directly with the sample:
 
 sample = {"path": path, "image": image}
-transformed_sample = transform(sample)
+new_sample = transform(sample)
 
-assert transformed_sample["path"] is sample["path"]
+assert new_sample["path"] is sample["path"]
 
 ########################################################################################################################
 # As stated above, :mod:`torchvision.transforms.v2` is a drop-in replacement for :mod:`torchvision.transforms` and thus
