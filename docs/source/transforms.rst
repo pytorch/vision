@@ -5,6 +5,22 @@ Transforming and augmenting images
 
 .. currentmodule:: torchvision.transforms
 
+
+.. note::
+    In 0.15, we released a new set of transforms available in the
+    ``torchvision.transforms.v2`` namespace, which add support for transforming
+    not just images but also bounding boxes, masks, or videos. These transforms
+    are fully backward compatible with the current ones, and you'll see them
+    documented below with a `v2.` prefix. To get started with those new
+    transforms, you can check out
+    :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`.
+    Note that these transforms are still BETA, and while we don't expect major
+    breaking changes in the future, some APIs may still change according to user
+    feedback. Please submit any feedback you may have in
+    https://github.com/pytorch/vision/issues/6753, and you can also check out
+    https://github.com/pytorch/vision/issues/7319 to learn more about the APIs
+    that we suspect might involve future changes.
+
 Transforms are common image transformations available in the
 ``torchvision.transforms`` module. They can be chained together using
 :class:`Compose`.
@@ -252,6 +268,14 @@ Functional Transforms
 ---------------------
 
 .. currentmodule:: torchvision.transforms.functional
+
+
+.. note::
+    You'll find below the documentation for the existing
+    ``torchvision.transforms.functional`` namespace. The
+    ``torchvision.transforms.v2.functional`` namespace exists as well and can be
+    used! The same functionals are present, so you simply need to change your
+    import to rely on the ``v2`` namespace.
 
 Functional transforms give you fine-grained control of the transformation pipeline.
 As opposed to the transformations above, functional transforms don't contain a random number
