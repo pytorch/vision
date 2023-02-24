@@ -229,8 +229,9 @@ class ToDtype(Transform):
 
     Args:
         dtype (``torch.dtype`` or dict of ``Datapoint`` -> ``torch.dtype``): The dtype to convert to.
-            A dict can be passed to specify
-            per-datapoint conversions, e.g. ``dtype={datapoints.Image: torch.float32, datapoints.Video: torch.float64}``.
+            A dict can be passed to specify per-datapoint conversions, e.g.
+            ``dtype={datapoints.Image: torch.float32, datapoints.Video:
+            torch.float64}``.
     """
 
     _transformed_types = (torch.Tensor,)
