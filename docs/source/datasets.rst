@@ -169,3 +169,8 @@ Base classes for custom datasets
     DatasetFolder
     ImageFolder
     VisionDataset
+
+Transforms v2
+-------------
+
+.. autofunction:: wrap_dataset_for_transforms_v2
