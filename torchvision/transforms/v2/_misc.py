@@ -223,12 +223,13 @@ class GaussianBlur(Transform):
 
 
 class ToDtype(Transform):
-    """[BETA] Converts the input to a specific dtype.
+    """[BETA] Converts the input to a specific dtype - this does not scale values.
 
     .. betastatus:: ToDtype transform
 
     Args:
-        dtype (dtype or dict of Datapoint -> dtype): The dtype to convert to. A dict can be passed to specify
+        dtype (``torch.dtype`` or dict of ``Datapoint`` -> ``torch.dtype``): The dtype to convert to.
+            A dict can be passed to specify
             per-datapoint conversions, e.g. ``dtype={datapoints.Image: torch.float32, datapoints.Video: torch.float64}``.
     """
 

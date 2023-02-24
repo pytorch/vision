@@ -34,6 +34,7 @@ from tabulate import tabulate
 sys.path.append(os.path.abspath("."))
 
 torchvision.disable_beta_transforms_warning()
+import torchvision.datapoints  # Don't remove, otherwise the docs for datapoints aren't linked properly
 
 # -- General configuration ------------------------------------------------
 
