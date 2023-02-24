@@ -38,7 +38,7 @@ assert image.data_ptr() == tensor.data_ptr()
 # What datapoints are supported?
 # ------------------------------
 #
-# So far :mod:`torchvision.datapoints` supports four different datapoints:
+# So far :mod:`torchvision.datapoints` supports four types of datapoints:
 #
 # * :class:`~torchvision.datapoints.Image`
 # * :class:`~torchvision.datapoints.Video`
@@ -71,7 +71,7 @@ print(image.shape, image.dtype)
 
 ########################################################################################################################
 # In general, the datapoints can also store additional metadata that complements the underlying tensor. For example,
-# :class:`~torchvision.datapoints.BoundingBox` stores the format as well as the spatial size of the corresponding image
+# :class:`~torchvision.datapoints.BoundingBox` stores the coordinates format as well as the spatial size of the corresponding image
 # alongside the actual values:
 
 bounding_box = datapoints.BoundingBox(
@@ -84,9 +84,9 @@ print(bounding_box)
 # Do I have to wrap the output of the datasets myself?
 # ----------------------------------------------------
 #
-# Only if you are using custom datasets. For the builtin ones, you can use
+# Only if you are using custom datasets. For the built-in ones, you can use
 # :func:`torchvision.datasets.wrap_dataset_for_transforms_v2`. Note that the function also supports subclasses of the
-# builtin datasets. Meaning, if your custom dataset subclasses from a builtin one and the output type is the same, you
+# built-in datasets. Meaning, if your custom dataset subclasses from a built-in one and the output type is the same, you
 # also don't have to wrap manually.
 #
 # How do the datapoints behave inside a computation?
@@ -95,13 +95,14 @@ print(bounding_box)
 # Datapoints look and feel just like regular tensors. Everything that is supported on plain :class:`torch.Tensor`'s
 # also works on datapoints.
 # Since for most operations involving datapoints, it cannot be safely inferred whether the result should retain the
-# datapoint type, the result will be a plain tensor:
+# datapoint type, we choose to return a plain tensor instead of a datapoint (this might change, see note below):
 
 assert type(image) is datapoints.Image
 
 new_image = image + 0
 
-assert type(new_image) is torch.Tensor
+assert isinstance(new_image, torch.Tensor)
+assert not isinstance(new_image, datapoints.Image)
 
 ########################################################################################################################
 # There are two exceptions to this rule:
