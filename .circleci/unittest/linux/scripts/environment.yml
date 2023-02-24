@@ -1,6 +1,7 @@
 channels:
   - pytorch
   - defaults
+  - malfet
 dependencies:
   - pytest
   - pytest-cov
