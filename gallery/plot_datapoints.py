@@ -116,7 +116,7 @@ assert isinstance(new_image, torch.Tensor) and not isinstance(new_image, datapoi
 
 image = datapoints.Image([[[0, 1], [1, 0]]])
 
-new_image = image.add_(1)
+new_image = image.add_(1).mul_(2)
 
 assert isinstance(image, torch.Tensor)
 print(image)
