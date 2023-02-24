@@ -5,7 +5,7 @@
 #
 # Do not install PyTorch and torchvision here, otherwise they also get cached.
 
-set -e
+set -ex
 
 this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # Avoid error: "fatal: unsafe repository"
@@ -39,11 +39,11 @@ conda activate "${env_dir}"
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
 FFMPEG_PIN="=4.2"
-if [[ "${PYTHON_VERSION}" = "3.9" ]]; then
+if [[ "${PYTHON_VERSION}" == "3.9" ]]; then
     FFMPEG_PIN=">=4.2"
 fi
 
-if [[ "${PYTHON_VERSION}" = "3.11" ]]; then
+if [[ "${PYTHON_VERSION}" == "3.11" ]]; then
      conda install -y -c malfet -c pytorch "ffmpeg${FFMPEG_PIN}"
 else
     conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
