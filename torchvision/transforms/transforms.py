@@ -141,7 +141,7 @@ class ToTensor:
 
 
 class PILToTensor:
-    """Convert a ``PIL Image`` to a tensor of the same type - this does not scale values.
+    """Convert a PIL Image to a tensor of the same type - this does not scale values.
 
     This transform does not support torchscript.
 
