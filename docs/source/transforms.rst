@@ -191,6 +191,7 @@ Miscellaneous
     Lambda
     v2.Lambda
     v2.SanitizeBoundingBox
+    v2.ClampBoundingBox
 
 .. _conversion_transforms:
 
@@ -212,6 +213,7 @@ Conversion
     v2.ConvertImageDtype
     v2.ConvertDtype
     v2.ToDtype
+    v2.ConvertBoundingBoxFormat
 
 Auto-Augmentation
 -----------------
