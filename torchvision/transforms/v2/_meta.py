@@ -9,7 +9,7 @@ from .utils import is_simple_tensor
 
 
 class ConvertBoundingBoxFormat(Transform):
-    """[BETA] Convert bounding box coordinates to the given ``format``, e.g. from "CXCYWH" to "XYXY".
+    """[BETA] Convert bounding box coordinates to the given ``format``, eg from "CXCYWH" to "XYXY".
 
     .. betastatus:: ConvertBoundingBoxFormat transform
 
@@ -18,6 +18,7 @@ class ConvertBoundingBoxFormat(Transform):
             Possible values are defined by :class:`~torchvision.datapoints.BoundingBoxFormat` and
             string values match the enums, e.g. "XYXY" or "XYWH" etc.
     """
+
     _transformed_types = (datapoints.BoundingBox,)
 
     def __init__(self, format: Union[str, datapoints.BoundingBoxFormat]) -> None:
@@ -79,6 +80,7 @@ class ClampBoundingBox(Transform):
     .. betastatus:: ClampBoundingBox transform
 
     """
+
     _transformed_types = (datapoints.BoundingBox,)
 
     def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:

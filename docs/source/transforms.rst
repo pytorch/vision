@@ -192,12 +192,19 @@ Miscellaneous
     v2.Lambda
     v2.SanitizeBoundingBox
     v2.ClampBoundingBox
+    v2.UniformTemporalSubsample
 
 .. _conversion_transforms:
 
 Conversion
 ----------
 
+.. note::
+    Beware, some of these conversion transforms below will scale the values
+    while performing the conversion, while some may not do any scaling. By
+    scaling, we mean e.g. that a ``uint8`` -> ``float32`` would map the [0,
+    255] range into [0, 1] (and vice-versa).
+    
 .. autosummary::
     :toctree: generated/
     :template: class.rst
@@ -211,8 +218,8 @@ Conversion
     v2.PILToTensor
     v2.ToImageTensor
     ConvertImageDtype
-    v2.ConvertImageDtype
     v2.ConvertDtype
+    v2.ConvertImageDtype
     v2.ToDtype
     v2.ConvertBoundingBoxFormat
 
