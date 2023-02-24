@@ -218,7 +218,7 @@ class SimpleCopyPaste(Transform):
         if not (len(images) == len(bboxes) == len(masks) == len(labels)):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain equal sized list of Images, "
-                "BoundingBox, Masks and Labels or OneHotLabels."
+                "BoundingBoxes, Masks and Labels or OneHotLabels."
             )
 
         targets = []

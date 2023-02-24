@@ -356,7 +356,7 @@ class SanitizeBoundingBox(Transform):
         params = dict(valid=valid, labels=labels)
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
-            # _transform() will only care about BoundingBox and the labels
+            # _transform() will only care about BoundingBoxes and the labels
             self._transform(inpt, params)
             for inpt in flat_inputs
         ]
