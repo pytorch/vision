@@ -254,11 +254,11 @@ class ToDtype(Transform):
 
 
 class SanitizeBoundingBox(Transform):
-    """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and optionally masks.
+    """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
 
     .. betastatus:: SanitizeBoundingBox transform
 
-    This transform removes bounding boxes and their associated labels that:
+    This transform removes bounding boxes and their associated labels/masks that:
 
     - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
@@ -281,10 +281,6 @@ class SanitizeBoundingBox(Transform):
             the input is a dict or it is a tuple whose second element is a dict.
             This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.
     """
-
-     This removes boxes and their corresponding labels:
-    # - small or degenerate bboxes based on min_size (this includes those where X2 <= X1 or Y2 <= Y1)
-    # - boxes with any coordinate outside the range of the image (negative, or > spatial_size)
 
     def __init__(
         self,
