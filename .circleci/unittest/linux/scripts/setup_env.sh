@@ -44,4 +44,4 @@ if [[ "${PYTHON_VERSION}" == "3.9" ]]; then
 fi
 
 conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
-conda env update --file "${this_dir}/environment.yml" ${PYTHON_311_CHAN} --prune
+conda env update --file "${this_dir}/environment.yml" --prune
