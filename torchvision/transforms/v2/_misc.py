@@ -254,7 +254,7 @@ class ToDtype(Transform):
 
 
 class SanitizeBoundingBoxes(Transform):
-    """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels.
+    """[BETA] Remove degenerate/invalid bounding boxes and their corresponding labels and optionally masks.
 
     .. betastatus:: SanitizeBoundingBoxes transform
 
