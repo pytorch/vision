@@ -1,6 +1,6 @@
 """
 ==================================================
-transforms v2: End-to-end object detection example
+Transforms v2: End-to-end object detection example
 ==================================================
 
 Object detection is not supported out of the box by ``torchvision.transforms`` v1, since it only supports images.
