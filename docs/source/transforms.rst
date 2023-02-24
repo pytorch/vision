@@ -99,10 +99,14 @@ Geometry
 
     Resize
     v2.Resize
+    v2.ScaleJitter
+    v2.RandomShortestSize
+    v2.RandomResize
     RandomCrop
     v2.RandomCrop
     RandomResizedCrop
     v2.RandomResizedCrop
+    v2.RandomIoUCrop
     CenterCrop
     v2.CenterCrop
     FiveCrop
@@ -111,16 +115,20 @@ Geometry
     v2.TenCrop
     Pad
     v2.Pad
+    v2.RandomZoomOut
+    RandomRotation
+    v2.RandomRotation
     RandomAffine
     v2.RandomAffine
     RandomPerspective
     v2.RandomPerspective
-    RandomRotation
-    v2.RandomRotation
+    ElasticTransform
+    v2.ElasticTransform
     RandomHorizontalFlip
     v2.RandomHorizontalFlip
     RandomVerticalFlip
     v2.RandomVerticalFlip
+
 
 Color
 -----
@@ -131,6 +139,7 @@ Color
 
     ColorJitter
     v2.ColorJitter
+    v2.RandomPhotometricDistort
     Grayscale
     v2.Grayscale
     RandomGrayscale
@@ -181,6 +190,8 @@ Miscellaneous
     v2.RandomErasing
     Lambda
     v2.Lambda
+    v2.SanitizeBoundingBox
+    v2.ClampBoundingBox
 
 .. _conversion_transforms:
 
@@ -198,9 +209,12 @@ Conversion
     v2.ToTensor
     PILToTensor
     v2.PILToTensor
+    v2.ToImageTensor
     ConvertImageDtype
     v2.ConvertImageDtype
     v2.ConvertDtype
+    v2.ToDtype
+    v2.ConvertBoundingBoxFormat
 
 Auto-Augmentation
 -----------------

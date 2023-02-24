@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchvision._utils import StrEnum
 from torchvision.transforms import InterpolationMode  # TODO: this needs to be moved out of transforms
 
 from ._datapoint import _FillTypeJIT, Datapoint
 
 
-class BoundingBoxFormat(StrEnum):
+class BoundingBoxFormat(Enum):
     """[BETA] Coordinate format of a bounding box.
 
     Available formats are
@@ -19,9 +19,9 @@ class BoundingBoxFormat(StrEnum):
     * ``CXCYWH``
     """
 
-    XYXY = StrEnum.auto()
-    XYWH = StrEnum.auto()
-    CXCYWH = StrEnum.auto()
+    XYXY = "XYXY"
+    XYWH = "XYWH"
+    CXCYWH = "CXCYWH"
 
 
 class BoundingBox(Datapoint):
@@ -62,7 +62,7 @@ class BoundingBox(Datapoint):
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
 
         if isinstance(format, str):
-            format = BoundingBoxFormat.from_str(format.upper())
+            format = BoundingBoxFormat[format.upper()]
 
         return cls._wrap(tensor, format=format, spatial_size=spatial_size)
 
