@@ -822,7 +822,7 @@ class TestContainerTransforms:
                 v2_transforms.Resize(256),
                 legacy_transforms.CenterCrop(224),
             ],
-            probabilities=probabilities,
+            p=probabilities,
         )
         legacy_transform = legacy_transforms.RandomChoice(
             [
@@ -1099,7 +1099,7 @@ class TestRefDetTransforms:
                 v2_transforms.Compose(
                     [
                         v2_transforms.RandomIoUCrop(),
-                        v2_transforms.SanitizeBoundingBoxes(labels_getter=lambda sample: sample[1]["labels"]),
+                        v2_transforms.SanitizeBoundingBox(labels_getter=lambda sample: sample[1]["labels"]),
                     ]
                 ),
                 {"with_mask": False},
