@@ -82,7 +82,7 @@ def roi_align_opset16(g, input, rois, spatial_scale, pooled_height, pooled_width
     return g.op(
         "RoiAlign",
         input,
-        rois,
+        g.op("CastLike", rois, input),
         batch_indices,
         coordinate_transformation_mode_s=coordinate_transformation_mode,
         spatial_scale_f=spatial_scale,
