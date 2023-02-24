@@ -10,7 +10,7 @@ from torchvision.transforms.v2 import Transform
 
 
 class ToTensor(Transform):
-    """[BETA] Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
+    """[BETA] Convert a PIL Image or ndarray to tensor and scale the values accordingly.
 
     .. betastatus:: ToTensor transform
 
