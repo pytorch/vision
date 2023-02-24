@@ -14,11 +14,10 @@ transformations.
 This is useful if you have to build a more complex transformation pipeline
 (e.g. in the case of segmentation tasks).
 
-Most transformations accept both `PIL <https://pillow.readthedocs.io>`_
-images and tensor images, although some transformations are :ref:`PIL-only
-<transforms_pil_only>` and some are :ref:`tensor-only
-<transforms_tensor_only>`. The :ref:`conversion_transforms` may be used to
-convert to and from PIL images.
+Most transformations accept both `PIL <https://pillow.readthedocs.io>`_ images
+and tensor images, although some transformations are PIL-only and some are
+tensor-only. The :ref:`conversion_transforms` may be used to convert to and from
+PIL images, or for converting dtypes and ranges.
 
 The transformations that accept tensor images also accept batches of tensor
 images. A Tensor Image is a tensor with ``(C, H, W)`` shape, where ``C`` is a
@@ -70,8 +69,10 @@ The following examples illustrate the use of the available transforms:
     produce the same results.
 
 
-Scriptable transforms
----------------------
+Transforms scriptability
+------------------------
+
+.. TODO: Add note about v2 scriptability (in next PR)
 
 In order to script the transformations, please use ``torch.nn.Sequential`` instead of :class:`Compose`.
 
@@ -89,100 +90,134 @@ Make sure to use only scriptable transformations, i.e. that work with ``torch.Te
 For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
 
 
-Compositions of transforms
---------------------------
+Geometry
+--------
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    Resize
+    v2.Resize
+    v2.ScaleJitter
+    v2.RandomShortestSize
+    v2.RandomResize
+    RandomCrop
+    v2.RandomCrop
+    RandomResizedCrop
+    v2.RandomResizedCrop
+    v2.RandomIoUCrop
+    CenterCrop
+    v2.CenterCrop
+    FiveCrop
+    v2.FiveCrop
+    TenCrop
+    v2.TenCrop
+    Pad
+    v2.Pad
+    v2.RandomZoomOut
+    RandomRotation
+    v2.RandomRotation
+    RandomAffine
+    v2.RandomAffine
+    RandomPerspective
+    v2.RandomPerspective
+    ElasticTransform
+    v2.ElasticTransform
+    RandomHorizontalFlip
+    v2.RandomHorizontalFlip
+    RandomVerticalFlip
+    v2.RandomVerticalFlip
+
+
+Color
+-----
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    ColorJitter
+    v2.ColorJitter
+    v2.RandomPhotometricDistort
+    Grayscale
+    v2.Grayscale
+    RandomGrayscale
+    v2.RandomGrayscale
+    GaussianBlur
+    v2.GaussianBlur
+    RandomInvert
+    v2.RandomInvert
+    RandomPosterize
+    v2.RandomPosterize
+    RandomSolarize
+    v2.RandomSolarize
+    RandomAdjustSharpness
+    v2.RandomAdjustSharpness
+    RandomAutocontrast
+    v2.RandomAutocontrast
+    RandomEqualize
+    v2.RandomEqualize
+
+Composition
+-----------
 
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
     Compose
-
-
-Transforms on PIL Image and torch.\*Tensor
-------------------------------------------
-
-.. autosummary::
-    :toctree: generated/
-    :template: class.rst
-
-    CenterCrop
-    ColorJitter
-    FiveCrop
-    Grayscale
-    Pad
-    RandomAffine
+    v2.Compose
     RandomApply
-    RandomCrop
-    RandomGrayscale
-    RandomHorizontalFlip
-    RandomPerspective
-    RandomResizedCrop
-    RandomRotation
-    RandomVerticalFlip
-    Resize
-    TenCrop
-    GaussianBlur
-    RandomInvert
-    RandomPosterize
-    RandomSolarize
-    RandomAdjustSharpness
-    RandomAutocontrast
-    RandomEqualize
-
-
-.. _transforms_pil_only:
-
-Transforms on PIL Image only
-----------------------------
-
-.. autosummary::
-    :toctree: generated/
-    :template: class.rst
-
+    v2.RandomApply
     RandomChoice
+    v2.RandomChoice
     RandomOrder
+    v2.RandomOrder
 
-.. _transforms_tensor_only:
-
-Transforms on torch.\*Tensor only
----------------------------------
+Miscellaneous
+-------------
 
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
     LinearTransformation
+    v2.LinearTransformation
     Normalize
+    v2.Normalize
     RandomErasing
-    ConvertImageDtype
+    v2.RandomErasing
+    Lambda
+    v2.Lambda
+    v2.SanitizeBoundingBox
+    v2.ClampBoundingBox
 
 .. _conversion_transforms:
 
-Conversion Transforms
----------------------
+Conversion
+----------
 
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
     ToPILImage
+    v2.ToPILImage
+    v2.ToImagePIL
     ToTensor
+    v2.ToTensor
     PILToTensor
+    v2.PILToTensor
+    v2.ToImageTensor
+    ConvertImageDtype
+    v2.ConvertImageDtype
+    v2.ConvertDtype
+    v2.ToDtype
+    v2.ConvertBoundingBoxFormat
 
-
-Generic Transforms
-------------------
-
-.. autosummary::
-    :toctree: generated/
-    :template: class.rst
-
-    Lambda
-
-
-Automatic Augmentation Transforms
----------------------------------
+Auto-Augmentation
+-----------------
 
 `AutoAugment <https://arxiv.org/pdf/1805.09501.pdf>`_ is a common Data Augmentation technique that can improve the accuracy of Image Classification models.
 Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
@@ -196,9 +231,13 @@ The new transform can be used standalone or mixed-and-matched with existing tran
 
     AutoAugmentPolicy
     AutoAugment
+    v2.AutoAugment
     RandAugment
+    v2.RandAugment
     TrivialAugmentWide
+    v2.TrivialAugmentWide
     AugMix
+    v2.AugMix
 
 .. _functional_transforms:
 

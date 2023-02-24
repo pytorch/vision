@@ -31,6 +31,23 @@ Below is a gallery of examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Object detection is not supported out of the box by torchvision.transforms v1, since it only su...">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_plot_transforms_v2_e2e_thumb.png
+    :alt: Transforms v2: End-to-end object detection example
+
+  :ref:`sphx_glr_auto_examples_plot_transforms_v2_e2e.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Transforms v2: End-to-end object detection example</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="Optical flow is the task of predicting movement between two images, usually two consecutive fra...">
 
 .. only:: html
@@ -123,6 +140,7 @@ Below is a gallery of examples
    :hidden:
 
    /auto_examples/plot_scripted_tensor_transforms
+   /auto_examples/plot_transforms_v2_e2e
    /auto_examples/plot_optical_flow
    /auto_examples/plot_repurposing_annotations
    /auto_examples/plot_transforms

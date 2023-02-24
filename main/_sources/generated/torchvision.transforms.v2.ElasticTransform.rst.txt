@@ -1,0 +1,10 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.transforms.v2
+
+
+ElasticTransform
+================
+
+.. autoclass:: ElasticTransform
+    :members:
