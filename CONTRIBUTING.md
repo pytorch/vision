@@ -49,7 +49,7 @@ python setup.py develop
 # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py develop
 # for C++ debugging, please use DEBUG=1
 # DEBUG=1 python setup.py develop
-pip install typing mypy pytest pytest-mock scipy
+pip install mypy pytest pytest-mock scipy
 ```
 You may also have to install `libpng-dev` and `libjpeg-turbo8-dev` libraries:
 ```bash
@@ -97,6 +97,7 @@ ufmt format `git diff main --name-only`
 ```
 
 #### Linting
+
 The codebase's pep8 compliance is checked with [flake8](https://flake8.pycqa.org/en/latest/).
 
 To check for flake8 errors:
