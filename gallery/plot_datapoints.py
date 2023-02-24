@@ -3,11 +3,11 @@
 Datapoints FAQ
 ==============
 
-The :mod:`torchvision.datapoints` namespace was introduced to ``torchvision.transforms.v2``. This example showcases what
-these datapoints are and how they behave. This is a fairly low-level topic that most users will not need to worry about:
-you do not need to understand the internals of datapoints to efficiently rely on ``torchvision.transforms.v2``. It may
-however be useful for advanced users trying to implement their own datasets, transforms, or work directly with the
-datapoints.
+The :mod:`torchvision.datapoints` namespace was introduced together with ``torchvision.transforms.v2``. This example
+showcases what these datapoints are and how they behave. This is a fairly low-level topic that most users will not need
+to worry about: you do not need to understand the internals of datapoints to efficiently rely on
+``torchvision.transforms.v2``. It may however be useful for advanced users trying to implement their own datasets,
+transforms, or work directly with the datapoints.
 """
 
 import PIL.Image
@@ -36,8 +36,8 @@ assert image.data_ptr() == tensor.data_ptr()
 
 
 ########################################################################################################################
-# Under the hood, they are needed in :mod:`torchvision.transforms.v2` to correctly dispatch to the appropriate low-level
-# kernel.
+# Under the hood, they are needed in :mod:`torchvision.transforms.v2` to correctly dispatch to the appropriate function
+# for the input data.
 #
 # What datapoints are supported?
 # ------------------------------
@@ -108,6 +108,12 @@ new_image = image + 0
 assert isinstance(new_image, torch.Tensor) and not isinstance(new_image, datapoints.Image)
 
 ########################################################################################################################
+# .. note::
+#
+#    This "unwrapping" behaviour is something we're actively seeking feedback on. If you find this surprising or if you
+#    have any suggestions on how to better support your use-cases, please reach out to us via this issue:
+#    https://github.com/pytorch/vision/issues/7319
+#
 # There are two exceptions to this rule:
 #
 # 1. The operations :meth:`~torch.Tensor.clone`, :meth:`~torch.Tensor.to`, and :meth:`~torch.Tensor.requires_grad_`
@@ -124,10 +130,3 @@ print(image)
 
 assert isinstance(new_image, torch.Tensor) and not isinstance(new_image, datapoints.Image)
 assert (new_image == image).all()
-
-########################################################################################################################
-# .. note::
-#
-#    This "unwrapping" behaviour is something we're actively seeking feedback on. If you find this surprising or if you
-#    have any suggestions on how to better support your use-cases, please reach out to us via this issue:
-#    https://github.com/pytorch/vision/issues/7319
