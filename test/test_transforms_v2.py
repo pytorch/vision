@@ -275,7 +275,7 @@ class TestSmoke:
                 boxes=datapoints.BoundingBox([[0, 0, 0, 0]], format=format, spatial_size=(224, 244)),
                 labels=torch.tensor([3]),
             )
-            assert transforms.SanitizeBoundingBoxes()(sample)["boxes"].shape == (0, 4)
+            assert transforms.SanitizeBoundingBox()(sample)["boxes"].shape == (0, 4)
 
     @parametrize(
         [
@@ -1876,7 +1876,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
             transforms.ConvertImageDtype(torch.float),
         ]
     if sanitize:
-        t += [transforms.SanitizeBoundingBoxes()]
+        t += [transforms.SanitizeBoundingBox()]
     t = transforms.Compose(t)
 
     num_boxes = 5
@@ -1917,7 +1917,7 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
         # ssd and ssdlite contain RandomIoUCrop which may "remove" some bbox. It
         # doesn't remove them strictly speaking, it just marks some boxes as
         # degenerate and those boxes will be later removed by
-        # SanitizeBoundingBoxes(), which we add to the pipelines if the sanitize
+        # SanitizeBoundingBox(), which we add to the pipelines if the sanitize
         # param is True.
         # Note that the values below are probably specific to the random seed
         # set above (which is fine).
@@ -1989,7 +1989,7 @@ def test_sanitize_bounding_boxes(min_size, labels_getter, sample_type):
         img = sample.pop("image")
         sample = (img, sample)
 
-    out = transforms.SanitizeBoundingBoxes(min_size=min_size, labels_getter=labels_getter)(sample)
+    out = transforms.SanitizeBoundingBox(min_size=min_size, labels_getter=labels_getter)(sample)
 
     if sample_type is tuple:
         out_image = out[0]
@@ -2023,13 +2023,13 @@ def test_sanitize_bounding_boxes_default_heuristic(key, sample_type):
     sample = {key: labels, "another_key": "whatever"}
     if sample_type is tuple:
         sample = (None, sample, "whatever_again")
-    assert transforms.SanitizeBoundingBoxes._find_labels_default_heuristic(sample) is labels
+    assert transforms.SanitizeBoundingBox._find_labels_default_heuristic(sample) is labels
 
     if key.lower() != "labels":
         # If "labels" is in the dict (case-insensitive),
         # it takes precedence over other keys which would otherwise be a match
         d = {key: "something_else", "labels": labels}
-        assert transforms.SanitizeBoundingBoxes._find_labels_default_heuristic(d) is labels
+        assert transforms.SanitizeBoundingBox._find_labels_default_heuristic(d) is labels
 
 
 def test_sanitize_bounding_boxes_errors():
@@ -2041,25 +2041,25 @@ def test_sanitize_bounding_boxes_errors():
     )
 
     with pytest.raises(ValueError, match="min_size must be >= 1"):
-        transforms.SanitizeBoundingBoxes(min_size=0)
+        transforms.SanitizeBoundingBox(min_size=0)
     with pytest.raises(ValueError, match="labels_getter should either be a str"):
-        transforms.SanitizeBoundingBoxes(labels_getter=12)
+        transforms.SanitizeBoundingBox(labels_getter=12)
 
     with pytest.raises(ValueError, match="Could not infer where the labels are"):
         bad_labels_key = {"bbox": good_bbox, "BAD_KEY": torch.arange(good_bbox.shape[0])}
-        transforms.SanitizeBoundingBoxes()(bad_labels_key)
+        transforms.SanitizeBoundingBox()(bad_labels_key)
 
     with pytest.raises(ValueError, match="If labels_getter is a str or 'default'"):
         not_a_dict = (good_bbox, torch.arange(good_bbox.shape[0]))
-        transforms.SanitizeBoundingBoxes()(not_a_dict)
+        transforms.SanitizeBoundingBox()(not_a_dict)
 
     with pytest.raises(ValueError, match="must be a tensor"):
         not_a_tensor = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0]).tolist()}
-        transforms.SanitizeBoundingBoxes()(not_a_tensor)
+        transforms.SanitizeBoundingBox()(not_a_tensor)
 
     with pytest.raises(ValueError, match="Number of boxes"):
         different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
-        transforms.SanitizeBoundingBoxes()(different_sizes)
+        transforms.SanitizeBoundingBox()(different_sizes)
 
     with pytest.raises(ValueError, match="boxes must be of shape"):
         bad_bbox = datapoints.BoundingBox(  # batch with 2 elements
@@ -2071,7 +2071,7 @@ def test_sanitize_bounding_boxes_errors():
             spatial_size=(20, 20),
         )
         different_sizes = {"bbox": bad_bbox, "labels": torch.arange(bad_bbox.shape[0])}
-        transforms.SanitizeBoundingBoxes()(different_sizes)
+        transforms.SanitizeBoundingBox()(different_sizes)
 
 
 @pytest.mark.parametrize(
