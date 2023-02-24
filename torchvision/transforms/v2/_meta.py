@@ -9,6 +9,14 @@ from .utils import is_simple_tensor
 
 
 class ConvertBoundingBoxFormat(Transform):
+    """[BETA] Convert bounding box coordinates to the given ``format``, i.e.
+    from "CXCYWH" to "XYXY".
+
+    .. betastatus:: ConvertBoundingBoxFormat transform
+
+    Args:
+        format (str or datapoints.BoundingBoxFormat): output bounding box format.
+    """
     _transformed_types = (datapoints.BoundingBox,)
 
     def __init__(self, format: Union[str, datapoints.BoundingBoxFormat]) -> None:
@@ -22,7 +30,7 @@ class ConvertBoundingBoxFormat(Transform):
 
 
 class ConvertDtype(Transform):
-    """[BETA] Convert a tensor image/box/mask to the given ``dtype`` and scale the values accordingly
+    """[BETA] Convert input image or video to the given ``dtype`` and scale the values accordingly.
 
     .. betastatus:: ConvertDtype transform
 
@@ -63,6 +71,12 @@ ConvertImageDtype = ConvertDtype
 
 
 class ClampBoundingBox(Transform):
+    """[BETA] Clamp bounding boxes coordinates between ``[0, spatial_size[0]]`` for x-axis and
+    ``[0, spatial_size[1]]`` for y-axis.
+
+    .. betastatus:: ClampBoundingBox transform
+
+    """
     _transformed_types = (datapoints.BoundingBox,)
 
     def _transform(self, inpt: datapoints.BoundingBox, params: Dict[str, Any]) -> datapoints.BoundingBox:
