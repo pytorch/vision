@@ -87,7 +87,7 @@ class BoundingBox(Datapoint):
 
         """
         if isinstance(format, str):
-            format = BoundingBoxFormat.from_str(format.upper())
+            format = BoundingBoxFormat[format.upper()]
 
         return cls._wrap(
             tensor,

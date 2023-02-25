@@ -11,9 +11,9 @@ from torchvision.transforms.v2.utils import is_simple_tensor
 
 
 class PILToTensor(Transform):
-    """[BETA] Convert a ``PIL Image`` to a tensor of the same type.
+    """[BETA] Convert a PIL Image to a tensor of the same type - this does not scale values.
 
-    .. betastatus:: PILToTensor transform
+    .. v2betastatus:: PILToTensor transform
 
     This transform does not support torchscript.
 
@@ -27,9 +27,10 @@ class PILToTensor(Transform):
 
 
 class ToImageTensor(Transform):
-    """[BETA] Convert a tensor or an ndarray or PIL Image to :class:`~torchvision.datapoints.Image`.
+    """[BETA] Convert a tensor, ndarray, or PIL Image to :class:`~torchvision.datapoints.Image`
+    ; this does not scale values.
 
-    .. betastatus:: ToImageTensor transform
+    .. v2betastatus:: ToImageTensor transform
 
     This transform does not support torchscript.
     """
@@ -43,9 +44,9 @@ class ToImageTensor(Transform):
 
 
 class ToImagePIL(Transform):
-    """[BETA] Convert a tensor or an ndarray to PIL Image.
+    """[BETA] Convert a tensor or an ndarray to PIL Image - this does not scale values.
 
-    .. betastatus:: ToImagePIL transform
+    .. v2betastatus:: ToImagePIL transform
 
     This transform does not support torchscript.
 
