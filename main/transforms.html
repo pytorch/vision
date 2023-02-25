@@ -39,7 +39,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Resize" href="generated/torchvision.transforms.Resize.html" />
-    <link rel="prev" title="Mask" href="generated/torchvision.datapoints.Mask.html" />
+    <link rel="prev" title="torchvision" href="index.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -225,7 +225,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a28ceb4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+e5ff0b2 ) &#x25BC</a>
     </div>
     
 
@@ -251,8 +251,8 @@
             
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="datapoints.html">Datapoints</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datapoints.html">Datapoints</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
@@ -348,6 +348,21 @@
               
   <section id="transforming-and-augmenting-images">
 <span id="transforms"></span><h1>Transforming and augmenting images<a class="headerlink" href="#transforming-and-augmenting-images" title="Permalink to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In 0.15, we released a new set of transforms available in the
+<code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> namespace, which add support for transforming
+not just images but also bounding boxes, masks, or videos. These transforms
+are fully backward compatible with the current ones, and you’ll see them
+documented below with a <cite>v2.</cite> prefix. To get started with those new
+transforms, you can check out
+<a class="reference internal" href="auto_examples/plot_transforms_v2_e2e.html#sphx-glr-auto-examples-plot-transforms-v2-e2e-py"><span class="std std-ref">Transforms v2: End-to-end object detection example</span></a>.
+Note that these transforms are still BETA, and while we don’t expect major
+breaking changes in the future, some APIs may still change according to user
+feedback. Please submit any feedback you may have <a class="reference external" href="https://github.com/pytorch/vision/issues/6753">here</a>, and you can also check
+out <a class="reference external" href="https://github.com/pytorch/vision/issues/7319">this issue</a> to learn
+more about the APIs that we suspect might involve future changes.</p>
+</div>
 <p>Transforms are common image transformations available in the
 <code class="docutils literal notranslate"><span class="pre">torchvision.transforms</span></code> module. They can be chained together using
 <a class="reference internal" href="generated/torchvision.transforms.Compose.html#torchvision.transforms.Compose" title="torchvision.transforms.Compose"><code class="xref py py-class docutils literal notranslate"><span class="pre">Compose</span></code></a>.
@@ -659,51 +674,61 @@ produce the same results.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ClampBoundingBox.html#torchvision.transforms.v2.ClampBoundingBox" title="torchvision.transforms.v2.ClampBoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ClampBoundingBox</span></code></a>()</p></td>
 <td><p>[BETA] Clamp bounding boxes to their corresponding image dimensions.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.UniformTemporalSubsample.html#torchvision.transforms.v2.UniformTemporalSubsample" title="torchvision.transforms.v2.UniformTemporalSubsample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.UniformTemporalSubsample</span></code></a>(num_samples)</p></td>
+<td><p>[BETA] Uniformly subsample <code class="docutils literal notranslate"><span class="pre">num_samples</span></code> indices from the temporal dimension of the video.</p></td>
+</tr>
 </tbody>
 </table>
 </section>
 <section id="conversion">
 <span id="conversion-transforms"></span><h2>Conversion<a class="headerlink" href="#conversion" title="Permalink to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Beware, some of these conversion transforms below will scale the values
+while performing the conversion, while some may not do any scaling. By
+scaling, we mean e.g. that a <code class="docutils literal notranslate"><span class="pre">uint8</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">float32</span></code> would map the [0,
+255] range into [0, 1] (and vice-versa).</p>
+</div>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.ToPILImage.html#torchvision.transforms.ToPILImage" title="torchvision.transforms.ToPILImage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToPILImage</span></code></a>([mode])</p></td>
-<td><p>Convert a tensor or an ndarray to PIL Image.</p></td>
+<td><p>Convert a tensor or an ndarray to PIL Image - this does not scale values.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToPILImage.html#torchvision.transforms.v2.ToPILImage" title="torchvision.transforms.v2.ToPILImage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToPILImage</span></code></a></p></td>
 <td><p>alias of <a class="reference internal" href="generated/torchvision.transforms.v2.ToImagePIL.html#torchvision.transforms.v2.ToImagePIL" title="torchvision.transforms.v2._type_conversion.ToImagePIL"><code class="xref py py-class docutils literal notranslate"><span class="pre">ToImagePIL</span></code></a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToImagePIL.html#torchvision.transforms.v2.ToImagePIL" title="torchvision.transforms.v2.ToImagePIL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToImagePIL</span></code></a>([mode])</p></td>
-<td><p>[BETA] Convert a tensor or an ndarray to PIL Image.</p></td>
+<td><p>[BETA] Convert a tensor or an ndarray to PIL Image - this does not scale values.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.ToTensor.html#torchvision.transforms.ToTensor" title="torchvision.transforms.ToTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToTensor</span></code></a>()</p></td>
-<td><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> or <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code> to tensor.</p></td>
+<td><p>Convert a PIL Image or ndarray to tensor and scale the values accordingly.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToTensor.html#torchvision.transforms.v2.ToTensor" title="torchvision.transforms.v2.ToTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToTensor</span></code></a>()</p></td>
-<td><p>[BETA] Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> or <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code> to tensor.</p></td>
+<td><p>[BETA] Convert a PIL Image or ndarray to tensor and scale the values accordingly.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.PILToTensor.html#torchvision.transforms.PILToTensor" title="torchvision.transforms.PILToTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PILToTensor</span></code></a>()</p></td>
-<td><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> to a tensor of the same type.</p></td>
+<td><p>Convert a PIL Image to a tensor of the same type - this does not scale values.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.PILToTensor.html#torchvision.transforms.v2.PILToTensor" title="torchvision.transforms.v2.PILToTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.PILToTensor</span></code></a>()</p></td>
-<td><p>[BETA] Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> to a tensor of the same type.</p></td>
+<td><p>[BETA] Convert a PIL Image to a tensor of the same type - this does not scale values.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToImageTensor.html#torchvision.transforms.v2.ToImageTensor" title="torchvision.transforms.v2.ToImageTensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToImageTensor</span></code></a>()</p></td>
-<td><p>[BETA] Convert a tensor or an ndarray or PIL Image to <a class="reference internal" href="generated/torchvision.datapoints.Image.html#torchvision.datapoints.Image" title="torchvision.datapoints.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>.</p></td>
+<td><p>[BETA] Convert a tensor, ndarray, or PIL Image to <a class="reference internal" href="generated/torchvision.datapoints.Image.html#torchvision.datapoints.Image" title="torchvision.datapoints.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> ; this does not scale values.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.ConvertImageDtype.html#torchvision.transforms.ConvertImageDtype" title="torchvision.transforms.ConvertImageDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvertImageDtype</span></code></a>(dtype)</p></td>
-<td><p>Convert a tensor image to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly This function does not support PIL Image.</p></td>
+<td><p>Convert a tensor image to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertImageDtype.html#torchvision.transforms.v2.ConvertImageDtype" title="torchvision.transforms.v2.ConvertImageDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertImageDtype</span></code></a></p></td>
-<td><p>alias of <a class="reference internal" href="generated/torchvision.transforms.v2.ConvertDtype.html#torchvision.transforms.v2.ConvertDtype" title="torchvision.transforms.v2._meta.ConvertDtype"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvertDtype</span></code></a></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertDtype.html#torchvision.transforms.v2.ConvertDtype" title="torchvision.transforms.v2.ConvertDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertDtype</span></code></a>([dtype])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertDtype.html#torchvision.transforms.v2.ConvertDtype" title="torchvision.transforms.v2.ConvertDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertDtype</span></code></a>([dtype])</p></td>
 <td><p>[BETA] Convert input image or video to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertImageDtype.html#torchvision.transforms.v2.ConvertImageDtype" title="torchvision.transforms.v2.ConvertImageDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertImageDtype</span></code></a></p></td>
+<td><p>alias of <a class="reference internal" href="generated/torchvision.transforms.v2.ConvertDtype.html#torchvision.transforms.v2.ConvertDtype" title="torchvision.transforms.v2._meta.ConvertDtype"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvertDtype</span></code></a></p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype" title="torchvision.transforms.v2.ToDtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ToDtype</span></code></a>(dtype)</p></td>
-<td><p>[BETA] Converts the input to a specific dtype.</p></td>
+<td><p>[BETA] Converts the input to a specific dtype - this does not scale values.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.v2.ConvertBoundingBoxFormat.html#torchvision.transforms.v2.ConvertBoundingBoxFormat" title="torchvision.transforms.v2.ConvertBoundingBoxFormat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">v2.ConvertBoundingBoxFormat</span></code></a>(format)</p></td>
-<td><p>[BETA] Convert bounding box coordinates to the given <code class="docutils literal notranslate"><span class="pre">format</span></code>, e.g.</p></td>
+<td><p>[BETA] Convert bounding box coordinates to the given <code class="docutils literal notranslate"><span class="pre">format</span></code>, eg from &quot;CXCYWH&quot; to &quot;XYXY&quot;.</p></td>
 </tr>
 </tbody>
 </table>
@@ -753,6 +778,14 @@ The new transform can be used standalone or mixed-and-matched with existing tran
 </section>
 <section id="functional-transforms">
 <span id="id7"></span><h2>Functional Transforms<a class="headerlink" href="#functional-transforms" title="Permalink to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You’ll find below the documentation for the existing
+<code class="docutils literal notranslate"><span class="pre">torchvision.transforms.functional</span></code> namespace. The
+<code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2.functional</span></code> namespace exists as well and can be
+used! The same functionals are present, so you simply need to change your
+import to rely on the <code class="docutils literal notranslate"><span class="pre">v2</span></code> namespace.</p>
+</div>
 <p>Functional transforms give you fine-grained control of the transformation pipeline.
 As opposed to the transformations above, functional transforms don’t contain a random number
 generator for their parameters.
@@ -913,7 +946,7 @@ you can use a functional transform to build transform classes with custom behavi
         <a href="generated/torchvision.transforms.Resize.html" class="btn btn-neutral float-right" title="Resize" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="generated/torchvision.datapoints.Mask.html" class="btn btn-neutral" title="Mask" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="index.html" class="btn btn-neutral" title="torchvision" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   

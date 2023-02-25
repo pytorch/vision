@@ -39,7 +39,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="ConvertBoundingBoxFormat" href="torchvision.transforms.v2.ConvertBoundingBoxFormat.html" />
-    <link rel="prev" title="ConvertDtype" href="torchvision.transforms.v2.ConvertDtype.html" />
+    <link rel="prev" title="ConvertImageDtype" href="torchvision.transforms.v2.ConvertImageDtype.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -225,7 +225,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+a28ceb4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.15.0a0+e5ff0b2 ) &#x25BC</a>
     </div>
     
 
@@ -251,8 +251,8 @@
             
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../datapoints.html">Datapoints</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../datapoints.html">Datapoints</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
@@ -353,15 +353,17 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="torchvision.transforms.v2.ToDtype">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.transforms.v2.</span></span><span class="sig-name descname"><span class="pre">ToDtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.11)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.dtype" title="(in PyTorch v1.13)"><span class="pre">dtype</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.11)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Type" title="(in Python v3.11)"><span class="pre">Type</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.11)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.dtype" title="(in PyTorch v1.13)"><span class="pre">dtype</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/transforms/v2/_misc.html#ToDtype"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.v2.ToDtype" title="Permalink to this definition">¶</a></dt>
-<dd><p>[BETA] Converts the input to a specific dtype.</p>
+<dd><p>[BETA] Converts the input to a specific dtype - this does not scale values.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>The ToDtype transform is in Beta stage, and backward compatibility is not guaranteed.</p>
+<p>The ToDtype transform is in Beta stage, and while we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dtype</strong> (<em>dpython:type</em><em> or </em><em>dict of Datapopython:int -&gt; dpython:type</em>) – The dtype to convert to. A dict can be passed to specify
-per-datapoint conversions, e.g. <code class="docutils literal notranslate"><span class="pre">dtype={datapoints.Image:</span> <span class="pre">torch.float32,</span> <span class="pre">datapoints.Video:</span> <span class="pre">torch.float64}</span></code>.</p>
+<dd class="field-odd"><p><strong>dtype</strong> (<code class="docutils literal notranslate"><span class="pre">torch.dtype</span></code> or dict of <code class="docutils literal notranslate"><span class="pre">Datapoint</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">torch.dtype</span></code>) – The dtype to convert to.
+A dict can be passed to specify per-datapoint conversions, e.g.
+<code class="docutils literal notranslate"><span class="pre">dtype={datapoints.Image:</span> <span class="pre">torch.float32,</span> <span class="pre">datapoints.Video:</span>
+<span class="pre">torch.float64}</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -379,7 +381,7 @@ per-datapoint conversions, e.g. <code class="docutils literal notranslate"><span
         <a href="torchvision.transforms.v2.ConvertBoundingBoxFormat.html" class="btn btn-neutral float-right" title="ConvertBoundingBoxFormat" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="torchvision.transforms.v2.ConvertDtype.html" class="btn btn-neutral" title="ConvertDtype" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="torchvision.transforms.v2.ConvertImageDtype.html" class="btn btn-neutral" title="ConvertImageDtype" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
