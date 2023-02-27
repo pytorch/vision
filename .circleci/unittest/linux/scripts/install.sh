@@ -5,7 +5,7 @@ unset PYTORCH_VERSION
 # so no need to set PYTORCH_VERSION.
 # In fact, keeping PYTORCH_VERSION forces us to hardcode PyTorch version in config.
 
-set -e
+set -ex
 
 eval "$(./conda/bin/conda shell.bash hook)"
 conda activate ./env
@@ -34,7 +34,12 @@ if [ "${os}" == "MacOSX" ]; then
     conda install -y -c "pytorch-${UPLOAD_CHANNEL}" "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}"
 else
     conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c nvidia "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}"
+
+    # make sure local cuda is set to required cuda version and not CUDA version by default
+    rm -f /usr/local/cuda
+    ln -s /usr/local/cuda-${version} /usr/local/cuda
 fi
+
 
 printf "* Installing torchvision\n"
 python setup.py develop
