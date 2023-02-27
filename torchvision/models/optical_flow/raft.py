@@ -475,16 +475,21 @@ class RAFT(nn.Module):
             raise ValueError(f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}")
         if not (h % 8 == 0) and (w % 8 == 0):
             raise ValueError(f"input image H and W should be divisible by 8, instead got {h} (h) and {w} (w)")
-        if h < 128 or w < 128:
-            raise ValueError(
-                f"input image H and W should be equal to or larger than 128, instead got {h} (h) and {w} (w)"
-            )
 
         fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)
         if fmap1.shape[-2:] != (h // 8, w // 8):
             raise ValueError("The feature encoder should downsample H and W by 8")
-
+        
+        _, _, h_fmap, w_fmap = fmap1.shape
+        if not (((h_fmap // 2**(self.corr_block.num_levels - 1))) < 2) and (
+                ((w_fmap // 2**(self.corr_block.num_levels - 1))) < 2
+        ):
+            min_res = 2 * 2**(self.corr_block.num_levels - 1) * 8
+            raise ValueError(
+                f"input image resolution is too small image resolution should be at least {min_res} (h) and {min_res} (w), got {h} (h) and {w} (w)"
+            )
+        
         self.corr_block.build_pyramid(fmap1, fmap2)
 
         context_out = self.context_encoder(image1)
