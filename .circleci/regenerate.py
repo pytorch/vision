@@ -262,6 +262,11 @@ def unittest_workflows(indentation=6):
             if os_type == "linux" and device_type == "cpu":
                 continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
+
+                # Turn off unit tests for 3.11, unit test are not setup properly
+                if python_version == "3.11":
+                    continue
+
                 job = {
                     "name": f"unittest_{os_type}_{device_type}_py{python_version}",
                     "python_version": python_version,
@@ -290,7 +295,7 @@ def cmake_workflows(indentation=6):
 
             job["cu_version"] = "cu117" if device == "gpu" else "cpu"
             if device == "gpu" and os_type == "linux":
-                job["wheel_docker_image"] = "pytorch/manylinux-cuda116"
+                job["wheel_docker_image"] = "pytorch/manylinux-cuda117"
             jobs.append({f"cmake_{os_type}_{device}": job})
     return indent(indentation, jobs)
 
