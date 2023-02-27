@@ -100,10 +100,11 @@ def _is_tracing():
 _WARN_ABOUT_BETA_TRANSFORMS = True
 _BETA_TRANSFORMS_WARNING = (
     "The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. "
-    "While we will try our best to maintain backward compatibility, "
-    "some APIs or behaviors might change without a deprecation cycle. "
-    "To help us improve these new features, please provide your feedback "
-    "here: https://github.com/pytorch/vision/issues/6753."
+    "While we do not expect major breaking changes, some APIs may still change "
+    "according to user feedback. Please submit any feedback you may have in "
+    "this issue: https://github.com/pytorch/vision/issues/6753, and you can also "
+    "check out https://github.com/pytorch/vision/issues/7319 to learn more about "
+    "the APIs that we suspect might involve future changes. "
     "You can silence this warning by calling torchvision.disable_beta_transform_warning()."
 )
 
