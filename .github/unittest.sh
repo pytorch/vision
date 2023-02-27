@@ -63,7 +63,7 @@ case "$(uname -s)" in
       INDEX_TYPE="extra-index-url"
 esac
 
-pip install --progress-bar=off torch "--${INDEX_TYPE}=${PYTORCH_WHEEL_INDEX}"
+pip install --progress-bar=off --pre torch "--${INDEX_TYPE}=${PYTORCH_WHEEL_INDEX}"
 
 if [[ $GPU_ARCH_TYPE = 'cuda' ]]; then
   python3 -c "import torch; exit(not torch.cuda.is_available())"
