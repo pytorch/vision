@@ -1,0 +1,34 @@
+name: Unit-tests on macOS
+
+on:
+  pull_request:
+  push:
+    branches:
+      - nightly
+      - main
+      - release/*
+  workflow_dispatch:
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+        runner: ["macos-12"]
+        include:
+          - python-version: "3.8"
+            runner: macos-m1-12
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
+    with:
+      repository: pytorch/vision
+      timeout: 120
+      runner: ${{ matrix.runner }}
+      script: |
+        export PYTHON_VERSION=${{ matrix.python-version }}
+        export GPU_ARCH_TYPE=cpu
+        ./.github/unittest.sh
