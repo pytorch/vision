@@ -23,11 +23,9 @@ jobs:
           - python-version: "3.8"
             runner: macos-m1-12
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
+    uses: pmeier/test-infra/.github/workflows/macos_job.yml@macos-ssh
     with:
       repository: pytorch/vision
-      test-infra-repository: pmeier/test-infra
-      test-infra-ref: macos-ssh
       timeout: 120
       runner: ${{ matrix.runner }}
       script: |
