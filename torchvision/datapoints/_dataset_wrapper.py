@@ -14,6 +14,7 @@ from torchvision.transforms.v2 import functional as F
 __all__ = ["wrap_dataset_for_transforms_v2"]
 
 
+# TODO: naming!
 def wrap_dataset_for_transforms_v2(dataset):
     """[BETA] Wrap a ``torchvision.dataset`` for usage with :mod:`torchvision.transforms.v2`.
 
@@ -166,11 +167,19 @@ def raise_not_supported(description):
     )
 
 
+def identity(item):
+    return item
+
+
 def identity_wrapper_factory(dataset):
     def wrapper(idx, sample):
         return sample
 
     return wrapper
+
+
+def pil_image_to_mask(pil_image):
+    return datapoints.Mask(pil_image)
 
 
 def list_of_dicts_to_dict_of_lists(list_of_dicts):
@@ -186,7 +195,7 @@ def wrap_target_by_type(target, *, target_types, type_wrappers):
         target = [target]
 
     wrapped_target = tuple(
-        type_wrappers.get(target_type, lambda x: x)(item) for target_type, item in zip(target_types, target)
+        type_wrappers.get(target_type, identity)(item) for target_type, item in zip(target_types, target)
     )
 
     if len(wrapped_target) == 1:
@@ -216,7 +225,7 @@ for dataset_cls in [
 def segmentation_wrapper_factory(dataset):
     def wrapper(idx, sample):
         image, mask = sample
-        return image, datapoints.Mask(mask)
+        return image, pil_image_to_mask(mask)
 
     return wrapper
 
@@ -362,7 +371,7 @@ def voc_detection_wrapper_factory(dataset):
 
 
 @WRAPPER_FACTORIES.register(datasets.SBDataset)
-def sbdataset_wrapper(dataset):
+def sbd_wrapper(dataset):
     if dataset.mode == "boundaries":
         raise_not_supported("SBDataset with mode='boundaries'")
 
@@ -429,7 +438,7 @@ def oxford_iiit_pet_wrapper_factor(dataset):
                 target,
                 target_types=dataset._target_types,
                 type_wrappers={
-                    "segmentation": datapoints.Mask,
+                    "segmentation": pil_image_to_mask,
                 },
             )
 
@@ -445,7 +454,7 @@ def cityscapes_wrapper_factory(dataset):
 
     def instance_segmentation_wrapper(mask):
         # See https://github.com/mcordts/cityscapesScripts/blob/8da5dd00c9069058ccc134654116aac52d4f6fa2/cityscapesscripts/preparation/json2instanceImg.py#L7-L21
-        data = datapoints.Mask(mask)
+        data = pil_image_to_mask(mask)
         masks = []
         labels = []
         for id in data.unique():
@@ -464,7 +473,7 @@ def cityscapes_wrapper_factory(dataset):
             target_types=dataset.target_type,
             type_wrappers={
                 "instance": instance_segmentation_wrapper,
-                "semantic": datapoints.Mask,
+                "semantic": pil_image_to_mask,
             },
         )
 
