@@ -54,19 +54,9 @@ fi
 echo '::endgroup::'
 
 echo '::group::Install PyTorch'
-# Due to the supply chain attack in Dec 2022 (https://pytorch.org/blog/compromised-nightly-dependency/), we host all
-# third-party dependencies on Linux on our own indices and *don't* install them from PyPI.
-case "$(uname -s)" in
-    Linux*)
-      INDEX_TYPE="index-url"
-      ;;
-    *)
-      INDEX_TYPE="extra-index-url"
-esac
+pip install --progress-bar=off --pre torch --index-url="${PYTORCH_WHEEL_INDEX}"
 
-pip install --progress-bar=off --pre torch "--${INDEX_TYPE}=${PYTORCH_WHEEL_INDEX}"
-
-if [[ $GPU_ARCH_TYPE = 'cuda' ]]; then
+if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
   python3 -c "import torch; exit(not torch.cuda.is_available())"
 fi
 echo '::endgroup::'
