@@ -38,7 +38,8 @@ conda create \
   --name ci \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
-  ninja libpng jpeg 'ffmpeg<4.3' \
+  ninja libpng jpeg \
+  'ffmpeg<4.3'  # See https://github.com/pytorch/vision/issues/7296 \
   -c "${PYTORCH_CONDA_CHANNEL}" \
   -c conda-forge
 conda activate ci
