@@ -10,7 +10,7 @@ from torchvision.transforms.v2 import Transform
 class Compose(Transform):
     """[BETA] Composes several transforms together.
 
-    .. betastatus:: Compose transform
+    .. v2betastatus:: Compose transform
 
     This transform does not support torchscript.
     Please, see the note below.
@@ -61,7 +61,7 @@ class Compose(Transform):
 class RandomApply(Transform):
     """[BETA] Apply randomly a list of transformations with a given probability.
 
-    .. betastatus:: RandomApply transform
+    .. v2betastatus:: RandomApply transform
 
     .. note::
         In order to script the transformation, please use ``torch.nn.ModuleList`` as input instead of list/tuple of
@@ -116,7 +116,7 @@ class RandomApply(Transform):
 class RandomChoice(Transform):
     """[BETA] Apply single transformation randomly picked from a list.
 
-    .. betastatus:: RandomChoice transform
+    .. v2betastatus:: RandomChoice transform
 
     This transform does not support torchscript.
 
@@ -155,7 +155,7 @@ class RandomChoice(Transform):
 class RandomOrder(Transform):
     """[BETA] Apply a list of transformations in a random order.
 
-    .. betastatus:: RandomOrder transform
+    .. v2betastatus:: RandomOrder transform
 
     This transform does not support torchscript.
 
