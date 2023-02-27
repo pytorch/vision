@@ -29,15 +29,23 @@ def wrap_dataset_for_transforms_v2(dataset):
     Special
 
         * :class:`~torchvision.datasets.CocoDetection`: Instead returning the target as list of dicts, now returns it as
-            dict of lists. In addition, the key-value-pairs ``"boxes"``, ``"masks"``, and ``"labels"`` are added which
-            wrap the data in the corresponding ``torchvision.datapoints``.
-        * :class:`~torchvision.datasets.VOCDetection`
-        * :class:`~torchvision.datasets.SBDataset`
-        * :class:`~torchvision.datasets.CelebA`
-        * :class:`~torchvision.datasets.Kitti`
-        * :class:`~torchvision.datasets.OxfordIIITPet`
-        * :class:`~torchvision.datasets.Cityscapes`
-        * :class:`~torchvision.datasets.WIDERFace`
+            dict of lists. In addition, the key-value-pairs ``"boxes"`` (in ``XYXY`` coordinate format), ``"masks"``,
+            and ``"labels"`` are added, which wrap the data in the corresponding ``torchvision.datapoints``.
+        * :class:`~torchvision.datasets.VOCDetection`: the key-value-pairs ``"boxes"`` and ``"labels"`` are added to
+            the target, which wrap the data in the corresponding ``torchvision.datapoints``.
+        * :class:`~torchvision.datasets.CelebA`: The target for ``target_type="bbox"`` is converted to ``XYXY``
+            coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBox` datapoint.
+        * :class:`~torchvision.datasets.Kitti`: Instead returning the target as list of dicts, now returns it as
+            dict of lists. In addition, the key-value-pairs ``"boxes"`` and ``"labels"`` are added, which wrap the data
+            in the corresponding ``torchvision.datapoints``.
+        * :class:`~torchvision.datasets.OxfordIIITPet`: The target for ``target_type="segmentation"`` is wrapped into a
+            :class:`~torchvision.datapoints.Mask` datapoint.
+        * :class:`~torchvision.datasets.Cityscapes`: The target for ``target_type="semantic"`` is wrapped into a
+            :class:`~torchvision.datapoints.Mask` datapoint. The target for ``target_type="instance"`` is *replaced* by
+            a dictionary with the key-value-pairs ``"masks"`` (as :class:`~torchvision.datapoints.Mask` datapoint) and
+            ``"labels"``.
+        * :class:`~torchvision.datasets.WIDERFace`: The value for key ``"bbox"`` in the target is converted to ``XYXY``
+            coordinate format and wrapped into a :class:`~torchvision.datapoints.BoundingBox` datapoint.
 
     Image classification datasets
 
