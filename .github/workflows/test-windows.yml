@@ -1,4 +1,4 @@
-name: Unit-tests on Linux
+name: Unit-tests on Windows
 
 on:
   pull_request:
