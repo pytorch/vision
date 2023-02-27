@@ -475,8 +475,8 @@ class RAFT(nn.Module):
             raise ValueError(f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}")
         if not (h % 8 == 0) and (w % 8 == 0):
             raise ValueError(f"input image H and W should be divisible by 8, instead got {h} (h) and {w} (w)")
-        if not (h < 128) and (w < 128):
-            raise ValueError(f"input image H and W should be equal or larger than 128, instead got {h} (h) and {w} (w)")
+        if h < 128 or w < 128:
+            raise ValueError(f"input image H and W should be equal to or larger than 128, instead got {h} (h) and {w} (w)")
 
         fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)
