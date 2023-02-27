@@ -259,7 +259,7 @@ def unittest_workflows(indentation=6):
         for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
-            if os_type == "linux" and device_type == "cpu":
+            if os_type == "linux":
                 continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
 
