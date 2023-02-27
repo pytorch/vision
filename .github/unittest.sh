@@ -34,12 +34,13 @@ echo "PYTORCH_WHEEL_INDEX=${PYTORCH_WHEEL_INDEX}"
 echo '::endgroup::'
 
 echo '::group::Create build environment'
+# See https://github.com/pytorch/vision/issues/7296 for ffmpeg
 conda create \
   --name ci \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
   ninja libpng jpeg \
-  'ffmpeg<4.3'  # See https://github.com/pytorch/vision/issues/7296 \
+  'ffmpeg<4.3' \
   -c "${PYTORCH_CONDA_CHANNEL}" \
   -c conda-forge
 conda activate ci
