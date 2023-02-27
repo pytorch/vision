@@ -14,7 +14,6 @@ from torchvision.transforms.v2 import functional as F
 __all__ = ["wrap_dataset_for_transforms_v2"]
 
 
-# TODO: naming!
 def wrap_dataset_for_transforms_v2(dataset):
     """[BETA] Wrap a ``torchvision.dataset`` for usage with :mod:`torchvision.transforms.v2`.
 
