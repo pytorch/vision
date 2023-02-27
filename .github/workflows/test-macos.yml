@@ -26,9 +26,14 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
+      test-infra-repository: pmeier/test-infra
+      test-infra-ref: macos-ssh
       timeout: 120
       runner: ${{ matrix.runner }}
       script: |
         export PYTHON_VERSION=${{ matrix.python-version }}
         export GPU_ARCH_TYPE=cpu
-        ./.github/unittest.sh
+        
+        sleep 3600
+
+#        ./.github/unittest.sh
