@@ -42,7 +42,13 @@ conda create \
   -c "${PYTORCH_CONDA_CHANNEL}" \
   -c conda-forge
 conda activate ci
-pip install --progress-bar=off --upgrade setuptools av!=10.0.0
+pip install --progress-bar=off --upgrade setuptools
+
+# See https://github.com/pytorch/vision/issues/6790
+if [[ "${PYTHON_VERSION}" != "3.11" ]]
+  pip install --progress-bar=off av!=10.0.0
+fi
+
 echo '::endgroup::'
 
 echo '::group::Install PyTorch'
