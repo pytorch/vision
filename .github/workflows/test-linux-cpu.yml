@@ -54,4 +54,6 @@ jobs:
 
         # Run Tests
         python3 -m torch.utils.collect_env
-        python3 -m pytest --junitxml=test-results/junit.xml --durations 20
+        TEST_RESULTS="${RUNNER_ARTIFACT_DIR}/test-results.xml"
+        echo "${TEST_RESULTS}"
+        python3 -m pytest --junitxml="${TEST_RESULTS}" --durations 20 -v
