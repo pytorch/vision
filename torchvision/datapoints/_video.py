@@ -9,6 +9,18 @@ from ._datapoint import _FillTypeJIT, Datapoint
 
 
 class Video(Datapoint):
+    """[BETA] :class:`torch.Tensor` subclass for videos.
+
+    Args:
+        data (tensor-like): Any data that can be turned into a tensor with :func:`torch.as_tensor`.
+        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
+            ``data``.
+        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
+            :class:`torch.Tensor`, the device is taken from it. Otherwise, the bounding box is constructed on the CPU.
+        requires_grad (bool, optional): Whether autograd should record operations on the bounding box. If omitted and
+            ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
+    """
+
     @classmethod
     def _wrap(cls, tensor: torch.Tensor) -> Video:
         video = tensor.as_subclass(cls)
