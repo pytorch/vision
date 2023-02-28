@@ -27,7 +27,10 @@ jobs:
     runs-on: ${{ matrix.runner }}
 
     steps:
-      - run: echo ${{ toJSON(runner) }}
+      - name: Dump runner context
+        env:
+          RUNNER_CONTEXT: ${{ toJSON(runner) }}
+        run: echo "$RUNNER_CONTEXT"
 
 #    uses: pmeier/test-infra/.github/workflows/macos_job.yml@macos-ssh
 #    with:
