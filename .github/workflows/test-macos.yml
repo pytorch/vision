@@ -27,7 +27,7 @@ jobs:
     on: ${{ matrix.runner }}
 
     steps:
-      run: echo ${{ runner }} | jq
+      - run: echo ${{ runner }} | jq
 
 #    uses: pmeier/test-infra/.github/workflows/macos_job.yml@macos-ssh
 #    with:
