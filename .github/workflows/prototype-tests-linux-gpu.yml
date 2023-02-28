@@ -32,7 +32,7 @@ jobs:
         # Mark Build Directory Safe
 
         echo '::group::Set PyTorch conda channel'
-        if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
+        if [[ (${GITHUB_BASE_REF} = 'release'*) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
           POSTFIX=test
         else
           POSTFIX=nightly
