@@ -2,7 +2,6 @@ import itertools
 import pathlib
 import random
 import re
-import sys
 import textwrap
 import warnings
 from collections import defaultdict
@@ -2102,10 +2101,6 @@ def test_sanitize_bounding_boxes_errors():
     ),
 )
 @pytest.mark.parametrize("call_disable_warning", (True, False))
-@pytest.mark.skipif(
-    sys.platform in ("win32", "cygwin"),
-    reason="assert_run_python_script is broken on Windows. Possible fix in https://github.com/pytorch/vision/pull/7346",
-)
 def test_warnings_v2_namespaces(import_statement, call_disable_warning):
     if call_disable_warning:
         source = f"""
@@ -2125,10 +2120,6 @@ def test_warnings_v2_namespaces(import_statement, call_disable_warning):
     assert_run_python_script(textwrap.dedent(source))
 
 
-@pytest.mark.skipif(
-    sys.platform in ("win32", "cygwin"),
-    reason="assert_run_python_script is broken on Windows. Possible fix in https://github.com/pytorch/vision/pull/7346",
-)
 def test_no_warnings_v1_namespace():
     source = """
     import warnings
