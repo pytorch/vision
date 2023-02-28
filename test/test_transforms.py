@@ -2146,6 +2146,8 @@ class TestAffine:
     @pytest.mark.parametrize("scale", [0.77, 1.0, 1.27])
     @pytest.mark.parametrize("shear", range(-15, 15, 5))
     def test_transformation_range(self, angle, translate, scale, shear, pil_image, input_img):
+        if angle * translate * shear < 0:
+            raise AssertionError("Boo!")
         self._test_transformation(
             angle=angle,
             translate=(translate, translate),
