@@ -24,7 +24,7 @@ jobs:
 #            runner: macos-m1-12
       fail-fast: false
 
-    on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - run: echo ${{ runner }} | jq
