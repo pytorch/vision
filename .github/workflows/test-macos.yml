@@ -13,25 +13,31 @@ jobs:
   tests:
     strategy:
       matrix:
-        python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
+#        python-version:
+#          - "3.8"
+#          - "3.9"
+#          - "3.10"
+#          - "3.11"
         runner: ["macos-12"]
-        include:
-          - python-version: "3.8"
-            runner: macos-m1-12
+#        include:
+#          - python-version: "3.8"
+#            runner: macos-m1-12
       fail-fast: false
-    uses: pmeier/test-infra/.github/workflows/macos_job.yml@macos-ssh
-    with:
-      repository: pytorch/vision
-      timeout: 120
-      runner: ${{ matrix.runner }}
-      script: |
-        export PYTHON_VERSION=${{ matrix.python-version }}
-        export GPU_ARCH_TYPE=cpu
-        
-        sleep 3600
 
-#        ./.github/unittest.sh
+    on: ${{ matrix.runner }}
+
+    steps:
+      run: echo ${{ runner }}} | jq
+
+#    uses: pmeier/test-infra/.github/workflows/macos_job.yml@macos-ssh
+#    with:
+#      repository: pytorch/vision
+#      timeout: 120
+#      runner: ${{ matrix.runner }}
+#      script: |
+#        export PYTHON_VERSION=${{ matrix.python-version }}
+#        export GPU_ARCH_TYPE=cpu
+#
+#        sleep 3600
+#
+##        ./.github/unittest.sh
