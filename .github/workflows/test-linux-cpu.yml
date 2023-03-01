@@ -55,4 +55,4 @@ jobs:
 
         # Run Tests
         python3 -m torch.utils.collect_env
-        python3 -m pytest --junitxml="${RUNNER_ARTIFACT_DIR}/test-results.xml" --durations 20 -v test/test_transforms.py
+        python3 -m pytest --junitxml="${RUNNER_ARTIFACT_DIR}/test-results.xml" -v --durations 20
