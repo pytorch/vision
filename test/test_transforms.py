@@ -2269,7 +2269,7 @@ def test_random_grayscale_with_grayscale_input():
 
 
 # TODO: remove in 0.17 when we can delete functional_pil.py and functional_tensor.py
-@pytest.mark.skipif(sys.version_info[:2] == (3, 10), reason="See #7372")
+@pytest.mark.xfail(sys.version_info[:2] == (3, 10), reason="See #7372")
 @pytest.mark.parametrize(
     "import_statement",
     (

@@ -2088,7 +2088,7 @@ def test_sanitize_bounding_boxes_errors():
         transforms.SanitizeBoundingBox()(different_sizes)
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 10), reason="See #7372")
+@pytest.mark.xfail(sys.version_info[:2] == (3, 10), reason="See #7372")
 @pytest.mark.parametrize(
     "import_statement",
     (
@@ -2122,7 +2122,7 @@ def test_warnings_v2_namespaces(import_statement, call_disable_warning):
     assert_run_python_script(textwrap.dedent(source))
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 10), reason="See #7372")
+@pytest.mark.xfail(sys.version_info[:2] == (3, 10), reason="See #7372")
 def test_no_warnings_v1_namespace():
     source = """
     import warnings
