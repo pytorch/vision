@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       - name: Set Release CHANNEL (for release)
-        if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'refs/heads/release') }}
+        if: ${{ startsWith(github.base_ref, 'release') || startsWith(github.ref, 'refs/heads/release') }}
         run: |
           echo "CHANNEL=test" >> "$GITHUB_ENV"
       - name: Install TorchVision
