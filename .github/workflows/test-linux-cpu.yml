@@ -23,6 +23,7 @@ jobs:
       runner: linux.12xlarge
       repository: pytorch/vision
       upload-artifact: test-results
+      timeout: 120
       script: |
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision

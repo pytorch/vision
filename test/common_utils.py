@@ -351,7 +351,7 @@ assert_equal = functools.partial(assert_close, rtol=0, atol=0)
 
 def parametrized_error_message(*args, **kwargs):
     def to_str(obj):
-        if isinstance(obj, torch.Tensor) and obj.numel() > 10:
+        if isinstance(obj, torch.Tensor) and obj.numel() > 30:
             return f"tensor(shape={list(obj.shape)}, dtype={obj.dtype}, device={obj.device})"
         elif isinstance(obj, enum.Enum):
             return f"{type(obj).__name__}.{obj.name}"
