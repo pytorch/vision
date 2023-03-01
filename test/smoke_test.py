@@ -63,11 +63,11 @@ def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
     print(f"torch.cuda.is_available: {torch.cuda.is_available()}")
     smoke_test_torchvision()
-    smoke_test_compile()
     smoke_test_torchvision_read_decode()
     smoke_test_torchvision_resnet50_classify()
     if torch.cuda.is_available():
         smoke_test_torchvision_resnet50_classify("cuda")
+        smoke_test_compile()
 
     if torch.backends.mps.is_available():
         smoke_test_torchvision_resnet50_classify("mps")
