@@ -23,7 +23,7 @@ jobs:
           - python-version: "3.8"
             runner: macos-m1-12
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/macos_job.yml
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
       timeout: 120
