@@ -18,7 +18,7 @@ jobs:
       matrix:
         python_version: ["3.8", "3.9", "3.10"]
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pmeier/test-infra/.github/workflows/linux_job.yml@test-results
     with:
       runner: linux.12xlarge
       repository: pytorch/vision
@@ -55,4 +55,4 @@ jobs:
 
         # Run Tests
         python3 -m torch.utils.collect_env
-        python3 -m pytest --junitxml="${RUNNER_ARTIFACT_DIR}/test-results.xml" --durations 20 -v test/test_transforms.py || true
+        python3 -m pytest --junitxml="${RUNNER_ARTIFACT_DIR}/test-results.xml" --durations 20 -v test/test_transforms.py
