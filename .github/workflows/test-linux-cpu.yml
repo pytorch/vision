@@ -22,6 +22,7 @@ jobs:
     with:
       runner: linux.12xlarge
       repository: pytorch/vision
+      upload-artifact: test-results
       script: |
         # Mark Build Directory Safe
         git config --global --add safe.directory /__w/vision/vision
@@ -54,6 +55,4 @@ jobs:
 
         # Run Tests
         python3 -m torch.utils.collect_env
-        TEST_RESULTS="${RUNNER_ARTIFACT_DIR}/test-results.xml"
-        echo "${TEST_RESULTS}"
-        python3 -m pytest --junitxml="${TEST_RESULTS}" --durations 20 -v
+        python3 -m pytest --junitxml="${RUNNER_ARTIFACT_DIR}/test-results.xml" --durations 20 -v test/test_transforms.py
