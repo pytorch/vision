@@ -32,7 +32,7 @@ def smoke_test_compile() -> None:
     model = torch.compile(model)
     x = torch.randn(1, 3, 224, 224, device="cuda")
     out = model(x)
-    print(f"torch.compile output: {out.shape}")
+    print(f"torch.compile model output: {out.shape}")
 
 def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
     img = read_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg")).to(device)
@@ -61,12 +61,14 @@ def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
 
 def main() -> None:
     print(f"torchvision: {torchvision.__version__}")
+    print(f"torch.cuda.is_available: {torch.cuda.is_available()}")
     smoke_test_torchvision()
+    smoke_test_compile()
     smoke_test_torchvision_read_decode()
     smoke_test_torchvision_resnet50_classify()
     if torch.cuda.is_available():
         smoke_test_torchvision_resnet50_classify("cuda")
-        smoke_test_compile()
+
     if torch.backends.mps.is_available():
         smoke_test_torchvision_resnet50_classify("mps")
 
