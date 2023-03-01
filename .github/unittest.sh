@@ -5,6 +5,7 @@ set -euo pipefail
 # Prepare conda
 CONDA_PATH=$(which conda)
 eval "$(${CONDA_PATH} shell.bash hook)"
+conda config --set channel_priority strict
 
 echo '::group::Set PyTorch conda channel and wheel index'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
@@ -42,7 +43,7 @@ conda create \
   ninja libpng jpeg \
   'ffmpeg<4.3' \
   -c "${PYTORCH_CONDA_CHANNEL}" \
-  -c conda-forge
+  -c defaults
 conda activate ci
 pip install --progress-bar=off --upgrade setuptools
 
