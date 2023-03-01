@@ -32,7 +32,7 @@ def smoke_test_compile() -> None:
     model = torch.compile(model)
     x = torch.randn(1, 3, 224, 224, device="cuda")
     out = model(x)
-    print(out.shape)
+    print(f"torch.compile output: {out.shape}")
 
 def smoke_test_torchvision_resnet50_classify(device: str = "cpu") -> None:
     img = read_image(str(SCRIPT_DIR / ".." / "gallery" / "assets" / "dog2.jpg")).to(device)
