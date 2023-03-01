@@ -146,7 +146,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=input.dtype, device=input.device),
-            msg=parametrized_error_message(*([actual, expected] + other_args), **kwargs),
+            msg=parametrized_error_message(input, other_args, **kwargs),
         )
 
     def _unbatch(self, batch, *, data_dims):
@@ -204,7 +204,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=batched_input.dtype, device=batched_input.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(batched_input, *other_args, **kwargs),
         )
 
     @sample_inputs
@@ -236,7 +236,7 @@ class TestKernels:
             output_cpu,
             check_device=False,
             **info.get_closeness_kwargs(test_id, dtype=input_cuda.dtype, device=input_cuda.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(input_cpu, *other_args, **kwargs),
         )
 
     @sample_inputs
@@ -294,7 +294,7 @@ class TestKernels:
             actual,
             expected,
             **info.get_closeness_kwargs(test_id, dtype=torch.float32, device=input.device),
-            msg=parametrized_error_message(*other_args, **kwargs),
+            msg=parametrized_error_message(input, *other_args, **kwargs),
         )
 
 
