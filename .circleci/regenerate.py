@@ -255,12 +255,11 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    for os_type in ["linux", "windows", "macos"]:
+    for os_type in ["windows", "macos"]:
         for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
-            if os_type == "linux" and device_type == "cpu":
-                continue
+
             for i, python_version in enumerate(PYTHON_VERSIONS):
 
                 # Turn off unit tests for 3.11, unit test are not setup properly
