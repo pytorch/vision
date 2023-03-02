@@ -36,7 +36,7 @@ jobs:
         export CUDATOOLKIT="pytorch-cuda=${VERSION}"
 
         # Set CHANNEL
-        if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
+        if [[ (${GITHUB_BASE_REF} = 'release'*) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then
           export CHANNEL=test
         else
           export CHANNEL=nightly
