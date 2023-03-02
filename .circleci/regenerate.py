@@ -248,10 +248,8 @@ def generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, pyt
 
     return {f"smoke_test_{os_type}_{pydistro}": d}
 
-
 def indent(indentation, data_list):
     return ("\n" + " " * indentation).join(yaml.dump(data_list, default_flow_style=False).splitlines())
-
 
 def unittest_workflows(indentation=6):
     jobs = []
