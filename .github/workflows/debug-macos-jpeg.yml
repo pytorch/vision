@@ -16,7 +16,7 @@ jobs:
 
       - name: Create build environment
         run: |
-          conda --quiet install python=3.10 pip libpng jpeg ffmpeg=4.2 ninja
+          conda install --quiet python=3.10 pip libpng jpeg ffmpeg=4.2 ninja
           pip install --progress-bar=off --upgrade setuptools light-the-torch
           ltt install --progress-bar=off --pytorch-channel=nightly torch
           python -m torch.utils.collect_env
