@@ -2279,6 +2279,7 @@ def test_random_grayscale_with_grayscale_input():
     ),
 )
 @pytest.mark.parametrize("from_private", (True, False))
+@pytest.mark.skipif(sys.version_info[:2] == (3, 10), reason="See #7372")
 @pytest.mark.skipif(
     sys.platform in ("win32", "cygwin"),
     reason="assert_run_python_script is broken on Windows. Possible fix in https://github.com/pytorch/vision/pull/7346",
