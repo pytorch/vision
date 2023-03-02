@@ -33,7 +33,7 @@ jobs:
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_wheels_macos.yml@main
+    uses: pytorch/test-infra/.github/workflows/build_wheels_macos.yml@conda-png-jpeg
     with:
       repository: ${{ matrix.repository }}
       ref: ""
