@@ -2106,6 +2106,7 @@ def test_sanitize_bounding_boxes_errors():
     sys.platform in ("win32", "cygwin"),
     reason="assert_run_python_script is broken on Windows. Possible fix in https://github.com/pytorch/vision/pull/7346",
 )
+@pytest.mark.skipif(sys.version_info[:2] == (3, 10), reason="See #7372")
 def test_warnings_v2_namespaces(import_statement, call_disable_warning):
     if call_disable_warning:
         source = f"""
@@ -2129,6 +2130,7 @@ def test_warnings_v2_namespaces(import_statement, call_disable_warning):
     sys.platform in ("win32", "cygwin"),
     reason="assert_run_python_script is broken on Windows. Possible fix in https://github.com/pytorch/vision/pull/7346",
 )
+@pytest.mark.skipif(sys.version_info[:2] == (3, 10), reason="See #7372")
 def test_no_warnings_v1_namespace():
     source = """
     import warnings
