@@ -26,7 +26,9 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
     with:
       repository: pytorch/vision
-      timeout: 120
+      # We need an increased timeout here, since the macos-12 runner is the free one from GH
+      # and needs roughly 2 hours to just run the test suite
+      timeout: 240
       runner: ${{ matrix.runner }}
       script: |
         export PYTHON_VERSION=${{ matrix.python-version }}
