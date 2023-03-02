@@ -7,6 +7,27 @@ CONDA_PATH=$(which conda)
 eval "$(${CONDA_PATH} shell.bash hook)"
 conda config --set channel_priority strict
 
+case $(uname) in
+  Linux)
+    OS_TYPE=linux
+    ;;
+  Darwin)
+    OS_TYPE=macos
+    ;;
+  *)
+    echo "Unknown OS type:" $(uname)
+    exit 1
+    ;;
+esac
+
+if [[ "${OS_TYPE}" != "macos" ]]; then
+  JPEG_LIBS=$(brew list | grep jpeg)
+  echo $JPEG_LIBS
+  for lib in $JPEG_LIBS; do
+    brew uninstall --ignore-dependencies --force $lib || true
+  done
+fi
+
 echo '::group::Set PyTorch conda channel and wheel index'
 # TODO: Can we maybe have this as environment variable in the job template? For example, `IS_RELEASE`.
 if [[ (${GITHUB_EVENT_NAME} = 'pull_request' && (${GITHUB_BASE_REF} = 'release'*)) || (${GITHUB_REF} = 'refs/heads/release'*) ]]; then

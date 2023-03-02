@@ -14,6 +14,14 @@ jobs:
       - name: Set up miniconda
         uses: conda-incubator/setup-miniconda@v2
 
+      - name: Uninstall system libs
+        run: |
+          JPEG_LIBS=$(brew list | grep jpeg)
+          echo $JPEG_LIBS
+          for lib in $JPEG_LIBS; do
+            brew uninstall --ignore-dependencies --force $lib || true
+          done
+
       - name: Create build environment
         run: |
           conda install --quiet python=3.10 pip libpng jpeg ffmpeg=4.2 ninja
