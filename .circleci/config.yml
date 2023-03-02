@@ -722,96 +722,6 @@ jobs:
             conda activate python${PYTHON_VERSION}
             python -c "import torchvision"
 
-  unittest_linux_cpu:
-    <<: *binary_common
-    docker:
-      - image: "pytorch/manylinux-cpu"
-    resource_class: 2xlarge+
-    steps:
-      - checkout
-      - designate_upload_channel
-      - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-
-          keys:
-            - env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-
-      - run:
-          name: Setup
-          command: .circleci/unittest/linux/scripts/setup_env.sh
-      - save_cache:
-
-          key: env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-
-          paths:
-            - conda
-            - env
-      - run:
-          name: Install torchvision
-          command: .circleci/unittest/linux/scripts/install.sh
-      - run:
-          name: Run tests
-          command: .circleci/unittest/linux/scripts/run_test.sh
-      - run:
-          name: Post process
-          command: .circleci/unittest/linux/scripts/post_process.sh
-      - store_test_results:
-          path: test-results
-
-  unittest_linux_gpu:
-    <<: *binary_common
-    machine:
-      image: ubuntu-2004-cuda-11.4:202110-01
-    resource_class: gpu.nvidia.medium
-    environment:
-      image_name: "pytorch/manylinux-cuda116"
-      CU_VERSION: << parameters.cu_version >>
-      PYTHON_VERSION: << parameters.python_version >>
-    steps:
-      - checkout
-      - designate_upload_channel
-      - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-
-          keys:
-            - env-v3-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-
-      - run:
-          name: Setup
-          command: docker run -e PYTHON_VERSION -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/setup_env.sh
-      - save_cache:
-
-          key: env-v3-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-
-          paths:
-            - conda
-            - env
-      - run:
-          # Here we create an envlist file that contains some env variables that we want the docker container to be aware of.
-          # Normally, the CIRCLECI variable is set and available on all CI workflows: https://circleci.com/docs/2.0/env-vars/#built-in-environment-variables.
-          # They're avaiable in all the other workflows (OSX and Windows).
-          # But here, we're running the unittest_linux_gpu workflows in a docker container, where those variables aren't accessible.
-          # So instead we dump the variables we need in env.list and we pass that file when invoking "docker run".
-          name: export CIRCLECI env var
-          command: echo "CIRCLECI=true" >> ./env.list
-      - run:
-          name: Install torchvision
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL -e CU_VERSION "${image_name}" .circleci/unittest/linux/scripts/install.sh
-      - run:
-          name: Run tests
-          command: docker run --env-file ./env.list -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
-      - run:
-          name: Post Process
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/post_process.sh
-      - store_test_results:
-          path: test-results
-
   unittest_windows_cpu:
     <<: *binary_common
     executor:
@@ -995,6 +905,10 @@ jobs:
           command: |
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate base
+            conda create -yn python39 python=3.9
+            conda activate python39
             packaging/build_cmake.sh
 
   cmake_windows_gpu:
@@ -1012,6 +926,11 @@ jobs:
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
             packaging/windows/internal/cuda_install.bat
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate
+            conda update -y conda
+            conda create -yn python39 python=3.9
+            conda activate python39
             packaging/build_cmake.sh
 
   build_docs:
@@ -1282,6 +1201,23 @@ workflows:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_conda_py3.10_cu118
           python_version: '3.10'
+      - binary_win_conda:
+          cu_version: cpu
+          name: binary_win_conda_py3.11_cpu
+          python_version: '3.11'
+      - binary_win_conda:
+          cu_version: cu117
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_conda_py3.11_cu117
+          python_version: '3.11'
+      - binary_win_conda:
+          cu_version: cu118
+          name: binary_win_conda_py3.11_cu118
+          python_version: '3.11'
       - build_docs:
           filters:
             branches:
@@ -1324,37 +1260,6 @@ workflows:
       - unittest_torchhub
       - unittest_onnx
       - unittest_extended
-      - unittest_linux_gpu:
-          cu_version: cu117
-          name: unittest_linux_gpu_py3.8
-          python_version: '3.8'
-      - unittest_linux_gpu:
-          cu_version: cu117
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          name: unittest_linux_gpu_py3.9
-          python_version: '3.9'
-      - unittest_linux_gpu:
-          cu_version: cu117
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          name: unittest_linux_gpu_py3.10
-          python_version: '3.10'
-      - unittest_linux_gpu:
-          cu_version: cu117
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          name: unittest_linux_gpu_py3.11
-          python_version: '3.11'
       - unittest_windows_cpu:
           cu_version: cpu
           name: unittest_windows_cpu_py3.8
@@ -1367,10 +1272,6 @@ workflows:
           cu_version: cpu
           name: unittest_windows_cpu_py3.10
           python_version: '3.10'
-      - unittest_windows_cpu:
-          cu_version: cpu
-          name: unittest_windows_cpu_py3.11
-          python_version: '3.11'
       - unittest_windows_gpu:
           cu_version: cu117
           name: unittest_windows_gpu_py3.8
@@ -1393,15 +1294,6 @@ workflows:
               - nightly
           name: unittest_windows_gpu_py3.10
           python_version: '3.10'
-      - unittest_windows_gpu:
-          cu_version: cu117
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
-          name: unittest_windows_gpu_py3.11
-          python_version: '3.11'
       - unittest_macos_cpu:
           cu_version: cpu
           name: unittest_macos_cpu_py3.8
@@ -1414,10 +1306,6 @@ workflows:
           cu_version: cpu
           name: unittest_macos_cpu_py3.10
           python_version: '3.10'
-      - unittest_macos_cpu:
-          cu_version: cpu
-          name: unittest_macos_cpu_py3.11
-          python_version: '3.11'
 
   cmake:
     jobs:
@@ -1429,7 +1317,7 @@ workflows:
           cu_version: cu117
           name: cmake_linux_gpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda116
+          wheel_docker_image: pytorch/manylinux-cuda117
       - cmake_windows_cpu:
           cu_version: cpu
           name: cmake_windows_cpu
@@ -1903,6 +1791,63 @@ workflows:
           name: nightly_binary_win_conda_py3.10_cu118_upload
           requires:
           - nightly_binary_win_conda_py3.10_cu118
+      - binary_win_conda:
+          cu_version: cpu
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cpu
+          python_version: '3.11'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cpu_upload
+          requires:
+          - nightly_binary_win_conda_py3.11_cpu
+      - binary_win_conda:
+          cu_version: cu117
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cu117
+          python_version: '3.11'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cu117_upload
+          requires:
+          - nightly_binary_win_conda_py3.11_cu117
+      - binary_win_conda:
+          cu_version: cu118
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cu118
+          python_version: '3.11'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.11_cu118_upload
+          requires:
+          - nightly_binary_win_conda_py3.11_cu118
   docker_build:
     triggers:
       - schedule:

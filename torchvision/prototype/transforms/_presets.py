@@ -9,7 +9,9 @@ import PIL.Image
 import torch
 from torch import Tensor
 
-from . import functional as F, InterpolationMode
+from torchvision.transforms.v2 import functional as F, InterpolationMode
+
+from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
 __all__ = ["StereoMatching"]
 
@@ -22,7 +24,7 @@ class StereoMatching(torch.nn.Module):
         resize_size: Optional[Tuple[int, ...]],
         mean: Tuple[float, ...] = (0.5, 0.5, 0.5),
         std: Tuple[float, ...] = (0.5, 0.5, 0.5),
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
 
@@ -36,7 +38,7 @@ class StereoMatching(torch.nn.Module):
 
         self.mean = list(mean)
         self.std = list(std)
-        self.interpolation = interpolation
+        self.interpolation = _check_interpolation(interpolation)
         self.use_gray_scale = use_gray_scale
 
     def forward(self, left_image: Tensor, right_image: Tensor) -> Tuple[Tensor, Tensor]:

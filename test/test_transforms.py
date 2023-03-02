@@ -2,6 +2,7 @@ import math
 import os
 import random
 import re
+import textwrap
 import warnings
 from functools import partial
 
@@ -9,9 +10,8 @@ import numpy as np
 import pytest
 import torch
 import torchvision.transforms as transforms
-import torchvision.transforms._pil_constants as _pil_constants
+import torchvision.transforms._functional_tensor as F_t
 import torchvision.transforms.functional as F
-import torchvision.transforms.functional_tensor as F_t
 from PIL import Image
 from torch._utils_internal import get_file_path_2
 
@@ -25,7 +25,7 @@ try:
 except ImportError:
     stats = None
 
-from common_utils import assert_equal, cycle_over, float_dtypes, int_dtypes
+from common_utils import assert_equal, assert_run_python_script, cycle_over, float_dtypes, int_dtypes
 
 
 GRACE_HOPPER = get_file_path_2(
@@ -175,7 +175,7 @@ class TestAccImage:
     def test_accimage_resize(self):
         trans = transforms.Compose(
             [
-                transforms.Resize(256, interpolation=_pil_constants.LINEAR),
+                transforms.Resize(256, interpolation=Image.LINEAR),
                 transforms.PILToTensor(),
                 transforms.ConvertImageDtype(dtype=torch.float),
             ]
@@ -1533,10 +1533,10 @@ def test_ten_crop(should_vflip, single_dim):
     five_crop.__repr__()
 
     if should_vflip:
-        vflipped_img = img.transpose(_pil_constants.FLIP_TOP_BOTTOM)
+        vflipped_img = img.transpose(Image.FLIP_TOP_BOTTOM)
         expected_output += five_crop(vflipped_img)
     else:
-        hflipped_img = img.transpose(_pil_constants.FLIP_LEFT_RIGHT)
+        hflipped_img = img.transpose(Image.FLIP_LEFT_RIGHT)
         expected_output += five_crop(hflipped_img)
 
     assert len(results) == 10
@@ -1883,6 +1883,9 @@ def test_random_rotation():
     # Checking if RandomRotation can be printed as string
     t.__repr__()
 
+    t = transforms.RandomRotation((-10, 10), interpolation=Image.BILINEAR)
+    assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
 
 def test_random_rotation_error():
     # assert fill being either a Sequence or a Number
@@ -2212,6 +2215,9 @@ def test_random_affine():
     t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
     assert "bilinear" in t.__repr__()
 
+    t = transforms.RandomAffine(10, interpolation=Image.BILINEAR)
+    assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
 
 def test_elastic_transformation():
     with pytest.raises(TypeError, match=r"alpha should be float or a sequence of floats"):
@@ -2228,9 +2234,8 @@ def test_elastic_transformation():
     with pytest.raises(ValueError, match=r"sigma is a sequence its length should be 2"):
         transforms.ElasticTransform(alpha=2.0, sigma=[1.0, 0.0, 1.0])
 
-    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
-        t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=2)
-        assert t.interpolation == transforms.InterpolationMode.BILINEAR
+    t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=Image.BILINEAR)
+    assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
     with pytest.raises(TypeError, match=r"fill should be int or float"):
         transforms.ElasticTransform(alpha=1.0, sigma=1.0, fill={})
@@ -2260,6 +2265,36 @@ def test_random_grayscale_with_grayscale_input():
     image_pil = F.to_pil_image(image_tensor)
     output_pil = transform(image_pil)
     torch.testing.assert_close(F.pil_to_tensor(output_pil), image_tensor)
+
+
+# TODO: remove in 0.17 when we can delete functional_pil.py and functional_tensor.py
+@pytest.mark.parametrize(
+    "import_statement",
+    (
+        "from torchvision.transforms import functional_pil",
+        "from torchvision.transforms import functional_tensor",
+        "from torchvision.transforms.functional_tensor import resize",
+        "from torchvision.transforms.functional_pil import resize",
+    ),
+)
+@pytest.mark.parametrize("from_private", (True, False))
+def test_functional_deprecation_warning(import_statement, from_private):
+    if from_private:
+        import_statement = import_statement.replace("functional", "_functional")
+        source = f"""
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            {import_statement}
+        """
+    else:
+        source = f"""
+        import pytest
+        with pytest.warns(UserWarning, match="removed in 0.17"):
+            {import_statement}
+        """
+    assert_run_python_script(textwrap.dedent(source))
 
 
 if __name__ == "__main__":

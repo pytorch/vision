@@ -3,9 +3,9 @@ import sys
 import warnings
 
 import numpy as np
+import PIL.Image
 import pytest
 import torch
-import torchvision.transforms._pil_constants as _pil_constants
 from common_utils import (
     _assert_approx_equal_tensor_to_pil,
     _assert_equal_tensor_to_pil,
@@ -657,13 +657,13 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
             matrix = (1, level, 0, 0, 1, 0)
         elif mode == "Y":
             matrix = (1, 0, 0, level, 1, 0)
-        return pil_img.transform((image_size, image_size), _pil_constants.AFFINE, matrix, resample=resample)
+        return pil_img.transform((image_size, image_size), PIL.Image.AFFINE, matrix, resample=resample)
 
     t_img, pil_img = _create_data(image_size, image_size)
 
     resample_pil = {
-        F.InterpolationMode.NEAREST: _pil_constants.NEAREST,
-        F.InterpolationMode.BILINEAR: _pil_constants.BILINEAR,
+        F.InterpolationMode.NEAREST: PIL.Image.NEAREST,
+        F.InterpolationMode.BILINEAR: PIL.Image.BILINEAR,
     }[interpolation]
 
     level = 0.3
