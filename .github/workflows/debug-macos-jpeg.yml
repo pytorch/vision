@@ -33,4 +33,5 @@ jobs:
           pytest -v test/test_image.py -k jpeg
 
       - name: Setup tmate session
+        if: always()
         uses: mxschmitt/action-tmate@v3
