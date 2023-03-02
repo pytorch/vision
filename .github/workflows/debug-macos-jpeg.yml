@@ -31,3 +31,6 @@ jobs:
         run: |
           pip install --progress-bar=off pytest pytest-mock
           pytest -v test/test_image.py -k jpeg
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
